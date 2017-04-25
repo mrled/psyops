@@ -1,12 +1,10 @@
 version: '3'
 services:
   biblemunger-svc:
-    image: localhost:5000/biblemunger:latest
-    ports:
-      - "8187:8187"
+    environment:
+      BIBLEMUNGER_BASEURL_OVERRIDE: http://localhost/biblemunger
+    image: mrled/biblemunger:latest
   frontend-svc:
-    image: localhost:5000/toys-frontend:latest
+    image: mrled/toys-frontend:latest
     ports:
     - "80:80"
-    links:
-    - biblemunger-svc
