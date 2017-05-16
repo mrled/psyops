@@ -7,19 +7,22 @@
 me 300 IN CNAME mrled.github.io.
 www 300 IN CNAME mrled.github.io.
 
+; prod server
+kenasus 300 IN A 67.207.80.196
+kenasus 300 IN AAAA 2604:a880:400:d0::23fd:7001
+
 ; dev server
 apsylania 300 IN A 67.205.178.207
 apsylania 300 IN AAAA 2604:a880:400:d0::221c:7001
+dev 300 IN CNAME apsylania.micahrl.com.
 
 ; old prod server
 noradia 300 IN A 162.243.35.116
-ispy 300 IN CNAME noradia.micahrl.com.
 toys 300 IN CNAME noradia.micahrl.com.
 vpn 300 IN CNAME noradia.micahrl.com.
 
 ; old dev server
 nullyork 300 IN A 162.243.186.50
-dev 300 IN CNAME nullyork.micahrl.com.
 
 ; hosted XMPP with conversations.im
 conference 300 IN CNAME xmpp-hosting.conversations.im.
@@ -30,7 +33,7 @@ _xmpp-server._tcp 300 IN SRV 1 1 5269 xmpp-hosting.conversations.im.
 _xmpps-client._tcp 10800 IN SRV 1 1 443 xmpps-hosting.conversations.im.
 xmpp-hosting-verification 300 IN TXT "verify=1pg6rwmyetpj4"
 
-;  hosted email with fastmail.com
+; hosted email with fastmail.com
 @ 300 IN MX 10 in1-smtp.messagingengine.com.
 @ 300 IN MX 20 in2-smtp.messagingengine.com.
 @ 300 IN TXT "keybase-site-verification=Z8Ro6BPCbOvBtJOG9CYDkdseYa0EgGBm6Z475VKMzWc"
