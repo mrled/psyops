@@ -18,6 +18,10 @@ Get the current zonefile:
     # Powerhell
     gandi record list --format text DOMAIN > Out-File -Encoding utf8 -FilePath DOMAIN.zone
 
+Unfortunately, the Gandi API cannot handle zonefiles with comments in them, so the file must be normalized before it can be applied:
+
+    ./normzone.py DOMAIN.zone
+
 Deploy a new zonefile:
 
-    gandi record update DOMAIN -f DOMAIN.zone
+    gandi record update DOMAIN -f DOMAIN.zone.normalized
