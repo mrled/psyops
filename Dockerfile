@@ -67,6 +67,14 @@ COPY ["psyops.prompt", "/home/mrled/.bashrc.d/"]
 RUN true \
     && chown -R mrled:mrled /home/mrled /setup \
     && true
+# Changes (like permission changes) made to a VOLUME after it has been declared wil be *discarded*
+# Contents of the volume are overwritten when it's bind-mounted
+# So make permission changes before declaring, and put any file changes into scripts that run after the Docker image has been created
+RUN true \
+    && mkdir /psyche \
+    && chown -R mrled:mrled /psyche \
+    && true
+VOLUME /psyche
 USER mrled
 WORKDIR /home/mrled
 
@@ -80,6 +88,7 @@ RUN true \
 
     # && mkdir $HOME/.bashrc.d \
     && echo "toilet --filter gay --font future PSYOPS" > $HOME/.bashrc.d/psyops \
+    && echo "mkdir -p ../../psyche/dot.config && ln -sf ../../psyche/dot.config /home/mrled/.config" > $HOME/.bashrc.d/volumes \
     # && echo "export PS1=\"$(toilet --filter gay --font term .P.S.Y.O.P.S.) \W > \"" > $HOME/.bashrc.d/psyops.prompt \
     # && printf 'export PS1=$(toilet --filter gay --font term .P.S.Y.O.P.S.) $PS1' > $HOME/.bashrc.d/psyops.prompt \
 
