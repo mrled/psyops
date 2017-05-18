@@ -1,0 +1,3 @@
+[submodule "dhd"]
+	path = dhd
+	url = git@github.com:mrled/dhd.git
