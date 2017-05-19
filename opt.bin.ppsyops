@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+printf "$(ansi fg magenta)P$(ansi fg red)S$(ansi fg yellow)Y$(ansi fg green)O$(ansi fg cyan)P$(ansi fg blue)S$(ansi reset)"

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+toilet --filter gay --font future PSYOPS
+export PS1="$(ppsyops --no-newline) \W \$ "

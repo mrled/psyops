@@ -60,10 +60,12 @@ RUN true \
 RUN true \
     && addgroup -S mrled \
     && adduser -S -G mrled -s /bin/bash mrled \
+    && mkdir /home/mrled/.bashrc.d \
     && true
 COPY ["dhd", "/home/mrled/.dhd"]
-COPY ["psyops", "/home/mrled/psyops"]
-COPY ["psyops.prompt", "/home/mrled/.bashrc.d/"]
+COPY ["opt.bin.ppsyops", "/home/mrled/opt/bin/ppsyops"]
+COPY ["bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
+COPY ["psyops-setup.sh", "/home/mrled/"]
 RUN true \
     && chown -R mrled:mrled /home/mrled /setup \
     && true
@@ -86,11 +88,7 @@ RUN true \
     && mkdir .ssh \
     && ln -s ../.dhd/hbase/known_hosts .ssh/known_hosts \
 
-    # && mkdir $HOME/.bashrc.d \
-    && echo "toilet --filter gay --font future PSYOPS" > $HOME/.bashrc.d/psyops \
     && echo "mkdir -p ../../psyche/dot.config && ln -sf ../../psyche/dot.config /home/mrled/.config" > $HOME/.bashrc.d/volumes \
-    # && echo "export PS1=\"$(toilet --filter gay --font term .P.S.Y.O.P.S.) \W > \"" > $HOME/.bashrc.d/psyops.prompt \
-    # && printf 'export PS1=$(toilet --filter gay --font term .P.S.Y.O.P.S.) $PS1' > $HOME/.bashrc.d/psyops.prompt \
 
     && true
 
