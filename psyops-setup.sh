@@ -3,14 +3,16 @@
 set -e
 set -u
 
+psyops=$(printf "$(ansi fg magenta)P$(ansi fg red)S$(ansi fg yellow)Y$(ansi fg green)O$(ansi fg cyan)P$(ansi fg blue)S$(ansi reset)")
+
 usage() {
     cat << ENDUSAGE
 Usage: $0 [-h|--help] [-f|--force]
-Set up $(ppsyops)
+Set up $psyops
     -h | --help: Print help and exit
     -f | --force: Remove any existing config files and reinit
 
-Configure the $(ppsyops) environment (gandi, digitalocean, etc)
+Configure the $psyops environment (gandi, digitalocean, etc)
 ENDUSAGE
 }
 
@@ -35,22 +37,22 @@ if test -e "$doctlcfg" && test "$force"; then rm "$doctlcfg"; fi
 # Don't let -f delete an existing SSH key
 
 if test ! -e "$idrsa"; then
-    echo "Create SSH key for $(ppsyops)"
+    echo "Create SSH key for $psyops"
     ssh-keygen -f "$idrsa" -t ed25519
 else
-    echo "SSH key for $(ppsyops) already exists"
+    echo "SSH key for $psyops already exists"
 fi
 
 if test ! -e "$gandicfg"; then
-    echo "Configure Gandi for $(ppsyops):"
+    echo "Configure Gandi for $psyops:"
     gandi setup
 else
-    echo "Gandi for $(ppsyops) is already configured"
+    echo "Gandi for $psyops is already configured"
 fi
 
 if test ! -e "$doctlcfg"    ; then
-    echo "Configure Digital Ocean for $(ppsyops):"
+    echo "Configure Digital Ocean for $psyops:"
     doctl auth init
 else
-    echo "Digital Ocean for $(ppsyops) is already configured"
+    echo "Digital Ocean for $psyops is already configured"
 fi
