@@ -14,6 +14,7 @@ RUN true \
         man man-pages mdocml-apropos \
         # provides tput
         ncurses \
+        openssh-client openssh-doc \
         openssl openssl-doc \
         python3 python3-doc \
         sudo sudo-doc \
