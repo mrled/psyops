@@ -63,6 +63,7 @@ RUN true \
     && mkdir /home/mrled/.bashrc.d \
     && true
 COPY ["dhd", "/home/mrled/.dhd"]
+COPY [".", "/home/mrled/psyops"]
 COPY ["opt.bin.ppsyops", "/home/mrled/opt/bin/ppsyops"]
 COPY ["bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
 COPY ["psyops-setup.sh", "/home/mrled/"]
