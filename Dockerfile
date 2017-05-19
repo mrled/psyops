@@ -65,8 +65,8 @@ RUN true \
     && true
 COPY ["dhd", "/home/mrled/.dhd"]
 COPY [".", "/home/mrled/psyops"]
-COPY ["opt.bin.ppsyops", "/home/mrled/opt/bin/ppsyops"]
 COPY ["bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
+COPY ["bashrc.d.volumes", "/home/mrled/.bashrc.d/volumes"]
 COPY ["psyops-setup.sh", "/home/mrled/"]
 RUN true \
     && chown -R mrled:mrled /home/mrled /setup \
@@ -84,14 +84,8 @@ WORKDIR /home/mrled
 
 # Run commands (as my user). Changes more often
 RUN true \
-
     && cd $HOME  \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
-    && mkdir .ssh \
-    && ln -s ../.dhd/hbase/known_hosts .ssh/known_hosts \
-
-    && echo "mkdir -p ../../psyche/dot.config && ln -sf ../../psyche/dot.config /home/mrled/.config" > $HOME/.bashrc.d/volumes \
-
     && true
 
 ENTRYPOINT "/bin/bash"
