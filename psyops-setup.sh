@@ -3,7 +3,7 @@
 set -e
 set -u
 
-psyops=$(printf "$(ansi fg magenta)P$(ansi fg red)S$(ansi fg yellow)Y$(ansi fg green)O$(ansi fg cyan)P$(ansi fg blue)S$(ansi reset)")
+psyops=$(printf "$(ansi fg=magenta)P$(ansi fg=red)S$(ansi fg=yellow)Y$(ansi fg=green)O$(ansi fg=cyan)P$(ansi fg=blue)S$(ansi mode=reset)")
 
 usage() {
     cat << ENDUSAGE
