@@ -1,10 +1,12 @@
 #!/bin/sh
 
-test -e $HOME/.config && echo "ERROR: $HOME/.config already exists" && exit 1
-mkdir -p ../../psyche/dot.config
-ln -sf ../../psyche/dot.config $HOME/.config
+if test ! -e $HOME/.config; then
+    mkdir -p /psyche/dot.config
+    ln -s ../../psyche/dot.config $HOME/.config
+fi
 
-test -e $HOME/.ssh && echo "ERROR: $HOME/.ssh already exists" && exit 1
-mkdir -p ../../psyche/dot.ssh
-ln -sf ../../psyche/dot.ssh $HOME/.ssh
-ln -sf $HOME/.dhd/hbase/known_hosts $HOME/.ssh/known_hosts
+if test ! -e $HOME/.ssh; then
+    mkdir -p /psyche/dot.ssh
+    ln -s ../../psyche/dot.ssh $HOME/.ssh
+    ln -sf $HOME/.dhd/hbase/known_hosts $HOME/.ssh/known_hosts
+fi
