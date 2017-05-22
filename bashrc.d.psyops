@@ -1,5 +1,4 @@
 #!/bin/sh
 
 toilet --filter gay --font future PSYOPS
-unset PROMPT_COMMAND
-export PS1=$(printf '\[%s\]P\[%s\]S\[%s\]Y\[%s\]O\[%s\]P\[%s\]S\[%s\] \W \$ ' "$(ansi fg=magenta)" "$(ansi fg=red)" "$(ansi fg=yellow)" "$(ansi fg=green)" "$(ansi fg=cyan)" "$(ansi fg=blue)" "$(ansi mode=reset)")
+export PROMPT_HOSTNAME_OVERRIDE="$(printf '\[%s\]P\[%s\]S\[%s\]Y\[%s\]O\[%s\]P\[%s\]S\[%s\]' "$(ansi fg=magenta)" "$(ansi fg=red)" "$(ansi fg=yellow)" "$(ansi fg=green)" "$(ansi fg=cyan)" "$(ansi fg=blue)" "$(ansi mode=reset)")"
