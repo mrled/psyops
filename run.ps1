@@ -4,15 +4,15 @@ Param(
     [Parameter(Mandatory=$true)] $dockerImage,
     $psycheVolume
 )
-
-if ($psycheVolume) {
-    $psycheVolume = Resolve-Path $psycheVolume | Select-Object -ExpandProperty Path
-    $psycheVolumeArg = "-v ${psycheVolume}:/psyche"
-}
 $origMsysNoPathconv = $env:MSYS_NO_PATHCONV
 $env:MSYS_NO_PATHCONV = 1
 try {
-    docker run --rm $psycheVolumeArg -it $dockerImage
+    if ($psycheVolume) {
+        $psycheVolume = Resolve-Path $psycheVolume | Select-Object -ExpandProperty Path
+        docker run --rm -v "${psycheVolume}:/psyche:rw" -it "$dockerImage"
+    } else {
+        docker run --rm -it "$dockerImage"
+    }
 } finally {
     $env:MSYS_NO_PATHCONV = $origMsysNoPathconv
 }
