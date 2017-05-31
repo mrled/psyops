@@ -30,7 +30,7 @@ done
 
 gandicfg=$HOME/.config/gandi/config.yaml
 doctlcfg=$HOME/.config/doctl/config.yaml
-keypath=$HOME/.ssh/$keytype
+keypath=$HOME/.ssh/id_$keytype
 
 if test -e "$gandicfg" && test "$force"; then rm "$gandicfg"; fi
 if test -e "$doctlcfg" && test "$force"; then rm "$doctlcfg"; fi
