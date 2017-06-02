@@ -8,13 +8,17 @@ psyops=$(printf "$(ansi fg=magenta)P$(ansi fg=red)S$(ansi fg=yellow)Y$(ansi fg=g
 usage() {
     cat <<ENDUSAGE
 Usage: $0 [-h|--help] [-f|--force]
-Set up $psyops
+Configure the $psyops environment (gandi, digitalocean, ssh, etc)
     -h | --help: Print help and exit
     -f | --force: Remove any existing config files and reinit
-    -t | --ssh-key-type: Type of SSH key to expect/generate
+    -t | --ssh-key-type: Type of SSH key to expect
+        Default value: ed25519
     -C | --ssh-key-comment: Comment field of SSH key
+        (Does NOT have to match comment supplied when key was generated)
+        Default value: conspirator@PSYOPS
 
-Configure the $psyops environment (gandi, digitalocean, etc)
+We expect an SSH key generated out of band. We recommend doing so like this:
+    ssh-keygen -t ed25519 -C conspirator@PSYOPS
 ENDUSAGE
 }
 
@@ -33,15 +37,22 @@ done
 
 gandicfg=$HOME/.config/gandi/config.yaml
 doctlcfg=$HOME/.config/doctl/config.yaml
-keypath=$HOME/.ssh/id_$keytype
+privkey="${HOME}/.ssh/id_${keytype}"
+pubkey="${HOME}/.ssh/id_${keytype}.pub"
 
-if test -e "$gandicfg" && test "$force"; then rm "$gandicfg"; fi
-if test -e "$doctlcfg" && test "$force"; then rm "$doctlcfg"; fi
-# Don't let -f delete an existing SSH key
+if test "$force"; then
+    rm "$gandicfg" "$doctlcfg" "$privkey" "$pubkey" || true
+fi
 
-if test ! -e "$keypath"; then
-    echo "Create SSH key for $psyops"
-    ssh-keygen -f "$keypath" -t "$keytype" -C "$keycomm"
+if test ! -e "$privkey"; then
+    echo "Configure SSH key for $psyops"
+    echo "Paste the private $keytype key here"
+    echo "Then hit ctrl+d on an empty line to read the key"
+    cat > "$privkey"
+    pubkeydata=$(ssh-keygen -y -f "$privkey")
+    pubkeydata="${pubkeydata} ${keycomm}"
+    echo "Private key accepted; public key: $pubkeydata"
+    echo "$pubkeydata" > "$pubkey"
 else
     echo "SSH key for $psyops already exists"
 fi
