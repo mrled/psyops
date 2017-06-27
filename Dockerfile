@@ -84,8 +84,11 @@ WORKDIR /home/mrled
 
 # Run commands (as my user). Changes more often
 RUN true \
-    && cd $HOME  \
+    && cd $HOME \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
+    && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
+    # Pull down the (public) repo over unauthenticated HTTPS, then switch it to authenticated SSH but don't fetch so as to not require a baked-in SSH key
+    && git clone https://github.com/mrled/psyops.secrets .psyops.secrets && cd .psyops.secrets && git remote set-url --all origin git@github.com/mrled/psyops.secrets.git \
     && true
 
 ENTRYPOINT "/bin/bash"
