@@ -11,6 +11,7 @@ RUN true \
         emacs-nox emacs-doc \
         file file-doc \
         git git-doc \
+        gnupg gnupg-doc \
         man man-pages mdocml-apropos \
         # provides tput
         ncurses \
@@ -68,6 +69,7 @@ COPY [".", "/home/mrled/psyops"]
 COPY ["docker/bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
 COPY ["docker/bashrc.d.volumes", "/home/mrled/.bashrc.d/volumes"]
 COPY ["psyops-setup.sh", "/home/mrled/"]
+COPY ["docker/psyops.secret.key.asc", "/home/mrled/.psyops.secret.key.asc"]
 RUN true \
     && chown -R mrled:mrled /home/mrled /setup \
     && true
