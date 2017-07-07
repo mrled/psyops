@@ -31,19 +31,19 @@ RUN true \
 # The toilet server gets mad if you hit it too hard
 # Do this shit first in a separate RUN statement so it's cached
 RUN true \
-    && apk add g++ libcaca libcaca-dev make \
-    && wget http://caca.zoy.org/raw-attachment/wiki/toilet/toilet-0.3.tar.gz \
-    && tar zxf toilet-0.3.tar.gz \
-    && cd toilet-0.3 \
+    && apk add g++ libcaca libcaca-dev make automake autoconf \
+    && git clone https://github.com/cacalabs/toilet \
+    && cd toilet \
+    && ./bootstrap \
     && ./configure \
     && make \
     && make install \
     # you have to leave libcaca, but it's only 4mb
     # && apk del g++ libcaca libcaca-dev make \
-    && apk del g++ libcaca-dev make \
+    && apk del g++ libcaca-dev make automake autoconf \
     && true
 
-COPY ["getdoctl.py", "/setup/"]
+COPY ["docker/getdoctl.py", "/setup/"]
 RUN true \
 
     && cd /setup \
@@ -65,8 +65,8 @@ RUN true \
     && true
 COPY ["dhd", "/home/mrled/.dhd"]
 COPY [".", "/home/mrled/psyops"]
-COPY ["bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
-COPY ["bashrc.d.volumes", "/home/mrled/.bashrc.d/volumes"]
+COPY ["docker/bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
+COPY ["docker/bashrc.d.volumes", "/home/mrled/.bashrc.d/volumes"]
 COPY ["psyops-setup.sh", "/home/mrled/"]
 RUN true \
     && chown -R mrled:mrled /home/mrled /setup \
@@ -88,7 +88,7 @@ RUN true \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
     && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
     # Pull down the (public) repo over unauthenticated HTTPS, then switch it to authenticated SSH but don't fetch so as to not require a baked-in SSH key
-    && git clone https://github.com/mrled/psyops.secrets .psyops.secrets && cd .psyops.secrets && git remote set-url --all origin git@github.com/mrled/psyops.secrets.git \
+    && git clone https://github.com/mrled/psyops.secrets .psyops.secrets && cd .psyops.secrets && git remote set-url --add origin git@github.com/mrled/psyops.secrets.git \
     && true
 
 ENTRYPOINT "/bin/bash"
