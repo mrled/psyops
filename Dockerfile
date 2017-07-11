@@ -81,10 +81,10 @@ RUN makewhatis
 
 # Enable passwordless sudo
 # ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
-RUN true \
-    && echo "mrled ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/mrled \
-    && chmod 0440 /etc/sudoers.d/mrled \
-    && true
+# RUN true \
+#     && echo "mrled ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/mrled \
+#     && chmod 0440 /etc/sudoers.d/mrled \
+#     && true
 
 # Configure my user. Changes more often
 RUN true \
@@ -118,25 +118,13 @@ WORKDIR /home/mrled
 # Run commands (as my user). Changes more often
 RUN true \
     && cd $HOME \
+    && git clone https://github.com/mrled/psyops-secrets $HOME/.secrets \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
-    && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
-    # && mkdir $HOME/.ssh \
-    && ln -s .secrets/dot.config $HOME/.config \
-    # && ln -s ../.secrets/dot.ssh/id_ed25519 $HOME/.ssh/id_ed25519 \
-    # && ln -s ../.secrets/dot.ssh/id_ed25519.pub $HOME/.ssh/id_ed25519.pub \
     && ln -sf ../.dhd/hbase/known_hosts $HOME/.ssh/known_hosts \
-    && true
-# Handle the secrets repo
-RUN true \
-    # Pull down the (public) repo over unauthenticated HTTPS, then switch it to authenticated SSH but don't fetch so as to not require a baked-in SSH key
-    # && git clone https://github.com/mrled/psyops-secrets .psyops.secrets && cd .psyops.secrets && git remote set-url --add origin git@github.com/mrled/psyops.secrets.git \
+    && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
 
-    # && git clone https://github.com/mrled/psyops-secrets $HOME/.secrets \
-    # && cd $HOME/.secrets \
-    # && git remote add gcrypt gcrypt::git@github.com:mrled/psyops-secrets.git \
-    # && git config gcrypt.gpg-args "--use-agent --passphrase-file $HOME/.gpg.passphrase --batch --no-tty" \
-
-    && git clone --origin encrypted --no-checkout https://github.com/mrled/psyops-secrets $HOME/.secrets \
+    # Note that at this time .secrets exists but has not been decrypted, so these symlinks will be broken until decryption time (see bashrc.d.psecrets)
+    && ln -s .secrets/dot.config $HOME/.config \
 
     && true
 

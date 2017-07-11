@@ -21,7 +21,7 @@ This step is not necessary on Unix platforms
 
 We bake in a GPG key.
 
-Our exported key and associated information was exported as follows. Note that this was done on a system with no existing keys (or `$HOME/.gnupg` folder).
+Our exported key and associated information was exported as follows. Note that this was done on a system with no existing keys (or indeed even a `$HOME/.gnupg` folder); if you export ownertrust on a system that has an existing key, you may get unexpected results.
 
     gpg --gen-key
     # ... and then answer the interactive questions to your liking ...
@@ -35,23 +35,36 @@ Our exported key and associated information was exported as follows. Note that t
 
 ## Setting up the Git repository
 
-We use [git-remote-gcrypt](https://spwhitton.name/tech/code/git-remote-gcrypt/) to handle secrets. The repository was set up like this:
+We use [git-remote-gcrypt](https://spwhitton.name/tech/code/git-remote-gcrypt/) to handle secrets, which are stored in [psyops-secrets](https://github.com/mrled/psyops-secrets). This is how that repository was created:
 
-Note the URL fragment when adding the `gcrypt` remote - the fragment represents the branch name that `git-remote-gcrypt` will push to. When it pushes, it flattens git changes into one commit (changeset) per file, and then on checkout it reconstitutes that into a repository that `git` can work with locally with full history. This means that the `master` branch is encrypted that way too... but since we don't push to that branch with `git-remote-gcrypt`, and instead use the `encrypted` branch, `master` can stay decrypted for our readme.
+1. Create the repo on GitHub
 
-    # Assumes an existing GPG key
-    git init psyops-secrets
-    cd psyops-secrets
-    echo 'Secrets for [PSYOPS](https://github.com/mrled/psyops)' > readme.markdown
-    git add readme.markdown
-    git commit -m "Add readme"
-    git remote add encrypted git@github.com:mrled/psyops-secrets.git
-    git push -u encrypted master:master -f
+2. Push an initial commit containing data that is OK to be pushed unencrypted
 
-    # The URL fragment, '#encrypted', means to push to a remote branch called 'encrypted'
-    # This leaves our master branch alone, in case we want to add non-secrets there
-    # However, note that the master branch is still encrypted and pushed to the 'encrypted' branch too
-    git remote add gcrypt 'gcrypt::git@github.com:mrled/psyops-secrets.git#encrypted'
-    git config gcrypt.gpg-args "--batch --no-tty --passphrase-file $HOME/.gpg.passphrase"
-    git checkout -b decrypted encrypted/master
-    git push -u gcrypt decrypted:encrypted
+        git init psyops-secrets-staging
+        pushd psyops-secrets-staging
+        echo 'Secrets for [PSYOPS](https://github.com/mrled/psyops)' > readme.markdown
+        git add readme.markdown
+        git commit -m "Initial commit - add readme"
+        git remote add origin git@github.com:mrled/psyops-secrets.git
+        git push -u origin master:master
+        popd
+
+3. Clone into a second location and configure `git-remote-gcrypt`
+
+        git clone gcrypt::git@github.com:mrled/psyops-secrets.git psyops-secrets
+        pushd psyops-secrets
+        git config gcrypt.gpg-args "--batch --no-tty --passphrase-file $gpgpassfile"
+
+    Note that when you clone it, it will say "You appear to have cloned an empty repository". This is because when using `git-remote-gcrypt` with a git SSH remote (which does not have permission to modify the .git directory directly) rather than an SFTP or rsync remote (which does), it must use a local intermediary repository. That local intermediary repository contains only encrypted data and not the existing commit, where the readme was added. (It then force-pushes to the remote repository a single commit, containing one file per changeset of your actual changes.)
+
+    A benefit of this is that our readme works in GitHub while files, and even log messages and file names, are encrypted. However, history will not be available to GitHub, as the layout of the repository and even commit messages are all squashed into encrypted changeset files.
+
+4. Add files and commit
+
+        git add state-secrets.txt
+        git commit -m "Adding important state secrets lol"
+        git push
+        popd
+
+    Note that, in this case, we are using a file containing the passphrase. Use a literal string, not a shell variable for this, and of course it must exist and be the correct passphrase. There may be other options, such as using a GPG agent, that you might wish to explore instead.
