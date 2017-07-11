@@ -95,11 +95,11 @@ RUN true \
 COPY ["dhd", "/home/mrled/.dhd"]
 COPY [".", "/home/mrled/psyops"]
 COPY ["docker/bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
-COPY ["docker/bashrc.d.volumes", "/home/mrled/.bashrc.d/volumes"]
 COPY ["psyops-setup.sh", "/home/mrled/"]
 COPY ["docker/psyops.secret.gpg.key.asc", "/home/mrled/.psyops.secret.gpg.key.asc"]
 COPY ["docker/psyops.secret.gpg.pubkey.asc", "/home/mrled/.psyops.secret.gpg.pubkey.asc"]
 COPY ["docker/psyops.secret.gpg.ownertrust.db.asc", "/home/mrled/.psyops.secret.gpg.ownertrust.db.asc"]
+COPY ["docker/id_ed25519.gpg", "/home/mrled/.ssh/id_ed25519.gpg"]
 COPY ["docker/bashrc.d.psecrets", "/home/mrled/.bashrc.d/psecrets"]
 RUN true \
     && chown -R mrled:mrled /home/mrled /setup \
@@ -120,10 +120,11 @@ RUN true \
     && cd $HOME \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
     && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
-    && mkdir $HOME/.ssh \
+    # && mkdir $HOME/.ssh \
     && ln -s .secrets/dot.config $HOME/.config \
-    && ln -s ../.secrets/dot.ssh/* $HOME/.ssh/ \
-    && ln -s ../.dhd/hbase/known_hosts $HOME/.ssh/known_hosts \
+    # && ln -s ../.secrets/dot.ssh/id_ed25519 $HOME/.ssh/id_ed25519 \
+    # && ln -s ../.secrets/dot.ssh/id_ed25519.pub $HOME/.ssh/id_ed25519.pub \
+    && ln -sf ../.dhd/hbase/known_hosts $HOME/.ssh/known_hosts \
     && true
 # Handle the secrets repo
 RUN true \
