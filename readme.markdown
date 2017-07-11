@@ -16,3 +16,18 @@ It's critical that repositories with shell scripts have Unix line endings, but b
     git reset --hard HEAD
 
 This step is not necessary on Unix platforms
+
+## Creating a GPG key for use
+
+We bake in a GPG key.
+
+Our exported key and associated information was exported as follows. Note that this was done on a system with no existing keys (or `$HOME/.gnupg` folder).
+
+    gpg2 --full-gen-key
+    # ... and then answer the interactive questions to your liking ...
+
+    gpg2 --list-secret-keys
+    keyid="KEY ID FROM ABOVE"
+
+    gpg2 --armor --export-ownertrust > psyops.secret.gpg.ownertrust.db.asc
+    gpg2 --armor --export-secret-key $keyid > psyops.secret.gpg.key

@@ -12,12 +12,15 @@ RUN true \
         file file-doc \
         git git-doc \
         gnupg gnupg-doc \
+        # gnupg1 gnupg1-doc \
         man man-pages mdocml-apropos \
         # provides tput
         ncurses \
         openssh-client openssh-doc \
         openssl openssl-doc \
         python3 python3-doc \
+        # for rst2man, used by git-remote-crypt
+        py3-docutils \
         sudo sudo-doc \
     && makewhatis \
     && update-ca-certificates --fresh \
@@ -25,10 +28,13 @@ RUN true \
     && python3 -m ensurepip && python3 -m pip install --upgrade pip && python3 -m pip install \
         gandi.cli \
 
+    && install -d -o root -g root -m 755 /usr/local/bin \
+
     && true
 
 # Configure other packages. Might change more frequently
 
+# Install toilet, which is very important
 # The toilet server gets mad if you hit it too hard
 # Do this shit first in a separate RUN statement so it's cached
 RUN true \
@@ -44,6 +50,7 @@ RUN true \
     && apk del g++ libcaca-dev make automake autoconf \
     && true
 
+# Install doctl, the Digital Ocean cli tool
 COPY ["docker/getdoctl.py", "/setup/"]
 RUN true \
 
@@ -54,8 +61,30 @@ RUN true \
     && python3 /setup/getdoctl.py \
     && tar -zx -f doctl*.tar.gz \
     && sha256sum -c doctl*.sha256 \
-    && install -D -o root -g root -m 755 /setup/doctl /usr/local/bin \
+    && install -o root -g root -m 755 /setup/doctl /usr/local/bin \
 
+    && true
+
+# Install git-remote-crypt
+RUN true \
+
+    # We install py3-docutils, which includes `rst2man-3`, but git-remote-crypt's setup.sh expects `rst2man`, lol
+    && printf '#!/bin/sh\nrst2man-3 "$@"\n' > /usr/local/bin/rst2man && chmod 755 /usr/local/bin/rst2man \
+    # && alias rst2man=rst2man-3 \
+    && git clone https://github.com/spwhitton/git-remote-gcrypt /setup/git-remote-crypt \
+    && cd /setup/git-remote-crypt \
+    && ./install.sh \
+
+    && true
+
+# Running makewhatis should happen after all root installation commands / only right before running as my user
+RUN makewhatis
+
+# Enable passwordless sudo
+# ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
+RUN true \
+    && echo "mrled ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/mrled \
+    && chmod 0440 /etc/sudoers.d/mrled \
     && true
 
 # Configure my user. Changes more often
@@ -70,6 +99,7 @@ COPY ["docker/bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
 COPY ["docker/bashrc.d.volumes", "/home/mrled/.bashrc.d/volumes"]
 COPY ["psyops-setup.sh", "/home/mrled/"]
 COPY ["docker/psyops.secret.key.asc", "/home/mrled/.psyops.secret.key.asc"]
+COPY ["docker/bashrc.d.psecrets", "/home/mrled/.bashrc.d/psecrets"]
 RUN true \
     && chown -R mrled:mrled /home/mrled /setup \
     && true
@@ -89,8 +119,17 @@ RUN true \
     && cd $HOME \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
     && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
+    && true
+# Handle the secrets repo
+RUN true \
     # Pull down the (public) repo over unauthenticated HTTPS, then switch it to authenticated SSH but don't fetch so as to not require a baked-in SSH key
-    && git clone https://github.com/mrled/psyops.secrets .psyops.secrets && cd .psyops.secrets && git remote set-url --add origin git@github.com/mrled/psyops.secrets.git \
+    # && git clone https://github.com/mrled/psyops-secrets .psyops.secrets && cd .psyops.secrets && git remote set-url --add origin git@github.com/mrled/psyops.secrets.git \
+
+    # && git clone https://github.com/mrled/psyops-secrets $HOME/.secrets \
+    # && cd $HOME/.secrets \
+    # && git remote add gcrypt gcrypt::git@github.com:mrled/psyops-secrets.git \
+    # && git config gcrypt.gpg-args "--use-agent --passphrase-file $HOME/.gpg.passphrase --batch --no-tty" \
+
     && true
 
 ENTRYPOINT "/bin/bash"
