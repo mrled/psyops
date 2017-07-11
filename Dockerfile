@@ -11,8 +11,7 @@ RUN true \
         emacs-nox emacs-doc \
         file file-doc \
         git git-doc \
-        gnupg gnupg-doc \
-        # gnupg1 gnupg1-doc \
+        gnupg1 gnupg1-doc \
         man man-pages mdocml-apropos \
         # provides tput
         ncurses \
@@ -98,7 +97,9 @@ COPY [".", "/home/mrled/psyops"]
 COPY ["docker/bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
 COPY ["docker/bashrc.d.volumes", "/home/mrled/.bashrc.d/volumes"]
 COPY ["psyops-setup.sh", "/home/mrled/"]
-COPY ["docker/psyops.secret.key.asc", "/home/mrled/.psyops.secret.key.asc"]
+COPY ["docker/psyops.secret.gpg.key.asc", "/home/mrled/.psyops.secret.gpg.key.asc"]
+COPY ["docker/psyops.secret.gpg.pubkey.asc", "/home/mrled/.psyops.secret.gpg.pubkey.asc"]
+COPY ["docker/psyops.secret.gpg.ownertrust.db.asc", "/home/mrled/.psyops.secret.gpg.ownertrust.db.asc"]
 COPY ["docker/bashrc.d.psecrets", "/home/mrled/.bashrc.d/psecrets"]
 RUN true \
     && chown -R mrled:mrled /home/mrled /setup \
@@ -119,6 +120,10 @@ RUN true \
     && cd $HOME \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
     && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
+    && mkdir $HOME/.ssh \
+    && ln -s .secrets/dot.config $HOME/.config \
+    && ln -s ../.secrets/dot.ssh/* $HOME/.ssh/ \
+    && ln -s ../.dhd/hbase/known_hosts $HOME/.ssh/known_hosts \
     && true
 # Handle the secrets repo
 RUN true \
@@ -129,6 +134,8 @@ RUN true \
     # && cd $HOME/.secrets \
     # && git remote add gcrypt gcrypt::git@github.com:mrled/psyops-secrets.git \
     # && git config gcrypt.gpg-args "--use-agent --passphrase-file $HOME/.gpg.passphrase --batch --no-tty" \
+
+    && git clone --origin encrypted --no-checkout https://github.com/mrled/psyops-secrets $HOME/.secrets \
 
     && true
 
