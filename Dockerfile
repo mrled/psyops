@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.6
 LABEL maintainer "me@micahrl.com"
 
 # Pre-copy root OS configuration phase
@@ -80,8 +80,8 @@ RUN true \
 
     # Enable passwordless sudo
     # ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
-    && echo "mrled ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/mrled \
-    && chmod 0440 /etc/sudoers.d/mrled \
+    # && echo "mrled ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/mrled \
+    # && chmod 0440 /etc/sudoers.d/mrled \
 
     # Running makewhatis should happen after all root installation commands / only right before running as my user
     && makewhatis \
@@ -127,9 +127,6 @@ RUN true \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
     && ln -sf ../.dhd/hbase/known_hosts $HOME/.ssh/known_hosts \
     && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
-
-    # Note that at this time .secrets exists but has not been decrypted, so these symlinks will be broken until decryption time (see bashrc.d.psecrets)
-    && ln -s .secrets/dot.config $HOME/.config \
 
     && true
 
