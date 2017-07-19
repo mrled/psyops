@@ -11,6 +11,8 @@ RUN true \
         emacs-nox emacs-doc \
         file file-doc \
         git git-doc \
+        # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
+        less less-doc \
         gnupg1 gnupg1-doc \
         man man-pages mdocml-apropos \
         # provides tput
@@ -21,11 +23,14 @@ RUN true \
         # for rst2man, used by git-remote-crypt
         py3-docutils \
         sudo sudo-doc \
+        # for awscli, installed below from pip, to get its documentation
+        groff groff-doc \
     && makewhatis \
     && update-ca-certificates --fresh \
 
     && python3 -m ensurepip && python3 -m pip install --upgrade pip && python3 -m pip install \
         gandi.cli \
+        awscli \
 
     && install -d -o root -g root -m 755 /usr/local/bin \
     && install -d -o root -g root -m 755 /psyops \
