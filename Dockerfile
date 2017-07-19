@@ -1,7 +1,7 @@
 FROM alpine:latest
 LABEL maintainer "me@micahrl.com"
 
-# Configure OS packages etc. Should change fairly rarely.
+# Pre-copy root OS configuration phase
 RUN true \
 
     && apk update \
@@ -28,15 +28,13 @@ RUN true \
         gandi.cli \
 
     && install -d -o root -g root -m 755 /usr/local/bin \
+    && install -d -o root -g root -m 755 /psyops \
+    && install -d -o root -g root -m 755 /psyops/setup \
 
-    && true
+    && cd /psyops/setup \
 
-# Configure other packages. Might change more frequently
-
-# Install toilet, which is very important
-# The toilet server gets mad if you hit it too hard
-# Do this shit first in a separate RUN statement so it's cached
-RUN true \
+    # Install toilet, which is very important
+    # Moved away from downloading a release tarbatll b/c the toilet server gets mad if you hit it too hard
     && apk add g++ libcaca libcaca-dev make automake autoconf \
     && git clone https://github.com/cacalabs/toilet \
     && cd toilet \
@@ -47,26 +45,8 @@ RUN true \
     # you have to leave libcaca, but it's only 4mb
     # && apk del g++ libcaca libcaca-dev make \
     && apk del g++ libcaca-dev make automake autoconf \
-    && true
 
-# Install doctl, the Digital Ocean cli tool
-COPY ["docker/getdoctl.py", "/setup/"]
-RUN true \
-
-    && cd /setup \
-
-    # this is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
-    && mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
-    && python3 /setup/getdoctl.py \
-    && tar -zx -f doctl*.tar.gz \
-    && sha256sum -c doctl*.sha256 \
-    && install -o root -g root -m 755 /setup/doctl /usr/local/bin \
-
-    && true
-
-# Install git-remote-crypt
-RUN true \
-
+    # Install git-remote-crypt
     # We install py3-docutils, which includes `rst2man-3`, but git-remote-crypt's setup.sh expects `rst2man`, lol
     && printf '#!/bin/sh\nrst2man-3 "$@"\n' > /usr/local/bin/rst2man && chmod 755 /usr/local/bin/rst2man \
     # && alias rst2man=rst2man-3 \
@@ -76,22 +56,41 @@ RUN true \
 
     && true
 
-# Running makewhatis should happen after all root installation commands / only right before running as my user
-RUN makewhatis
+# Copy files for system-level configuration
 
-# Enable passwordless sudo
-# ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
-# RUN true \
-#     && echo "mrled ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/mrled \
-#     && chmod 0440 /etc/sudoers.d/mrled \
-#     && true
+# Install doctl, the Digital Ocean cli tool
+COPY ["docker/getdoctl.py", "/setup/"]
 
-# Configure my user. Changes more often
+# Run scripts for system-level configuration that rely on copied files
 RUN true \
+
+    && cd /setup \
+
+    # this is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
+    && mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
+    && python3 /setup/getdoctl.py --outdir /setup \
+    && tar -zx -f doctl*.tar.gz \
+    && sha256sum -c doctl*.sha256 \
+    && install -o root -g root -m 755 /setup/doctl /usr/local/bin \
+
+    # Enable passwordless sudo
+    # ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
+    && echo "mrled ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/mrled \
+    && chmod 0440 /etc/sudoers.d/mrled \
+
+    # Running makewhatis should happen after all root installation commands / only right before running as my user
+    && makewhatis \
+
+    # Configure my user
     && addgroup -S mrled \
     && adduser -S -G mrled -s /bin/bash mrled \
     && mkdir /home/mrled/.bashrc.d \
+
+
     && true
+
+
+# Configure my user. Changes more often
 COPY ["dhd", "/home/mrled/.dhd"]
 COPY [".", "/home/mrled/psyops"]
 COPY ["docker/bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
@@ -101,6 +100,7 @@ COPY ["docker/psyops.secret.gpg.pubkey.asc", "/home/mrled/.psyops.secret.gpg.pub
 COPY ["docker/psyops.secret.gpg.ownertrust.db.asc", "/home/mrled/.psyops.secret.gpg.ownertrust.db.asc"]
 COPY ["docker/id_ed25519.gpg", "/home/mrled/.ssh/id_ed25519.gpg"]
 COPY ["docker/bashrc.d.psecrets", "/home/mrled/.bashrc.d/psecrets"]
+COPY ["docker/bin", "/psyops/bin"]
 RUN true \
     && chown -R mrled:mrled /home/mrled /setup \
     && true
