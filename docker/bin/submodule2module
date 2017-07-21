@@ -1,0 +1,40 @@
+#!/bin/sh
+
+set -e
+set -u
+
+usage() {
+    cat <<ENDUSAGE
+$0: Make a submodule into a full Git repository
+USAGE: $0 <CHECKOUTDIR> <MODULEDIR>
+    CHECKOUTDIR:    The checked-out submodule
+    MODULEDIR:      The copy of the Git history from the parent's .git/modules/MODULENAME
+
+EXAMPLE:
+Say you have a git repo at /tmp/repo, which has a submodule at
+/tmp/repo/submod. This means that /tmp/repo/.git is a directory, as normal.
+However, the submodule's /tmp/repo/submod/.git is a file, with a reference to
+/tmp/repo/.git/modules/submod. This script takes in CHECKOUTDIR (a copy of
+/tmp/repo/submod) and MODULEDIR (a copy of /tmp/repo/.git/modules/submod),
+removes the .git file, moves MODULEDIR into CHECKOUTDIR/.git, and updates
+CHECKOUTDIR/.git/config. As a result, CHECKOUTDIR can be moved anywhere on the
+filesystem and used as a regular Git repository; it is no longer tied to the
+parent repo.
+ENDUSAGE
+}
+
+if test $# != 2; then usage; exit; fi
+checkoutdir=
+moduledir=
+for arg in "$@"; do
+    if ! test "$checkoutdir"; then
+        checkoutdir=$arg
+    elif ! test "$moduledir"; then
+        moduledir=$arg;
+    fi
+done
+
+rm -f "$checkoutdir/.git"
+mv "$moduledir" "$checkoutdir/.git"
+grep -v worktree "$checkoutdir/.git/config" > "$checkoutdir/.git/config.new"
+mv "$checkoutdir/.git/config.new" "$checkoutdir/.git/config"

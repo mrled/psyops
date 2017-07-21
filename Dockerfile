@@ -97,6 +97,7 @@ RUN true \
 
 # Configure my user. Changes more often
 COPY ["dhd", "/home/mrled/.dhd"]
+COPY [".git/modules/dhd", "/home/mrled/.dhd/.git.new"]
 COPY [".", "/home/mrled/psyops"]
 COPY ["docker/bashrc.d.psyops", "/home/mrled/.bashrc.d/psyops"]
 COPY ["psyops-setup.sh", "/home/mrled/"]
@@ -123,6 +124,7 @@ WORKDIR /home/mrled
 # Run commands (as my user). Changes more often
 RUN true \
     && cd $HOME \
+    && /psyops/bin/submodule2module "$HOME/.dhd" "$HOME/.dhd/.git.new" \
     && git clone https://github.com/mrled/psyops-secrets $HOME/.secrets \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
     && ln -sf ../.dhd/hbase/known_hosts $HOME/.ssh/known_hosts \
