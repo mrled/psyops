@@ -67,7 +67,6 @@ RUN true \
 
 # Copy files for system-level configuration
 
-# Install doctl, the Digital Ocean cli tool
 COPY ["docker/psysetup/*", "/usr/local/bin/"]
 
 # Run scripts for system-level configuration that rely on copied files
@@ -75,9 +74,9 @@ RUN true \
 
     && cd "$psysetup" \
 
-    # this is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
+    # Install doctl, the Digital Ocean cli tool
+    # this next line is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
     && mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
-
     && getdoctl --outdir "$psysetup" \
     && tar -zx -f doctl*.tar.gz \
     && sha256sum -c doctl*.sha256 \
@@ -115,6 +114,12 @@ COPY ["docker/bashrc.d", "$homedir/.bashrc.d"]
 
 COPY ["docker/psybin/*", "/usr/local/bin/"]
 
+# Run this after ALL files have been placed into /usr/local/bin
+# Fucking Docker uses the host's umask
+# Apparently it's doing this not for the user running the docker command, but for the daemon(?)
+# And so there's no easy way to even set it in some sort of wrapper script?
+RUN chmod a+rX /usr/local/bin/*
+
 RUN true \
     && mkdir "$psyvol" \
     && chown -R "$username:$username" "$homedir" "$psyvol" \
@@ -130,10 +135,9 @@ WORKDIR $homedir
 
 # Run commands (as my user). Changes more often
 RUN true \
-    && cd "$HOME" \
     && submodule2repo "$HOME/.dhd" "$HOME/.dhd/.git.new" \
     && git clone https://github.com/mrled/psyops-secrets "$HOME/.secrets" \
-    && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc . \
+    && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc "$HOME" \
     && ln -sf ../.dhd/hbase/known_hosts "$HOME/.ssh/known_hosts" \
     && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
 
