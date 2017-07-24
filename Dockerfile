@@ -31,6 +31,9 @@ RUN true \
         sudo sudo-doc \
         # for awscli, installed below from pip, to get its documentation
         groff groff-doc \
+        # For non-busybox ping. Busybox ping requires root privs, or setting net.ipv4.ping_group_range on the Docker *host*,
+        # which is problematic on Windows/macOS which both use a Linux VM that is difficult to directly configure.
+        iputils \
     && makewhatis \
     && update-ca-certificates --fresh \
 
