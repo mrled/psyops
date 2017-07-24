@@ -1,5 +1,5 @@
 [submodule "dhd"]
-	path = dhd
+	path = submod/dhd
 	url = git@github.com:mrled/dhd.git
 [submodule "submod/wintriallab"]
 	path = submod/wintriallab

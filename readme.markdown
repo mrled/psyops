@@ -11,9 +11,10 @@ It's critical that repositories with shell scripts have Unix line endings, but b
     git reset --hard HEAD
 
     # Then you have to do this once for each submodule:
-    rm .git/modules/dhd/index
-    cd dhd
+    rm .git/modules/submod/dhd/index
+    cd submod/dhd
     git reset --hard HEAD
+    # ... repeat for all other submodules
 
 This step is not necessary on Unix platforms
 

@@ -104,10 +104,6 @@ RUN true \
 
 # Configure my user. Changes more often
 
-# Get psyops submodules (to be processed by submodule2repo later)
-COPY ["dhd", "$homedir/.dhd"]
-COPY [".git/modules/dhd", "$homedir/.dhd/.git.new"]
-
 COPY ["docker/psyops.secret.gpg.key.asc",           "$homedir/.gnupg/psyops.secret.gpg.key.asc"]
 COPY ["docker/psyops.secret.gpg.pubkey.asc",        "$homedir/.gnupg/psyops.secret.gpg.pubkey.asc"]
 COPY ["docker/psyops.secret.gpg.ownertrust.db.asc", "$homedir/.gnupg/psyops.secret.gpg.ownertrust.db.asc"]
@@ -138,8 +134,8 @@ WORKDIR $homedir
 
 # Run commands (as my user). Changes more often
 RUN true \
-    && submodule2repo "$HOME/.dhd" "$HOME/.dhd/.git.new" \
     && git clone https://github.com/mrled/psyops-secrets "$HOME/.secrets" \
+    && ln -sf "$psyvol/submod/dhd" "$HOME/.dhd" \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc "$HOME" \
     && ln -sf ../.dhd/hbase/known_hosts "$HOME/.ssh/known_hosts" \
     && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
