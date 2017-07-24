@@ -1,4 +1,26 @@
 #!/bin/sh
 
-toilet --filter rainbow --font future PSYOPS
-export PROMPT_HOSTNAME_OVERRIDE="$(printf '\[%s\]P\[%s\]S\[%s\]Y\[%s\]O\[%s\]P\[%s\]S\[%s\]' "$(ansi fg=magenta)" "$(ansi fg=red)" "$(ansi fg=yellow)" "$(ansi fg=green)" "$(ansi fg=cyan)" "$(ansi fg=blue)" "$(ansi mode=reset)")"
+export PROMPT_HOSTNAME_OVERRIDE=$(printf '\[%s\]P\[%s\]S\[%s\]Y\[%s\]O\[%s\]P\[%s\]S\[%s\]' "$(ansi fg=magenta)" "$(ansi fg=red)" "$(ansi fg=yellow)" "$(ansi fg=green)" "$(ansi fg=cyan)" "$(ansi fg=blue)" "$(ansi mode=reset)")
+
+psyops_usage() {
+    toilet --filter rainbow --font future PSYOPS
+
+    cat <<ENDUSAGE
+
+Welcome to PSYOPS
+
+This Docker image is used for Personal SYsOPS tasks that require saved credentials and/or special tools. It is a way of keeping the myriad tools up to date and independent of the host operating system configuration - all you need is Docker, and everything will work, without having to chase down dependency versions or whatever else. We even get Windows support.
+
+It is intended to be run with the --rm flag, with the psyops git repository mounted as a Docker volume to /psyops. Persistent data should *not* be stored in \$HOME or anywhere on the filesystem other than /psyops.
+
+You should have seen a prompt to enter a GPG passphrase to unlock secrets. If the GPG key wasn't successfully decrypted, run setup_psecrets to get the prompt again.
+ENDUSAGE
+}
+
+psyops_usage
+
+if ! test -e /psyops/.git; then
+    echo ""
+    echo "Warning: it appears that the /psyops volume is NOT mounted. If your host OS is Windows, there may be a firewall issue. Check Docker settings to ensure that the drive on the host containing the psyops checkout directory is shared, and run a command like:  Set-NetConnectionProfile -interfacealias 'vEthernet (DockerNAT)' -NetworkCategory Private"
+    echo ""
+fi
