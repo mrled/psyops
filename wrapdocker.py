@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import os
 import subprocess
 import sys
@@ -16,6 +17,18 @@ if sys.version_info < MIN_PYTHON:
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 
 
+def getlogger():
+    log = logging.getLogger('wrapdocker')
+    log.setLevel(logging.WARNING)
+    conhandler = logging.StreamHandler()
+    conhandler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+    log.addHandler(conhandler)
+    return log
+
+
+log = getlogger()
+
+
 def run(imagename, imagetag, passargs=None):
 
     # On Windows, we need to set the MSYS_NO_PATHCONV flag to 1, or else volume
@@ -23,7 +36,7 @@ def run(imagename, imagetag, passargs=None):
     # https://lmonkiewicz.com/programming/get-noticed-2017/docker-problems-on-windows/
     env = os.environ.copy()
     if sys.platform == 'win32':
-        env['MSYS_NO_PATHCONV'] = 1
+        env['MSYS_NO_PATHCONV'] = "1"
 
     runcli = [
         'docker', 'run',
@@ -34,6 +47,7 @@ def run(imagename, imagetag, passargs=None):
     if passargs:
         runcli += passargs
     runcli += [f'{imagename}:{imagetag}']
+    log.info(f"Running an image with: {' '.join(runcli)}")
     subprocess.check_call(runcli, env=env)
 
 
@@ -42,6 +56,7 @@ def build(imagename, imagetag, passargs=None):
         'docker', 'build', scriptdir, '--tag', f'{imagename}:{imagetag}']
     if passargs:
         buildcli += passargs
+    log.info(f"Building an image with:\n{buildcli}")
     subprocess.check_call(buildcli)
 
 
@@ -68,9 +83,15 @@ def main(*args, **kwargs):
         "imagetag", nargs='?', default="wip",
         help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.")
     parser.add_argument(
-        "--", dest="passargs", nargs=argparse.REMAINDER,
-        help="Pass arguments to *Docker* (not when running the image)")
+        "--docker-args", "-a", dest="passargs", nargs=argparse.REMAINDER,
+        help="Pass arguments to *Docker* (not when running the image). Must be last argument passed.")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Print verbose messages")
     parsed = parser.parse_args()
+
+    if parsed.verbose:
+        log.setLevel(logging.DEBUG)
+
     if parsed.action == "build":
         build(parsed.imagename, parsed.imagetag, passargs=parsed.passargs)
     elif parsed.action == "run":
