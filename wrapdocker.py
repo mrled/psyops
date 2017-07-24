@@ -4,6 +4,7 @@ import argparse
 import os
 import subprocess
 import sys
+import textwrap
 
 
 MIN_PYTHON = (3, 6)
@@ -45,14 +46,30 @@ def build(imagename, imagetag, passargs=None):
 
 
 def main(*args, **kwargs):
+    epilog = textwrap.dedent("""
+        Basically, Docker can be a little precious sometimes.
+        This script is intended to handle some known problems for intended use
+        cases in this repo:
+
+        - The image we build assumes that this repo will be mounted as a volume
+        - Volumes in Windows wont work unless %MSYS_NO_PATHCONV% is set
+
+        (This script is not intended to wrap all of Docker's functionality)""")
     parser = argparse.ArgumentParser(
-        description="Wrap Docker for PSYOPS",
-        epilog="Docker can be a little precious sometimes, and Windows is clearly a second class citizen even today",
-        add_help=True)
-    parser.add_argument("action", choices=["build", "run"])
-    parser.add_argument("imagename", nargs='?', default="psyops")
-    parser.add_argument("imagetag", nargs='?', default="wip")
-    parser.add_argument("--", dest="passargs", nargs=argparse.REMAINDER)
+        description="Wrap Docker for PSYOPS", epilog=epilog, add_help=True,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        "action", choices=["build", "run"],
+        help="Docker subcommand")
+    parser.add_argument(
+        "imagename", nargs='?', default="psyops",
+        help="The name of the Docker image to build. Defaults to 'psyops'.")
+    parser.add_argument(
+        "imagetag", nargs='?', default="wip",
+        help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.")
+    parser.add_argument(
+        "--", dest="passargs", nargs=argparse.REMAINDER,
+        help="Pass arguments to *Docker* (not when running the image)")
     parsed = parser.parse_args()
     if parsed.action == "build":
         build(parsed.imagename, parsed.imagetag, passargs=parsed.passargs)
