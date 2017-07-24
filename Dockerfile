@@ -143,6 +143,6 @@ RUN true \
 
     && true
 
-ENTRYPOINT "/bin/bash"
+CMD /bin/bash -l
 # NOTE: run with 'docker run -it <imagename>'
 # You must run with -it so that it runs interactively and with a terminal assigned
