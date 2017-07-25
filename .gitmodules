@@ -1,4 +1,4 @@
-[submodule "dhd"]
+[submodule "submod/dhd"]
 	path = submod/dhd
 	url = git@github.com:mrled/dhd.git
 [submodule "submod/wintriallab"]
@@ -7,7 +7,7 @@
 [submodule "docker/psysetup/toilet"]
 	path = docker/psysetup/toilet
 	url = https://github.com/cacalabs/toilet
-[submodule "docker/psysetup/git-remote-crypt"]
+[submodule "docker/psysetup/git-remote-gcrypt"]
 	path = docker/psysetup/git-remote-gcrypt
 	url = https://github.com/spwhitton/git-remote-gcrypt
 [submodule "submod/psyops-secrets"]
