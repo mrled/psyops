@@ -93,13 +93,7 @@ RUN if test "$enablesudo"; then  "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sud
 
 # Configure my user. Changes more often
 
-COPY ["docker/psyops.secret.gpg.key.asc",           "$homedir/.gnupg/psyops.secret.gpg.key.asc"]
-COPY ["docker/psyops.secret.gpg.pubkey.asc",        "$homedir/.gnupg/psyops.secret.gpg.pubkey.asc"]
-COPY ["docker/psyops.secret.gpg.ownertrust.db.asc", "$homedir/.gnupg/psyops.secret.gpg.ownertrust.db.asc"]
-COPY ["docker/id_ed25519.gpg",                      "$homedir/.ssh/id_ed25519.gpg"]
-
-COPY ["docker/bashrc.d", "$homedir/.bashrc.d"]
-
+COPY ["docker/home/", "$homedir/"]
 COPY ["docker/psybin/*", "/usr/local/bin/"]
 
 # Run this after ALL files have been placed into /usr/local/bin
@@ -129,11 +123,12 @@ RUN true \
     # Of course, the changes are not pushed to GitHub until we do so (probably from the host)
     && ln -sf "$psyvol/submod/dhd" "$HOME/.dhd" \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc "$HOME" \
-    && ln -sf ../.dhd/hbase/known_hosts "$HOME/.ssh/known_hosts" \
+    # && ln -sf ../.dhd/hbase/known_hosts "$HOME/.ssh/known_hosts" \
     && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
 
     && true
 
-CMD /bin/bash -l
+ENTRYPOINT /bin/bash
+CMD source $homedir/.source_psecrets
 # NOTE: run with 'docker run -it <imagename>'
 # You must run with -it so that it runs interactively and with a terminal assigned
