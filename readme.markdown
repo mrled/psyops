@@ -2,21 +2,57 @@
 
 Shit I use to manage my own infrastructure
 
+## Using PSYOPS
+
+PSYOPS makes some assumptions, and we provide a wrapper script to manage them. Note that the script requires Python 3.6.
+
+    # Show help
+    ./psyops.py --help
+
+    # Build the Docker image
+    ./psyops.py build
+
+    # Run the image
+    ./psyops.py run
+
+    # Build the image and run it immediately
+    # Will not attempt to run the image if building fails, which is
+    # particularly useful under Powershell, which doesn't have &&
+    ./psyops.py buildrun
+
+    # Perform repository (and submodule) operations
+    # See more information in the section below about line endings
+    ./psyops.py repo
+
+The assumptions we try to make are:
+
+- The current directory, a git repo, should be mounted to /psyops with permissions so the psyops user can read/write
+- There is no permanent storage in the Docker container
+- The Docker container is invoked with --rm
+- Any persistent data should be in the /psyops volume, bind-mounted to the host
+
+See the section below on submodules for more details on how they are used
+
 ## Line endings
 
 It's critical that repositories with shell scripts have Unix line endings, but by defaut Git for Windows turns on the `core.autocrlf` setting, which checks out files using Windows line endings (while converting them back to Unix line endings upon commit). Without turning this off system-wide, you have to do something like this:
 
+    # The parent repository
     git config core.autocrlf off
     rm .git/index
     git reset --hard HEAD
 
-    # Then you have to do this once for each submodule:
+    # Each submodule:
     rm .git/modules/submod/dhd/index
     cd submod/dhd
     git reset --hard HEAD
     # ... repeat for all other submodules
 
 This step is not necessary on Unix platforms
+
+The `psyops.py` wrapper script can handle iterating through all submodules and the main repo and performing these actions. Note that the command will fail if there are uncommitted changes.
+
+    psyops repo fixcrlf
 
 ## Creating a GPG key for use
 
@@ -34,7 +70,15 @@ Our exported key and associated information was exported as follows. Note that t
     gpg --armor --export-secret-key $keyid > psyops.secret.gpg.key.asc
     gpg --armor --export $keyid > psyops.secret.gpg.pubkey.asc
 
-## Setting up the Git repository
+See the section below on the secrets module for more information about how it is used.
+
+## Submodules
+
+We make heavy use of submodules, to avoid checking out code during build, which slows down the build and can incur rate limit errors. Understanding how Git interacts with submodules is important to understanding how PSYOPS works. In a bad case, an improper understanding of submodules can cause loss of data - for instance, if you don't realize that a change to a submodule has to be committed and pushed separately from changes to the parent module.
+
+Submodules are available in the repository as well, as long as this repo is mounted to the /psyops volume. They can be used exactly the same way on the host or in the container, and you can edit files on the host while using them in the container - it's very useful to use a graphical editor on the host to modify files that are used on the command line in the container.
+
+## Setting up the secrets submodule
 
 We use [git-remote-gcrypt](https://spwhitton.name/tech/code/git-remote-gcrypt/) to handle secrets, which are stored in [psyops-secrets](https://github.com/mrled/psyops-secrets). This is how that repository was created:
 
