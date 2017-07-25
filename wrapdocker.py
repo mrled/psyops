@@ -63,7 +63,9 @@ def build(imagename, imagetag, buildargs=None):
 
 
 def main(*args, **kwargs):
-    epilog = textwrap.dedent("""
+    description = textwrap.dedent("""
+        Wrap Docker for PSYOPS
+
         Basically, Docker can be a little precious sometimes.
         This script is intended to handle some known problems for intended use
         cases in this repo:
@@ -73,8 +75,15 @@ def main(*args, **kwargs):
         - Windows doesn't have &&, so you can't do 'docker build && docker run'
 
         (This script is not intended to wrap all of Docker's functionality)""")
+    epilog = textwrap.dedent("""
+        Note about the passthrough arguments:
+
+        In the (likely) case that you want to pass arguments that begin with a
+        dash, you may need to use an equals sign between the passthru argument
+        and its value. For instance, '--build-passthru="--no-cache"'
+        """)
     parser = argparse.ArgumentParser(
-        description="Wrap Docker for PSYOPS", epilog=epilog, add_help=True,
+        description=description, epilog=epilog, add_help=True,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument(
