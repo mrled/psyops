@@ -35,40 +35,56 @@ See the section below on submodules for more details on how they are used
 
 ## Line endings
 
-It's critical that repositories with shell scripts have Unix line endings, but by defaut Git for Windows turns on the `core.autocrlf` setting, which checks out files using Windows line endings (while converting them back to Unix line endings upon commit). Without turning this off system-wide, you have to do something like this:
+It's critical that repositories with shell scripts have Unix line endings, but by defaut Git for Windows turns on the `core.autocrlf` setting, which checks out files using Windows line endings (while converting them back to Unix line endings upon commit). You have a few options to deal with this:
 
-    # The parent repository
-    git config core.autocrlf off
-    rm .git/index
-    git reset --hard HEAD
+1.  Turning it off system wide, like this:
 
-    # Each submodule:
-    rm .git/modules/submod/dhd/index
-    cd submod/dhd
-    git reset --hard HEAD
-    # ... repeat for all other submodules
+        git config --global core.autocrlf false
 
-This step is not necessary on Unix platforms
+2.  Cloning the repo, then in the main repo and each submodule, changing the setting and resetting the checkout directory:
 
-The `psyops.py` wrapper script can handle iterating through all submodules and the main repo and performing these actions. Note that the command will fail if there are uncommitted changes.
+        # The parent repository
+        git config core.autocrlf off
+        rm .git/index
+        git reset --hard HEAD
 
-    psyops repo fixcrlf
+        # Each submodule:
+        rm .git/modules/submod/dhd/index
+        cd submod/dhd
+        git reset --hard HEAD
+        # ... repeat for all other submodules
+
+3.  Using the `psyops.py` script to automate the second step all at once:
+
+        ./psyops.py repo fixcrlf
+
+This task is not necessary on Unix platforms
 
 ## Creating a GPG key for use
 
-We bake in a GPG key.
+We bake an GPG key into the image, and use a Python script called `psecrets` to decrypt it when the container starts. See the `psecrets` help (or just start the container and read the help text) to learn how that works. See below for how the key and other data was initially generated.
 
 Our exported key and associated information was exported as follows. Note that this was done on a system with no existing keys (or indeed even a `$HOME/.gnupg` folder); if you export ownertrust on a system that has an existing key, you may get unexpected results.
 
     gpg --gen-key
     # ... and then answer the interactive questions to your liking ...
+    # You almost certainly want a passphrase, since the key will be baked in
 
     gpg --list-secret-keys
     keyid="KEY ID FROM ABOVE"
 
-    gpg --armor --export-ownertrust > psyops.secret.gpg.ownertrust.db.asc
+    # Export the secret key
+    # If it was encrypted with a passphrase in the first step, the export will
+    # be encrypted as well.
     gpg --armor --export-secret-key $keyid > psyops.secret.gpg.key.asc
+
+    # Export the (unencrypted) public key
     gpg --armor --export $keyid > psyops.secret.gpg.pubkey.asc
+
+    # Export the (unencrypted) ownertrust database
+    # If we import the secret and public key without importing the ownertrust
+    # db, GPG will not trust our keys
+    gpg --armor --export-ownertrust > psyops.secret.gpg.ownertrust.db.asc
 
 See the section below on the secrets module for more information about how it is used.
 
@@ -76,7 +92,7 @@ See the section below on the secrets module for more information about how it is
 
 We make heavy use of submodules, to avoid checking out code during build, which slows down the build and can incur rate limit errors. Understanding how Git interacts with submodules is important to understanding how PSYOPS works. In a bad case, an improper understanding of submodules can cause loss of data - for instance, if you don't realize that a change to a submodule has to be committed and pushed separately from changes to the parent module.
 
-Submodules are available in the repository as well, as long as this repo is mounted to the /psyops volume. They can be used exactly the same way on the host or in the container, and you can edit files on the host while using them in the container - it's very useful to use a graphical editor on the host to modify files that are used on the command line in the container.
+Submodules should be available inside the container as well, as long as this repo is mounted to the /psyops volume. They can be used exactly the same way on the host or in the container, and you can edit files on the host while using them in the container - it's very useful to use a graphical editor on the host to modify files that are used on the command line in the container.
 
 ## Setting up the secrets submodule
 
