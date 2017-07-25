@@ -46,46 +46,37 @@ RUN true \
     && install -d -o root -g root -m 755 /usr/local/bin \
     && install -d -o root -g root -m 755 "$psysetup" \
 
-    && cd "$psysetup" \
+    && true
+
+# Copy files for system-level configuration & run setup that relies on them
+COPY ["docker/psysetup", "$psysetup"]
+RUN true \
 
     # Install toilet, which is very important
     # Moved away from downloading a release tarbatll b/c the toilet server gets mad if you hit it too hard
     && apk add g++ libcaca libcaca-dev make automake autoconf \
-    && git clone https://github.com/cacalabs/toilet \
-    && cd toilet \
+    && cd "$psysetup/toilet" \
     && ./bootstrap \
     && ./configure \
     && make \
     && make install \
-    # you have to leave libcaca, but it's only 4mb
-    # && apk del g++ libcaca libcaca-dev make \
+    # you have to leave libcaca itself, but it's only 4mb; the rest can go away
     && apk del g++ libcaca-dev make automake autoconf \
 
     # Install git-remote-crypt
     # We install py3-docutils, which includes `rst2man-3`, but git-remote-crypt's setup.sh expects `rst2man`, lol
     && printf '#!/bin/sh\nrst2man-3 "$@"\n' > /usr/local/bin/rst2man && chmod 755 /usr/local/bin/rst2man \
-    && git clone https://github.com/spwhitton/git-remote-gcrypt "$psysetup/git-remote-crypt" \
-    && cd "$psysetup/git-remote-crypt" \
+    && cd "$psysetup/git-remote-gcrypt" \
     && ./install.sh \
-
-    && true
-
-# Copy files for system-level configuration
-
-COPY ["docker/psysetup/*", "/usr/local/bin/"]
-
-# Run scripts for system-level configuration that rely on copied files
-RUN true \
-
-    && cd "$psysetup" \
 
     # Install doctl, the Digital Ocean cli tool
     # this next line is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
     && mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
-    && getdoctl --outdir "$psysetup" \
+    && "$psysetup/doctl/getdoctl" --outdir "$psysetup/doctl" \
+    && cd "$psysetup/doctl" \
     && tar -zx -f doctl*.tar.gz \
     && sha256sum -c doctl*.sha256 \
-    && install -o root -g root -m 755 "$psysetup/doctl" /usr/local/bin \
+    && install -o root -g root -m 755 "$psysetup/doctl/doctl" /usr/local/bin \
 
     # Running makewhatis should happen after all root installation commands / only right before running as my user
     && makewhatis \
@@ -95,7 +86,6 @@ RUN true \
     && adduser -S -G "$username" -s /bin/bash "$username" \
 
     && true
-
 
 # Enable passwordless sudo
 # ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
@@ -120,7 +110,7 @@ RUN chmod a+rX /usr/local/bin/*
 
 RUN true \
     && mkdir "$psyvol" \
-    && chown -R "$username:$username" "$homedir" "$psyvol" \
+    && chown -R "$username:$username" "$homedir" "$psyvol" "$psysetup" \
     && true
 
 # Changes (like permission changes) made to a VOLUME after it has been declared wil be *discarded*
@@ -133,7 +123,10 @@ WORKDIR $homedir
 
 # Run commands (as my user). Changes more often
 RUN true \
-    && git clone https://github.com/mrled/psyops-secrets "$HOME/.secrets" \
+    # NOTE: We clone from an encrypted git repo (which happens to be a submodule of the
+    # psyops repo) at $psysetup/psyops-secrets
+    # So when we push to it, it updates the encrypted submodule checked out on the host
+    # Of course, the changes are not pushed to GitHub until we do so (probably from the host)
     && ln -sf "$psyvol/submod/dhd" "$HOME/.dhd" \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc "$HOME" \
     && ln -sf ../.dhd/hbase/known_hosts "$HOME/.ssh/known_hosts" \

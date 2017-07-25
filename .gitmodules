@@ -4,3 +4,12 @@
 [submodule "submod/wintriallab"]
 	path = submod/wintriallab
 	url = git@github.com:mrled/wintriallab.git
+[submodule "docker/psysetup/toilet"]
+	path = docker/psysetup/toilet
+	url = https://github.com/cacalabs/toilet
+[submodule "docker/psysetup/git-remote-crypt"]
+	path = docker/psysetup/git-remote-gcrypt
+	url = https://github.com/spwhitton/git-remote-gcrypt
+[submodule "submod/psyops-secrets"]
+	path = submod/psyops-secrets
+	url = git@github.com:mrled/psyops-secrets.git
