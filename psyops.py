@@ -255,7 +255,12 @@ def main(*args, **kwargs):
                 print(submod.checkoutdir)
         elif "fixcrlf" in parsed.repoaction:
             parentrepo.allfixcrlf()
+        else:
+            print(f"Unknown repoaction {parsed.repoaction}")
+            parser.print_usage()
+            return 1
     else:
+        print(f"Unknown action {parsed.action}")
         parser.print_usage()
         return 1
 
