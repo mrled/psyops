@@ -5,6 +5,8 @@ ARG psysetup=/psysetup
 ARG username=psyops
 ARG homedir=/home/psyops
 ARG psyvol=/psyops
+ARG gitname="Micah R Ledbetter"
+ARG gitemail="me@micahrl.com"
 ARG enablesudo=
 
 # Pre-copy root OS configuration phase
@@ -85,13 +87,6 @@ RUN true \
     && sha256sum -c doctl*.sha256 \
     && install -o root -g root -m 755 "$psysetup/doctl" /usr/local/bin \
 
-    # Enable passwordless sudo
-    # ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
-    && if test "$enablesudo"; then true \
-        && echo "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$username" \
-        && chmod 0440 "/etc/sudoers.d/$username" \
-    ;  fi \
-
     # Running makewhatis should happen after all root installation commands / only right before running as my user
     && makewhatis \
 
@@ -101,6 +96,10 @@ RUN true \
 
     && true
 
+
+# Enable passwordless sudo
+# ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
+RUN if test "$enablesudo"; then  "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$username" && chmod 0440 "/etc/sudoers.d/$username"; fi
 
 # Configure my user. Changes more often
 
@@ -138,7 +137,7 @@ RUN true \
     && ln -sf "$psyvol/submod/dhd" "$HOME/.dhd" \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc "$HOME" \
     && ln -sf ../.dhd/hbase/known_hosts "$HOME/.ssh/known_hosts" \
-    && git config --global user.email "me@micahrl.com" && git config --global user.name "Micah R Ledbetter" \
+    && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
 
     && true
 
