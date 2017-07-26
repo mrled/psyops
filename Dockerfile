@@ -8,26 +8,28 @@ RUN true \
     && apk add \
         bash bash-doc \
         ca-certificates ca-certificates-doc \
+        # I got tired of fucking with busybox's wget
+        curl curl-doc \
         emacs-nox emacs-doc \
         file file-doc \
         git git-doc \
+        gnupg1 gnupg1-doc \
+        # for awscli, installed below from pip, to get its documentation
+        groff groff-doc \
+        # For non busybox ping; busybox ping requires root privs, or setting net.ipv4.ping_group_range on the Docker *host*,
+        # which is problematic on Windows/macOS which both use a Linux VM that is difficult to directly configure.
+        iputils \
         # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
         less less-doc \
-        gnupg1 gnupg1-doc \
         man man-pages mdocml-apropos \
         # provides tput
         ncurses \
         openssh-client openssh-doc \
         openssl openssl-doc \
-        python3 python3-doc \
         # for rst2man, used by git-remote-crypt
         py3-docutils \
+        python3 python3-doc \
         sudo sudo-doc \
-        # for awscli, installed below from pip, to get its documentation
-        groff groff-doc \
-        # For non-busybox ping. Busybox ping requires root privs, or setting net.ipv4.ping_group_range on the Docker *host*,
-        # which is problematic on Windows/macOS which both use a Linux VM that is difficult to directly configure.
-        iputils \
     && makewhatis \
     && update-ca-certificates --fresh \
 
@@ -44,25 +46,30 @@ ARG username=psyops
 
 # Copy files for system-level configuration & run setup that relies on them
 COPY ["docker/setup", "$psysetup"]
-RUN true \
 
+RUN true \
     # Install toilet, which is very important
     # Moved away from downloading a release tarbatll b/c the toilet server gets mad if you hit it too hard
-    && apk add g++ libcaca libcaca-dev make automake autoconf \
+    # you have to leave libcaca itself, but it's only 4mb; the rest can go away
+    && apk add libcaca \
+    && apk add --virtual=BUILDTOILET g++ libcaca-dev make automake autoconf \
     && cd "$psysetup/toilet" \
     && ./bootstrap \
     && ./configure \
     && make \
     && make install \
-    # you have to leave libcaca itself, but it's only 4mb; the rest can go away
-    && apk del g++ libcaca-dev make automake autoconf \
+    && apk del --purge BUILDTOILET \
+    && true
 
+RUN true \
     # Install git-remote-crypt
     # We install py3-docutils, which includes `rst2man-3`, but git-remote-crypt's setup.sh expects `rst2man`, lol
     && printf '#!/bin/sh\nrst2man-3 "$@"\n' > /usr/local/bin/rst2man && chmod 755 /usr/local/bin/rst2man \
     && cd "$psysetup/git-remote-gcrypt" \
     && ./install.sh \
+    && true
 
+RUN true \
     # Install doctl, the Digital Ocean cli tool
     # this next line is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
     && mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
@@ -71,6 +78,19 @@ RUN true \
     && tar -zx -f doctl*.tar.gz \
     && sha256sum -c doctl*.sha256 \
     && install -o root -g root -m 755 "$psysetup/doctl/doctl" /usr/local/bin \
+    && true
+
+RUN true \
+    # Install Azure CLI
+    && apk add --virtual=BUILDAZURECLI gcc libffi-dev musl-dev openssl-dev python3-dev make \
+    # Azure requires this because it is... bad
+    && ln -s ../../bin/python3 /usr/local/bin/python \
+    && python3 -m pip install azure-cli \
+    && apk del --purge BUILDAZURECLI \
+    && true
+
+RUN true \
+    # Final steps
 
     # Running makewhatis should happen after all root installation commands / only right before running as my user
     && makewhatis \
