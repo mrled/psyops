@@ -1,14 +1,6 @@
 FROM alpine:3.6
 LABEL maintainer "me@micahrl.com"
 
-ARG psysetup=/setup
-ARG username=psyops
-ARG homedir=/home/psyops
-ARG psyvol=/psyops
-ARG gitname="Micah R Ledbetter"
-ARG gitemail="me@micahrl.com"
-ARG enablesudo=
-
 # Pre-copy root OS configuration phase
 RUN true \
 
@@ -44,9 +36,11 @@ RUN true \
         awscli \
 
     && install -d -o root -g root -m 755 /usr/local/bin \
-    && install -d -o root -g root -m 755 "$psysetup" \
 
     && true
+
+ARG psysetup=/setup
+ARG username=psyops
 
 # Copy files for system-level configuration & run setup that relies on them
 COPY ["docker/setup", "$psysetup"]
@@ -89,9 +83,12 @@ RUN true \
 
 # Enable passwordless sudo
 # ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
-RUN if test "$enablesudo"; then  "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$username" && chmod 0440 "/etc/sudoers.d/$username"; fi
+ARG enablesudo=
+RUN if test "$enablesudo"; then echo "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$username" && chmod 0440 "/etc/sudoers.d/$username"; fi
 
 # Configure my user. Changes more often
+
+ARG homedir=/home/$username
 
 COPY ["docker/home/", "$homedir/"]
 COPY ["docker/usrlocalbin/*", "/usr/local/bin/"]
@@ -101,6 +98,8 @@ COPY ["docker/usrlocalbin/*", "/usr/local/bin/"]
 # Apparently it's doing this not for the user running the docker command, but for the daemon(?)
 # And so there's no easy way to even set it in some sort of wrapper script?
 RUN chmod a+rX /usr/local/bin/*
+
+ARG psyvol=/psyops
 
 RUN true \
     && mkdir "$psyvol" \
@@ -114,6 +113,9 @@ VOLUME $psyvol
 
 USER $username
 WORKDIR $homedir
+
+ARG gitname="Micah R Ledbetter"
+ARG gitemail="me@micahrl.com"
 
 # Run commands (as my user). Changes more often
 RUN true \
