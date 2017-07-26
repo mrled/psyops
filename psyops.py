@@ -81,6 +81,36 @@ def dockerbuild(imagename, imagetag, buildargs=None):
     subprocess.check_call(buildcli)
 
 
+def netvolfix(ifname="vEthernet (DockerNAT)"):
+    """Set the Docker interface's connection profile to private
+
+    Docker creates a network for containers to use, and firewall rules that
+    enable host volumes to mount in the container. However, the firewall rules
+    require the Docker network profile to be private, and for some reason this
+    gets reset all the time, resulting in containers running with no errors,
+    but no mounted volumes.
+
+    NOTE: This requires admin privileges.
+    """
+    pscmd = f'Set-NetConnectionProfile -interfacealias "{ifname}" -NetworkCategory Private'
+    subprocess.check_call(
+        ['powershell.exe', '-NoProfile', '-Command', pscmd])
+
+
+def netvoltest(ifname="vEthernet (DockerNAT)", throw=False):
+    """Test whether the Docker interface's network connection profile is set to private"""
+    pscmd = f'Get-NetConnectionProfile -interfacealias "{ifname}" | Select-Object -ExpandProperty NetworkCategory'
+    output = subprocess.check_output(
+        ['powershell.exe', '-NoProfile', '-Command', pscmd])
+    log.info(f"Network connection profile of {ifname} is {output}")
+    if output == "Private":
+        return True
+    elif throw:
+        raise Exception(f"Network connection profile of {ifname} is {output}")
+    else:
+        return False
+
+
 class GitRepoMetadata():
 
     _submodules = None
@@ -161,6 +191,25 @@ class GitRepoMetadata():
             submodule.fixcrlf()
         self.fixcrlf()
 
+    def testcheckout(self, throw=False):
+        """Test that all submodules are checked out
+
+        If care is not taken when the initial repo is checked out, or when the
+        location of a submodule has changed, it can result in an empty
+        submodule checkout directory that is not detected until we attempt to
+        use it. Check for that here first and fail early.
+        """
+        missing = []
+        for submodule in self.submodules:
+            if not os.path.exists(os.path.join(submodule.checkoutdir, '.git')):
+                log.warn(
+                    f"Submodule at {submodule.checkoutdir} not checked out")
+                missing += [submodule.checkoutdir]
+        if missing and throw:
+            raise Exception(
+                f"These submodules are not properly checked out: {missing}")
+        return missing == []
+
 
 def main(*args, **kwargs):
     description = textwrap.dedent("""
@@ -213,10 +262,19 @@ def main(*args, **kwargs):
         '--container-passthru', dest='containerargs',
         help="Pass these additional arguments to the container itself")
 
-    repoopts = argparse.ArgumentParser(add_help=False)
-    repoopts.add_argument(
-        'repoaction', choices=['enumsubmod', 'fixcrlf'],
-        help="Operate on the Git repository and submodules. If 'enumsubmod', list all submodules. If 'fixcrlf', disable core.autocrlf on parent repo and all submodules.")
+    utilopts = argparse.ArgumentParser(add_help=False)
+    utilopts.add_argument(
+        '--enumsubmod', const='enumsubmod',
+        action='append_const', dest='utilaction',
+        help="List all submodules")
+    utilopts.add_argument(
+        '--fixcrlf', const='fixcrlf',
+        action='append_const', dest='utilaction',
+        help="Disasble core.autocrlf on parent repo and all submodules")
+    utilopts.add_argument(
+        '--netvolfix', const='netvolfix',
+        action='append_const', dest='utilaction',
+        help="Set the network connection profile for the 'vEthernet (DockerNAT)' network to private, which is required for volumes to be mounted in containers.")
 
     subparsers = parser.add_subparsers(dest="action")
     subparsers.add_parser(
@@ -226,7 +284,7 @@ def main(*args, **kwargs):
     subparsers.add_parser(
         'buildrun', parents=[dockeropts, dockerbuildopts, dockerrunopts])
     subparsers.add_parser(
-        'repo', parents=[repoopts])
+        'util', parents=[utilopts])
 
     parsed = parser.parse_args()
 
@@ -237,28 +295,35 @@ def main(*args, **kwargs):
 
     log.info(parsed)
 
+    parentrepo = GitRepoMetadata(scriptdir)
+
     if parsed.action == "build":
+        parentrepo.testcheckout(throw=True)
+        netvoltest(throw=True)
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
     elif parsed.action == "run":
+        parentrepo.testcheckout(throw=True)
+        netvoltest(throw=True)
         dockerrun(
             parsed.imagename, parsed.imagetag, runargs=parsed.runargs,
             containerargs=parsed.containerargs)
     elif parsed.action == "buildrun":
+        parentrepo.testcheckout(throw=True)
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
         dockerrun(
             parsed.imagename, parsed.imagetag, runargs=parsed.runargs,
             containerargs=parsed.containerargs)
-    elif parsed.action == "repo":
-        parentrepo = GitRepoMetadata(scriptdir)
-        if "enumsubmod" in parsed.repoaction:
+    elif parsed.action == "util":
+        if not parsed.utilaction:
+            utilopts.print_help()
+            return 1
+        if 'enumsubmod' in parsed.utilaction:
             for submod in parentrepo.submodules:
                 print(submod.checkoutdir)
-        elif "fixcrlf" in parsed.repoaction:
+        if 'fixcrlf' in parsed.utilaction:
             parentrepo.allfixcrlf()
-        else:
-            print(f"Unknown repoaction {parsed.repoaction}")
-            parser.print_usage()
-            return 1
+        if 'netvolfix' in parsed.utilaction:
+            netvolfix()
     else:
         print(f"Unknown action {parsed.action}")
         parser.print_usage()
