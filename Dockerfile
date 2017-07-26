@@ -1,7 +1,7 @@
 FROM alpine:3.6
 LABEL maintainer "me@micahrl.com"
 
-ARG psysetup=/psysetup
+ARG psysetup=/setup
 ARG username=psyops
 ARG homedir=/home/psyops
 ARG psyvol=/psyops
@@ -49,7 +49,7 @@ RUN true \
     && true
 
 # Copy files for system-level configuration & run setup that relies on them
-COPY ["docker/psysetup", "$psysetup"]
+COPY ["docker/setup", "$psysetup"]
 RUN true \
 
     # Install toilet, which is very important
@@ -94,7 +94,7 @@ RUN if test "$enablesudo"; then  "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sud
 # Configure my user. Changes more often
 
 COPY ["docker/home/", "$homedir/"]
-COPY ["docker/psybin/*", "/usr/local/bin/"]
+COPY ["docker/usrlocalbin/*", "/usr/local/bin/"]
 
 # Run this after ALL files have been placed into /usr/local/bin
 # Fucking Docker uses the host's umask
