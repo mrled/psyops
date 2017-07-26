@@ -13,7 +13,7 @@ This Docker image is used for Personal SYsOPS tasks that require saved credentia
 
 It is intended to be run with the --rm flag, with the psyops git repository mounted as a Docker volume to /psyops. Persistent data should *not* be stored in \$HOME or anywhere on the filesystem other than /psyops.
 
-You should have seen a prompt to enter a GPG passphrase to unlock secrets. If the GPG key wasn't successfully decrypted, run setup_psecrets to get the prompt again.
+You should have seen a prompt to enter a GPG passphrase to unlock secrets. If the GPG key wasn't successfully decrypted, run unlock-psecrets to get the prompt again.
 ENDUSAGE
 }
 

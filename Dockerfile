@@ -128,7 +128,7 @@ RUN true \
 
     && true
 
-ENTRYPOINT /bin/bash
-CMD source $homedir/.source_psecrets
+CMD /bin/bash -i
+ENTRYPOINT $HOME/.entrypoint.sh
 # NOTE: run with 'docker run -it <imagename>'
 # You must run with -it so that it runs interactively and with a terminal assigned
