@@ -4,7 +4,6 @@ export PROMPT_HOSTNAME_OVERRIDE=$(printf '\[%s\]P\[%s\]S\[%s\]Y\[%s\]O\[%s\]P\[%
 
 psyops_usage() {
     toilet --filter rainbow --font future PSYOPS
-
     cat <<ENDUSAGE
 
 Welcome to PSYOPS
@@ -13,14 +12,26 @@ This Docker image is used for Personal SYsOPS tasks that require saved credentia
 
 It is intended to be run with the --rm flag, with the psyops git repository mounted as a Docker volume to /psyops. Persistent data should *not* be stored in \$HOME or anywhere on the filesystem other than /psyops.
 
-You should have seen a prompt to enter a GPG passphrase to unlock secrets. If the GPG key wasn't successfully decrypted, run unlock-psecrets to get the prompt again.
 ENDUSAGE
+
+    if psecretsctl testlock; then
+        echo "$(ansi fg=green mode=bold)Secrets decrypted and symlinked successfully"
+    else
+        echo "$(ansi fg=red mode=bold)Secrets NOT decrypted, commands that rely on config files (doctl, gandi, ...) will fail!"
+        echo "$(ansi fg=red mode=bold)Run 'psecretsctl unlock' to attempt to decrypt the secrets repo again."
+    fi
+    echo ""
+
+    if test -e /psyops/.git; then
+        echo "$(ansi fg=green mode=bold)The /psyops volume has been mounted successfully"
+    else
+        echo "$(ansi fg=red mode=bold)Warning: it appears that the /psyops volume is NOT mounted."
+        echo "$(ansi fg=red mode=bold)If your host OS is Windows, there may be a firewall issue."
+        echo "$(ansi fg=red mode=bold)1. Check Docker settings to ensure that the drive on the host containing the psyops checkout directory is shared"
+        echo "$(ansi fg=red mode=bold)2. Run a command like: Set-NetConnectionProfile -interfacealias 'vEthernet (DockerNAT)' -NetworkCategory Private,"
+        echo "$(ansi fg=red mode=bold)   or have the wrapper script do that for you: 'psyops.py util --netvolfix'"
+    fi
+    echo ""
 }
 
 psyops_usage
-
-if ! test -e /psyops/.git; then
-    echo ""
-    echo "Warning: it appears that the /psyops volume is NOT mounted. If your host OS is Windows, there may be a firewall issue. Check Docker settings to ensure that the drive on the host containing the psyops checkout directory is shared, and run a command like:  Set-NetConnectionProfile -interfacealias 'vEthernet (DockerNAT)' -NetworkCategory Private"
-    echo ""
-fi
