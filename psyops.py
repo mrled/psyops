@@ -105,6 +105,8 @@ def netvolfix(ifname="vEthernet (DockerNAT)"):
 
 def netvoltest(ifname="vEthernet (DockerNAT)", throw=False):
     """Test whether the Docker interface's network connection profile is set to private"""
+    if sys.platform != "win32":
+        return True
     pscmd = f'Get-NetConnectionProfile -interfacealias "{ifname}" | Select-Object -ExpandProperty NetworkCategory'
     output = subprocess.check_output(
         ['powershell.exe', '-NoProfile', '-Command', pscmd])
