@@ -44,8 +44,7 @@ ENV PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH="symlink.sh"
 # Pre-copy root OS configuration phase
 RUN true \
 
-    && apk update \
-    && apk add \
+    && apk update && apk add \
         bash bash-doc \
         ca-certificates ca-certificates-doc \
         # I got tired of fucking with busybox's wget
@@ -68,7 +67,7 @@ RUN true \
         openssl openssl-doc \
         python3 python3-doc \
         sudo sudo-doc \
-    && makewhatis \
+
     && update-ca-certificates --fresh \
 
     && python3 -m ensurepip && python3 -m pip install --upgrade pip && python3 -m pip install \
@@ -112,7 +111,7 @@ RUN true \
 RUN true \
     # Install doctl, the Digital Ocean cli tool
     # this next line is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
-    && mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
+    && mkdir /lib64 && ln -s ../lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
     && "$psysetup/doctl/getdoctl" --outdir "$psysetup/doctl" \
     && cd "$psysetup/doctl" \
     && tar -zx -f doctl*.tar.gz \
