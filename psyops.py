@@ -48,7 +48,9 @@ def debugexchandler(type, value, tb):
         pdb.pm()
 
 
-def dockerrun(imagename, imagetag, runargs=None, containerargs=None):
+def dockerrun(
+        imagename, imagetag, psyopsvol, tmpfsmount,
+        runargs=None, containerargs=None, psyopsvolperms="rw", tmpfsperms="rw"):
 
     # On Windows, we need to set the MSYS_NO_PATHCONV flag to 1, or else volume
     # mounting fails with weird errors
@@ -62,7 +64,8 @@ def dockerrun(imagename, imagetag, runargs=None, containerargs=None):
         '--rm',
         '--interactive',
         '--tty',
-        '--volume', f'{scriptdir}:/psyops:rw']
+        '--volume', f'{scriptdir}:{psyopsvol}:{psyopsvolperms}',
+        '--tmpfs', f'{tmpfsmount}:{tmpfsperms}']
     if runargs:
         runcli += runargs.split(" ")
     runcli += [f'{imagename}:{imagetag}']
@@ -103,11 +106,11 @@ def netvoltest(ifname="vEthernet (DockerNAT)", throw=False):
     output = subprocess.check_output(
         ['powershell.exe', '-NoProfile', '-Command', pscmd])
     log.info(f"Network connection profile of {ifname} is {output}")
-    if output == "Private":
+    if output.decode().strip() == "Private":
         return True
-    elif throw:
-        raise Exception(f"Network connection profile of {ifname} is {output}")
     else:
+        if throw:
+            raise Exception(f"Network connection profile of {ifname} is {output}")
         return False
 
 
@@ -261,6 +264,12 @@ def main(*args, **kwargs):
     dockerrunopts.add_argument(
         '--container-passthru', dest='containerargs',
         help="Pass these additional arguments to the container itself")
+    dockerrunopts.add_argument(
+        '--psyops-volume', dest='psyopsvol', default="/psyops",
+        help="Mount point for the psyops volume")
+    dockerrunopts.add_argument(
+        '--secrets-tmpfs', dest='secretstmpfs', default="/secrets",
+        help="Mount point for the secrets tmpfs filesystem")
 
     utilopts = argparse.ArgumentParser(add_help=False)
     utilopts.add_argument(
@@ -305,13 +314,15 @@ def main(*args, **kwargs):
         parentrepo.testcheckout(throw=True)
         netvoltest(throw=True)
         dockerrun(
-            parsed.imagename, parsed.imagetag, runargs=parsed.runargs,
+            parsed.imagename, parsed.imagetag, parsed.psyopsvol,
+            parsed.secretstmpfs, runargs=parsed.runargs,
             containerargs=parsed.containerargs)
     elif parsed.action == "buildrun":
         parentrepo.testcheckout(throw=True)
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
         dockerrun(
-            parsed.imagename, parsed.imagetag, runargs=parsed.runargs,
+            parsed.imagename, parsed.imagetag, parsed.psyopsvol,
+            parsed.secretstmpfs, runargs=parsed.runargs,
             containerargs=parsed.containerargs)
     elif parsed.action == "util":
         if not parsed.utilaction:

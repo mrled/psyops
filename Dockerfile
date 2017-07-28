@@ -1,6 +1,46 @@
 FROM alpine:3.6
 LABEL maintainer "me@micahrl.com"
 
+ARG username=psyops
+ARG homedir=/home/$username
+
+# Location where we will mount the psyops repo as a volume. Note that even
+# though this is an environment variable, it's not changeable at runtime
+ENV PSYOPS_VOLUME="/psyops"
+# Location to store decrypted secrets, expected to be mounted on tmpfs
+ENV PSYOPS_SECRETS_PATH="/secrets"
+# Encrypted private GPG key path to import
+ENV PSYOPS_GPG_IMPORT_SECRET_KEY="$homedir/.gnupg/psyops.secret.gpg.key.asc"
+# Unencrypted public GPG key path to import
+ENV PSYOPS_GPG_IMPORT_PUBLIC_KEY="$homedir/.gnupg/psyops.secret.gpg.pubkey.asc"
+# Unencrypted GPG ownertrust database to import
+ENV PSYOPS_GPG_IMPORT_OWNERTRUST_DB="$homedir/.gnupg/psyops.secret.gpg.ownertrust.db.asc"
+# Secret GPG key ID
+ENV PSYOPS_GPG_SECRET_KEY_ID="3426CF80"
+# Public GPG key ID
+ENV PSYOPS_GPG_PUBLIC_KEY_ID="664C82AD"
+# Location to store (plaintext!) GPG passphrase
+ENV PSYOPS_GPG_PLAINTEXT_PASSFILE="$PSYOPS_SECRETS_PATH/gpg-passphrase"
+# Encrypted private SSH key path
+ENV PSYOPS_SSH_ENCRYPTED_PRIVATE_KEY_PATH="$homedir/.ssh/id_ed25519.gpg"
+# Location to decrypt private SSH key
+ENV PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH="$PSYOPS_SECRETS_PATH/id_ed25519"
+# Unencrypted public SSH key path
+ENV PSYOPS_SSH_PUBLIC_KEY_PATH="$homedir/.ssh/id_ed25519.pub"
+# Location to decrypt secrets repo
+ENV PSYOPS_SECRETS_REPO_CHECKOUT_PATH="$PSYOPS_SECRETS_PATH/psyops-secrets"
+# Branch name for encrypted commits. Must be name of both the local branch
+# we'll check out AND the remote branch that is encrypted before pushing
+ENV PSYOPS_SECRETS_REPO_BRANCH="master"
+# Name to use for the gcrypt remote
+ENV PSYOPS_SECRETS_REPO_REMOTE_NAME="origin"
+# URI for the gcrypt remote
+# remoteuri = "git@github.com:mrled/psyops-secrets.git"
+ENV PSYOPS_SECRETS_REPO_REMOTE_URI="file://$PSYOPS_VOLUME/submod/psyops-secrets"
+# The psyops-secrets repo has a script to symlink its config files into the
+# homedir... if it exists, the repo was successfully decrypted
+ENV PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH="symlink.sh"
+
 # Pre-copy root OS configuration phase
 RUN true \
 
@@ -42,7 +82,6 @@ RUN true \
     && true
 
 ARG psysetup=/setup
-ARG username=psyops
 
 # Copy files for system-level configuration & run setup that relies on them
 COPY ["docker/setup", "$psysetup"]
@@ -108,8 +147,6 @@ RUN if test "$enablesudo"; then echo "$username ALL=(ALL) NOPASSWD: ALL" > "/etc
 
 # Configure my user. Changes more often
 
-ARG homedir=/home/$username
-
 COPY ["docker/home/", "$homedir/"]
 COPY ["docker/usrlocalbin/*", "/usr/local/bin/"]
 
@@ -119,17 +156,15 @@ COPY ["docker/usrlocalbin/*", "/usr/local/bin/"]
 # And so there's no easy way to even set it in some sort of wrapper script?
 RUN chmod a+rX /usr/local/bin/*
 
-ARG psyvol=/psyops
-
 RUN true \
-    && mkdir "$psyvol" \
-    && chown -R "$username:$username" "$homedir" "$psyvol" "$psysetup" \
+    && mkdir "$PSYOPS_VOLUME" \
+    && chown -R "$username:$username" "$homedir" "$PSYOPS_VOLUME" "$psysetup" \
     && true
 
 # Changes (like permission changes) made to a VOLUME after it has been declared wil be *discarded*
 # Contents of the volume are overwritten when it's bind-mounted
 # So make permission changes before declaring, and put any file changes into scripts that run after the Docker image has been created
-VOLUME $psyvol
+VOLUME $PSYOPS_VOLUME
 
 USER $username
 WORKDIR $homedir
@@ -143,9 +178,10 @@ RUN true \
     # psyops repo) at $psysetup/psyops-secrets
     # So when we push to it, it updates the encrypted submodule checked out on the host
     # Of course, the changes are not pushed to GitHub until we do so (probably from the host)
-    && ln -sf "$psyvol/submod/dhd" "$HOME/.dhd" \
+    && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc "$HOME" \
-    # && ln -sf ../.dhd/hbase/known_hosts "$HOME/.ssh/known_hosts" \
+    && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \
+    && ln -sf "$PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH $HOME/.ssh/" \
     && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
 
     && true

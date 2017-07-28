@@ -26,10 +26,10 @@ PSYOPS makes some assumptions, and we provide a wrapper script to manage them. N
 
 The assumptions we try to make are:
 
-- The current directory, a git repo, should be mounted to /psyops with permissions so the psyops user can read/write
+- The current directory, a git repo, should be mounted to $PSYOPS_VOLUME with permissions so the psyops user can read/write
 - There is no permanent storage in the Docker container
 - The Docker container is invoked with --rm
-- Any persistent data should be in the /psyops volume, bind-mounted to the host
+- Any persistent data should be in $PSYOPS_VOLUME, bind-mounted to the host
 
 See the section below on submodules for more details on how they are used
 
@@ -92,7 +92,7 @@ See the section below on the secrets module for more information about how it is
 
 We make heavy use of submodules, to avoid checking out code during build, which slows down the build and can incur rate limit errors. Understanding how Git interacts with submodules is important to understanding how PSYOPS works. In a bad case, an improper understanding of submodules can cause loss of data - for instance, if you don't realize that a change to a submodule has to be committed and pushed separately from changes to the parent module.
 
-Submodules should be available inside the container as well, as long as this repo is mounted to the /psyops volume. They can be used exactly the same way on the host or in the container, and you can edit files on the host while using them in the container - it's very useful to use a graphical editor on the host to modify files that are used on the command line in the container.
+Submodules should be available inside the container as well, as long as this repo is mounted to the $PSYOPS_VOLUME volume. They can be used exactly the same way on the host or in the container, and you can edit files on the host while using them in the container - it's very useful to use a graphical editor on the host to modify files that are used on the command line in the container.
 
 ## Setting up the secrets submodule
 
@@ -129,3 +129,19 @@ We use [git-remote-gcrypt](https://spwhitton.name/tech/code/git-remote-gcrypt/) 
         popd
 
     Note that, in this case, we are using a file containing the passphrase. Use a literal string, not a shell variable for this, and of course it must exist and be the correct passphrase. There may be other options, such as using a GPG agent, that you might wish to explore instead.
+
+## Build and run -time variables
+
+If at all possible, we define variables like magic paths and so forth in only one place, so that changing them later is not a hassle.
+
+The Dockerfile has some constructs that help us with this:
+
+* ENV statements are shell environment variables that are *settable* while *running* the container and *readable* while *building or running* the container.
+* ARG statements are shell environment variables that are *settable and readable* only while *builing* the container
+
+Some ENV statements are used during build, and the container will not work properly if their values are changed at runtime; see the Dockerfile and note any variables that are used during that time.
+
+There is one kind of magic string that cannot follow this pattern: variables that our wrapper script passes to `docker run`. At the time of this writing, this includes only:
+
+- The psyops volume path (`ENV PSYOPS_VOLUME="/psyops"` in the Dockerfile)
+- The secrets tmpfs mount point (`ENV PSYOPS_SECRETS_PATH="/secrets"` in the Dockerfile)
