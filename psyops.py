@@ -50,7 +50,9 @@ def debugexchandler(type, value, tb):
 
 def dockerrun(
         imagename, imagetag, psyopsvol, tmpfsmount,
-        runargs=None, containerargs=None, psyopsvolperms="rw", tmpfsperms="rw"):
+        runargs=None, containerargs=None, psyopsvolperms="rw",
+        # Note: default tmpfs options are read only and noexec
+        tmpfsopts="exec,mode=1777"):
 
     # On Windows, we need to set the MSYS_NO_PATHCONV flag to 1, or else volume
     # mounting fails with weird errors
@@ -65,7 +67,7 @@ def dockerrun(
         '--interactive',
         '--tty',
         '--volume', f'{scriptdir}:{psyopsvol}:{psyopsvolperms}',
-        '--tmpfs', f'{tmpfsmount}:{tmpfsperms}']
+        '--tmpfs', f'{tmpfsmount}:{tmpfsopts}']
     if runargs:
         runcli += runargs.split(" ")
     runcli += [f'{imagename}:{imagetag}']

@@ -35,8 +35,8 @@ ENV PSYOPS_SECRETS_REPO_BRANCH="master"
 # Name to use for the gcrypt remote
 ENV PSYOPS_SECRETS_REPO_REMOTE_NAME="origin"
 # URI for the gcrypt remote
-# remoteuri = "git@github.com:mrled/psyops-secrets.git"
-ENV PSYOPS_SECRETS_REPO_REMOTE_URI="file://$PSYOPS_VOLUME/submod/psyops-secrets"
+# ENV PSYOPS_SECRETS_REPO_REMOTE_URI="file://$PSYOPS_VOLUME/submod/psyops-secrets"
+ENV PSYOPS_SECRETS_REPO_REMOTE_URI="git@github.com:mrled/psyops-secrets.git"
 # The psyops-secrets repo has a script to symlink its config files into the
 # homedir... if it exists, the repo was successfully decrypted
 ENV PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH="symlink.sh"
@@ -183,7 +183,7 @@ RUN true \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc "$HOME" \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \
-    && ln -sf "$PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH $HOME/.ssh/" \
+    && ln -sf "$PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
 
     && true
