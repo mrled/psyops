@@ -52,7 +52,7 @@ def dockerrun(
         imagename, imagetag, psyopsvol, tmpfsmount,
         runargs=None, containerargs=None, psyopsvolperms="rw",
         # Note: default tmpfs options are read only and noexec
-        tmpfsopts="exec,mode=1777"):
+        tmpfsopts="exec,mode=1777", hostname="PSYOPS"):
 
     # On Windows, we need to set the MSYS_NO_PATHCONV flag to 1, or else volume
     # mounting fails with weird errors
@@ -67,7 +67,8 @@ def dockerrun(
         '--interactive',
         '--tty',
         '--volume', f'{scriptdir}:{psyopsvol}:{psyopsvolperms}',
-        '--tmpfs', f'{tmpfsmount}:{tmpfsopts}']
+        '--tmpfs', f'{tmpfsmount}:{tmpfsopts}',
+        '--hostname', hostname]
     if runargs:
         runcli += runargs.split(" ")
     runcli += [f'{imagename}:{imagetag}']
