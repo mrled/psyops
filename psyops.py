@@ -308,7 +308,6 @@ def main(*args, **kwargs):
 
     if parsed.action == "build":
         parentrepo.testcheckout(throw=True)
-        netvoltest(throw=True)
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
     elif parsed.action == "run":
         parentrepo.testcheckout(throw=True)
@@ -320,6 +319,7 @@ def main(*args, **kwargs):
     elif parsed.action == "buildrun":
         parentrepo.testcheckout(throw=True)
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
+        netvoltest(throw=True)
         dockerrun(
             parsed.imagename, parsed.imagetag, parsed.psyopsvol,
             parsed.secretstmpfs, runargs=parsed.runargs,
