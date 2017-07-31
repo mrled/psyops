@@ -1,39 +1,3 @@
 #!/bin/sh
 
 export PROMPT_HOSTNAME_OVERRIDE=$(printf '\[%s\]P\[%s\]S\[%s\]Y\[%s\]O\[%s\]P\[%s\]S\[%s\]' "$(ansi fg=magenta)" "$(ansi fg=red)" "$(ansi fg=yellow)" "$(ansi fg=green)" "$(ansi fg=cyan)" "$(ansi fg=blue)" "$(ansi mode=reset)")
-
-psyops_usage() {
-    toilet --filter rainbow --font future PSYOPS
-    cat <<ENDHEADER
-$(ansi mode=bold)
-Welcome to $(ansi fg=magenta)P$(ansi fg=red)S$(ansi fg=yellow)Y$(ansi fg=green)O$(ansi fg=cyan)P$(ansi fg=blue)S$(ansi mode=reset)
-$(ansi mode=bold)
-This Docker image is used for $(ansi fg=magenta)Personal SYsOPS$(ansi mode=reset mode=bold) tasks that require saved credentials and/or special tools. It is a way of keeping the myriad tools up to date and independent of the host operating system configuration - all you need is Docker, and everything will work, without having to chase down dependency versions or whatever else. We even get Windows support.
-
-It is intended to be run with the $(ansi fg=magenta)--rm$(ansi mode=reset mode=bold) flag, with the psyops git repository mounted as a Docker volume to $(ansi fg=magenta)$PSYOPS_VOLUME$(ansi mode=reset mode=bold). Persistent data should *not* be stored in $(ansi fg=magenta)\$HOME$(ansi mode=reset mode=bold) or anywhere on the filesystem other than $(ansi fg=magenta)$PSYOPS_VOLUME$(ansi mode=reset mode=bold).
-$(ansi mode=reset)
-ENDHEADER
-
-    if psecrets testlock; then
-        echo "$(ansi fg=green mode=bold)Secrets decrypted and symlinked successfully"
-    else
-        cat <<ENDPSECRETSERR
-$(ansi fg=red mode=bold)Secrets NOT decrypted, commands that rely on config files ($(ansi fg=magenta)doctl$(ansi fg=red), $(ansi fg=magenta)gandi$(ansi fg=red), etc) will fail! $(ansi fg=red mode=bold)Run $(ansi fg=magenta)psecrets unlock$(ansi fg=red) to attempt to decrypt the secrets repo again.
-ENDPSECRETSERR
-    fi
-    echo ""
-
-    if test -e "$PSYOPS_VOLUME/.git"; then
-        echo "$(ansi fg=green mode=bold)The $(ansi fg=magenta)$PSYOPS_VOLUME$(ansi fg=green) volume has been mounted successfully"
-    else
-        cat <<ENDPSYOPSERR
-$(ansi fg=red mode=bold)Warning: it appears that the $(ansi fg=magenta)$PSYOPS_VOLUME$(ansi fg=red) volume is NOT mounted.
-$(ansi fg=red mode=bold)If your host OS is Windows, there may be a firewall issue.
-$(ansi fg=red mode=bold)1. Check Docker settings to ensure that the drive on the host containing the psyops repository checkout directory is shared
-$(ansi fg=red mode=bold)2. Run a command like: $(ansi fg=magenta)Set-NetConnectionProfile -interfacealias 'vEthernet (DockerNAT)' -NetworkCategory Private$(ansi fg=red), or have the wrapper script do that for you: $(ansi fg=magenta)psyops.py util --netvolfix$(ansi fg=red)
-ENDPSYOPSERR
-    fi
-    echo "$(ansi mode=reset)"
-}
-
-psyops_usage

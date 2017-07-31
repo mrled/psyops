@@ -149,6 +149,8 @@ RUN if test "$enablesudo"; then echo "$username ALL=(ALL) NOPASSWD: ALL" > "/etc
 
 COPY ["docker/home/", "$homedir/"]
 COPY ["docker/usrlocalbin/*", "/usr/local/bin/"]
+# So we can use it in scripts at login time, even if $PSYOPS_VOLUME did not mount properly
+COPY ["submod/dhd/opt/bin/ansi", "/usr/local/bin/"]
 
 # Run this after ALL files have been placed into /usr/local/bin
 # Fucking Docker uses the host's umask
