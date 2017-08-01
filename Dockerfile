@@ -140,10 +140,14 @@ RUN true \
 
     && true
 
-# Enable passwordless sudo
-# ONLY FOR DEVELOPMENT, since a root user in your container can probably escape to be a root user on your container host
+# Passwordless sudo. DEVELOPMENT ONLY PLEASE.
 ARG enablesudo=
-RUN if test "$enablesudo"; then echo "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$username" && chmod 0440 "/etc/sudoers.d/$username"; fi
+RUN if test "$enablesudo"; then true \
+        && echo "ENABLING PASSWORDLESS SUDO" >&2 \
+        && echo "sudo should only be enabled in development, since root privs in your container can probably be leveraged to root privs on your host" >&2 \
+        && echo "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$username" \
+        && chmod 0440 "/etc/sudoers.d/$username" \
+    ; fi
 
 # Configure my user. Changes more often
 
