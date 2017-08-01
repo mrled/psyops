@@ -14,11 +14,9 @@ ENDHEADER
 if psecrets testlock; then
     echo "$(ansi fg=green mode=bold)Secrets decrypted and symlinked successfully"
 else
-    cat <<ENDPSECRETSERR
-$(ansi fg=red mode=bold)WARNING: Secrets NOT decrypted, commands that rely on config files ($(ansi fg=magenta)doctl$(ansi fg=red), $(ansi fg=magenta)gandi$(ansi fg=red), etc) will fail! $(ansi fg=red mode=bold)Run $(ansi fg=magenta)psecrets unlock$(ansi fg=red) to attempt to decrypt the secrets repo again.
-ENDPSECRETSERR
+    echo "$(ansi fg=red mode=bold)WARNING: Secrets NOT decrypted, commands that rely on config files ($(ansi fg=magenta)doctl$(ansi fg=red), $(ansi fg=magenta)gandi$(ansi fg=red), etc) will fail! $(ansi fg=red mode=bold)Run $(ansi fg=magenta)psecrets unlock$(ansi fg=red) to attempt to decrypt the secrets repo again."
 fi
-echo ""
+echo "$(ansi mode=reset)"
 
 if test -e "$PSYOPS_VOLUME/.git"; then
     echo "$(ansi fg=green mode=bold)The $(ansi fg=magenta)$PSYOPS_VOLUME$(ansi fg=green) volume has been mounted successfully"
@@ -29,5 +27,12 @@ $(ansi fg=red mode=bold)If your host OS is Windows, there may be a firewall issu
 $(ansi fg=red mode=bold)1. Check Docker settings to ensure that the drive on the host containing the psyops repository checkout directory is shared
 $(ansi fg=red mode=bold)2. Run a command like: $(ansi fg=magenta)Set-NetConnectionProfile -interfacealias 'vEthernet (DockerNAT)' -NetworkCategory Private$(ansi fg=red), or have the wrapper script do that for you: $(ansi fg=magenta)psyops.py util --netvolfix$(ansi fg=red)
 ENDPSYOPSERR
+fi
+echo "$(ansi mode=reset)"
+
+if sudo -v 2>/dev/null; then
+    echo "$(ansi fg=red mode=bold)WARNING: $(ansi fg=magenta)sudo$(ansi fg=red) is enbled for this user! This should only be used during development. Root in the PSYOPS container can likely escalate to root in the container host."
+else
+    echo "$(ansi fg=green mode=bold)For security reasons, $(ansi fg=magenta)sudo$(ansi fg=green) has been disabled in this container"
 fi
 echo "$(ansi mode=reset)"
