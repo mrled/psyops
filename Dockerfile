@@ -66,16 +66,14 @@ RUN true \
         ncurses \
         openssh-client openssh-doc \
         openssl openssl-doc \
-        # for rst2man, used by git-remote-crypt
-        py3-docutils \
         python3 python3-doc \
         sudo sudo-doc \
     && makewhatis \
     && update-ca-certificates --fresh \
 
     && python3 -m ensurepip && python3 -m pip install --upgrade pip && python3 -m pip install \
-        gandi.cli \
         awscli \
+        gandi.cli \
 
     && install -d -o root -g root -m 755 /usr/local/bin \
 
@@ -102,6 +100,9 @@ RUN true \
 
 RUN true \
     # Install git-remote-crypt
+    && apk add \
+        # for rst2man
+        py3-docutils \
     # We install py3-docutils, which includes `rst2man-3`, but git-remote-crypt's setup.sh expects `rst2man`, lol
     && printf '#!/bin/sh\nrst2man-3 "$@"\n' > /usr/local/bin/rst2man && chmod 755 /usr/local/bin/rst2man \
     && cd "$psysetup/git-remote-gcrypt" \
@@ -124,7 +125,7 @@ RUN true \
     && apk add --virtual=BUILDAZURECLI gcc libffi-dev musl-dev openssl-dev python3-dev make \
     # Azure requires this because it is... bad
     && ln -s ../../bin/python3 /usr/local/bin/python \
-    && python3 -m pip install azure-cli \
+    && python3 -m pip install azure azure-cli \
     && apk del --purge BUILDAZURECLI \
     && true
 
