@@ -254,6 +254,9 @@ def main(*args, **kwargs):
     dockeropts.add_argument(
         "imagetag", nargs='?', default="wip",
         help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.")
+    dockeropts.add_argument(
+        "--sudo", action="store_true",
+        help="Pass the enablesudo=1 arg during build, and use the tag 'sudo' rather than the default when building or running. (Overrides any other tag set.)")
 
     dockerbuildopts = argparse.ArgumentParser(add_help=False)
     dockerbuildopts.add_argument(
@@ -308,6 +311,10 @@ def main(*args, **kwargs):
     log.info(parsed)
 
     parentrepo = GitRepoMetadata(scriptdir)
+
+    if parsed.sudo:
+        parsed.buildargs += "--build-arg sudo=1"
+        parsed.tag = "sudo"
 
     if parsed.action == "build":
         parentrepo.testcheckout(throw=True)
