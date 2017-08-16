@@ -312,7 +312,7 @@ def main(*args, **kwargs):
 
     parentrepo = GitRepoMetadata(scriptdir)
 
-    if parsed.sudo:
+    if 'sudo' in parsed and parsed.sudo:
         parsed.buildargs += "--build-arg sudo=1"
         parsed.tag = "sudo"
 
