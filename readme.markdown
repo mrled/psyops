@@ -73,7 +73,7 @@ The `~/.docker/config.json` file is documented [here](https://docs.docker.com/en
 
 ## Creating a GPG key for use
 
-We bake an GPG key into the image, and use a Python script called `psecrets` to decrypt it when the container starts. See the `psecrets` help (or just start the container and read the help text) to learn how that works. See below for how the key and other data was initially generated.
+We bake an encrypted GPG key into the image, and use a Python script called `psecrets` to decrypt it when the container starts. See the `psecrets` help (or just start the container and read the help text) to learn how that works. See below for how the key and other data was initially generated.
 
 Our exported key and associated information was exported as follows. Note that this was done on a system with no existing keys (or indeed even a `$HOME/.gnupg` folder); if you export ownertrust on a system that has an existing key, you may get unexpected results.
 
@@ -103,7 +103,9 @@ See the section below on the secrets module for more information about how it is
 
 We make heavy use of submodules, to avoid checking out code during build, which slows down the build and can incur rate limit errors. Understanding how Git interacts with submodules is important to understanding how PSYOPS works. In a bad case, an improper understanding of submodules can cause loss of data - for instance, if you don't realize that a change to a submodule has to be committed and pushed separately from changes to the parent module.
 
-Submodules should be available inside the container as well, as long as this repo is mounted to the $PSYOPS_VOLUME volume. They can be used exactly the same way on the host or in the container, and you can edit files on the host while using them in the container - it's very useful to use a graphical editor on the host to modify files that are used on the command line in the container.
+Submodules should be available inside the container as well, as long as this repo is mounted to the `$PSYOPS_VOLUME` volume. They can be used exactly the same way on the host or in the container, and you can edit files on the host while using them in the container - it's very useful to use a graphical editor on the host to modify files that are used on the command line in the container.
+
+That said, see above for notes about line endings if your docker host is running Windows.
 
 ## Setting up the secrets submodule
 
@@ -143,7 +145,7 @@ We use [git-remote-gcrypt](https://spwhitton.name/tech/code/git-remote-gcrypt/) 
 
 ## Build and run -time variables
 
-If at all possible, we define variables like magic paths and so forth in only one place, so that changing them later is not a hassle.
+If at all possible, we define variables like usernames, special paths, and so forth in only one place, so that changing them later is not a hassle.
 
 The Dockerfile has some constructs that help us with this:
 
@@ -152,7 +154,7 @@ The Dockerfile has some constructs that help us with this:
 
 Some ENV statements are used during build, and the container will not work properly if their values are changed at runtime; see the Dockerfile and note any variables that are used during that time.
 
-There is one kind of magic string that cannot follow this pattern: variables that our wrapper script passes to `docker run`. At the time of this writing, this includes only:
+There is one kind of magic string that must be set in more than one place: variables that our wrapper script passes to `docker run`. These must be set to the same values in both `Dockerfile` and the `psyops.py` wrapper script. At the time of this writing, this includes only:
 
 - The psyops volume path (`ENV PSYOPS_VOLUME="/psyops"` in the Dockerfile)
 - The secrets tmpfs mount point (`ENV PSYOPS_SECRETS_PATH="/secrets"` in the Dockerfile)
