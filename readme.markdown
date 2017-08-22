@@ -60,6 +60,17 @@ It's critical that repositories with shell scripts have Unix line endings, but b
 
 This task is not necessary on Unix platforms
 
+## Recommended Docker settings
+
+### Detach keys
+
+Docker is dumb as hell, and has made `ctrl-p,ctrl-q` the default key sequence to use for detaching from an interactive container, even though bash has made `ctrl-p` the default key sequence for "previous command" (the same as the up arrow) since forever. There are two ways to change this; the following examples use `ctrl-i,ctrl-i` instead:
+
+1. Pass `--run-args="--detach-keys 'ctrl-i,ctrl-i'"` when running the psyops image
+2. Add a line like `"detachKeys": "ctrl-i,ctrl-i"` to `~/.docker/config.json`
+
+The `~/.docker/config.json` file is documented [here](https://docs.docker.com/engine/reference/commandline/cli/#configuration-files).
+
 ## Creating a GPG key for use
 
 We bake an GPG key into the image, and use a Python script called `psecrets` to decrypt it when the container starts. See the `psecrets` help (or just start the container and read the help text) to learn how that works. See below for how the key and other data was initially generated.
