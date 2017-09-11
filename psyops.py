@@ -15,7 +15,8 @@ if sys.version_info < MIN_PYTHON:
     sys.exit(1)
 
 
-scriptdir = os.path.dirname(os.path.realpath(__file__))
+scriptpath = os.path.realpath(__file__)
+scriptdir = os.path.dirname(scriptpath)
 
 
 def getlogger():
@@ -109,13 +110,18 @@ def netvoltest(ifname="vEthernet (DockerNAT)", throw=False):
         return True
     pscmd = f'Get-NetConnectionProfile -interfacealias "{ifname}" | Select-Object -ExpandProperty NetworkCategory'
     output = subprocess.check_output(
-        ['powershell.exe', '-NoProfile', '-Command', pscmd])
-    log.info(f"Network connection profile of {ifname} is {output}")
-    if output.decode().strip() == "Private":
+        ['powershell.exe', '-NoProfile', '-Command', pscmd]).decode().strip()
+    log.info(
+        f"Network category for the network attached to {ifname} is {output}")
+    if output == "Private":
         return True
     else:
+        msg = " ".join([
+            f"Network category for the network attached to {ifname} must be set to Private, but it is instead set to {output}.",
+            f"Run '{scriptpath} util --netvolfix' to fix this."])
+        log.error(msg)
         if throw:
-            raise Exception(f"Network connection profile of {ifname} is {output}")
+            raise Exception(msg)
         return False
 
 
