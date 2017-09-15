@@ -268,7 +268,7 @@ def main(*args, **kwargs):
 
     dockerbuildopts = argparse.ArgumentParser(add_help=False)
     dockerbuildopts.add_argument(
-        '--build-passthru', dest='buildargs',
+        '--build-passthru', dest='buildargs', default="",
         help="Pass these additional arguments to 'docker build'")
 
     dockerrunopts = argparse.ArgumentParser(add_help=False)
@@ -321,7 +321,7 @@ def main(*args, **kwargs):
     parentrepo = GitRepoMetadata(scriptdir)
 
     if 'sudo' in parsed and parsed.sudo:
-        parsed.buildargs += "--build-arg sudo=1"
+        parsed.buildargs += "--build-arg enablesudo=1"
         parsed.tag = "sudo"
 
     if parsed.action == "build":
