@@ -40,6 +40,9 @@ ENV PSYOPS_SECRETS_REPO_REMOTE_URI="git@github.com:mrled/psyops-secrets.git"
 # The psyops-secrets repo has a script to symlink its config files into the
 # homedir... if it exists, the repo was successfully decrypted
 ENV PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH="symlink.sh"
+# Allow setting the timezone at runtime
+ENV PSYOPS_TIMEZONE="US/Central"
+
 
 # Pre-copy root OS configuration phase
 RUN true \
@@ -66,7 +69,10 @@ RUN true \
         openssh-client openssh-doc \
         openssl openssl-doc \
         python3 python3-doc \
+        # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
+        shadow shadow-doc \
         sudo sudo-doc \
+        tzdata tzdata-doc \
 
     && update-ca-certificates --fresh \
 
@@ -134,9 +140,15 @@ RUN true \
     # Running makewhatis should happen after all root installation commands / only right before running as my user
     && makewhatis \
 
+    # Allow my user to set /etc/localtime
+    && addgroup -S "timekeeper" \
+    && chgrp timekeeper /etc/localtime \
+    && chmod 0664 /etc/localtime \
+
     # Configure my user
     && addgroup -S "$username" \
     && adduser -S -G "$username" -s /bin/bash "$username" \
+    && usermod -g timekeeper "$username" \
 
     && true
 
