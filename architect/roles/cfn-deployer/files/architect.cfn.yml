@@ -47,11 +47,12 @@ Resources:
       KeyName: !Ref KeyName
       UserData: { "!Base64": { "Fn::Join": [ " ", [
         "#!/bin/sh\n",
-        "apt-get update && apt-get -y install bash gnupg;",
-        "curl -s \"https://pgp.mit.edu/pks/lookup?op=get&search=0x1657198823E52A61\" | gpg --import;",
-        "curl -s "https://install.zerotier.com/" -o /tmp/ztinstall.bash;",
-        "if gpg < /tmp/ztinstall.bash; then bash /tmp/ztinstall.bash; fi;",
-        "zerotier-cli join ", {"Ref": "ZeroTierInfrastructureVpnId"}
+        "set -eu; ",
+        "apt-get update && apt-get -y install bash gnupg && ",
+        "curl -s \"https://pgp.mit.edu/pks/lookup?op=get&search=0x1657198823E52A61\" | gpg --import && ",
+        "curl -s "https://install.zerotier.com/" -o /tmp/ztinstall.bash && ",
+        "if gpg < /tmp/ztinstall.bash; then bash /tmp/ztinstall.bash; fi && ",
+        "zerotier-cli join ", {"Ref": "ZeroTierInfrastructureVpnId"}, ";\n"
       ]]}}
     CreationPolicy:
       ResourceSignal:
