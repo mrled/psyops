@@ -1,0 +1,13 @@
+--
+- name: Launch Architect instance from CloudFormation
+  cloudformation:
+    stack_name: "micahrl.com-architect"
+    state: "present"
+    region: "us-west-2"
+    disable_rollback: false
+    template: "files/architect.cfn.yml"
+    template_parameters:
+      KeyName: "psyops"
+      InstanceType: "t2.micro"
+    tags:
+      Stack: "micahrl.com-architect"

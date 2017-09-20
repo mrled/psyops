@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Architect is my CI server
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  InstanceType:
+    Description: CI EC2 instance type
+    Type: String
+    Default: t2.micro
+    ConstraintDescription: must be a valid EC2 instance type.
+  ZeroTierNetworkId:
+    Description: Network ID of an existing ZeroTier network
+    Type: String
+
+# TODO: Can Mappings be defined in a separate CFN template?
+
+Mappings:
+  AWSInstanceType2Arch:
+    t2.micro:
+      Arch: HVM64
+  AWSInstanceType2NATArch:
+    t2.micro:
+      Arch: NATHVM64
+  # TODO:
+  AWSRegionArch2AMI:
+    us-west-2:
+      PV64: ami-7f77b31f
+      HVM64: ami-7172b611
+      HVMG2: ami-be4ea3c6
+
+Resources:
+  ArchitectInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !FindInMap
+        - AWSRegionArch2AMI
+        - !Ref 'AWS::Region'
+        - !FindInMap
+          - AWSInstanceType2Arch
+          - !Ref InstanceType
+          - Arch
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      UserData: { "!Base64": { "Fn::Join": [ " ", [
+        "#!/bin/sh\n",
+        "apt-get update && apt-get -y install bash gnupg;",
+        "curl -s \"https://pgp.mit.edu/pks/lookup?op=get&search=0x1657198823E52A61\" | gpg --import;",
+        "curl -s "https://install.zerotier.com/" -o /tmp/ztinstall.bash;",
+        "if gpg < /tmp/ztinstall.bash; then bash /tmp/ztinstall.bash; fi;",
+        "zerotier-cli join ", {"Ref": "ZeroTierInfrastructureVpnId"}
+      ]]}}
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
