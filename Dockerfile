@@ -135,6 +135,17 @@ RUN true \
     && true
 
 RUN true \
+    # Install Ansible
+    && apk add \
+        ansible ansible-doc \
+    # Required for Ansible scripts and/or the EC2 inventory script
+    && python -m pip install \
+        ansible \
+        boto \
+        boto3 \
+    && true
+
+RUN true \
     # Final steps
 
     # Running makewhatis should happen after all root installation commands / only right before running as my user
