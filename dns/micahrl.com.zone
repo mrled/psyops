@@ -24,6 +24,10 @@ vpn 300 IN CNAME noradia.micahrl.com.
 ; old dev server
 nullyork 300 IN A 162.243.186.50
 
+; architect
+architect 300 IN A 173.255.196.96
+architect 300 IN AAAA 2600:3c00::f03c:91ff:fea7:c3ac
+
 ; hosted XMPP with conversations.im
 conference 300 IN CNAME xmpp-hosting.conversations.im.
 proxy 300 IN CNAME xmpp-hosting.conversations.im.
