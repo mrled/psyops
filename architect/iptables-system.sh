@@ -12,23 +12,23 @@ set -u
 
 ## System firewall rules
 
-# Allow any established sessions - including outbound sessions - to receive traffic
-iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-ip6tables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+# Allow any established sessions from our container host - including replies to outbound queries - to receive traffic
+iptables --append INPUT -m conntrack --ctstate ESTABLISHED,RELATED --jump ACCEPT
+ip6tables --append INPUT -m conntrack --ctstate ESTABLISHED,RELATED --jump ACCEPT
 
 # Allow SSH on eth0
-iptables -A INPUT -i eth0 -p tcp --dport 22 -j ACCEPT
-ip6tables -A INPUT -i eth0 -p tcp --dport 22 -j ACCEPT
+iptables --append INPUT --in-interface eth0 --protocol tcp --dport 22 --jump ACCEPT
+ip6tables --append INPUT --in-interface eth0 --protocol tcp --dport 22 --jump ACCEPT
 
 # Allow UDP 9993 on eth0 (required for ZeroTier)
-iptables -A INPUT -i eth0 -p udp --dport 9993 -j ACCEPT
-ip6tables -A INPUT -i eth0 -p udp --dport 9993 -j ACCEPT
-iptables -A OUTPUT -p udp --dport 9993 -j ACCEPT
-ip6tables -A OUTPUT -p udp --dport 9993 -j ACCEPT
+iptables --append INPUT --in-interface eth0 --protocol udp --dport 9993 --jump ACCEPT
+ip6tables --append INPUT --in-interface eth0 --protocol udp --dport 9993 --jump ACCEPT
+iptables --append OUTPUT --protocol udp --dport 9993 --jump ACCEPT
+ip6tables --append OUTPUT --protocol udp --dport 9993 --jump ACCEPT
 
 # Reject everything to eth0 that hasn't been accepted by a previous rule
-iptables -A INPUT -i eth0 -j REJECT
-ip6tables -A INPUT -i eth0 -j REJECT
+iptables --append INPUT --in-interface eth0 --jump REJECT
+ip6tables --append INPUT --in-interface eth0 --jump REJECT
 
 ## Docker firewall rules
 
@@ -40,5 +40,8 @@ ip6tables -A INPUT -i eth0 -j REJECT
 # Create the chain we need if Docker hasn't done so already
 iptables --new DOCKER-USER 2>/dev/null || true
 
+# Allow any established sessions from our containers - including replies to outbound queries - to receive traffic
+iptables --append DOCKER-USER --match conntrack --ctstate ESTABLISHED,RELATED --jump ACCEPT
+
 # Reject packets that would be forwarded to Docker when they come in over eth0 (the public interface)
-iptables --insert DOCKER-USER --in-interface eth0 --jump REJECT
+iptables --append DOCKER-USER --in-interface eth0 ---jump REJECT
