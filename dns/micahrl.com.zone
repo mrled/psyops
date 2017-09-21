@@ -30,10 +30,15 @@ architect 300 IN AAAA 2600:3c00::f03c:91ff:fea7:c3ac
 
 ; infra.micahrl.com (ZeroTier network)
 infra 300 IN AAAA fc7b:7a95:0194:6f84:bf9a:0000:0000:0001
+infra 300 IN A 192.168.196.106
 architect.infra 300 IN AAAA fc7b:7a95:0194:6f84:bf9a:0000:0000:0001
+architect.infra 300 IN A 192.168.196.106
 worklaptop.infra 300 IN AAAA fc7b:7a95:01db:dd71:178e:0000:0000:0001
+worklaptop.infra 300 IN A 192.168.196.112
 glitch.infra 300 IN AAAA fc7b:7a95:011b:6eb1:240e:0000:0000:0001
+glitch.info 300 IN A 192.168.196.132
 andraia.infra 300 IN AAAA fc7b:7a95:0112:ca1e:eb11:0000:0000:0001
+andraia.infra 300 IN A 192.168.196.122
 
 ; hosted XMPP with conversations.im
 conference 300 IN CNAME xmpp-hosting.conversations.im.
