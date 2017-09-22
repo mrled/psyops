@@ -39,6 +39,8 @@ glitch.infra 300 IN AAAA fc7b:7a95:011b:6eb1:240e:0000:0000:0001
 glitch.info 300 IN A 192.168.196.132
 andraia.infra 300 IN AAAA fc7b:7a95:0112:ca1e:eb11:0000:0000:0001
 andraia.infra 300 IN A 192.168.196.122
+orocroix.infra 300 IN AAAA fc7b:7a95:01cd:6db8:d738:0000:0000:0001
+orocroix.infra 300 IN A 192.168.196.241
 
 ; hosted XMPP with conversations.im
 conference 300 IN CNAME xmpp-hosting.conversations.im.
