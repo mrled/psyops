@@ -9,6 +9,7 @@ services:
       - jenkins_home:/var/jenkins_home
     deploy:
       replicas: 1
+    command: --httpPort=-1 --httpsPort=8443 --httpsCertificate="/var/jenkins_home/$domain.crt" --httpsPrivateKey="/var/jenkins_home/$domain.key"
 
   # backupmanager:
   #   image: alpine:latest

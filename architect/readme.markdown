@@ -85,13 +85,7 @@ Some references:
 - <https://stackoverflow.com/questions/29755014/setup-secured-jenkins-master-with-docker>
 - <https://github.com/hughperkins/howto-jenkins-ssl/blob/master/letsencrypt.mde>
 
-Once the certificate is generated, you must configure Jenkins to use it.
-
-First, the key must be converted to RSA format:
-
-    openssl rsa -in privkey.pem -out privkey-rsa.pem
-
-Then, the key must be made available to Jenkins. Copy the public and private keys to the directory being mounted as the `/var/jenkins_home` volume in the Jenkins Docker image.
+Once the certificate is generated, you must configure Jenkins to use it. Copy the public and private keys to the directory being mounted as the `/var/jenkins_home` volume in the Jenkins Docker image.
 
     cp "$domain.crt" "$domain.key" /path/to/jenkins_home
     docker run -v /path/to/jenkins_home:/var/jenkins_home -p 443:8443 jenkins --httpPort=-1 --httpsPort=8443 --httpsCertificate="/var/jenkins_home/$domain.crt" --httpsPrivateKey="/var/jenkins_home/$domain.key"
