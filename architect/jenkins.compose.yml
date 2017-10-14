@@ -1,15 +1,36 @@
-version: "3"
+version: "3.1"
 services:
 
   jenkins:
     image: jenkins/jenkins:lts
     ports:
       - "80:8080"
+      - "443:8443"
     volumes:
       - jenkins_home:/var/jenkins_home
+      - jenkins_cert:/var/jenkins_cert
     deploy:
       replicas: 1
-    command: --httpPort=-1 --httpsPort=8443 --httpsCertificate="/var/jenkins_home/$domain.crt" --httpsPrivateKey="/var/jenkins_home/$domain.key"
+    command: --httpPort=-1 --httpsPort=8443 --httpsCertificate="/var/jenkins_cert/architect.infra.micahrl.com.crt" --httpsPrivateKey="/var/jenkins_cert/architect.infra.micahrl.com.key"
+
+  inflatable-wharf:
+    # image: mrled/inflatable-wharf:latest
+    image: inflatable-wharf:dev
+    deploy:
+      replicas: 1
+    environment:
+      - ACME_LETSENCRYPT_EMAIL=psyops@micahrl.com
+      - ACME_DOMAIN=architect.infra.micahrl.com
+      - ACME_DNS_AUTHENTICATOR=gandi
+      - ACME_SERVER=staging
+      - ACME_FREQUENCY=monthly
+      - ACME_SECRETS_ENV_FILE=/run/secrets/lego_acme_env_file
+    secrets:
+      - source: lego_acme_env_file
+        target: lego_acme_env_file
+        mode: 0444
+    volumes:
+      - jenkins_cert:/srv/inflatable-wharf
 
   # backupmanager:
   #   image: alpine:latest
@@ -20,3 +41,8 @@ services:
 
 volumes:
   jenkins_home:
+  jenkins_cert:
+
+secrets:
+  lego_acme_env_file:
+    file: ./lego-acme-secret-env.txt
