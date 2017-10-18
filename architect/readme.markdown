@@ -47,17 +47,26 @@ I wanted to automated this with CloudFormation and Ansible but I got tired of bu
 
  -  Configure `docker-machine` on your workstation
 
-    In my case, I used:
+    In my case, I used the following to create the `docker-machine` entry
+    for the Docker host that will run my Jenkins server:
 
         docker-machine create --driver generic --generic-ip-address architect.infra.micahrl.com --engine-storage-driver overlay2 architect
 
-    During troubleshooting, running `docker-machine -D create ...` provides more debugging information.
+    This step is only necessary once (per workstation)
 
-    I had to pass the `--engine-storage-driver overlay2` argument
-    because it was using `aufs` by default,
-    which was preventing the Docker daemon on architect from starting
-    after running `docker-machine create`.
-    [See also](https://github.com/docker/machine/issues/4197).
+     -  During troubleshooting, running `docker-machine -D create ...` provides more debugging information.
+
+     -  I had to pass the `--engine-storage-driver overlay2` argument
+        because it was using `aufs` by default,
+        which was preventing the Docker daemon on architect from starting
+        after running `docker-machine create`.
+        [See also](https://github.com/docker/machine/issues/4197).
+
+ -  Configure `docker` to interact with the remote machine:
+
+        eval $(docker-machine env architect)
+
+    This step is run once per shell that you wish to use to interact with the remote Docker host
 
  -  Set the necessary environment variables in `lego-acme-secret-env.txt`.
 
