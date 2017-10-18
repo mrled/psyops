@@ -1,17 +1,22 @@
-version: "3.1"
+version: "3.2"
 services:
 
   jenkins:
-    image: jenkins/jenkins:lts
+    image: mrled/architect-jenkins:latest
     ports:
       - "80:8080"
       - "443:8443"
+    environment:
+      - DOCKER_HOST_DOCKER_GID=999
     volumes:
       - jenkins_home:/var/jenkins_home
-      - type: volume
-        source: jenkins_cert
-        target: /var/jenkins_cert
-        read_only: true
+      - jenkins_cert:/var/jenkins_cert
+
+      # Mount this as /var/run/docker.sock in a service container
+      # to allow it to control the *host's* docker service
+      # See also https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/
+      - /var/run/docker.sock:/var/run/docker.sock
+
     deploy:
       replicas: 1
     command: --httpPort=-1 --httpsPort=8443 --httpsCertificate="/var/jenkins_cert/certificates/architect.infra.micahrl.com.crt" --httpsPrivateKey="/var/jenkins_cert/certificates/architect.infra.micahrl.com.key"

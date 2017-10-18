@@ -59,14 +59,20 @@ I wanted to automated this with CloudFormation and Ansible but I got tired of bu
     after running `docker-machine create`.
     [See also](https://github.com/docker/machine/issues/4197).
 
- -  Use the jenkins.compose.yml file in this directory
+ -  Set the necessary environment variables in `lego-acme-secret-env.txt`.
 
-    First, set the necessary environment variables in `lego-acme-secret-env.txt`.
     Mine looks like this:
 
         GANDI_API_KEY=xxx
 
-    Then, deploy the stack:
+ -  Ensure the compose file contains correct values
+
+     -  Ensure the `DOCKER_HOST_DOCKER_GID` variable matches the GID for the `docker` user on your docker host.
+     -  Ensure the paths to the HTTPS certificates are correct
+        (they're based on the domain name you give to Let's Encrypt)
+     -  Provide the correct variables to `inflatable-wharf` for your environment
+
+ -  Deploy the jenkins.compose.yml file in this directory
 
         docker stack deploy --compose-file jenkins.compose.yml  jenkins
 
