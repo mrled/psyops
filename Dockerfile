@@ -1,6 +1,11 @@
 FROM alpine:3.6
 LABEL maintainer "me@micahrl.com"
 
+#### Development notes
+#
+# 1.    Multi-line RUN statements *cannot* have blank lines in them, but *can* have empty comments
+
+
 ARG username=psyops
 ARG homedir=/home/$username
 
@@ -46,7 +51,7 @@ ENV PSYOPS_TIMEZONE="US/Central"
 
 # Pre-copy root OS configuration phase
 RUN true \
-
+    #
     && apk update && apk add \
         bash bash-doc \
         ca-certificates ca-certificates-doc \
@@ -73,15 +78,15 @@ RUN true \
         shadow shadow-doc \
         sudo sudo-doc \
         tzdata tzdata-doc \
-
+    #
     && update-ca-certificates --fresh \
-
+    #
     && python3 -m ensurepip && python3 -m pip install --upgrade pip && python3 -m pip install \
         awscli \
         gandi.cli \
-
+    #
     && install -d -o root -g root -m 755 /usr/local/bin \
-
+    #
     && true
 
 ARG psysetup=/setup
@@ -147,20 +152,20 @@ RUN true \
 
 RUN true \
     # Final steps
-
+    #
     # Running makewhatis should happen after all root installation commands / only right before running as my user
     && makewhatis \
-
+    #
     # Allow my user to set /etc/localtime
     && addgroup -S "timekeeper" \
     && chgrp timekeeper /etc/localtime \
     && chmod 0664 /etc/localtime \
-
+    #
     # Configure my user
     && addgroup -S "$username" \
     && adduser -S -G "$username" -s /bin/bash "$username" \
     && usermod --append --groups timekeeper "$username" \
-
+    #
     && true
 
 # Passwordless sudo. DEVELOPMENT ONLY PLEASE.
@@ -212,7 +217,6 @@ RUN true \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \
     && ln -sf "$PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
-
     && true
 
 CMD /bin/bash -i
