@@ -159,7 +159,7 @@ RUN true \
     # Configure my user
     && addgroup -S "$username" \
     && adduser -S -G "$username" -s /bin/bash "$username" \
-    && usermod -g timekeeper "$username" \
+    && usermod --append --groups timekeeper "$username" \
 
     && true
 
