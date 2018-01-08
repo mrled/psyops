@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""PSYOPS Docker wrapper to make life a bit easier"""
+
 import argparse
 import configparser
 import logging
@@ -15,36 +17,32 @@ if sys.version_info < MIN_PYTHON:
     sys.exit(1)
 
 
-scriptpath = os.path.realpath(__file__)
-scriptdir = os.path.dirname(scriptpath)
-
-
-def getlogger():
-    log = logging.getLogger('wrapdocker')
-    log.setLevel(logging.WARNING)
-    conhandler = logging.StreamHandler()
-    conhandler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
-    log.addHandler(conhandler)
-    return log
-
-
-log = getlogger()
+SCRIPTPATH = os.path.realpath(__file__)
+SCRIPTDIR = os.path.dirname(SCRIPTPATH)
+logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
 def resolvepath(path):
+    """Resolve a path"""
     return os.path.realpath(os.path.normpath(os.path.expanduser(path)))
 
 
-def debugexchandler(type, value, tb):
+def debugexchandler(exc_type, exc_value, exc_traceback):
+    """Debug Exception Handler
+
+    If sys.excepthook is set to this function, automatically enter the debugger when encountering
+    an uncaught exception
+    """
     if hasattr(sys, 'ps1') or not sys.stderr.isatty():
         # we are in interactive mode or we don't have a tty-like
         # device, so we call the default hook
-        sys.__excepthook__(type, value, tb)
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
     else:
-        import traceback, pdb  # noqa
+        import pdb
+        import traceback
         # we are NOT in interactive mode, print the exception...
-        traceback.print_exception(type, value, tb)
-        print
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
+        print()
         # ...then start the debugger in post-mortem mode.
         pdb.pm()
 
@@ -54,6 +52,7 @@ def dockerrun(
         runargs=None, containerargs=None, psyopsvolperms="rw",
         # Note: default tmpfs options are read only and noexec
         tmpfsopts="exec,mode=1777", hostname="PSYOPS"):
+    """Run the Docker container"""
 
     # On Windows, we need to set the MSYS_NO_PATHCONV flag to 1, or else volume
     # mounting fails with weird errors
@@ -67,7 +66,7 @@ def dockerrun(
         '--rm',
         '--interactive',
         '--tty',
-        '--volume', f'{scriptdir}:{psyopsvol}:{psyopsvolperms}',
+        '--volume', f'{SCRIPTDIR}:{psyopsvol}:{psyopsvolperms}',
         '--tmpfs', f'{tmpfsmount}:{tmpfsopts}',
         '--hostname', hostname]
     if runargs:
@@ -75,16 +74,17 @@ def dockerrun(
     runcli += [f'{imagename}:{imagetag}']
     if containerargs:
         runcli += containerargs.split(" ")
-    log.info(f"Running an image with: {' '.join(runcli)}")
+    logger.info(f"Running an image with: {' '.join(runcli)}")
     subprocess.check_call(runcli, env=env)
 
 
 def dockerbuild(imagename, imagetag, buildargs=None):
+    """Build the Docker container"""
     buildcli = [
-        'docker', 'build', scriptdir, '--tag', f'{imagename}:{imagetag}']
+        'docker', 'build', SCRIPTDIR, '--tag', f'{imagename}:{imagetag}']
     if buildargs:
         buildcli += buildargs.split(" ")
-    log.info(f"Building an image with:\n{buildcli}")
+    logger.info(f"Building an image with:\n{buildcli}")
     subprocess.check_call(buildcli)
 
 
@@ -108,24 +108,28 @@ def netvoltest(ifname="vEthernet (DockerNAT)", throw=False):
     """Test whether the Docker interface's network connection profile is set to private"""
     if sys.platform != "win32":
         return True
-    pscmd = f'Get-NetConnectionProfile -interfacealias "{ifname}" | Select-Object -ExpandProperty NetworkCategory'
+    pscmd = (
+        f'Get-NetConnectionProfile -interfacealias "{ifname}"'
+        '| Select-Object -ExpandProperty NetworkCategory')
     output = subprocess.check_output(
         ['powershell.exe', '-NoProfile', '-Command', pscmd]).decode().strip()
-    log.info(
+    logger.info(
         f"Network category for the network attached to {ifname} is {output}")
     if output == "Private":
         return True
     else:
-        msg = " ".join([
-            f"Network category for the network attached to {ifname} must be set to Private, but it is instead set to {output}.",
-            f"Run '{scriptpath} util --netvolfix' to fix this."])
-        log.error(msg)
+        msg = (
+            f"Network category for the network attached to {ifname} must be set to Private, "
+            f"but it is instead set to {output}. "
+            f"Run '{SCRIPTPATH} util --netvolfix' to fix this.")
+        logger.error(msg)
         if throw:
             raise Exception(msg)
         return False
 
 
 class GitRepoMetadata():
+    """Metadata of a checked-out Git repository"""
 
     _submodules = None
 
@@ -175,13 +179,13 @@ class GitRepoMetadata():
                         .git/modules/<module path> for submodules
         """
 
-        log.info(f"Fixing CRLF for module at {self.checkoutdir}")
+        logger.info(f"Fixing CRLF for module at {self.checkoutdir}")
 
         status = subprocess.check_output(
             ['git', 'status'], cwd=self.checkoutdir)
         if 'nothing to commit, working tree clean' not in str(status):
             msg = f"Uncommitted changes in {self.checkoutdir}"
-            log.warning(msg)
+            logger.warning(msg)
             raise Exception(msg)
 
         # First, change the setting
@@ -216,7 +220,7 @@ class GitRepoMetadata():
         missing = []
         for submodule in self.submodules:
             if not os.path.exists(os.path.join(submodule.checkoutdir, '.git')):
-                log.warn(
+                logger.warning(
                     f"Submodule at {submodule.checkoutdir} not checked out")
                 missing += [submodule.checkoutdir]
         if missing and throw:
@@ -225,7 +229,9 @@ class GitRepoMetadata():
         return missing == []
 
 
-def main(*args, **kwargs):
+def main(*args, **kwargs):  # pylint: disable=W0613
+    """PSYOPS Docker wrapper main program execution"""
+
     description = textwrap.dedent("""
         Wrap Docker for PSYOPS
 
@@ -264,7 +270,9 @@ def main(*args, **kwargs):
         help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.")
     dockeropts.add_argument(
         "--sudo", action="store_true",
-        help="Pass the enablesudo=1 arg during build, and use the tag 'sudo' rather than the default when building or running. (Overrides any other tag set.)")
+        help=(
+            "Pass the enablesudo=1 arg during build, and use the tag 'sudo' rather than the "
+            "default when building or running. (Overrides any other tag set.)"))
 
     dockerbuildopts = argparse.ArgumentParser(add_help=False)
     dockerbuildopts.add_argument(
@@ -297,7 +305,9 @@ def main(*args, **kwargs):
     utilopts.add_argument(
         '--netvolfix', const='netvolfix',
         action='append_const', dest='utilaction',
-        help="Set the network connection profile for the 'vEthernet (DockerNAT)' network to private, which is required for volumes to be mounted in containers.")
+        help=(
+            "Set the network connection profile for the 'vEthernet (DockerNAT)' network to "
+            "private, which is required for volumes to be mounted in containers."))
 
     subparsers = parser.add_subparsers(dest="action")
     subparsers.add_parser(
@@ -312,13 +322,13 @@ def main(*args, **kwargs):
     parsed = parser.parse_args()
 
     if parsed.verbose or parsed.debug:
-        log.setLevel(logging.DEBUG)
+        logger.setLevel(logging.DEBUG)
     if parsed.debug:
         sys.excepthook = debugexchandler
 
-    log.info(parsed)
+    logger.info(parsed)
 
-    parentrepo = GitRepoMetadata(scriptdir)
+    parentrepo = GitRepoMetadata(SCRIPTDIR)
 
     if 'sudo' in parsed and parsed.sudo:
         parsed.buildargs += "--build-arg enablesudo=1"
