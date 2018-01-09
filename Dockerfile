@@ -151,6 +151,15 @@ RUN true \
     && true
 
 RUN true \
+    # Install git-secret
+    && cd "$psysetup/git-secret" \
+    && apk add --virtual=BUILDGITSECRET make \
+    && make build \
+    && PREFIX="/usr/local" make install \
+    && apk del --purge BUILDGITSECRET \
+    && true
+
+RUN true \
     # Final steps
     #
     # Running makewhatis should happen after all root installation commands / only right before running as my user
