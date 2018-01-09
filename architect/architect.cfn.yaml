@@ -34,6 +34,18 @@ Parameters:
     Default: 10.0.0.0/16
   VpcSubnetBlock:
     Default: 10.0.0.0/24
+  VpnIpsecUserConf:
+    Description: An ipsec.conf file
+    Type: String
+  VpnIpsecUserSecrets:
+    Description: An ipsec.secrets file
+    Type: String
+  VpnUserCert:
+    Description: A public certificate used to connect to the VPN
+    Type: String
+  VpnUserKey:
+    Description: The private key corresponding to VpnUserCert
+    Type: String
 
 Resources:
   VPC:
@@ -122,73 +134,27 @@ Resources:
     Type: 'AWS::EC2::Instance'
     DependsOn: AttachGateway
     Metadata:
-      Comment: Install a simple application
+      Comment: Set up StrongSwan to connect to VPN
       'AWS::CloudFormation::Init':
         config:
           packages:
-            yum:
-              httpd: []
+            apt:
+              strongswan: []
+              apt-transport-https: []
+              ca-certificates: []
+              curl: []
+              gnupg2: []
+              software-propeties-common: []
           files:
-            /var/www/html/index.html:
-              content: !Join 
-                - |+
+            /etc/strongswan/ipsec.conf:
+              content: VpnIpsecUserConf
+            /etc/strongswan/ipsec.secrets:
+              content: VpnIpsecUserSecrets
+            /etc/strongswan/user.cert:
+              content: VpnUserCert
+            /etc/strongswan/user.key:
+              content: VpnUserkey
 
-                -
-                  - >-
-                    <h1>Congratulations, you have successfully launched the AWS
-                    CloudFormation sample.</h1>
-              mode: '000644'
-              owner: root
-              group: root
-            /etc/cfn/cfn-hup.conf:
-              content: !Join 
-                - ''
-                - - |
-                    [main]
-                  - stack=
-                  - !Ref 'AWS::StackId'
-                  - |+
-
-                  - region=
-                  - !Ref 'AWS::Region'
-                  - |+
-
-              mode: '000400'
-              owner: root
-              group: root
-            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
-              content: !Join 
-                - ''
-                - - |
-                    [cfn-auto-reloader-hook]
-                  - |
-                    triggers=post.update
-                  - >
-                    path=Resources.WebServerInstance.Metadata.AWS::CloudFormation::Init
-                  - 'action=/opt/aws/bin/cfn-init -v '
-                  - '         --stack '
-                  - !Ref 'AWS::StackName'
-                  - '         --resource WebServerInstance '
-                  - '         --region '
-                  - !Ref 'AWS::Region'
-                  - |+
-
-                  - |
-                    runas=root
-              mode: '000400'
-              owner: root
-              group: root
-          services:
-            sysvinit:
-              httpd:
-                enabled: 'true'
-                ensureRunning: 'true'
-              cfn-hup:
-                enabled: 'true'
-                ensureRunning: 'true'
-                files:
-                  - /etc/cfn/cfn-hup.conf
-                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
     Properties:
       ImageId: !Ref Ec2InstanceAmi
       InstanceType: !Ref InstanceType
@@ -203,28 +169,15 @@ Resources:
           DeviceIndex: '0'
           DeleteOnTermination: 'true'
           SubnetId: !Ref Subnet
-      UserData: !Base64 
-        'Fn::Join':
-          - ''
-          - - |
-              #!/bin/bash -xe
-            - |
-              yum update -y aws-cfn-bootstrap
-            - '/opt/aws/bin/cfn-init -v '
-            - '         --stack '
-            - !Ref 'AWS::StackName'
-            - '         --resource WebServerInstance '
-            - '         --region '
-            - !Ref 'AWS::Region'
-            - |+
-
-            - '/opt/aws/bin/cfn-signal -e $? '
-            - '         --stack '
-            - !Ref 'AWS::StackName'
-            - '         --resource WebServerInstance '
-            - '         --region '
-            - !Ref 'AWS::Region'
-            - |+
+      UserData: {"Fn::Base64": {"Fn::Join": ["\n", [
+        "#!/bin/sh"
+        "set -eu"
+        "baseurl=https://download.docker.com/linux/$(. /etc/os-release; echo \"$ID\")"
+        "curl -fsSL $baseurl/gpg | sudo apt-key add -"
+        "sudo add-apt-repository \"deb [arch=amd64] $baseurl $(lsb_release -cs) stable\""
+        "apt-get update"
+        "apt-get install docker-ce"
+      ]]}}
 
     CreationPolicy:
       ResourceSignal:
@@ -232,10 +185,7 @@ Resources:
 
 Outputs:
   URL:
-    Value: !Join 
-      - ''
-      - - 'http://'
-        - !GetAtt 
-          - WebServerInstance
-          - PublicIp
+    Value: !GetAtt
+      - WebServerInstance
+      - PublicIp
     Description: Newly created application URL
