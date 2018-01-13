@@ -2,19 +2,97 @@
 
 Personal CI server
 
-## Setup
+## Deploying
 
-I wanted to automated this with CloudFormation and Ansible but I got tired of bullshit, so it's half manual. Ugh.
+### Initial deployment
 
- -  Create new VM on Linode. (Linode is cheaper than either EC2 or Digital Ocean for 1GB of RAM.)
+To do the initial AWS deployment,
+you'll need to pass parameters specifying secrets,
+such as the ipsec configuration for connecting to the VPN.
 
- -  Docker can have [problems](https://forum.linode.com/viewtopic.php?t=13995&sid=223987b585a4ce92f5186485a2be2990) with the Linode kernels. [Switch to the distro default kernel](https://linode.com/docs/tools-reference/custom-kernels-distros/run-a-distribution-supplied-kernel-with-kvm).
+#### Prerequisites
 
- -  Configure root passwords and SSH keys etc
+Configure these items ahead of time.
 
- -  Install Docker via their official repo
+Our backend network for communicating with this server is based on an Algo VPN.
 
- -  Install ZeroTier and connect to my network
+1. Create a user in your Algo VPN for the Architect server (we will use the token `$user` to refer to the name of this user)
+
+2. Find the `ipsec_$user.conf` file
+
+3. Find the `ipsec_$user.secrets` file
+
+4. Convert the `$user.p12` file from PKCS12 to PEM format with OpenSSL:
+
+        openssl pkcs12 -in $user.p12 -nocerts -out $user.key
+        openssl pkcs12 -in $user.p12 -clcerts -nokeys -out $user.cert
+
+#### Deloying
+
+    # Configure these things ahead of time
+    configpath="/path/to/algo/vpn/files"
+    vpn_pkcs12_passphrase="passphrase for the algo VPN PKCS12 certificate"
+
+    # Once that configuration is done, this can be copied and pasted
+    aws cloudformation deploy \
+        --template-file ./architect.cfn.yaml \
+        --stack-name architect \
+        --parameter-overrides \
+            VpnIpsecUserConf="$(cat $configpath/ipsec_architect.conf)" \
+            VpnIpsecUserSecrets="$(cat $configpath/ipsec_architect.secrets)" \
+            VpnUserCert="$(cat $configpath/architect.p12 | base64)" \
+            VpnUserKey=XXX
+
+#### Troubleshooting
+
+The stack output contains the IP address,
+and you can retrieve it with the command:
+
+    aws cloudformation describe-stacks --stack-name <STACK NAME>
+
+After the very first boot,
+you can obtain the host key like this:
+
+    aws ec2 get-console-output --output text --instance-id <INSTANCE ID>
+
+**Note that this only works after the very first boot.**
+Subsequent boots will not display the host key.
+I hope you got it after the first one!
+
+(In practice,
+this isn't too bad,
+because the Cloud Formation template automatically connects the system to our VPN,
+and MITM attacks are not a problem if we can trust the VPN;
+this is only really useful when trying to modify,
+and debug problems with,
+an initial deployment.)
+
+You also must obtain the IP address of the EC2 instance,
+which you can obtain from the AWS console or the template's `ArchitectIpAddress` output.
+
+Once the host key is verified,
+simply use whatever SSH key pair is associated with the instance -
+that is,
+whatever key pair was specified by the `KeyName` parameter to the CFN template.
+In the example below,
+I also supply `-o UserKnownHostsFile=/dev/null` on the command line,
+which prevents ssh from saving the host key to `~/.ssh/known_hosts`
+on the SSH client machine.
+
+    ssh -o UserKnownHostsFile=/dev/null admin@<IP ADDRESS> -i /path/to/keypair.pem
+
+### Subsequent deployments
+
+To redeploy later,
+it is enough to just specify the template file and stack name arguments;
+unless the template parameters have changed,
+there is no need to supply parameter overrides during a redeployment.
+
+## Remaining tasks
+
+This is stuff from the previous incarnation (more manual, and deployed to Linode). I need to assimilate these into the latest incarnation (more automatic, and deployed to AWS).
+
+ -  Configuring StrongSwan VPN
 
  -  Apply firewall
 
@@ -37,11 +115,7 @@ I wanted to automated this with CloudFormation and Ansible but I got tired of bu
 
  -  I'm using public DNS for backend infrastructure, so I have `*.infra.micahrl.com` hosts that resolve to private ZeroTier IPv6 addresses
 
- -  Install Docker:
-
-     -  Follow [install instructions](https://docs.docker.com/engine/installation/linux/docker-ce/debian/#install-using-the-repository)
-
-     -  Create the Swarm. (Replace `1.2.3.4` with the address on the ZeroTier interface.)
+ -  Create the Docker Swarm. (Replace `1.2.3.4` with the address on the VPN interface.)
 
             docker swarm init --advertise-addr 1.2.3.4
 

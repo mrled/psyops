@@ -1,10 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: >-
-  AWS CloudFormation Sample Template VPC_Single_Instance_In_Subnet: Sample
-  template showing how to create a VPC and add an EC2 instance with an Elastic
-  IP address and a security group. **WARNING** This template creates an Amazon
-  EC2 instance. You will be billed for the AWS resources used if you create a
-  stack from this template.
+Description: Architect CI stack
 
 Parameters:
   InstanceType:
@@ -14,38 +9,46 @@ Parameters:
     ConstraintDescription: must be a valid EC2 instance type.
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Default: ArchitectKeyPair
     Type: 'AWS::EC2::KeyPair::KeyName'
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
   SSHLocation:
     Description: The IP address range that can be used to SSH to the EC2 instances
     Type: String
-    MinLength: '9'
-    MaxLength: '18'
     Default: 0.0.0.0/0
     AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
   Ec2InstanceArch:
     Default: HVM64
+    Type: String
   Ec2InstanceNatArch:
     Default: NATHVM64
-  Ec2InstanceAmi:
+    Type: String
+  Ec2DebianStretchAmi:
     Default: ami-4d183328  # Debian Stretch in us-east-2
+    Type: String
   VpcCidrBlock:
     Default: 10.0.0.0/16
+    Type: String
   VpcSubnetBlock:
     Default: 10.0.0.0/24
+    Type: String
   VpnIpsecUserConf:
     Description: An ipsec.conf file
     Type: String
+    Default: TEST
   VpnIpsecUserSecrets:
     Description: An ipsec.secrets file
     Type: String
+    Default: TEST
   VpnUserCert:
-    Description: A public certificate used to connect to the VPN
+    Description: The public certificate used to connect to the IPSEC VPN
     Type: String
+    Default: TEST
   VpnUserKey:
-    Description: The private key corresponding to VpnUserCert
+    Description: The private key used to connect to the IPSEC VPN
     Type: String
+    Default: TEST
 
 Resources:
   VPC:
@@ -112,6 +115,19 @@ Resources:
       PortRange:
         From: '0'
         To: '65535'
+  InboundNetworkAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      RuleNumber: '102'
+      Protocol: '6'
+      RuleAction: allow
+      Egress: 'false'
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: '0'
+        To: '65535'
+
   SubnetNetworkAclAssociation:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
     Properties:
@@ -122,13 +138,27 @@ Resources:
     DependsOn: AttachGateway
     Properties:
       Domain: vpc
-      InstanceId: !Ref WebServerInstance
+      InstanceId: !Ref ArchitectInstance
 
   ArchitectInstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref VPC
       GroupDescription: Architect instance security group
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHLocation
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: !Ref SSHLocation
+        - IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: !Ref SSHLocation
 
   ArchitectInstance:
     Type: 'AWS::EC2::Instance'
@@ -144,24 +174,57 @@ Resources:
               ca-certificates: []
               curl: []
               gnupg2: []
-              software-propeties-common: []
+              software-properties-common: []
           files:
             /etc/strongswan/ipsec.conf:
-              content: VpnIpsecUserConf
+              content: !Ref VpnIpsecUserConf
+              mode: '000400'
+              owner: root
+              group: root
             /etc/strongswan/ipsec.secrets:
-              content: VpnIpsecUserSecrets
-            /etc/strongswan/user.cert:
-              content: VpnUserCert
+              content: !Ref VpnIpsecUserSecrets
+              mode: '000400'
+              owner: root
+              group: root
             /etc/strongswan/user.key:
-              content: VpnUserkey
+              content: !Ref VpnUserKey
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/strongswan/user.cert:
+              content: !Ref VpnUserCert
+              mode: '000400'
+              owner: root
+              group: root
+            /usr/local/bin/setup-docker.sh:
+              content: !Join
+                - "\n"
+                - - |
+                    #!/bin/sh
+                    set -eu
+                    distroid=$(. /etc/os-release; echo "$ID")
+                    curl -fsSL https://download.docker.com/linux/$distroid/gpg | sudo apt-key add -
+                    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/$distroid $(lsb_release -cs) stable"
+                    apt-get update
+                    apt-get install -y docker-ce
+              mode: '000755'
+              owner: root
+              group: root
+
+          commands:
+            setup-docker:
+              command: "/usr/local/bin/setup-docker.sh"
+              ignoreErrors: false
 
     Properties:
-      ImageId: !Ref Ec2InstanceAmi
+      ImageId: !Ref Ec2DebianStretchAmi
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       Tags:
         - Key: Application
           Value: !Ref 'AWS::StackId'
+        - Key: Name
+          Value: Architect
       NetworkInterfaces:
         - GroupSet:
             - !Ref ArchitectInstanceSecurityGroup
@@ -169,23 +232,56 @@ Resources:
           DeviceIndex: '0'
           DeleteOnTermination: 'true'
           SubnetId: !Ref Subnet
-      UserData: {"Fn::Base64": {"Fn::Join": ["\n", [
-        "#!/bin/sh"
-        "set -eu"
-        "baseurl=https://download.docker.com/linux/$(. /etc/os-release; echo \"$ID\")"
-        "curl -fsSL $baseurl/gpg | sudo apt-key add -"
-        "sudo add-apt-repository \"deb [arch=amd64] $baseurl $(lsb_release -cs) stable\""
-        "apt-get update"
-        "apt-get install docker-ce"
-      ]]}}
+
+      UserData:
+        "Fn::Base64":
+          !Sub |
+            #!/bin/bash -xe
+            apt-get update
+            apt-get -uy install python-setuptools software-properties-common
+            mkdir -p /usr/local/src/aws-cfn-bootstrap-latest
+            curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C /usr/local/src/aws-cfn-bootstrap-latest --strip-components 1
+            easy_install /usr/local/src/aws-cfn-bootstrap-latest
+
+            cfn-init -v --stack ${AWS::StackName} --resource ArchitectInstance --region ${AWS::Region}
+            cfn-signal -e $? --stack ${AWS::StackName} --resource ArchitectInstance --region ${AWS::Region}
+
+
+      # UserData: !Base64 
+      #   'Fn::Join':
+      #     - ''
+      #     - - |
+      #         #!/bin/bash -xe
+      #         apt-get update
+      #         apt-get -uy install python-setuptools software-properties-common
+      #         mkdir -p /usr/local/src/aws-cfn-bootstrap-latest
+      #         curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C /usr/local/src/aws-cfn-bootstrap-latest --strip-components 1
+      #         easy_install /usr/local/src/aws-cfn-bootstrap-latest
+      #       - |+
+
+      #       # - 'cfn-init -v '
+      #       # - '         --stack '
+      #       # - !Ref 'AWS::StackName'
+      #       # - '         --resource ArchitectInstance '
+      #       # - '         --region '
+      #       # - !Ref 'AWS::Region'
+      #       # - |+
+
+      #       - 'cfn-signal -e $? '
+      #       - '         --stack '
+      #       - !Ref 'AWS::StackName'
+      #       - '         --resource ArchitectInstance '
+      #       - '         --region '
+      #       - !Ref 'AWS::Region'
+      #       - |+
 
     CreationPolicy:
       ResourceSignal:
         Timeout: PT15M
 
 Outputs:
-  URL:
+  ArchitectIpAddress:
     Value: !GetAtt
-      - WebServerInstance
+      - ArchitectInstance
       - PublicIp
-    Description: Newly created application URL
+    Description: Architect IP address
