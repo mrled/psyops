@@ -14,46 +14,112 @@ such as the ipsec configuration for connecting to the VPN.
 
 Configure these items ahead of time.
 
-Our backend network for communicating with this server is based on an Algo VPN.
+1.  Install the AWS command line. This is already present in PSYOPS.
 
-1. Create a user in your Algo VPN for the Architect server (we will use the token `$user` to refer to the name of this user)
+2.  Configure the AWS command line with `~/.aws/credentials` and `~/.aws/config`
 
-2. Find the `ipsec_$user.conf` file
+    NOTE that the rest of this document,
+    as well as the configuration in the CloudFormation templates,
+    assume that you are using the AWS key and secret for the _root user of the account_.
+    If you are instead using an IAM user that does not have root access,
+    you should carefully double-check CMK permissions in the `architect.kms.cfn.yaml` template
+    to ensure that your IAM user will not be locked out from administering the CMK.
 
-3. Find the `ipsec_$user.secrets` file
+3.  Collect information about our backend infrastructure VPN
 
-4. Convert the `$user.p12` file from PKCS12 to PEM format with OpenSSL:
+    Our backend network for communicating with this server is based on an Algo VPN.
+    First we must create a user in your Algo VPN for the Architect server.
 
-        openssl pkcs12 -in $user.p12 -nocerts -out $user.key
-        openssl pkcs12 -in $user.p12 -clcerts -nokeys -out $user.cert
+    NOTE: we used the name `architect` for our VPN user,
+    as configured in Algo's `config.cfg` file.
+    If you used a different name,
+    substitute it for `architect` below.
+    Also note that the `AWS::CloudFormation::Init` section in `architect.cfn.yaml` assumes the user is named `architect`,
+    and as such expects `architect.key` and `architect.crt` to be the correct values;
+    if a different username was provided, note that the `ipsec_$user.conf` and `ipsec_$user.secrets`
+    will expect `.key` and `.crt` files to be named after `$user`.
+
+    Locate the directory that contains the following files:
+
+    - `ipsec_architect.conf`
+    - `ipsec_architect.secrets`
+    - `architect.p12`
+
 
 #### Deloying
 
-    # Configure these things ahead of time
-    configpath="/path/to/algo/vpn/files"
-    vpn_pkcs12_passphrase="passphrase for the algo VPN PKCS12 certificate"
+First, configuration that is dependent on your environment:
 
-    # Once that configuration is done, this can be copied and pasted
-    aws cloudformation deploy \
-        --template-file ./architect.cfn.yaml \
-        --stack-name architect \
-        --parameter-overrides \
-            VpnIpsecUserConf="$(cat $configpath/ipsec_architect.conf)" \
-            VpnIpsecUserSecrets="$(cat $configpath/ipsec_architect.secrets)" \
-            VpnUserCert="$(cat $configpath/architect.p12 | base64)" \
-            VpnUserKey=XXX
+```sh
+# Set stack names so we can refer to them later
+# These defaults work fine, but feel free to change them if you like
+architect_ci_stack="ArchitectCi"
+architect_kms_stack="ArchitectKms"
+
+# The path to the algo repository's config/ subdir
+configpath="/path/to/algo/config"
+
+# The p12 password, from Algo's output after deployment
+# (This example value must be changed for your environment)
+pkcs12pass="ohd6uoP5"
+```
+
+Now, use that configuration to deploy:    
+
+```sh
+# Deploy the KMS and an IAM role that can use the KMS
+# We have to supply the --capabilities flag
+# because modifying IAM roles can affect the entire AWS account
+# and Amazon restricts this unless you explicitly allow it
+aws cloudformation deploy \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --template-file ./architect.kms.cfn.yaml \
+    --stack-name "$architect_kms_stack"
+
+# Get the ID of the KMS that we are using
+kmsquery='Stacks[0].Outputs[?OutputKey==`ArchitectKmsId`].OutputValue'
+kmsid=$(aws cloudformation describe-stacks --stack-name "$architect_kms_stack" --query "$kmsquery" --output text)
+
+# Convert the PKCS12, which contains both private key + public cert, into separate key/cert values
+vpnkey=$(openssl pkcs12 -in "$configpath/architect.p12" -nocerts -passin pass:$pkcs12pass -nodes)
+vpncrt=$(openssl pkcs12 -in "$configpath/architect.p12" -clcerts -nokeys -passin pass:$pkcs12pass)
+
+# Encrypt the now-passwordless PEM cert using your newly created AWS KMS
+vpnkey_encrypted=$(aws kms encrypt --key-id "$kmsid" --plaintext "$vpnkey" --query 'CiphertextBlob' --output text)
+# NOTE: the result of this command is binary data that has been base64 encoded
+# To decrypt it from the KMS, you must decode it from base64 first:
+#   vpnkey_encrypted_decoded=$(echo "$vpnkey_encrypted" | base64 -d)
+#   aws kms decrypt --ciphertext-blob "$vpnkey_encrypted_decoded"
+
+# Once that configuration is done, this can be copied and pasted
+aws cloudformation deploy \
+    --template-file ./architect.cfn.yaml \
+    --stack-name "$architect_ci_stack" \
+    --parameter-overrides \
+        VpnIpsecUserConf="$(cat "$configpath/ipsec_architect.conf")" \
+        VpnIpsecUserSecrets="$(cat "$configpath/ipsec_architect.secrets")" \
+        VpnKeyEncrypted="$vpnkey_encrypted" \
+        VpnCert="$vpncrt" \
+        KmsId="$kmsid"
+```
 
 #### Troubleshooting
 
 The stack output contains the IP address,
 and you can retrieve it with the command:
 
-    aws cloudformation describe-stacks --stack-name <STACK NAME>
+```sh
+aws cloudformation describe-stacks --stack-name "$architect_ci_stack"
+```
 
 After the very first boot,
 you can obtain the host key like this:
 
-    aws ec2 get-console-output --output text --instance-id <INSTANCE ID>
+```sh
+iidquery='Stacks[0].Outputs[?OutputKey=`ArchitectInstanceId`].OutputValue'
+iid=$(aws cloudformation describe-stacks --stack-name "$architect_ci_stack" --query "$iidquery")
+aws ec2 get-console-output --output text --instance-id "$iid"
+```
 
 **Note that this only works after the very first boot.**
 Subsequent boots will not display the host key.

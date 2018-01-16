@@ -1,0 +1,130 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Architect KMS stack
+
+Resources:
+
+  ArchitectInstanceIamRole: 
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: 2012-10-17
+        Statement: 
+          - 
+            Effect: Allow
+            Principal: 
+              Service: 
+                - ec2.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Path: /
+      # Policies: 
+      #   - 
+      #     PolicyName: root
+      #     PolicyDocument: 
+      #       Version: 2012-10-17
+      #       Statement: 
+      #         - 
+      #           Effect: Allow
+      #           Action: "*"
+      #           Resource: "*"
+
+  ArchitectInstanceIamProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Path: /
+      Roles:
+        - !Ref ArchitectInstanceIamRole
+      InstanceProfileName: ArchitectInstanceIamProfile
+
+  # The architect CMK, aka Customer Managed Key
+  ArchitectKey:
+    Type: "AWS::KMS::Key"
+    Properties: 
+      Description: Architect CMK
+      KeyPolicy: 
+        Version: 2012-10-17
+        Id: key-architect
+        Statement:
+          -
+            Sid: Grant the account root full access to the CMK
+            Effect: Allow
+            Principal:
+              AWS: {"Fn::Join": ['', ["arn:aws:iam::", {"Ref": "AWS::AccountId"}, ":root"]]}
+            Action: 'kms:*'
+            Resource: '*'
+
+          -
+            Sid: Grant the Architect Instance IAM role access to use the CMK
+            Effect: Allow
+            # Principal: {"AWS": [{"Ref": "ArchitectInstanceIamRole"}]}
+            Principal:
+              AWS: !GetAtt ArchitectInstanceIamRole.Arn
+                # - !Ref ArchitectInstanceIamRole
+                # - {"Fn::GetAtt": ["ArchitectInstanceIamRole", "Arn"] }
+                # - !GetAtt ArchitectInstanceIamRole.Arn
+            Action: 
+              - kms:Decrypt
+              - kms:DescribeKey
+            Resource: "*"
+
+          # This policy would enable user/SOMEADMIN on the current AWS account to administer the CMK
+          # "Administer" here means create/delete/etc, but not encrypt or decrypt data
+          # - 
+          #   Sid: Allow administration of the key
+          #   Effect: Allow
+          #   Principal: 
+          #     AWS: !Sub |
+          #       arn:aws:iam::{AWS::AcountId}:user/SOMEADMIN
+          #   Action: 
+          #     - kms:Create*
+          #     - kms:Describe*
+          #     - kms:Enable*
+          #     - kms:List*
+          #     - kms:Put*
+          #     - kms:Update*
+          #     - kms:Revoke*
+          #     - kms:Disable*
+          #     - kms:Get*
+          #     - kms:Delete*
+          #     - kms:ScheduleKeyDeletion
+          #     - kms:CancelKeyDeletion
+          #   Resource: "*"
+
+          # This policy would enable user/SOMUSER on the current AWS account to use the CMK
+          # for encryption and decryption but it does not permit administrative functions
+          # - 
+          #   Sid: Allow use of the key
+          #   Effect: Allow
+          #   Principal: 
+          #     AWS: !Sub |
+          #       arn:aws:iam::{AWS::AcountId}:user/SOMEUSER
+          #   Action: 
+          #     - kms:Encrypt
+          #     - kms:Decrypt
+          #     - kms:ReEncrypt*
+          #     - kms:GenerateDataKey*
+          #     - kms:DescribeKey
+          #   Resource: "*"
+          
+  # Aliases are especially useful for key rotation...
+  # if all consumers of the key reference the alias,
+  # you can just rotate the key and update the alias
+  # without having to track down every use
+  ArchitectKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/CurrentArchitectKey
+      TargetKeyId:
+        Ref: ArchitectKey
+
+Outputs:
+  ArchitectInstanceIamProfileArn:
+    Value: {"Fn::GetAtt" : ["ArchitectInstanceIamProfile", "Arn"] }
+    Description: Architect Instance IAM Profile ARN
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", ArchitectInstanceIamProfileArn ] ]
+  ArchitectKmsId:
+    Value: !Ref ArchitectKey
+    Description: Architect KMS ID
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", ArchitectKmsId ] ]

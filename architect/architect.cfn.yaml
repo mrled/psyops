@@ -41,12 +41,16 @@ Parameters:
     Description: An ipsec.secrets file
     Type: String
     Default: TEST
-  VpnUserCert:
-    Description: The public certificate used to connect to the IPSEC VPN
+  VpnKeyEncrypted:
+    Description: A private key to connect to the IPSEC VPN, in PEM format, encrypted by the KMS
     Type: String
     Default: TEST
-  VpnUserKey:
-    Description: The private key used to connect to the IPSEC VPN
+  VpnCert:
+    Description: A certificate corresponding to VpnKeyEncrypted used to connect to the IPSEC VPN, in PEM format
+    Type: String
+    Default: TEST
+  KmsId:
+    Description: The ID of the KMS to use to descrypt the VPN PKCS12 key and certificate
     Type: String
     Default: TEST
 
@@ -174,6 +178,8 @@ Resources:
               ca-certificates: []
               curl: []
               gnupg2: []
+              openssl: []
+              python-pip: []
               software-properties-common: []
           files:
             /etc/strongswan/ipsec.conf:
@@ -186,13 +192,13 @@ Resources:
               mode: '000400'
               owner: root
               group: root
-            /etc/strongswan/user.key:
-              content: !Ref VpnUserKey
+            /etc/strongswan/architect.key.kmsencrypted.base64:
+              content: !Ref VpnKeyEncrypted
               mode: '000400'
               owner: root
               group: root
-            /etc/strongswan/user.cert:
-              content: !Ref VpnUserCert
+            /etc/strongswan/architect.cert:
+              content: !Ref VpnCert
               mode: '000400'
               owner: root
               group: root
@@ -210,10 +216,26 @@ Resources:
               mode: '000755'
               owner: root
               group: root
+            /usr/local/bin/decrypt-vpn-key.sh:
+              content: !Join
+                - "\n"
+                - - |
+                    #!/bin/sh
+                    set -eu
+                    base64 -d < /etc/strongswan/architect.key.kmsencrypted.base64 > /etc/strongswan/architect.key.kmsencrypted
+                    aws kms decrypt --ciphertext-blob fileb:///etc/strongswan/architect.key.kmsencrypted > /etc/strongswan/architect.key
+              mode: '000755'
+              owner: root
+              group: root
 
           commands:
+            install-aws-cli:
+              command: pip install awscli --upgrade --user
+              ignoreErrors: false
+            decrypt-vpn-private-key:
+              command: /usr/local/bin/decrypt-vpn-key.sh
             setup-docker:
-              command: "/usr/local/bin/setup-docker.sh"
+              command: /usr/local/bin/setup-docker.sh
               ignoreErrors: false
 
     Properties:
@@ -243,37 +265,8 @@ Resources:
             curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C /usr/local/src/aws-cfn-bootstrap-latest --strip-components 1
             easy_install /usr/local/src/aws-cfn-bootstrap-latest
 
-            cfn-init -v --stack ${AWS::StackName} --resource ArchitectInstance --region ${AWS::Region}
-            cfn-signal -e $? --stack ${AWS::StackName} --resource ArchitectInstance --region ${AWS::Region}
-
-
-      # UserData: !Base64 
-      #   'Fn::Join':
-      #     - ''
-      #     - - |
-      #         #!/bin/bash -xe
-      #         apt-get update
-      #         apt-get -uy install python-setuptools software-properties-common
-      #         mkdir -p /usr/local/src/aws-cfn-bootstrap-latest
-      #         curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C /usr/local/src/aws-cfn-bootstrap-latest --strip-components 1
-      #         easy_install /usr/local/src/aws-cfn-bootstrap-latest
-      #       - |+
-
-      #       # - 'cfn-init -v '
-      #       # - '         --stack '
-      #       # - !Ref 'AWS::StackName'
-      #       # - '         --resource ArchitectInstance '
-      #       # - '         --region '
-      #       # - !Ref 'AWS::Region'
-      #       # - |+
-
-      #       - 'cfn-signal -e $? '
-      #       - '         --stack '
-      #       - !Ref 'AWS::StackName'
-      #       - '         --resource ArchitectInstance '
-      #       - '         --region '
-      #       - !Ref 'AWS::Region'
-      #       - |+
+            # cfn-init -v --stack "${AWS::StackName}"" --resource ArchitectInstance --region ${AWS::Region}
+            cfn-signal -e $? --stack "${AWS::StackName}" --resource ArchitectInstance --region ${AWS::Region}
 
     CreationPolicy:
       ResourceSignal:
@@ -285,3 +278,5 @@ Outputs:
       - ArchitectInstance
       - PublicIp
     Description: Architect IP address
+  ArchitectInstanceId:
+    Value: !Ref ArchitectInstance
