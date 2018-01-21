@@ -279,10 +279,8 @@ Resources:
             region="${AWS::Region}"
             # Install AWS CFN Bootstrap scripts
             apt-get update
-            apt-get -uy install python-setuptools software-properties-common
-            mkdir -p /usr/local/src/aws-cfn-bootstrap-latest
-            curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C /usr/local/src/aws-cfn-bootstrap-latest --strip-components 1
-            easy_install /usr/local/src/aws-cfn-bootstrap-latest
+            apt-get -uy install python-setuptools
+            easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
             # Bootstrap CFN
             cfn-init --verbose --stack "$stackname" --resource ArchitectInstance --region "$region"
             cfn-signal --exit-code $? --stack "$stackname" --resource ArchitectInstance --region "$region"
