@@ -24,6 +24,9 @@ Parameters:
   Ec2InstanceNatArch:
     Default: NATHVM64
     Type: String
+  Ec2InstanceProfileName:
+    Description: Name of an instance profile to assign to the Architect EC2 instance. This profile should have permission to read from the KMS passed as KmsId.
+    Type: String
   Ec2DebianStretchAmi:
     Default: ami-4d183328  # Debian Stretch in us-east-2
     Type: String
@@ -209,21 +212,28 @@ Resources:
                     #!/bin/sh
                     set -eu
                     distroid=$(. /etc/os-release; echo "$ID")
+                    releasename=$(lsb_release -cs)
                     curl -fsSL https://download.docker.com/linux/$distroid/gpg | sudo apt-key add -
-                    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/$distroid $(lsb_release -cs) stable"
+                    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/$distroid $releasename stable"
                     apt-get update
                     apt-get install -y docker-ce
               mode: '000755'
               owner: root
               group: root
             /usr/local/bin/decrypt-vpn-key.sh:
+              # NOTE: use of the `aws` command requires that the EC2 instance have a profile with an IAM role
+              #       as well as the AWS_DEFAULT_REGION environment variable to be set
               content: !Join
                 - "\n"
                 - - |
                     #!/bin/sh
+                    if test -z "$AWS_DEFAULT_REGION"; then
+                        echo "ERROR - \$AWS_DEFAULT_REGION IS NOT SET"
+                        exit 1
+                    fi
                     set -eu
                     base64 -d < /etc/strongswan/architect.key.kmsencrypted.base64 > /etc/strongswan/architect.key.kmsencrypted
-                    aws kms decrypt --ciphertext-blob fileb:///etc/strongswan/architect.key.kmsencrypted > /etc/strongswan/architect.key
+                    aws kms decrypt --ciphertext-blob fileb:///etc/strongswan/architect.key.kmsencrypted --query "Plaintext" --output text > /etc/strongswan/architect.key
               mode: '000755'
               owner: root
               group: root
@@ -234,13 +244,17 @@ Resources:
               ignoreErrors: false
             decrypt-vpn-private-key:
               command: /usr/local/bin/decrypt-vpn-key.sh
-            setup-docker:
-              command: /usr/local/bin/setup-docker.sh
+              env:
+                AWS_DEFAULT_REGION: !Ref AWS::Region
               ignoreErrors: false
+            # setup-docker:
+            #   command: /usr/local/bin/setup-docker.sh
+            #   ignoreErrors: false
 
     Properties:
       ImageId: !Ref Ec2DebianStretchAmi
       InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref Ec2InstanceProfileName
       KeyName: !Ref KeyName
       Tags:
         - Key: Application
@@ -258,15 +272,20 @@ Resources:
       UserData:
         "Fn::Base64":
           !Sub |
-            #!/bin/bash -xe
+            #!/bin/sh
+            set -eu
+            # Set config values. These are replaced at deployment time by CloudFormation.
+            stackname="${AWS::StackName}"
+            region="${AWS::Region}"
+            # Install AWS CFN Bootstrap scripts
             apt-get update
             apt-get -uy install python-setuptools software-properties-common
             mkdir -p /usr/local/src/aws-cfn-bootstrap-latest
             curl https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C /usr/local/src/aws-cfn-bootstrap-latest --strip-components 1
             easy_install /usr/local/src/aws-cfn-bootstrap-latest
-
-            # cfn-init -v --stack "${AWS::StackName}"" --resource ArchitectInstance --region ${AWS::Region}
-            cfn-signal -e $? --stack "${AWS::StackName}" --resource ArchitectInstance --region ${AWS::Region}
+            # Bootstrap CFN
+            cfn-init --verbose --stack "$stackname" --resource ArchitectInstance --region "$region"
+            cfn-signal --exit-code $? --stack "$stackname" --resource ArchitectInstance --region "$region"
 
     CreationPolicy:
       ResourceSignal:

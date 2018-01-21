@@ -118,11 +118,11 @@ Resources:
         Ref: ArchitectKey
 
 Outputs:
-  ArchitectInstanceIamProfileArn:
-    Value: {"Fn::GetAtt" : ["ArchitectInstanceIamProfile", "Arn"] }
-    Description: Architect Instance IAM Profile ARN
+  ArchitectInstanceIamProfileName:
+    Value: !Ref ArchitectInstanceIamProfile
+    Description: Architect Instance IAM Profile name
     Export:
-      Name: !Join [ ":", [ !Ref "AWS::StackName", ArchitectInstanceIamProfileArn ] ]
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "ArchitectInstanceIamProfileName" ] ]
   ArchitectKmsId:
     Value: !Ref ArchitectKey
     Description: Architect KMS ID
