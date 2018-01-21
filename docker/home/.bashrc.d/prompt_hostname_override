@@ -1,0 +1,12 @@
+#!/bin/bash
+
+pho1="\[$(ansi mode=bold)\]"
+pho2="\[$(ansi fg=red)\]P"
+pho3="\[$(ansi fg=yellow)\]S"
+pho4="\[$(ansi fg=green)\]Y"
+pho5="\[$(ansi fg=cyan)\]O"
+pho6="\[$(ansi fg=blue)\]P"
+pho7="\[$(ansi fg=magenta)\]S"
+pho8="\[$(ansi mode=reset)\]"
+
+export PROMPT_HOSTNAME_OVERRIDE="${pho1}${pho2}${pho3}${pho4}${pho5}${pho6}${pho7}${pho8}"
