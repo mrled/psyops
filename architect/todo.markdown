@@ -1,9 +1,11 @@
 # Architect bugs and to do list
 
-## Configure and start StrongSwan
+## Fix cfn-init
 
-StrongSwan is getting installed, and config files from Algo are saved to disk, but StrongSwan isn't using those files by default.
-Figure out how to configure StrongSwan properly.
+`cfn-init` isn't working properly for some reason.
+If I comment out the line from userdata, I can SSH to the server after deployment and it works OK.
+But if I leave it uncommented in userdata, the machine never comes up.
+Obviously there are no logs about this anywhere because fuck me.
 
 ## Fix docker deployments
 

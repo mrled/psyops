@@ -39,23 +39,21 @@ Parameters:
   VpnIpsecUserConf:
     Description: An ipsec.conf file
     Type: String
-    Default: TEST
   VpnIpsecUserSecrets:
     Description: An ipsec.secrets file
     Type: String
-    Default: TEST
   VpnKeyEncrypted:
     Description: A private key to connect to the IPSEC VPN, in PEM format, encrypted by the KMS
     Type: String
-    Default: TEST
   VpnCert:
     Description: A certificate corresponding to VpnKeyEncrypted used to connect to the IPSEC VPN, in PEM format
     Type: String
-    Default: TEST
+  VpnCaCert:
+    Description: Certificate for the IPSEC VPN certificate authority
+    Type: String
   KmsId:
     Description: The ID of the KMS to use to descrypt the VPN PKCS12 key and certificate
     Type: String
-    Default: TEST
 
 Resources:
   VPC:
@@ -110,7 +108,7 @@ Resources:
       Tags:
         - Key: Application
           Value: !Ref 'AWS::StackId'
-  OutBoundNetworkAclEntry:
+  OutBoundNetworkTcpAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAcl
@@ -122,12 +120,36 @@ Resources:
       PortRange:
         From: '0'
         To: '65535'
-  InboundNetworkAclEntry:
+  OutBoundNetworkUdpAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      RuleNumber: '101'
+      Protocol: '17'
+      RuleAction: allow
+      Egress: 'true'
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: '0'
+        To: '65535'
+  InboundNetworkTcpAclEntry:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAcl
       RuleNumber: '102'
       Protocol: '6'
+      RuleAction: allow
+      Egress: 'false'
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: '0'
+        To: '65535'
+  InboundNetworkUdpAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      RuleNumber: '103'
+      Protocol: '17'
       RuleAction: allow
       Egress: 'false'
       CidrBlock: 0.0.0.0/0
@@ -166,6 +188,14 @@ Resources:
           FromPort: '443'
           ToPort: '443'
           CidrIp: !Ref SSHLocation
+        - IpProtocol: udp
+          FromPort: '500'
+          ToPort: '500'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort: '4500'
+          ToPort: '4500'
+          CidrIp: 0.0.0.0/0
 
   ArchitectInstance:
     Type: 'AWS::EC2::Instance'
@@ -173,38 +203,95 @@ Resources:
     Metadata:
       Comment: Set up StrongSwan to connect to VPN
       'AWS::CloudFormation::Init':
-        config:
+
+        configSets:
+          default:
+            - configAwsCli
+            - configVpn
+            # - configDocker
+
+        configAwsCli:
+          packages:
+            apt:
+              python-pip: []
+          commands:
+            install-aws-cli:
+              command: pip install awscli --upgrade --user
+              ignoreErrors: false
+
+        configVpn:
           packages:
             apt:
               strongswan: []
+          # NOTE: it's OK to replace files installed from APT packages here because packages get installed first
+          files:
+            /etc/ipsec.conf:
+              content: !Ref VpnIpsecUserConf
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/ipsec.secrets:
+              content: !Ref VpnIpsecUserSecrets
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/ipsec.d/private/architect.key.b64.kmsencrypted.b64:
+              content: !Ref VpnKeyEncrypted
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/ipsec.d/certs/architect.crt:
+              content: !Ref VpnCert
+              mode: '000400'
+              owner: root
+              group: root
+            /etc/ipsec.d/cacerts/cacert.pem:
+              content: !Ref VpnCaCert
+              mode: '000400'
+              owner: root
+              group: root
+            /usr/local/bin/decrypt-vpn-key.sh:
+              # NOTE: use of the `aws` command requires that the EC2 instance have a profile with an IAM role
+              #       as well as the AWS_DEFAULT_REGION environment variable to be set
+              content: !Join
+                - "\n"
+                - - |
+                    #!/bin/sh
+                    if test -z "$AWS_DEFAULT_REGION"; then
+                        echo "ERROR - \$AWS_DEFAULT_REGION IS NOT SET"
+                        exit 1
+                    fi
+                    set -eu
+                    umask 0077
+                    key=/etc/ipsec.d/private/architect.key
+                    key_b64="${key}.b64"
+                    key_b64_enc="${key_b64}.kmsencrypted"
+                    key_b64_enc_b64="${key_b64_enc}.b64"
+                    base64 -d < "$key_b64_enc_b64" > "$key_b64_enc"
+                    aws kms decrypt --ciphertext-blob "fileb://${key_b64_enc}" --query "Plaintext" --output text > "$key_b64"
+                    base64 -d < "$key_b64" > "$key"
+                    systemctl enable strongswan
+                    systemctl start strongswan
+              mode: '000755'
+              owner: root
+              group: root
+          commands:
+            decrypt-vpn-private-key:
+              command: /usr/local/bin/decrypt-vpn-key.sh
+              env:
+                AWS_DEFAULT_REGION: !Ref AWS::Region
+              ignoreErrors: false
+
+        configDocker:
+          packages:
+            apt:
               apt-transport-https: []
               ca-certificates: []
               curl: []
               gnupg2: []
               openssl: []
-              python-pip: []
               software-properties-common: []
           files:
-            /etc/strongswan/ipsec.conf:
-              content: !Ref VpnIpsecUserConf
-              mode: '000400'
-              owner: root
-              group: root
-            /etc/strongswan/ipsec.secrets:
-              content: !Ref VpnIpsecUserSecrets
-              mode: '000400'
-              owner: root
-              group: root
-            /etc/strongswan/architect.key.kmsencrypted.base64:
-              content: !Ref VpnKeyEncrypted
-              mode: '000400'
-              owner: root
-              group: root
-            /etc/strongswan/architect.cert:
-              content: !Ref VpnCert
-              mode: '000400'
-              owner: root
-              group: root
             /usr/local/bin/setup-docker.sh:
               content: !Join
                 - "\n"
@@ -220,36 +307,10 @@ Resources:
               mode: '000755'
               owner: root
               group: root
-            /usr/local/bin/decrypt-vpn-key.sh:
-              # NOTE: use of the `aws` command requires that the EC2 instance have a profile with an IAM role
-              #       as well as the AWS_DEFAULT_REGION environment variable to be set
-              content: !Join
-                - "\n"
-                - - |
-                    #!/bin/sh
-                    if test -z "$AWS_DEFAULT_REGION"; then
-                        echo "ERROR - \$AWS_DEFAULT_REGION IS NOT SET"
-                        exit 1
-                    fi
-                    set -eu
-                    base64 -d < /etc/strongswan/architect.key.kmsencrypted.base64 > /etc/strongswan/architect.key.kmsencrypted
-                    aws kms decrypt --ciphertext-blob fileb:///etc/strongswan/architect.key.kmsencrypted --query "Plaintext" --output text > /etc/strongswan/architect.key
-              mode: '000755'
-              owner: root
-              group: root
-
           commands:
-            install-aws-cli:
-              command: pip install awscli --upgrade --user
+            setup-docker:
+              command: /usr/local/bin/setup-docker.sh
               ignoreErrors: false
-            decrypt-vpn-private-key:
-              command: /usr/local/bin/decrypt-vpn-key.sh
-              env:
-                AWS_DEFAULT_REGION: !Ref AWS::Region
-              ignoreErrors: false
-            # setup-docker:
-            #   command: /usr/local/bin/setup-docker.sh
-            #   ignoreErrors: false
 
     Properties:
       ImageId: !Ref Ec2DebianStretchAmi
@@ -273,7 +334,6 @@ Resources:
         "Fn::Base64":
           !Sub |
             #!/bin/sh
-            set -eu
             # Set config values. These are replaced at deployment time by CloudFormation.
             stackname="${AWS::StackName}"
             region="${AWS::Region}"
@@ -282,7 +342,7 @@ Resources:
             apt-get -uy install python-setuptools
             easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
             # Bootstrap CFN
-            cfn-init --verbose --stack "$stackname" --resource ArchitectInstance --region "$region"
+            # cfn-init --verbose --stack "$stackname" --resource ArchitectInstance --region "$region"
             cfn-signal --exit-code $? --stack "$stackname" --resource ArchitectInstance --region "$region"
 
     CreationPolicy:

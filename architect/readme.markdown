@@ -64,6 +64,16 @@ First, configuration that is dependent on your environment:
     pkcs12pass="ohd6uoP5"
     ```
 
+Next, modify the `ipsec_architect.conf` file to be valid for your configuration.
+Since this file may be modified from what the Algo scripts generated,
+it should be added to this git repo too.
+The syntax of an `ipsec.conf` file is a deep topic that could not be reasonably covered here;
+if you have questions,
+compare the file that Algo generates with what is committed to this repo,
+and you should expect to have to deploy with the ipsec stuff commented out,
+connect and make manual changes to the ipsec config,
+and redeploy with what you learned a few times.
+
 Now, use that configuration to deploy:    
 
     ```sh
@@ -101,10 +111,11 @@ Now, use that configuration to deploy:
         --stack-name "$architect_ci_stack" \
         --parameter-overrides \
             Ec2InstanceProfileName="$profname" \
-            VpnIpsecUserConf="$(cat "$configpath/ipsec_architect.conf")" \
+            VpnIpsecUserConf="$(cat ./ipsec_architect.conf)" \
             VpnIpsecUserSecrets="$(cat "$configpath/ipsec_architect.secrets")" \
             VpnKeyEncrypted="$vpnkey_encrypted" \
             VpnCert="$vpncrt" \
+            VpnCaCert="$(cat "$configpath/cacert.pem")" \
             KmsId="$kmsid"
     ```
 
