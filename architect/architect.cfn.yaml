@@ -156,6 +156,30 @@ Resources:
       PortRange:
         From: '0'
         To: '65535'
+  InboundNetworkIcmpAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      RuleNumber: '104'
+      Protocol: '1'
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      Icmp:
+        Code: -1
+        Type: -1
+  OutboundNetworkIcmpAclEntry:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      RuleNumber: '104'
+      Protocol: '1'
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      Icmp:
+        Code: -1
+        Type: -1
 
   SubnetNetworkAclAssociation:
     Type: 'AWS::EC2::SubnetNetworkAclAssociation'
@@ -180,21 +204,35 @@ Resources:
           ToPort: '22'
           CidrIp: !Ref SSHLocation
       SecurityGroupEgress:
-        - IpProtocol: tcp
+        - Description: HTTP
+          IpProtocol: tcp
           FromPort: '80'
           ToPort: '80'
           CidrIp: !Ref SSHLocation
-        - IpProtocol: tcp
+        - Description: HTTPS
+          IpProtocol: tcp
           FromPort: '443'
           ToPort: '443'
           CidrIp: !Ref SSHLocation
-        - IpProtocol: udp
+        - Description: DNS
+          IpProtocol: udp
+          FromPort: '53'
+          ToPort: '53'
+          CidrIp: 0.0.0.0/0
+        - Description: IPSEC
+          IpProtocol: udp
           FromPort: '500'
           ToPort: '500'
           CidrIp: 0.0.0.0/0
-        - IpProtocol: udp
+        - Description: IPSEC
+          IpProtocol: udp
           FromPort: '4500'
           ToPort: '4500'
+          CidrIp: 0.0.0.0/0
+        - Description: Ping lol
+          IpProtocol: icmp
+          FromPort: '-1'
+          ToPort: '-1'
           CidrIp: 0.0.0.0/0
 
   ArchitectInstance:
@@ -208,7 +246,13 @@ Resources:
           default:
             - configAwsCli
             - configVpn
+            # - configDebugging
             # - configDocker
+
+        configDebugging:
+          packages:
+            apt:
+              dnsutils: []
 
         configAwsCli:
           packages:
@@ -334,6 +378,7 @@ Resources:
         "Fn::Base64":
           !Sub |
             #!/bin/sh
+            set -eu
             # Set config values. These are replaced at deployment time by CloudFormation.
             stackname="${AWS::StackName}"
             region="${AWS::Region}"
@@ -342,7 +387,7 @@ Resources:
             apt-get -uy install python-setuptools
             easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
             # Bootstrap CFN
-            # cfn-init --verbose --stack "$stackname" --resource ArchitectInstance --region "$region"
+            cfn-init --verbose --stack "$stackname" --resource ArchitectInstance --region "$region"
             cfn-signal --exit-code $? --stack "$stackname" --resource ArchitectInstance --region "$region"
 
     CreationPolicy:
