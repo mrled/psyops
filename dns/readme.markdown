@@ -1,27 +1,16 @@
 # micahrl.com DNS
 
-I use the Gandi client.
+I use AWS Route53.
 
-Install:
+To deploy:
 
-    python -m pip install gandi.cli
+    aws cloudformation deploy \
+        --stack-name MicahrlDotCom \
+        --template-file ./MicahrlDotCom.cfn.yaml \
+        --capabilities CAPABILITY_NAMED_IAM
 
-Configure:
+To update once deployed:
 
-    gandi setup
-
-Get the current zonefile:
-
-    # Unix
-    gandi record list --format text DOMAIN > DOMAIN.zone
-
-    # Powerhell
-    gandi record list --format text DOMAIN > Out-File -Encoding utf8 -FilePath DOMAIN.zone
-
-Unfortunately, the Gandi API cannot handle zonefiles with comments in them, so the file must be normalized before it can be applied:
-
-    ./normzone.py DOMAIN.zone
-
-Deploy a new zonefile:
-
-    gandi record update DOMAIN -f DOMAIN.zone.normalized
+    aws cloudformation update-stack \
+        --stack-name MicahrlDotCom \
+        --template-body "$(cat ./MicahrlDotCom.cfn.yaml)"

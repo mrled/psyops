@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: micahrl.com. Zone
+
+# NOTES:
+# - TXT records have to be wrapped with double quotes in the string
+#   NO:  `ResourceRecords: ["v=spf1 include:spf.example.com ?all"]`
+#   YES: `ResourceRecords: ["\"v=spf1 include:spf.example.com ?all\""]`
+
+Resources:
+
+  # Origin zone, for most subdomains of micahrl.com.
+  OriginZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties: 
+      Name: micahrl.com.
+
+  # Records in the origin zone
+  OriginRecords:
+    Type: "AWS::Route53::RecordSetGroup"
+
+    # Required because of the delegation record for internal.micahrl.com.
+    DependsOn:
+      - InternalZone
+
+    Properties: 
+      HostedZoneId: !Ref OriginZone
+      RecordSets:
+
+        # $ORIGIN
+        - Name: micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["217.70.184.38"]
+
+        # Webserver
+        - Name: me.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["mrled.github.io"]
+        - Name: www.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["mrled.github.io"]
+
+        # Prod server
+        - Name: kenasus.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["67.207.80.196"]
+        - Name: kenasus.micahrl.com.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2604:a880:400:d0::23fd:7001"]
+
+        # Dev server
+        - Name: apsylania.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["67.205.178.207"]
+        - Name: apsylania.micahrl.com.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2604:a880:400:d0::221c:7001"]
+        - Name: dev.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["apsylania.micahrl.com."]
+        
+        # Old prod server
+        - Name: noradia.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["162.243.35.116"]
+        - Name: toys.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["noradia.micahrl.com."]
+        
+        # Old dev server
+        - Name: nullyork.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["162.243.186.50"]
+
+        # Architect
+        - Name: architect.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["173.255.196.96"]
+        - Name: architect.micahrl.com.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2600:3c00::f03c:91ff:fea7:c3ac"]
+
+        # Hosted email with fastmail.com
+        - Name: micahrl.com.
+          Type: MX
+          TTL: 300
+          ResourceRecords:
+          - 10 in1-smtp.messagingengine.com.
+          - 20 in2-smtp.messagingengine.com.
+        - Name: mesmtp._domainkey.micahrl.com.
+          Type: TXT
+          TTL: 300
+          ResourceRecords:
+          - "\"v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC0djtWDjMwbbkE5MeE83dfB8jjMcnjBDOcrTBBBz/3KVSxyN/cl59VCGGUHzzGWY2HCGZ9cmh3tLJ1y+fDPa14/4/EvVTYR33Z0EI2F2GekuyXKBPoa+6ioSlYdfSm42oSoI42R4+RCVINuDNPXzaEbJ1cGPBw5bgf7tR28fWd3wIDAQAB\""
+
+        # TXT records for various services
+        - Name: micahrl.com.
+          Type: TXT
+          TTL: 300
+          ResourceRecords:
+          # Keybase verification
+          - "\"keybase-site-verification=Z8Ro6BPCbOvBtJOG9CYDkdseYa0EgGBm6Z475VKMzWc\""
+          # SPF for Fastmail
+          - "\"v=spf1 include:spf.messagingengine.com ?all\""
+          # DKIM for Fastmail
+
+        # Nameserver delegation record for the internal subdomain
+        # This necessitates `DependsOn: ["InternalZone"]`
+        - Name: internal.micahrl.com.
+          Type: NS
+          TTL: 300
+          ResourceRecords: !GetAtt InternalZone.NameServers
+
+  # Internal zone - for VPN clients
+  InternalZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties: 
+      Name: internal.micahrl.com.
+
+  # A new group with permission to modify records in the InternalZone
+  InternalZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+      - PolicyName: AllowUpdatingInternalZonePolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - route53:ChangeResourceRecordSets
+            - route53:GetHostedZone
+            - route53:ListResourceRecordSets
+            Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "InternalZone"}]]}
