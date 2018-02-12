@@ -267,7 +267,8 @@ Resources:
         configVpn:
           packages:
             apt:
-              strongswan: []
+              strongswan-charon: []
+              strongswan-pki: []  # not required for normal operation, but useful for troubleshooting
           # NOTE: it's OK to replace files installed from APT packages here because packages get installed first
           files:
             /etc/ipsec.conf:
