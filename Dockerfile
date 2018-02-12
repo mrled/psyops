@@ -76,6 +76,8 @@ RUN true \
         python3 python3-doc \
         # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
         shadow shadow-doc \
+        # Useful to have the 'ipsec' command when working with Algo
+        strongswan strongswan-doc \
         sudo sudo-doc \
         tzdata tzdata-doc \
     #
