@@ -54,6 +54,9 @@ Parameters:
   KmsId:
     Description: The ID of the KMS to use to descrypt the VPN PKCS12 key and certificate
     Type: String
+  VpnKeepaliveHost:
+    Description: Ping this host ever few minutes to ensure the VPN tunnel is still up
+    Type: string
 
 Resources:
   VPC:
@@ -319,6 +322,13 @@ Resources:
                     systemctl enable strongswan
                     systemctl start strongswan
               mode: '000755'
+              owner: root
+              group: root
+            /etc/cron.d/vpn-tunnel-keepalive:
+              content: !Sub
+                - |
+                  */5 * * * * root ping -t 5 "${VpnKeepaliveHost}"
+              mode: '000644'
               owner: root
               group: root
           commands:
