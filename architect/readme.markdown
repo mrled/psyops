@@ -62,6 +62,10 @@ First, configuration that is dependent on your environment:
     # The p12 password, from Algo's output after deployment
     # (This example value must be changed for your environment)
     pkcs12pass="ohd6uoP5"
+
+    # A host to ping periodically to keep the VPN tunnel up
+    # Can be anything that goes over the rightsubnet routes from ipsec_architect.conf
+    vpn_keepalive_host="architect.internal.micahrl.com"
     ```
 
 Next, modify the `ipsec_architect.conf` file to be valid for your configuration.
@@ -116,6 +120,7 @@ Now, use that configuration to deploy:
             VpnKeyEncrypted="$vpnkey_encrypted" \
             VpnCert="$vpncrt" \
             VpnCaCert="$(cat "$configpath/cacert.pem")" \
+            VpnKeepaliveHost="$vpn_keepalive_host" \
             KmsId="$kmsid"
     ```
 

@@ -56,7 +56,7 @@ Parameters:
     Type: String
   VpnKeepaliveHost:
     Description: Ping this host ever few minutes to ensure the VPN tunnel is still up
-    Type: string
+    Type: String
 
 Resources:
   VPC:
@@ -247,11 +247,32 @@ Resources:
 
         configSets:
           default:
+            - configSwap
             - configAwsCli
             - configDhcp
             - configVpn
             # - configDebugging
             - configDocker
+
+        configSwap:
+          files:
+            /usr/local/bin/setup-temp-storage.sh:
+              content: !Join
+                - "\n"
+                - - |
+                    #!/bin/sh
+                    set -eu
+                    device=/dev/xvds
+                    mkswap "$device"
+                    swapon "$device"
+                    echo "$device none swap defaults 0 0" >> /etc/fstab
+              mode: '000755'
+              owner: root
+              group: root
+          commands:
+            mkswap:
+              command: /usr/local/bin/setup-temp-storage.sh
+              ignoreErrors: true
 
         configDebugging:
           packages:
@@ -325,8 +346,8 @@ Resources:
               owner: root
               group: root
             /etc/cron.d/vpn-tunnel-keepalive:
-              content: !Sub
-                - |
+              content:
+                !Sub |
                   */5 * * * * root ping -t 5 "${VpnKeepaliveHost}"
               mode: '000644'
               owner: root
@@ -415,6 +436,14 @@ Resources:
           DeviceIndex: '0'
           DeleteOnTermination: 'true'
           SubnetId: !Ref Subnet
+
+      BlockDeviceMappings:
+
+        # This is ONLY FOR SWAP STORAGE - it's deleted on termination
+        - DeviceName: /dev/xvds
+          Ebs:
+            DeleteOnTermination: true
+            VolumeSize: "2"
 
       UserData:
         "Fn::Base64":
