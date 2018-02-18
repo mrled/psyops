@@ -1,41 +1,5 @@
 # Architect bugs and to do list
 
-## Fix cfn-init
-
-`cfn-init` isn't working properly for some reason.
-If I comment out the line from userdata, I can SSH to the server after deployment and it works OK.
-But if I leave it uncommented in userdata, the machine never comes up.
-Obviously there are no logs about this anywhere because fuck me.
-
-## Fix docker deployments
-
-When the `setup-docker` command is run via `cfn-init`, we get these errors:
-
-    Traceback (most recent call last):
-    File "/usr/lib/python2.7/logging/__init__.py", line 884, in emit
-        stream.write(fs % msg.encode("UTF-8"))
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2 in position 112: ordinal not in range(128)
-    Logged from file util.py, line 476
-    Traceback (most recent call last):
-    File "/usr/lib/python2.7/logging/__init__.py", line 884, in emit
-        stream.write(fs % msg.encode("UTF-8"))
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2 in position 113: ordinal not in range(128)
-    Logged from file util.py, line 476
-    Traceback (most recent call last):
-    File "/usr/lib/python2.7/logging/__init__.py", line 884, in emit
-        stream.write(fs % msg.encode("UTF-8"))
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2 in position 109: ordinal not in range(128)
-    Logged from file util.py, line 476
-
-Oddly, when I log in and run `setup-docker.sh` from the command line, I don't see any weirdness in the output.
-
-### Next steps
-
-I wonder if there's weirdness with output redirection (for logging?) by `cfn-init` and piping the Docker GPG key into `apt-add-key`.
-Try saving the key to a file first, then calling `apt-add-key` on the file instead, thereby eliminating input/output redirection.
-
-If that doesn't work, I guess we're back to commenting out individual lines from the docker setup script and seeing what happens. Ugh.
-
 ## Rewrite old readme
 
 The old readme described more things, but it was using Digital Ocean.
@@ -121,34 +85,9 @@ What remains to be translated into AWS from the old readme:
 
             **Jenkins will not be available until `lego` has received the signed certificate from Let's Encrypt**
 
-            `lego` can take 20-30 minutes to validate the DNS challenge
-            and receive the signed certificate from Let's Encrypt.
-            During this time, the `jenkins` image will come up,
-            see that it cannot find its TLS certificates,
-            and shut back down,
-            but once the certificates are available,
-            it will stay up.
-
-            Track this process by following the logs for the `inflatable-wharf` service
-            (see below).
-
-        -  You can view logs it by first getting service IDs:
-
-                docker stack services jenkins
-
-            Which might return output like this:
-
-                ID                  NAME                       MODE                REPLICAS            IMAGE                           PORTS
-                uvafm36cyz38        jenkins_jenkins            replicated          1/1                 jenkins/jenkins:lts             *:80->8080/tcp,*:443->8443/tcp
-                vla3440dmlwn        jenkins_inflatable-wharf   replicated          1/1                 mrled/inflatable-wharf:latest   
-
-            And then grabbing the log for the service in question based on that service ID:
-
-                # The -f argument to logs works like the -f argument to tail,
-                docker service logs -f uvafm36cyz38
-
-            (Note that `docker service logs` operates on _service_ IDs you get from `docker stack services`,
-            not _container_ IDs that you might get from `docker ps`)
+         -  For more information on how `inflatable-wharf` works,
+            including troubleshooting steps and how to view logs,
+            see <https://github.com/mrled/inflatable-wharf>
 
     -  Follow [docs](https://github.com/jenkinsci/docker/blob/master/README.md)
 
@@ -173,40 +112,7 @@ What remains to be translated into AWS from the old readme:
     in the Docker compose file,
     we use an image derived from that image called [inflatable-wharf](https://github.com/mrled/inflatable-wharf).
 
-    ## Troubleshooting
-
-    This command will use the `lego` container to connect to the _staging_ API endpoint,
-    configure a Let's Encrypt account,
-    create a private key,
-    request that the ACME server signs the private key,
-    and ask the ACME server to verify ownership by a DNS challenge,
-    using Gandi's API to set and delete the challenge record.
-    It will save the Let's Encrypt account info
-    and public/private TLS keys to the `$legovolume` directory.
-
-    When I ran this, it took about 30 minutes.
-
-        letsencrypt_email="some email address"
-        domain="jenkins.example.com"
-        gandi_api_key="yourapikey"
-        lego_volume="$(pwd)/lego-temp-volume"
-        mkdir -p "$lego_volume"
-
-        docker run \
-            --rm \
-            --interactive \
-            --tty \
-            --env "GANDI_API_KEY=$gandi_api_key" \
-            --volume "${lego_volume}:/.lego" \
-            xenolf/lego \
-                --accept-tos \
-                --email "$letsencrypt_email" \
-                --domains "$domain" \
-                --dns gandi \
-                --server "https://acme-staging.api.letsencrypt.org/directory" \
-                run
-
-    Some references:
+    ## References
 
     - <https://stackoverflow.com/questions/29755014/setup-secured-jenkins-master-with-docker>
     - <https://github.com/hughperkins/howto-jenkins-ssl/blob/master/letsencrypt.md>
