@@ -251,6 +251,7 @@ Resources:
             - configAwsCli
             - configDhcp
             - configVpn
+            - configVpnKeepalive
             # - configDebugging
             - configDocker
 
@@ -345,18 +346,29 @@ Resources:
               mode: '000755'
               owner: root
               group: root
-            /etc/cron.d/vpn-tunnel-keepalive:
-              content:
-                !Sub |
-                  */5 * * * * root ping -t 5 "${VpnKeepaliveHost}"
-              mode: '000644'
-              owner: root
-              group: root
+
           commands:
             decrypt-vpn-private-key:
               command: /usr/local/bin/decrypt-vpn-key.sh
               env:
                 AWS_DEFAULT_REGION: !Ref AWS::Region
+              ignoreErrors: false
+
+        configVpnKeepalive:
+          files:
+            # Ping some address in the tunnel every so often
+            # Initially, this was pinging 10x, but cut down to 1x when there were problems;
+            # see also [highload]
+            /etc/cron.d/vpn-tunnel-keepalive:
+              content:
+                !Sub |
+                  */5 * * * * vpnkeepalive ping -t 1 "${VpnKeepaliveHost}"
+              mode: '000644'
+              owner: root
+              group: root
+          commands:
+            create-vpnkeepalive-user:
+              command: useradd --home-dir /nonexistent --no-create-home --shell /bin/sh --system --user-group vpnkeepalive
               ignoreErrors: false
 
         configDhcp:
@@ -439,7 +451,16 @@ Resources:
 
       BlockDeviceMappings:
 
+        # Increase root filesystem size (not adding another disk)
+        # (Hopefully will prevent disk exhaustion in rare cases, see also [highload])
+        - DeviceName: "xvda"
+          Ebs:
+            DeleteOnTermination: true
+            VolumeSize: 16
+            VolumeType: gp2
+
         # This is ONLY FOR SWAP STORAGE - it's deleted on termination
+        # (Hopefully will prevent disk exhaustion in rare cases, see also [highload])
         - DeviceName: /dev/xvds
           Ebs:
             DeleteOnTermination: true
@@ -473,3 +494,9 @@ Outputs:
     Description: Architect IP address
   ArchitectInstanceId:
     Value: !Ref ArchitectInstance
+
+# Footnotes
+# [highload]:
+#   Once, the load got super high (150+), some swap and fs journaling processes consumed all CPU,
+#   and the VPN keepalive ping processes supposed to be run for 10 pings (10 sec) every 5 minutes
+#   couldn't finish so dozens were present at once
