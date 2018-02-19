@@ -1,2 +1,2 @@
 workdir/
-*.retry
+ansible.log
