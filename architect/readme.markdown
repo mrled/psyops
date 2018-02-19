@@ -22,7 +22,12 @@ Once you have these things configured, you can deploy with a simple command:
 
     ansible-playbook deploy.yaml --ask-vault-pass
 
-## Troubleshooting 
+## Troubleshooting
+
+### After a failed stack deployment
+
+Rollback is disabled when deploying the CI stack,
+but you may want to log into the console and delete it before another deployment anyway.
 
 ### Connecting over SSH for troubleshooting
 
