@@ -1,0 +1,11 @@
+---
+- name: Save SSH host private key (temporarily)
+  copy:
+    content: "{{ architect_ssh_host_ed25519_key_b64 | b64decode }}"
+    dest: "{{ workdir }}/ssh_host_ed25519_key"
+- name: Get SSH host public key
+  shell: ssh-keygen -y -f "{{ workdir }}/ssh_host_ed25519_key" > "{{ workdir }}/ssh_host_ed25519_key.pub"
+- name: Remove host private key
+  file:
+    state: absent
+    path: "{{ workdir }}/ssh_host_ed25519_key"

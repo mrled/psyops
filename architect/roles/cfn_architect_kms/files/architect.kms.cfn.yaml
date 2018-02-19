@@ -1,3 +1,5 @@
+---
+
 AWSTemplateFormatVersion: 2010-09-09
 Description: Architect KMS stack
 
@@ -56,12 +58,8 @@ Resources:
           -
             Sid: Grant the Architect Instance IAM role access to use the CMK
             Effect: Allow
-            # Principal: {"AWS": [{"Ref": "ArchitectInstanceIamRole"}]}
             Principal:
               AWS: !GetAtt ArchitectInstanceIamRole.Arn
-                # - !Ref ArchitectInstanceIamRole
-                # - {"Fn::GetAtt": ["ArchitectInstanceIamRole", "Arn"] }
-                # - !GetAtt ArchitectInstanceIamRole.Arn
             Action: 
               - kms:Decrypt
               - kms:DescribeKey

@@ -1,0 +1,24 @@
+- name: Configure the server
+  hosts: localhost
+  vars_files:
+    - architect.cfg
+    - architect.vault.cfg
+
+  pre_tasks:
+    - block:
+      - name: Define working directory
+        # Not a changeable variable because it's used other places
+        set_fact:
+          workdir: "./workdir"
+      - name: Create working directory
+        command: mkdir {{ workdir }}
+        args:
+          creates: "{{ workdir }}"
+
+      # TODO: Can I include this only if the public key doesn't already exist?
+      - include: playbooks/regen_ssh_host_public_key.yaml
+
+  roles:
+    - role: cfn_architect_kms
+    - role: kms_encrypt_secrets
+    - role: cfn_architect_ci
