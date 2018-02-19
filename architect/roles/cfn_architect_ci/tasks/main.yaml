@@ -1,29 +1,37 @@
 ---
 
-- name: Deploy the Architect CI template
-  cloudformation:
-    aws_access_key: "{{ aws_access_key }}"
-    aws_secret_key: "{{ aws_secret_key }}"
-    stack_name: "{{ architect_ci_stack_name }}"
-    state: "present"
-    region: "{{ aws_region }}"
-    template: "roles/cfn_architect_ci/files/architect.ci.cfn.yaml"
-    template_parameters:
-      Ec2InstanceProfileName: "{{ architect_iam_profile_name }}"
-      VpnIpsecUserConf: "{{ lookup('file', 'ipsec_architect.conf') }}"
-      VpnIpsecUserSecrets: "{{ algo_ipsec_secrets }}"
-      VpnKeyEncrypted: "{{ algo_vpn_key_kmsencrypted }}"
-      VpnCert: "{{ algo_vpn_cert_b64 | b64decode }}"
-      VpnCaCert: "{{ algo_cacert_b64 | b64decode }}"
-      VpnKeepaliveHost: "{{ vpn_keepalive_host }}"
-      KmsId: "{{ architect_kms_id }}"
-      KeyPairName: "{{ architect_ci_keypair_name }}"
-      SshHostRsaKeyEncrypted: "{{ architect_ssh_host_rsa_key_b64 }}"
-      SshHostEcdsaKeyEncrypted: "{{ architect_ssh_host_ecdsa_key_b64 }}"
-      SshHostEd25519KeyEncrypted: "{{ architect_ssh_host_ed25519_key_b64 }}"
-    tags:
-      Environment: Architect
-  register: architect_ci_stack_result
+- block:
 
-- set_fact:
-  architect_ip_address: "{{ architect_ci_stack_result.stack_outputs.ArchitectIpAddress }}"
+  - name: Deploy the Architect CI template
+    cloudformation:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      stack_name: "{{ architect_ci_stack_name }}"
+      state: "present"
+      disable_rollback: true
+      region: "{{ aws_region }}"
+      template: "roles/cfn_architect_ci/files/architect.ci.cfn.yaml"
+      template_parameters:
+        Ec2InstanceProfileName: "{{ architect_iam_profile_name }}"
+        VpnIpsecUserConf: "{{ lookup('file', 'ipsec_architect.conf') }}"
+        VpnIpsecUserSecrets: "{{ algo_ipsec_secrets }}"
+        VpnKeyEncrypted: "{{ algo_vpn_key_kmsencrypted }}"
+        VpnCert: "{{ algo_vpn_cert_b64 | b64decode }}"
+        VpnCaCert: "{{ algo_cacert_b64 | b64decode }}"
+        VpnKeepaliveHost: "{{ vpn_keepalive_host }}"
+        KmsId: "{{ architect_kms_id }}"
+        KeyPairName: "{{ architect_ci_keypair_name }}"
+        SshHostRsaKeyEncrypted: "{{ architect_ssh_host_rsa_key_b64 }}"
+        SshHostEcdsaKeyEncrypted: "{{ architect_ssh_host_ecdsa_key_b64 }}"
+        SshHostEd25519KeyEncrypted: "{{ architect_ssh_host_ed25519_key_b64 }}"
+      tags:
+        Environment: Architect
+    register: architect_ci_stack_result
+
+  - set_fact:
+      architect_ip_address: "{{ architect_ci_stack_result.stack_outputs.ArchitectIpAddress }}"
+
+  rescue:
+  - debug: var=architect_ci_stack_result
+  - fail:
+      msg: Deployment has failed :(
