@@ -1,5 +1,30 @@
 ---
 
+- name: Define AWS facts
+  set_fact:
+    aws_bucket_access_iam_role_name: ArchitectDeploymentBucketAccessRole
+
+- name: Create IAM role for deployment bucket access
+  iam:
+    iam_type: role
+    name: "{{ aws_bucket_access_iam_role_name }}"
+    state: present
+    trust_policy:
+      Version: '2012-10-17'
+      Statement:
+      - Action: sts:AssumeRole
+        Effect: Allow
+        Principal:
+          Service: ec2.amazonaws.com
+          
+# - name: Create deployment S3 bucket
+#   s3_bucket:
+#     name: "{{ aws_s3_deployment_bucket_name }}"
+#     state: present
+#     aws_access_key: "{{ aws_access_key }}"
+#     aws_secret_key: "{{ aws_secret_key }}"
+#     region: "{{ aws_region }}"
+
 - name: Deploy the Architect KMS template
   cloudformation:
     aws_access_key: "{{ aws_access_key }}"
@@ -15,3 +40,10 @@
 - set_fact:
     architect_kms_id: "{{ architect_kms_stack_result.stack_outputs.ArchitectKmsId }}"
     architect_iam_profile_name: "{{ architect_kms_stack_result.stack_outputs.ArchitectInstanceIamProfileName }}"
+
+# - name: Delete deployment S3 bucket
+#   s3_bucket:
+#     name: "{{ aws_s3_deployment_bucket_name }}"
+#     state: absent
+#     region: "{{ aws_region }}"
+#     force: yes
