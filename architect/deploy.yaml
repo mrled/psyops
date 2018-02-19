@@ -16,7 +16,7 @@
           creates: "{{ workdir }}"
 
       # TODO: Can I include this only if the public key doesn't already exist?
-      - include: playbooks/regen_ssh_host_public_key.yaml
+      - import_tasks: tasks/regen_ssh_host_public_key.yaml
 
   roles:
     - role: cfn_architect_kms
