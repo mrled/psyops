@@ -3,6 +3,7 @@
 """PSYOPS Docker wrapper to make life a bit easier"""
 
 import argparse
+import base64
 import configparser
 import logging
 import os
@@ -45,6 +46,45 @@ def debugexchandler(exc_type, exc_value, exc_traceback):
         print()
         # ...then start the debugger in post-mortem mode.
         pdb.pm()
+
+
+def powershell(command):
+    """Run a Powershell command
+
+    Use the -EncodedCommand parameter to get around any quoting issues
+
+    command:    The text of a command to run. Pipelines and other complex statements are supported.
+    output:     The command's standard output
+    """
+    encoded_command = base64.b64encode(command.encode('utf-16le')).decode()
+
+    # We almost certainly want 64-bit Powershell
+    # However, we may be running in a 32-bit Python
+    # Within 32-bit processes, 64-bit binaries are available as the C:\Windows\sysnative
+    pspath_system32 = f"{os.environ['SystemRoot']}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+    pspath_sysnative = f"{os.environ['SystemRoot']}\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe"
+    pspath = pspath_sysnative if os.path.isfile(pspath_sysnative) else pspath_system32
+
+    pscall = [pspath, '-NoProfile', '-EncodedCommand', encoded_command]
+    logger.info(f"Calling Powershell executable at '{pspath}', passing command '{command}', encoded as '{encoded_command}'")
+    psproc = subprocess.Popen(pscall, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    stdout = ""
+    stderr = ""
+    while psproc.returncode == None:
+        this_stdout, this_stderr = psproc.communicate()
+        # print(f"_partial_ STDOUT: {this_stdout}")
+        # print(f"_partial_ STDERR: {this_stderr}")
+        stdout += this_stdout.decode()
+        stderr += this_stderr.decode()
+        psproc.poll()
+    logger.info(f"Powershell command return code: {psproc.returncode}")
+    logger.info(f"Powershell command STDOUT: {stdout}")
+    logger.info(f"Powershell command STDERR: {stderr}")
+    if psproc.returncode != 0:
+        raise Exception(
+            f"Powershell command exited with nonzero return code '{psproc.returncode}'")
+    return stdout.rstrip()
 
 
 def dockerrun(
@@ -99,28 +139,25 @@ def netvolfix(ifname="vEthernet (DockerNAT)"):
 
     NOTE: This requires admin privileges.
     """
-    pscmd = f'Set-NetConnectionProfile -interfacealias "{ifname}" -NetworkCategory Private'
-    subprocess.check_call(
-        ['powershell.exe', '-NoProfile', '-Command', pscmd])
+    output = powershell(
+        f'Set-NetConnectionProfile -InterfaceAlias "{ifname}" -NetworkCategory Private')
+    logger.info(f"Set-ConnectionProfile output: '{output}'")
 
 
 def netvoltest(ifname="vEthernet (DockerNAT)", throw=False):
     """Test whether the Docker interface's network connection profile is set to private"""
     if sys.platform != "win32":
         return True
-    pscmd = (
-        f'Get-NetConnectionProfile -interfacealias "{ifname}"'
-        '| Select-Object -ExpandProperty NetworkCategory')
-    output = subprocess.check_output(
-        ['powershell.exe', '-NoProfile', '-Command', pscmd]).decode().strip()
+    output = powershell(
+        f'Get-NetConnectionProfile -InterfaceAlias "{ifname}" | Select-Object -ExpandProperty NetworkCategory')
     logger.info(
         f"Network category for the network attached to {ifname} is {output}")
     if output == "Private":
         return True
     else:
         msg = (
-            f"Network category for the network attached to {ifname} must be set to Private, "
-            f"but it is instead set to {output}. "
+            f"Network category for the network attached to '{ifname}' must be set to Private, "
+            f"but it is instead set to '{output}'. "
             f"Run '{SCRIPTPATH} util --netvolfix' to fix this.")
         logger.error(msg)
         if throw:
