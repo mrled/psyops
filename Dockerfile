@@ -5,7 +5,6 @@ LABEL maintainer "me@micahrl.com"
 #
 # 1.    Multi-line RUN statements *cannot* have blank lines in them, but *can* have empty comments
 
-
 ARG username=psyops
 ARG homedir=/home/$username
 
@@ -52,7 +51,14 @@ ENV PSYOPS_TIMEZONE="US/Central"
 # Pre-copy root OS configuration phase
 RUN true \
     #
-    && apk update && apk add \
+    # Fix frustrating errors like
+    #   ERROR: http://dl-cdn.alpinelinux.org/alpine/v3.6/main: temporary error (try again later)
+    # See also: https://github.com/gliderlabs/docker-alpine/issues/279#issuecomment-300859312
+    && echo http://dl-2.alpinelinux.org/alpine/v3.6/main > /etc/apk/repositories \
+    && echo http://dl-2.alpinelinux.org/alpine/v3.6/community >> /etc/apk/repositories \
+    && apk update \
+    #
+    && apk add \
         bash bash-doc \
         ca-certificates ca-certificates-doc \
         # I got tired of fucking with busybox's wget
@@ -83,7 +89,24 @@ RUN true \
     #
     && update-ca-certificates --fresh \
     #
-    && python3 -m ensurepip && python3 -m pip install --upgrade pip && python3 -m pip install \
+    # Configure Python stuff, including for later building C modules
+    # (Useful to keep on the image permanently, so we can compile C modules in virtualenvs)
+    # These prereqs include support for PyNACL
+    && python3 -m ensurepip \
+    && python3 -m pip install --upgrade pip \
+    && python3 -m pip install virtualenv \
+    && apk add \
+        # general
+        gcc \
+        make \
+        musl-dev \
+        python3-dev \
+        # for (at least) PyNACL
+        libffi-dev \
+        openssl-dev \
+    #
+    # Get AWS and Gandi command line tools
+    && python3 -m pip install \
         awscli \
         gandi.cli \
     #
@@ -118,7 +141,7 @@ RUN true \
     # We install py3-docutils, which includes `rst2man-3`, but git-remote-crypt's setup.sh expects `rst2man`, lol
     && printf '#!/bin/sh\nrst2man-3 "$@"\n' > /usr/local/bin/rst2man && chmod 755 /usr/local/bin/rst2man \
     && cd "$psysetup/git-remote-gcrypt" \
-    && ./install.sh \
+    && ./install.sh 2>&1 \
     && true
 
 RUN true \
@@ -134,11 +157,9 @@ RUN true \
 
 RUN true \
     # Install Azure CLI
-    && apk add --virtual=BUILDAZURECLI gcc libffi-dev musl-dev openssl-dev python3-dev make \
     # Azure requires this because it is... bad
     && ln -s ../../bin/python3 /usr/local/bin/python \
     && python3 -m pip install azure azure-cli \
-    && apk del --purge BUILDAZURECLI \
     && true
 
 RUN true \
