@@ -19,3 +19,6 @@
 [submodule "submod/algo"]
 	path = submod/algo
 	url = git@github.com:mrled/algo.git
+[submodule "submod/architect"]
+	path = submod/architect
+	url = git@github.com:mrled/architect.git
