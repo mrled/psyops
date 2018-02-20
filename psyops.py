@@ -115,7 +115,14 @@ def dockerrun(
     if containerargs:
         runcli += containerargs.split(" ")
     logger.info(f"Running an image with: {' '.join(runcli)}")
-    subprocess.check_call(runcli, env=env)
+    retcode = subprocess.call(runcli, env=env)
+
+    suppressed_result_codes = [
+        130,  # probably SIGINT aka ctrl-c from the last program
+    ]
+    logger.info(f"'docker run' command exited with code '{retcode}'")
+    if retcode > 0 and retcode not in suppressed_result_codes:
+        raise Exception(f"'docker run' command exited with nonzero code '{retcode}'")
 
 
 def dockerbuild(imagename, imagetag, buildargs=None):
