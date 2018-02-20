@@ -21,15 +21,33 @@
         VpnKeepaliveHost: "{{ vpn_keepalive_host }}"
         KmsId: "{{ architect_kms_id }}"
         KeyPairName: "{{ architect_ci_keypair_name }}"
-        SshHostRsaKeyEncrypted: "{{ architect_ssh_host_rsa_key_b64 }}"
-        SshHostEcdsaKeyEncrypted: "{{ architect_ssh_host_ecdsa_key_b64 }}"
-        SshHostEd25519KeyEncrypted: "{{ architect_ssh_host_ed25519_key_b64 }}"
+        SshHostEcdsaKeyEncrypted: "{{ architect_ssh_host_ecdsa_key_kmsencrypted }}"
       tags:
         Environment: Architect
     register: architect_ci_stack_result
 
   - set_fact:
       architect_ip_address: "{{ architect_ci_stack_result.stack_outputs.ArchitectIpAddress }}"
+
+  - name: Save known_hosts file
+    copy:
+      content: "{{ architect_ip_address }} {{ ssh_host_public_ecdsa_key }}"
+      dest: "{{ workdir }}/known_hosts"
+
+  - name: Success!
+    vars:
+      ssh_cmd: >
+        ssh
+        -o UserKnownHostsFile={{ workdir }}/known_hosts
+        -i /path/to/{{ architect_ci_keypair_name }}.pem
+        admin@{{ architect_ip_address }}
+      msg: |
+          Connecting to Architect, for debugging
+          IP address          {{ architect_ip_address }}
+          ECDSA fingerprint   {{ ssh_host_public_ecdsa_key_fingerprint }}
+          SSH command         {{ ssh_cmd }}
+    debug:
+      msg: "{{ msg.split('\n') }}"
 
   rescue:
   - debug: var=architect_ci_stack_result

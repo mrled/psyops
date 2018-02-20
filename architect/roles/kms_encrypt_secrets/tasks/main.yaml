@@ -1,5 +1,9 @@
 ---
 
+# NOTE: the result of this command is binary data that has been base64 encoded
+# To decrypt it from the KMS, you must decode it from base64 first:
+#   aws kms decrypt --ciphertext-blob "$(echo "$vpnkey_encrypted" | base64 -d)"
+
 - name: Encrypt the VPN secret key with the KMS
   shell: aws kms encrypt --key-id "{{ architect_kms_id }}" --plaintext "{{ algo_vpn_key_b64 | b64decode }}" --query 'CiphertextBlob' --output text
   environment:
@@ -10,6 +14,12 @@
 - set_fact:
     algo_vpn_key_kmsencrypted: "{{ algo_vpn_key_kmsencrypted_result.stdout }}"
 
-  # NOTE: the result of this command is binary data that has been base64 encoded
-  # To decrypt it from the KMS, you must decode it from base64 first:
-  #   aws kms decrypt --ciphertext-blob "$(echo "$vpnkey_encrypted" | base64 -d)"
+- name: Encrypt the SSH host DSA key with the KMS
+  shell: aws kms encrypt --key-id "{{ architect_kms_id }}" --plaintext "{{ architect_ssh_host_ecdsa_key_b64 | b64decode }}" --query 'CiphertextBlob' --output text
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ aws_access_key }}"
+    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_key }}"
+    AWS_DEFAULT_REGION: "{{ aws_region }}"
+  register: architect_ssh_host_ecdsa_key_kmsencrypted_result
+- set_fact:
+    architect_ssh_host_ecdsa_key_kmsencrypted: "{{ architect_ssh_host_ecdsa_key_kmsencrypted_result.stdout }}"
