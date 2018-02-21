@@ -114,6 +114,26 @@ RUN true \
     #
     && true
 
+## Third party software that doesn't require the /setup dir
+
+RUN true \
+    # Install Azure CLI
+    # Azure requires this python3->python link because it is... bad
+    && ln -s ../../bin/python3 /usr/local/bin/python \
+    && python3 -m pip install azure azure-cli \
+    && true
+
+RUN true \
+    # Install Ansible
+    && apk add \
+        ansible ansible-doc \
+    # Required for Ansible scripts and/or the EC2 inventory script
+    && python -m pip install \
+        ansible \
+        boto \
+        boto3 \
+    && true
+
 ARG psysetup=/setup
 
 # Copy files for system-level configuration & run setup that relies on them
@@ -148,29 +168,20 @@ RUN true \
     # Install doctl, the Digital Ocean cli tool
     # this next line is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
     && mkdir /lib64 && ln -s ../lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
-    && "$psysetup/doctl/getdoctl" --outdir "$psysetup/doctl" \
-    && cd "$psysetup/doctl" \
+    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" digitalocean/doctl '^doctl.*linux.*amd64.*tar.gz$' \
+    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" digitalocean/doctl '^doctl.*linux.*amd64.*sha256$' \
+    && cd "$psysetup" \
     && tar -zx -f doctl*.tar.gz \
     && sha256sum -c doctl*.sha256 \
-    && install -o root -g root -m 755 "$psysetup/doctl/doctl" /usr/local/bin \
+    && install -o root -g root -m 755 "$psysetup/doctl" /usr/local/bin \
     && true
 
 RUN true \
-    # Install Azure CLI
-    # Azure requires this because it is... bad
-    && ln -s ../../bin/python3 /usr/local/bin/python \
-    && python3 -m pip install azure azure-cli \
-    && true
-
-RUN true \
-    # Install Ansible
-    && apk add \
-        ansible ansible-doc \
-    # Required for Ansible scripts and/or the EC2 inventory script
-    && python -m pip install \
-        ansible \
-        boto \
-        boto3 \
+    # Install pt, the_platinum_searcher
+    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" monochromegane/the_platinum_searcher '^pt_linux_amd64.*.tar.gz$' \
+    && cd "$psysetup" \
+    && tar -zx -f pt_linux_amd64*.tar.gz \
+    && install -o root -g root -m 755 "$psysetup/pt_linux_amd64/pt" /usr/local/bin \
     && true
 
 RUN true \
