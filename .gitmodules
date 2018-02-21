@@ -13,9 +13,6 @@
 [submodule "submod/psyops-secrets"]
 	path = submod/psyops-secrets
 	url = git@github.com:mrled/psyops-secrets.git
-[submodule "docker/setup/git-secret"]
-	path = docker/setup/git-secret
-	url = https://github.com/sobolevn/git-secret/
 [submodule "submod/algo"]
 	path = submod/algo
 	url = git@github.com:mrled/algo.git

@@ -144,7 +144,7 @@ RUN true \
     # Moved away from downloading a release tarbatll b/c the toilet server gets mad if you hit it too hard
     # you have to leave libcaca itself, but it's only 4mb; the rest can go away
     && apk add libcaca \
-    && apk add --virtual=BUILDTOILET g++ libcaca-dev make automake autoconf \
+    && apk add --virtual=BUILDTOILET g++ libcaca-dev automake autoconf \
     && cd "$psysetup/toilet" \
     && ./bootstrap \
     && ./configure \
@@ -182,15 +182,6 @@ RUN true \
     && cd "$psysetup" \
     && tar -zx -f pt_linux_amd64*.tar.gz \
     && install -o root -g root -m 755 "$psysetup/pt_linux_amd64/pt" /usr/local/bin \
-    && true
-
-RUN true \
-    # Install git-secret
-    && cd "$psysetup/git-secret" \
-    && apk add --virtual=BUILDGITSECRET make \
-    && make build \
-    && PREFIX="/usr/local" make install \
-    && apk del --purge BUILDGITSECRET \
     && true
 
 RUN true \
