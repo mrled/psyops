@@ -394,7 +394,7 @@ def main(*args, **kwargs):  # pylint: disable=W0613
 
     if 'sudo' in parsed and parsed.sudo:
         parsed.buildargs += "--build-arg enablesudo=1"
-        parsed.tag = "sudo"
+        parsed.imagetag = "sudo"
 
     if parsed.action == "build":
         parentrepo.testcheckout(throw=True)
