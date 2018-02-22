@@ -165,7 +165,7 @@ def netvoltest(ifname="vEthernet (DockerNAT)", throw=False):
         msg = (
             f"Network category for the network attached to '{ifname}' must be set to Private, "
             f"but it is instead set to '{output}'. "
-            f"Run '{SCRIPTPATH} util --netvolfix' to fix this.")
+            f"Run '{SCRIPTPATH} util --netvolfix' to fix self.")
         logger.error(msg)
         if throw:
             raise Exception(msg)
@@ -273,97 +273,115 @@ class GitRepoMetadata():
         return missing == []
 
 
+class PsyopsArgumentCollection():
+    """PSYOPS argument collection
+
+    A container for the defined arguments.
+    The parser and each subparser are set as properties, allowing them to be referenced by consuming code.
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        description = textwrap.dedent("""
+            Wrap Docker for PSYOPS
+
+            Basically, Docker can be a little precious sometimes.
+            This script is intended to handle some known problems for intended use
+            cases in this repo:
+
+            - The image we build assumes that this repo will be mounted as a volume
+            - Volumes in Windows wont work unless $env:MSYS_NO_PATHCONV is set
+            - Windows doesn't have &&, so you can't do 'docker build && docker run'
+
+            (This script is not intended to wrap all of Docker's functionality)""")
+        epilog = textwrap.dedent("""
+            Note about the passthrough arguments:
+
+            In the (likely) case that you want to pass arguments that begin with a
+            dash, you may need to use an equals sign between the passthru argument
+            and its value. For instance, '--build-passthru="--no-cache"'
+            """)
+
+        self.parser = argparse.ArgumentParser(
+            description=description, epilog=epilog, add_help=True,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
+
+        self.parser.add_argument(
+            "--verbose", "-v", action="store_true", help="Print verbose messages")
+        self.parser.add_argument(
+            "--debug", "-d", action="store_true",
+            help="Invoke debugger on exceptions. (Implies --verbose.)")
+
+        self.dockeropts = argparse.ArgumentParser(add_help=False)
+        self.dockeropts.add_argument(
+            "imagename", nargs='?', default="psyops",
+            help="The name of the Docker image to build. Defaults to 'psyops'.")
+        self.dockeropts.add_argument(
+            "imagetag", nargs='?', default="wip",
+            help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.")
+        self.dockeropts.add_argument(
+            "--sudo", action="store_true",
+            help=(
+                "Pass the enablesudo=1 arg during build, and use the tag 'sudo' rather than the "
+                "default when building or running. (Overrides any other tag set.)"))
+
+        self.dockerbuildopts = argparse.ArgumentParser(add_help=False)
+        self.dockerbuildopts.add_argument(
+            '--build-passthru', dest='buildargs', default="",
+            help="Pass these additional arguments to 'docker build'")
+
+        self.dockerrunopts = argparse.ArgumentParser(add_help=False)
+        self.dockerrunopts.add_argument(
+            '--run-passthru', dest='runargs',
+            help="Pass these additional arguments to 'docker run'")
+        self.dockerrunopts.add_argument(
+            '--container-passthru', dest='containerargs',
+            help="Pass these additional arguments to the container itself")
+        self.dockerrunopts.add_argument(
+            '--psyops-volume', dest='psyopsvol', default="/psyops",
+            help="Mount point for the psyops volume")
+        self.dockerrunopts.add_argument(
+            '--secrets-tmpfs', dest='secretstmpfs', default="/secrets",
+            help="Mount point for the secrets tmpfs filesystem")
+
+        self.utilopts = argparse.ArgumentParser(add_help=False)
+        self.utilsubparsers = self.utilopts.add_subparsers(dest="utilaction")
+        self.utilsubparsers.required = True
+        self.utilsubparsers.add_parser(
+            'enumsubmod', help='List all Git submodules')
+        self.utilsubparsers.add_parser(
+            'fixcrlf', help='Disasble core.autocrlf on parent repo and all submodules')
+        self.util_netvolfix_subparser = self.utilsubparsers.add_parser(
+            'netvolfix', help=(
+                "(Windows only) Set the network connection profile for the Docker network profile "
+                "to private, which is required for volumes to be mounted in containers."))
+        self.util_netvolfix_subparser.add_argument(
+            '--connection-profile', default='vEthernet (DockerNAT)',
+            help='The name of the Docker network connection')
+
+        self.subparsers = self.parser.add_subparsers(dest="action")
+        self.subparsers.required = True
+        self.subparsers.add_parser(
+            'build', parents=[self.dockeropts, self.dockerbuildopts],
+            help='Build the Docker image')
+        self.subparsers.add_parser(
+            'run', parents=[self.dockeropts, self.dockerrunopts],
+            help='Run the Docker image')
+        self.subparsers.add_parser(
+            'buildrun', parents=[self.dockeropts, self.dockerbuildopts, self.dockerrunopts],
+            help='Build the Docker image, then immediately run it')
+        self.subparsers.add_parser(
+            'util', parents=[self.utilopts],
+            help='Utility functions')
+
+        self.parsed = self.parser.parse_args(*args, **kwargs)
+
+
 def main(*args, **kwargs):  # pylint: disable=W0613
     """PSYOPS Docker wrapper main program execution"""
 
-    description = textwrap.dedent("""
-        Wrap Docker for PSYOPS
-
-        Basically, Docker can be a little precious sometimes.
-        This script is intended to handle some known problems for intended use
-        cases in this repo:
-
-        - The image we build assumes that this repo will be mounted as a volume
-        - Volumes in Windows wont work unless %MSYS_NO_PATHCONV% is set
-        - Windows doesn't have &&, so you can't do 'docker build && docker run'
-
-        (This script is not intended to wrap all of Docker's functionality)""")
-    epilog = textwrap.dedent("""
-        Note about the passthrough arguments:
-
-        In the (likely) case that you want to pass arguments that begin with a
-        dash, you may need to use an equals sign between the passthru argument
-        and its value. For instance, '--build-passthru="--no-cache"'
-        """)
-    parser = argparse.ArgumentParser(
-        description=description, epilog=epilog, add_help=True,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Print verbose messages")
-    parser.add_argument(
-        "--debug", "-d", action="store_true",
-        help="Invoke debugger on exceptions. (Implies --verbose.)")
-
-    dockeropts = argparse.ArgumentParser(add_help=False)
-    dockeropts.add_argument(
-        "imagename", nargs='?', default="psyops",
-        help="The name of the Docker image to build. Defaults to 'psyops'.")
-    dockeropts.add_argument(
-        "imagetag", nargs='?', default="wip",
-        help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.")
-    dockeropts.add_argument(
-        "--sudo", action="store_true",
-        help=(
-            "Pass the enablesudo=1 arg during build, and use the tag 'sudo' rather than the "
-            "default when building or running. (Overrides any other tag set.)"))
-
-    dockerbuildopts = argparse.ArgumentParser(add_help=False)
-    dockerbuildopts.add_argument(
-        '--build-passthru', dest='buildargs', default="",
-        help="Pass these additional arguments to 'docker build'")
-
-    dockerrunopts = argparse.ArgumentParser(add_help=False)
-    dockerrunopts.add_argument(
-        '--run-passthru', dest='runargs',
-        help="Pass these additional arguments to 'docker run'")
-    dockerrunopts.add_argument(
-        '--container-passthru', dest='containerargs',
-        help="Pass these additional arguments to the container itself")
-    dockerrunopts.add_argument(
-        '--psyops-volume', dest='psyopsvol', default="/psyops",
-        help="Mount point for the psyops volume")
-    dockerrunopts.add_argument(
-        '--secrets-tmpfs', dest='secretstmpfs', default="/secrets",
-        help="Mount point for the secrets tmpfs filesystem")
-
-    utilopts = argparse.ArgumentParser(add_help=False)
-    utilopts.add_argument(
-        '--enumsubmod', const='enumsubmod',
-        action='append_const', dest='utilaction',
-        help="List all submodules")
-    utilopts.add_argument(
-        '--fixcrlf', const='fixcrlf',
-        action='append_const', dest='utilaction',
-        help="Disasble core.autocrlf on parent repo and all submodules")
-    utilopts.add_argument(
-        '--netvolfix', const='netvolfix',
-        action='append_const', dest='utilaction',
-        help=(
-            "Set the network connection profile for the 'vEthernet (DockerNAT)' network to "
-            "private, which is required for volumes to be mounted in containers."))
-
-    subparsers = parser.add_subparsers(dest="action")
-    subparsers.add_parser(
-        'build', parents=[dockeropts, dockerbuildopts])
-    subparsers.add_parser(
-        'run', parents=[dockeropts, dockerrunopts])
-    subparsers.add_parser(
-        'buildrun', parents=[dockeropts, dockerbuildopts, dockerrunopts])
-    subparsers.add_parser(
-        'util', parents=[utilopts])
-
-    parsed = parser.parse_args()
+    arguments = PsyopsArgumentCollection()
+    parsed = arguments.parsed
 
     if parsed.verbose or parsed.debug:
         logger.setLevel(logging.DEBUG)
@@ -397,19 +415,20 @@ def main(*args, **kwargs):  # pylint: disable=W0613
             parsed.secretstmpfs, runargs=parsed.runargs,
             containerargs=parsed.containerargs)
     elif parsed.action == "util":
-        if not parsed.utilaction:
-            utilopts.print_help()
-            return 1
-        if 'enumsubmod' in parsed.utilaction:
+        if parsed.utilaction == 'enumsubmod':
             for submod in parentrepo.submodules:
                 print(submod.checkoutdir)
-        if 'fixcrlf' in parsed.utilaction:
+        elif parsed.utilaction == 'fixcrlf':
             parentrepo.allfixcrlf()
-        if 'netvolfix' in parsed.utilaction:
-            netvolfix()
+        elif parsed.utilaction == 'netvolfix':
+            netvolfix(parsed.connection_profile)
+        else:
+            print(f"Unknown utilaction: '{parsed.utilaction}'")
+            arguments.utilopts.print_help()
+            return 1
     else:
-        print(f"Unknown action {parsed.action}")
-        parser.print_usage()
+        print(f"Unknown action '{parsed.action}'")
+        arguments.parser.print_usage()
         return 1
 
 
