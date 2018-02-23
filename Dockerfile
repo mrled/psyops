@@ -85,6 +85,7 @@ RUN true \
         # Useful to have the 'ipsec' command when working with Algo
         strongswan strongswan-doc \
         sudo sudo-doc \
+        tmux tmux-doc \
         tzdata tzdata-doc \
     #
     && update-ca-certificates --fresh \
@@ -247,7 +248,7 @@ RUN true \
     # So when we push to it, it updates the encrypted submodule checked out on the host
     # Of course, the changes are not pushed to GitHub until we do so (probably from the host)
     && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
-    && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.vimrc "$HOME" \
+    && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.tmux.conf .dhd/hbase/.vimrc "$HOME" \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \
     && ln -sf "$PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
