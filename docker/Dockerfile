@@ -138,7 +138,7 @@ RUN true \
 ARG psysetup=/setup
 
 # Copy files for system-level configuration & run setup that relies on them
-COPY ["docker/setup", "$psysetup"]
+COPY ["setup", "$psysetup"]
 
 RUN true \
     # Install toilet, which is very important
@@ -214,10 +214,10 @@ RUN if test "$enablesudo"; then true \
 
 # Configure my user. Changes more often
 
-COPY ["docker/home/", "$homedir/"]
-COPY ["docker/usrlocalbin/*", "/usr/local/bin/"]
+COPY ["home/", "$homedir/"]
+COPY ["usrlocalbin/*", "/usr/local/bin/"]
 # So we can use it in scripts at login time, even if $PSYOPS_VOLUME did not mount properly
-COPY ["submod/dhd/opt/bin/ansi", "/usr/local/bin/"]
+#COPY ["submod/dhd/opt/bin/ansi", "/usr/local/bin/"]
 
 # Run this after ALL files have been placed into /usr/local/bin
 # Fucking Docker uses the host's umask

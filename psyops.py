@@ -20,6 +20,7 @@ if sys.version_info < MIN_PYTHON:
 
 SCRIPTPATH = os.path.realpath(__file__)
 SCRIPTDIR = os.path.dirname(SCRIPTPATH)
+DOCKERDIR = os.path.join(SCRIPTDIR, 'docker')
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
@@ -128,7 +129,7 @@ def dockerrun(
 def dockerbuild(imagename, imagetag, buildargs=None):
     """Build the Docker container"""
     buildcli = [
-        'docker', 'build', SCRIPTDIR, '--tag', f'{imagename}:{imagetag}']
+        'docker', 'build', DOCKERDIR, '--tag', f'{imagename}:{imagetag}']
     if buildargs:
         buildcli += buildargs.split(" ")
     logger.info(f"Building an image with:\n{buildcli}")
