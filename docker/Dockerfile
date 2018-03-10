@@ -63,6 +63,7 @@ RUN true \
         ca-certificates ca-certificates-doc \
         # I got tired of fucking with busybox's wget
         curl curl-doc \
+        docker docker-doc docker-bash-completion \
         emacs-nox emacs-doc \
         file file-doc \
         git git-doc \
