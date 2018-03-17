@@ -11,7 +11,7 @@ Resources:
   # Origin zone, for most subdomains of micahrl.com.
   OriginZone:
     Type: "AWS::Route53::HostedZone"
-    Properties: 
+    Properties:
       Name: micahrl.com.
 
   # Records in the origin zone
@@ -22,7 +22,7 @@ Resources:
     DependsOn:
       - InternalZone
 
-    Properties: 
+    Properties:
       HostedZoneId: !Ref OriginZone
       RecordSets:
 
@@ -65,7 +65,7 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["apsylania.micahrl.com."]
-        
+
         # Old prod server
         - Name: noradia.micahrl.com.
           Type: A
@@ -75,7 +75,7 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["noradia.micahrl.com."]
-        
+
         # Old dev server
         - Name: nullyork.micahrl.com.
           Type: A
@@ -126,10 +126,13 @@ Resources:
   # Internal zone - for VPN clients
   InternalZone:
     Type: "AWS::Route53::HostedZone"
-    Properties: 
+    Properties:
       Name: internal.micahrl.com.
 
   # A new group with permission to modify records in the InternalZone
+  # I use my inflatable-wharf container for this,
+  # which uses xenolf/lego under the hood
+  # Required permissions: https://github.com/xenolf/lego#aws-route-53
   InternalZoneUpdaterGroup:
     Type: AWS::IAM::Group
     Properties:
@@ -138,6 +141,11 @@ Resources:
         PolicyDocument:
           Version: 2012-10-17
           Statement:
+          - Effect: Allow
+            Action:
+            - route53:GetChange
+            - route53:ListHostedZonesByName
+            Resource: "*"
           - Effect: Allow
             Action:
             - route53:ChangeResourceRecordSets
