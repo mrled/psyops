@@ -394,7 +394,8 @@ def main(*args, **kwargs):  # pylint: disable=W0613
     parentrepo = GitRepoMetadata(SCRIPTDIR)
 
     if 'sudo' in parsed and parsed.sudo:
-        parsed.buildargs += "--build-arg enablesudo=1"
+        if 'buildargs' in parsed:
+            parsed.buildargs += "--build-arg enablesudo=1"
         parsed.imagetag = "sudo"
 
     if parsed.action == "build":
