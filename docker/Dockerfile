@@ -1,4 +1,4 @@
-FROM alpine:3.6
+FROM alpine:3.7
 LABEL maintainer "me@micahrl.com"
 
 #### Development notes
@@ -23,8 +23,6 @@ ENV PSYOPS_GPG_IMPORT_OWNERTRUST_DB="$homedir/.gnupg/psyops.secret.gpg.ownertrus
 ENV PSYOPS_GPG_SECRET_KEY_ID="3426CF80"
 # Public GPG key ID
 ENV PSYOPS_GPG_PUBLIC_KEY_ID="664C82AD"
-# Location to store (plaintext!) GPG passphrase
-ENV PSYOPS_GPG_PLAINTEXT_PASSFILE="$PSYOPS_SECRETS_PATH/gpg-passphrase"
 # Encrypted private SSH key path
 ENV PSYOPS_SSH_ENCRYPTED_PRIVATE_KEY_PATH="$homedir/.ssh/id_ed25519.gpg"
 # Location to decrypt private SSH key
@@ -67,7 +65,9 @@ RUN true \
         emacs-nox emacs-doc \
         file file-doc \
         git git-doc \
-        gnupg1 gnupg1-doc \
+        # Installs GPG 2.x, not 1.x (gnupg1 gnupg1-doc)
+        # Sadly, Alpine doesn't offer a way to install them side by side
+        gnupg gnupg-doc \
         # for awscli, installed below from pip, to get its documentation
         groff groff-doc \
         # For non busybox ping; busybox ping requires root privs, or setting net.ipv4.ping_group_range on the Docker *host*,
@@ -100,8 +100,10 @@ RUN true \
     && apk add \
         # general
         gcc \
+        linux-headers \
         make \
         musl-dev \
+        python2-dev \
         python3-dev \
         # for (at least) PyNACL
         libffi-dev \
@@ -253,6 +255,9 @@ RUN true \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \
     && ln -sf "$PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
+    # Useful when building on Windows hosts, which use open permissions by default
+    && mkdir -p $HOME/.gnupg $HOME/.ssh \
+    && chmod 700 $HOME/.gnupg $HOME/.ssh \
     && true
 
 CMD /bin/bash -i
