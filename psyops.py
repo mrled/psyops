@@ -344,6 +344,9 @@ class PsyopsArgumentCollection():
         self.dockerrunopts.add_argument(
             '--secrets-tmpfs', dest='secretstmpfs', default="/secrets",
             help="Mount point for the secrets tmpfs filesystem")
+        self.dockerrunopts.add_argument(
+            '--skip-netvolcheck', dest='skipnetvolcheck', action="store_true",
+            help="Skip checking whether the Docker network profile is private")
 
         self.utilopts = argparse.ArgumentParser(add_help=False)
         self.utilsubparsers = self.utilopts.add_subparsers(dest="utilaction")
@@ -403,7 +406,7 @@ def main(*args, **kwargs):  # pylint: disable=W0613
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
     elif parsed.action == "run":
         parentrepo.testcheckout(throw=True)
-        netvoltest(throw=True)
+        netvoltest(throw=(not parsed.skipnetvolcheck))
         dockerrun(
             parsed.imagename, parsed.imagetag, parsed.psyopsvol,
             parsed.secretstmpfs, runargs=parsed.runargs,
@@ -411,7 +414,7 @@ def main(*args, **kwargs):  # pylint: disable=W0613
     elif parsed.action == "buildrun":
         parentrepo.testcheckout(throw=True)
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
-        netvoltest(throw=True)
+        netvoltest(throw=(not parsed.skipnetvolcheck))
         dockerrun(
             parsed.imagename, parsed.imagetag, parsed.psyopsvol,
             parsed.secretstmpfs, runargs=parsed.runargs,
