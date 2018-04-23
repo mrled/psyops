@@ -29,18 +29,12 @@ ENV PSYOPS_SSH_ENCRYPTED_PRIVATE_KEY_PATH="$homedir/.ssh/id_ed25519.gpg"
 ENV PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH="$PSYOPS_SECRETS_PATH/id_ed25519"
 # Unencrypted public SSH key path
 ENV PSYOPS_SSH_PUBLIC_KEY_PATH="$homedir/.ssh/id_ed25519.pub"
-# Location to decrypt secrets repo
-ENV PSYOPS_SECRETS_REPO_CHECKOUT_PATH="$PSYOPS_SECRETS_PATH/psyops-secrets"
-# Branch name for encrypted commits. Must be name of both the local branch
-# we'll check out AND the remote branch that is encrypted before pushing
-ENV PSYOPS_SECRETS_REPO_BRANCH="master"
-# Name to use for the gcrypt remote
-ENV PSYOPS_SECRETS_REPO_REMOTE_NAME="origin"
-# URI for the gcrypt remote
-# ENV PSYOPS_SECRETS_REPO_REMOTE_URI="file://$PSYOPS_VOLUME/submod/psyops-secrets"
-ENV PSYOPS_SECRETS_REPO_REMOTE_URI="git@github.com:mrled/psyops-secrets.git"
-# The psyops-secrets repo has a script to symlink its config files into the
-# homedir... if it exists, the repo was successfully decrypted
+# Encrypted secrets path
+ENV PSYOPS_SECRETS_ENCRYPTED_PATH="$PSYOPS_VOLUME/docker/psyops-secrets.tar.gz.gpg"
+# Location to decrypt secrets
+ENV PSYOPS_SECRETS_DECRYPTED_PATH="$PSYOPS_SECRETS_PATH/psyops-secrets"
+# The encrypted secrets file contains a script to symlink its config files into
+# the homedir... if it exists, the repo was successfully decrypted
 ENV PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH="symlink.sh"
 # Allow setting the timezone at runtime
 ENV PSYOPS_TIMEZONE="US/Central"
@@ -158,17 +152,6 @@ RUN true \
     && true
 
 RUN true \
-    # Install git-remote-crypt
-    && apk add \
-        # for rst2man
-        py3-docutils \
-    # We install py3-docutils, which includes `rst2man-3`, but git-remote-crypt's setup.sh expects `rst2man`, lol
-    && printf '#!/bin/sh\nrst2man-3 "$@"\n' > /usr/local/bin/rst2man && chmod 755 /usr/local/bin/rst2man \
-    && cd "$psysetup/git-remote-gcrypt" \
-    && ./install.sh 2>&1 \
-    && true
-
-RUN true \
     # Install doctl, the Digital Ocean cli tool
     # this next line is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
     && mkdir /lib64 && ln -s ../lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
@@ -246,10 +229,6 @@ ARG gitemail="me@micahrl.com"
 
 # Run commands (as my user). Changes more often
 RUN true \
-    # NOTE: We clone from an encrypted git repo (which happens to be a submodule of the
-    # psyops repo) at $psysetup/psyops-secrets
-    # So when we push to it, it updates the encrypted submodule checked out on the host
-    # Of course, the changes are not pushed to GitHub until we do so (probably from the host)
     && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.tmux.conf .dhd/hbase/.vimrc "$HOME" \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \

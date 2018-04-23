@@ -107,41 +107,19 @@ Submodules should be available inside the container as well, as long as this rep
 
 That said, see above for notes about line endings if your docker host is running Windows.
 
-## Setting up the secrets submodule
+## Setting up the secrets tarfile
 
-We use [git-remote-gcrypt](https://spwhitton.name/tech/code/git-remote-gcrypt/) to handle secrets, which are stored in [psyops-secrets](https://github.com/mrled/psyops-secrets). This is how that repository was created:
+We use an encrypted tarfile to manage secrets.
 
-1. Create the repo on GitHub
+To create the encrypted secrets file:
 
-2. Push an initial commit containing data that is OK to be pushed unencrypted
+1.  Start the PSYOPS container
+2.  Place your secrets in `$PSYOPS_SECRETS_PATH`
+3.  Add your symlink script (named the same as the value of `$PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH`)
+4.  Call `psecrets encrypt`
+5.  The encrypted secrets file is now saved to `$PSYOPS_SECRETS_ENCRYPTED_PATH`
+6.  Make sure to commit that file to the PSYOPS repository
 
-        git init psyops-secrets-staging
-        pushd psyops-secrets-staging
-        echo 'Secrets for [PSYOPS](https://github.com/mrled/psyops)' > readme.markdown
-        git add readme.markdown
-        git commit -m "Initial commit - add readme"
-        git remote add origin git@github.com:mrled/psyops-secrets.git
-        git push -u origin master:master
-        popd
-
-3. Clone into a second location and configure `git-remote-gcrypt`
-
-        git clone gcrypt::git@github.com:mrled/psyops-secrets.git psyops-secrets
-        pushd psyops-secrets
-        git config gcrypt.gpg-args "--batch --no-tty --passphrase-file $gpgpassfile"
-
-    Note that when you clone it, it will say "You appear to have cloned an empty repository". This is because when using `git-remote-gcrypt` with a git SSH remote (which does not have permission to modify the .git directory directly) rather than an SFTP or rsync remote (which does), it must use a local intermediary repository. That local intermediary repository contains only encrypted data and not the existing commit, where the readme was added. (It then force-pushes to the remote repository a single commit, containing one file per changeset of your actual changes.)
-
-    A benefit of this is that our readme works in GitHub while files, and even log messages and file names, are encrypted. However, history will not be available to GitHub, as the layout of the repository and even commit messages are all squashed into encrypted changeset files.
-
-4. Add files and commit
-
-        git add state-secrets.txt
-        git commit -m "Adding important state secrets lol"
-        git push
-        popd
-
-    Note that, in this case, we are using a file containing the passphrase. Use a literal string, not a shell variable for this, and of course it must exist and be the correct passphrase. There may be other options, such as using a GPG agent, that you might wish to explore instead.
 
 ## Build and run -time variables
 

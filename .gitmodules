@@ -7,9 +7,6 @@
 [submodule "docker/setup/toilet"]
 	path = docker/setup/toilet
 	url = https://github.com/cacalabs/toilet
-[submodule "docker/setup/git-remote-gcrypt"]
-	path = docker/setup/git-remote-gcrypt
-	url = https://github.com/spwhitton/git-remote-gcrypt
 [submodule "submod/psyops-secrets"]
 	path = submod/psyops-secrets
 	url = git@github.com:mrled/psyops-secrets.git
