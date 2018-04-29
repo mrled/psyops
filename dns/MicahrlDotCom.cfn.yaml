@@ -20,7 +20,7 @@ Resources:
 
     # Required because of the delegation record for internal.micahrl.com.
     DependsOn:
-      - InternalZone
+      - InternalZoneUpdated
 
     Properties:
       HostedZoneId: !Ref OriginZone
@@ -117,19 +117,20 @@ Resources:
           # DKIM for Fastmail
 
         # Nameserver delegation record for the internal subdomain
-        # This necessitates `DependsOn: ["InternalZone"]`
+        # This necessitates `DependsOn: ["InternalZoneUpdated"]`
         - Name: internal.micahrl.com.
           Type: NS
           TTL: 300
-          ResourceRecords: !GetAtt InternalZone.NameServers
+          ResourceRecords: !GetAtt InternalZoneUpdated.NameServers
 
   # Internal zone - for VPN clients
-  InternalZone:
+  # Changed the name to InternalZoneUpdated after manual deletion to force recreation
+  InternalZoneUpdated:
     Type: "AWS::Route53::HostedZone"
     Properties:
       Name: internal.micahrl.com.
 
-  # A new group with permission to modify records in the InternalZone
+  # A new group with permission to modify records in the InternalZoneUpdated
   # I use my inflatable-wharf container for this,
   # which uses xenolf/lego under the hood
   # Required permissions: https://github.com/xenolf/lego#aws-route-53
@@ -151,4 +152,15 @@ Resources:
             - route53:ChangeResourceRecordSets
             - route53:GetHostedZone
             - route53:ListResourceRecordSets
-            Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "InternalZone"}]]}
+            Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "InternalZoneUpdated"}]]}
+
+Outputs:
+  OriginZoneId:
+    Description: The ID of the micahrl.com. root zone
+    Value: !Ref OriginZone
+  InternalZoneId:
+    Description: The ID of the internal.micahrl.com. zone
+    Value: !Ref InternalZoneUpdated
+  InternalZoneUpdaterGroupArn:
+    Description: The ARN for a group with permission to modify records in the internal zone
+    Value: !GetAtt InternalZoneUpdaterGroup.Arn
