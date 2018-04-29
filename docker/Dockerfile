@@ -52,6 +52,8 @@ RUN true \
     #
     && apk add \
         bash bash-doc \
+        # For dig
+        bind-tools \
         ca-certificates ca-certificates-doc \
         # I got tired of fucking with busybox's wget
         curl curl-doc \
@@ -77,11 +79,13 @@ RUN true \
         python3 python3-doc \
         # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
         shadow shadow-doc \
+        strace strace-doc \
         # Useful to have the 'ipsec' command when working with Algo
         strongswan strongswan-doc \
         sudo sudo-doc \
         tmux tmux-doc \
         tzdata tzdata-doc \
+        zip zip-doc \
     #
     && update-ca-certificates --fresh \
     #
