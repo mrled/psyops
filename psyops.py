@@ -49,45 +49,6 @@ def debugexchandler(exc_type, exc_value, exc_traceback):
         pdb.pm()
 
 
-def powershell(command):
-    """Run a Powershell command
-
-    Use the -EncodedCommand parameter to get around any quoting issues
-
-    command:    The text of a command to run. Pipelines and other complex statements are supported.
-    output:     The command's standard output
-    """
-    encoded_command = base64.b64encode(command.encode('utf-16le')).decode()
-
-    # We almost certainly want 64-bit Powershell
-    # However, we may be running in a 32-bit Python
-    # Within 32-bit processes, 64-bit binaries are available as the C:\Windows\sysnative
-    pspath_system32 = f"{os.environ['SystemRoot']}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
-    pspath_sysnative = f"{os.environ['SystemRoot']}\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe"
-    pspath = pspath_sysnative if os.path.isfile(pspath_sysnative) else pspath_system32
-
-    pscall = [pspath, '-NoProfile', '-EncodedCommand', encoded_command]
-    logger.info(f"Calling Powershell executable at '{pspath}', passing command '{command}', encoded as '{encoded_command}'")
-    psproc = subprocess.Popen(pscall, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    stdout = ""
-    stderr = ""
-    while psproc.returncode == None:
-        this_stdout, this_stderr = psproc.communicate()
-        # print(f"_partial_ STDOUT: {this_stdout}")
-        # print(f"_partial_ STDERR: {this_stderr}")
-        stdout += this_stdout.decode()
-        stderr += this_stderr.decode()
-        psproc.poll()
-    logger.info(f"Powershell command return code: {psproc.returncode}")
-    logger.info(f"Powershell command STDOUT: {stdout}")
-    logger.info(f"Powershell command STDERR: {stderr}")
-    if psproc.returncode != 0:
-        raise Exception(
-            f"Powershell command exited with nonzero return code '{psproc.returncode}'")
-    return stdout.rstrip()
-
-
 def dockerrun(
         imagename, imagetag, psyopsvol, tmpfsmount,
         runargs=None, containerargs=None, psyopsvolperms="rw",
@@ -134,43 +95,6 @@ def dockerbuild(imagename, imagetag, buildargs=None):
         buildcli += buildargs.split(" ")
     logger.info(f"Building an image with:\n{buildcli}")
     subprocess.check_call(buildcli)
-
-
-def netvolfix(ifname="vEthernet (DockerNAT)"):
-    """Set the Docker interface's connection profile to private
-
-    Docker creates a network for containers to use, and firewall rules that
-    enable host volumes to mount in the container. However, the firewall rules
-    require the Docker network profile to be private, and for some reason this
-    gets reset all the time, resulting in containers running with no errors,
-    but no mounted volumes.
-
-    NOTE: This requires admin privileges.
-    """
-    output = powershell(
-        f'Set-NetConnectionProfile -InterfaceAlias "{ifname}" -NetworkCategory Private')
-    logger.info(f"Set-ConnectionProfile output: '{output}'")
-
-
-def netvoltest(ifname="vEthernet (DockerNAT)", throw=False):
-    """Test whether the Docker interface's network connection profile is set to private"""
-    if sys.platform != "win32":
-        return True
-    output = powershell(
-        f'Get-NetConnectionProfile -InterfaceAlias "{ifname}" | Select-Object -ExpandProperty NetworkCategory')
-    logger.info(
-        f"Network category for the network attached to {ifname} is {output}")
-    if output == "Private":
-        return True
-    else:
-        msg = (
-            f"Network category for the network attached to '{ifname}' must be set to Private, "
-            f"but it is instead set to '{output}'. "
-            f"Run '{SCRIPTPATH} util --netvolfix' to fix self.")
-        logger.error(msg)
-        if throw:
-            raise Exception(msg)
-        return False
 
 
 class GitRepoMetadata():
@@ -344,9 +268,6 @@ class PsyopsArgumentCollection():
         self.dockerrunopts.add_argument(
             '--secrets-tmpfs', dest='secretstmpfs', default="/secrets",
             help="Mount point for the secrets tmpfs filesystem")
-        self.dockerrunopts.add_argument(
-            '--skip-netvolcheck', dest='skipnetvolcheck', action="store_true",
-            help="Skip checking whether the Docker network profile is private")
 
         self.utilopts = argparse.ArgumentParser(add_help=False)
         self.utilsubparsers = self.utilopts.add_subparsers(dest="utilaction")
@@ -355,13 +276,6 @@ class PsyopsArgumentCollection():
             'enumsubmod', help='List all Git submodules')
         self.utilsubparsers.add_parser(
             'fixcrlf', help='Disasble core.autocrlf on parent repo and all submodules')
-        self.util_netvolfix_subparser = self.utilsubparsers.add_parser(
-            'netvolfix', help=(
-                "(Windows only) Set the network connection profile for the Docker network profile "
-                "to private, which is required for volumes to be mounted in containers."))
-        self.util_netvolfix_subparser.add_argument(
-            '--connection-profile', default='vEthernet (DockerNAT)',
-            help='The name of the Docker network connection')
 
         self.subparsers = self.parser.add_subparsers(dest="action")
         self.subparsers.required = True
@@ -406,7 +320,6 @@ def main(*args, **kwargs):  # pylint: disable=W0613
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
     elif parsed.action == "run":
         parentrepo.testcheckout(throw=True)
-        netvoltest(throw=(not parsed.skipnetvolcheck))
         dockerrun(
             parsed.imagename, parsed.imagetag, parsed.psyopsvol,
             parsed.secretstmpfs, runargs=parsed.runargs,
@@ -414,7 +327,6 @@ def main(*args, **kwargs):  # pylint: disable=W0613
     elif parsed.action == "buildrun":
         parentrepo.testcheckout(throw=True)
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
-        netvoltest(throw=(not parsed.skipnetvolcheck))
         dockerrun(
             parsed.imagename, parsed.imagetag, parsed.psyopsvol,
             parsed.secretstmpfs, runargs=parsed.runargs,
@@ -425,8 +337,6 @@ def main(*args, **kwargs):  # pylint: disable=W0613
                 print(submod.checkoutdir)
         elif parsed.utilaction == 'fixcrlf':
             parentrepo.allfixcrlf()
-        elif parsed.utilaction == 'netvolfix':
-            netvolfix(parsed.connection_profile)
         else:
             print(f"Unknown utilaction: '{parsed.utilaction}'")
             arguments.utilopts.print_help()
