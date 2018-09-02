@@ -94,7 +94,9 @@ RUN true \
     # These prereqs include support for PyNACL
     && python3 -m ensurepip \
     && python3 -m pip install --upgrade pip \
-    && python3 -m pip install virtualenv \
+    && python3 -m pip install \
+        pipenv \
+        virtualenv \
     && apk add \
         # general
         gcc \
