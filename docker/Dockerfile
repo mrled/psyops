@@ -239,6 +239,7 @@ RUN true \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.tmux.conf .dhd/hbase/.vimrc "$HOME" \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \
     && ln -sf "$PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
+    && ln -s "$PSYOPS_VOLUME/.home.psyops.local" "$HOME/.local" \
     && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
     # Useful when building on Windows hosts, which use open permissions by default
     && mkdir -p $HOME/.gnupg $HOME/.ssh \
