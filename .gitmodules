@@ -16,3 +16,6 @@
 [submodule "submod/architect"]
 	path = submod/architect
 	url = git@github.com:mrled/architect.git
+[submodule "submod/automata"]
+	path = submod/automata
+	url = git@github.com:mrled/automata.git
