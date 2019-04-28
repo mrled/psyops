@@ -114,6 +114,12 @@ RUN true \
         awscli \
         gandi.cli \
     #
+    # Make sure basic Python2 tooling is installed too, ugh
+    && python2 -m ensurepip \
+    && python2 -m pip install --upgrade \
+        pip \
+        virtualenv \
+    #
     && install -d -o root -g root -m 755 /usr/local/bin \
     #
     && true
