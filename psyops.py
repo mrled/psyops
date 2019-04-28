@@ -188,10 +188,11 @@ class GitRepoMetadata():
         """
         missing = []
         for submodule in self.submodules:
-            if not os.path.exists(os.path.join(submodule.checkoutdir, '.git')):
+            submodpath = os.path.join(SCRIPTDIR, submodule.checkoutdir)
+            if not os.path.exists(os.path.join(submodpath, '.git')):
                 logger.warning(
                     f"Submodule at {submodule.checkoutdir} not checked out")
-                missing += [submodule.checkoutdir]
+                missing += [submodpath]
         if missing and throw:
             raise Exception(
                 f"These submodules are not properly checked out: {missing}")
