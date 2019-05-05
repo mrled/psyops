@@ -1,0 +1,36 @@
+---
+
+- name: Handle fucking Broadcom 14e4:43a0
+  block:
+
+    - set_fact:
+        rpmfusion_free: rpmfusion-free-release-{{ ansible_distribution_version }}.noarch.rpm
+        rpmfusion_nonfree: rpmfusion-nonfree-release-{{ ansible_distribution_version }}.noarch.rpm
+
+    - name: Get rpmfusion
+      get_url: url={{ item }} dest=/usr/local/src
+      with_items:
+        - https://download1.rpmfusion.org/free/fedora/{{ rpmfusion_free }}
+        - https://download1.rpmfusion.org/nonfree/fedora/{{ rpmfusion_nonfree }}
+
+    - name: Install rpmfusion
+      dnf:
+        name:
+          - /usr/local/src/{{ rpmfusion_free }}
+          - /usr/local/src/{{ rpmfusion_nonfree }}
+        state: present
+
+    - name: Install broadcom package and prereqs
+      package: name={{ item }} state=latest
+      with_items:
+        - broadcom-wl
+        - kernel-devel-{{ ansible_kernel }}
+        - akmods
+
+    - name: Run akmods
+      command: akmods
+
+    - name: modprobe wl
+      command: modprobe wl
+
+  when: fucking_broadcom_wifi

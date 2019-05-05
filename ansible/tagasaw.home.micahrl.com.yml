@@ -1,0 +1,8 @@
+---
+
+- name: Configure tagasaw
+  hosts: plexservers
+  roles:
+    - { name: hardware, tags: ['hardware'] }
+    - { name: plexserver, tags: ['plexserver'] }
+    - { name: unifi_controller, tags: ['unifi_controller'] }

@@ -1,0 +1,24 @@
+---
+
+unifi_ports:
+  - desc: Device command and control
+    port: 8080
+    proto: tcp
+  - desc: Web interface and API
+    port: 8443
+    proto: tcp
+  - desc: HTTPS portal
+    port: 8843
+    proto: tcp
+  - desc: HTTP portal
+    port: 8880
+    proto: tcp
+  - desc: STUN service
+    port: 3478
+    proto: udp
+  - desc: Speed Test (unifi5 only)
+    port: 6789
+    proto: udp
+  - desc: NT discovery
+    port: 10001
+    proto: udp

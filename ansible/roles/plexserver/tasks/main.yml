@@ -1,0 +1,7 @@
+---
+
+- name: Download the Plex RPM
+  get_url: url={{ plexserver_rpm_url }} dest={{ plexserver_rpm_path }} checksum={{ plexserver_rpm_checksum }}
+- name: Install the Plex RPM    
+  dnf: name={{ plexserver_rpm_path }} state=latest
+
