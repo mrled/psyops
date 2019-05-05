@@ -7,9 +7,6 @@
 [submodule "docker/setup/toilet"]
 	path = docker/setup/toilet
 	url = https://github.com/cacalabs/toilet
-[submodule "submod/psyops-secrets"]
-	path = submod/psyops-secrets
-	url = git@github.com:mrled/psyops-secrets.git
 [submodule "submod/algo"]
 	path = submod/algo
 	url = git@github.com:mrled/algo.git
