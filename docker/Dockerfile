@@ -191,6 +191,7 @@ RUN true \
     #
     # Allow my user to set /etc/localtime
     && addgroup -S "timekeeper" \
+    && touch /etc/localtime \
     && chgrp timekeeper /etc/localtime \
     && chmod 0664 /etc/localtime \
     #
