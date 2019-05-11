@@ -1,0 +1,8 @@
+---
+
+plexserver_share_user: plex
+plexserver_share_pass: "{{ vault_plexserver_share_pass }}"
+plexserver_share_domain: 
+plexserver_share_server: chenoska.lan.micahrl.com
+plexserver_share_path: plex
+

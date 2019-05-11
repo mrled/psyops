@@ -1,4 +1,4 @@
 localhost
 
 [plexservers]
-tagasaw.home.micahrl.com ansible_python_interpreter=/usr/bin/python3
+tagasaw.lan.micahrl.com ansible_python_interpreter=/usr/bin/python3

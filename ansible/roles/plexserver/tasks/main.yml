@@ -1,7 +1,88 @@
 ---
 
-- name: Download the Plex RPM
-  get_url: url={{ plexserver_rpm_url }} dest={{ plexserver_rpm_path }} checksum={{ plexserver_rpm_checksum }}
-- name: Install the Plex RPM    
-  dnf: name={{ plexserver_rpm_path }} state=latest
+- name: Install prereqs
+  package: name=cifs-utils state=installed
 
+- name: Plex logs to syslog
+  copy:
+    content: export PLEX_MEDIA_SERVER_USE_SYSLOG=true
+    dest: /etc/sysconfig/PlexMediaServer
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart plex service
+
+- name: Ensure the hostname is correct (or else plex fucks up due to DNS rebinding protection)
+  lineinfile:
+    path: /etc/hosts
+    line: 127.0.0.2 {{ inventory_hostname_short }} {{ inventory_hostname }}
+  notify: Restart plex service
+
+- block:
+    - name: Install the Plex RPM from existing yum repo
+      dnf: name=plexmediaserver state=latest
+      notify: Restart plex service
+  rescue:
+    - name: Install the Plex RPM from URL
+      dnf: name={{ plexserver_rpm_url }} state=latest
+      notify: Restart plex service
+
+- name: Configure the firewall trusted zone
+  firewalld: port={{ item }} permanent=yes zone=trusted state=enabled immediate=yes
+  with_items:
+    - 32400/tcp  # (for access to the Plex Media Server) [required]
+    - 1900/udp   # (for access to the Plex DLNA Server)
+    - 3005/tcp   # (for controlling Plex Home Theater via Plex Companion)
+    - 5353/udp   # (for older Bonjour/Avahi network discovery)
+    - 8324/tcp   # (for controlling Plex for Roku via Plex Companion)
+    - 32410/udp  # (for current GDM network discovery)
+    - 32410/udp  # (for current GDM network discovery)
+    - 32412/udp  # (for current GDM network discovery)
+    - 32413/udp  # (for current GDM network discovery)
+    - 32414/udp  # (for current GDM network discovery)
+    - 32469/tcp  # (for access to the Plex DLNA Server)
+
+# I think you actully have to add to BOTH the trusted and default zones?
+- name: Configure the firewall default zone
+  firewalld: port={{ item }} permanent=yes state=enabled immediate=yes
+  with_items:
+    - 32400/tcp  # (for access to the Plex Media Server) [required]
+    - 1900/udp   # (for access to the Plex DLNA Server)
+    - 3005/tcp   # (for controlling Plex Home Theater via Plex Companion)
+    - 5353/udp   # (for older Bonjour/Avahi network discovery)
+    - 8324/tcp   # (for controlling Plex for Roku via Plex Companion)
+    - 32410/udp  # (for current GDM network discovery)
+    - 32410/udp  # (for current GDM network discovery)
+    - 32412/udp  # (for current GDM network discovery)
+    - 32413/udp  # (for current GDM network discovery)
+    - 32414/udp  # (for current GDM network discovery)
+    - 32469/tcp  # (for access to the Plex DLNA Server)
+
+- name: Set credentials file
+  copy:
+    content: |-
+      username={{ plexserver_share_user }}
+      password={{ plexserver_share_pass }}
+      domain={{ plexserver_share_domain }}
+    dest: "{{ plexserver_creds_path }}"
+    owner: root
+    group: root
+    mode: 0600
+  notify: Restart plex service
+
+- name: Get plex user
+  getent: database=passwd key={{ plexserver_username }}
+  register: gotent
+  notify: Restart plex service
+
+- name: Mount the NAS
+  mount:
+    path: "{{ plexserver_mountpoint }}"
+    src: "//{{ plexserver_share_server }}/{{ plexserver_share_path }}"
+    fstype: cifs
+    opts: "credentials={{ plexserver_creds_path }},uid={{ getent_passwd[plexserver_username][1] }},gid={{ getent_passwd[plexserver_username][2] }}"
+    state: mounted
+  notify: Restart plex service
+
+- name: Start plex service
+  systemd: name=plexmediaserver daemon_reload=yes enabled=yes state=restarted

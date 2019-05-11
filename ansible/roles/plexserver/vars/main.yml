@@ -3,3 +3,7 @@
 plexserver_rpm_name: plexmediaserver-{{ plexserver_version }}.{{ plexserver_arch }}.rpm
 plexserver_rpm_url: https://downloads.plex.tv/plex-media-server-new/{{ plexserver_version }}/redhat/{{ plexserver_rpm_name }}
 plexserver_rpm_path: /usr/local/src/{{ plexserver_rpm_name }}
+
+# This must match what's in the plex RPM
+plexserver_username: plex
+plexserver_groupname: plex
