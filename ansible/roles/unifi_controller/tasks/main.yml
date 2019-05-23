@@ -80,7 +80,7 @@
       - "{{ ipv4addr }}:10001:10001/udp"  # UBNT discovery
     env:
       TZ: America/Chicago
-      UNAS_UID0: false
+      UNAS_UID0: "false"
       UNIFI_UID: user_result.uid
       UNIFI_GID: group_result.gid
 
