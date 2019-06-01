@@ -13,6 +13,7 @@ ARG homedir=/home/$username
 ENV PSYOPS_VOLUME="/psyops"
 # Location to store decrypted secrets, expected to be mounted on tmpfs
 ENV PSYOPS_SECRETS_PATH="/secrets"
+
 # Encrypted private GPG key path to import
 ENV PSYOPS_GPG_IMPORT_SECRET_KEY="$homedir/.gnupg/psyops.secret.gpg.key.asc"
 # Unencrypted public GPG key path to import
@@ -23,12 +24,21 @@ ENV PSYOPS_GPG_IMPORT_OWNERTRUST_DB="$homedir/.gnupg/psyops.secret.gpg.ownertrus
 ENV PSYOPS_GPG_SECRET_KEY_ID="3426CF80"
 # Public GPG key ID
 ENV PSYOPS_GPG_PUBLIC_KEY_ID="664C82AD"
-# Encrypted private SSH key path
-ENV PSYOPS_SSH_ENCRYPTED_PRIVATE_KEY_PATH="$homedir/.ssh/id_ed25519.gpg"
-# Location to decrypt private SSH key
-ENV PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH="$PSYOPS_SECRETS_PATH/id_ed25519"
-# Unencrypted public SSH key path
-ENV PSYOPS_SSH_PUBLIC_KEY_PATH="$homedir/.ssh/id_ed25519.pub"
+
+# Encrypted private SSH ED25519 key path
+ENV PSYOPS_SSH_ED25519_ENCRYPTED_PRIVATE_KEY_PATH="$homedir/.ssh/id_ed25519.gpg"
+# Location to decrypt private ED25519 SSH key
+ENV PSYOPS_SSH_ED25519_DECRYPTED_PRIVATE_KEY_PATH="$PSYOPS_SECRETS_PATH/id_ed25519"
+# Unencrypted public SSH ED25519 key path
+ENV PSYOPS_SSH_ED25519_PUBLIC_KEY_PATH="$homedir/.ssh/id_ed25519.pub"
+
+# Encrypted private SSH RSA key path
+ENV PSYOPS_SSH_RSA_ENCRYPTED_PRIVATE_KEY_PATH="$homedir/.ssh/id_rsa.gpg"
+# Location to decrypt private RSA SSH key
+ENV PSYOPS_SSH_RSA_DECRYPTED_PRIVATE_KEY_PATH="$PSYOPS_SECRETS_PATH/id_rsa"
+# Unencrypted public SSH RSA key path
+ENV PSYOPS_SSH_RSA_PUBLIC_KEY_PATH="$homedir/.ssh/id_rsa.pub"
+
 # Encrypted secrets path
 ENV PSYOPS_SECRETS_ENCRYPTED_PATH="$PSYOPS_VOLUME/docker/psyops-secrets.tar.gz.gpg"
 # Location to decrypt secrets
@@ -245,7 +255,8 @@ RUN true \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
     && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.tmux.conf .dhd/hbase/.vimrc "$HOME" \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \
-    && ln -sf "$PSYOPS_SSH_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
+    && ln -sf "$PSYOPS_SSH_ED25519_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
+    && ln -sf "$PSYOPS_SSH_RSA_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && ln -s "$PSYOPS_VOLUME/.home.psyops.local" "$HOME/.local" \
     && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
     # Useful when building on Windows hosts, which use open permissions by default
