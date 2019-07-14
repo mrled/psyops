@@ -1,0 +1,23 @@
+---
+
+- name: Configure hardware
+  hosts: all
+  roles:
+    - { name: hardware, tags: ['hardware'] }
+
+- name: Deploy Plex
+  hosts: plexservers
+  roles:
+    - { name: plexserver, tags: ['plexserver'] }
+
+- name: Deploy Unifi gateway config files
+  hosts: unifiusg
+  tasks:
+    - debug: msg="Deploying Unifi gateway on {{ inventory_hostname }}"
+  roles:
+    - { name: unifi_usg, tags: ['unifi_usg'] }
+
+- name: Deploy Unifi controller config
+  hosts: unificontrollers
+  roles:
+    - { name: unifi_controller, tags: ['unifi_controller'] }

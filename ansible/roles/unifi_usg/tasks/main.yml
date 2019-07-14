@@ -1,0 +1,21 @@
+---
+
+# - name: Create algo config directory
+#   file: path=/config/algo state=directory owner=root mode=0755
+
+# - name: Copy algo config directory
+#   file: src=algo/ dest=/config/algo/ owner=root mode=0644
+
+- name: Copy algo config directory
+  copy: src=algo/ dest=/config/algo/ owner=root mode=0644 directory_mode=0755
+
+- name: Copy algo private key
+  copy: content={{ algo_client_key }} dest=/config/algo/gw1.key owner=root mode=0600
+
+- name: Symlink algo CA key
+  file: src=/config/algo/cacert.pem dest=/etc/ipsec.d/cacerts/cacert.pem state=link force=true
+- name: Symlink algo client cert
+  file: src=/config/algo/gw1.crt dest=/etc/ipsec.d/certs/gw1.crt state=link force=true
+- name: Symlink algo client key
+  file: src=/config/algo/gw1.key dest=/etc/ipsec.d/private/gw1.crt state=link force=true
+
