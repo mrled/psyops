@@ -166,6 +166,14 @@ Resources:
           Type: A
           TTL: 60
           ResourceRecords: ["192.168.1.228"]
+        - Name: fourgang.home.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.69.4"]
+        - Name: occult.home.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.69.6"]
 
   # A new group with permission to modify records in the InternalZoneUpdated
   # I use my inflatable-wharf container for this,
