@@ -43,3 +43,16 @@ To connect to new Ubiquiti AP `nanoton` on nicer PCIe wifi card
     nmcli con add con-name nanoton ifname wlp2s0 type wifi ssid nanoton
     nmcli d wifi connect nanoton password "PASSWORD"
 
+### Occult
+
+* Raspberry Pi 4
+* PoE HAT
+* Raspbian - I actually thought I could run Fedora? but I guess that's not true til Fedora 31 :/
+  * https://medium.com/@maheshsenni/setting-up-a-raspberry-pi-without-keyboard-and-mouse-headless-9359e0926807
+  * write minimal raspbian to sd card, touch 'ssh' on the the boot partition, connect to PoE switch
+  * it came up, nice. set static ip address in my dhcp server, ssh pi@ with password 'raspberry', run 'sudo dhclient -1 eth0'
+  * this kept its original ip address, and also got it the new one. I didn't even lose my ssh session
+* Change pi@ password
+* Create psyops-ansible user per above, and upload key
+* Configure DNS to give Occult a hostname
+* Configure home router to route traffic on Algo subnet to Occult

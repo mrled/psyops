@@ -1,0 +1,80 @@
+---
+
+- name: Set /etc/hostname
+  copy: content={{ inventory_hostname }} dest=/etc/hostname owner=root group=root mode=0644
+
+- name: Set hostname in /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: 127.0.1.1 {{ inventory_hostname }}
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install VPN software
+  apt:
+    name:
+    - strongswan-charon
+    - strongswan-pki
+    update_cache: yes
+
+- name: Copy the VPN configuration files
+  copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  with_items:
+    - content: "{{ algo_gateway_ipsec_conf }}"
+      dest: /etc/ipsec.conf
+      owner: root
+      group: root
+      mode: "0400"
+    - content: "{{ algo_gateway_ipsec_secrets }}"
+      dest: /etc/ipsec.secrets
+      owner: root
+      group: root
+      mode: "0400"
+    - content: "{{ algo_gateway_private_key }}"
+      dest: /etc/ipsec.d/private/{{ algo_gateway_private_key_filename }}
+      owner: root
+      group: root
+      mode: "0400"
+    - content: "{{ algo_gateway_certificate }}"
+      dest: /etc/ipsec.d/certs/{{ algo_gateway_certificate_filename }}
+      owner: root
+      group: root
+      mode: "0400"
+    - content: "{{ algo_gateway_cacert }}"
+      dest: /etc/ipsec.d/cacerts/cacert.pem
+      owner: root
+      group: root
+      mode: "0400"
+  notify:
+    - restart-strongswan
+
+- name: Create a group for the VPN keepalive user
+  group: name=vpnkeepalive system=yes
+
+- name: Create the VPN keepalive user 
+  user:
+    name: vpnkeepalive
+    group: vpnkeepalive
+    home: /nonexistent
+    createhome: no
+    shell: /bin/sh
+    system: yes
+
+- name: Set the VPN keepalive cron job
+  copy:
+    content: >+
+      "*/5 * * * * vpnkeepalive ping -c 1 '{{ algo_gateway_keepalive_host }}'"
+    dest: /etc/cron.d/vpn-tunnel-keepalive
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enable IPv4 forwarding
+  sysctl: name=net.ipv4.ip_forward value=1 sysctl_set=yes state=present reload=yes

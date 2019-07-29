@@ -21,3 +21,8 @@
   hosts: unificontrollers
   roles:
     - { name: unifi_controller, tags: ['unifi_controller'] }
+
+- name: Deploy Algo gateawy
+  hosts: algogateway
+  roles:
+    - { name: algo_gateway, tags: ['algo_gateway'] }

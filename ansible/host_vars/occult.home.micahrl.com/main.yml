@@ -1,0 +1,106 @@
+---
+
+# The VPN host - either an IP address or a domain name
+algo_gateway_vpn_host: newtroy.micahrl.com
+
+# The Algo subnet
+algo_gateway_remote_subnet: 10.19.48.0/24
+
+# Algo user's VPN private key, generated from Algo
+# openssl pkcs12 -in "USER.p12" -nocerts -passin pass:$ALGO_GENERATED_PKCS12PASS -nodes 2>/dev/null
+algo_gateway_private_key: "{{ vault_occult_algo_private_key }}"
+algo_gateway_private_key_filename: occult.key
+
+# Algo user's VPN certificate, generated from Algo
+# openssl pkcs12 -in "USER.p12" -clcerts -nokeys -passin pass:$ALGO_GENERATED_PKCS12PASS 2>/dev/null
+algo_gateway_certificate: |+
+  Bag Attributes
+      friendlyName: occult
+      localKeyID: 85 AB FC 25 B5 63 FA A8 D1 6B B3 EA 21 90 47 C8 2F E8 FC FB
+  subject=/CN=occult
+  issuer=/CN=newtroy.micahrl.com
+  -----BEGIN CERTIFICATE-----
+  MIICIzCCAaigAwIBAgIBCTAKBggqhkjOPQQDAjAeMRwwGgYDVQQDDBNuZXd0cm95
+  Lm1pY2FocmwuY29tMB4XDTE5MDcyODAyMTIxOVoXDTI5MDcyNTAyMTIxOVowETEP
+  MA0GA1UEAwwGb2NjdWx0MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEG6aPqW4M+KTS
+  Wry7mgK8/hAGodfljSjBG7S6bDnhm8RfORM/7BrcnfGrC0xNL0xGS+xeTc94j8jn
+  9O198XhRsIAhlUmJimqhyqNAN11lmUbQSaQBiY6efQnS6bNy9UmAo4HGMIHDMAkG
+  A1UdEwQCMAAwHQYDVR0OBBYEFPH0eYWWDP3Vm3bvOt0r6pHER8gcME4GA1UdIwRH
+  MEWAFBMbkl2ltG2Ic8tsNkd8sT2+i2xmoSKkIDAeMRwwGgYDVQQDDBNuZXd0cm95
+  Lm1pY2FocmwuY29tggkA82rpW7/a52cwJwYDVR0lBCAwHgYIKwYBBQUHAwEGCCsG
+  AQUFBwMCBggrBgEFBQcDETALBgNVHQ8EBAMCBaAwEQYDVR0RBAowCIIGb2NjdWx0
+  MAoGCCqGSM49BAMCA2kAMGYCMQD6OYy8HtGIR6KTf9wQ9+XAxzqs++xlBFDtlXVC
+  O0YpYkXbrKSlEsHIjflr9gqC/xgCMQC2grBdyoyy1Q8i0NXDl+hstizJ/QQPxr6e
+  ivaZwim3ux65AVPT1cWFBSF0BvPbV9c=
+  -----END CERTIFICATE-----
+
+algo_gateway_certificate_filename: occult.crt
+  
+# The contents of Algo's ipsec_USER.conf file
+# We parameterize this where we can, and make a couple of changes, documented in the comments
+algo_gateway_ipsec_leftid: occult
+algo_gateway_ipsec_conf: |+
+  conn ikev2-{{ algo_gateway_vpn_host }}
+      fragmentation=yes
+      rekey=no
+      keyexchange=ikev2
+      compress=no
+      dpddelay=35s
+      ike=aes256gcm16-prfsha512-ecp384,aes256-sha2_512-prfsha512-ecp384,aes256-sha2_384-prfsha384-ecp384!
+      esp=aes256gcm16-ecp384,aes256-sha2_512-prfsha512-ecp384!
+
+      right={{ algo_gateway_vpn_host }}
+      rightid={{ algo_gateway_vpn_host }}
+
+      # Change from Algo-generated version: allow any IP address
+      # Upstream Algo only uses IP addresses and sets right=W.X.Y.Z,
+      # but my fork can configure a domain name
+      rightallowany=yes
+
+      # Change from Algo-generated version: only use VPN for VPN hosts
+      # aka "split-tunneling"
+      # This means ONLY pass traffic destined for this network over the VPN
+      rightsubnet={{ algo_gateway_remote_subnet }}
+
+      # Change from Algo-generated version: restart dead peers
+      dpdaction=restart
+
+      # Change from Algo-generated version: keep trying to connect to the server forever
+      keyingtries=%forever
+
+      rightauth=pubkey
+
+      leftid={{ algo_gateway_ipsec_leftid }}
+      leftsourceip=%config
+      leftauth=pubkey
+      leftcert={{ algo_gateway_certificate_filename }}
+      leftfirewall=yes
+      left=%defaultroute
+
+      # We don't use auto=route because it doesn't work with leftsourceip=%config
+      # We use dbdaction=restart, keyingtries=%forever, and auto=start instead
+      # See https://wiki.strongswan.org/issues/2162
+      # TODO: I think this means we can get rid of our VPN keepalive pings?
+      auto=start
+
+algo_gateway_cacert: |+
+  -----BEGIN CERTIFICATE-----
+  MIIB/zCCAYSgAwIBAgIJAPNq6Vu/2udnMAoGCCqGSM49BAMCMB4xHDAaBgNVBAMM
+  E25ld3Ryb3kubWljYWhybC5jb20wHhcNMTkwNTExMjIyMTUzWhcNMjkwNTA4MjIy
+  MTUzWjAeMRwwGgYDVQQDDBNuZXd0cm95Lm1pY2FocmwuY29tMHYwEAYHKoZIzj0C
+  AQYFK4EEACIDYgAEl4WVkNH4NsabRwO/mXRnJGccEmRDBkr72HqCbq3yVqBbYwJy
+  8c0hKn5a0X4DV7NtzrACT1sHnafNrqhIFIptKtEn/ecHQIe/Bygaa98PuKMf7zEY
+  gMCcurqFoZY4W+Hbo4GNMIGKMB0GA1UdDgQWBBQTG5JdpbRtiHPLbDZHfLE9vots
+  ZjBOBgNVHSMERzBFgBQTG5JdpbRtiHPLbDZHfLE9votsZqEipCAwHjEcMBoGA1UE
+  AwwTbmV3dHJveS5taWNhaHJsLmNvbYIJAPNq6Vu/2udnMAwGA1UdEwQFMAMBAf8w
+  CwYDVR0PBAQDAgEGMAoGCCqGSM49BAMCA2kAMGYCMQCWRNPfWijltxKxdl+jveAG
+  ceKmLeFAZ4BMXk0I471F2IlsNvNGbKx4Ju8K8vd6+tYCMQCmf/epK5DzPKhvnV5W
+  cJOQjjuWhUAdDf8PfvXmt9EgzquiYRgDB40xzDXFOcYIocE=
+  -----END CERTIFICATE-----
+
+# The parameterized contents of Algo's 'ipsec_USER.secrets' file:
+algo_gateway_ipsec_secrets: "{{ algo_gateway_vpn_host }} : ECDSA {{ algo_gateway_private_key_filename }}"
+
+# A host to ping periodically to keep the VPN tunnel up
+# Can be anything that goes over the rightsubnet routes in ipsec.conf
+algo_gateway_keepalive_host: "occult.internal.micahrl.com"
