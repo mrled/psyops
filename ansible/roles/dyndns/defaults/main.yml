@@ -1,0 +1,4 @@
+---
+
+dyndns_user: dyndns
+dyndns_currentip_file: /var/run/dyndns.currentip

@@ -1,0 +1,50 @@
+---
+
+- name: Install packages
+  package: name={{ item }} state=latest
+  with_items:
+    - bind-utils # for dig
+
+- name: Get current IP address
+  command: dig +short myip.opendns.com @resolver1.opendns.com
+  register: currentip_result
+
+- name: Deploy the Route53 CloudFormation template
+  cloudformation:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    stack_name: "{{ dyndns_route53_stack_name }}"
+    state: "present"
+    region: "{{ aws_region }}"
+    template: "roles/dyndns/files/dyndns.cfn.yml"
+    template_parameters:
+      DynDnsZone: "{{ dyndns_hosted_zone_id }}"
+      DynDnsFqdn: "{{ dyndns_fqdn }}"
+      DynDnsCurrentIp: "{{ currentip_result.stdout }}"
+
+- name: Add user account for dyndns
+  user: name={{ dyndns_user }}
+
+- fail: This whole thing is untested
+
+- fail: Need to create a user in the DyndnsZoneUpdaterGroup and download its creds
+
+- fail: Need to take creds from my aws script
+
+- fail: Need to install aws cli tools
+
+- name: Get dyndns UID
+  getent: database=passwd key={{ dyndns_user }}
+
+- name: Set dyndns UID fact
+  set_fact:
+    dyndns_uid: getent_passwd[dyndns_user][1]
+
+- name: Ensure permissions on current IP file
+  file: state=file owner={{ dyndns_user }} group=root mode=0600 path={{ dyndns_currentip_file }}
+
+- name: Copy dyndns.sh
+  template: src=dyndns.sh.j2 dest=/usr/local/bin/dyndns.sh owner=root group=root mode=0755
+
+- name: dyndns.sh cronjob
+  cron: name=dyndns minute="*/10" hour="*" job=/usr/local/bin/dyndns.sh cron_file=ansible_dyndns user={{ dyndns_user }}

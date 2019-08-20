@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: {{ dyndns_route53_stack_name }} dyndns records
+
+Parameters:
+
+  DynDnsZone:
+    Type: String
+    Description: The ID for the zone to add these records to
+
+  DynDnsFqdn:
+    Type: String
+    Description: The FQDN being used for the dynamic DNS service, including trailing dot, like 'dyn.example.com.'
+
+  DynDnsCurrentIp:
+    Type: String
+    Description: The current IP address for the dynamic host
+
+Resources:
+
+  DynDnsZoneRecords:
+    Type: AWS::Route53::RecordSetGroup
+
+    Properties:
+      HostedZoneId: !Ref DynDnsZone
+      RecordSets:
+
+        - Name: !Ref DynDnsFqdn
+          Type: A
+          TTL: 300
+          ResourceRecords:
+            - !Ref DynDnsCurrentIp
+
+  DyndnsZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+      - PolicyName: AllowUpdatingInternalZonePolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - route53:GetChange
+            - route53:ListHostedZonesByName
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - route53:ChangeResourceRecordSets
+            - route53:GetHostedZone
+            - route53:ListResourceRecordSets
+            Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "DynDnsZone"}]]}
+
