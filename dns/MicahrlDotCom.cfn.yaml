@@ -130,6 +130,16 @@ Resources:
           TTL: 300
           ResourceRecords: !GetAtt HomeZone.NameServers
 
+        # Dynamic DNS delegation to noip
+        - Name: homeward.micahrl.com.
+          Type: NS
+          TTL: 300
+          ResourceRecords:
+            - ns1.no-ip.com.
+            - ns2.no-ip.com.
+            - ns3.no-ip.com.
+            - ns4.no-ip.com.
+
   # Internal zone - for VPN clients
   # Changed the name to InternalZoneUpdated after manual deletion to force recreation
   InternalZoneUpdated:
@@ -138,7 +148,7 @@ Resources:
       Name: internal.micahrl.com.
 
   # Home Zone
-  # Google Fiber box is too dumb to set hostnames for its clients :) lol
+  # Unifi is too dumb to set hostnames for its clients :) lol
   HomeZone:
     Type: "AWS::Route53::HostedZone"
     Properties:
@@ -150,30 +160,44 @@ Resources:
     Properties:
       HostedZoneId: !Ref HomeZone
       RecordSets:
-        - Name: andraia.home.micahrl.com.
+
+        # Network gear
+        - Name: gateway.home.micahrl.com.
           Type: A
           TTL: 60
-          ResourceRecords: ["192.168.1.253"]
+          ResourceRecords: ["192.168.1.1"]
+        - Name: cloudkey.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.2"]
+        - Name: switch01.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.3"]
+
+        # Servers
         - Name: tagasaw.home.micahrl.com.
           Type: A
           TTL: 60
-          ResourceRecords: ["192.168.1.122"]
-        - Name: plex.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["tagasaw.home.micahrl.com."]
-        - Name: chenoska.home.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["192.168.1.228"]
-        - Name: fourgang.home.micahrl.com
-          Type: A
-          TTL: 60
-          ResourceRecords: ["192.168.69.4"]
+          ResourceRecords: ["192.168.1.25"]
         - Name: occult.home.micahrl.com
           Type: A
           TTL: 60
-          ResourceRecords: ["192.168.69.6"]
+          ResourceRecords: ["192.168.1.26"]
+        - Name: chenoska.home.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.27"]
+
+        # Clients
+        - Name: glitch.home.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.50"]
+        - Name: andraia.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.51"]
 
   # A new group with permission to modify records in the InternalZoneUpdated
   # I use my inflatable-wharf container for this,
