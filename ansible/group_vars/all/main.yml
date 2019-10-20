@@ -3,6 +3,31 @@
 plexserver_share_user: plex
 plexserver_share_pass: "{{ vault_plexserver_share_pass }}"
 plexserver_share_domain: 
-plexserver_share_server: chenoska.lan.micahrl.com
+plexserver_share_server: chenoska.home.micahrl.com
 plexserver_share_path: plex
 
+# Wireguard docs
+# TODO: lookup plugin to generate the pubkey from the privkey
+# TODO: set all these as hostvars, use hostvars['HOSTNAME'].wireguard_privkey etc
+#       (should be ok even for e.g. glitch, which doesn't get provisioned from Ansible)
+# To generate the keys:
+# - wg genkey | tee privatekey | wg pubkey > publickey
+# - save the privkey in the vault and the pubkey here
+# - Delete the privatekey and publickey files
+wireguard_vpn_network: 192.168.2.0/24
+wireguard_server_privkey: "{{ vault_wireguard_server_privkey }}"
+wireguard_server_pubkey: E2pT5R+SZ+lLdHEt15iWlsfvGJQu6Zp164HdyB+V7mo=
+wireguard_server_offset: 1
+wireguard_clients:
+  - name: glitch
+    offset: 10
+    privkey: "{{ vault_wireguard_client_privkey_glitch }}"
+    pubkey: NBJFj0NFyy/T1O3IvDG8j1kpc04vMDd/KOqDUoDRHX0=
+  - name: andraia
+    offset: 11
+    privkey: "{{ vault_wireguard_client_privkey_andraia }}"
+    pubkey: 4tSQt5Fla90iQI1p0uWYoxxRsX31+aLmF18pzKaeDi0=
+  - name: neurofornia
+    offset: 12
+    privkey: "{{ vault_wireguard_client_privkey_neurofornia }}"
+    pubkey: 66ovHlNaCY/rYKzu7p32MmdgRrBka1NoZGY1Sdl9HAU=

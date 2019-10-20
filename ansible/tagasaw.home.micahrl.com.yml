@@ -5,4 +5,4 @@
   roles:
     - { name: hardware, tags: ['hardware'] }
     - { name: plexserver, tags: ['plexserver'] }
-    - { name: unifi_controller, tags: ['unifi_controller'] }
+    - { name: wireguard_server, tags: ['wireguard_server'] }

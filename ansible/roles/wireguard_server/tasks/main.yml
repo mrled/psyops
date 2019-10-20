@@ -1,0 +1,42 @@
+---
+
+- name: Install wireguard COPR repo
+  get_url:
+    url: https://copr.fedorainfracloud.org/coprs/jdoss/wireguard/repo/epel-7/jdoss-wireguard-epel-7.repo
+    dest: /etc/yum.repos.d/jdoss-wireguard.repo 
+    mode: '0644'
+    owner: root
+    group: root
+  register: wireguard_install_repo
+
+- name: Install wireguard
+  dnf:
+    name:
+      - wireguard-dkms
+      - wireguard-tools
+    state: latest
+    update_cache: yes
+  notify: restart wireguard
+
+- name: Enable IP forwarding
+  sysctl: name={{ item }} value=1 state=present
+  with_items:
+    - net.ipv4.ip_forward
+    - net.ipv6.conf.all.forwarding
+
+# Configure firewall
+# I think you actully have to add to BOTH the trusted and default zones?
+- name: Configure the firewall trusted zone
+  firewalld: port=51820/udp permanent=yes zone=trusted state=enabled immediate=yes
+- name: Configure the firewall trusted zone
+  firewalld: port=51820/udp permanent=yes state=enabled immediate=yes
+
+- name: Create wireguard config directory
+  file: state=directory path=/etc/wireguard owner=root group=root mode=0700
+
+- name: Install wireguard configuration
+  template: src=wg0.conf dest=/etc/wireguard/wg0.conf owner=root group=root mode=0600
+  notify: restart wireguard
+
+- name: Start wireguard
+  service: name=wg-quick@wg0.service enabled=yes state=started

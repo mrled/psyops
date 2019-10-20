@@ -1,15 +1,14 @@
 # localhost
 
 [plexservers]
-tagasaw.lan.micahrl.com
+tagasaw.home.micahrl.com
 
-[unificontrollers]
-# tagasaw.home.micahrl.com
-192.168.69.70
+[wireguardservers]
+tagasaw.home.micahrl.com
 
 [unifiusg]
 # gw1.home.micahrl.com
-192.168.69.1
+192.168.1.1
 
 [algogateway]
 occult.home.micahrl.com
