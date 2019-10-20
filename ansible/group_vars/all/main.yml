@@ -6,6 +6,11 @@ plexserver_share_domain:
 plexserver_share_server: chenoska.home.micahrl.com
 plexserver_share_path: plex
 
+interactive_user: mrled
+interactive_primary_group: mrled
+interactive_secondary_groups:
+  - docker
+
 # Wireguard docs
 # TODO: lookup plugin to generate the pubkey from the privkey
 # TODO: set all these as hostvars, use hostvars['HOSTNAME'].wireguard_privkey etc

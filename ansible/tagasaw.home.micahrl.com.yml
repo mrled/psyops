@@ -4,5 +4,6 @@
   hosts: plexservers
   roles:
     - { name: hardware, tags: ['hardware'] }
+    - { name: interactive, tags: ['interactive'] }
     - { name: plexserver, tags: ['plexserver'] }
     - { name: wireguard_server, tags: ['wireguard_server'] }

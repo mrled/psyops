@@ -1,0 +1,24 @@
+---
+
+- name: Make my group
+  group: name={{ interactive_primary_group }}
+
+- name: Make myself
+  user:
+    name: "{{ interactive_user }}"
+    group: "{{ interactive_primary_group }}"
+    groups: "{{ interactive_secondary_groups }}"
+
+- name: Install packages
+  package:
+    name:
+      - emacs-nox
+      - git
+      - mosh
+      - ripgrep
+      - tmux
+
+- name: Allow mosh through the firewall (default zone)
+  firewalld: service=mosh state=enabled permanent=yes immediate=yes
+- name: Allow mosh through the firewall (trusted zone)
+  firewalld: service=mosh state=enabled permanent=yes immediate=yes zone=trusted

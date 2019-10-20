@@ -1,0 +1,23 @@
+---
+
+- name: Add Docker repo
+  yum_repository:
+    name: docker
+    description: docker
+    # Got this baseurl by reading Docker install manual,
+    # found 'dnf config-manager --add-repo https://REPOURL' command,
+    # visiting that REPOURL, and picking docker-ce-stable
+    baseurl: https://download.docker.com/linux/fedora/$releasever/$basearch/stable
+
+- name: Install Docker
+  dnf:
+    name:
+      - containerd.io
+      - docker-ce
+      - docker-ce-cli
+      - python3-docker
+    state: latest
+    update_cache: yes
+
+- name: Start docker service
+  systemd: name=docker state=started enabled=yes
