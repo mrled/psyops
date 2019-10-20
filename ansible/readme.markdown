@@ -56,3 +56,12 @@ To connect to new Ubiquiti AP `nanoton` on nicer PCIe wifi card
 * Create psyops-ansible user per above, and upload key
 * Configure DNS to give Occult a hostname
 * Configure home router to route traffic on Algo subnet to Occult
+
+## TODO
+
+* Clear out the fucking firewalld config on every god damned ansible run
+  * You can do this by deleting all the zones from /etc/firewalld/zones
+  * Is there a less dumb way to do this? Who knows
+  * Also don't forget the default zone
+  * Probably just reconfigure firewalld from scratch so that it works everywhere
+  * Don't forget, some Fedora versions have a default zone like "FedoraServer", for others it's something more generic! Why is this! Please end my life!
