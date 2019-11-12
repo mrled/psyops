@@ -1,0 +1,16 @@
+---
+
+seedbox_bindaddr_v4: "0.0.0.0"
+seedbox_bindaddr_v6: "::"
+seedbox_download_queue_size: 25
+seedbox_peer_port: 51413
+seedbox_dht_enabled: true
+seedbox_pex_enabled: true
+seedbox_portforward_enabled: true
+seedbox_rpc_bind_address: "0.0.0.0"
+seedbox_rpc_password: "{{ vault_seedbox_rpc_password }}"
+seedbox_rpc_port: 9091
+seedbox_rpc_username: "netstorm"
+seedbox_speedlimit_down: 100
+seedbox_speedlimit_up: 100
+seedbox_upload_slots_per_torrent: 14

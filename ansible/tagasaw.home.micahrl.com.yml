@@ -7,3 +7,4 @@
     - { name: interactive, tags: ['interactive'] }
     - { name: plexserver, tags: ['plexserver'] }
     - { name: wireguard_server, tags: ['wireguard_server'] }
+    - { name: seedbox, tags: ['seedbox'] }

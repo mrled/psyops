@@ -1,0 +1,10 @@
+---
+
+- name: Install transmission
+  package:
+    name:
+      - transmission-daemon
+    state: latest
+
+- name: Install the configfile
+  template: src=settings.json.j2 dest={{ transmission_home }}/.config/transmission-daemon/settings.j2

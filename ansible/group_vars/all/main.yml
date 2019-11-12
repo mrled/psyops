@@ -36,3 +36,11 @@ wireguard_clients:
     offset: 12
     privkey: "{{ vault_wireguard_client_privkey_neurofornia }}"
     pubkey: 66ovHlNaCY/rYKzu7p32MmdgRrBka1NoZGY1Sdl9HAU=
+
+# Seedbox settings
+seedbox_enable_portforward: no
+seedbox_download_queue_size: 300
+seedbox_download_dir: /netmount/chenoska/incoming/transmission
+seedbox_incomplete_dir: /netmount/chenoska/incoming
+seedbox_speedlimit_down: 750
+seedbox_speedlimit_up: 750
