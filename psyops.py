@@ -52,6 +52,8 @@ def debugexchandler(exc_type, exc_value, exc_traceback):
 def dockerrun(
         imagename, imagetag, psyopsvol, tmpfsmount,
         runargs=None, containerargs=None, psyopsvolperms="rw",
+        # Only used when running from Linux
+        linuxuid=None, linuxgid=None,
         # Note: default tmpfs options are read only and noexec
         tmpfsopts="exec,mode=1777", hostname="PSYOPS"):
     """Run the Docker container"""
@@ -71,6 +73,13 @@ def dockerrun(
         '--volume', f'{SCRIPTDIR}:{psyopsvol}:{psyopsvolperms}',
         '--tmpfs', f'{tmpfsmount}:{tmpfsopts}',
         '--hostname', hostname]
+
+    if sys.platform.startswith("linux"):
+        runcli += [
+            "-e", "uid={}".format(linuxuid or os.geteuid()),
+            "-e", "gid={}".format(linuxgid or os.getegid()),
+        ]
+
     if runargs:
         runcli += runargs.split(" ")
     runcli += [f'{imagename}:{imagetag}']

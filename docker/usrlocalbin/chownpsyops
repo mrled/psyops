@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import sys
+
+
+def recursively_chown(directory, uid, gid):
+    """Recursively chown a directory; do not follow symlinks
+    """
+    for root, dirs, files in os.walk(directory):
+        for path in root + dirs + files:
+            os.chown(path, uid, gid, follow_symlinks=False)
+
+
+def main(*args, **kwargs):
+    """Main program function
+    """
+    parser = argparse.ArgumentParser(description="Chown the psyops user homedir")
+    parser.add_argument(
+        "--psyops-username", default=os.environ.get("PSYOPS
+    parser.add_argument(
+        "--uid", default=os.environ.get("PSYOPS_UID"),
+        help="UID of the psyops user")
+    parser.add_argument(
+        "--gid", default=os.environ.get("PSYOPS_GID"),
+        help="GID of the psyops user")
+    parsed = parser.parse_args()
+    raise Exception("Dude, you need to find the homedir somehow")
+    recursively_chown(homedir, parsed.uid, parsed.gid)
+
+
+if __name__ == '__main__':
+    sys.exit(main(*sys.argv))

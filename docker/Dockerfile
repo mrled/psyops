@@ -6,7 +6,10 @@ LABEL maintainer "me@micahrl.com"
 # 1.    Multi-line RUN statements *cannot* have blank lines in them, but *can* have empty comments
 
 ARG username=psyops
+ARG groupname=psyops
 ARG homedir=/home/$username
+ENV PSYOPS_UID=1000
+ENV PSYOPS_GID=1000
 
 # Location where we will mount the psyops repo as a volume. Note that even
 # though this is an environment variable, it's not changeable at runtime
@@ -174,18 +177,6 @@ RUN true \
     && true
 
 RUN true \
-    # Install doctl, the Digital Ocean cli tool
-    # this next line is some bullshit; copied from https://github.com/digitalocean/doctl/blob/master/Dockerfile
-    && mkdir /lib64 && ln -s ../lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2 \
-    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" digitalocean/doctl '^doctl.*linux.*amd64.*tar.gz$' \
-    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" digitalocean/doctl '^doctl.*linux.*amd64.*sha256$' \
-    && cd "$psysetup" \
-    && tar -zx -f doctl*.tar.gz \
-    && sha256sum -c doctl*.sha256 \
-    && install -o root -g root -m 755 "$psysetup/doctl" /usr/local/bin \
-    && true
-
-RUN true \
     # Install pt, the_platinum_searcher
     && "$psysetup/bin/get-gh-release" --outdir "$psysetup" monochromegane/the_platinum_searcher '^pt_linux_amd64.*.tar.gz$' \
     && cd "$psysetup" \
@@ -194,6 +185,7 @@ RUN true \
     && true
 
 RUN true \
+    && set -x \
     # Final steps
     #
     # Running makewhatis should happen after all root installation commands / only right before running as my user
@@ -206,8 +198,8 @@ RUN true \
     && chmod 0664 /etc/localtime \
     #
     # Configure my user
-    && addgroup -S "$username" \
-    && adduser -S -G "$username" -s /bin/bash "$username" \
+    && addgroup -g "$PSYOPS_GID" "$groupname" \
+    && adduser -D -G "$groupname" -u "$PSYOPS_UID" -s /bin/bash "$username" \
     && usermod --append --groups timekeeper "$username" \
     #
     && true
@@ -236,13 +228,15 @@ RUN chmod a+rX /usr/local/bin/*
 
 RUN true \
     && mkdir "$PSYOPS_VOLUME" \
-    && chown -R "$username:$username" "$homedir" "$PSYOPS_VOLUME" "$psysetup" \
+    && chown -R "$username:$groupname" "$homedir" "$PSYOPS_VOLUME" "$psysetup" \
     && true
 
 # Changes (like permission changes) made to a VOLUME after it has been declared wil be *discarded*
 # Contents of the volume are overwritten when it's bind-mounted
 # So make permission changes before declaring, and put any file changes into scripts that run after the Docker image has been created
 VOLUME $PSYOPS_VOLUME
+
+RUN chown "$username:$groupname" "$PSYOPS_VOLUME"
 
 USER $username
 WORKDIR $homedir
