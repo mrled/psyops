@@ -1,10 +1,114 @@
 ---
 
+- name: Create seedbox mountpoints
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  with_items: "{{ seedbox_mountpoints }}"
+
+- name: Configure seedbox mount files
+  copy:
+    content: |+
+      username={{ item.username }}
+      passwprd={{ item.password }}
+    dest: "{{ item.credsfile }}"
+    owner: root
+    group: root
+    mode: "0600"
+  with_items: "{{ seedbox_mountpoints }}"
+
+- name: Mount seedbox mounts
+  mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: "{{ item.fstype }}"
+    opts: credentials={{ item.credsfile }}
+    state: mounted
+  with_items: "{{ seedbox_mountpoints }}"
+
+- fail: msg="STOPPINGHERE"
+
 - name: Install transmission
   package:
     name:
       - transmission-daemon
     state: latest
 
+- name: getent seedbox local user
+  getent: database=passwd key={{ seedbox_local_user }}
+- name: Set seedbox Unix homedir
+  set_fact:
+    seedbox_homedir: "{{ getent_passwd[seedbox_local_user][4] }}"
+
+- name: Ensure downloads/incompletes directories exist
+  file:
+    path: "{{ item }}"
+    owner: "{{ seedbox_local_user }}"
+    group: "{{ seedbox_local_group }}"
+    mode: "0700"
+    state: directory
+  with_items:
+    - "{{ seedbox_download_dir }}"
+    - "{{ seedbox_incomplete_dir }}"
+  notify: restart transmission
+
+- name: Ensure watch directory exists (warning, allows world writes)
+  file:
+    path: "{{ item }}"
+    owner: "{{ seedbox_local_user }}"
+    group: "{{ seedbox_local_group }}"
+    mode: "0777"
+    state: directory
+  with_items:
+  - "{{ seedbox_watch_dir }}"
+
+# see also https://unix.stackexchange.com/questions/520625/transmission-daemon-udp-failed-to-set-receive-send-buffer
+- name: Set higher send/receive buffer sizes
+  sysctl: name={{ item.name }} value={{ item.value }}
+  with_items:
+  - { name: 'net.core.rmem_max', value: 16777216 }
+  - { name: 'net.core.wmem_max', value: 4194304 }
+
+- name: Ensure transmission config directory exists
+  file:
+    path: "{{ seedbox_homedir }}/.config/transmission-daemon"
+    owner: "{{ seedbox_local_user }}"
+    group: "{{ seedbox_local_group }}"
+    mode: "0700"
+    state: directory
+  notify: restart transmission
+
+- name: Stop transmission before changing config file
+  service: name=transmission-daemon state=stopped
+  notify: restart transmission
+
 - name: Install the configfile
-  template: src=settings.json.j2 dest={{ transmission_home }}/.config/transmission-daemon/settings.j2
+  template:
+    src: settings.json.j2
+    dest: "{{ seedbox_homedir }}/.config/transmission-daemon/settings.json"
+    owner: "{{ seedbox_local_user }}"
+    group: "{{ seedbox_local_group }}"
+    mode: "0600"
+  notify: restart transmission
+
+- name: Allow transmission through the firewall (trusted zone)
+  firewalld: port={{ item }} permanent=yes zone=trusted state=enabled immediate=yes
+  with_items:
+  - "{{ seedbox_peer_port }}/udp"
+  - "{{ seedbox_peer_port }}/tcp"
+  - "{{ seedbox_rpc_port }}/udp"
+  - "{{ seedbox_rpc_port }}/tcp"
+
+- name: Allow transmission through the firewall (default zone)
+  firewalld: port={{ item }} permanent=yes state=enabled immediate=yes
+  with_items:
+  - "{{ seedbox_peer_port }}/udp"
+  - "{{ seedbox_peer_port }}/tcp"
+  - "{{ seedbox_rpc_port }}/udp"
+  - "{{ seedbox_rpc_port }}/tcp"
+
+- name: Start transmission
+  service: name=transmission-daemon state=started enabled=yes

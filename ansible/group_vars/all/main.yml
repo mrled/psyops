@@ -42,5 +42,17 @@ seedbox_enable_portforward: no
 seedbox_download_queue_size: 300
 seedbox_download_dir: /netmount/chenoska/incoming/transmission
 seedbox_incomplete_dir: /netmount/chenoska/incoming
+seedbox_watch_dir: /netmount/chenoska/torrents
 seedbox_speedlimit_down: 750
 seedbox_speedlimit_up: 750
+seedbox_peer_port: 7288
+
+# TODO: consider refactoring mountpoints into their own role and using role dependencies
+seedbox_mountpoints:
+  - path: /netmount/chenoska/incoming
+    src: //chenoska.home.micahrl.com/Incoming
+    credsfile: /etc/chenoska_incoming.credentials
+    opts: ""
+    username: "{{ plexserver_share_user }}"
+    password: "{{ plexserver_share_pass }}"
+    fstype: cifs
