@@ -37,11 +37,11 @@ Resources:
         - Name: me.micahrl.com.
           Type: CNAME
           TTL: 300
-          ResourceRecords: ["mrled.github.io"]
+          ResourceRecords: ["clever-kepler-458884.netlify.com."]
         - Name: www.micahrl.com.
           Type: CNAME
           TTL: 300
-          ResourceRecords: ["mrled.github.io"]
+          ResourceRecords: ["me.micahrl.com"]
 
         # Prod server
         - Name: kenasus.micahrl.com.
