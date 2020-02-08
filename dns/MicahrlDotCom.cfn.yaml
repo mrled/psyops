@@ -194,10 +194,30 @@ Resources:
           Type: A
           TTL: 60
           ResourceRecords: ["192.168.1.50"]
-        - Name: andraia.home.micahrl.com.
+        - Name: andraia-wifi.home.micahrl.com.
           Type: A
           TTL: 60
           ResourceRecords: ["192.168.1.51"]
+        - Name: andraia-wired.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.116"]
+        - Name: andraia.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["andraia-wired.home.micahrl.com."]
+        - Name: neurofornia-wifi.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.108"]
+        - Name: neurofornia-wired.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.117"]
+        - Name: neurofornia.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["neurofornia-wired.home.micahrl.com."]
 
   # A new group with permission to modify records in the InternalZoneUpdated
   # I use my inflatable-wharf container for this,
