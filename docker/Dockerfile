@@ -72,6 +72,7 @@ RUN true \
         curl curl-doc \
         docker docker-doc docker-bash-completion \
         emacs-nox emacs-doc \
+        neovim \
         file file-doc \
         git git-doc \
         # Installs GPG 2.x, not 1.x (gnupg1 gnupg1-doc)
@@ -161,7 +162,6 @@ ARG psysetup=/setup
 COPY ["setup", "$psysetup"]
 
 RUN true \
-    # Install pt, the_platinum_searcher
     && "$psysetup/bin/get-gh-release" --outdir "$psysetup" BurntSushi/ripgrep '^ripgrep.*linux-musl.tar.gz$' \
     && cd "$psysetup" \
     && tar -zx -f ripgrep*.tar.gz \
@@ -231,7 +231,7 @@ ARG gitemail="me@micahrl.com"
 # Run commands (as my user). Changes more often
 RUN true \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
-    && ln -sf .dhd/hbase/.bashrc .dhd/hbase/.emacs .dhd/hbase/.inputrc .dhd/hbase/.profile .dhd/hbase/.screenrc .dhd/hbase/.tmux.conf .dhd/hbase/.vimrc "$HOME" \
+    && ln -sf .dhd/hbase/.{bashrc,emacs,inputrc,profile,screenrc,tmux.conf,vimrc} "$HOME" \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \
     && ln -sf "$PSYOPS_SSH_ED25519_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && ln -sf "$PSYOPS_SSH_RSA_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
