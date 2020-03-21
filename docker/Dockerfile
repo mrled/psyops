@@ -1,4 +1,4 @@
-FROM alpine:3.9
+FROM alpine:latest
 LABEL maintainer "me@micahrl.com"
 
 #### Development notes
@@ -59,8 +59,8 @@ RUN true \
     # Fix frustrating errors like
     #   ERROR: http://dl-cdn.alpinelinux.org/alpine/v3.6/main: temporary error (try again later)
     # See also: https://github.com/gliderlabs/docker-alpine/issues/279#issuecomment-300859312
-    && echo http://dl-2.alpinelinux.org/alpine/v3.6/main > /etc/apk/repositories \
-    && echo http://dl-2.alpinelinux.org/alpine/v3.6/community >> /etc/apk/repositories \
+    #&& echo http://dl-2.alpinelinux.org/alpine/v3.6/main > /etc/apk/repositories \
+    #&& echo http://dl-2.alpinelinux.org/alpine/v3.6/community >> /etc/apk/repositories \
     && apk update \
     #
     && apk add \
@@ -148,8 +148,6 @@ RUN true \
 
 RUN true \
     # Install Ansible
-    && apk add \
-        ansible ansible-doc \
     # Required for Ansible scripts and/or the EC2 inventory script
     && python -m pip install \
         ansible \
@@ -163,25 +161,11 @@ ARG psysetup=/setup
 COPY ["setup", "$psysetup"]
 
 RUN true \
-    # Install toilet, which is very important
-    # Moved away from downloading a release tarbatll b/c the toilet server gets mad if you hit it too hard
-    # you have to leave libcaca itself, but it's only 4mb; the rest can go away
-    && apk add libcaca \
-    && apk add --virtual=BUILDTOILET g++ libcaca-dev automake autoconf \
-    && cd "$psysetup/toilet" \
-    && ./bootstrap \
-    && ./configure \
-    && make \
-    && make install \
-    && apk del --purge BUILDTOILET \
-    && true
-
-RUN true \
     # Install pt, the_platinum_searcher
-    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" monochromegane/the_platinum_searcher '^pt_linux_amd64.*.tar.gz$' \
+    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" BurntSushi/ripgrep '^ripgrep.*linux-musl.tar.gz$' \
     && cd "$psysetup" \
-    && tar -zx -f pt_linux_amd64*.tar.gz \
-    && install -o root -g root -m 755 "$psysetup/pt_linux_amd64/pt" /usr/local/bin \
+    && tar -zx -f ripgrep*.tar.gz \
+    && install -o root -g root -m 755 "$psysetup"/ripgrep*linux-musl/rg /usr/local/bin \
     && true
 
 RUN true \
