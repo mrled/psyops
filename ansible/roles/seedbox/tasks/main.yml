@@ -13,7 +13,7 @@
   copy:
     content: |+
       username={{ item.username }}
-      passwprd={{ item.password }}
+      password={{ item.password }}
     dest: "{{ item.credsfile }}"
     owner: root
     group: root
