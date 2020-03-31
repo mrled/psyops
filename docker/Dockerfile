@@ -231,8 +231,7 @@ ARG gitemail="me@micahrl.com"
 # Run commands (as my user). Changes more often
 RUN true \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
-    && ln -sf .dhd/hbase/.{bashrc,emacs,inputrc,profile,screenrc,tmux.conf,vimrc} "$HOME" \
-    && ln -sf "$PSYOPS_VOLUME/submod/dhd/hbase/known_hosts" "$HOME/.ssh/known_hosts" \
+    && setup-psyops-dhd \
     && ln -sf "$PSYOPS_SSH_ED25519_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && ln -sf "$PSYOPS_SSH_RSA_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && ln -s "$PSYOPS_VOLUME/.home.psyops.local" "$HOME/.local" \
