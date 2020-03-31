@@ -1,0 +1,39 @@
+[general]
+accounts = me@micahrl.com, office@mrlproperties.com
+
+
+
+[Account me@micahrl.com]
+localrepository = me@micahrl.com-local
+remoterepository = me@micahrl.com-remote
+
+[Repository me@micahrl.com-remote]
+type = IMAP
+remotehost = mail.messagingengine.com
+remoteuser = mrled@fastmail.com
+remotepass = {{ mailbackup_me_micahrl_com_password }}
+ssl = yes
+sslcacertfile = /etc/ssl/certs/ca-bundle.crt
+
+[Repository me@micahrl.com-local]
+type = Maildir
+localfolders = {{ mailbackup_share_mountpoint }}/Maildirs/me@micahrl.com
+
+
+
+[Account office@mrlproperties.com]
+localrepository = office@mrlproperties.com-local
+remoterepository = office@mrlproperties.com-remote
+
+[Repository office@mrlproperties.com-remote]
+type = IMAP
+remotehost = imappro.zoho.com
+remoteuser = office@mrlproperties.com
+remotepass = {{ mailbackup_office_mrlproperties_com_password }}
+ssl = yes
+sslcacertfile = /etc/ssl/certs/ca-bundle.crt
+
+[Repository office@mrlproperties.com-local]
+type = Maildir
+localfolders = {{ mailbackup_share_mountpoint }}/Maildirs/office@mrlproperties.com
+

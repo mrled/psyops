@@ -1,0 +1,29 @@
+# Log more, making it easier to troubleshoot
+# (On fedora, need to check logs with journalct; they aren't necessarily in /var/log)
+Debug=yes
+
+# The user that gets all the mails (UID < 1000, usually the admin)
+root={{ mailfwd_root_destination_address }}
+
+# SMTP server
+mailhub={{ mailfwd_smtp_host }}:{{ mailfwd_smtp_port }}
+
+# The address where the mail appears to come from for user authentication.
+rewriteDomain={{ mailfwd_rewrite_domain }}
+
+# The full hostname.  Must be correctly formed, fully qualified domain name or GMail will reject connection.
+hostname={{ ansible_fqdn }}
+
+# Use SSL/TLS before starting negotiation
+TLS_CA_FILE=/etc/ssl/certs/ca-bundle.crt
+UseTLS={{ mailfwd_UseTLS }}
+UseSTARTTLS={{ mailfwd_UseSTARTTLS }}
+
+# Username/Password
+AuthUser={{ mailfwd_smtp_user }}
+AuthPass={{ mailfwd_smtp_pass }}
+AuthMethod=LOGIN
+
+# Email 'From header's can override the default domain?
+FromLineOverride=yes
+

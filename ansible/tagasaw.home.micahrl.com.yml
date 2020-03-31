@@ -4,7 +4,9 @@
   hosts: plexservers
   roles:
     - { name: hardware, tags: ['hardware'] }
+    - { name: emailfwd, tags: ['emailfwd'] }
     - { name: interactive, tags: ['interactive'] }
+    - { name: mailbackup, tags: ['mailbackup'] }
     - { name: plexserver, tags: ['plexserver'] }
     - { name: wireguard_server, tags: ['wireguard_server'] }
     - { name: seedbox, tags: ['seedbox'] }

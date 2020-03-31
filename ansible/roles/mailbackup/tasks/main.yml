@@ -1,0 +1,81 @@
+---
+
+- name: Install offlineimap packages
+  dnf:
+    name:
+      - offlineimap
+    state: latest
+    update_cache: yes
+
+- name: Add mailbackup user
+  user:
+    name: "{{ mailbackup_username }}"
+    system: yes
+    create_home: yes
+    home: "{{ mailbackup_homedir }}"
+
+- name: Copy offlineimap config file
+  template:
+    src: offlineimap.conf.j2
+    dest: "{{ mailbackup_homedir }}/.offlineimaprc"
+    owner: "{{ mailbackup_username }}"
+    mode: "0600"
+
+- name: Create mailbackup mountpoints
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  with_items: "{{ mailbackup_mountpoints }}"
+
+- name: Configure mailbackup mount files
+  copy:
+    content: |+
+      username={{ item.username }}
+      password={{ item.password }}
+    dest: "{{ item.credsfile }}"
+    owner: root
+    group: root
+    mode: "0600"
+  with_items: "{{ mailbackup_mountpoints }}"
+
+- name: Mount mailbackup mounts
+  mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: "{{ item.fstype }}"
+    opts: credentials={{ item.credsfile }},uid={{ item.mountowner }}
+    state: mounted
+  with_items: "{{ mailbackup_mountpoints }}"
+
+- name: Make Maildirs
+  file:
+    path: "{{ mailbackup_share_mountpoint }}/Maildirs"
+    state: directory
+    owner: "{{ mailbackup_username }}"
+    mode: "0700"
+
+- name: Copy wrapper script
+  template:
+    src: offlineimap_wrapper.sh.j2
+    dest: /usr/local/bin/offlineimap_wrapper.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure cronvar
+  cronvar:
+    name: MAILTO
+    value: "{{ mailbackup_report_email }}"
+    cron_file: "{{ mailbackup_cron_file }}"
+
+- name: Configure cronjob
+  cron:
+    name: mailbackup-offlineimap
+    minute: "0"
+    hour: "*/6"
+    job: /usr/local/bin/offlineimap_wrapper.sh
+    user: "{{ mailbackup_username }}"
+    cron_file: "{{ mailbackup_cron_file }}"

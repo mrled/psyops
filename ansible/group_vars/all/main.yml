@@ -1,5 +1,14 @@
 ---
 
+mailfwd_smtp_host: smtps-proxy.messagingengine.com
+mailfwd_smtp_port: "443"
+mailfwd_rewrite_domain: micahrl.com
+mailfwd_root_destination_address: psyops@micahrl.com
+mailfwd_smtp_user: mrled@fastmail.com
+mailfwd_smtp_pass: "{{ vault_mailfwd_smtp_pass }}"
+mailfwd_UseTLS: "Yes"
+mailfwd_UseSTARTTLS: "No"
+
 plexserver_share_user: plex
 plexserver_share_pass: "{{ vault_plexserver_share_pass }}"
 plexserver_share_domain: 
@@ -56,3 +65,21 @@ seedbox_mountpoints:
     username: "{{ plexserver_share_user }}"
     password: "{{ plexserver_share_pass }}"
     fstype: cifs
+
+mailbackup_share_user: mailbackup
+mailbackup_share_pass: "{{ vault_mailbackup_share_pass }}"
+mailbackup_report_email: psyops@micahrl.com
+mailbackup_share_mountpoint: /netmount/chenoska/mailbackup
+mailbackup_me_micahrl_com_password: "{{ vault_mailbackup_me_micahrl_com_password }}"
+mailbackup_office_mrlproperties_com_password: "{{ vault_mailbackup_office_mrlproperties_com_password }}"
+
+mailbackup_mountpoints:
+  - path: "{{ mailbackup_share_mountpoint }}"
+    src: //chenoska.home.micahrl.com/mailbackup
+    credsfile: /etc/chenoska_mailbackup.credentials
+    opts: ""
+    username: "{{ mailbackup_share_user }}"
+    password: "{{ mailbackup_share_pass }}"
+    fstype: cifs
+    mountowner: "{{ mailbackup_username }}"
+
