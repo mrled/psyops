@@ -247,6 +247,28 @@ Resources:
             - route53:ListResourceRecordSets
             Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "InternalZoneUpdated"}]]}
 
+  # A new group with permission to modify records in the HomeZone
+  # For use with Let's Encrypt / ACME
+  HomeZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+      - PolicyName: AllowUpdatingHomeZonePolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - route53:GetChange
+            - route53:ListHostedZonesByName
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - route53:ChangeResourceRecordSets
+            - route53:GetHostedZone
+            - route53:ListResourceRecordSets
+            Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "HomeZone"}]]}
+
 Outputs:
   OriginZoneId:
     Description: The ID of the micahrl.com. root zone
@@ -257,3 +279,9 @@ Outputs:
   InternalZoneUpdaterGroupArn:
     Description: The ARN for a group with permission to modify records in the internal zone
     Value: !GetAtt InternalZoneUpdaterGroup.Arn
+  HomeZoneId:
+    Description: The ID of the home.micahrl.com. zone
+    Value: !Ref HomeZone
+  HomeZoneUpdaterGroupArn:
+    Description: The ARN for a group with permission to modify records in the home zone
+    Value: !GetAtt HomeZoneUpdaterGroup.Arn

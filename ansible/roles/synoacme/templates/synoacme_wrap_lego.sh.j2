@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+if test $(find "{{ synoacme_certificate_dir }}" -type f -name "*.key" | wc -l) -ge 1; then
+    action=run
+    extraargs=""
+else
+    action=renew
+    extraargs="--reuse-key --days={{ synoacme_renew_days }}"
+fi
+
+export AWS_REGION={{ synoacme_aws_region }}
+export AWS_ACCESS_KEY_ID={{ synoacme_aws_access_key }}
+export AWS_SECRET_ACCESS_KEY={{ synoacme_aws_secret_key }}
+
+{{ synoacme_lego_extracted_path }}/lego \
+    --accept-tos \
+    --path={{ synoacme_certificate_dir }} \
+    --email={{ synoacme_email }} \
+    --domains={{ synoacme_domain }} \
+    --dns=route53 \
+    $action \
+    $extraargs
+
+{{ synoacme_renew_hook_path }}

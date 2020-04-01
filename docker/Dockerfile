@@ -154,6 +154,9 @@ RUN true \
         ansible \
         boto \
         boto3 \
+    && apk add \
+        # Required for Ansible to use SSH password auth instead of public keys
+        sshpass sshpass-doc \
     && true
 
 ARG psysetup=/setup

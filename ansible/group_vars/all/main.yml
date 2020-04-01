@@ -83,3 +83,25 @@ mailbackup_mountpoints:
     fstype: cifs
     mountowner: "{{ mailbackup_username }}"
 
+# For ACME DNS challenges in the home.micahrl.com domain
+home_zone_updater_access_key: "{{ vault_home_zone_updater_access_key }}"
+home_zone_updater_secret_key: "{{ vault_home_zone_updater_secret_key }}"
+home_zone_updater_region: us-east-2
+
+synoacme_nas_user: admin
+synoacme_nas_pass: "{{ vault_synoacme_nas_pass }}"
+synoacme_nas_ssh_pubkey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC07+VcrheD/Xe3rDxCvFxG6uLmHW2NPeF80Al/O2mFeXRP8s7F6B57jyxWTmO0iPhtMmrlhf9dtev6dw2jQIr0gGPSzvw5yJ9TsYjS7XogpQ4RlcFAqiAwp+zDGDF7NN9vyptsCAEiG4rnEPEdp9B0xTZmiqQ1RliwDtzZCpmJ1Eh5RZnmjGJmzTGsIiDBM2qkpIjL1QC+AQysWeSUDx9YB+9YWI4rmJv49RAO451/hCmTgv0c97UzQXjBb4aogQgYdglSjO21InoyQ6Q2fgJt5WOk+miAN638qBH24veHAE+PlzMGwS9YRMyFBvGzPn6z390vpM+pLY9wQoDMAHRN synoacme_nas_ssh_pubkey
+synoacme_nas_ssh_privkey: "{{ vault_synoacme_nas_ssh_privkey }}"
+
+synoacme_job_name: chenoska
+synoacme_aws_access_key: "{{ home_zone_updater_access_key }}"
+synoacme_aws_secret_key: "{{ home_zone_updater_secret_key }}"
+synoacme_aws_region: "{{ home_zone_updater_region }}"
+synoacme_email: psyops@micahrl.com
+synoacme_domain: chenoska.home.micahrl.com
+synoacme_syn_user: admin
+synoacme_syn_server: "{{ synoacme_domain }}"
+synoacme_syn_server_pubkey: chenoska.home.micahrl.com,192.168.1.27 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKU6IMsFrQ5oVd7qnF8FsK++8OJl/PhgVe1sVfws0Ex4rpWHAoz/yOMie37fHnYHKZ0hgLHBEXDtf8uXvBDt7F4=
+synoacme_syn_pubkey: "{{ synoacme_nas_ssh_pubkey }}"
+synoacme_syn_privkey: "{{ synoacme_nas_ssh_privkey }}"
+

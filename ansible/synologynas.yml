@@ -1,0 +1,5 @@
+---
+- name: Configure Synology NASes
+  hosts: synologynas
+  roles:
+    - { name: synoacme_nas, tags: ['synoacme_nas'] }

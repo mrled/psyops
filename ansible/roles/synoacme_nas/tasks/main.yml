@@ -1,0 +1,23 @@
+---
+
+- name: Fix homedir permissions
+  # SSH won't accept key auth if homedir is world/group writable, which it is by default on Synology
+  file:
+    path: "{{ lookup('env', 'HOME') }}"
+    mode: "0700"
+    state: directory
+
+- name: Install SSH key
+  authorized_key:
+    user: admin
+    state: present
+    key: "{{ synoacme_nas_ssh_pubkey }}"
+
+- name: Allow passwordless sudo
+  copy:
+    content: |+
+      {{ synoacme_nas_user }} ALL=(ALL) NOPASSWD: ALL
+    dest: /etc/sudoers.d/{{ synoacme_nas_user }}_passwordless
+    owner: root
+    group: root
+    mode: "0600"
