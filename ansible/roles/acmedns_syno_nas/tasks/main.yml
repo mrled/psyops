@@ -11,13 +11,13 @@
   authorized_key:
     user: admin
     state: present
-    key: "{{ synoacme_nas_ssh_pubkey }}"
+    key: "{{ acmedns_syno_nas_ssh_pubkey }}"
 
 - name: Allow passwordless sudo
   copy:
     content: |+
-      {{ synoacme_nas_user }} ALL=(ALL) NOPASSWD: ALL
-    dest: /etc/sudoers.d/{{ synoacme_nas_user }}_passwordless
+      {{ acmedns_syno_nas_user }} ALL=(ALL) NOPASSWD: ALL
+    dest: /etc/sudoers.d/{{ acmedns_syno_nas_user }}_passwordless
     owner: root
     group: root
     mode: "0600"

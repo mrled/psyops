@@ -1,0 +1,70 @@
+---
+
+- name: Add acme group
+  group:
+    name: "{{ acmedns_base_group }}"
+    system: yes
+
+- name: Add acme user
+  user:
+    name: "{{ acmedns_base_user }}"
+    group: "{{ acmedns_base_group }}"
+    system: yes
+    create_home: yes
+    home: "{{ acmedns_base_home }}"
+
+- name: Create acme user .ssh directory
+  file:
+    path: "{{ acmedns_base_home }}/.ssh"
+    state: directory
+    owner: "{{ acmedns_base_user }}"
+    group: "{{ acmedns_base_group }}"
+    mode: "0700"
+
+- name: Create acme certificates directory
+  file:
+    path: "{{ acmedns_base_certificate_dir }}"
+    state: directory
+    owner: "{{ acmedns_base_user }}"
+    group: "{{ acmedns_base_group }}"
+    mode: "0700"
+
+- name: Set acme user ssh key
+  copy:
+    content: "{{ item.value }}"
+    dest: "{{ acmedns_base_home }}/.ssh/{{ item.name }}"
+    owner: "{{ acmedns_base_user }}"
+    group: "{{ acmedns_base_group }}"
+    mode: "0600"
+  with_items:
+    - name: id_rsa
+      value: "{{ acmedns_base_privkey }}"
+    - name: id_rsa.pub
+      value: "{{ acmedns_base_pubkey }}"
+  no_log: yes
+
+- name: Get lego
+  get_url:
+    url: "{{ acmedns_base_lego_uri }}"
+    dest: "{{ acmedns_base_lego_archive_path }}"
+
+- name: Create lego extration dir
+  file:
+    state: directory
+    path: "{{ acmedns_base_lego_extracted_path }}"
+    owner: "{{ acmedns_base_user }}"
+    group: "{{ acmedns_base_group }}"
+    mode: "0755"
+
+- name: Extract lego
+  unarchive:
+    src: "{{ acmedns_base_lego_archive_path }}"
+    dest: "{{ acmedns_base_lego_extracted_path }}"
+    remote_src: yes
+
+- name: Install lego
+  file:
+    state: link
+    src: "{{ acmedns_base_lego_extracted_path }}/lego"
+    dest: /usr/local/bin/lego
+

@@ -10,4 +10,5 @@
     - { name: plexserver, tags: ['plexserver'] }
     - { name: wireguard_server, tags: ['wireguard_server'] }
     - { name: seedbox, tags: ['seedbox'] }
-    - { name: synoacme, tags: ['synoacme'] }
+    - { name: acmedns_base, tags: ['acmedns_base'] }
+    - { name: acmedns_syno_updater, tags: ['acmedns_syno_updater'] }

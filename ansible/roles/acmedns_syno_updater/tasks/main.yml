@@ -1,0 +1,44 @@
+---
+
+- name: Add synology server to known_hosts
+  known_hosts:
+    name: "{{ acmedns_syno_updater_syn_server }}"
+    key: "{{ acmedns_syno_updater_syn_server_pubkey }}"
+  become: yes
+  become_user: "{{ acmedns_syno_updater_user }}"
+
+- name: Install script
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: "{{ acmedns_syno_updater_group }}"
+    mode: "0750"
+  with_items:
+    - src: acmedns_update.sh.j2
+      dest: "{{ acmedns_syno_updater_script_path }}"
+
+- name: Configure cronvar
+  cronvar:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    cron_file: "{{ acmedns_syno_updater_cron_file }}"
+  with_items:
+    - name: MAILTO
+      value: "{{ acmedns_syno_updater_email }}"
+
+- name: Configure cronjob
+  cron:
+    name: "{{ acmedns_syno_updater_job_name }}"
+    day: "*"
+    hour: "3"
+    minute: "47"
+    job: "{{ acmedns_syno_updater_script_path }}"
+    user: "{{ acmedns_syno_updater_user }}"
+    cron_file: "{{ acmedns_syno_updater_cron_file }}"
+
+- name: Run wrapper script once
+  # Wrapper script passes --days, so this won't contact Let's Encrypt unless necessary
+  command: "{{ acmedns_syno_updater_script_path }}"
+  become: yes
+  become_user: "{{ acmedns_syno_updater_user }}"

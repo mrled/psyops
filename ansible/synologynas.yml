@@ -2,4 +2,4 @@
 - name: Configure Synology NASes
   hosts: synologynas
   roles:
-    - { name: synoacme_nas, tags: ['synoacme_nas'] }
+    - { name: acmedns_syno_nas, tags: ['acmedns_syno_nas'] }

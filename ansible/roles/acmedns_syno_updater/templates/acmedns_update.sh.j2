@@ -1,0 +1,56 @@
+#!/bin/sh
+set -eu
+
+if test $(find "{{ acmedns_syno_updater_certificate_dir }}" -type f -name "*.key" | wc -l) -ge 1; then
+    action=run
+    extraargs=""
+else
+    action=renew
+    extraargs="--reuse-key --days={{ acmedns_syno_updater_renew_days }}"
+fi
+
+export AWS_REGION={{ acmedns_syno_updater_aws_region }}
+export AWS_ACCESS_KEY_ID={{ acmedns_syno_updater_aws_access_key }}
+export AWS_SECRET_ACCESS_KEY={{ acmedns_syno_updater_aws_secret_key }}
+
+/usr/local/bin/lego \
+    --accept-tos \
+    --path={{ acmedns_syno_updater_certificate_dir }} \
+    --email={{ acmedns_syno_updater_email }} \
+    --domains={{ acmedns_syno_updater_domain }} \
+    --dns=route53 \
+    $action \
+    $extraargs
+
+host="{{ acmedns_syno_updater_syn_user }}@{{ acmedns_syno_updater_syn_server }}"
+date=$(date +%Y%m%d)
+tmppath=/tmp/${date}-acme-update
+scp -r {{ acmedns_syno_updater_certificate_dir }}/certificates $host:$tmppath
+
+#
+# SSH to the remote server and install the certs:
+#
+
+echo "$(cat <<ENDSSH
+
+echo "$(cat <<ENDSUDO
+
+echo 'Copying files...'
+cd /usr/syno/etc/ssl
+if ! test -d /usr/syno/etc/certificate.acme_renew_hook_backup; then
+  cp -r /usr/syno/etc/certificate /usr/syno/etc/certificate.acme_renew_hook_backup
+fi
+chown -R root:root "$tmppath"
+mv $tmppath/{{ acmedns_syno_updater_domain }}.crt /usr/syno/etc/certificate/system/default/fullchain.pem
+mv $tmppath/{{ acmedns_syno_updater_domain }}.key /usr/syno/etc/certificate/system/default/privkey.pem
+echo 'Removing temp dir...'
+rm -rf $tmppath
+echo 'Reloading webserver...'
+sudo /usr/syno/sbin/synoservicecfg --reload nginx
+echo 'Done'
+
+ENDSUDO
+)" | sudo su -
+
+ENDSSH
+)" | ssh $host
