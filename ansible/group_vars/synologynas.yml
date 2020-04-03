@@ -1,3 +1,0 @@
----
-ansible_ssh_user: admin
-# See host-specific vault for password

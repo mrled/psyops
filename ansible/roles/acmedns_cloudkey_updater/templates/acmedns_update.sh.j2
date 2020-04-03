@@ -1,0 +1,101 @@
+#!/bin/sh
+set -eu
+
+export AWS_REGION={{ acmedns_cloudkey_updater_aws_region }}
+export AWS_ACCESS_KEY_ID={{ acmedns_cloudkey_updater_aws_access_key }}
+export AWS_SECRET_ACCESS_KEY={{ acmedns_cloudkey_updater_aws_secret_key }}
+
+usage() {
+    cat <<ENDUSAGE
+$0: Update certificates via ACME DNS challenges for {{ acmedns_cloudkey_updater_job_name }}
+and copy them to the remote server
+  --help:   This help
+  --action: One of "both", "runlego", or "copyremote"
+
+ACTIONS
+runlego:      Run lego to perform ACME DNS challenge
+copyremote:   Copy the certificates to the remote server
+both:         Both run lego and copy the certs to the remote server
+
+Note that even when lego runs, it might not actually contact Let's Encrypt.
+If a cert is already generated, it will not request a renewal unless the cert
+is expiring in less than {{ acmedns_cloudkey_updater_renew_days }} days.
+ENDUSAGE
+}
+
+runlego() {
+    if test $(find "{{ acmedns_cloudkey_updater_certificate_dir }}" -type f -name "*.key" | wc -l) -ge 1; then
+        legoaction=run
+        extraargs=""
+    else
+        legoaction=renew
+        extraargs="--reuse-key --days={{ acmedns_cloudkey_updater_renew_days }}"
+    fi
+
+    /usr/local/bin/lego \
+        --accept-tos \
+        --path={{ acmedns_cloudkey_updater_certificate_dir }} \
+        --email={{ acmedns_cloudkey_updater_email }} \
+        --domains={{ acmedns_cloudkey_updater_domain }} \
+        --dns=route53 \
+        $legoaction \
+        $extraargs
+}
+
+copyremote() {
+    domain="{{ acmedns_cloudkey_updater_domain }}"
+    sshdest="{{ acmedns_cloudkey_updater_server_user }}@$domain"
+    certdir="{{ acmedns_cloudkey_updater_certificate_dir }}/certificates"
+    date=$(date +%Y%m%d)
+    tmppath=/tmp/${date}-acme-update
+    echo "Generating .p12 file for importing..."
+    badpass=aircontrolenterprise
+    openssl pkcs12 -export -in "${certdir}/${domain}.crt" -inkey "${certdir}/${domain}.key" -out "${certdir}/${domain}.p12" -name unifi -password pass:$badpass
+    echo "Copying to remote system..."
+    scp -r {{ acmedns_cloudkey_updater_certificate_dir }}/certificates $sshdest:$tmppath
+
+    dest="/etc/ssl/private"
+    echo "$(cat <<ENDSSH
+        echo 'Copying files...'
+        if ! test -d $dest.acme_renew_hook_backup; then
+            cp -r $dest $dest.acme_renew_hook_backup
+        fi
+        mv $tmppath/$domain.crt $dest/cloudkey-acme_updater.crt
+        mv $tmppath/$domain.key $dest/cloudkey-acme_updater.key
+        echo 'Importing .p12...'
+        #keytool -delete -alias unifi -storepass $badpass -keystore $dest/unifi.keystore.jks || true
+        keytool -importkeystore -deststorepass $badpass -destkeypass $badpass -destkeystore $dest/unifi.keystore.jks -srckeystore $tmppath/$domain.p12 -srcstoretype PKCS12 -srcstorepass $badpass -alias unifi -noprompt
+        chown -R root:ssl-cert "$dest"
+        chmod 640 $dest/*
+        echo 'Removing temp dir...'
+        rm -rf $tmppath
+        echo 'Testing nginx configuration...'
+        /usr/sbin/nginx -t || echo 'NGINX CONFIG TEST FAILED'
+        echo 'Restarting nginx...'
+        systemctl restart nginx
+        echo 'Restarting unifi...'
+        systemctl restart unifi
+        echo 'Done'
+ENDSSH
+    )" | ssh $sshdest
+}
+
+action=both
+while test $# -gt 0; do
+    case "$1" in
+        -h | --help ) usage; exit 0;;
+        -a | --action ) action=$2; shift 2;;
+        -d | --debug ) set -x; shift;;
+        *) action=$1; shift;;
+    esac
+done
+
+echo "Running action '$action'..."
+if test "$action" == "both" || test "$action" == "runlego"; then
+    echo "runlego()..."
+    runlego
+fi
+if test "$action" == "both" || test "$action" == "copyremote"; then
+    echo "copyremote()..."
+    copyremote
+fi

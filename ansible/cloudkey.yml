@@ -1,0 +1,6 @@
+---
+- name: Configure cloudkey
+  hosts: cloudkey
+  roles:
+    - { name: acmedns_cloudkey_host, tags: ['acmedns_cloudkey_host'] }
+

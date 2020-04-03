@@ -1,3 +1,4 @@
 ---
+ansible_ssh_user: admin
 ansible_ssh_pass: "{{ vault_ansible_ssh_pass }}"
 ansible_become_pass: "{{ vault_ansible_ssh_pass }}"

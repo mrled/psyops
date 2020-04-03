@@ -9,7 +9,7 @@
 
 - name: Install SSH key
   authorized_key:
-    user: admin
+    user: "{{ acmedns_syno_nas_user }}"
     state: present
     key: "{{ acmedns_syno_nas_ssh_pubkey }}"
 

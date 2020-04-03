@@ -115,3 +115,26 @@ acmedns_syno_updater_syn_server_pubkey: chenoska.home.micahrl.com,192.168.1.27 e
 acmedns_syno_updater_pubkey: "{{ acmedns_base_pubkey }}"
 acmedns_syno_updater_privkey: "{{ acmedns_base_privkey }}"
 
+
+
+# ACME DNS Ubiquiti Unifi CloudKey updater settings
+acmedns_cloudkey_host_user: mrladmin
+acmedns_cloudkey_host_ssh_pubkey: "{{ acmedns_base_pubkey }}"
+acmedns_cloudkey_host_ssh_privkey: "{{ acmedns_base_privkey }}"
+
+acmedns_cloudkey_updater_cert_base: "{{ acmedns_base_certificate_dir }}"
+acmedns_cloudkey_updater_user: "{{ acmedns_base_user }}"
+acmedns_cloudkey_updater_group: "{{ acmedns_base_group }}"
+acmedns_cloudkey_updater_job_name: cloudkey
+acmedns_cloudkey_updater_aws_access_key: "{{ home_zone_updater_access_key }}"
+acmedns_cloudkey_updater_aws_secret_key: "{{ home_zone_updater_secret_key }}"
+acmedns_cloudkey_updater_aws_region: "{{ home_zone_updater_region }}"
+acmedns_cloudkey_updater_email: psyops@micahrl.com
+acmedns_cloudkey_updater_domain: cloudkey.home.micahrl.com
+acmedns_cloudkey_updater_server_user: "{{ acmedns_cloudkey_host_user }}"
+acmedns_cloudkey_updater_server: "{{ acmedns_cloudkey_updater_domain }}"
+acmedns_cloudkey_updater_host_ssh_pubkey: cloudkey.home.micahrl.com,192.168.1.2 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHZyo3/q7m109QtIgO3HyNsfox2k7cDm9qg1xlq8rOloWzGHVEyW4qS7uYZhqPuiGldifjMafPWMMfZQG8GvgIc=
+acmedns_cloudkey_updater_pubkey: "{{ acmedns_base_pubkey }}"
+acmedns_cloudkey_updater_privkey: "{{ acmedns_base_privkey }}"
+
+
