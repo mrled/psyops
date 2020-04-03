@@ -3,11 +3,14 @@ module sysloghost_syslogng 1.0;
 require {
     type cifs_t;
     type syslogd_t;
+    type unreserved_port_t;
     class dir { add_name getattr search write };
     class file { append create getattr open setattr };
+    class udp_socket name_bind;
 }
 
 #============= syslogd_t ==============
 allow syslogd_t cifs_t:dir { add_name getattr search write };
 allow syslogd_t cifs_t:file { append create getattr open setattr };
+allow syslogd_t unreserved_port_t:udp_socket name_bind;
 

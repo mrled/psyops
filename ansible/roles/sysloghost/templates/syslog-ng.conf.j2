@@ -26,7 +26,8 @@ options {
 # Sources
 #
 source s_sys { system(); internal(); };
-source s_net { udp(); tcp(); };
+source s_netsys { udp(); tcp(); };
+source s_netcons { udp(port(5514)); };
 
 
 #
@@ -43,8 +44,9 @@ destination d_kern { file("/var/log/kern"); };
 destination d_localall { file("/var/log/localall.log"); };
 destination d_mlal { usertty("*"); };
 
-destination d_nas { file("{{ sysloghost_share_mountpoint }}/all.log.$R_YEAR$R_MONTH$R_DAY"); };
-destination d_naslocaltest { file("/var/log/all.log.$R_YEAR$R_MONTH$R_DAY"); };
+destination d_nas_syslog { file("{{ sysloghost_share_mountpoint }}/$HOST.syslog.log.$R_YEAR$R_MONTH$R_DAY"); };
+destination d_nas_netcons { file("{{ sysloghost_share_mountpoint }}/$HOST.netconsole.log.$R_YEAR$R_MONTH$_DAY"); };
+destination d_nas_localtest { file("/var/log/all.log.$R_YEAR$R_MONTH$R_DAY"); };
 
 
 #
@@ -78,8 +80,9 @@ log { source(s_sys); filter(f_news); destination(d_spol); };
 log { source(s_sys); filter(f_boot); destination(d_boot); };
 log { source(s_sys); filter(f_cron); destination(d_cron); };
 
-log { source(s_sys); destination(d_localall); };
-log { source(s_net); destination(d_nas); };
+log { source(s_sys); destination(d_localall); destination(d_nas_syslog); };
+log { source(s_netsys); destination(d_nas_syslog); };
+log { source(s_netcons); destination(d_nas_netcons); };
 
 
 #
