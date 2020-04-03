@@ -1,0 +1,13 @@
+module sysloghost_syslogng 1.0;
+
+require {
+    type cifs_t;
+    type syslogd_t;
+    class dir { add_name getattr search write };
+    class file { append create getattr open setattr };
+}
+
+#============= syslogd_t ==============
+allow syslogd_t cifs_t:dir { add_name getattr search write };
+allow syslogd_t cifs_t:file { append create getattr open setattr };
+

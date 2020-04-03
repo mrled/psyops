@@ -1,0 +1,95 @@
+---
+
+- name: Uninstall rsyslog
+  dnf:
+    name: rsyslog
+    state: absent
+
+- name: Install syslog-ng and other packages
+  dnf:
+    name:
+      - policycoreutils-python
+      - syslog-ng
+    state: latest
+    update_cache: yes
+
+- name: Configure udp/514 in the trusted zone
+  firewalld: port=514/udp permanent=yes zone=trusted state=enabled immediate=yes
+- name: Configure udp/514 in the default zone
+  firewalld: port=514/udp permanent=yes state=enabled immediate=yes
+- name: Configure tcp/514 in the trusted zone
+  firewalld: port=514/tcp permanent=yes zone=trusted state=enabled immediate=yes
+- name: Configure tcp/514 in the default zone
+  firewalld: port=514/tcp permanent=yes state=enabled immediate=yes
+
+- name: Create sysloghost mountpoints
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  with_items: "{{ sysloghost_mountpoints }}"
+
+- name: Configure sysloghost mount files
+  copy:
+    content: |+
+      username={{ item.username }}
+      password={{ item.password }}
+    dest: "{{ item.credsfile }}"
+    owner: root
+    group: root
+    mode: "0600"
+  with_items: "{{ sysloghost_mountpoints }}"
+
+- name: Mount sysloghost mounts
+  mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: "{{ item.fstype }}"
+    opts: credentials={{ item.credsfile }}
+    state: mounted
+  with_items: "{{ sysloghost_mountpoints }}"
+  notify: restart syslog-ng
+
+- name: Apply syslog-ng configuration
+  template:
+    src: syslog-ng.conf.j2
+    dest: /etc/syslog-ng/syslog-ng.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart syslog-ng
+
+
+
+
+
+- name: Copy SELinux type enforcement file
+  template:
+    src: sysloghost_syslogng.te.j2
+    dest: /etc/selinux/sysloghost_syslogng
+  register: sysloghost_copytefile
+
+- name: Compile SELinux module file
+  command: checkmodule -M -m -o /etc/selinux/sysloghost_syslogng.mod /etc/selinux/sysloghost_syslogng
+  when: sysloghost_copytefile.changed
+
+- name: Build SELinux policy package
+  command: semodule_package -o /etc/selinux/sysloghost_syslogng.pp -m /etc/selinux/sysloghost_syslogng.mod
+  when: sysloghost_copytefile.changed
+
+- name: Load SELinux policy package
+  command: semodule -i /etc/selinux/sysloghost_syslogng.pp
+  when: sysloghost_copytefile.changed
+  notify: restart syslog-ng
+
+
+
+
+- name: Start syslog-ng
+  service:
+    name: syslog-ng
+    state: started
+
+
