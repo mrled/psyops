@@ -29,8 +29,6 @@
     state: mounted
   with_items: "{{ seedbox_mountpoints }}"
 
-- fail: msg="STOPPINGHERE"
-
 - name: Install transmission
   package:
     name:
@@ -72,27 +70,36 @@
   - { name: 'net.core.rmem_max', value: 16777216 }
   - { name: 'net.core.wmem_max', value: 4194304 }
 
-- name: Ensure transmission config directory exists
+- name: Ensure transmission config and staging directories exist
   file:
-    path: "{{ seedbox_homedir }}/.config/transmission-daemon"
+    path: "{{ item }}"
     owner: "{{ seedbox_local_user }}"
     group: "{{ seedbox_local_group }}"
     mode: "0700"
     state: directory
-  notify: restart transmission
+  with_items:
+    - "{{ seedbox_homedir }}/.config/transmission-daemon"
+    - "{{ seedbox_homedir }}/.config/transmission-daemon-configstaging"
 
-- name: Stop transmission before changing config file
-  service: name=transmission-daemon state=stopped
-  notify: restart transmission
-
-- name: Install the configfile
+- name: Install the transmission config file to a staging area
   template:
     src: settings.json.j2
-    dest: "{{ seedbox_homedir }}/.config/transmission-daemon/settings.json"
+    dest: "{{ seedbox_homedir }}/.config/transmission-daemon-configstaging/settings.json"
     owner: "{{ seedbox_local_user }}"
     group: "{{ seedbox_local_group }}"
     mode: "0600"
-  notify: restart transmission
+  register: seedbox_xmission_config
+
+- name: Stop transmission before changing config file (so it doesn't overwrite it)
+  service: name=transmission-daemon state=stopped
+  when: seedbox_xmission_config.changed
+
+- name: Copy config file from staging to the real directory
+  copy:
+    src: "{{ seedbox_homedir }}/.config/transmission-daemon-configstaging/settings.json"
+    dest: "{{ seedbox_homedir }}/.config/transmission-daemon/settings.json"
+    remote_src: yes
+  when: seedbox_xmission_config.changed
 
 - name: Allow transmission through the firewall (trusted zone)
   firewalld: port={{ item }} permanent=yes zone=trusted state=enabled immediate=yes
