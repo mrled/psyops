@@ -1,5 +1,7 @@
 ---
 
+interactive: false
+
 mailfwd_smtp_host: smtps-proxy.messagingengine.com
 mailfwd_smtp_port: "443"
 mailfwd_rewrite_domain: micahrl.com

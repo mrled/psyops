@@ -1,28 +1,67 @@
 ---
 
-- name: Configure hardware
+- name: Configure base
   hosts: all
   roles:
     - { name: hardware, tags: ['hardware'] }
+    - { name: emailfwd, tags: ['emailfwd'] }
+    - { name: interactive, tags: ['interactive'], when: interactive }
+
+- name: Configure Synology NASes
+  hosts: synologynas
+  roles:
+    - { name: acmedns_syno_nas, tags: ['acmedns_syno_nas'] }
+
+- name: Configure cloudkey
+  hosts: cloudkey
+  roles:
+    - { name: acmedns_cloudkey_host, tags: ['acmedns_cloudkey_host'] }
+
+- name: Deploy wireguard server
+  hosts: wireguardservers
+  roles:
+    - { name: wireguard_server, tags: ['wireguard_server'] }
+
+- name: Deploy mailbackup
+  hosts: mailbackup
+  roles:
+    - { name: mailbackup, tags: ['mailbackup'] }
+
+- name: Deploy syslog server
+  hosts: syslogserver
+  roles:
+    - { name: sysloghost, tags: ['sysloghost'] }
+
+- name: Deploy ACME DNS bases
+  hosts: acmednsupdaters
+  roles:
+    - { name: acmedns_base, tags: ['acmedns_base'] }
+    - { name: acmedns_syno_updater, tags: ['acmedns_syno_updater'] }
+    - { name: acmedns_cloudkey_updater, tags: ['acmedns_cloudkey_updater'] }
 
 - name: Deploy Plex
   hosts: plexservers
   roles:
     - { name: plexserver, tags: ['plexserver'] }
 
-- name: Deploy Unifi gateway config files
-  hosts: unifiusg
-  tasks:
-    - debug: msg="Deploying Unifi gateway on {{ inventory_hostname }}"
+- name: Deploy seedbox
+  hosts: seedboxes
   roles:
-    - { name: unifi_usg, tags: ['unifi_usg'] }
+    - { name: seedbox, tags: ['seedbox'] }
 
-- name: Deploy Unifi controller config
-  hosts: unificontrollers
-  roles:
-    - { name: unifi_controller, tags: ['unifi_controller'] }
+#- name: Deploy Unifi gateway config files
+#  hosts: unifiusg
+#  tasks:
+#    - debug: msg="Deploying Unifi gateway on {{ inventory_hostname }}"
+#  roles:
+#    - { name: unifi_usg, tags: ['unifi_usg'] }
 
-- name: Deploy Algo gateawy
-  hosts: algogateway
-  roles:
-    - { name: algo_gateway, tags: ['algo_gateway'] }
+#- name: Deploy Unifi controller config
+#  hosts: unificontrollers
+#  roles:
+#    - { name: unifi_controller, tags: ['unifi_controller'] }
+
+#- name: Deploy Algo gateawy
+#  hosts: algogateway
+#  roles:
+#    - { name: algo_gateway, tags: ['algo_gateway'] }
