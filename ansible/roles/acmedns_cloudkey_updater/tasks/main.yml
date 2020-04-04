@@ -1,5 +1,7 @@
 ---
 
+- fail: msg="THIS ROLE IS BROKEN, needs to update its wrapper script like the one in acmedns_syno_updater, and needs to fix the remote copy script to actually work; currently it's broken and will result in a broken cloudkey, lol"
+
 - name: Add synology server to known_hosts
   known_hosts:
     name: "{{ acmedns_cloudkey_updater_server }}"
