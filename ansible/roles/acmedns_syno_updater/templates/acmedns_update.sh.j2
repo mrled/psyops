@@ -1,26 +1,18 @@
 #!/bin/sh
 set -eu
 
-if test $(find "{{ acmedns_syno_updater_certificate_dir }}" -type f -name "*.key" | wc -l) -ge 1; then
-    action=run
-    extraargs=""
-else
-    action=renew
-    extraargs="--reuse-key --days={{ acmedns_syno_updater_renew_days }}"
-fi
-
 export AWS_REGION={{ acmedns_syno_updater_aws_region }}
 export AWS_ACCESS_KEY_ID={{ acmedns_syno_updater_aws_access_key }}
 export AWS_SECRET_ACCESS_KEY={{ acmedns_syno_updater_aws_secret_key }}
 
-/usr/local/bin/lego \
-    --accept-tos \
-    --path={{ acmedns_syno_updater_certificate_dir }} \
-    --email={{ acmedns_syno_updater_email }} \
-    --domains={{ acmedns_syno_updater_domain }} \
-    --dns=route53 \
-    $action \
-    $extraargs
+echoexec() { echo "Running: $*"; $*; }
+
+echoexec wraplego.py \
+    --verbose \
+    --legodir "{{ acmedns_syno_updater_certificate_dir }}" \
+    --email "{{ acmedns_syno_updater_email }}" \
+    --domain "{{ acmedns_syno_updater_domain }}" \
+    --authenticator "route53" \
 
 host="{{ acmedns_syno_updater_syn_user }}@{{ acmedns_syno_updater_syn_server }}"
 date=$(date +%Y%m%d)

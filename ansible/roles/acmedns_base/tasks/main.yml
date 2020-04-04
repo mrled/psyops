@@ -1,5 +1,17 @@
 ---
 
+- name: Install RPMs
+  dnf:
+    name:
+      - python3-pip
+    state: latest
+    update_cache: true
+
+- name: Install python modules
+  pip:
+    name:
+      - cryptography
+    state: latest
 - name: Add acme group
   group:
     name: "{{ acmedns_base_group }}"
@@ -67,4 +79,12 @@
     state: link
     src: "{{ acmedns_base_lego_extracted_path }}/lego"
     dest: /usr/local/bin/lego
+
+- name: Install lego wrapper
+  template:
+    src: wraplego.py.j2
+    dest: /usr/local/bin/wraplego.py
+    owner: root
+    group: root
+    mode: "0755"
 
