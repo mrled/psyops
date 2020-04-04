@@ -97,11 +97,11 @@ acmedns_base_group: acmedns
 acmedns_base_pubkey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC07+VcrheD/Xe3rDxCvFxG6uLmHW2NPeF80Al/O2mFeXRP8s7F6B57jyxWTmO0iPhtMmrlhf9dtev6dw2jQIr0gGPSzvw5yJ9TsYjS7XogpQ4RlcFAqiAwp+zDGDF7NN9vyptsCAEiG4rnEPEdp9B0xTZmiqQ1RliwDtzZCpmJ1Eh5RZnmjGJmzTGsIiDBM2qkpIjL1QC+AQysWeSUDx9YB+9YWI4rmJv49RAO451/hCmTgv0c97UzQXjBb4aogQgYdglSjO21InoyQ6Q2fgJt5WOk+miAN638qBH24veHAE+PlzMGwS9YRMyFBvGzPn6z390vpM+pLY9wQoDMAHRN acmedns_syno_nas_ssh_pubkey
 acmedns_base_privkey: "{{ vault_acmedns_base_privkey }}"
 
-# ACME DNS Synology updater settings
-acmedns_syno_nas_user: admin
-acmedns_syno_nas_ssh_pubkey: "{{ acmedns_base_pubkey }}"
-acmedns_syno_nas_ssh_privkey: "{{ acmedns_base_privkey }}"
+acmedns_remote_host_ssh_client_pubkey: "{{ acmedns_base_pubkey }}"
 
+
+
+# ACME DNS Synology updater settings
 acmedns_syno_updater_cert_base: "{{ acmedns_base_certificate_dir }}"
 acmedns_syno_updater_user: "{{ acmedns_base_user }}"
 acmedns_syno_updater_group: "{{ acmedns_base_group }}"

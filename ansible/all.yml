@@ -10,12 +10,12 @@
 - name: Configure Synology NASes
   hosts: synologynas
   roles:
-    - { name: acmedns_syno_nas, tags: ['acmedns_syno_nas'] }
+    - { name: acmedns_remote_host, tags: ['acmedns_remote_host'] }
 
 - name: Configure cloudkey
   hosts: cloudkey
   roles:
-    - { name: acmedns_cloudkey_host, tags: ['acmedns_cloudkey_host'] }
+    - { name: acmedns_remote_host, tags: ['acmedns_remote_host'] }
 
 - name: Deploy wireguard server
   hosts: wireguardservers

@@ -6,18 +6,20 @@
     path: "{{ lookup('env', 'HOME') }}"
     mode: "0700"
     state: directory
+  when: acmedns_remote_host_fix_homedir_permissions|bool
 
 - name: Install SSH key
   authorized_key:
-    user: "{{ acmedns_syno_nas_user }}"
+    user: "{{ acmedns_remote_host_user }}"
     state: present
-    key: "{{ acmedns_syno_nas_ssh_pubkey }}"
+    key: "{{ acmedns_remote_host_ssh_client_pubkey }}"
 
 - name: Allow passwordless sudo
   copy:
     content: |+
-      {{ acmedns_syno_nas_user }} ALL=(ALL) NOPASSWD: ALL
-    dest: /etc/sudoers.d/{{ acmedns_syno_nas_user }}_passwordless
+      {{ acmedns_remote_host_user }} ALL=(ALL) NOPASSWD: ALL
+    dest: /etc/sudoers.d/{{ acmedns_remote_host_user }}_passwordless
     owner: root
     group: root
     mode: "0600"
+  when: acmedns_remote_host_allow_passwordless_sudo|bool
