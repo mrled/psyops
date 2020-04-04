@@ -7,8 +7,8 @@ tagasaw.home.micahrl.com
 tagasaw.home.micahrl.com
 
 [unifiusg]
-# gw1.home.micahrl.com
-192.168.1.1
+# Specify the IP address so we can do this before DNS is all up etc
+gateway.home.micahrl.com ansible_host=192.168.1.1
 
 [synologynas]
 chenoska.home.micahrl.com
