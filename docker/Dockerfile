@@ -154,6 +154,7 @@ RUN true \
         ansible \
         boto \
         boto3 \
+        mitogen \
     && apk add \
         # Required for Ansible to use SSH password auth instead of public keys
         sshpass sshpass-doc \
