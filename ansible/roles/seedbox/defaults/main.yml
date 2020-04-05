@@ -14,8 +14,6 @@ seedbox_rpc_username: "netstorm"
 seedbox_speedlimit_down: 100
 seedbox_speedlimit_up: 100
 seedbox_upload_slots_per_torrent: 14
-seedbox_local_user: transmission
-seedbox_local_group: transmission
 
 # seedbox_mountpoints should be a list of dicts with Ansible mount module keys
 seedbox_mountpoints: []
