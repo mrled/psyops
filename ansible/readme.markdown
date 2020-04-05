@@ -29,6 +29,14 @@ On Fedora:
 
 Also must add psyops public key to the psyops-ansible user.
 
+### Configuring git for ansible-vault
+
+* See the `.gitattributes` file
+* See the `.vault-pass-script` file
+* Run this on your ansible host: `git config diff.ansible-vault.textconv 'ansible-vault view --vault-password-file ansible/.vault-pass-script'`
+
+This lets diffs in the vault files show as text in `git diff`
+
 ## Host specific documentation
 
 ### Tagasaw
