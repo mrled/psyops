@@ -51,7 +51,7 @@ def debugexchandler(exc_type, exc_value, exc_traceback):
 
 def dockerrun(
         imagename, imagetag, psyopsvol, tmpfsmount,
-        runargs=None, containerargs=None, psyopsvolperms="rw",
+        runargs=None, containerargs=None,
         # Only used when running from Linux
         linuxuid=None, linuxgid=None,
         # Note: default tmpfs options are read only and noexec
@@ -65,12 +65,21 @@ def dockerrun(
     if sys.platform == 'win32':
         env['MSYS_NO_PATHCONV'] = "1"
 
+    if sys.platform == 'darwin':
+        # See also:
+        # - https://docs.docker.com/docker-for-mac/osxfs-caching/
+        # - https://www.docker.com/blog/user-guided-caching-in-docker-for-mac/
+        volperms = "cached"
+    else:
+        volperms = "rw"
+    volume = f'{SCRIPTDIR}:{psyopsvol}:{volperms}'
+
     runcli = [
         'docker', 'run',
         '--rm',
         '--interactive',
         '--tty',
-        '--volume', f'{SCRIPTDIR}:{psyopsvol}:{psyopsvolperms}',
+        '--volume', volume,
         '--tmpfs', f'{tmpfsmount}:{tmpfsopts}',
         '--hostname', hostname]
 
