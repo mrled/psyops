@@ -58,6 +58,8 @@ seedbox_speedlimit_down: 750
 seedbox_speedlimit_up: 750
 seedbox_peer_port: 7288
 
+seedbox_transmission_rss_feeds: "{{ vault_seedbox_transmission_rss_feeds }}"
+
 # TODO: consider refactoring mountpoints into their own role and using role dependencies
 seedbox_mountpoints:
   - path: /netmount/chenoska/incoming
