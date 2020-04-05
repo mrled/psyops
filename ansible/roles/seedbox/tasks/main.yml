@@ -1,62 +1,39 @@
 ---
 
-- name: Install RPM packages
-  dnf:
-    name:
-      - ruby
-      - ruby-devel
-      - transmission-daemon
-    update_cache: yes
-    state: latest
-
-- name: Disable the RPM-provided transmission service
-  service:
-    name: transmission-daemon
-    state: stopped
-    enabled: no
-
-- name: Remove RPM-provided transmission homedir
+- name: Create seedbox mountpoints
   file:
-    path: /var/lib/transmission
-    state: absent
+    state: directory
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  with_items: "{{ seedbox_mountpoints }}"
 
-- name: Link the real user's homedir to the right place
+- name: Configure seedbox mount files
+  copy:
+    content: |+
+      username={{ item.username }}
+      password={{ item.password }}
+    dest: "{{ item.credsfile }}"
+    owner: root
+    group: root
+    mode: "0600"
+  with_items: "{{ seedbox_mountpoints }}"
 
+- name: Mount seedbox mounts
+  mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: "{{ item.fstype }}"
+    opts: credentials={{ item.credsfile }}
+    state: mounted
+  with_items: "{{ seedbox_mountpoints }}"
 
-- name: Install transmission-rss
-  gem:
-    name: transmission-rss
+- name: Install transmission
+  package:
+    name:
+      - transmission-daemon
     state: latest
-    user_install: false
-
-#- name: Create seedbox mountpoints
-#  file:
-#    state: directory
-#    path: "{{ item.path }}"
-#    owner: root
-#    group: root
-#    mode: "0755"
-#  with_items: "{{ seedbox_mountpoints }}"
-
-#- name: Configure seedbox mount files
-#  copy:
-#    content: |+
-#      username={{ item.username }}
-#      password={{ item.password }}
-#    dest: "{{ item.credsfile }}"
-#    owner: root
-#    group: root
-#    mode: "0600"
-#  with_items: "{{ seedbox_mountpoints }}"
-
-#- name: Mount seedbox mounts
-#  mount:
-#    path: "{{ item.path }}"
-#    src: "{{ item.src }}"
-#    fstype: "{{ item.fstype }}"
-#    opts: credentials={{ item.credsfile }}
-#    state: mounted
-#  with_items: "{{ seedbox_mountpoints }}"
 
 - name: getent seedbox local user
   getent: database=passwd key={{ seedbox_local_user }}
@@ -106,7 +83,7 @@
 
 - name: Install the transmission config file to a staging area
   template:
-    src: transmission-settings.json.j2
+    src: settings.json.j2
     dest: "{{ seedbox_homedir }}/.config/transmission-daemon-configstaging/settings.json"
     owner: "{{ seedbox_local_user }}"
     group: "{{ seedbox_local_group }}"
@@ -114,9 +91,7 @@
   register: seedbox_xmission_config
 
 - name: Stop transmission before changing config file (so it doesn't overwrite it)
-  service:
-    name: transmission-daemon
-    state: stopped
+  service: name=transmission-daemon state=stopped
   when: seedbox_xmission_config.changed
 
 - name: Copy config file from staging to the real directory
@@ -143,35 +118,4 @@
   - "{{ seedbox_rpc_port }}/tcp"
 
 - name: Start transmission
-  service:
-    name: transmission-daemon
-    state: started
-    enabled: yes
-
-- name: Install transmission-rss config file
-  template:
-    src: transmission-rss.conf.j2
-    dest: /etc/transmission-rss.conf
-    owner: "{{ seedbox_local_user }}"
-    group: "{{ seedbox_local_group }}"
-    mode: "0640"
-
-- name: Install transmission-rss systemd unit
-  copy:
-    src: transmission-rss.service
-    dest: /etc/systemd/system/transmission-rss.service
-    owner: root
-    group: root
-    mode: "0644"
-  register: install_transmission_rss_service
-
-- name: systemd daemon-reexec
-  systemd:
-    daemon_reexec: yes
-  when: install_transmission_rss_service.changed
-
-- name: Start transmission-rss
-  service:
-    name: transmission-rss
-    state: started
-    enabled: yes
+  service: name=transmission-daemon state=started enabled=yes

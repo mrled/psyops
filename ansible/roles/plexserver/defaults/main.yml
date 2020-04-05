@@ -4,3 +4,5 @@ plexserver_version: 1.15.4.994-107756f7e
 plexserver_arch: x86_64
 plexserver_rpm_checksum: sha1:1d45bed103a40fa95beb2f28d8106d98ba4c6c3a
 
+plexserver_creds_path: /etc/plex-share-creds
+plexserver_mountpoint: /mnt/plexmedia
