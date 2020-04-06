@@ -42,8 +42,8 @@
   file:
     state: directory
     path: "{{ item.path }}"
-    owner: root
-    group: root
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
     mode: "0755"
   with_items: "{{ seedbox_mount_list }}"
 
