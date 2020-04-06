@@ -8,7 +8,7 @@
 - name: Install syslog-ng and other packages
   dnf:
     name:
-      - policycoreutils-python
+      - policycoreutils-python-utils
       - syslog-ng
     state: latest
     update_cache: yes
