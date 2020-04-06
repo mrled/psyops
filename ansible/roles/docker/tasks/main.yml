@@ -1,5 +1,9 @@
 ---
 
+- name: Use cgroups v1 on Fedora 31
+  import_tasks: fedora31_cgroupsv1.yml
+  when: ansible_distribution == "Fedora" and ansible_distribution_major_version >= '31'
+
 - name: Add Docker repo
   yum_repository:
     name: docker
@@ -9,15 +13,60 @@
     # visiting that REPOURL, and picking docker-ce-stable
     baseurl: https://download.docker.com/linux/fedora/$releasever/$basearch/stable
 
-- name: Install Docker
+- name: Install RPMs
   dnf:
     name:
       - containerd.io
       - docker-ce
       - docker-ce-cli
       - python3-docker
+      - python3-pip
     state: latest
     update_cache: yes
 
+- name: Install pip packages
+  pip:
+    name:
+      - jsondiff
+      - pyyaml
+    state: latest
+
 - name: Start docker service
-  systemd: name=docker state=started enabled=yes
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Configure Swarm ports in the trusted zone
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    zone: trusted
+    state: enabled
+    immediate: yes
+  with_items: "{{ docker_swarm_ports }}"
+  when: docker_standalone_swarm|bool
+
+- name: Configure Swarm ports in the default zone
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  with_items: "{{ docker_swarm_ports }}"
+  when: docker_standalone_swarm|bool
+
+- name: Create standalone swarm
+  docker_swarm:
+    state: present
+    advertise_addr: "{{ docker_standalone_swarm_advertise_addr | default(false) }}"
+  when: docker_standalone_swarm|bool
+
+- name: Inspect the swarm
+  docker_swarm:
+    state: inspect
+  register: docker_swarm_inspect
+  when: docker_standalone_swarm|bool
+
+- debug:
+    var: docker_swarm_inspect
