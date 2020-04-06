@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  sonarr:
+    image: "linuxserver/sonarr"
+    ports:
+      - "{{ seedbox_sonarr_port }}:8989/tcp"
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    volumes:
+      - "{{ seedbox_sonarr_config_dir }}:/config"
+      - "{{ seedbox_usenet_completes_dir }}:/downloads"
+      - "{{ seedbox_media.tv }}:/tv"
+  lidarr:
+    image: "linuxserver/lidarr"
+    ports:
+      - "{{ seedbox_lidarr_port }}:8686/tcp"
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    volumes:
+      - "{{ seedbox_lidarr_config_dir }}:/config"
+      - "{{ seedbox_usenet_completes_dir }}:/downloads"
+      - "{{ seedbox_media.music }}:/music"
+  radarr:
+    image: "linuxserver/radarr"
+    ports:
+      - "{{ seedbox_radarr_port }}:7878/tcp"
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    volumes:
+      - "{{ seedbox_radarr_config_dir }}:/config"
+      - "{{ seedbox_usenet_completes_dir }}:/downloads"
+      - "{{ seedbox_media.movies }}:/movies"
+  sabnzb:
+    image: "linuxserver/sabnzbd"
+    ports:
+      - "{{ seedbox_sabnzbd_http_port }}:8080/tcp"
+      - "{{ seedbox_sabnzbd_https_port }}:9090/tcp"
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    volumes:
+      - "{{ seedbox_sabnzbd_config_dir }}:/config"
+      - "{{ seedbox_usenet_completes_dir }}:/downloads"
+      - "{{ seedbox_usenet_incompletes_dir }}:/incomplete-downloads"
+      - "{{ seedbox_usenet_watch_dir }}:/watched-folder"
+      - "{{ seedbox_media.tv }}:/tv"
+      - "{{ seedbox_media.music }}:/music"
+      - "{{ seedbox_media.itunes }}:/itunes"
+      - "{{ seedbox_media.movies }}:/movies"
+      - "{{ seedbox_media.books }}:/books"
+

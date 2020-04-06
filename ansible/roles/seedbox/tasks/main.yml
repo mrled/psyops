@@ -1,5 +1,43 @@
 ---
 
+- name: Add seedbox group
+  group:
+    name: "{{ seedbox_group }}"
+    system: yes
+
+- name: Add seedbox user
+  user:
+    name: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    system: yes
+    create_home: yes
+
+- name: getent seedbox
+  getent:
+    database: passwd
+    key: "{{ seedbox_user }}"
+  register: seedbox_getent
+
+- name: Set UID/GID facts
+  set_fact:
+    seedbox_uid: "{{ getent_passwd[seedbox_user][1] }}"
+    seedbox_gid: "{{ getent_passwd[seedbox_user][2] }}"
+    seedbox_homedir: "{{ getent_passwd[seedbox_user][4] }}"
+
+- name: Create seedbox config dirs
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0750"
+  with_items:
+    - "{{ seedbox_config_dir }}"
+    - "{{ seedbox_sabnzbd_config_dir }}"
+    - "{{ seedbox_lidarr_config_dir }}"
+    - "{{ seedbox_sonarr_config_dir }}"
+    - "{{ seedbox_radarr_config_dir }}"
+
 - name: Create seedbox mountpoints
   file:
     state: directory
@@ -7,7 +45,7 @@
     owner: root
     group: root
     mode: "0755"
-  with_items: "{{ seedbox_mountpoints }}"
+  with_items: "{{ seedbox_mount_list }}"
 
 - name: Configure seedbox mount files
   copy:
@@ -18,104 +56,88 @@
     owner: root
     group: root
     mode: "0600"
-  with_items: "{{ seedbox_mountpoints }}"
+  with_items: "{{ seedbox_mount_list }}"
 
 - name: Mount seedbox mounts
   mount:
     path: "{{ item.path }}"
     src: "{{ item.src }}"
     fstype: "{{ item.fstype }}"
-    opts: credentials={{ item.credsfile }}
+    opts: credentials={{ item.credsfile }},uid={{ seedbox_uid }},gid={{ seedbox_gid }}
     state: mounted
-  with_items: "{{ seedbox_mountpoints }}"
+  with_items: "{{ seedbox_mount_list }}"
 
-- name: Install transmission
-  package:
-    name:
-      - transmission-daemon
-    state: latest
+- name: Make seedbox mount subdirs
+  file:
+    path: "{{ item.value }}"
+    state: directory
+    mode: "0770"
+  with_dict: "{{ seedbox_media }}"
 
-- name: getent seedbox local user
-  getent: database=passwd key={{ seedbox_local_user }}
-- name: Set seedbox Unix homedir
-  set_fact:
-    seedbox_homedir: "{{ getent_passwd[seedbox_local_user][4] }}"
-
-- name: Ensure downloads/incompletes directories exist
+- name: Make more seedbox mount subdirs
   file:
     path: "{{ item }}"
-    owner: "{{ seedbox_local_user }}"
-    group: "{{ seedbox_local_group }}"
-    mode: "0700"
     state: directory
+    mode: "0770"
   with_items:
-    - "{{ seedbox_download_dir }}"
-    - "{{ seedbox_incomplete_dir }}"
-  notify: restart transmission
+    - "{{ seedbox_usenet_completes_dir }}"
+    - "{{ seedbox_usenet_incompletes_dir }}"
+    - "{{ seedbox_usenet_watch_dir }}"
 
-- name: Ensure watch directory exists (warning, allows world writes)
-  file:
-    path: "{{ item }}"
-    owner: "{{ seedbox_local_user }}"
-    group: "{{ seedbox_local_group }}"
-    mode: "0777"
-    state: directory
-  with_items:
-  - "{{ seedbox_watch_dir }}"
-
-# see also https://unix.stackexchange.com/questions/520625/transmission-daemon-udp-failed-to-set-receive-send-buffer
-- name: Set higher send/receive buffer sizes
-  sysctl: name={{ item.name }} value={{ item.value }}
-  with_items:
-  - { name: 'net.core.rmem_max', value: 16777216 }
-  - { name: 'net.core.wmem_max', value: 4194304 }
-
-- name: Ensure transmission config and staging directories exist
-  file:
-    path: "{{ item }}"
-    owner: "{{ seedbox_local_user }}"
-    group: "{{ seedbox_local_group }}"
-    mode: "0700"
-    state: directory
-  with_items:
-    - "{{ seedbox_homedir }}/.config/transmission-daemon"
-    - "{{ seedbox_homedir }}/.config/transmission-daemon-configstaging"
-
-- name: Install the transmission config file to a staging area
+- name: Install seedbox compose file
   template:
-    src: settings.json.j2
-    dest: "{{ seedbox_homedir }}/.config/transmission-daemon-configstaging/settings.json"
-    owner: "{{ seedbox_local_user }}"
-    group: "{{ seedbox_local_group }}"
-    mode: "0600"
-  register: seedbox_xmission_config
+    src: seedbox.compose.yml
+    dest: "{{ seedbox_compose_path }}"
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0640"
 
-- name: Stop transmission before changing config file (so it doesn't overwrite it)
-  service: name=transmission-daemon state=stopped
-  when: seedbox_xmission_config.changed
-
-- name: Copy config file from staging to the real directory
-  copy:
-    src: "{{ seedbox_homedir }}/.config/transmission-daemon-configstaging/settings.json"
-    dest: "{{ seedbox_homedir }}/.config/transmission-daemon/settings.json"
-    remote_src: yes
-  when: seedbox_xmission_config.changed
-
-- name: Allow transmission through the firewall (trusted zone)
-  firewalld: port={{ item }} permanent=yes zone=trusted state=enabled immediate=yes
+- name: Configure ports in the trusted zone
+  firewalld:
+    port: "{{ item }}/tcp"
+    permanent: yes
+    zone: trusted
+    state: enabled
+    immediate: yes
   with_items:
-  - "{{ seedbox_peer_port }}/udp"
-  - "{{ seedbox_peer_port }}/tcp"
-  - "{{ seedbox_rpc_port }}/udp"
-  - "{{ seedbox_rpc_port }}/tcp"
+    - "{{ seedbox_sabnzbd_http_port }}"
+    - "{{ seedbox_sabnzbd_https_port }}"
+    - "{{ seedbox_sonarr_port }}"
+    - "{{ seedbox_lidarr_port }}"
+    - "{{ seedbox_radarr_port }}"
 
-- name: Allow transmission through the firewall (default zone)
-  firewalld: port={{ item }} permanent=yes state=enabled immediate=yes
+- name: Configure ports in the default zone
+  firewalld:
+    port: "{{ item }}/tcp"
+    permanent: yes
+    state: enabled
+    immediate: yes
   with_items:
-  - "{{ seedbox_peer_port }}/udp"
-  - "{{ seedbox_peer_port }}/tcp"
-  - "{{ seedbox_rpc_port }}/udp"
-  - "{{ seedbox_rpc_port }}/tcp"
+    - "{{ seedbox_sabnzbd_http_port }}"
+    - "{{ seedbox_sabnzbd_https_port }}"
+    - "{{ seedbox_sonarr_port }}"
+    - "{{ seedbox_lidarr_port }}"
+    - "{{ seedbox_radarr_port }}"
 
-- name: Start transmission
-  service: name=transmission-daemon state=started enabled=yes
+- name: Deploy the Docker stack
+  docker_stack:
+    state: present
+    name: seedbox
+    compose:
+      - "{{ seedbox_compose_path }}"
+
+# https://sabnzbd.org/wiki/extra/hostname-check.html
+# https://groups.google.com/forum/#!msg/ansible-project/JvHfchsgRaU/Vw_CzBbvadgJ
+- name: Fix sabnzbd host verification check
+  lineinfile:
+    path: "{{ seedbox_sabnzbd_config_dir }}/sabnzbd.ini"
+    insertafter: '^\[misc\]$'
+    regexp: '^host_whitelist ='
+    line: 'host_whitelist = {{ ansible_fqdn }}, '
+  register: seedbox_sabnzbd_host_whitelist_lineinfile
+  tags: seedbox_sabnzbd_host_whitelist
+
+- name: Restart sabnzbd after changing config file
+  command: docker service update --force seedbox_sabnzb
+  when: seedbox_sabnzbd_host_whitelist_lineinfile.changed
+

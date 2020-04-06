@@ -1,4 +1,15 @@
 ---
+seedbox_config_dir: /etc/seedbox
+seedbox_compose_path: "{{ seedbox_config_dir }}/seedbox.compose.yml"
+seedbox_sabnzbd_config_dir: "{{ seedbox_config_dir }}/sabnzbd"
+seedbox_sonarr_config_dir: "{{ seedbox_config_dir }}/sonarr"
+seedbox_lidarr_config_dir: "{{ seedbox_config_dir }}/lidarr"
+seedbox_radarr_config_dir: "{{ seedbox_config_dir }}/radarr"
+seedbox_sonarr_port: 9903
+seedbox_lidarr_port: 9904
+seedbox_radarr_port: 9905
+seedbox_sabnzbd_http_port: 9901
+seedbox_sabnzbd_https_port: 9902
 
 seedbox_bindaddr_v4: "0.0.0.0"
 seedbox_bindaddr_v6: "::"
