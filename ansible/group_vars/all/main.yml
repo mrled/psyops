@@ -2,6 +2,12 @@
 
 timezone: America/Chicago
 
+# For ACME DNS challenges in the home.micahrl.com domain
+home_zone_updater_access_key: "{{ vault_home_zone_updater_access_key }}"
+home_zone_updater_secret_key: "{{ vault_home_zone_updater_secret_key }}"
+home_zone_updater_zone_id: Z32HSYI0AGMFV9
+home_zone_updater_region: us-east-2
+
 mailfwd_smtp_host: smtps-proxy.messagingengine.com
 mailfwd_smtp_port: "443"
 mailfwd_rewrite_domain: micahrl.com
@@ -73,6 +79,18 @@ seedbox_media:
   movies: "{{ seedbox_mount.path }}/Movies"
   books: "{{ seedbox_mount.path }}/Books"
   itunes: "{{ seedbox_mount.path }}/iTunes"
+seedbox_domain: seedbox.home.micahrl.com
+seedbox_acme_email: psyops@micahrl.com
+seedbox_acme_aws_region: "{{ home_zone_updater_region }}"
+seedbox_acme_aws_access_key: "{{ home_zone_updater_access_key }}"
+seedbox_acme_aws_secret_key: "{{ home_zone_updater_secret_key }}"
+seedbox_acme_aws_zone: "{{ home_zone_updater_zone_id }}"
+
+# These should be the same for all services
+# Note that some services might require manual configuration
+# The traefik dashboard is at least configured with this
+seedbox_web_admin_user: freeleech
+seedbox_web_admin_pass: "{{ vault_seedbox_web_admin_pass }}"
 
 # Old seedbox settings
 seedbox_enable_portforward: no
@@ -112,11 +130,6 @@ mailbackup_mountpoints:
     password: "{{ mailbackup_share_pass }}"
     fstype: cifs
     mountowner: "{{ mailbackup_username }}"
-
-# For ACME DNS challenges in the home.micahrl.com domain
-home_zone_updater_access_key: "{{ vault_home_zone_updater_access_key }}"
-home_zone_updater_secret_key: "{{ vault_home_zone_updater_secret_key }}"
-home_zone_updater_region: us-east-2
 
 # ACME DNS base updater settings
 acmedns_base_certificate_dir: "/etc/acmedns/certificates"

@@ -2,14 +2,21 @@
 seedbox_config_dir: /etc/seedbox
 seedbox_compose_path: "{{ seedbox_config_dir }}/seedbox.compose.yml"
 seedbox_sabnzbd_config_dir: "{{ seedbox_config_dir }}/sabnzbd"
+seedbox_sabnzbd_config_ini: "{{ seedbox_sabnzbd_config_dir }}/sabnzbd.ini"
 seedbox_sonarr_config_dir: "{{ seedbox_config_dir }}/sonarr"
 seedbox_lidarr_config_dir: "{{ seedbox_config_dir }}/lidarr"
 seedbox_radarr_config_dir: "{{ seedbox_config_dir }}/radarr"
-seedbox_sonarr_port: 9903
-seedbox_lidarr_port: 9904
-seedbox_radarr_port: 9905
-seedbox_sabnzbd_http_port: 9901
-seedbox_sabnzbd_https_port: 9902
+seedbox_arr_configs:
+  sonarr: "{{ seedbox_sonarr_config_dir }}/config.xml"
+  radarr: "{{ seedbox_radarr_config_dir }}/config.xml"
+  lidarr: "{{ seedbox_lidarr_config_dir }}/config.xml"
+seedbox_stack_needs_redeploy: false
+seedbox_traefik_config_dir: "{{ seedbox_config_dir }}/traefik"
+seedbox_traefik_toml: "{{ seedbox_traefik_config_dir }}/traefik.toml"
+seedbox_traefik_acme_json: "{{ seedbox_traefik_config_dir }}/acme.json"
+seedbox_traefik_aws_creds_file: "{{ seedbox_traefik_config_dir }}/aws_credentials"
+seedbox_traefik_api_users_file: "{{ seedbox_traefik_config_dir }}/traefik-users.htpasswd"
+seedbox_acme_staging: false
 
 seedbox_bindaddr_v4: "0.0.0.0"
 seedbox_bindaddr_v6: "::"

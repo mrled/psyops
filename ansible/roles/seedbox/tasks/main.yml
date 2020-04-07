@@ -1,5 +1,19 @@
 ---
 
+- name: Install RPMs
+  dnf:
+    name:
+      - python3-lxml
+      - python3-pip
+    state: latest
+    update_cache: yes
+
+- name: Install pip packages
+  pip:
+    name:
+      - passlib
+    state: latest
+
 - name: Add seedbox group
   group:
     name: "{{ seedbox_group }}"
@@ -100,11 +114,8 @@
     state: enabled
     immediate: yes
   with_items:
-    - "{{ seedbox_sabnzbd_http_port }}"
-    - "{{ seedbox_sabnzbd_https_port }}"
-    - "{{ seedbox_sonarr_port }}"
-    - "{{ seedbox_lidarr_port }}"
-    - "{{ seedbox_radarr_port }}"
+    - "80"
+    - "443"
 
 - name: Configure ports in the default zone
   firewalld:
@@ -113,11 +124,52 @@
     state: enabled
     immediate: yes
   with_items:
-    - "{{ seedbox_sabnzbd_http_port }}"
-    - "{{ seedbox_sabnzbd_https_port }}"
-    - "{{ seedbox_sonarr_port }}"
-    - "{{ seedbox_lidarr_port }}"
-    - "{{ seedbox_radarr_port }}"
+    - "80"
+    - "443"
+
+- name: Make traefik config dir
+  file:
+    path: "{{ seedbox_traefik_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Install traefik config
+  template:
+    src: traefik.toml.j2
+    dest: "{{ seedbox_traefik_toml }}"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Install traefik AWS credentials
+  template:
+    src: aws_credentials.j2
+    dest: "{{ seedbox_traefik_aws_creds_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Ensure acme.json exists
+  # Create an empty file if one isn't present
+  # Do nothing if it already exists
+  copy:
+    content: ""
+    dest: "{{ seedbox_traefik_acme_json }}"
+    force: no
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Configure traefik htpasswd
+  htpasswd:
+    path: "{{ seedbox_traefik_api_users_file }}"
+    name: "{{ seedbox_web_admin_user }}"
+    password: "{{ seedbox_web_admin_pass }}"
+    owner: root
+    group: root
+    mode: "0600"
 
 - name: Deploy the Docker stack
   docker_stack:
@@ -126,6 +178,13 @@
     compose:
       - "{{ seedbox_compose_path }}"
 
+#
+# Light configuration of our apps
+# At least for now, we expect that these configs need to be backed up,
+# because we will do lots of manual configuration as well.
+# This just gets the basics.
+#
+
 # https://sabnzbd.org/wiki/extra/hostname-check.html
 # https://groups.google.com/forum/#!msg/ansible-project/JvHfchsgRaU/Vw_CzBbvadgJ
 - name: Fix sabnzbd host verification check
@@ -133,11 +192,39 @@
     path: "{{ seedbox_sabnzbd_config_dir }}/sabnzbd.ini"
     insertafter: '^\[misc\]$'
     regexp: '^host_whitelist ='
-    line: 'host_whitelist = {{ ansible_fqdn }}, '
-  register: seedbox_sabnzbd_host_whitelist_lineinfile
-  tags: seedbox_sabnzbd_host_whitelist
+    line: 'host_whitelist = {{ ansible_fqdn }}, {{ seedbox_domain }}, '
+  register: seedbox_needsupdate_sab_hostverify
 
-- name: Restart sabnzbd after changing config file
-  command: docker service update --force seedbox_sabnzb
-  when: seedbox_sabnzbd_host_whitelist_lineinfile.changed
+# UrlBase/url_base:
+# This step is required for the traefik reverse proxy to work
+# The reverse proxy can pass traffic from any route (e.g. /blahblah-sonarr) to the backend (e.g. sonarr)
+# However, without this step, the backend application will not know that its accessed via a subdir,
+# so it'll return full paths to resources as if it were at the root (e.g. /example.js)
+# instead of under the subdir (e.g. /blahblah-sonarr/example.js)
+
+- name: Configure *arr UrlBase
+  xml:
+    path: "{{ item.value }}"
+    xpath: /Config/UrlBase
+    value: "/{{ item.key }}"
+  with_dict: "{{ seedbox_arr_configs }}"
+  register: seedbox_needsupdate_arr_urlbase
+
+- name: Configure sabnzbd url_base
+  ini_file:
+    path: "{{ seedbox_sabnzbd_config_ini }}"
+    section: misc
+    option: url_base
+    value: /sabnzbd
+  register: seedbox_needsupdate_sab_urlbase
+
+# We have to redeploy the stack to pick up any config changes
+- name: Redeploy the Docker stack after changing a config file
+  docker_stack:
+    state: present
+    name: seedbox
+    compose:
+      - "{{ seedbox_compose_path }}"
+  when: seedbox_needsupdate_sab_hostverify.changed or seedbox_needsupdate_arr_urlbase.changed or seedbox_needsupdate_sab_urlbase.changed
+
 
