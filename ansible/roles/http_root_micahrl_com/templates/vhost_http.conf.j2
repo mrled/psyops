@@ -1,0 +1,9 @@
+<VirtualHost *:80>
+    ServerAdmin {{ http_root_micahrl_com_email }}
+    ServerName {{ http_root_micahrl_com_domain_list[0] }}
+{% for domain in http_root_micahrl_com_domain_list[1:] %}
+    ServerAlias {{ domain }}
+{% endfor %}
+    DocumentRoot /var/www/html
+</VirtualHost>
+

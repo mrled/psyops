@@ -28,20 +28,24 @@ Resources:
       RecordSets:
 
         # $ORIGIN
+        - Name: nullyork.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["18.216.135.175"]
         - Name: micahrl.com.
           Type: A
           TTL: 300
-          ResourceRecords: ["217.70.184.38"]
+          ResourceRecords: ["18.216.135.175"]
+        - Name: www.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["nullyork.micahrl.com."]
 
         # Webserver
         - Name: me.micahrl.com.
           Type: CNAME
           TTL: 300
           ResourceRecords: ["clever-kepler-458884.netlify.com."]
-        - Name: www.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["me.micahrl.com"]
 
         # Prod server
         - Name: kenasus.micahrl.com.
@@ -76,12 +80,6 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["noradia.micahrl.com."]
-
-        # Old dev server
-        - Name: nullyork.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["162.243.186.50"]
 
         # Architect
         - Name: architect.micahrl.com.

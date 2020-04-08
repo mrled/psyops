@@ -1,14 +1,42 @@
 ---
 
+# Note: I have no automated import of the IP address deployed in the micahrl.com root webserver EC2 play
+# WHen deploying that instance from scratch, will need to manually update the CFN template for the A record
 - name: Configure DNS
-  hosts: localdelegation
+  hosts: localhost
+  connection: local
+  become: no
+  gather_facts: no
   roles:
-    - name: cloudformation
+    - name: cfn
       cloudformation_stack_name: MicahrlDotCom
       cloudformation_template_path: cloudformation/MicahrlDotCom.cfn.yml
       cloudformation_capabilities: ['CAPABILITY_NAMED_IAM']
       tags:
         - dns
+
+- name: Deploy micahrl.com root webserver instance to ec2
+  hosts: localhost
+  connection: local
+  become: no
+  gather_facts: no
+  roles:
+    - name: cfn
+      cloudformation_stack_name: HttpRootMicahrlDotCom
+      cloudformation_template_path: cloudformation/HttpRootMicahrlDotCom.cfn.yml
+      cloudformation_tags:
+        AnsibleRole: http_root_micahrl_com
+      cloudformation_template_params:
+        KeyPairName: psyops_rsa
+      tags:
+        - http_root_micahrl_com
+
+# Note: I have no automated import of the SSH host key generated in the EC2 deployment phase
+# So you'll have to trust that one manually before running this play
+- name: Configure deployed micahrl.com root webserver instance
+  hosts: http_root_micahrl_com
+  roles:
+    - { name: http_root_micahrl_com, tags: ['http_root_micahrl_com'] }
 
 - name: Configure base
   hosts: all

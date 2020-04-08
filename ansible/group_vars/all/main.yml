@@ -18,6 +18,14 @@ home_zone_updater_secret_key: "{{ vault_home_zone_updater_secret_key }}"
 home_zone_updater_zone_id: Z32HSYI0AGMFV9
 home_zone_updater_region: "{{ aws_region }}"
 
+http_root_micahrl_com_certname: nullyork_root
+http_root_micahrl_com_email: psyops@micahrl.com
+http_root_micahrl_com_domain_list:
+  - nullyork.micahrl.com
+  - micahrl.com
+  - www.micahrl.com
+http_root_micahrl_com_redirect_real_webserver: https://me.micahrl.com/
+
 mailfwd_smtp_host: smtps-proxy.messagingengine.com
 mailfwd_smtp_port: "443"
 mailfwd_rewrite_domain: micahrl.com

@@ -1,0 +1,84 @@
+---
+
+- name: Install EPEL
+  yum:
+    name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+  register: http_root_micahrl_com_epel
+
+- name: Enable EPEL
+  command: yum-config-manager --enable epel
+  when: http_root_micahrl_com_epel.changed
+
+- name: Install packages
+  package:
+    name:
+      - httpd
+      - python2-certbot-apache
+    state: latest
+    update_cache: yes
+
+- name: Start httpd
+  systemd:
+    name: httpd
+    state: started
+    enabled: yes
+
+- name: Install vhost for port 80
+  template:
+    src: vhost_http.conf.j2
+    dest: /etc/httpd/conf.d/vhost_http.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart httpd
+  register: http_root_micahrl_com_install_vhost
+
+- name: Restart httpd
+  systemd:
+    name: httpd
+    state: restarted
+    enabled: yes
+  when: http_root_micahrl_com_install_vhost.changed
+
+# This can be easily run from SSH as well
+- name: Create certbot wrapper
+  copy:
+    content: >+
+      certbot run
+      --noninteractive
+      --agree-tos
+      --apache
+      --keep-until-expiring
+      --redirect
+      --hsts
+      --uir
+      --cert-name {{ http_root_micahrl_com_certname }}
+      --email {{ http_root_micahrl_com_email }}
+      --domains {{ http_root_micahrl_com_domain_list | join(',') }}
+    dest: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+# Running certbot here does two things for us:
+# 1) If the cert doen't exist or is expired, it'll get us a valid cert
+# 2) It'll add RewriteCond entries to the port 80 vhost to redirect to HTTPS
+- name: Run certbox once
+  shell: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
+
+- name: Redirect / to real webserver
+  lineinfile:
+    path: /etc/httpd/conf.d/vhost_http-le-ssl.conf
+    line: RedirectMatch permanent ^/$ {{ http_root_micahrl_com_redirect_real_webserver }}
+    insertbefore: '^\<\/VirtualHost\>$'
+  notify: restart httpd
+
+- name: Cron certbot
+  cron:
+    name: certbot_{{ http_root_micahrl_com_certname }} 
+    cron_file: certbot_{{ http_root_micahrl_com_certname }}
+    job: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
+    user: root
+    minute: '22'
+    hour: '4'
+    day: "*/14"

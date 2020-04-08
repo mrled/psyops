@@ -1,0 +1,2 @@
+---
+http_root_micahrl_com_servername: "{{ ansible_fqdn }}:80"
