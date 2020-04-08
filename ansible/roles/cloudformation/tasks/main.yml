@@ -1,0 +1,14 @@
+---
+
+- name: Deploy CloudFormation template
+  cloudformation:
+    stack_name: "{{ cloudformation_stack_name }}"
+    state: "present"
+    region: "{{ cloudformation_aws_region }}"
+    template: "{{ cloudformation_template_path }}"
+    template_parameters: "{{ cloudformation_template_params }}"
+    tags: "{{ cloudformation_tags }}"
+    aws_access_key: "{{ cloudformation_aws_access_key }}"
+    aws_secret_key: "{{ cloudformation_aws_secret_key }}"
+
+

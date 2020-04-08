@@ -2,11 +2,21 @@
 
 timezone: America/Chicago
 
+# For access to everything in AWS
+aws_access_key: "{{ vault_aws_access_key }}"
+aws_secret_key: "{{ vault_aws_secret_key }}"
+aws_region: us-east-2
+
+# For the generic cloudformation role, set the all-access keys as the defaults
+cloudformation_aws_access_key: "{{ aws_access_key }}"
+cloudformation_aws_secret_key: "{{ aws_secret_key }}"
+cloudformation_aws_region: "{{ aws_region }}"
+
 # For ACME DNS challenges in the home.micahrl.com domain
 home_zone_updater_access_key: "{{ vault_home_zone_updater_access_key }}"
 home_zone_updater_secret_key: "{{ vault_home_zone_updater_secret_key }}"
 home_zone_updater_zone_id: Z32HSYI0AGMFV9
-home_zone_updater_region: us-east-2
+home_zone_updater_region: "{{ aws_region }}"
 
 mailfwd_smtp_host: smtps-proxy.messagingengine.com
 mailfwd_smtp_port: "443"

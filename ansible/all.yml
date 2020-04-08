@@ -1,5 +1,15 @@
 ---
 
+- name: Configure DNS
+  hosts: localdelegation
+  roles:
+    - name: cloudformation
+      cloudformation_stack_name: MicahrlDotCom
+      cloudformation_template_path: cloudformation/MicahrlDotCom.cfn.yml
+      cloudformation_capabilities: ['CAPABILITY_NAMED_IAM']
+      tags:
+        - dns
+
 - name: Configure base
   hosts: all
   roles:
