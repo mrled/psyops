@@ -3,6 +3,7 @@ seedbox_config_dir: /etc/seedbox
 seedbox_compose_path: "{{ seedbox_config_dir }}/seedbox.compose.yml"
 seedbox_sabnzbd_config_dir: "{{ seedbox_config_dir }}/sabnzbd"
 seedbox_sabnzbd_config_ini: "{{ seedbox_sabnzbd_config_dir }}/sabnzbd.ini"
+seedbox_rutorrent_config_dir: "{{ seedbox_config_dir }}/rutorrent"
 seedbox_sonarr_config_dir: "{{ seedbox_config_dir }}/sonarr"
 seedbox_lidarr_config_dir: "{{ seedbox_config_dir }}/lidarr"
 seedbox_radarr_config_dir: "{{ seedbox_config_dir }}/radarr"

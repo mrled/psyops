@@ -51,6 +51,7 @@
     - "{{ seedbox_lidarr_config_dir }}"
     - "{{ seedbox_sonarr_config_dir }}"
     - "{{ seedbox_radarr_config_dir }}"
+    - "{{ seedbox_rutorrent_config_dir }}"
 
 - name: Create seedbox mountpoints
   file:
@@ -97,6 +98,7 @@
     - "{{ seedbox_usenet_completes_dir }}"
     - "{{ seedbox_usenet_incompletes_dir }}"
     - "{{ seedbox_usenet_watch_dir }}"
+    - "{{ seedbox_rutorrent_downloads_dir }}"
 
 - name: Install seedbox compose file
   template:
@@ -193,7 +195,7 @@
     insertafter: '^\[misc\]$'
     regexp: '^host_whitelist ='
     line: 'host_whitelist = {{ ansible_fqdn }}, {{ seedbox_domain }}, '
-  register: seedbox_needsupdate_sab_hostverify
+  notify: seedbox stack redeploy
 
 # UrlBase/url_base:
 # This step is required for the traefik reverse proxy to work
@@ -208,7 +210,7 @@
     xpath: /Config/UrlBase
     value: "/{{ item.key }}"
   with_dict: "{{ seedbox_arr_configs }}"
-  register: seedbox_needsupdate_arr_urlbase
+  notify: seedbox stack redeploy
 
 - name: Configure sabnzbd url_base
   ini_file:
@@ -216,15 +218,5 @@
     section: misc
     option: url_base
     value: /sabnzbd
-  register: seedbox_needsupdate_sab_urlbase
-
-# We have to redeploy the stack to pick up any config changes
-- name: Redeploy the Docker stack after changing a config file
-  docker_stack:
-    state: present
-    name: seedbox
-    compose:
-      - "{{ seedbox_compose_path }}"
-  when: seedbox_needsupdate_sab_hostverify.changed or seedbox_needsupdate_arr_urlbase.changed or seedbox_needsupdate_sab_urlbase.changed
-
+  notify: seedbox stack redeploy
 

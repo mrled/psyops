@@ -77,6 +77,7 @@ services:
       - "{{ seedbox_media.itunes }}:/itunes"
       - "{{ seedbox_media.movies }}:/movies"
       - "{{ seedbox_media.books }}:/books"
+      - "{{ seedbox_media.trix }}:/trix"
     networks:
       - privnet
     labels:
@@ -86,7 +87,27 @@ services:
       - "traefik.http.routers.seedbox-sabnzb.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-sabnzb.service=seedbox-sabnzb"
       - "traefik.http.services.seedbox-sabnzb.loadbalancer.server.port=8080"
-      - "traefik.http.routers.seedbox-sabnzb.middlewares=seedbox-auth"
+
+  rutorrent:
+    image: linuxserver/rutorrent
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    ports:
+      - "{{ seedbox_rutorrent_peer_port }}/udp"
+    volumes:
+      - "{{ seedbox_rutorrent_config_dir }}:/config"
+      - "{{ seedbox_rutorrent_downloads_dir }}:/downloads"
+    networks:
+      - privnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-rutorrent.rule=Host(`{{ seedbox_domain }}`) && PathPrefix(`/rutorrent`)"
+      - "traefik.http.routers.seedbox-rutorrent.tls=true"
+      - "traefik.http.routers.seedbox-rutorrent.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-rutorrent.service=seedbox-rutorrent"
+      - "traefik.http.services.seedbox-rutorrent.loadbalancer.server.port=80"
 
   balancer:
     image: traefik

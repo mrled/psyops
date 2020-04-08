@@ -79,6 +79,7 @@ seedbox_media:
   movies: "{{ seedbox_mount.path }}/Movies"
   books: "{{ seedbox_mount.path }}/Books"
   itunes: "{{ seedbox_mount.path }}/iTunes"
+  trix: "{{ seedbox_mount.path }}/Trix"
 seedbox_domain: seedbox.home.micahrl.com
 seedbox_acme_email: psyops@micahrl.com
 seedbox_acme_aws_region: "{{ home_zone_updater_region }}"
@@ -91,6 +92,9 @@ seedbox_acme_aws_zone: "{{ home_zone_updater_zone_id }}"
 # The traefik dashboard is at least configured with this
 seedbox_web_admin_user: freeleech
 seedbox_web_admin_pass: "{{ vault_seedbox_web_admin_pass }}"
+
+seedbox_rutorrent_peer_port: "{{ vault_seedbox_rutorrent_peer_port }}"
+seedbox_rutorrent_downloads_dir: "{{ seedbox_mount.path }}/torrent"
 
 # Old seedbox settings
 seedbox_enable_portforward: no

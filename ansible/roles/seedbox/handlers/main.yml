@@ -2,3 +2,11 @@
 
 - name: restart transmission
   service: name=transmission-daemon state=restarted
+
+- name: seedbox stack redeploy
+  docker_stack:
+    state: present
+    name: seedbox
+    compose:
+      - "{{ seedbox_compose_path }}"
+
