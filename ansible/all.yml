@@ -28,6 +28,8 @@
         AnsibleRole: http_root_micahrl_com
       cloudformation_template_params:
         KeyPairName: psyops_rsa
+        InstanceType: t2.micro
+        InstanceAmiId: ami-0e01ce4ee18447327 # Amazon Linux 2
       tags:
         - http_root_micahrl_com
 
@@ -37,6 +39,27 @@
   hosts: http_root_micahrl_com
   roles:
     - { name: http_root_micahrl_com, tags: ['http_root_micahrl_com'] }
+
+- name: Deploy matrix server to EC2
+  hosts: localhost
+  connection: local
+  become: no
+  gather_facts: no
+  roles:
+    - name: cfn
+      cloudformation_stack_name: MatrixMicahrlDotCom
+      cloudformation_template_path: cloudformation/MatrixMicahrlDotCom.cfn.yml
+      cloudformation_tags:
+        AnsibleRole: matrixserver
+      cloudformation_template_params:
+        KeyPairName: psyops_rsa
+        InstanceType: t3a.small
+        InstanceAmiId: ami-0fc20dd1da406780b  # Ubuntu 18.04 LTS
+        MediaBucketName: "{{ matrix_media_bucket_name }}"
+        MediaBucketFullAccessPolicyName: "{{ matrix_media_bucket_full_access_policy_name }}"
+        MediaBucketFullAccessGroupName: "{{ matrix_media_bucket_full_access_group_name }}"
+      tags:
+        - matrixserver
 
 - name: Configure base
   hosts: all

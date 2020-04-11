@@ -82,3 +82,25 @@
     minute: '22'
     hour: '4'
     day: "*/14"
+
+- name: Install reverse proxy config file
+  template:
+    src: matrix.conf.include.j2
+    dest: /etc/httpd/matrix.conf.include
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Allow SSL proxying
+  lineinfile:
+    path: /etc/httpd/conf.d/vhost_http-le-ssl.conf
+    line: SSLProxyEngine On
+    insertbefore: '^\<\/VirtualHost\>$'
+  notify: restart httpd
+
+- name: Reference reverse proxy config file
+  lineinfile:
+    path: /etc/httpd/conf.d/vhost_http-le-ssl.conf
+    line: Include /etc/httpd/matrix.conf.include
+    insertbefore: '^\<\/VirtualHost\>$'
+  notify: restart httpd

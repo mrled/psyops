@@ -1,0 +1,149 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Matrix server for micahrl.com
+Parameters:
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    ConstraintDescription: must be a valid EC2 instance type.
+  KeyPairName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  InstanceAmiId:
+    Description: AMI ID (Find this by launching a new instance in the console. Different per region.)
+    Type: String
+    Default: ami-0e01ce4ee18447327
+  MediaBucketName:
+    Description: Name for the media bucket in S3
+    Type: String
+  MediaBucketFullAccessPolicyName:
+    Description: Name for the full access policy for the media bucket
+    Type: String
+  MediaBucketFullAccessGroupName:
+    Description: Name for the group to have full access to the media bucket
+    Type: String
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref KeyPairName
+      UserData:
+        Fn::Base64: !Sub |
+          IPAddress=${IPAddress}
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+      - !Ref InstanceSecurityGroup
+      ImageId: !Ref InstanceAmiId
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH/HTTP/HTTPS
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        CidrIp: 0.0.0.0/0
+      # TURN over TCP
+      - IpProtocol: tcp
+        FromPort: '3478'
+        ToPort: '3478'
+        CidrIp: 0.0.0.0/0
+      # TURN over UDP
+      - IpProtocol: udp
+        FromPort: '3478'
+        ToPort: '3478'
+        CidrIp: 0.0.0.0/0
+      # TURN over TCP
+      - IpProtocol: tcp
+        FromPort: '5349'
+        ToPort: '5349'
+        CidrIp: 0.0.0.0/0
+      # TURN over UDP
+      - IpProtocol: udp
+        FromPort: '5349'
+        ToPort: '5349'
+        CidrIp: 0.0.0.0/0
+      # Matrix Federation API HTTPS
+      - IpProtocol: tcp
+        FromPort: '8448'
+        ToPort: '8448'
+        CidrIp: 0.0.0.0/0
+      # TURN over UDP
+      - IpProtocol: udp
+        FromPort: '49152'
+        ToPort: '49172'
+        CidrIp: 0.0.0.0/0
+      # RTP media over UDP (for Jitsi)
+      - IpProtocol: udp
+        FromPort: '10000'
+        ToPort: '10000'
+        CidrIp: 0.0.0.0/0
+      # RTP media fallback over TCP (for Jitsi)
+      - IpProtocol: tcp
+        FromPort: '4443'
+        ToPort: '4443'
+        CidrIp: 0.0.0.0/0
+  IPAddress:
+    Type: AWS::EC2::EIP
+  IPAssoc:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref EC2Instance
+      EIP: !Ref IPAddress
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Ref MediaBucketName
+      # Enable server-side encryption, for whatever good that does
+      # Use the default encryption key, which does not incur any additional fees
+      BucketEncryption:
+        ServerSideEncryptionConfiguration: 
+          - ServerSideEncryptionByDefault: 
+              SSEAlgorithm: AES256
+  MediaBucketFullAccessGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Ref MediaBucketFullAccessGroupName
+  MediaBucketPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "s3:*"
+            Resource:
+              # e.g. arn:aws:s3:::example-bucket
+              - !Join ['', ['arn:aws:s3:::', !Ref MediaBucket]]
+              # e.g. arn:aws:s3:::example-bucket/*
+              - !Join ['', ['arn:aws:s3:::', !Ref MediaBucket, '/*']]
+      Groups:
+        - !Ref MediaBucketFullAccessGroup
+      PolicyName: !Ref MediaBucketFullAccessPolicyName
+
+Outputs:
+  InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Value: !Ref EC2Instance
+  InstanceIPAddress:
+    Description: IP address of the newly created EC2 instance
+    Value: !Ref IPAddress
+  S3Bucket:
+    Description: The S3 bucket to store media on
+    Value: !Ref MediaBucket
+  S3BucketFullAccessPolicy:
+    Description: A policy granting full access to the media bucket
+    Value: !Ref MediaBucketPolicy
+

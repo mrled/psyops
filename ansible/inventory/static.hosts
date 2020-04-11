@@ -30,3 +30,6 @@ tagasaw.home.micahrl.com
 
 [seedboxes]
 tagasaw.home.micahrl.com
+
+[matrixservers]
+olcott.micahrl.com ansible_user=ubuntu
