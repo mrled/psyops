@@ -19,3 +19,6 @@
 [submodule "submod/fourgang"]
 	path = submod/fourgang
 	url = git@github.com:mrled/fourgang.git
+[submodule "submod/matrix-docker-ansible-deploy"]
+	path = submod/matrix-docker-ansible-deploy
+	url = git@github.com:mrled/matrix-docker-ansible-deploy.git
