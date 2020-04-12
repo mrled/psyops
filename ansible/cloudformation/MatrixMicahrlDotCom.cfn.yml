@@ -39,7 +39,7 @@ Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Enable SSH/HTTP/HTTPS
+      GroupDescription: Enable Matrix ports, ICMP, and SSH/HTTP/HTTPS
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '22'
@@ -92,6 +92,11 @@ Resources:
       - IpProtocol: tcp
         FromPort: '4443'
         ToPort: '4443'
+        CidrIp: 0.0.0.0/0
+      # ICMP
+      - IpProtocol: icmp
+        FromPort: '-1'
+        ToPort: '-1'
         CidrIp: 0.0.0.0/0
   IPAddress:
     Type: AWS::EC2::EIP
