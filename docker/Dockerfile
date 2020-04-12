@@ -72,7 +72,6 @@ RUN true \
         curl curl-doc \
         docker docker-doc docker-bash-completion \
         emacs-nox emacs-doc \
-        neovim \
         file file-doc \
         git git-doc \
         # Installs GPG 2.x, not 1.x (gnupg1 gnupg1-doc)
@@ -83,11 +82,13 @@ RUN true \
         # For non busybox ping; busybox ping requires root privs, or setting net.ipv4.ping_group_range on the Docker *host*,
         # which is problematic on Windows/macOS which both use a Linux VM that is difficult to directly configure.
         iputils \
+        jq jq-doc \
         # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
         less less-doc \
         man man-pages mdocml-apropos \
         # provides tput
         ncurses \
+        neovim neovim-doc \
         openssh-client openssh-doc \
         openssl openssl-doc \
         python3 python3-doc \
@@ -141,19 +142,13 @@ RUN true \
 ## Third party software that doesn't require the /setup dir
 
 RUN true \
-    # Install Azure CLI
-    # Azure requires this python3->python link because it is... bad
-    && ln -s ../../bin/python3 /usr/local/bin/python \
-    && python3 -m pip install azure azure-cli \
-    && true
-
-RUN true \
     # Install Ansible
     # Required for Ansible scripts and/or the EC2 inventory script
     && python -m pip install \
         ansible \
         boto \
         boto3 \
+        dnspython \
         mitogen \
     && apk add \
         # Required for Ansible to use SSH password auth instead of public keys
