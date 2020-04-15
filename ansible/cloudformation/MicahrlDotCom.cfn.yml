@@ -256,6 +256,18 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["tagasaw.home.micahrl.com."]
+        - Name: plex.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["tagasaw.home.micahrl.com."]
+        - Name: tentacles.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["tagasaw.home.micahrl.com."]
+        - Name: transmission.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["tagasaw.home.micahrl.com."]
 
   # A new group with permission to modify records in the InternalZoneUpdated
   # I use my inflatable-wharf container for this,

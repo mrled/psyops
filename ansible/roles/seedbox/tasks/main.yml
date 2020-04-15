@@ -47,11 +47,14 @@
     mode: "0750"
   with_items:
     - "{{ seedbox_config_dir }}"
+    - "{{ seedbox_traefik_config_dir }}"
     - "{{ seedbox_sabnzbd_config_dir }}"
     - "{{ seedbox_lidarr_config_dir }}"
     - "{{ seedbox_sonarr_config_dir }}"
     - "{{ seedbox_radarr_config_dir }}"
-    - "{{ seedbox_rutorrent_config_dir }}"
+    - "{{ seedbox_hydra2_config_dir }}"
+    - "{{ seedbox_transmission_config_dir }}"
+    - "{{ seedbox_tentacles_config_dir }}"
 
 - name: Create seedbox mountpoints
   file:
@@ -98,7 +101,7 @@
     - "{{ seedbox_usenet_completes_dir }}"
     - "{{ seedbox_usenet_incompletes_dir }}"
     - "{{ seedbox_usenet_watch_dir }}"
-    - "{{ seedbox_rutorrent_downloads_dir }}"
+    - "{{ seedbox_torrent_downloads_dir }}"
 
 - name: Install seedbox compose file
   template:
@@ -110,40 +113,57 @@
 
 - name: Configure ports in the trusted zone
   firewalld:
-    port: "{{ item }}/tcp"
+    port: "{{ item }}"
     permanent: yes
     zone: trusted
     state: enabled
     immediate: yes
   with_items:
-    - "80"
-    - "443"
+    - "80/tcp"
+    - "443/tcp"
+    - "{{ seedbox_transmission_peer_port }}/tcp"
+    - "{{ seedbox_transmission_peer_port }}/udp"
 
 - name: Configure ports in the default zone
   firewalld:
-    port: "{{ item }}/tcp"
+    port: "{{ item }}"
     permanent: yes
     state: enabled
     immediate: yes
   with_items:
-    - "80"
-    - "443"
+    - "80/tcp"
+    - "443/tcp"
+    - "{{ seedbox_transmission_peer_port }}/tcp"
+    - "{{ seedbox_transmission_peer_port }}/udp"
 
-- name: Make traefik config dir
-  file:
-    path: "{{ seedbox_traefik_config_dir }}"
-    state: directory
+- name: Upload transmission image source
+  copy:
+    src: transmission-docker/
+    dest: "{{ seedbox_transmission_docker_build_dir }}"
     owner: root
     group: root
     mode: "0700"
+  register: seedbox_transmission_docker_copy
+
+- name: Build transmission image
+  docker_image:
+    build:
+      pull: yes
+      path: "{{ seedbox_transmission_docker_build_dir }}"
+    name: local/transmission
+    tag: ansibuilt
+    force_tag: yes
+    force_source: "{{ seedbox_transmission_docker_copy.changed }}"
+    source: build
 
 - name: Install traefik config
   template:
-    src: traefik.toml.j2
-    dest: "{{ seedbox_traefik_toml }}"
+    src: traefik.yml.j2
+    dest: "{{ seedbox_traefik_config_file }}"
     owner: root
     group: root
     mode: "0600"
+  tags: seedbox_docker_deploy
 
 - name: Install traefik AWS credentials
   template:
@@ -152,6 +172,7 @@
     owner: root
     group: root
     mode: "0600"
+  tags: seedbox_docker_deploy
 
 - name: Ensure acme.json exists
   # Create an empty file if one isn't present
@@ -163,6 +184,7 @@
     owner: root
     group: root
     mode: "0600"
+  tags: seedbox_docker_deploy
 
 - name: Configure traefik htpasswd
   htpasswd:
@@ -172,13 +194,17 @@
     owner: root
     group: root
     mode: "0600"
+  tags: seedbox_docker_deploy
+
 
 - name: Deploy the Docker stack
   docker_stack:
     state: present
     name: seedbox
+    prune: yes
     compose:
       - "{{ seedbox_compose_path }}"
+  tags: seedbox_docker_deploy
 
 #
 # Light configuration of our apps
@@ -218,5 +244,13 @@
     section: misc
     option: url_base
     value: /sabnzbd
+  notify: seedbox stack redeploy
+
+- name: Configure nzbhydra2 url base
+  lineinfile:
+    path: "{{ seedbox_hydra2_config_yaml }}"
+    line: '  urlBase: "/hydra2"'
+    insertafter: 'main:'
+    regex: ' *urlBase: .*'
   notify: seedbox stack redeploy
 

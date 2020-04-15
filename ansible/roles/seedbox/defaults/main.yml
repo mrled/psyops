@@ -3,7 +3,6 @@ seedbox_config_dir: /etc/seedbox
 seedbox_compose_path: "{{ seedbox_config_dir }}/seedbox.compose.yml"
 seedbox_sabnzbd_config_dir: "{{ seedbox_config_dir }}/sabnzbd"
 seedbox_sabnzbd_config_ini: "{{ seedbox_sabnzbd_config_dir }}/sabnzbd.ini"
-seedbox_rutorrent_config_dir: "{{ seedbox_config_dir }}/rutorrent"
 seedbox_sonarr_config_dir: "{{ seedbox_config_dir }}/sonarr"
 seedbox_lidarr_config_dir: "{{ seedbox_config_dir }}/lidarr"
 seedbox_radarr_config_dir: "{{ seedbox_config_dir }}/radarr"
@@ -13,28 +12,15 @@ seedbox_arr_configs:
   lidarr: "{{ seedbox_lidarr_config_dir }}/config.xml"
 seedbox_stack_needs_redeploy: false
 seedbox_traefik_config_dir: "{{ seedbox_config_dir }}/traefik"
-seedbox_traefik_toml: "{{ seedbox_traefik_config_dir }}/traefik.toml"
+seedbox_traefik_config_file: "{{ seedbox_traefik_config_dir }}/traefik.yml"
 seedbox_traefik_acme_json: "{{ seedbox_traefik_config_dir }}/acme.json"
 seedbox_traefik_aws_creds_file: "{{ seedbox_traefik_config_dir }}/aws_credentials"
 seedbox_traefik_api_users_file: "{{ seedbox_traefik_config_dir }}/traefik-users.htpasswd"
 seedbox_acme_staging: false
+seedbox_hydra2_config_dir: "{{ seedbox_config_dir }}/hydra2"
+seedbox_hydra2_config_yaml: "{{ seedbox_hydra2_config_dir }}/nzbhydra.yml"
+seedbox_transmission_config_dir: "{{ seedbox_config_dir }}/transmission"
+seedbox_transmission_peer_port: 10298
+seedbox_transmission_docker_build_dir: "{{ seedbox_config_dir }}/transmission-docker-build"
+seedbox_tentacles_config_dir: "{{ seedbox_config_dir }}/tentacles"
 
-seedbox_bindaddr_v4: "0.0.0.0"
-seedbox_bindaddr_v6: "::"
-seedbox_download_queue_size: 25
-seedbox_peer_port: 51413
-seedbox_dht_enabled: true
-seedbox_pex_enabled: true
-seedbox_portforward_enabled: true
-seedbox_rpc_bind_address: "0.0.0.0"
-seedbox_rpc_password: "{{ vault_seedbox_rpc_password }}"
-seedbox_rpc_port: 9091
-seedbox_rpc_username: "netstorm"
-seedbox_speedlimit_down: 100
-seedbox_speedlimit_up: 100
-seedbox_upload_slots_per_torrent: 14
-seedbox_local_user: transmission
-seedbox_local_group: transmission
-
-# seedbox_mountpoints should be a list of dicts with Ansible mount module keys
-seedbox_mountpoints: []

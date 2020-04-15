@@ -5,5 +5,5 @@ plexserver_rpm_url: https://downloads.plex.tv/plex-media-server-new/{{ plexserve
 plexserver_rpm_path: /usr/local/src/{{ plexserver_rpm_name }}
 
 # This must match what's in the plex RPM
-plexserver_username: plex
-plexserver_groupname: plex
+plexserver_rpm_username: plex
+plexserver_rpm_groupname: plex

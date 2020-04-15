@@ -15,7 +15,7 @@
 - name: Ensure the hostname is correct (or else plex fucks up due to DNS rebinding protection)
   lineinfile:
     path: /etc/hosts
-    line: 127.0.0.2 {{ inventory_hostname_short }} {{ inventory_hostname }}
+    line: 127.0.0.2 {{ inventory_hostname_short }} {{ inventory_hostname }} {{ plexserver_domain_name }}
   notify: Restart plex service
 
 - block:
@@ -27,62 +27,79 @@
       dnf: name={{ plexserver_rpm_url }} state=latest
       notify: Restart plex service
 
-- name: Configure the firewall trusted zone
-  firewalld: port={{ item }} permanent=yes zone=trusted state=enabled immediate=yes
-  with_items:
-    - 32400/tcp  # (for access to the Plex Media Server) [required]
-    - 1900/udp   # (for access to the Plex DLNA Server)
-    - 3005/tcp   # (for controlling Plex Home Theater via Plex Companion)
-    - 5353/udp   # (for older Bonjour/Avahi network discovery)
-    - 8324/tcp   # (for controlling Plex for Roku via Plex Companion)
-    - 32410/udp  # (for current GDM network discovery)
-    - 32410/udp  # (for current GDM network discovery)
-    - 32412/udp  # (for current GDM network discovery)
-    - 32413/udp  # (for current GDM network discovery)
-    - 32414/udp  # (for current GDM network discovery)
-    - 32469/tcp  # (for access to the Plex DLNA Server)
 
-# I think you actully have to add to BOTH the trusted and default zones?
-- name: Configure the firewall default zone
-  firewalld: port={{ item }} permanent=yes state=enabled immediate=yes
-  with_items:
-    - 32400/tcp  # (for access to the Plex Media Server) [required]
-    - 1900/udp   # (for access to the Plex DLNA Server)
-    - 3005/tcp   # (for controlling Plex Home Theater via Plex Companion)
-    - 5353/udp   # (for older Bonjour/Avahi network discovery)
-    - 8324/tcp   # (for controlling Plex for Roku via Plex Companion)
-    - 32410/udp  # (for current GDM network discovery)
-    - 32410/udp  # (for current GDM network discovery)
-    - 32412/udp  # (for current GDM network discovery)
-    - 32413/udp  # (for current GDM network discovery)
-    - 32414/udp  # (for current GDM network discovery)
-    - 32469/tcp  # (for access to the Plex DLNA Server)
 
-- name: Set credentials file
-  copy:
-    content: |-
-      username={{ plexserver_share_user }}
-      password={{ plexserver_share_pass }}
-      domain={{ plexserver_share_domain }}
-    dest: "{{ plexserver_creds_path }}"
-    owner: root
-    group: root
-    mode: 0600
-  notify: Restart plex service
+# Manage the plex user and homedir situation
+# We have a plexserver_seedbox_username and plexserver_seedbox_groupname
+# which should match the uid/gid for our seedbox role.
+# However, plex creates a user when their RPM is installed,
+# so here we just give the plex user the same uid/gid as our seedbox user
 
 - name: Get plex user
-  getent: database=passwd key={{ plexserver_username }}
-  register: gotent
-  notify: Restart plex service
+  getent:
+    database: passwd
+  register: plexserver_getent
 
-- name: Mount the NAS
-  mount:
-    path: "{{ plexserver_mountpoint }}"
-    src: "//{{ plexserver_share_server }}/{{ plexserver_share_path }}"
-    fstype: cifs
-    opts: "credentials={{ plexserver_creds_path }},uid={{ getent_passwd[plexserver_username][1] }},gid={{ getent_passwd[plexserver_username][2] }}"
-    state: mounted
-  notify: Restart plex service
+- name: Set plex user facts
+  set_fact:
+    plexserver_desired_uid: "{{ getent_passwd[plexserver_seedbox_username][1] }}"
+    plexserver_desired_gid: "{{ getent_passwd[plexserver_seedbox_username][2] }}"
+    plexserver_desired_home: "{{ getent_passwd[plexserver_seedbox_username][4] }}"
+    plexserver_discovered_uid: "{{ getent_passwd[plexserver_rpm_username][1] }}"
+    plexserver_discovered_gid: "{{ getent_passwd[plexserver_rpm_username][2] }}"
+    plexserver_discovered_home: "{{ getent_passwd[plexserver_rpm_username][4] }}"
+
+- name: Get plex homedir
+  stat:
+    path: "{{ plexserver_discovered_home }}"
+  register: plexserver_stat_home
+
+- name: Show plex user facts
+  debug:
+    msg:
+      - "plexserver_desired_uid: {{ plexserver_desired_uid }}"
+      - "plexserver_desired_gid: {{ plexserver_desired_gid }}"
+      - "plexserver_desired_home: {{ plexserver_desired_home }}"
+      - "plexserver_discovered_uid: {{ plexserver_discovered_uid }}"
+      - "plexserver_discovered_gid: {{ plexserver_discovered_gid }}"
+      - "plexserver_discovered_home: {{ plexserver_discovered_home }}"
+      - "plexserver_stat_home.stat.islnk: {{ plexserver_stat_home.stat.islnk }}"
+      - "plexserver_stat_home.stat.lnk_target: {{ plexserver_stat_home.stat.lnk_target | default(None) }}"
+      - "plexserver_stat_home.stat.lnk_source: {{ plexserver_stat_home.stat.lnk_source | default(None) }}"
+
+- name: Determine whether we need to make any changes
+  set_fact:
+    plexserver_wrong_uid: "{{ plexserver_desired_uid != plexserver_discovered_uid }}"
+    plexserver_wrong_gid: "{{ plexserver_desired_gid != plexserver_discovered_gid }}"
+    plexserver_wrong_home: "{{ not plexserver_stat_home.stat.islnk or plexserver_stat_home.stat.lnk_target != plexserver_desired_home }}"
+
+- name: Stop plex service to allow for changes
+  systemd:
+    name: plexmediaserver
+    state: stopped
+  when: plexserver_wrong_uid or plexserver_wrong_gid or plexserver_wrong_home
+
+- name: Give the plex user the same UID as our seedbox user
+  command: usermod --non-unique --uid "{{ plexserver_desired_uid }}" "{{ plexserver_rpm_username }}"
+  when: plexserver_wrong_uid
+
+- name: Give the plex group the same GUID as our seedbox group
+  command: groupmod --non-unique --gid "{{ plexserver_desired_gid }}" "{{ plexserver_rpm_groupname }}"
+  when: plexserver_wrong_gid
+
+- name: Give the plex user the same homedir as the seedbox user
+  shell: >-
+    mv "{{ plexserver_discovered_home }}" "{{ plexserver_discovered_home }}.{{ ansible_date_time.epoch }}.bak" &&
+    ln -s "{{ plexserver_desired_home }}" "{{ plexserver_discovered_home }}"
+  when: plexserver_wrong_home
+
+
+- name: Configure the firewall trusted zone
+  firewalld: port={{ item }} permanent=yes zone=trusted state=enabled immediate=yes
+  with_items: "{{ plexserver_ports }}"
+- name: Configure the firewall default zone
+  firewalld: port={{ item }} permanent=yes state=enabled immediate=yes
+  with_items: "{{ plexserver_ports }}"
 
 - name: Start plex service
   systemd: name=plexmediaserver daemon_reload=yes enabled=yes state=restarted

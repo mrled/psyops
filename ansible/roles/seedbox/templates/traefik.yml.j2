@@ -1,0 +1,51 @@
+---
+
+# defaultEntryPoints must be at the top
+defaultEntryPoints:
+  - http
+  - https
+
+log:
+  level: DEBUG
+  format: json
+accessLog:
+  format: json
+#tracing:
+#  serviceName: traefik
+
+api:
+  dashboard: true
+
+entryPoints:
+  http:
+    address: ":80"
+  https:
+    address: ":443"
+
+http:
+  middlewares:
+    seedbox-https-redir:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+certificatesResolvers:
+  seedbox-resolver:
+    acme:
+      storage: /acme.json
+      email: "{{ seedbox_acme_email }}"
+{% if seedbox_acme_staging | bool %}
+      caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
+{% endif %}
+      dnsChallenge:
+        provider: route53
+
+providers:
+  docker: {}
+
+docker:
+  endpoint: unix:///var/run/docker.sock
+  domain: "{{ seedbox_domain }}"
+  watch: true
+  exposedbydefault: false
+

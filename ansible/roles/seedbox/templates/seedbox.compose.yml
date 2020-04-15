@@ -9,10 +9,9 @@ services:
       TZ: "{{ seedbox_timezone }}"
     volumes:
       - "{{ seedbox_sonarr_config_dir }}:/config"
-      - "{{ seedbox_usenet_completes_dir }}:/downloads"
-      - "{{ seedbox_media.tv }}:/tv"
+      - "{{ seedbox_media_dir }}:/media"
     networks:
-      - privnet
+      - dernetverk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.seedbox-sonarr.rule=Host(`{{ seedbox_domain }}`) && PathPrefix(`/sonarr`)"
@@ -29,10 +28,9 @@ services:
       TZ: "{{ seedbox_timezone }}"
     volumes:
       - "{{ seedbox_lidarr_config_dir }}:/config"
-      - "{{ seedbox_usenet_completes_dir }}:/downloads"
-      - "{{ seedbox_media.music }}:/music"
+      - "{{ seedbox_media_dir }}:/media"
     networks:
-      - privnet
+      - dernetverk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.seedbox-lidarr.rule=Host(`{{ seedbox_domain }}`) && PathPrefix(`/lidarr`)"
@@ -49,10 +47,9 @@ services:
       TZ: "{{ seedbox_timezone }}"
     volumes:
       - "{{ seedbox_radarr_config_dir }}:/config"
-      - "{{ seedbox_usenet_completes_dir }}:/downloads"
-      - "{{ seedbox_media.movies }}:/movies"
+      - "{{ seedbox_media_dir }}:/media"
     networks:
-      - privnet
+      - dernetverk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.seedbox-radarr.rule=Host(`{{ seedbox_domain }}`) && PathPrefix(`/radarr`)"
@@ -69,17 +66,9 @@ services:
       TZ: "{{ seedbox_timezone }}"
     volumes:
       - "{{ seedbox_sabnzbd_config_dir }}:/config"
-      - "{{ seedbox_usenet_completes_dir }}:/downloads"
-      - "{{ seedbox_usenet_incompletes_dir }}:/incomplete-downloads"
-      - "{{ seedbox_usenet_watch_dir }}:/watched-folder"
-      - "{{ seedbox_media.tv }}:/tv"
-      - "{{ seedbox_media.music }}:/music"
-      - "{{ seedbox_media.itunes }}:/itunes"
-      - "{{ seedbox_media.movies }}:/movies"
-      - "{{ seedbox_media.books }}:/books"
-      - "{{ seedbox_media.trix }}:/trix"
+      - "{{ seedbox_media_dir }}:/media"
     networks:
-      - privnet
+      - dernetverk
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.seedbox-sabnzb.rule=Host(`{{ seedbox_domain }}`) && PathPrefix(`/sabnzbd`)"
@@ -88,26 +77,76 @@ services:
       - "traefik.http.routers.seedbox-sabnzb.service=seedbox-sabnzb"
       - "traefik.http.services.seedbox-sabnzb.loadbalancer.server.port=8080"
 
-  rutorrent:
-    image: linuxserver/rutorrent
+  transmission:
+    image: local/transmission:ansibuilt
+    init: true
+    user: "{{ seedbox_uid }}:{{ seedbox_gid }}"
+    volumes:
+      - "{{ seedbox_transmission_config_dir }}:/config"
+      - "{{ seedbox_media_dir }}:/media"
+    ports:
+      - "{{ seedbox_transmission_peer_port }}:{{ seedbox_transmission_peer_port }}/tcp"
+      - "{{ seedbox_transmission_peer_port }}:{{ seedbox_transmission_peer_port }}/udp"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-transmission.rule=Host(`{{ seedbox_transmission_domain }}`)"
+      - "traefik.http.routers.seedbox-transmission.tls=true"
+      - "traefik.http.routers.seedbox-transmission.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-transmission.service=seedbox-transmission"
+      - "traefik.http.services.seedbox-transmission.loadbalancer.server.port=9091"
+
+  hydra2:
+    image: linuxserver/hydra2
     environment:
       PUID: "{{ seedbox_uid }}"
       PGID: "{{ seedbox_gid }}"
       TZ: "{{ seedbox_timezone }}"
-    ports:
-      - "{{ seedbox_rutorrent_peer_port }}/udp"
     volumes:
-      - "{{ seedbox_rutorrent_config_dir }}:/config"
-      - "{{ seedbox_rutorrent_downloads_dir }}:/downloads"
+      - "{{ seedbox_hydra2_config_dir }}:/config"
+      - "{{ seedbox_usenet_watch_dir }}:/downloads"
     networks:
-      - privnet
+      - dernetverk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.seedbox-rutorrent.rule=Host(`{{ seedbox_domain }}`) && PathPrefix(`/rutorrent`)"
-      - "traefik.http.routers.seedbox-rutorrent.tls=true"
-      - "traefik.http.routers.seedbox-rutorrent.tls.certresolver=seedbox-resolver"
-      - "traefik.http.routers.seedbox-rutorrent.service=seedbox-rutorrent"
-      - "traefik.http.services.seedbox-rutorrent.loadbalancer.server.port=80"
+      - "traefik.http.routers.seedbox-hydra2.rule=Host(`{{ seedbox_domain }}`) && PathPrefix(`/hydra2`)"
+      - "traefik.http.routers.seedbox-hydra2.tls=true"
+      - "traefik.http.routers.seedbox-hydra2.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-hydra2.service=seedbox-hydra2"
+      - "traefik.http.services.seedbox-hydra2.loadbalancer.server.port=5076"
+
+  tentacles:
+    image: linuxserver/jellyfin
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+      UMASK_SET: "022"
+    volumes:
+      - "{{ seedbox_tentacles_config_dir }}:/config"
+      - "{{ seedbox_media_dir }}:/media"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-tentacles.rule=Host(`{{ seedbox_tentacles_domain }}`)"
+      - "traefik.http.routers.seedbox-tentacles.tls=true"
+      - "traefik.http.routers.seedbox-tentacles.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-tentacles.service=seedbox-tentacles"
+      - "traefik.http.services.seedbox-tentacles.loadbalancer.server.port=8096"
+
+  whoami:
+    image: containous/whoami:latest
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-whoami.rule=Host(`{{ seedbox_domain }}`) && PathPrefix(`/whoami`)"
+      - "traefik.http.routers.seedbox-whoami.tls=true"
+      - "traefik.http.routers.seedbox-whoami.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-whoami.service=seedbox-whoami"
+      - "traefik.http.services.seedbox-whoami.loadbalancer.server.port=80"
 
   balancer:
     image: traefik
@@ -118,7 +157,7 @@ services:
       - "8080:8080/tcp"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - {{ seedbox_traefik_toml }}:/traefik.toml:ro
+      - {{ seedbox_traefik_config_file }}:/traefik.yml:ro
       - {{ seedbox_traefik_acme_json }}:/acme.json
       - {{ seedbox_traefik_aws_creds_file }}:/root/.aws/credentials
       - {{ seedbox_traefik_api_users_file }}:/traefik-users.htpasswd
@@ -145,16 +184,13 @@ services:
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
     networks:
-      - pubnet
-      - privnet
+      - dernetverk
     deploy:
       mode: global
       placement:
-        constraints: [node.role == manager]
+        constraints:
+          - node.role == manager
 
-# docker network create -d overlay traefik
 networks:
-  pubnet:
-    driver: overlay
-  privnet:
+  dernetverk:
     driver: overlay
