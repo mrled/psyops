@@ -41,6 +41,13 @@ Resources:
           TTL: 300
           ResourceRecords: ["nullyork.micahrl.com."]
 
+        # GitHub Pages
+        # (Documentation for my projects is at pages.micahrl.com)
+        - Name: pages.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["mrled.github.io."]
+
         # Webserver
         - Name: me.micahrl.com.
           Type: CNAME
