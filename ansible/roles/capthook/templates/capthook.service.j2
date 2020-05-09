@@ -1,0 +1,8 @@
+[Unit]
+Description=Captain Hook, a webhook server
+
+[Service]
+User={{ capthook_user }}
+Group={{ capthook_group }}
+ExecStartPre={{ capthook_webhooks_dir }}/hooks.build.py "{{ capthook_webhooks_dir }}" "{{ capthook_hooks_config_path }}"
+ExecStart={{ capthook_webhook_extracted_path }} -hotreload -port {{ capthook_port }} -verbose -header 'X-Avast=Matey' -header 'X-Yarr=ItsDrivingMeNuts' -hooks {{ capthook_hooks_config_path }}

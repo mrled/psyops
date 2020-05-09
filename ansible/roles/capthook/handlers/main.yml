@@ -1,0 +1,6 @@
+---
+- name: restart capthook
+  systemd:
+    name: capthook
+    state: restarted
+    daemon_reload: yes
