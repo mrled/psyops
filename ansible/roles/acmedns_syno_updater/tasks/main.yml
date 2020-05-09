@@ -43,3 +43,39 @@
   become: yes
   become_user: "{{ acmedns_syno_updater_user }}"
   when: acmedns_syno_updater_runonce|bool
+
+- name: Allow all users to run wrapper script as our user
+  lineinfile:
+    path: /etc/sudoers.d/acmedns_{{ acmedns_syno_updater_job_name }}
+    line: "ALL ALL=({{ acmedns_syno_updater_user }}) NOPASSWD: {{ acmedns_syno_updater_script_path }}"
+    owner: root
+    group: root
+    mode: "0640"
+    create: yes
+    validate: visudo -cf %s
+
+- name: Install hook
+  template:
+    src: hook.json.j2
+    dest: "{{ capthook_webhooks_dir }}/acmedns_{{ acmedns_syno_updater_job_name }}.hook.json"
+    owner: "{{ capthook_user }}"
+    group: "{{ capthook_user }}"
+    mode: "0644"
+  notify: restart capthook
+
+- name: Copy SELinux type enforcement file
+  template:
+    src: acmedns_syno_updater_webhook.te.j2
+    dest: /etc/selinux/acmedns_syno_updater_webhook_{{ acmedns_syno_updater_job_name }}
+  register: acmedns_syno_updater_copytefile
+- name: Compile SELinux module file
+  command: checkmodule -M -m -o /etc/selinux/acmedns_syno_updater_webhook_{{ acmedns_syno_updater_job_name }}.mod /etc/selinux/acmedns_syno_updater_webhook_{{ acmedns_syno_updater_job_name }}
+  when: acmedns_syno_updater_copytefile.changed
+- name: Build SELinux policy package
+  command: semodule_package -o /etc/selinux/acmedns_syno_updater_webhook_{{ acmedns_syno_updater_job_name }}.pp -m /etc/selinux/acmedns_syno_updater_webhook_{{ acmedns_syno_updater_job_name }}.mod
+  when: acmedns_syno_updater_copytefile.changed
+- name: Load SELinux policy package
+  command: semodule -i /etc/selinux/acmedns_syno_updater_webhook_{{ acmedns_syno_updater_job_name }}.pp
+  when: acmedns_syno_updater_copytefile.changed
+  notify: restart capthook
+

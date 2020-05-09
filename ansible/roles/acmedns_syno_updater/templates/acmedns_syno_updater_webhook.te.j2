@@ -1,0 +1,14 @@
+module acmedns_syno_updater_webhook_{{ acmedns_syno_updater_job_name }} 1.0;
+
+require {
+    type user_home_t;
+    type sudo_exec_t;
+    type init_t;
+    class file { execute execute_no_trans map open read };
+}
+
+#============= init_t ==============
+allow init_t sudo_exec_t:file { execute execute_no_trans map open read };
+allow init_t user_home_t:file map;
+
+
