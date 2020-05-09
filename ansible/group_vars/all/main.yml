@@ -154,7 +154,7 @@ acmedns_syno_updater_aws_secret_key: "{{ home_zone_updater_secret_key }}"
 acmedns_syno_updater_aws_region: "{{ home_zone_updater_region }}"
 acmedns_syno_updater_email: psyops@micahrl.com
 acmedns_syno_updater_domain: chenoska.home.micahrl.com
-acmedns_syno_updater_syn_user: "{{ acmedns_syno_nas_user }}"
+acmedns_syno_updater_syn_user: admin
 acmedns_syno_updater_syn_server: "{{ acmedns_syno_updater_domain }}"
 acmedns_syno_updater_syn_server_pubkey: chenoska.home.micahrl.com,192.168.1.27 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKU6IMsFrQ5oVd7qnF8FsK++8OJl/PhgVe1sVfws0Ex4rpWHAoz/yOMie37fHnYHKZ0hgLHBEXDtf8uXvBDt7F4=
 acmedns_syno_updater_pubkey: "{{ acmedns_base_pubkey }}"
