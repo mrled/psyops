@@ -6,7 +6,7 @@ nullyork.micahrl.com ansible_user=ec2-user
 [plexservers]
 tagasaw.home.micahrl.com
 
-[wireguardservers]
+[seedboxes]
 tagasaw.home.micahrl.com
 
 [unifiusg]
@@ -19,17 +19,17 @@ chenoska.home.micahrl.com
 [cloudkey]
 cloudkey.home.micahrl.com
 
+[wireguardservers]
+kilotah.home.micahrl.com
+
 [mailbackup]
-tagasaw.home.micahrl.com
+kilotah.home.micahrl.com
 
 [syslogserver]
-tagasaw.home.micahrl.com
+kilotah.home.micahrl.com
 
 [acmednsupdaters]
-tagasaw.home.micahrl.com
-
-[seedboxes]
-tagasaw.home.micahrl.com
+kilotah.home.micahrl.com
 
 [matrixservers]
 olcott.micahrl.com ansible_user=ubuntu

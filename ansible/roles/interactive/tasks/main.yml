@@ -9,6 +9,22 @@
     group: "{{ interactive_primary_group }}"
     groups: "{{ interactive_secondary_groups }}"
 
+- name: Getent
+  getent:
+    database: passwd
+- name: Set interactive user facts
+  set_fact:
+    interactive_user_uid: "{{ getent_passwd[interactive_user][1] }}"
+    interactive_user_primary_gid: "{{ getent_passwd[interactive_user][2] }}"
+    interactive_user_home: "{{ getent_passwd[interactive_user][4] }}"
+
+- name: Set authorized keys
+  authorized_key:
+    user: "{{ interactive_user }}"
+    state: present
+    key: "{{ item }}"
+  with_items: "{{ interactive_authorized_keys }}"
+
 - name: Install packages
   package:
     name:
@@ -17,8 +33,49 @@
       - mosh
       - ripgrep
       - tmux
+      - vim
 
-- name: Allow mosh through the firewall (default zone)
-  firewalld: service=mosh state=enabled permanent=yes immediate=yes
-- name: Allow mosh through the firewall (trusted zone)
-  firewalld: service=mosh state=enabled permanent=yes immediate=yes zone=trusted
+- name: Allow mosh through the firewall (Fedora)
+  block:
+  - name: Allow mosh through the firewall (default zone) (Fedora)
+    firewalld: service=mosh state=enabled permanent=yes immediate=yes
+  - name: Allow mosh through the firewall (trusted zone) (Fedora)
+    firewalld: service=mosh state=enabled permanent=yes immediate=yes zone=trusted
+  when: ansible_distribution == "Fedora"
+
+- name: Allow mosh through the firewall (Ubuntu)
+  ufw:
+    rule: allow
+    proto: udp
+    port: 60000:61000
+  when: ansible_distribution == "Ubuntu"
+
+- name: Create interactive mountpoints
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    owner: "{{ interactive_user }}"
+    group: "{{ interactive_primary_group }}"
+    mode: "0755"
+  with_items: "{{ interactive_mountpoints }}"
+
+- name: Configure interactive mount files
+  copy:
+    content: |+
+      username={{ item.username }}
+      password={{ item.password }}
+    dest: "{{ item.credsfile }}"
+    owner: "{{ interactive_user }}"
+    group: "{{ interactive_primary_group }}"
+    mode: "0600"
+  with_items: "{{ interactive_mountpoints }}"
+
+- name: Mount interactive mountpoints
+  mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: "{{ item.fstype }}"
+    opts: credentials={{ item.credsfile }},uid={{ interactive_user_uid }},gid={{ interactive_user_primary_gid }}
+    state: mounted
+  with_items: "{{ interactive_mountpoints }}"
+

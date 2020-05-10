@@ -1,11 +1,10 @@
 ---
 
 - name: Install offlineimap packages
-  dnf:
+  package:
     name:
       - offlineimap
     state: latest
-    update_cache: yes
 
 - name: Add mailbackup user
   user:

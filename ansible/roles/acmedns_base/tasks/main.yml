@@ -1,17 +1,28 @@
 ---
 
-- name: Install RPMs
-  dnf:
-    name:
-      - python3-pip
-    state: latest
-    update_cache: true
+- name: Install prereqs (Fedora)
+  block:
+  - name: Install packages (Fedora)
+    dnf:
+      name:
+        - python3-pip
+      state: latest
+      update_cache: yes
+  - name: Install python modules (Fedora)
+    pip:
+      name:
+        - cryptography
+      state: latest
+  when: ansible_distribution == "Fedora"
 
-- name: Install python modules
-  pip:
+- name: Install prereqs (Ubuntu)
+  apt:
     name:
-      - cryptography
+      - python3-cryptography
     state: latest
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
 - name: Add acme group
   group:
     name: "{{ acmedns_base_group }}"

@@ -1,26 +1,48 @@
 ---
 
-- name: Uninstall rsyslog
-  dnf:
-    name: rsyslog
-    state: absent
+- name: Install packages (Fedora)
+  block:
+  - name: Uninstall rsyslog
+    dnf:
+      name: rsyslog
+      state: absent
+  - name: Install syslog-ng and other packages
+    dnf:
+      name:
+        - policycoreutils-python-utils
+        - syslog-ng
+      state: latest
+      update_cache: yes
+  when: ansible_distribution == "Fedora"
 
-- name: Install syslog-ng and other packages
-  dnf:
-    name:
-      - policycoreutils-python-utils
-      - syslog-ng
-    state: latest
-    update_cache: yes
+- name: Install packages (Ubuntu)
+  block:
+    - name: Install syslog-ng etc
+      apt:
+        name:
+          - syslog-ng
+        state: latest
+  when: ansible_distribution == "Ubuntu"
 
-- name: Configure udp/514 in the trusted zone
-  firewalld: port=514/udp permanent=yes zone=trusted state=enabled immediate=yes
-- name: Configure udp/514 in the default zone
-  firewalld: port=514/udp permanent=yes state=enabled immediate=yes
-- name: Configure tcp/514 in the trusted zone
-  firewalld: port=514/tcp permanent=yes zone=trusted state=enabled immediate=yes
-- name: Configure tcp/514 in the default zone
-  firewalld: port=514/tcp permanent=yes state=enabled immediate=yes
+- name: Configure firewall (Fedora)
+  block:
+  - name: Configure udp/514 in the trusted zone (Fedora)
+    firewalld: port=514/udp permanent=yes zone=trusted state=enabled immediate=yes
+  - name: Configure udp/514 in the default zone (Fedora)
+    firewalld: port=514/udp permanent=yes state=enabled immediate=yes
+  - name: Configure tcp/514 in the trusted zone (Fedora)
+    firewalld: port=514/tcp permanent=yes zone=trusted state=enabled immediate=yes
+  - name: Configure tcp/514 in the default zone (Fedora)
+    firewalld: port=514/tcp permanent=yes state=enabled immediate=yes
+  when: ansible_distribution == "Fedora"
+
+- name: Configure firewall (Ubuntu)
+  block:
+  - name: Configure tcp/514 (Ubuntu)
+    ufw: port=514 proto=tcp rule=allow
+  - name: Configure udp/514 (Ubuntu)
+    ufw: port=514 proto=udp rule=allow
+  when: ansible_distribution == "Ubuntu"
 
 - name: Create sysloghost mountpoints
   file:
@@ -62,29 +84,24 @@
   notify: restart syslog-ng
 
 
-
-
-
-- name: Copy SELinux type enforcement file
-  template:
-    src: sysloghost_syslogng.te.j2
-    dest: /etc/selinux/sysloghost_syslogng
-  register: sysloghost_copytefile
-
-- name: Compile SELinux module file
-  command: checkmodule -M -m -o /etc/selinux/sysloghost_syslogng.mod /etc/selinux/sysloghost_syslogng
-  when: sysloghost_copytefile.changed
-
-- name: Build SELinux policy package
-  command: semodule_package -o /etc/selinux/sysloghost_syslogng.pp -m /etc/selinux/sysloghost_syslogng.mod
-  when: sysloghost_copytefile.changed
-
-- name: Load SELinux policy package
-  command: semodule -i /etc/selinux/sysloghost_syslogng.pp
-  when: sysloghost_copytefile.changed
-  notify: restart syslog-ng
-
-
+- name: Handle SELinux on Fedora
+  block:
+  - name: Copy SELinux type enforcement file (Fedora)
+    template:
+      src: sysloghost_syslogng.te.j2
+      dest: /etc/selinux/sysloghost_syslogng
+    register: sysloghost_copytefile
+  - name: Compile SELinux module file (Fedora)
+    command: checkmodule -M -m -o /etc/selinux/sysloghost_syslogng.mod /etc/selinux/sysloghost_syslogng
+    when: sysloghost_copytefile.changed
+  - name: Build SELinux policy package (Fedora)
+    command: semodule_package -o /etc/selinux/sysloghost_syslogng.pp -m /etc/selinux/sysloghost_syslogng.mod
+    when: sysloghost_copytefile.changed
+  - name: Load SELinux policy package (Fedora)
+    command: semodule -i /etc/selinux/sysloghost_syslogng.pp
+    when: sysloghost_copytefile.changed
+    notify: restart syslog-ng
+  when: ansible_distribution == "Fedora"
 
 
 - name: Start syslog-ng

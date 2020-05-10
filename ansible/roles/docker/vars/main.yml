@@ -1,6 +1,6 @@
 ---
 docker_swarm_ports:
-  - 2377/tcp
-  - 7946/tcp
-  - 7946/udp
-  - 4789/udp
+  - { port: 2377, proto: tcp }
+  - { port: 7946, proto: tcp }
+  - { port: 7946, proto: udp }
+  - { port: 4789, proto: udp }

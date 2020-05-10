@@ -1,12 +1,22 @@
 ---
 
-- name: Install packages
+- name: Install packages (Fedora)
   dnf:
     name:
       - mailx
       - ssmtp
     state: latest
+    updated_cache: yes
+  when: ansible_distribution == "Fedora"
+
+- name: Install packages (Ubuntu)
+  apt:
+    name:
+      - bsd-mailx
+      - ssmtp
+    state: latest
     update_cache: yes
+  when: ansible_distribution == "Ubuntu"
 
 - name: Copy ssmtp config
   template:
