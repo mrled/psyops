@@ -150,6 +150,7 @@ RUN true \
         boto3 \
         dnspython \
         mitogen \
+        netaddr \
     && apk add \
         # Required for Ansible to use SSH password auth instead of public keys
         sshpass sshpass-doc \
