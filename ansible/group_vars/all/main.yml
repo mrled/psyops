@@ -125,7 +125,7 @@ mailbackup_office_mrlproperties_com_password: "{{ vault_mailbackup_office_mrlpro
 
 mailbackup_mountpoints:
   - path: "{{ mailbackup_share_mountpoint }}"
-    src: //chenoska.home.micahrl.com/mailbackup
+    src: //chenoska.home.micahrl.com/mailbackup2
     credsfile: /etc/chenoska_mailbackup.credentials
     opts: ""
     username: "{{ mailbackup_share_user }}"
