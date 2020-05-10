@@ -67,6 +67,7 @@
     - { name: base, tags: ['base'] }
     - { name: emailfwd, tags: ['emailfwd'] }
     - { name: interactive, tags: ['interactive'], when: interactive }
+    - { name: capthook, tags: ['capthook'] }
 
 - name: Configure Synology NASes
   hosts: synologynas
