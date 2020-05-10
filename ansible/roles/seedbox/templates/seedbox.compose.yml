@@ -98,7 +98,7 @@ services:
       - "traefik.http.services.seedbox-transmission.loadbalancer.server.port=9091"
 
   hydra2:
-    image: linuxserver/hydra2
+    image: linuxserver/nzbhydra2
     environment:
       PUID: "{{ seedbox_uid }}"
       PGID: "{{ seedbox_gid }}"
