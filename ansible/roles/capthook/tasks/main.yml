@@ -25,8 +25,9 @@
 # https://github.com/ansible/ansible/pull/65739
 - name: Get webhook
   command:
-    cmd: curl -o "{{ capthook_webhook_archive_path }}" "{{ capthook_webhook_dl_uri }}"
+    cmd: curl -L -o "{{ capthook_webhook_archive_path }}" "{{ capthook_webhook_dl_uri }}"
     creates: "{{ capthook_webhook_archive_path }}"
+    warn: false
   become: yes
   become_user: "{{ capthook_user }}"
 
