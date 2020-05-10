@@ -1,6 +1,6 @@
 ---
 
-- name: Handle fucking Broadcom 14e4:43a0
+- name: Handle fucking Broadcom 14e4:43a0 (Fedora)
   block:
 
     - set_fact:
@@ -33,4 +33,4 @@
     - name: modprobe wl
       command: modprobe wl
 
-  when: fucking_broadcom_wifi
+  when: ansible_distribution == "Fedora"

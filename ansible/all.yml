@@ -64,7 +64,7 @@
 - name: Configure base
   hosts: all
   roles:
-    - { name: hardware, tags: ['hardware'] }
+    - { name: base, tags: ['base'] }
     - { name: emailfwd, tags: ['emailfwd'] }
     - { name: interactive, tags: ['interactive'], when: interactive }
 
