@@ -29,11 +29,14 @@ date=$(date +%Y%m%d)
 tmppath=/tmp/${date}-acme-update
 scp -r {{ acmedns_cloudkey_updater_certificate_dir }}/certificates $host:$tmppath
 dest="/etc/ssl/private"
+# Note that this password is NOT arbitrary - it's what the CloudKey expects
 badpass=aircontrolenterprise
 
 #
 # SSH to the remote server and install the certs:
 #
+
+# Note that the tarball we create may be required? I'm not clear on that, but I cargo culted it.
 
 echo "$(cat <<ENDSSH
 
