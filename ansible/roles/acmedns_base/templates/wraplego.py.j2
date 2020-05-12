@@ -97,7 +97,7 @@ def certpath(legodir, domain, filetype):
     return result
 
 
-def lego(lego_dir, email, domain, authenticator, production=True, whatif=False):
+def lego(lego_dir, email, domain, authenticator, key_type=None, production=True, whatif=False):
     """Run the lego command.
 
     whatif      Do not actually run lego, but show what would have run
@@ -109,9 +109,12 @@ def lego(lego_dir, email, domain, authenticator, production=True, whatif=False):
         '--email', email,
         '--domains', domain,
         '--dns', authenticator,
+        '--dns-timeout', '60',     # helped w 'could not determine authoritative nameservers' err
     ]
     if not production:
-        command += ['--server', 'https://acme-staging.api.letsencrypt.org/directory']
+        command += ['--server', 'https://acme-staging-v02.api.letsencrypt.org/directory']
+    if key_type:
+        command += ['--key-type', key_type]
     if os.path.exists(certpath(lego_dir, domain, 'crt')):
         command += ["renew"]
     else:
@@ -124,8 +127,8 @@ def lego(lego_dir, email, domain, authenticator, production=True, whatif=False):
     if not whatif:
         subprocess_run_log(command)
 
-    acme_dir_contents = '\n'.join(abswalk(self.lego_dir))
-    LOGGER.info(f"Current contents of {self.lego_dir}:\n{indent(acme_dir_contents)}")
+    acme_dir_contents = '\n'.join(abswalk(lego_dir))
+    LOGGER.info(f"Current contents of {lego_dir}:\n{indent(acme_dir_contents)}")
 
 
 def main(*args, **kwargs):
@@ -138,14 +141,20 @@ def main(*args, **kwargs):
     parser.add_argument("--staging", action="store_true")
     parser.add_argument("--renewdays", type=int, default=25)
     parser.add_argument("--debug", "-d", action="store_true")
+    parser.add_argument("--key-type")
     parser.add_argument("--verbose", "-v", action="store_true")
     parsed = parser.parse_args()
     if parsed.debug or parsed.verbose:
         LOGGER.setLevel(logging.DEBUG)
     if shouldrun(certpath(parsed.legodir, parsed.domain, 'crt'), min_cert_validity=parsed.renewdays):
         lego(
-            parsed.legodir, parsed.email, parsed.domain, parsed.authenticator,
-            production=not parsed.staging, whatif=parsed.whatif)
+            parsed.legodir,
+            parsed.email,
+            parsed.domain,
+            parsed.authenticator,
+            key_type=parsed.key_type,
+            production=not parsed.staging,
+            whatif=parsed.whatif)
 
 
 if __name__ == '__main__':
