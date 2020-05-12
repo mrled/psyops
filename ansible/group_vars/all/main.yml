@@ -169,6 +169,7 @@ acmedns_syno_updater_job_name: chenoska
 acmedns_syno_updater_aws_access_key: "{{ home_zone_updater_access_key }}"
 acmedns_syno_updater_aws_secret_key: "{{ home_zone_updater_secret_key }}"
 acmedns_syno_updater_aws_region: "{{ home_zone_updater_region }}"
+acmedns_syno_updater_aws_zone_id: "{{ home_zone_updater_zone_id }}"
 acmedns_syno_updater_email: psyops@micahrl.com
 acmedns_syno_updater_domain: chenoska.home.micahrl.com
 acmedns_syno_updater_syn_user: admin
@@ -191,6 +192,7 @@ acmedns_cloudkey_updater_job_name: cloudkey
 acmedns_cloudkey_updater_aws_access_key: "{{ home_zone_updater_access_key }}"
 acmedns_cloudkey_updater_aws_secret_key: "{{ home_zone_updater_secret_key }}"
 acmedns_cloudkey_updater_aws_region: "{{ home_zone_updater_region }}"
+acmedns_cloudkey_updater_aws_zone_id: "{{ home_zone_updater_zone_id }}"
 acmedns_cloudkey_updater_email: psyops@micahrl.com
 acmedns_cloudkey_updater_domain: cloudkey.home.micahrl.com
 acmedns_cloudkey_updater_server_user: "{{ acmedns_cloudkey_host_user }}"

@@ -4,6 +4,7 @@ set -eu
 export AWS_REGION={{ acmedns_syno_updater_aws_region }}
 export AWS_ACCESS_KEY_ID={{ acmedns_syno_updater_aws_access_key }}
 export AWS_SECRET_ACCESS_KEY={{ acmedns_syno_updater_aws_secret_key }}
+export AWS_HOSTED_ZONE_ID={{ acmedns_syno_updater_aws_zone_id }}
 
 echoexec() { echo "Running: $*"; $*; }
 
