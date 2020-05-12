@@ -4,98 +4,97 @@ set -eu
 export AWS_REGION={{ acmedns_cloudkey_updater_aws_region }}
 export AWS_ACCESS_KEY_ID={{ acmedns_cloudkey_updater_aws_access_key }}
 export AWS_SECRET_ACCESS_KEY={{ acmedns_cloudkey_updater_aws_secret_key }}
+export AWS_HOSTED_ZONE_ID={{ acmedns_cloudkey_updater_aws_zone_id }}
 
-usage() {
-    cat <<ENDUSAGE
-$0: Update certificates via ACME DNS challenges for {{ acmedns_cloudkey_updater_job_name }}
-and copy them to the remote server
-  --help:   This help
-  --action: One of "both", "runlego", or "copyremote"
+echoexec() { echo "Running: $*"; $*; }
 
-ACTIONS
-runlego:      Run lego to perform ACME DNS challenge
-copyremote:   Copy the certificates to the remote server
-both:         Both run lego and copy the certs to the remote server
+# The java code that runs the Unifi Controller interface on :8443 on a CloudKey
+# can't understand ec384 certs, which are the lego default.
+# So we have to force it to use rsa4096.
+# Crazy-making, because the nginx that runs the landing page and control pannel on :443
+# and the node app that runs the NVR controller interface on :7443 work just fine with them.
+# If you're getting errors like this on :8443 after installing a cert:
+#   curl: (35) error:14004410:SSL routines:CONNECT_CR_SRVR_HELLO:sslv3 alert handshake failure
+# ... then your cert might need to be generated as RSA
+echoexec wraplego.py \
+    --verbose \
+    --legodir "{{ acmedns_cloudkey_updater_certificate_dir }}" \
+    --email "{{ acmedns_cloudkey_updater_email }}" \
+    --domain "{{ acmedns_cloudkey_updater_domain }}" \
+    --authenticator "route53" \
+    --key-type rsa4096 \
 
-Note that even when lego runs, it might not actually contact Let's Encrypt.
-If a cert is already generated, it will not request a renewal unless the cert
-is expiring in less than {{ acmedns_cloudkey_updater_renew_days }} days.
-ENDUSAGE
-}
+host="{{ acmedns_cloudkey_updater_server_user }}@{{ acmedns_cloudkey_updater_server }}"
+date=$(date +%Y%m%d)
+tmppath=/tmp/${date}-acme-update
+scp -r {{ acmedns_cloudkey_updater_certificate_dir }}/certificates $host:$tmppath
+dest="/etc/ssl/private"
+badpass=aircontrolenterprise
 
-runlego() {
-    if test $(find "{{ acmedns_cloudkey_updater_certificate_dir }}" -type f -name "*.key" | wc -l) -ge 1; then
-        legoaction=run
-        extraargs=""
-    else
-        legoaction=renew
-        extraargs="--reuse-key --days={{ acmedns_cloudkey_updater_renew_days }}"
-    fi
+#
+# SSH to the remote server and install the certs:
+#
 
-    /usr/local/bin/lego \
-        --accept-tos \
-        --path={{ acmedns_cloudkey_updater_certificate_dir }} \
-        --email={{ acmedns_cloudkey_updater_email }} \
-        --domains={{ acmedns_cloudkey_updater_domain }} \
-        --dns=route53 \
-        $legoaction \
-        $extraargs
-}
+echo "$(cat <<ENDSSH
 
-copyremote() {
-    domain="{{ acmedns_cloudkey_updater_domain }}"
-    sshdest="{{ acmedns_cloudkey_updater_server_user }}@$domain"
-    certdir="{{ acmedns_cloudkey_updater_certificate_dir }}/certificates"
-    date=$(date +%Y%m%d)
-    tmppath=/tmp/${date}-acme-update
-    echo "Generating .p12 file for importing..."
-    badpass=aircontrolenterprise
-    openssl pkcs12 -export -in "${certdir}/${domain}.crt" -inkey "${certdir}/${domain}.key" -out "${certdir}/${domain}.p12" -name unifi -password pass:$badpass
-    echo "Copying to remote system..."
-    scp -r {{ acmedns_cloudkey_updater_certificate_dir }}/certificates $sshdest:$tmppath
+umask 0000
 
-    dest="/etc/ssl/private"
-    echo "$(cat <<ENDSSH
-        echo 'Copying files...'
-        if ! test -d $dest.acme_renew_hook_backup; then
-            cp -r $dest $dest.acme_renew_hook_backup
-        fi
-        mv $tmppath/$domain.crt $dest/cloudkey-acme_updater.crt
-        mv $tmppath/$domain.key $dest/cloudkey-acme_updater.key
-        echo 'Importing .p12...'
-        #keytool -delete -alias unifi -storepass $badpass -keystore $dest/unifi.keystore.jks || true
-        keytool -importkeystore -deststorepass $badpass -destkeypass $badpass -destkeystore $dest/unifi.keystore.jks -srckeystore $tmppath/$domain.p12 -srcstoretype PKCS12 -srcstorepass $badpass -alias unifi -noprompt
-        chown -R root:ssl-cert "$dest"
-        chmod 640 $dest/*
-        echo 'Removing temp dir...'
-        rm -rf $tmppath
-        echo 'Testing nginx configuration...'
-        /usr/sbin/nginx -t || echo 'NGINX CONFIG TEST FAILED'
-        echo 'Restarting nginx...'
-        systemctl restart nginx
-        echo 'Restarting unifi...'
-        systemctl restart unifi
-        echo 'Done'
+if ! test -d $dest.acme_renew_hook_backup; then
+    echo 'Copying original files...'
+    cp -R "$dest" "$dest.acme_renew_hook_backup"
+    chown -R root:ssl-cert "$dest.acme_renew_hook_backup"
+fi
+rm -f "$dest"/*
+
+echo "Generating .p12 file for importing..."
+openssl pkcs12 -export \
+    -in "$tmppath/{{ acmedns_cloudkey_updater_domain }}.crt" \
+    -inkey "$tmppath/{{ acmedns_cloudkey_updater_domain }}.key" \
+    -out "$tmppath/cloudkey.p12" \
+    -name unifi \
+    -password pass:$badpass
+
+echo "Copying new cert..."
+mv $tmppath/{{ acmedns_cloudkey_updater_domain }}.crt $dest/cloudkey.crt
+mv $tmppath/{{ acmedns_cloudkey_updater_domain }}.key $dest/cloudkey.key
+
+echo 'Importing .p12...'
+#keytool -delete -alias unifi -storepass $badpass -keystore $dest/unifi.keystore.jks || true
+keytool -importkeystore -noprompt \
+    -deststorepass $badpass \
+    -destkeypass $badpass \
+    -destkeystore $dest/unifi.keystore.jks \
+    -srckeystore $tmppath/cloudkey.p12 \
+    -srcstoretype PKCS12 \
+    -srcstorepass $badpass \
+    -alias unifi
+
+echo "Calculating md5..."
+md5sum "$dest/unifi.keystore.jks" > "$dest/unifi.keystore.jks.md5"
+
+echo "Setting cert permissions..."
+chown -R root:ssl-cert "$dest"
+chmod 644 $dest/cloudkey.crt $dest/unifi.keystore.jks.md5
+chmod 640 $dest/cloudkey.key $dest/unifi.keystore.jks
+
+echo "Creating tarball..."
+cd "$dest"
+tar -cvf cert.tar unifi.keystore.jks unifi.keystore.jks.md5 cloudkey.crt cloudkey.key
+chown root:ssl-cert "$dest/cert.tar"
+chmod 640 "$dest/cert.tar"
+
+echo 'Removing temp dir...'
+rm -rf $tmppath
+
+echo 'Testing nginx configuration...'
+/usr/sbin/nginx -t || echo 'NGINX CONFIG TEST FAILED'
+
+echo 'Restarting nginx...'
+systemctl restart nginx
+echo 'Restarting unifi...'
+systemctl restart unifi
+
+echo 'Done'
+
 ENDSSH
-    )" | ssh $sshdest
-}
-
-action=both
-while test $# -gt 0; do
-    case "$1" in
-        -h | --help ) usage; exit 0;;
-        -a | --action ) action=$2; shift 2;;
-        -d | --debug ) set -x; shift;;
-        *) action=$1; shift;;
-    esac
-done
-
-echo "Running action '$action'..."
-if test "$action" == "both" || test "$action" == "runlego"; then
-    echo "runlego()..."
-    runlego
-fi
-if test "$action" == "both" || test "$action" == "copyremote"; then
-    echo "copyremote()..."
-    copyremote
-fi
+)" | ssh $host
