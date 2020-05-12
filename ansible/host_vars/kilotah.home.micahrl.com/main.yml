@@ -4,3 +4,4 @@ ansible_python_interpreter: /usr/bin/python3
 interactive: yes
 ansible_user: ubuntu
 capthook_arch: arm64
+acmedns_base_lego_arch: arm64
