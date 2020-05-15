@@ -37,3 +37,16 @@
     - { regex: "^dtparam=poe_fan_temp2.*", line: "dtparam=poe_fan_temp2=69000,poe_fan_temp2_hyst=2000" }
     - { regex: "^dtparam=poe_fan_temp3.*", line: "dtparam=poe_fan_temp3=71000,poe_fan_temp3_hyst=2000" }
   when: rpi_poe_hat
+
+- name: Set timezone
+  timezone:
+    name: "{{ base_timezone }}"
+  register: base_set_timezone
+  when: base_timezone is defined
+
+- name: Restart cron if timezone changed
+  systemd:
+    name: cron
+    state: restarted
+  when: base_set_timezone.changed
+
