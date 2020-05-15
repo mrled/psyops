@@ -5,3 +5,5 @@ interactive: yes
 ansible_user: ubuntu
 capthook_arch: arm64
 acmedns_base_lego_arch: arm64
+rpi_poe_hat: true
+rpi_boot_mount: /boot/firmware

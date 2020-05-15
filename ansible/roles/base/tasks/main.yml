@@ -12,3 +12,28 @@
     state: latest
     update_cache: yes
   when: ansible_distribution == "Ubuntu"
+
+# https://devtidbits.com/2018/07/26/way-too-slow-sudo/
+- name: Ensure hostname is in /etc/hosts (Ubuntu)
+  block:
+  - name: Get hostname
+    command: hostname
+    register: base_hostname_result
+    changed_when: false
+  - name: Add hostname to /etc/hosts
+    lineinfile:
+      line: "127.0.0.254 {{ base_hostname_result.stdout_lines[0] }}"
+      path: /etc/hosts
+  when: ansible_distribution == "Ubuntu"
+
+- name: Configure rpi PoE hat fan (requires manual reboot to take effect)
+  lineinfile:
+    line: "{{ item.line }}"
+    regex: "{{ item.regex }}"
+    path: "{{ rpi_boot_mount }}/usercfg.txt"
+  with_items:
+    - { regex: "^dtparam=poe_fan_temp0.*", line: "dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=5000" }
+    - { regex: "^dtparam=poe_fan_temp1.*", line: "dtparam=poe_fan_temp1=67000,poe_fan_temp1_hyst=2000" }
+    - { regex: "^dtparam=poe_fan_temp2.*", line: "dtparam=poe_fan_temp2=69000,poe_fan_temp2_hyst=2000" }
+    - { regex: "^dtparam=poe_fan_temp3.*", line: "dtparam=poe_fan_temp3=71000,poe_fan_temp3_hyst=2000" }
+  when: rpi_poe_hat
