@@ -91,6 +91,7 @@ RUN true \
         neovim neovim-doc \
         openssh-client openssh-doc \
         openssl openssl-doc \
+        parallel parallel-doc \
         python3 python3-doc \
         # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
         shadow shadow-doc \
@@ -144,7 +145,7 @@ RUN true \
 RUN true \
     # Install Ansible
     # Required for Ansible scripts and/or the EC2 inventory script
-    && python -m pip install \
+    && python3 -m pip install \
         ansible \
         boto \
         boto3 \
@@ -230,6 +231,7 @@ ARG gitemail="me@micahrl.com"
 
 # Run commands (as my user). Changes more often
 RUN true \
+    && echo "will cite" | parallel --citation \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
     && setup-psyops-dhd \
     && ln -sf "$PSYOPS_SSH_ED25519_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
