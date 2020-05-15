@@ -6,6 +6,9 @@
       - offlineimap
     state: latest
 
+- name: Update CA certs
+  command: update-ca-certificates
+
 - name: Add mailbackup user
   user:
     name: "{{ mailbackup_username }}"
@@ -59,7 +62,7 @@
 - name: Copy wrapper script
   template:
     src: offlineimap_wrapper.sh.j2
-    dest: /usr/local/bin/offlineimap_wrapper.sh
+    dest: "{{ mailbackup_script_path }}"
     owner: root
     group: root
     mode: "0755"
@@ -75,6 +78,26 @@
     name: mailbackup-offlineimap
     minute: "0"
     hour: "*/6"
-    job: /usr/local/bin/offlineimap_wrapper.sh
+    job: "{{ mailbackup_script_path }}"
     user: "{{ mailbackup_username }}"
     cron_file: "{{ mailbackup_cron_file }}"
+
+- name: Allow all users to run wrapper script as our user
+  lineinfile:
+    path: /etc/sudoers.d/{{ mailbackup_hook_name }}
+    line: "ALL ALL=({{ mailbackup_username }}) NOPASSWD: {{ mailbackup_script_path }}"
+    owner: root
+    group: root
+    mode: "0640"
+    create: yes
+    validate: visudo -cf %s
+
+- name: Install hook
+  template:
+    src: hook.json.j2
+    dest: "{{ capthook_webhooks_dir }}/{{ mailbackup_hook_name }}.hook.json"
+    owner: "{{ capthook_user }}"
+    group: "{{ capthook_user }}"
+    mode: "0644"
+  notify: restart capthook
+

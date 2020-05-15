@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-if pgrep --euid "{{ mailbackup_username }}" offlineimap >/dev/null; then
+if pgrep --euid "{{ mailbackup_username }}" --exact offlineimap >/dev/null; then
     echo "Tried to run offlineimap but it was already running"
     exit 1
 fi

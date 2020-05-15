@@ -128,7 +128,7 @@ def lego(lego_dir, email, domain, authenticator, key_type=None, production=True,
         subprocess_run_log(command)
 
     acme_dir_contents = '\n'.join(abswalk(lego_dir))
-    LOGGER.info(f"Current contents of {lego_dir}:\n{indent(acme_dir_contents)}")
+    LOGGER.info(f"Current contents of {lego_dir}:\n{acme_dir_contents}")
 
 
 def main(*args, **kwargs):

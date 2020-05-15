@@ -16,7 +16,7 @@ echoexec() { echo "Running: $*"; $*; }
 # If you're getting errors like this on :8443 after installing a cert:
 #   curl: (35) error:14004410:SSL routines:CONNECT_CR_SRVR_HELLO:sslv3 alert handshake failure
 # ... then your cert might need to be generated as RSA
-echoexec wraplego.py \
+echoexec /usr/local/bin/wraplego.py \
     --verbose \
     --legodir "{{ acmedns_cloudkey_updater_certificate_dir }}" \
     --email "{{ acmedns_cloudkey_updater_email }}" \

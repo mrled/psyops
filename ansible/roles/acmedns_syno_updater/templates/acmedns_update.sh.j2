@@ -8,7 +8,7 @@ export AWS_HOSTED_ZONE_ID={{ acmedns_syno_updater_aws_zone_id }}
 
 echoexec() { echo "Running: $*"; $*; }
 
-echoexec wraplego.py \
+echoexec /usr/local/bin/wraplego.py \
     --verbose \
     --legodir "{{ acmedns_syno_updater_certificate_dir }}" \
     --email "{{ acmedns_syno_updater_email }}" \

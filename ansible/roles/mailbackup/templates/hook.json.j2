@@ -1,0 +1,11 @@
+{
+    "id": "{{ mailbackup_hook_name }}",
+    "execute-command": "sudo",
+    "pass-arguments-to-command": [
+      {"source": "string", "name": "-u"},
+      {"source": "string", "name": "{{ mailbackup_username }}"},
+      {"source": "string", "name": "{{ mailbackup_script_path }}"}
+    ],
+    "include-command-output-in-response": true
+}
+
