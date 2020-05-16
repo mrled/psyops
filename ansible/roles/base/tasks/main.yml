@@ -2,7 +2,7 @@
 
 - name: Fix fucking Broadcom wifi on Fedora
   import_tasks: fucking_broadcom_wifi.yml
-  when: fucking_broadcom_wifi
+  when: base_fucking_broadcom_wifi
 
 - name: Install base packages (Ubuntu)
   apt:
@@ -48,13 +48,13 @@
   lineinfile:
     line: "{{ item.line }}"
     regex: "{{ item.regex }}"
-    path: "{{ rpi_boot_mount }}/usercfg.txt"
+    path: "{{ base_rpi_boot_mount }}/usercfg.txt"
   with_items:
     - { regex: "^dtparam=poe_fan_temp0.*", line: "dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=5000" }
     - { regex: "^dtparam=poe_fan_temp1.*", line: "dtparam=poe_fan_temp1=67000,poe_fan_temp1_hyst=2000" }
     - { regex: "^dtparam=poe_fan_temp2.*", line: "dtparam=poe_fan_temp2=69000,poe_fan_temp2_hyst=2000" }
     - { regex: "^dtparam=poe_fan_temp3.*", line: "dtparam=poe_fan_temp3=71000,poe_fan_temp3_hyst=2000" }
-  when: rpi_poe_hat
+  when: base_rpi_poe_hat
 
 - name: Set timezone
   timezone:
