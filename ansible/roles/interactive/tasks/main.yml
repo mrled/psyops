@@ -12,11 +12,15 @@
 - name: Getent
   getent:
     database: passwd
+  tags:
+    - netmount
 - name: Set interactive user facts
   set_fact:
     interactive_user_uid: "{{ getent_passwd[interactive_user][1] }}"
     interactive_user_primary_gid: "{{ getent_passwd[interactive_user][2] }}"
     interactive_user_home: "{{ getent_passwd[interactive_user][4] }}"
+  tags:
+    - netmount
 
 - name: Set authorized keys
   authorized_key:
@@ -71,11 +75,20 @@
   with_items: "{{ interactive_mountpoints }}"
 
 - name: Mount interactive mountpoints
+  vars:
+    interactive_mount_args:
+      - credentials={{ item.credsfile }}
+      - uid={{ interactive_user }}
+      - gid={{ interactive_primary_group }}
+      - x-systemd.automount
+      - x-systemd.requires=network-online.target
+      - vers=3
   mount:
     path: "{{ item.path }}"
     src: "{{ item.src }}"
     fstype: "{{ item.fstype }}"
-    opts: credentials={{ item.credsfile }},uid={{ interactive_user_uid }},gid={{ interactive_user_primary_gid }}
+    opts: "{{ interactive_mount_args | join(',') }}"
     state: mounted
   with_items: "{{ interactive_mountpoints }}"
+  tags: netmount
 

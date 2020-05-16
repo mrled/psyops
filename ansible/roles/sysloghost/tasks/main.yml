@@ -65,14 +65,23 @@
   with_items: "{{ sysloghost_mountpoints }}"
 
 - name: Mount sysloghost mounts
+  vars:
+    sysloghost_mount_args:
+      - credentials={{ item.credsfile }}
+      - uid=root
+      - gid=syslog
+      - x-systemd.automount
+      - x-systemd.requires=network-online.target
+      - vers=3
   mount:
     path: "{{ item.path }}"
     src: "{{ item.src }}"
     fstype: "{{ item.fstype }}"
-    opts: credentials={{ item.credsfile }}
+    opts: "{{ sysloghost_mount_args | join(',') }}"
     state: mounted
   with_items: "{{ sysloghost_mountpoints }}"
   notify: restart syslog-ng
+  tags: netmount
 
 - name: Apply syslog-ng configuration
   template:

@@ -44,13 +44,21 @@
   with_items: "{{ mailbackup_mountpoints }}"
 
 - name: Mount mailbackup mounts
+  vars:
+    mailbackup_mount_args:
+      - credentials={{ item.credsfile }}
+      - uid={{ item.mountowner }}
+      - x-systemd.automount
+      - x-systemd.requires=network-online.target
+      - vers=3
   mount:
     path: "{{ item.path }}"
     src: "{{ item.src }}"
     fstype: "{{ item.fstype }}"
-    opts: credentials={{ item.credsfile }},uid={{ item.mountowner }}
+    opts: "{{ mailbackup_mount_args | join(',') }}"
     state: mounted
   with_items: "{{ mailbackup_mountpoints }}"
+  tags: netmount
 
 - name: Make Maildirs
   file:
