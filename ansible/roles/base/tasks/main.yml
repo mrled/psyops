@@ -13,18 +13,36 @@
     update_cache: yes
   when: ansible_distribution == "Ubuntu"
 
+- name: Set system hostname to inventory_hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+  register: base_hostname_result
+  when: base_set_system_hostname_to_inventory_hostname
+  tags: hostname
+
+- name: Re-gather facts when hostname changes
+  action: setup
+  when: base_hostname_result.changed
+  tags: hostname
+
+# Note that if a machine cannot resolve its short hostname, sudo can be very slow
 # https://devtidbits.com/2018/07/26/way-too-slow-sudo/
-- name: Ensure hostname is in /etc/hosts (Ubuntu)
-  block:
-  - name: Get hostname
-    command: hostname
-    register: base_hostname_result
-    changed_when: false
-  - name: Add hostname to /etc/hosts
-    lineinfile:
-      line: "127.0.0.254 {{ base_hostname_result.stdout_lines[0] }}"
-      path: /etc/hosts
-  when: ansible_distribution == "Ubuntu"
+- name: Add hostname to /etc/hosts
+  lineinfile:
+    # NOTE:
+    # ansible_hostname is a single hostname like 'asdf01' as discovered by ansible
+    #    (possibly just set in previous step)
+    # ansible_fqdn is the fqdn like 'asdf01.example.com' as discovered by ansible
+    # inventory_hostname is the hostname used in the inventory
+    # we use ansible_hostname and ansible_fqdn here because these should ALWAYS be resolvable
+    # and if base_set_hostname_to_inventory_hostname is set to true
+    # these values will be based on whatever inventory_hostname is
+    # this means I can set DNS, then run ansible, and the host will have its name configured properly
+    line: "127.0.0.254 {{ ansible_hostname }} {{ ansible_fqdn }}"
+    regex: '^127\.0\.0\.254.'
+    backup: yes
+    path: /etc/hosts
+  tags: hostname
 
 - name: Configure rpi PoE hat fan (requires manual reboot to take effect)
   lineinfile:

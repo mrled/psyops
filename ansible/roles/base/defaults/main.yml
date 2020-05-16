@@ -1,3 +1,4 @@
 ---
 fucking_broadcom_wifi: false
 rpi_poe_hat: false
+base_set_system_hostname_to_inventory_hostname: false
