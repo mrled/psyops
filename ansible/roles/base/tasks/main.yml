@@ -9,6 +9,8 @@
     name:
       - cifs-utils     # allow mounting CIFS network filesystems
       - net-tools      # netstat etc
+      - python3
+      - python3-venv   # fuck this lol
     state: latest
     update_cache: yes
   when: ansible_distribution == "Ubuntu"
@@ -55,6 +57,35 @@
     - { regex: "^dtparam=poe_fan_temp2.*", line: "dtparam=poe_fan_temp2=69000,poe_fan_temp2_hyst=2000" }
     - { regex: "^dtparam=poe_fan_temp3.*", line: "dtparam=poe_fan_temp3=71000,poe_fan_temp3_hyst=2000" }
   when: base_rpi_poe_hat
+
+- name: Log rpi temperature to the temporal log
+  block:
+  - name: Copy rpi_log_temperature script
+    copy:
+      src: rpi_log_temperature.py
+      dest: /usr/local/bin/rpi_log_temperature.py
+      owner: root
+      mode: "0755"
+  - name: Install rpi_log_temperature venv
+    pip:
+      virtualenv: /var/venvs/rpi_log_temperature
+      virtualenv_command: python3 -m venv
+      name:
+        - gpiozero
+        - rpi-gpio
+  - name: Install rpi_log_temperature cronjob
+    vars:
+      base_log_rpi_temp_script: sh -c ". /var/venvs/rpi_log_temperature/bin/activate && /usr/local/bin/rpi_log_temperature.py --syslog-server 'syslog.home.micahrl.com' --syslog-port '5515'"
+    cron:
+      name: "{{ base_log_rpi_temperature_temporal_jobname }}"
+      day: "*"
+      hour: "*"
+      minute: "*"
+      job: "{{ base_log_rpi_temp_script }}"
+      user: root
+      cron_file: "{{ base_log_rpi_temperature_temporal_jobname }}"
+  when: base_log_rpi_temperature_temporal
+  tags: base_log_rpi_temperature_temporal
 
 - name: Set timezone
   timezone:
