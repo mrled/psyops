@@ -1,11 +1,15 @@
 ---
 
 # Show in different formats, because sigh
-root_timezone:
+global_timezone:
   zoneinfo_cityname: America/Chicago
   zoneinfo_tzname: US/Central
+global_syslog_host: syslog.home.micahrl.com
+global_syslog_netsys_port: "514"
+global_syslog_netcons_port: "5514"
+global_syslog_nettemp_port: "5515"
 
-base_timezone: "{{ root_timezone.zoneinfo_tzname }}"
+base_timezone: "{{ global_timezone.zoneinfo_tzname }}"
 
 # For access to everything in AWS
 aws_access_key: "{{ vault_aws_access_key }}"
@@ -98,7 +102,7 @@ wireguard_clients:
 # Seedbox settings
 seedbox_user: seedbox
 seedbox_group: seedbox
-seedbox_timezone: "{{ root_timezone.zoneinfo_cityname }}"
+seedbox_timezone: "{{ global_timezone.zoneinfo_cityname }}"
 seedbox_share_user: seedbox
 seedbox_share_pass: "{{ vault_seedbox_share_pass }}"
 seedbox_mount:
@@ -221,6 +225,9 @@ sysloghost_mountpoints:
     username: "{{ sysloghost_share_user }}"
     password: "{{ sysloghost_share_pass }}"
     fstype: cifs
+sysloghost_netsys_port: "{{ global_syslog_netsys_port }}"
+sysloghost_netcons_port: "{{ global_syslog_netcons_port }}"
+sysloghost_nettemp_port: "{{ global_syslog_nettemp_port }}"
 
 
 # Matrix server

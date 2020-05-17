@@ -26,22 +26,28 @@
 
 - name: Configure firewall (Fedora)
   block:
-  - name: Configure udp/514 in the trusted zone (Fedora)
-    firewalld: port=514/udp permanent=yes zone=trusted state=enabled immediate=yes
-  - name: Configure udp/514 in the default zone (Fedora)
-    firewalld: port=514/udp permanent=yes state=enabled immediate=yes
-  - name: Configure tcp/514 in the trusted zone (Fedora)
-    firewalld: port=514/tcp permanent=yes zone=trusted state=enabled immediate=yes
-  - name: Configure tcp/514 in the default zone (Fedora)
-    firewalld: port=514/tcp permanent=yes state=enabled immediate=yes
+  - name: Configure syslog UDP ports in the trusted zone (Fedora)
+    firewalld: port={{ item }}/udp permanent=yes zone=trusted state=enabled immediate=yes
+    with_items: "{{ sysloghost_all_ports }}"
+  - name: Configure syslog TCP ports in the trusted zone (Fedora)
+    firewalld: port={{ item }}/tcp permanent=yes zone=trusted state=enabled immediate=yes
+    with_items: "{{ sysloghost_all_ports }}"
+  - name: Configure syslog UDP ports in the default zone (Fedora)
+    firewalld: port={{ item }}/udp permanent=yes state=enabled immediate=yes
+    with_items: "{{ sysloghost_all_ports }}"
+  - name: Configure syslog TCP ports in the default zone (Fedora)
+    firewalld: port={{ item }}/tcp permanent=yes state=enabled immediate=yes
+    with_items: "{{ sysloghost_all_ports }}"
   when: ansible_distribution == "Fedora"
 
 - name: Configure firewall (Ubuntu)
   block:
-  - name: Configure tcp/514 (Ubuntu)
-    ufw: port=514 proto=tcp rule=allow
-  - name: Configure udp/514 (Ubuntu)
-    ufw: port=514 proto=udp rule=allow
+  - name: Configure syslog UDP ports (Ubuntu)
+    ufw: port={{ item }} proto=udp rule=allow
+    with_items: "{{ sysloghost_all_ports }}"
+  - name: Configure syslog TCP ports (Ubuntu)
+    ufw: port={{ item }} proto=tcp rule=allow
+    with_items: "{{ sysloghost_all_ports }}"
   when: ansible_distribution == "Ubuntu"
 
 - name: Create sysloghost mountpoints
