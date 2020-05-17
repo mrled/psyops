@@ -1,0 +1,3 @@
+---
+backup_unifi_jobname: backup_unifi
+backup_unifi_scriptpath: /usr/local/bin/backup_unifi.sh

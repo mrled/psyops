@@ -78,16 +78,18 @@
   hosts: cloudkey
   roles:
     - { name: acmedns_remote_host, tags: ['acmedns_remote_host'] }
+    - { name: backup_remote_host, tags: ['backup_remote_host'] }
 
 - name: Deploy wireguard server
   hosts: wireguardservers
   roles:
     - { name: wireguard_server, tags: ['wireguard_server'] }
 
-- name: Deploy mailbackup
-  hosts: mailbackup
+- name: Deploy pullbackup
+  hosts: pullbackup
   roles:
     - { name: mailbackup, tags: ['mailbackup'] }
+    - { name: backup_unifi, tags: ['backup_unifi'] }
 
 - name: Deploy syslog server
   hosts: syslogserver

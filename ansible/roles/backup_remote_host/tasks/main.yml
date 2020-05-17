@@ -1,0 +1,25 @@
+---
+
+- name: Fix homedir permissions
+  # SSH won't accept key auth if homedir is world/group writable, which it is by default on Synology
+  file:
+    path: "{{ lookup('env', 'HOME') }}"
+    mode: "0700"
+    state: directory
+  when: acmedns_remote_host_fix_homedir_permissions|bool
+
+- name: Install SSH key
+  authorized_key:
+    user: "{{ acmedns_remote_host_user }}"
+    state: present
+    key: "{{ acmedns_remote_host_ssh_client_pubkey }}"
+
+- name: Allow passwordless sudo
+  copy:
+    content: |+
+      {{ acmedns_remote_host_user }} ALL=(ALL) NOPASSWD: ALL
+    dest: /etc/sudoers.d/{{ acmedns_remote_host_user }}_passwordless
+    owner: root
+    group: root
+    mode: "0600"
+  when: acmedns_remote_host_allow_passwordless_sudo|bool

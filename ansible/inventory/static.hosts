@@ -22,7 +22,7 @@ cloudkey.home.micahrl.com
 [wireguardservers]
 kilotah.home.micahrl.com
 
-[mailbackup]
+[pullbackup]
 kilotah.home.micahrl.com
 
 [syslogserver]

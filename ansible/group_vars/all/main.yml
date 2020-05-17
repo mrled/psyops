@@ -8,6 +8,9 @@ global_syslog_host: syslog.home.micahrl.com
 global_syslog_netsys_port: "514"
 global_syslog_netcons_port: "5514"
 global_syslog_nettemp_port: "5515"
+global_cloudkey_hostname: cloudkey.home.micahrl.com
+global_cloudkey_ssh_host_key: "{{ global_cloudkey_hostname }},192.168.1.2 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHZyo3/q7m109QtIgO3HyNsfox2k7cDm9qg1xlq8rOloWzGHVEyW4qS7uYZhqPuiGldifjMafPWMMfZQG8GvgIc="
+global_cloudkey_user: mrladmin
 
 base_timezone: "{{ global_timezone.zoneinfo_tzname }}"
 
@@ -142,12 +145,41 @@ seedbox_web_admin_user: freeleech
 seedbox_web_admin_pass: "{{ vault_seedbox_web_admin_pass }}"
 
 
+# For pulling remote data onto the NAS
+# Don't allow other systems to push here without thinking through security implications
+backup_base_user: pullbackup
+backup_base_group: pullbackup
+backup_base_mount_share_pass: "{{ vault_backup_base_mount_share_pass }}"
+backup_base_destination_root: /netmount/chenoska/pullbackup
+backup_base_mountpoints:
+  - path: "{{ backup_base_destination_root }}"
+    src: //chenoska/pullbackup
+    credsfile: /etc/chenoska_pullbackup.credentials
+    username: pullbackup
+    password: "{{ backup_base_mount_share_pass }}"
+    fstype: cifs
+    mountowner: "{{ backup_base_user }}"
+    mountgroup: "{{ backup_base_group }}"
+
+
+backup_unifi_controller_hostname: "{{ global_cloudkey_hostname }}"
+backup_unifi_controller_user: "{{ global_cloudkey_user }}"
+backup_unifi_controller_hostkey: "{{ global_cloudkey_ssh_host_key }}"
+backup_unifi_user: "{{ backup_base_user }}"
+backup_unifi_group: "{{ backup_base_group }}"
+backup_unifi_dest: "{{ backup_base_destination_root }}/unifi"
+backup_base_pubkey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDZOwlN6NAaYqIFkdy6LofXEk3rn9wVZSHr8Jlh/lWZdn17pqRifY2yEwNOj+tnkq4inMgiXIdGZdb0WiOwxClDvmlDyOaADK0Zi5aLmSqf2KBbxXeNYZcdCvPip0aiFv7LxYfLN95r30z+ZFCpC/vtRqcypGlFJ+I26LmXsz2ZIPNo96SEeA8gB2SHVAugCIRlGoS6fwcb96E08HKe/hYTGVs70G0tZ5HXABkK71CbijH0LZQOIJq6UPqc4s0O3+z7FJ1dXrJ3B/nfn+cAfJpsTMHgRmpa7tr5ps/rC/Qj8EGW/x2UuES6bepyxRCZhAKuI40uL/2/6WHsW0TJm/GKnxMXP0rAjHbY5fCnAlFsqYZKt59/cMauQvD0nNaoXFpLFbOzQSt9nFEjD4ANGiGKnW36Gxj+kmRhhM7s2XagzmyQY6GgDASEfnWyBZnDKfH5T2HJueqaSNdxPK7lJqBbapj+WRHKa1hSVKuMfFJl7+q24SvTjJhDxrs+Al5Aq6U8rCwtQy5cIE3Ox4xi8TsztJP5Xq5aiMwfbRKLzzO+0bf9gipZeTV+ipphThVDPUGXVaohodmSvHXSY/+hM1G98Dmvoh1kofbIDKjij8nuWgx6T5vJrvA6KDVLq/REb8NRIQjOxgSwJFRr/8SjiR4yZtne8BJ+6d4NjAuxLvkRyQ== backup_base_ssh_pubkey
+backup_base_privkey: "{{ vault_backup_base_privkey }}"
+
+
+# TODO: move to using the backup_base stuff in the future
 mailbackup_share_user: mailbackup
 mailbackup_share_pass: "{{ vault_mailbackup_share_pass }}"
 mailbackup_report_email: psyops@micahrl.com
 mailbackup_share_mountpoint: /netmount/chenoska/mailbackup
 mailbackup_me_micahrl_com_password: "{{ vault_mailbackup_me_micahrl_com_password }}"
 mailbackup_office_mrlproperties_com_password: "{{ vault_mailbackup_office_mrlproperties_com_password }}"
+
 
 mailbackup_mountpoints:
   - path: "{{ mailbackup_share_mountpoint }}"
@@ -190,7 +222,7 @@ acmedns_syno_updater_privkey: "{{ acmedns_base_privkey }}"
 
 
 # ACME DNS Ubiquiti Unifi CloudKey updater settings
-acmedns_cloudkey_host_user: mrladmin
+acmedns_cloudkey_host_user: "{{ global_cloudkey_user }}"
 acmedns_cloudkey_host_ssh_pubkey: "{{ acmedns_base_pubkey }}"
 acmedns_cloudkey_host_ssh_privkey: "{{ acmedns_base_privkey }}"
 
@@ -203,10 +235,10 @@ acmedns_cloudkey_updater_aws_secret_key: "{{ home_zone_updater_secret_key }}"
 acmedns_cloudkey_updater_aws_region: "{{ home_zone_updater_region }}"
 acmedns_cloudkey_updater_aws_zone_id: "{{ home_zone_updater_zone_id }}"
 acmedns_cloudkey_updater_email: psyops@micahrl.com
-acmedns_cloudkey_updater_domain: cloudkey.home.micahrl.com
+acmedns_cloudkey_updater_domain: "{{ global_cloudkey_hostname }}"
 acmedns_cloudkey_updater_server_user: "{{ acmedns_cloudkey_host_user }}"
 acmedns_cloudkey_updater_server: "{{ acmedns_cloudkey_updater_domain }}"
-acmedns_cloudkey_updater_host_ssh_pubkey: cloudkey.home.micahrl.com,192.168.1.2 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHZyo3/q7m109QtIgO3HyNsfox2k7cDm9qg1xlq8rOloWzGHVEyW4qS7uYZhqPuiGldifjMafPWMMfZQG8GvgIc=
+acmedns_cloudkey_updater_host_ssh_pubkey: "{{ global_cloudkey_ssh_host_key }}"
 acmedns_cloudkey_updater_pubkey: "{{ acmedns_base_pubkey }}"
 acmedns_cloudkey_updater_privkey: "{{ acmedns_base_privkey }}"
 

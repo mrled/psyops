@@ -3,3 +3,4 @@ ansible_ssh_user: mrladmin
 ansible_ssh_pass: "{{ vault_ansible_ssh_pass }}"
 ansible_python_interpreter: python3
 acmedns_remote_host_user: "{{ ansible_ssh_user }}"
+backup_remote_host_user: "{{ ansible_ssh_user }}"

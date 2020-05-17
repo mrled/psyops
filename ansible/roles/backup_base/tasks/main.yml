@@ -1,0 +1,85 @@
+---
+
+- name: Add group
+  group:
+    name: "{{ backup_base_group }}"
+    system: yes
+
+- name: Add user
+  user:
+    name: "{{ backup_base_user }}"
+    group: "{{ backup_base_group }}"
+    system: yes
+    create_home: yes
+
+- name: Getent for home
+  getent:
+    database: passwd
+    key: "{{ backup_base_user }}"
+
+- name: Set home fact
+  set_fact:
+    backup_base_home: "{{ getent_passwd[backup_base_user][4] }}"
+
+- name: Create ~/.ssh
+  file:
+    state: directory
+    path: "{{ backup_base_home }}/.ssh"
+    owner: "{{ backup_base_user }}"
+    group: "{{ backup_base_group }}"
+    mode: "0700"
+
+- name: Set ssh key
+  copy:
+    content: "{{ item.value }}"
+    dest: "{{ backup_base_home }}/.ssh/{{ item.name }}"
+    owner: "{{ backup_base_user }}"
+    group: "{{ backup_base_group }}"
+    mode: "0600"
+  with_items:
+    - name: id_rsa
+      value: "{{ backup_base_privkey }}"
+    - name: id_rsa.pub
+      value: "{{ backup_base_pubkey }}"
+  no_log: yes
+
+- name: Create mountpoint
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    owner: "{{ item.mountowner }}"
+    group: "{{ item.mountgroup }}"
+    mode: "0755"
+  with_items: "{{ backup_base_mountpoints }}"
+
+- name: Configure mount credential files
+  copy:
+    content: |+
+      username={{ item.username }}
+      password={{ item.password }}
+    dest: "{{ item.credsfile }}"
+    owner: root
+    group: root
+    mode: "0600"
+  with_items: "{{ backup_base_mountpoints }}"
+
+- name: Mount backup filesystem
+  vars:
+    backup_base_mount_args:
+      - credentials={{ item.credsfile }}
+      - uid={{ item.mountowner }}
+      - gid={{ item.mountgroup }}
+      - x-systemd.automount
+      - x-systemd.requires=network-online.target
+      - vers=3
+  mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ backup_base_mount_args | join(',') }}"
+    state: mounted
+  with_items: "{{ backup_base_mountpoints }}"
+  tags: netmount
+
+
+

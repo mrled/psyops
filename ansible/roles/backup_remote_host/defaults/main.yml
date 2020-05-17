@@ -1,0 +1,4 @@
+---
+acmedns_remote_host_fix_homedir_permissions: false
+acmedns_remote_host_allow_passwordless_sudo: false
+
