@@ -81,7 +81,7 @@
       day: "*"
       hour: "*"
       minute: "*"
-      job: "{{ base_log_rpi_temp_script }}"
+      job: "{{ base_log_rpi_temp_script }} --no-console-log"
       user: root
       cron_file: "{{ base_log_rpi_temperature_temporal_jobname }}"
   when: base_log_rpi_temperature_temporal
