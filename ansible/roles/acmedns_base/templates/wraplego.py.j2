@@ -104,7 +104,7 @@ def lego(lego_dir, email, domain, authenticator, key_type=None, production=True,
     """
 
     command = [
-        'lego', '--accept-tos',
+        '/usr/local/bin/lego', '--accept-tos',
         '--path', lego_dir,
         '--email', email,
         '--domains', domain,
