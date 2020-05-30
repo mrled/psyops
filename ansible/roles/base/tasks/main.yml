@@ -75,13 +75,13 @@
         - rpi-gpio
   - name: Install rpi_log_temperature cronjob
     vars:
-      base_log_rpi_temp_script: sh -c ". /var/venvs/rpi_log_temperature/bin/activate && /usr/local/bin/rpi_log_temperature.py --syslog-server 'syslog.home.micahrl.com' --syslog-port '5515'"
+      base_log_rpi_temp_script: sh -c ". /var/venvs/rpi_log_temperature/bin/activate && /usr/local/bin/rpi_log_temperature.py --syslog-server 'syslog.home.micahrl.com' --syslog-port '5515'  --no-console-log"
     cron:
       name: "{{ base_log_rpi_temperature_temporal_jobname }}"
       day: "*"
       hour: "*"
       minute: "*"
-      job: "{{ base_log_rpi_temp_script }} --no-console-log"
+      job: "{{ base_log_rpi_temp_script }}"
       user: root
       cron_file: "{{ base_log_rpi_temperature_temporal_jobname }}"
   when: base_log_rpi_temperature_temporal
