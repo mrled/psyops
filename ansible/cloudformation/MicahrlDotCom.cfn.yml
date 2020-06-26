@@ -248,11 +248,35 @@ Resources:
         - Name: neurofornia-wired.home.micahrl.com.
           Type: A
           TTL: 60
-          ResourceRecords: ["192.168.1.117"]
+          ResourceRecords: ["192.168.1.133"]
         - Name: neurofornia.home.micahrl.com.
           Type: CNAME
           TTL: 60
           ResourceRecords: ["neurofornia-wired.home.micahrl.com."]
+        - Name: mledbettermbp-wifi.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.114"]
+        - Name: mledbettermbp-wired.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.117"]
+        - Name: mledbettermbp.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["mledbettermbp-wired.home.micahrl.com."]
+        - Name: haluth-wifi.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.134"]
+        - Name: haluth-wired.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.135"]
+        - Name: haluth.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["haluth-wired.home.micahrl.com."]
 
         # Services
         - Name: syslog.home.micahrl.com.
