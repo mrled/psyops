@@ -85,7 +85,7 @@ RUN true \
         jq jq-doc \
         # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
         less less-doc \
-        man man-pages mdocml-apropos \
+        man-db man-db-doc man-pages \
         # provides tput
         ncurses \
         neovim neovim-doc \
@@ -173,9 +173,6 @@ RUN true \
     && set -x \
     # Final steps
     #
-    # Running makewhatis should happen after all root installation commands / only right before running as my user
-    && makewhatis \
-    #
     # Allow my user to set /etc/localtime
     && addgroup -S "timekeeper" \
     && touch /etc/localtime \
@@ -231,7 +228,7 @@ ARG gitemail="me@micahrl.com"
 
 # Run commands (as my user). Changes more often
 RUN true \
-    && echo "will cite" | parallel --citation \
+    && echo "will cite" | parallel --citation || true \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
     && setup-psyops-dhd \
     && ln -sf "$PSYOPS_SSH_ED25519_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
