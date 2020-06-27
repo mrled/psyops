@@ -1,3 +1,4 @@
 .vscode
 .home.psyops.local
 .DS_Store
+__pycache__
