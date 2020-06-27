@@ -9,3 +9,4 @@ base_rpi_poe_hat: true
 base_rpi_boot_mount: /boot/firmware
 base_set_system_hostname_to_inventory_hostname: true
 base_log_rpi_temperature_temporal: true
+syncthing_personal: yes

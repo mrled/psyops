@@ -61,8 +61,10 @@ interactive_secondary_groups:
   - docker
 interactive_user_home_share_user: mrled
 interactive_user_home_share_pass: "{{ vault_interactive_user_home_share_pass }}"
+interactive_user_home: /home/mrled
+interactive_mountpoint_path: "{{ interactive_user_home }}/nas"
 interactive_mountpoints:
-  - path: "{{ interactive_user_home }}/nas"
+  - path: "{{ interactive_mountpoint_path }}"
     src: //chenoska.home.micahrl.com/home
     credsfile: "{{ interactive_user_home }}/.nas.credentials"
     opts: ""
@@ -190,6 +192,26 @@ mailbackup_mountpoints:
     password: "{{ mailbackup_share_pass }}"
     fstype: cifs
     mountowner: "{{ mailbackup_username }}"
+
+# Syncthing configuration
+syncthing_personal_user: "{{ interactive_user }}"
+syncthing_personal_default_folder_path: "{{ interactive_mountpoint_path }}/Syncthing"
+# This dict gets merged directly into the json config in a REST API
+syncthing_personal_add_devices:
+  - deviceID: EZRELCU-J4OQ2OQ-6B5VJJS-YJ434RT-OWYPR7M-43CRSI5-LDJIBNB-ZXTF4AL
+    name: Kalix
+    addresses:
+      - kalix.home.micahrl.com
+    introducer: true
+    autoAcceptFolders: true
+  - deviceID: IE32Y43-T7YZTSL-HFYHQRX-IZCHQHD-CQXJ7OS-RXALIX3-QTP7OKS-DIPEJAF
+    name: Haluth
+    addresses:
+      - haluth.home.micahrl.com
+      - dynamic
+    introducer: true
+    autoAcceptFolders: true
+
 
 # ACME DNS base updater settings
 acmedns_base_certificate_dir: "/etc/acmedns/certificates"
