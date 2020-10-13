@@ -145,9 +145,11 @@ seedbox_media:
   books: "{{ seedbox_mount.path }}/Books"
   itunes: "{{ seedbox_mount.path }}/iTunes"
   trix: "{{ seedbox_mount.path }}/Trix"
+  books: "{{ seedbox_mount.path }}/Books"
 seedbox_domain: seedbox.home.micahrl.com
 seedbox_tentacles_domain: tentacles.home.micahrl.com
 seedbox_transmission_domain: transmission.home.micahrl.com
+seedbox_cops_domain: books.home.micahrl.com
 seedbox_acme_email: psyops@micahrl.com
 seedbox_acme_aws_region: "{{ home_zone_updater_region }}"
 seedbox_acme_aws_access_key: "{{ home_zone_updater_access_key }}"

@@ -116,6 +116,25 @@ services:
       - "traefik.http.routers.seedbox-hydra2.service=seedbox-hydra2"
       - "traefik.http.services.seedbox-hydra2.loadbalancer.server.port=5076"
 
+  cops:
+    image: linuxserver/cops
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    volumes:
+      - "{{ seedbox_cops_config_dir }}:/config"
+      - "{{ seedbox_media.books }}:/books"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-cops.rule=Host(`{{ seedbox_cops_domain }}`)"
+      - "traefik.http.routers.seedbox-cops.tls=true"
+      - "traefik.http.routers.seedbox-cops.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-cops.service=seedbox-cops"
+      - "traefik.http.services.seedbox-cops.loadbalancer.server.port=80"
+
   tentacles:
     image: linuxserver/jellyfin
     environment:
@@ -157,10 +176,10 @@ services:
       - "8080:8080/tcp"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - {{ seedbox_traefik_config_file }}:/traefik.yml:ro
-      - {{ seedbox_traefik_acme_json }}:/acme.json
-      - {{ seedbox_traefik_aws_creds_file }}:/root/.aws/credentials
-      - {{ seedbox_traefik_api_users_file }}:/traefik-users.htpasswd
+      - "{{ seedbox_traefik_config_file }}:/traefik.yml:ro"
+      - "{{ seedbox_traefik_acme_json }}:/acme.json"
+      - "{{ seedbox_traefik_aws_creds_file }}:/root/.aws/credentials"
+      - "{{ seedbox_traefik_api_users_file }}:/traefik-users.htpasswd"
     environment:
       - AWS_REGION={{ seedbox_acme_aws_region }}
       - AWS_HOSTED_ZONE_ID={{ seedbox_acme_aws_zone }}

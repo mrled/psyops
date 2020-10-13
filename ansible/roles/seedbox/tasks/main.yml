@@ -53,6 +53,7 @@
     - "{{ seedbox_sonarr_config_dir }}"
     - "{{ seedbox_radarr_config_dir }}"
     - "{{ seedbox_hydra2_config_dir }}"
+    - "{{ seedbox_cops_config_dir }}"
     - "{{ seedbox_transmission_config_dir }}"
     - "{{ seedbox_tentacles_config_dir }}"
 
@@ -196,6 +197,13 @@
     mode: "0600"
   tags: seedbox_docker_deploy
 
+# - name: Remove the Docker stack
+#   docker_stack:
+#     state: absent
+#     name: seedbox
+#     compose:
+#       - "{{ seedbox_compose_path }}"
+#   tags: seedbox_docker_deploy
 
 - name: Deploy the Docker stack
   docker_stack:
