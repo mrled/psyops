@@ -78,6 +78,20 @@ interactive_authorized_keys:
   - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILyKqPWBZofTLlHcSDI6DVsRFwuECVBncda/XwxYxi5M glitch@blink
   - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCuBBHcsvy0xygxeZI8RLZ12LQoNvuD9huhgx02ICwrfCcqBm5r3t7J7lzIBlrTgjpHGr+AYspdDs/XFrHsSrHf6cC2EuSwn2G0vP/coTOZNyxZINhvOS3PNQlxIK87IAEShv6x24o6K4UK7BlDuZge4xeWHp370phK2BbtHoLciQKI7Gmf6xrh9/QVrJiQV+XsdmRLn9WWMIeQTQPFwydt4YpiLBWFmIlMg/cwOp/Wn7nZakNyn1cP0l2nrD1+OLvY2T/1mxM0dtZII5aJgvxIkviTwL5/JSQsNuFinq/yM0hFKFBotpKx9D6VI0Lf+FoscsFiDgTaINWZc5+44HH3kzQghC/bdRLdQ7plE78iTuwf0ehubUt1mbH86EmwNpu7oCzt3pzZHPRVIP/dNrMa3gBcnhWhNrzRzpfp3Zymg9YgyGucHxJuHBkhk5K7ySUxTrUgFPReb/+6ZeIA9iDtnnf8QuqLt9/b27AFaK8lr4zQo6ksteqJKEJr9k1d5kPAxajxCSn7aa+bfZWfThWkubyuKS1IGkvAM5UnwompaV8jk+j95owxjTgoRG4iE2AQyVfnhF9GG0TKrwiuiGgGXcZwGNxwcn4QCAGLcy4fw/A/3gDC/duO30lP6LajfX9woWqfl9os8SKewxpDM7MFRkI0I49XvY1rj214Wg4I3Q== mrled@AndrAIa.salacious.bureau
 
+privnet_gitserver_user: gitserver
+privnet_gitserver_group: gitserver
+privnet_gitserver_share_user: gitserver
+privnet_gitserver_share_pass: "{{ vault_gitserver_share_pass }}"
+privnet_gitserver_mount:
+  path: /netmount/chenoska/gitserver
+  src: //chenoska.home.micahrl.com/gitserver
+  credsfile: /etc/chenoska_git.credentials
+  username: "{{ gitserver_user }}"
+  password: "{{ gitserver_share_pass }}"
+  fstype: cifs
+privnet_mount_list: ["{{ seedbox_mount }}"]
+privnet_gitea_data_dir: "{{ gitserver_mount.path }}"
+
 # Wireguard docs
 # TODO: lookup plugin to generate the pubkey from the privkey
 # TODO: set all these as hostvars, use hostvars['HOSTNAME'].wireguard_privkey etc

@@ -1,0 +1,10 @@
+---
+privnet_config_dir: /etc/privnet
+privnet_compose_path: "{{ privnet_config_dir }}/privnet.compose.yml"
+privnet_stack_needs_redeploy: false
+privnet_traefik_config_dir: "{{ privnet_config_dir }}/traefik"
+privnet_traefik_config_file: "{{ privnet_traefik_config_dir }}/traefik.yml"
+privnet_traefik_acme_json: "{{ privnet_traefik_config_dir }}/acme.json"
+privnet_traefik_aws_creds_file: "{{ privnet_traefik_config_dir }}/aws_credentials"
+privnet_traefik_api_users_file: "{{ privnet_traefik_config_dir }}/traefik-users.htpasswd"
+privnet_acme_staging: false

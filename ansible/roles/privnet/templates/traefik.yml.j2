@@ -1,0 +1,51 @@
+---
+
+# defaultEntryPoints must be at the top
+defaultEntryPoints:
+  - http
+  - https
+
+log:
+  level: DEBUG
+  format: json
+accessLog:
+  format: json
+#tracing
+#  serviceName: traefik
+
+api:
+  dashboard: true
+
+entryPoints:
+  http:
+    address: ":80"
+  https:
+    address: ":443"
+
+http:
+  middlewares:
+    privnet-https-redir:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+certificatesResolvers:
+  privnets-resolver:
+    acme:
+      storage: /acme.json
+      email: "{{ privnet_acme_email }}"
+{% if privnet_acme_staging | bool %}
+      caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
+{% endif %}
+      dnsChallenge:
+        provider: route53
+
+providers:
+  docker: {}
+
+docker:
+  endpoint: unix:///var/run/docker.sock
+  domain: "{{ privnet_domain }}"
+  watch: true
+  exposedbydefault: false
+
