@@ -220,6 +220,12 @@ Resources:
           TTL: 60
           ResourceRecords: ["192.168.1.27"]
 
+        # Management interfacess
+        - Name: tagasaw-tinypilot.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.143"]
+
         # Clients
         - Name: glitch.home.micahrl.com
           Type: A
@@ -283,6 +289,10 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["kilotah.home.micahrl.com."]
+        - Name: git.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kilotah.home.micahrl.com."]
         - Name: seedbox.home.micahrl.com.
           Type: CNAME
           TTL: 60
@@ -296,6 +306,10 @@ Resources:
           TTL: 60
           ResourceRecords: ["tagasaw.home.micahrl.com."]
         - Name: transmission.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["tagasaw.home.micahrl.com."]
+        - Name: books.home.micahrl.com.
           Type: CNAME
           TTL: 60
           ResourceRecords: ["tagasaw.home.micahrl.com."]
