@@ -67,7 +67,6 @@
     - { name: base, tags: ['base'] }
     - { name: emailfwd, tags: ['emailfwd'] }
     - { name: interactive, tags: ['interactive'], when: interactive }
-    - { name: syncthing_personal, tags: ['syncthing'], when: syncthing_personal }
     - { name: capthook, tags: ['capthook'] }
 
 - name: Configure Synology NASes
