@@ -1,13 +1,12 @@
 ---
-
-- name: Install packages (Fedora)
+- name: Install packages (RH)
   dnf:
     name:
       - mailx
       - ssmtp
     state: latest
-    updated_cache: yes
-  when: ansible_distribution == "Fedora"
+    update_cache: yes
+  when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Install packages (Ubuntu)
   apt:
@@ -23,6 +22,5 @@
     src: ssmtp.conf.j2
     dest: /etc/ssmtp/ssmtp.conf
     owner: root
-    group: mail 
+    group: mail
     mode: "0640"
-

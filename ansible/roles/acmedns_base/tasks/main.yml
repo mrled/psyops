@@ -1,19 +1,18 @@
 ---
-
-- name: Install prereqs (Fedora)
+- name: Install prereqs (RH)
   block:
-  - name: Install packages (Fedora)
-    dnf:
-      name:
-        - python3-pip
-      state: latest
-      update_cache: yes
-  - name: Install python modules (Fedora)
-    pip:
-      name:
-        - cryptography
-      state: latest
-  when: ansible_distribution == "Fedora"
+    - name: Install packages (RH)
+      dnf:
+        name:
+          - python3-pip
+        state: latest
+        update_cache: yes
+    - name: Install python modules (RH)
+      pip:
+        name:
+          - cryptography
+        state: latest
+  when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Install prereqs (Ubuntu)
   apt:
@@ -98,4 +97,3 @@
     owner: root
     group: root
     mode: "0755"
-

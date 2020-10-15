@@ -1,310 +1,44 @@
 ---
+# Global variables
+# We prefix all of these with global_ so its clear where they come from
 
 # Show in different formats, because sigh
 global_timezone:
   zoneinfo_cityname: America/Chicago
   zoneinfo_tzname: US/Central
+
+# This is not prefixed with global_, but the base role is very generic
+base_timezone: "{{ global_timezone.zoneinfo_tzname }}"
+
+# This stuff is used on all my Linux machines
 global_syslog_host: syslog.home.micahrl.com
 global_syslog_netsys_port: "514"
 global_syslog_netcons_port: "5514"
 global_syslog_nettemp_port: "5515"
+
+# Unifi stuff
 global_cloudkey_hostname: cloudkey.home.micahrl.com
 global_cloudkey_ssh_host_key: "{{ global_cloudkey_hostname }},192.168.1.2 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHZyo3/q7m109QtIgO3HyNsfox2k7cDm9qg1xlq8rOloWzGHVEyW4qS7uYZhqPuiGldifjMafPWMMfZQG8GvgIc="
 global_cloudkey_user: mrladmin
 
-base_timezone: "{{ global_timezone.zoneinfo_tzname }}"
-
-# For access to everything in AWS
-aws_access_key: "{{ vault_aws_access_key }}"
-aws_secret_key: "{{ vault_aws_secret_key }}"
-aws_region: us-east-2
-
-# For the generic cloudformation role, set the all-access keys as the defaults
-cloudformation_aws_access_key: "{{ aws_access_key }}"
-cloudformation_aws_secret_key: "{{ aws_secret_key }}"
-cloudformation_aws_region: "{{ aws_region }}"
+# root AWS keys
+global_aws_access_key: "{{ vault_aws_access_key }}"
+global_aws_secret_key: "{{ vault_aws_secret_key }}"
+global_aws_region: us-east-2
 
 # For ACME DNS challenges in the home.micahrl.com domain
-home_zone_updater_access_key: "{{ vault_home_zone_updater_access_key }}"
-home_zone_updater_secret_key: "{{ vault_home_zone_updater_secret_key }}"
-home_zone_updater_zone_id: Z32HSYI0AGMFV9
-home_zone_updater_region: "{{ aws_region }}"
+# Used in multiple roles
+global_home_zone_updater_access_key: "{{ vault_home_zone_updater_access_key }}"
+global_home_zone_updater_secret_key: "{{ vault_home_zone_updater_secret_key }}"
+global_home_zone_updater_zone_id: Z32HSYI0AGMFV9
+global_home_zone_updater_region: "{{ global_aws_region }}"
 
-http_root_micahrl_com_certname: nullyork_root
-http_root_micahrl_com_email: psyops@micahrl.com
-http_root_micahrl_com_domain_list:
-  - nullyork.micahrl.com
-  - micahrl.com
-  - www.micahrl.com
-http_root_micahrl_com_redirect_real_webserver: https://me.micahrl.com/
-http_root_micahrl_com_matrix_fqdn: matrix.micahrl.com
+# For the generic cloudformation role, set the all-access keys as the defaults
+# This is not prefixed with global_, but the cfn role is very generic
+cloudformation_aws_access_key: "{{ global_aws_access_key }}"
+cloudformation_aws_secret_key: "{{ global_aws_secret_key }}"
+cloudformation_aws_region: "{{ global_aws_region }}"
 
-mailfwd_smtp_host: smtps-proxy.messagingengine.com
-mailfwd_smtp_port: "443"
-mailfwd_rewrite_domain: micahrl.com
-mailfwd_root_destination_address: psyops@micahrl.com
-mailfwd_smtp_user: mrled@fastmail.com
-mailfwd_smtp_pass: "{{ vault_mailfwd_smtp_pass }}"
-mailfwd_UseTLS: "Yes"
-mailfwd_UseSTARTTLS: "No"
-
-plexserver_seedbox_username: "{{ seedbox_user }}"
-plexserver_seedbox_groupname: "{{ seedbox_group }}"
-plexserver_media_path: "{{ seedbox_mount.path }}"
-plexserver_domain_name: plex.home.micahrl.com
-
-interactive: false
-interactive_user: mrled
-interactive_primary_group: mrled
-interactive_secondary_groups:
-  - admin
-  - docker
-interactive_user_home_share_user: mrled
-interactive_user_home_share_pass: "{{ vault_interactive_user_home_share_pass }}"
-interactive_user_home: /home/mrled
-interactive_mountpoint_path: "{{ interactive_user_home }}/nas"
-interactive_mountpoints:
-  - path: "{{ interactive_mountpoint_path }}"
-    src: //chenoska.home.micahrl.com/home
-    credsfile: "{{ interactive_user_home }}/.nas.credentials"
-    opts: ""
-    username: "{{ interactive_user_home_share_user }}"
-    password: "{{ interactive_user_home_share_pass }}"
-    fstype: cifs
-    mountowner: "{{ interactive_user }}"
-interactive_authorized_keys:
-  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAu67Htv3uYlqH8EtTKUWd/4VVZWD23d6jScejOlcCLF mrled@kalix
-  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS
-  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILyKqPWBZofTLlHcSDI6DVsRFwuECVBncda/XwxYxi5M glitch@blink
-  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCuBBHcsvy0xygxeZI8RLZ12LQoNvuD9huhgx02ICwrfCcqBm5r3t7J7lzIBlrTgjpHGr+AYspdDs/XFrHsSrHf6cC2EuSwn2G0vP/coTOZNyxZINhvOS3PNQlxIK87IAEShv6x24o6K4UK7BlDuZge4xeWHp370phK2BbtHoLciQKI7Gmf6xrh9/QVrJiQV+XsdmRLn9WWMIeQTQPFwydt4YpiLBWFmIlMg/cwOp/Wn7nZakNyn1cP0l2nrD1+OLvY2T/1mxM0dtZII5aJgvxIkviTwL5/JSQsNuFinq/yM0hFKFBotpKx9D6VI0Lf+FoscsFiDgTaINWZc5+44HH3kzQghC/bdRLdQ7plE78iTuwf0ehubUt1mbH86EmwNpu7oCzt3pzZHPRVIP/dNrMa3gBcnhWhNrzRzpfp3Zymg9YgyGucHxJuHBkhk5K7ySUxTrUgFPReb/+6ZeIA9iDtnnf8QuqLt9/b27AFaK8lr4zQo6ksteqJKEJr9k1d5kPAxajxCSn7aa+bfZWfThWkubyuKS1IGkvAM5UnwompaV8jk+j95owxjTgoRG4iE2AQyVfnhF9GG0TKrwiuiGgGXcZwGNxwcn4QCAGLcy4fw/A/3gDC/duO30lP6LajfX9woWqfl9os8SKewxpDM7MFRkI0I49XvY1rj214Wg4I3Q== mrled@AndrAIa.salacious.bureau
-
-privnet_gitserver_user: gitserver
-privnet_gitserver_group: gitserver
-privnet_gitserver_share_user: gitserver
-privnet_gitserver_share_pass: "{{ vault_gitserver_share_pass }}"
-privnet_gitserver_mount:
-  path: /netmount/chenoska/gitserver
-  src: //chenoska.home.micahrl.com/gitserver
-  credsfile: /etc/chenoska_git.credentials
-  username: "{{ gitserver_user }}"
-  password: "{{ gitserver_share_pass }}"
-  fstype: cifs
-privnet_mount_list: ["{{ seedbox_mount }}"]
-privnet_gitea_data_dir: "{{ gitserver_mount.path }}"
-
-# Wireguard docs
-# TODO: lookup plugin to generate the pubkey from the privkey
-# TODO: set all these as hostvars, use hostvars['HOSTNAME'].wireguard_privkey etc
-#       (should be ok even for e.g. glitch, which doesn't get provisioned from Ansible)
-# To generate the keys:
-# - wg genkey | tee privatekey | wg pubkey > publickey
-# - save the privkey in the vault and the pubkey here
-# - Delete the privatekey and publickey files
-wireguard_vpn_network: 192.168.2.0/24
-wireguard_server_privkey: "{{ vault_wireguard_server_privkey }}"
-wireguard_server_pubkey: E2pT5R+SZ+lLdHEt15iWlsfvGJQu6Zp164HdyB+V7mo=
-wireguard_server_offset: 1
-wireguard_clients:
-  - name: glitch
-    offset: 10
-    privkey: "{{ vault_wireguard_client_privkey_glitch }}"
-    pubkey: NBJFj0NFyy/T1O3IvDG8j1kpc04vMDd/KOqDUoDRHX0=
-  - name: andraia
-    offset: 11
-    privkey: "{{ vault_wireguard_client_privkey_andraia }}"
-    pubkey: 4tSQt5Fla90iQI1p0uWYoxxRsX31+aLmF18pzKaeDi0=
-  - name: neurofornia
-    offset: 12
-    privkey: "{{ vault_wireguard_client_privkey_neurofornia }}"
-    pubkey: 66ovHlNaCY/rYKzu7p32MmdgRrBka1NoZGY1Sdl9HAU=
-
-# Seedbox settings
-seedbox_user: seedbox
-seedbox_group: seedbox
-seedbox_timezone: "{{ global_timezone.zoneinfo_cityname }}"
-seedbox_share_user: seedbox
-seedbox_share_pass: "{{ vault_seedbox_share_pass }}"
-seedbox_mount:
-  path: /netmount/chenoska/seedbox
-  src: //chenoska.home.micahrl.com/Seedbox
-  credsfile: /etc/chenoska_seedbox.credentials
-  username: "{{ seedbox_share_user }}"
-  password: "{{ seedbox_share_pass }}"
-  fstype: cifs
-seedbox_mount_list:
-  - "{{ seedbox_mount }}"
-seedbox_usenet_completes_dir: "{{ seedbox_mount.path }}/usenet/completes"
-seedbox_usenet_incompletes_dir: "{{ seedbox_mount.path }}/usenet/incompletes"
-seedbox_usenet_watch_dir: "{{ seedbox_mount.path }}/usenet/watch"
-seedbox_torrent_downloads_dir: "{{ seedbox_mount.path }}/torrents/incoming"
-seedbox_media_dir: "{{ seedbox_mount.path }}"
-seedbox_media:
-  tv: "{{ seedbox_mount.path }}/TV"
-  music: "{{ seedbox_mount.path }}/Music"
-  movies: "{{ seedbox_mount.path }}/Movies"
-  books: "{{ seedbox_mount.path }}/Books"
-  itunes: "{{ seedbox_mount.path }}/iTunes"
-  trix: "{{ seedbox_mount.path }}/Trix"
-  books: "{{ seedbox_mount.path }}/Books"
-seedbox_domain: seedbox.home.micahrl.com
-seedbox_tentacles_domain: tentacles.home.micahrl.com
-seedbox_transmission_domain: transmission.home.micahrl.com
-seedbox_cops_domain: books.home.micahrl.com
-seedbox_acme_email: psyops@micahrl.com
-seedbox_acme_aws_region: "{{ home_zone_updater_region }}"
-seedbox_acme_aws_access_key: "{{ home_zone_updater_access_key }}"
-seedbox_acme_aws_secret_key: "{{ home_zone_updater_secret_key }}"
-seedbox_acme_aws_zone: "{{ home_zone_updater_zone_id }}"
-
-# These should be the same for all services
-# Note that some services might require manual configuration
-# The traefik dashboard is at least configured with this
-seedbox_web_admin_user: freeleech
-seedbox_web_admin_pass: "{{ vault_seedbox_web_admin_pass }}"
-
-
-# For pulling remote data onto the NAS
-# Don't allow other systems to push here without thinking through security implications
-backup_base_user: pullbackup
-backup_base_group: pullbackup
-backup_base_mount_share_pass: "{{ vault_backup_base_mount_share_pass }}"
-backup_base_destination_root: /netmount/chenoska/pullbackup
-backup_base_mountpoints:
-  - path: "{{ backup_base_destination_root }}"
-    src: //chenoska/pullbackup
-    credsfile: /etc/chenoska_pullbackup.credentials
-    username: pullbackup
-    password: "{{ backup_base_mount_share_pass }}"
-    fstype: cifs
-    mountowner: "{{ backup_base_user }}"
-    mountgroup: "{{ backup_base_group }}"
-
-
-backup_unifi_controller_hostname: "{{ global_cloudkey_hostname }}"
-backup_unifi_controller_user: "{{ global_cloudkey_user }}"
-backup_unifi_controller_hostkey: "{{ global_cloudkey_ssh_host_key }}"
-backup_unifi_user: "{{ backup_base_user }}"
-backup_unifi_group: "{{ backup_base_group }}"
-backup_unifi_dest: "{{ backup_base_destination_root }}/unifi"
-backup_base_pubkey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDZOwlN6NAaYqIFkdy6LofXEk3rn9wVZSHr8Jlh/lWZdn17pqRifY2yEwNOj+tnkq4inMgiXIdGZdb0WiOwxClDvmlDyOaADK0Zi5aLmSqf2KBbxXeNYZcdCvPip0aiFv7LxYfLN95r30z+ZFCpC/vtRqcypGlFJ+I26LmXsz2ZIPNo96SEeA8gB2SHVAugCIRlGoS6fwcb96E08HKe/hYTGVs70G0tZ5HXABkK71CbijH0LZQOIJq6UPqc4s0O3+z7FJ1dXrJ3B/nfn+cAfJpsTMHgRmpa7tr5ps/rC/Qj8EGW/x2UuES6bepyxRCZhAKuI40uL/2/6WHsW0TJm/GKnxMXP0rAjHbY5fCnAlFsqYZKt59/cMauQvD0nNaoXFpLFbOzQSt9nFEjD4ANGiGKnW36Gxj+kmRhhM7s2XagzmyQY6GgDASEfnWyBZnDKfH5T2HJueqaSNdxPK7lJqBbapj+WRHKa1hSVKuMfFJl7+q24SvTjJhDxrs+Al5Aq6U8rCwtQy5cIE3Ox4xi8TsztJP5Xq5aiMwfbRKLzzO+0bf9gipZeTV+ipphThVDPUGXVaohodmSvHXSY/+hM1G98Dmvoh1kofbIDKjij8nuWgx6T5vJrvA6KDVLq/REb8NRIQjOxgSwJFRr/8SjiR4yZtne8BJ+6d4NjAuxLvkRyQ== backup_base_ssh_pubkey
-backup_base_privkey: "{{ vault_backup_base_privkey }}"
-
-
-# TODO: move to using the backup_base stuff in the future
-mailbackup_share_user: mailbackup
-mailbackup_share_pass: "{{ vault_mailbackup_share_pass }}"
-mailbackup_report_email: psyops@micahrl.com
-mailbackup_share_mountpoint: /netmount/chenoska/mailbackup
-mailbackup_me_micahrl_com_password: "{{ vault_mailbackup_me_micahrl_com_password }}"
-mailbackup_office_mrlproperties_com_password: "{{ vault_mailbackup_office_mrlproperties_com_password }}"
-
-
-mailbackup_mountpoints:
-  - path: "{{ mailbackup_share_mountpoint }}"
-    src: //chenoska.home.micahrl.com/mailbackup2
-    credsfile: /etc/chenoska_mailbackup.credentials
-    opts: ""
-    username: "{{ mailbackup_share_user }}"
-    password: "{{ mailbackup_share_pass }}"
-    fstype: cifs
-    mountowner: "{{ mailbackup_username }}"
-
-# Syncthing configuration
-syncthing_personal_user: "{{ interactive_user }}"
-syncthing_personal_default_folder_path: "{{ interactive_mountpoint_path }}/Syncthing"
-# This dict gets merged directly into the json config in a REST API
-syncthing_personal_add_devices:
-  - deviceID: EZRELCU-J4OQ2OQ-6B5VJJS-YJ434RT-OWYPR7M-43CRSI5-LDJIBNB-ZXTF4AL
-    name: Kalix
-    addresses:
-      - kalix.home.micahrl.com
-    introducer: true
-    autoAcceptFolders: true
-  - deviceID: IE32Y43-T7YZTSL-HFYHQRX-IZCHQHD-CQXJ7OS-RXALIX3-QTP7OKS-DIPEJAF
-    name: Haluth
-    addresses:
-      - haluth.home.micahrl.com
-      - dynamic
-    introducer: true
-    autoAcceptFolders: true
-
-
-# ACME DNS base updater settings
-acmedns_base_certificate_dir: "/etc/acmedns/certificates"
-acmedns_base_user: acmedns
-acmedns_base_group: acmedns
-acmedns_base_pubkey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC07+VcrheD/Xe3rDxCvFxG6uLmHW2NPeF80Al/O2mFeXRP8s7F6B57jyxWTmO0iPhtMmrlhf9dtev6dw2jQIr0gGPSzvw5yJ9TsYjS7XogpQ4RlcFAqiAwp+zDGDF7NN9vyptsCAEiG4rnEPEdp9B0xTZmiqQ1RliwDtzZCpmJ1Eh5RZnmjGJmzTGsIiDBM2qkpIjL1QC+AQysWeSUDx9YB+9YWI4rmJv49RAO451/hCmTgv0c97UzQXjBb4aogQgYdglSjO21InoyQ6Q2fgJt5WOk+miAN638qBH24veHAE+PlzMGwS9YRMyFBvGzPn6z390vpM+pLY9wQoDMAHRN acmedns_syno_nas_ssh_pubkey
-acmedns_base_privkey: "{{ vault_acmedns_base_privkey }}"
-
-acmedns_remote_host_ssh_client_pubkey: "{{ acmedns_base_pubkey }}"
-
-
-
-# ACME DNS Synology updater settings
-acmedns_syno_updater_cert_base: "{{ acmedns_base_certificate_dir }}"
-acmedns_syno_updater_user: "{{ acmedns_base_user }}"
-acmedns_syno_updater_group: "{{ acmedns_base_group }}"
-acmedns_syno_updater_job_name: chenoska
-acmedns_syno_updater_aws_access_key: "{{ home_zone_updater_access_key }}"
-acmedns_syno_updater_aws_secret_key: "{{ home_zone_updater_secret_key }}"
-acmedns_syno_updater_aws_region: "{{ home_zone_updater_region }}"
-acmedns_syno_updater_aws_zone_id: "{{ home_zone_updater_zone_id }}"
-acmedns_syno_updater_email: psyops@micahrl.com
-acmedns_syno_updater_domain: chenoska.home.micahrl.com
-acmedns_syno_updater_syn_user: admin
-acmedns_syno_updater_syn_server: "{{ acmedns_syno_updater_domain }}"
-acmedns_syno_updater_syn_server_pubkey: chenoska.home.micahrl.com,192.168.1.27 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKU6IMsFrQ5oVd7qnF8FsK++8OJl/PhgVe1sVfws0Ex4rpWHAoz/yOMie37fHnYHKZ0hgLHBEXDtf8uXvBDt7F4=
-acmedns_syno_updater_pubkey: "{{ acmedns_base_pubkey }}"
-acmedns_syno_updater_privkey: "{{ acmedns_base_privkey }}"
-
-
-
-# ACME DNS Ubiquiti Unifi CloudKey updater settings
-acmedns_cloudkey_host_user: "{{ global_cloudkey_user }}"
-acmedns_cloudkey_host_ssh_pubkey: "{{ acmedns_base_pubkey }}"
-acmedns_cloudkey_host_ssh_privkey: "{{ acmedns_base_privkey }}"
-
-acmedns_cloudkey_updater_cert_base: "{{ acmedns_base_certificate_dir }}"
-acmedns_cloudkey_updater_user: "{{ acmedns_base_user }}"
-acmedns_cloudkey_updater_group: "{{ acmedns_base_group }}"
-acmedns_cloudkey_updater_job_name: cloudkey
-acmedns_cloudkey_updater_aws_access_key: "{{ home_zone_updater_access_key }}"
-acmedns_cloudkey_updater_aws_secret_key: "{{ home_zone_updater_secret_key }}"
-acmedns_cloudkey_updater_aws_region: "{{ home_zone_updater_region }}"
-acmedns_cloudkey_updater_aws_zone_id: "{{ home_zone_updater_zone_id }}"
-acmedns_cloudkey_updater_email: psyops@micahrl.com
-acmedns_cloudkey_updater_domain: "{{ global_cloudkey_hostname }}"
-acmedns_cloudkey_updater_server_user: "{{ acmedns_cloudkey_host_user }}"
-acmedns_cloudkey_updater_server: "{{ acmedns_cloudkey_updater_domain }}"
-acmedns_cloudkey_updater_host_ssh_pubkey: "{{ global_cloudkey_ssh_host_key }}"
-acmedns_cloudkey_updater_pubkey: "{{ acmedns_base_pubkey }}"
-acmedns_cloudkey_updater_privkey: "{{ acmedns_base_privkey }}"
-
-
-
-
-# syslog server for network
-sysloghost_share_mountpoint: /netmount/chenoska/syslog
-sysloghost_share_user: syslogstorage
-sysloghost_share_pass: "{{ vault_sysloghost_share_pass }}"
-sysloghost_mountpoints:
-  - path: "{{ sysloghost_share_mountpoint }}"
-    src: //chenoska.home.micahrl.com/syslog
-    credsfile: /etc/chenoska_sysloghost.credentials
-    opts: ""
-    username: "{{ sysloghost_share_user }}"
-    password: "{{ sysloghost_share_pass }}"
-    fstype: cifs
-sysloghost_netsys_port: "{{ global_syslog_netsys_port }}"
-sysloghost_netcons_port: "{{ global_syslog_netcons_port }}"
-sysloghost_nettemp_port: "{{ global_syslog_nettemp_port }}"
-
-
-# Matrix server
-# WARNING: The real configuration is managed over in psyops/submod/matrix-docker-ansible-deploy
-# This is just the prerequisites - the stuff that that playbook doesn't set up for you
-# Stuff like DNS, existing server, S3 bucket, etc
-# Be careful - stuff in this section MUST match configuration in that submodule as well
-matrix_media_bucket_name: com-micahrl-matrix-media
-matrix_media_bucket_full_access_policy_name: com-micahrl-matrix-media-full-access-policy
-matrix_media_bucket_full_access_group_name: com-micahrl-matrix-media-full-access-group
+# Shared seedbox stuff
+global_seedbox_domain: "{{ vault_seedbox_domain }}"
+global_plexserver_domain: plex.{{ global_seedbox_domain }}

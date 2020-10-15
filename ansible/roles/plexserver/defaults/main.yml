@@ -1,6 +1,5 @@
 ---
-
-plexserver_version: 1.20.1.3252-a78fef9a9
+plexserver_version: 1.20.3.3430-48c594b30
 plexserver_arch: x86_64
 plexserver_rpm_checksum: sha1:1d45bed103a40fa95beb2f28d8106d98ba4c6c3a
 
@@ -8,15 +7,15 @@ plexserver_creds_path: /etc/plex-share-creds
 plexserver_mountpoint: /mnt/plexmedia
 
 plexserver_ports:
-  - 32400/tcp  # (for access to the Plex Media Server) [required]
-  - 1900/udp   # (for access to the Plex DLNA Server)
-  - 3005/tcp   # (for controlling Plex Home Theater via Plex Companion)
-  - 5353/udp   # (for older Bonjour/Avahi network discovery)
-  - 8324/tcp   # (for controlling Plex for Roku via Plex Companion)
-  - 32410/udp  # (for current GDM network discovery)
-  - 32410/udp  # (for current GDM network discovery)
-  - 32412/udp  # (for current GDM network discovery)
-  - 32413/udp  # (for current GDM network discovery)
-  - 32414/udp  # (for current GDM network discovery)
-  - 32469/tcp  # (for access to the Plex DLNA Server)
+  - 32400/tcp # (for access to the Plex Media Server) [required]
+  - 1900/udp # (for access to the Plex DLNA Server)
+  - 3005/tcp # (for controlling Plex Home Theater via Plex Companion)
+  - 5353/udp # (for older Bonjour/Avahi network discovery)
+  - 8324/tcp # (for controlling Plex for Roku via Plex Companion)
+  - 32410/udp # (for current GDM network discovery)
+  - 32410/udp # (for current GDM network discovery)
+  - 32412/udp # (for current GDM network discovery)
+  - 32413/udp # (for current GDM network discovery)
+  - 32414/udp # (for current GDM network discovery)
+  - 32469/tcp # (for access to the Plex DLNA Server)
 

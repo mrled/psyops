@@ -1,0 +1,47 @@
+---
+# ACME DNS base updater settings
+acmedns_base_certificate_dir: "/etc/acmedns/certificates"
+acmedns_base_user: acmedns
+acmedns_base_group: acmedns
+acmedns_base_pubkey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC07+VcrheD/Xe3rDxCvFxG6uLmHW2NPeF80Al/O2mFeXRP8s7F6B57jyxWTmO0iPhtMmrlhf9dtev6dw2jQIr0gGPSzvw5yJ9TsYjS7XogpQ4RlcFAqiAwp+zDGDF7NN9vyptsCAEiG4rnEPEdp9B0xTZmiqQ1RliwDtzZCpmJ1Eh5RZnmjGJmzTGsIiDBM2qkpIjL1QC+AQysWeSUDx9YB+9YWI4rmJv49RAO451/hCmTgv0c97UzQXjBb4aogQgYdglSjO21InoyQ6Q2fgJt5WOk+miAN638qBH24veHAE+PlzMGwS9YRMyFBvGzPn6z390vpM+pLY9wQoDMAHRN acmedns_syno_nas_ssh_pubkey
+acmedns_base_privkey: "{{ vault_acmedns_base_privkey }}"
+
+acmedns_remote_host_ssh_client_pubkey: "{{ acmedns_base_pubkey }}"
+
+# ACME DNS Synology updater settings
+acmedns_syno_updater_cert_base: "{{ acmedns_base_certificate_dir }}"
+acmedns_syno_updater_user: "{{ acmedns_base_user }}"
+acmedns_syno_updater_group: "{{ acmedns_base_group }}"
+acmedns_syno_updater_job_name: chenoska
+acmedns_syno_updater_aws_access_key: "{{ global_home_zone_updater_access_key }}"
+acmedns_syno_updater_aws_secret_key: "{{ global_home_zone_updater_secret_key }}"
+acmedns_syno_updater_aws_region: "{{ global_home_zone_updater_region }}"
+acmedns_syno_updater_aws_zone_id: "{{ global_home_zone_updater_zone_id }}"
+acmedns_syno_updater_email: psyops@micahrl.com
+acmedns_syno_updater_domain: chenoska.home.micahrl.com
+acmedns_syno_updater_syn_user: admin
+acmedns_syno_updater_syn_server: "{{ acmedns_syno_updater_domain }}"
+acmedns_syno_updater_syn_server_pubkey: chenoska.home.micahrl.com,192.168.1.27 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKU6IMsFrQ5oVd7qnF8FsK++8OJl/PhgVe1sVfws0Ex4rpWHAoz/yOMie37fHnYHKZ0hgLHBEXDtf8uXvBDt7F4=
+acmedns_syno_updater_pubkey: "{{ acmedns_base_pubkey }}"
+acmedns_syno_updater_privkey: "{{ acmedns_base_privkey }}"
+
+# ACME DNS Ubiquiti Unifi CloudKey updater settings
+acmedns_cloudkey_host_user: "{{ global_cloudkey_user }}"
+acmedns_cloudkey_host_ssh_pubkey: "{{ acmedns_base_pubkey }}"
+acmedns_cloudkey_host_ssh_privkey: "{{ acmedns_base_privkey }}"
+
+acmedns_cloudkey_updater_cert_base: "{{ acmedns_base_certificate_dir }}"
+acmedns_cloudkey_updater_user: "{{ acmedns_base_user }}"
+acmedns_cloudkey_updater_group: "{{ acmedns_base_group }}"
+acmedns_cloudkey_updater_job_name: cloudkey
+acmedns_cloudkey_updater_aws_access_key: "{{ global_home_zone_updater_access_key }}"
+acmedns_cloudkey_updater_aws_secret_key: "{{ global_home_zone_updater_secret_key }}"
+acmedns_cloudkey_updater_aws_region: "{{ global_home_zone_updater_region }}"
+acmedns_cloudkey_updater_aws_zone_id: "{{ global_home_zone_updater_zone_id }}"
+acmedns_cloudkey_updater_email: psyops@micahrl.com
+acmedns_cloudkey_updater_domain: "{{ global_cloudkey_hostname }}"
+acmedns_cloudkey_updater_server_user: "{{ acmedns_cloudkey_host_user }}"
+acmedns_cloudkey_updater_server: "{{ acmedns_cloudkey_updater_domain }}"
+acmedns_cloudkey_updater_host_ssh_pubkey: "{{ global_cloudkey_ssh_host_key }}"
+acmedns_cloudkey_updater_pubkey: "{{ acmedns_base_pubkey }}"
+acmedns_cloudkey_updater_privkey: "{{ acmedns_base_privkey }}"

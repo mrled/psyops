@@ -1,7 +1,7 @@
 # Static inventory
 
 [http_root_micahrl_com]
-nullyork.micahrl.com ansible_user=ec2-user
+nullyork.micahrl.com
 
 [plexservers]
 tagasaw.home.micahrl.com
@@ -10,8 +10,7 @@ tagasaw.home.micahrl.com
 tagasaw.home.micahrl.com
 
 [unifiusg]
-# Specify the IP address so we can do this before DNS is all up etc
-gateway.home.micahrl.com ansible_host=192.168.1.1
+gateway.home.micahrl.com
 
 [synologynas]
 chenoska.home.micahrl.com
@@ -35,4 +34,20 @@ kilotah.home.micahrl.com
 kilotah.home.micahrl.com
 
 [matrixservers]
-olcott.micahrl.com ansible_user=ubuntu
+olcott.micahrl.com
+
+[interactive]
+kilotah.home.micahrl.com
+
+[emailfwd]
+nullyork.micahrl.com
+tagasaw.home.micahrl.com
+kilotah.home.micahrl.com
+olcott.micahrl.com
+
+[capthook]
+nullyork.micahrl.com
+tagasaw.home.micahrl.com
+kilotah.home.micahrl.com
+olcott.micahrl.com
+

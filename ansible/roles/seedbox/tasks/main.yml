@@ -1,5 +1,4 @@
 ---
-
 - name: Install RPMs
   dnf:
     name:
@@ -31,12 +30,14 @@
     database: passwd
     key: "{{ seedbox_user }}"
   register: seedbox_getent
+  tags: seedbox_docker_deploy
 
 - name: Set UID/GID facts
   set_fact:
     seedbox_uid: "{{ getent_passwd[seedbox_user][1] }}"
     seedbox_gid: "{{ getent_passwd[seedbox_user][2] }}"
     seedbox_homedir: "{{ getent_passwd[seedbox_user][4] }}"
+  tags: seedbox_docker_deploy
 
 - name: Create seedbox config dirs
   file:
@@ -57,36 +58,7 @@
     - "{{ seedbox_transmission_config_dir }}"
     - "{{ seedbox_tentacles_config_dir }}"
 
-- name: Create seedbox mountpoints
-  file:
-    state: directory
-    path: "{{ item.path }}"
-    owner: "{{ seedbox_user }}"
-    group: "{{ seedbox_group }}"
-    mode: "0755"
-  with_items: "{{ seedbox_mount_list }}"
-
-- name: Configure seedbox mount files
-  copy:
-    content: |+
-      username={{ item.username }}
-      password={{ item.password }}
-    dest: "{{ item.credsfile }}"
-    owner: root
-    group: root
-    mode: "0600"
-  with_items: "{{ seedbox_mount_list }}"
-
-- name: Mount seedbox mounts
-  mount:
-    path: "{{ item.path }}"
-    src: "{{ item.src }}"
-    fstype: "{{ item.fstype }}"
-    opts: credentials={{ item.credsfile }},uid={{ seedbox_uid }},gid={{ seedbox_gid }}
-    state: mounted
-  with_items: "{{ seedbox_mount_list }}"
-
-- name: Make seedbox mount subdirs
+- name: Make seedbox media subdirs
   file:
     path: "{{ item.value }}"
     state: directory
@@ -111,6 +83,7 @@
     owner: "{{ seedbox_user }}"
     group: "{{ seedbox_group }}"
     mode: "0640"
+  tags: seedbox_docker_deploy
 
 - name: Configure ports in the trusted zone
   firewalld:
@@ -197,13 +170,19 @@
     mode: "0600"
   tags: seedbox_docker_deploy
 
-# - name: Remove the Docker stack
-#   docker_stack:
-#     state: absent
-#     name: seedbox
-#     compose:
-#       - "{{ seedbox_compose_path }}"
-#   tags: seedbox_docker_deploy
+- name: Remove the Docker stack
+  block:
+    - name: Remove the Docker stack
+      docker_stack:
+        state: absent
+        name: seedbox
+        compose:
+          - "{{ seedbox_compose_path }}"
+    - name: Pause so the network gets deleted too
+      pause:
+        seconds: 15
+  tags: seedbox_docker_deploy
+  when: seedbox_docker_greenfield_deploy
 
 - name: Deploy the Docker stack
   docker_stack:
@@ -227,8 +206,8 @@
   lineinfile:
     path: "{{ seedbox_sabnzbd_config_dir }}/sabnzbd.ini"
     insertafter: '^\[misc\]$'
-    regexp: '^host_whitelist ='
-    line: 'host_whitelist = {{ ansible_fqdn }}, {{ seedbox_domain }}, '
+    regexp: "^host_whitelist ="
+    line: "host_whitelist = {{ ansible_fqdn }}, {{ seedbox_misc_domain }}, "
   notify: seedbox stack redeploy
 
 # UrlBase/url_base:
@@ -258,7 +237,6 @@
   lineinfile:
     path: "{{ seedbox_hydra2_config_yaml }}"
     line: '  urlBase: "/hydra2"'
-    insertafter: 'main:'
-    regex: ' *urlBase: .*'
+    insertafter: "main:"
+    regex: " *urlBase: .*"
   notify: seedbox stack redeploy
-

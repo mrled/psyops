@@ -1,5 +1,4 @@
 ---
-
 - name: Add group
   group:
     name: "{{ capthook_group }}"
@@ -78,57 +77,56 @@
     group: root
     mode: "0644"
 
-- name: Configure firewall (Fedora)
+- name: Configure firewall (RH)
   block:
-  - name: Configure port in the trusted zone
-    firewalld: port={{ capthook_port }}/tcp permanent=yes zone=trusted state=enabled immediate=yes
-  - name: Configure port in the default zone
-    firewalld: port={{ capthook_port }}/tcp permanent=yes state=enabled immediate=yes
-  when: ansible_distribution == "Fedora"
+    - name: Configure port in the trusted zone
+      firewalld: port={{ capthook_port }}/tcp permanent=yes zone=trusted state=enabled immediate=yes
+    - name: Configure port in the default zone
+      firewalld: port={{ capthook_port }}/tcp permanent=yes state=enabled immediate=yes
+  when: ansible_distribution in ["CentOS", "Fedora"]
 
 - name: Configure firewall (Ubuntu)
   ufw: port={{ capthook_port }} proto=tcp rule=allow
   when: ansible_distribution == "Ubuntu"
 
-- name: Configure SELinux (Fedora)
+- name: Configure SELinux (RH)
   block:
-  - name: Copy SELinux type enforcement file for buildpy
-    template:
-      src: capthook_buildpy.te.j2
-      dest: /etc/selinux/capthook_buildpy.te
-    register: capthook_buildpy_copytefile
-  - name: Compile SELinux module file for buildpy
-    command: checkmodule -M -m -o /etc/selinux/capthook_buildpy.mod /etc/selinux/capthook_buildpy.te
-    when: capthook_buildpy_copytefile.changed
-  - name: Build SELinux policy package for buildpy
-    command: semodule_package -o /etc/selinux/capthook_buildpy.pp -m /etc/selinux/capthook_buildpy.mod
-    when: capthook_buildpy_copytefile.changed
-  - name: Load SELinux policy package for buildpy
-    command: semodule -i /etc/selinux/capthook_buildpy.pp
-    when: capthook_buildpy_copytefile.changed
-    notify: restart capthook
+    - name: Copy SELinux type enforcement file for buildpy
+      template:
+        src: capthook_buildpy.te.j2
+        dest: /etc/selinux/capthook_buildpy.te
+      register: capthook_buildpy_copytefile
+    - name: Compile SELinux module file for buildpy
+      command: checkmodule -M -m -o /etc/selinux/capthook_buildpy.mod /etc/selinux/capthook_buildpy.te
+      when: capthook_buildpy_copytefile.changed
+    - name: Build SELinux policy package for buildpy
+      command: semodule_package -o /etc/selinux/capthook_buildpy.pp -m /etc/selinux/capthook_buildpy.mod
+      when: capthook_buildpy_copytefile.changed
+    - name: Load SELinux policy package for buildpy
+      command: semodule -i /etc/selinux/capthook_buildpy.pp
+      when: capthook_buildpy_copytefile.changed
+      notify: restart capthook
 
-  - name: Copy SELinux type enforcement file for webhook
-    template:
-      src: capthook_webhook.te.j2
-      dest: /etc/selinux/capthook_webhook.te
-    register: capthook_webhook_copytefile
-  - name: Compile SELinux module file for webhook
-    command: checkmodule -M -m -o /etc/selinux/capthook_webhook.mod /etc/selinux/capthook_webhook.te
-    when: capthook_webhook_copytefile.changed
-  - name: Build SELinux policy package for webhook
-    command: semodule_package -o /etc/selinux/capthook_webhook.pp -m /etc/selinux/capthook_webhook.mod
-    when: capthook_webhook_copytefile.changed
-  - name: Load SELinux policy package for webhook
-    command: semodule -i /etc/selinux/capthook_webhook.pp
-    when: capthook_webhook_copytefile.changed
-    notify: restart capthook
+    - name: Copy SELinux type enforcement file for webhook
+      template:
+        src: capthook_webhook.te.j2
+        dest: /etc/selinux/capthook_webhook.te
+      register: capthook_webhook_copytefile
+    - name: Compile SELinux module file for webhook
+      command: checkmodule -M -m -o /etc/selinux/capthook_webhook.mod /etc/selinux/capthook_webhook.te
+      when: capthook_webhook_copytefile.changed
+    - name: Build SELinux policy package for webhook
+      command: semodule_package -o /etc/selinux/capthook_webhook.pp -m /etc/selinux/capthook_webhook.mod
+      when: capthook_webhook_copytefile.changed
+    - name: Load SELinux policy package for webhook
+      command: semodule -i /etc/selinux/capthook_webhook.pp
+      when: capthook_webhook_copytefile.changed
+      notify: restart capthook
 
-  when: ansible_distribution == "Fedora"
+  when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Start service
   systemd:
     name: capthook
     state: started
     daemon_reload: yes
-

@@ -1,5 +1,5 @@
 ---
-#dependencies:
-  #- role: docker
-  #  vars:
-  #    docker_standalone_swarm: true
+dependencies:
+  - role: docker
+    vars:
+      docker_standalone_swarm: true

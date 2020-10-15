@@ -1,0 +1,68 @@
+---
+# Plays for my various Linux machines
+# A lot of these will end up on the same box
+# But keeping them as separate groups means I can split them out whenever I t
+
+- name: Configure base
+  hosts: all
+  roles:
+    - { name: base, tags: ["base"] }
+
+- name: Configure capthook
+  hosts: capthook
+  roles:
+    - { name: capthook, tags: ["capthook"] }
+
+# - name: Configure email forwarding
+#   hosts: emailfwd
+#   roles:
+#     - { name: emailfwd, tags: ["emailfwd"] }
+
+- name: Configure interactive
+  hosts: interactive
+  roles:
+    - { name: interactive, tags: ["interactive"] }
+
+- name: Configure personal syncthing
+  hosts: syncthing_personal
+  roles:
+    - { name: syncthing_personal, tags: ["syncthing_personal"] }
+
+- name: Deploy wireguard server
+  hosts: wireguardservers
+  roles:
+    - { name: wireguard_server, tags: ["wireguard_server"] }
+
+- name: Deploy privnet infrastructure
+  hosts: privnet
+  roles:
+    - { name: privnet, tags: ["privnet"] }
+
+- name: Deploy pullbackup
+  hosts: pullbackup
+  roles:
+    - { name: mailbackup, tags: ["mailbackup"] }
+    - { name: backup_unifi, tags: ["backup_unifi"] }
+
+- name: Deploy syslog server
+  hosts: syslogserver
+  roles:
+    - { name: sysloghost, tags: ["sysloghost"] }
+
+- name: Deploy ACME DNS base
+  hosts: acmednsupdaters
+  roles:
+    - { name: acmedns_base, tags: ["acmedns_base"] }
+    - { name: acmedns_syno_updater, tags: ["acmedns_syno_updater"] }
+    # acmedns_cloudkey_updater is broken :(
+    - { name: acmedns_cloudkey_updater, tags: ["acmedns_cloudkey_updater"] }
+
+- name: Deploy seedbox
+  hosts: seedboxes
+  roles:
+    - { name: seedbox, tags: ["seedbox"] }
+
+- name: Deploy Plex
+  hosts: plexservers
+  roles:
+    - { name: plexserver, tags: ["plexserver"] }

@@ -24,3 +24,6 @@ seedbox_transmission_peer_port: 10298
 seedbox_transmission_docker_build_dir: "{{ seedbox_config_dir }}/transmission-docker-build"
 seedbox_tentacles_config_dir: "{{ seedbox_config_dir }}/tentacles"
 seedbox_cops_config_dir: "{{ seedbox_config_dir }}/cops"
+
+# Set this to true to remove the docker stack before deploying
+seedbox_docker_greenfield_deploy: false

@@ -1,0 +1,14 @@
+---
+privnet_gitserver_user: gitserver
+privnet_gitserver_group: gitserver
+privnet_gitserver_share_user: gitserver
+privnet_gitserver_share_pass: "{{ vault_gitserver_share_pass }}"
+privnet_gitserver_mount:
+  path: /netmount/chenoska/gitserver
+  src: //chenoska.home.micahrl.com/gitserver
+  credsfile: /etc/chenoska_git.credentials
+  username: "{{ gitserver_user }}"
+  password: "{{ gitserver_share_pass }}"
+  fstype: cifs
+privnet_mount_list: ["{{ seedbox_mount }}"]
+privnet_gitea_data_dir: "{{ gitserver_mount.path }}"

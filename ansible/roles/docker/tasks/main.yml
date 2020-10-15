@@ -1,5 +1,4 @@
 ---
-
 - name: Use cgroups v1 on Fedora 31
   import_tasks: fedora31_cgroupsv1.yml
   when: ansible_distribution == "Fedora" and ansible_distribution_major_version >= '31'
@@ -15,7 +14,6 @@
     state: latest
   when: ansible_distribution == "Ubuntu"
 
-
 - name: Add Docker repo (Fedora)
   yum_repository:
     name: docker
@@ -25,6 +23,15 @@
     # visiting that REPOURL, and picking docker-ce-stable
     baseurl: https://download.docker.com/linux/fedora/$releasever/$basearch/stable
   when: ansible_distribution == "Fedora"
+
+- name: Add Docker repo (CentOS)
+  yum_repository:
+    name: docker
+    description: docker
+    # Got this baseurl by reading Docker install manual, and looking at
+    # https://download.docker.com/linux/centos/docker-ce.repo
+    baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
+  when: ansible_distribution == "CentOS"
 
 - name: Add Docker repo (Ubuntu)
   block:
@@ -44,17 +51,16 @@
         state: present
   when: ansible_distribution == "Ubuntu"
 
-- name: Install packages (Fedora)
+- name: Install packages (RH)
   dnf:
     name:
       - containerd.io
       - docker-ce
       - docker-ce-cli
-      - python3-docker
       - python3-pip
     state: latest
     update_cache: yes
-  when: ansible_distribution == "Fedora"
+  when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Install packages (Ubuntu)
   apt:
@@ -62,7 +68,6 @@
       - containerd.io
       - docker-ce
       - docker-ce-cli
-      - python3-docker
       - python3-pip
     state: latest
     update_cache: yes
@@ -71,9 +76,26 @@
 - name: Install pip packages
   pip:
     name:
+      - docker
       - jsondiff
       - pyyaml
     state: latest
+
+- name: Fix CentOS firewalld
+  block:
+    - name: Enable masquerading
+      firewalld:
+        masquerade: yes
+        state: enabled
+        permanent: yes
+        zone: public
+      register: docker_rh_firewalld_masq_enabled
+    - name: Reload firewalld
+      systemd:
+        name: firewalld
+        state: reloaded
+      when: docker_rh_firewalld_masq_enabled.changed
+  when: ansible_distribution == "CentOS" and ansible_facts['distribution_version'] is version('8', '>=')
 
 - name: Start docker service
   systemd:
@@ -81,52 +103,6 @@
     state: started
     enabled: yes
 
-
 - name: Configure the Docker Swarm
-  block:
-
-
-  - name: Configure Swarm ports in the trusted zone (Fedora)
-    firewalld:
-      port: "{{ item.port }}/{{ item.proto }}"
-      permanent: yes
-      zone: trusted
-      state: enabled
-      immediate: yes
-    with_items: "{{ docker_swarm_ports }}"
-    when: ansible_distribution == "Fedora"
-
-  - name: Configure Swarm ports in the default zone (Fedora)
-    firewalld:
-      port: "{{ item.port }}/{{ item.proto }}"
-      permanent: yes
-      state: enabled
-      immediate: yes
-    with_items: "{{ docker_swarm_ports }}"
-    when: ansible_distribution == "Fedora"
-
-  - name: Configure Swarm ports (Ubuntu)
-    ufw:
-      rule: allow
-      port: "{{ item.port }}"
-      proto: "{{ item.proto }}"
-    when: ansible_distribution == "Ubuntu"
-
-  - name: Create standalone swarm
-    docker_swarm:
-      state: present
-      advertise_addr: "{{ docker_standalone_swarm_advertise_addr | default(false) }}"
-    when: docker_standalone_swarm|bool
-
-  - name: Inspect the swarm
-    docker_swarm:
-      state: inspect
-    register: docker_swarm_inspect
-
-  - debug:
-      var: docker_swarm_inspect
-
-
+  import_tasks: swarm.yml
   when: docker_standalone_swarm|bool
-
-

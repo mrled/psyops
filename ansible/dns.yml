@@ -1,0 +1,17 @@
+---
+- name: Configure DNS
+  hosts: localhost
+  connection: local
+  become: no
+  gather_facts: no
+  roles:
+    - name: cfn
+      cloudformation_stack_name: MicahrlDotCom
+      cloudformation_template_path: cloudformation/MicahrlDotCom.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+    - name: cfn
+      cloudformation_stack_name: SeedboxZone
+      cloudformation_template_path: cloudformation/SeedboxZone.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_template_params:
+        DomainName: "{{ global_seedbox_domain }}"

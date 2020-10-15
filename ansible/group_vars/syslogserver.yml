@@ -1,0 +1,16 @@
+---
+# syslog server for network
+sysloghost_share_mountpoint: /netmount/chenoska/syslog
+sysloghost_share_user: syslogstorage
+sysloghost_share_pass: "{{ vault_sysloghost_share_pass }}"
+sysloghost_mountpoints:
+  - path: "{{ sysloghost_share_mountpoint }}"
+    src: //chenoska.home.micahrl.com/syslog
+    credsfile: /etc/chenoska_sysloghost.credentials
+    opts: ""
+    username: "{{ sysloghost_share_user }}"
+    password: "{{ sysloghost_share_pass }}"
+    fstype: cifs
+sysloghost_netsys_port: "{{ global_syslog_netsys_port }}"
+sysloghost_netcons_port: "{{ global_syslog_netcons_port }}"
+sysloghost_nettemp_port: "{{ global_syslog_nettemp_port }}"

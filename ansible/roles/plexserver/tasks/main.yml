@@ -1,5 +1,4 @@
 ---
-
 - name: Install prereqs
   package: name=cifs-utils state=installed
 
@@ -26,8 +25,6 @@
     - name: Install the Plex RPM from URL
       dnf: name={{ plexserver_rpm_url }} state=latest
       notify: Restart plex service
-
-
 
 # Manage the plex user and homedir situation
 # We have a plexserver_seedbox_username and plexserver_seedbox_groupname
@@ -92,7 +89,6 @@
     mv "{{ plexserver_discovered_home }}" "{{ plexserver_discovered_home }}.{{ ansible_date_time.epoch }}.bak" &&
     ln -s "{{ plexserver_desired_home }}" "{{ plexserver_discovered_home }}"
   when: plexserver_wrong_home
-
 
 - name: Configure the firewall trusted zone
   firewalld: port={{ item }} permanent=yes zone=trusted state=enabled immediate=yes

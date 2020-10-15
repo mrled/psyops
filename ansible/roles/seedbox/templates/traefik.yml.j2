@@ -7,9 +7,9 @@ defaultEntryPoints:
 
 log:
   level: DEBUG
-  format: json
+  format: common
 accessLog:
-  format: json
+  format: common
 #tracing:
 #  serviceName: traefik
 
@@ -35,7 +35,7 @@ certificatesResolvers:
       storage: /acme.json
       email: "{{ seedbox_acme_email }}"
 {% if seedbox_acme_staging | bool %}
-      caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
 {% endif %}
       dnsChallenge:
         provider: route53
@@ -45,7 +45,7 @@ providers:
 
 docker:
   endpoint: unix:///var/run/docker.sock
-  domain: "{{ seedbox_domain }}"
+  domain: "{{ seedbox_misc_domain }}"
   watch: true
   exposedbydefault: false
 

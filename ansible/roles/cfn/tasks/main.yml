@@ -1,6 +1,5 @@
 ---
-
-- name: Deploy CloudFormation template
+- name: Deploy CloudFormation template for stack {{ cloudformation_stack_name }}
   cloudformation:
     stack_name: "{{ cloudformation_stack_name }}"
     state: present
@@ -12,4 +11,6 @@
     on_create_failure: "{{ cloudformation_on_create_failure }}"
     template_parameters: "{{ cloudformation_template_params }}"
   register: cloudformation_result
-
+- name: Show deployment result for stack {{ cloudformation_stack_name }}
+  debug:
+    var: cloudformation_result

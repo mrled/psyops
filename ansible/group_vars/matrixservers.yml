@@ -1,0 +1,9 @@
+---
+# Matrix server
+# WARNING: The real configuration is managed over in psyops/submod/matrix-docker-ansible-deploy
+# This is just the prerequisites - the stuff that that playbook doesn't set up for you
+# Stuff like DNS, existing server, S3 bucket, etc
+# Be careful - stuff in this section MUST match configuration in that submodule as well
+matrix_media_bucket_name: com-micahrl-matrix-media
+matrix_media_bucket_full_access_policy_name: com-micahrl-matrix-media-full-access-policy
+matrix_media_bucket_full_access_group_name: com-micahrl-matrix-media-full-access-group

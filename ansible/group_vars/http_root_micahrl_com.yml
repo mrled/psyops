@@ -1,0 +1,9 @@
+---
+http_root_micahrl_com_certname: nullyork_root
+http_root_micahrl_com_email: psyops@micahrl.com
+http_root_micahrl_com_domain_list:
+  - nullyork.micahrl.com
+  - micahrl.com
+  - www.micahrl.com
+http_root_micahrl_com_redirect_real_webserver: https://me.micahrl.com/
+http_root_micahrl_com_matrix_fqdn: matrix.micahrl.com

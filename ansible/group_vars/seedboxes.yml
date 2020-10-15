@@ -1,0 +1,38 @@
+---
+# Seedbox settings
+
+seedbox_user: seedbox
+seedbox_group: seedbox
+seedbox_timezone: "{{ global_timezone.zoneinfo_cityname }}"
+seedbox_media_root: /4tbmirror
+
+seedbox_usenet_completes_dir: "{{ seedbox_media_root }}/usenet/completes"
+seedbox_usenet_incompletes_dir: "{{ seedbox_media_root }}/usenet/incompletes"
+seedbox_usenet_watch_dir: "{{ seedbox_media_root }}/usenet/watch"
+seedbox_torrent_downloads_dir: "{{ seedbox_media_root }}/torrents/incoming"
+seedbox_media_dir: "{{ seedbox_media_root }}"
+seedbox_media:
+  tv: "{{ seedbox_media_root }}/TV"
+  music: "{{ seedbox_media_root }}/Music"
+  movies: "{{ seedbox_media_root }}/Movies"
+  books: "{{ seedbox_media_root }}/Books"
+  itunes: "{{ seedbox_media_root }}/iTunes"
+  trix: "{{ seedbox_media_root }}/Trix"
+
+seedbox_root_domain: "{{ global_seedbox_domain }}"
+seedbox_misc_domain: "seedbox.{{ seedbox_root_domain }}"
+seedbox_tentacles_domain: tentacles.{{ seedbox_root_domain }}
+seedbox_transmission_domain: transmission.{{ seedbox_root_domain }}
+seedbox_cops_domain: books.{{ seedbox_root_domain }}
+
+seedbox_acme_email: psyops@micahrl.com
+seedbox_acme_aws_region: "{{ global_home_zone_updater_region }}"
+seedbox_acme_aws_access_key: "{{ vault_seedbox_zone_updater_access_key }}"
+seedbox_acme_aws_secret_key: "{{ vault_seedbox_zone_updater_secret_key }}"
+seedbox_acme_aws_zone: Z10276202TLC17I3UZTK3
+
+# These should be the same for all services
+# Note that some services might require manual configuration
+# The traefik dashboard is at least configured with this
+seedbox_web_admin_user: freeleech
+seedbox_web_admin_pass: "{{ vault_seedbox_web_admin_pass }}"
