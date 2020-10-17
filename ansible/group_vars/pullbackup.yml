@@ -22,7 +22,7 @@ backup_unifi_controller_hostkey: "{{ global_cloudkey_ssh_host_key }}"
 backup_unifi_user: "{{ backup_base_user }}"
 backup_unifi_group: "{{ backup_base_group }}"
 backup_unifi_dest: "{{ backup_base_destination_root }}/unifi"
-backup_base_pubkey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDZOwlN6NAaYqIFkdy6LofXEk3rn9wVZSHr8Jlh/lWZdn17pqRifY2yEwNOj+tnkq4inMgiXIdGZdb0WiOwxClDvmlDyOaADK0Zi5aLmSqf2KBbxXeNYZcdCvPip0aiFv7LxYfLN95r30z+ZFCpC/vtRqcypGlFJ+I26LmXsz2ZIPNo96SEeA8gB2SHVAugCIRlGoS6fwcb96E08HKe/hYTGVs70G0tZ5HXABkK71CbijH0LZQOIJq6UPqc4s0O3+z7FJ1dXrJ3B/nfn+cAfJpsTMHgRmpa7tr5ps/rC/Qj8EGW/x2UuES6bepyxRCZhAKuI40uL/2/6WHsW0TJm/GKnxMXP0rAjHbY5fCnAlFsqYZKt59/cMauQvD0nNaoXFpLFbOzQSt9nFEjD4ANGiGKnW36Gxj+kmRhhM7s2XagzmyQY6GgDASEfnWyBZnDKfH5T2HJueqaSNdxPK7lJqBbapj+WRHKa1hSVKuMfFJl7+q24SvTjJhDxrs+Al5Aq6U8rCwtQy5cIE3Ox4xi8TsztJP5Xq5aiMwfbRKLzzO+0bf9gipZeTV+ipphThVDPUGXVaohodmSvHXSY/+hM1G98Dmvoh1kofbIDKjij8nuWgx6T5vJrvA6KDVLq/REb8NRIQjOxgSwJFRr/8SjiR4yZtne8BJ+6d4NjAuxLvkRyQ== backup_base_ssh_pubkey
+backup_base_pubkey: "{{ global_backup_ssh_client_pubkey }}"
 backup_base_privkey: "{{ vault_backup_base_privkey }}"
 
 # TODO: move to using the backup_base stuff in the future
