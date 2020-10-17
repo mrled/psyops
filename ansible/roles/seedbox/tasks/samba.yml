@@ -1,0 +1,54 @@
+---
+- name: Install samba config
+  template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: testparm %s
+  notify: restart samba
+
+# TODO: check whether existing smbpasswd matches seedbox_user_samba_passwd_ro
+# and only update the password if necessary
+
+- name: Set seedbox samba account password (read only)
+  shell: >
+    printf '{{ seedbox_user_samba_passwd_ro }}\n{{ seedbox_user_samba_passwd_ro }}\n' |
+    smbpasswd -a "{{ seedbox_user }}"
+
+- name: Set SELinux security context for {{ seedbox_media_root }}
+  sefcontext:
+    target: "{{ seedbox_media_root }}(/.*)?"
+    setype: samba_share_t
+    #setype: unlabeled_t
+  #register: seedbox_samba_sefcontext_result
+
+# Takes a few secs on my media volume as for 20201017, but not very long
+- name: Apply new SELinux security context to {{ seedbox_media_root }}
+  command: restorecon -irv "{{ seedbox_media_root }}"
+  #when: seedbox_samba_sefcontext_result.changed
+
+- name: Start samba
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  with_items:
+    - smb
+    - nmb
+
+- name: Allow samba on firewall in default zone
+  firewalld:
+    service: samba
+    state: enabled
+    permanent: yes
+    immediate: yes
+
+- name: Allow samba on firewall in trusted zone
+  firewalld:
+    service: samba
+    state: enabled
+    permanent: yes
+    immediate: yes
+    zone: trusted

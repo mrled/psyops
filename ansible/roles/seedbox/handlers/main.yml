@@ -1,5 +1,4 @@
 ---
-
 - name: restart transmission
   service: name=transmission-daemon state=restarted
 
@@ -10,3 +9,10 @@
     compose:
       - "{{ seedbox_compose_path }}"
 
+- name: restart samba
+  service:
+    name: "{{ item }}"
+    state: restarted
+  with_items:
+    - smb
+    - nmb

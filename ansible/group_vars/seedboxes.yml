@@ -3,6 +3,7 @@
 
 seedbox_user: seedbox
 seedbox_group: seedbox
+seedbox_user_samba_passwd_ro: "{{ vault_seedbox_user_samba_passwd_ro }}"
 seedbox_timezone: "{{ global_timezone.zoneinfo_cityname }}"
 seedbox_media_root: /4tbmirror
 

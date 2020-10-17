@@ -4,6 +4,8 @@
     name:
       - python3-lxml
       - python3-pip
+      - samba
+      - samba-client
     state: latest
     update_cache: yes
 
@@ -38,6 +40,9 @@
     seedbox_gid: "{{ getent_passwd[seedbox_user][2] }}"
     seedbox_homedir: "{{ getent_passwd[seedbox_user][4] }}"
   tags: seedbox_docker_deploy
+
+- import_tasks: samba.yml
+  tags: samba
 
 - name: Create seedbox config dirs
   file:
