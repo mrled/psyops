@@ -25,6 +25,8 @@
   #register: seedbox_samba_sefcontext_result
 
 # Takes a few secs on my media volume as for 20201017, but not very long
+# This applies the changes the sefcontext task set previously
+# (... you'd really like to be able to do both of these in one task)
 - name: Apply new SELinux security context to {{ seedbox_media_root }}
   command: restorecon -irv "{{ seedbox_media_root }}"
   #when: seedbox_samba_sefcontext_result.changed
