@@ -62,6 +62,7 @@
     - "{{ seedbox_cops_config_dir }}"
     - "{{ seedbox_transmission_config_dir }}"
     - "{{ seedbox_tentacles_config_dir }}"
+    - "{{ seedbox_jackett_config_dir }}"
 
 - name: Make seedbox media subdirs
   file:
@@ -84,6 +85,7 @@
     - "{{ seedbox_usenet_incompletes_dir }}"
     - "{{ seedbox_usenet_watch_dir }}"
     - "{{ seedbox_torrent_downloads_dir }}"
+    - "{{ seedbox_jackett_blackhole_dir }}"
 
 - name: Install seedbox compose file
   template:

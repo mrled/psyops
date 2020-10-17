@@ -58,6 +58,7 @@ services:
       - "traefik.http.routers.seedbox-radarr.service=seedbox-radarr"
       - "traefik.http.services.seedbox-radarr.loadbalancer.server.port=7878"
       - "traefik.http.routers.seedbox-radarr.middlewares=seedbox-auth"
+
   sabnzb:
     image: "linuxserver/sabnzbd"
     environment:
@@ -115,6 +116,29 @@ services:
       - "traefik.http.routers.seedbox-hydra2.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-hydra2.service=seedbox-hydra2"
       - "traefik.http.services.seedbox-hydra2.loadbalancer.server.port=5076"
+
+  jackett:
+    image: linuxserver/jackett
+    container_name: jackett
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+      AUTO_UPDATE: "true" # recommended by jackett
+      #RUN_OPTS: <run options here> #optional
+    volumes:
+      - "{{ seedbox_jackett_config_dir }}:/config"
+      - "{{ seedbox_jackett_blackhole_dir }}:/downloads"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-jackett.rule=Host(`{{ seedbox_jackett_domain }}`)"
+      - "traefik.http.routers.seedbox-jackett.tls=true"
+      - "traefik.http.routers.seedbox-jackett.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-jackett.service=seedbox-jackett"
+      - "traefik.http.services.seedbox-jackett.loadbalancer.server.port=9117"
+      - "traefik.http.routers.seedbox-jackett.middlewares=seedbox-auth"
 
   cops:
     image: linuxserver/cops
