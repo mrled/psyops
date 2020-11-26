@@ -283,6 +283,10 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["haluth-wired.home.micahrl.com."]
+        - Name: petrolcider.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.158"]
 
         # Services
         - Name: syslog.home.micahrl.com.
