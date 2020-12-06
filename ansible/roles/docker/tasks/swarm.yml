@@ -23,6 +23,7 @@
     rule: allow
     port: "{{ item.port }}"
     proto: "{{ item.proto }}"
+  with_items: "{{ docker_swarm_ports }}"
   when: ansible_distribution == "Ubuntu"
 
 - name: Create standalone swarm

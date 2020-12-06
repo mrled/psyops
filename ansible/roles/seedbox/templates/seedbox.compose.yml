@@ -1,6 +1,8 @@
 version: "3.7"
 
 services:
+  #
+
   sonarr:
     image: "linuxserver/sonarr"
     environment:
@@ -20,6 +22,7 @@ services:
       - "traefik.http.routers.seedbox-sonarr.service=seedbox-sonarr"
       - "traefik.http.services.seedbox-sonarr.loadbalancer.server.port=8989"
       - "traefik.http.routers.seedbox-sonarr.middlewares=seedbox-auth"
+
   lidarr:
     image: "linuxserver/lidarr"
     environment:
@@ -39,6 +42,7 @@ services:
       - "traefik.http.routers.seedbox-lidarr.service=seedbox-lidarr"
       - "traefik.http.services.seedbox-lidarr.loadbalancer.server.port=8686"
       - "traefik.http.routers.seedbox-lidarr.middlewares=seedbox-auth"
+
   radarr:
     image: "linuxserver/radarr"
     environment:
@@ -178,6 +182,32 @@ services:
       - "traefik.http.routers.seedbox-tentacles.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-tentacles.service=seedbox-tentacles"
       - "traefik.http.services.seedbox-tentacles.loadbalancer.server.port=8096"
+
+  {#
+  plex:
+    image: plexinc/pms-docker
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+      VERSION: docker
+      UMASK_SET: "022"
+      #PLEX_CLAIM: #optional
+    volumes:
+      - "{{ seedbox_plex_config_dir }}:/config"
+      - "{{ seedbox_media_dir }}:/media"
+    devices:
+      - /dev/dri:/dev/dri
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-plex.rule=Host(`{{ seedbox_plex_domain }}`)"
+      - "traefik.http.routers.seedbox-plex.tls=true"
+      - "traefik.http.routers.seedbox-plex.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-plex.service=seedbox-plex"
+      - "traefik.http.services.seedbox-plex.loadbalancer.server.port=32400"
+  #}
 
   whoami:
     image: containous/whoami:latest

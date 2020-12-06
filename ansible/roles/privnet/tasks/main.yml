@@ -6,6 +6,7 @@
       - python3-pip
     state: latest
     update_cache: yes
+  when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Install pip packages
   pip:
