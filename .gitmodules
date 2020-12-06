@@ -4,9 +4,6 @@
 [submodule "submod/wintriallab"]
 	path = submod/wintriallab
 	url = git@github.com:mrled/wintriallab.git
-[submodule "docker/setup/toilet"]
-	path = docker/setup/toilet
-	url = https://github.com/cacalabs/toilet
 [submodule "submod/algo"]
 	path = submod/algo
 	url = git@github.com:mrled/algo.git

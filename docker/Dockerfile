@@ -125,6 +125,10 @@ RUN true \
         libffi-dev \
         openssl-dev \
     #
+    # Configure Ruby stuff
+    && apk add \
+        ruby \
+    #
     # Get AWS and Gandi command line tools
     && python3 -m pip install \
         awscli \
@@ -161,6 +165,17 @@ ARG psysetup=/setup
 
 # Copy files for system-level configuration & run setup that relies on them
 COPY ["setup", "$psysetup"]
+
+## Configure psyops-banner prereqs
+# Absolutely vital to our mission
+RUN true \
+    && apk add \
+        figlet figlet-doc \
+    && gem install \
+        lolcat \
+    && cp "$psysetup/figlet-fonts/"*.[ft]lf /usr/share/figlet/fonts \
+    && chmod 644 /usr/share/figlet/fonts/* \
+    && true
 
 RUN true \
     && "$psysetup/bin/get-gh-release" --outdir "$psysetup" BurntSushi/ripgrep '^ripgrep.*linux-musl.tar.gz$' \

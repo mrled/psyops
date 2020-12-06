@@ -1,6 +1,9 @@
 #!/bin/sh
 
-toilet --filter rainbow --font future PSYOPS
+echo ""
+psyops-banner -p heartbeat
+echo ""
+
 cat <<ENDHEADER
 $(ansi mode=bold)
 Welcome to $(ansi fg=magenta)P$(ansi fg=red)S$(ansi fg=yellow)Y$(ansi fg=green)O$(ansi fg=cyan)P$(ansi fg=blue)S$(ansi mode=reset)
