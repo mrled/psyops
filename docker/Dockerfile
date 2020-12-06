@@ -228,7 +228,7 @@ ARG gitemail="me@micahrl.com"
 
 # Run commands (as my user). Changes more often
 RUN true \
-    && echo "will cite" | parallel --citation || true \
+    && echo "will cite" | parallel --citation >/dev/null 2>&1 || true \
     && ln -sf "$PSYOPS_VOLUME/submod/dhd" "$HOME/.dhd" \
     && setup-psyops-dhd \
     && ln -sf "$PSYOPS_SSH_ED25519_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
