@@ -33,10 +33,10 @@
   roles:
     - { name: wireguard_server, tags: ["wireguard_server"] }
 
-- name: Deploy privnet infrastructure
-  hosts: privnet
-  roles:
-    - { name: privnet, tags: ["privnet"] }
+# - name: Deploy privnet infrastructure
+#   hosts: privnet
+#   roles:
+#     - { name: privnet, tags: ["privnet"] }
 
 - name: Deploy pullbackup
   hosts: pullbackup
