@@ -4,10 +4,10 @@ syncthing_personal_user: "mrled"
 syncthing_personal_default_folder_path: "/home/mrled/Syncthing"
 # This dict gets merged directly into the json config in a REST API
 syncthing_personal_add_devices:
-  - deviceID: EZRELCU-J4OQ2OQ-6B5VJJS-YJ434RT-OWYPR7M-43CRSI5-LDJIBNB-ZXTF4AL
-    name: Kalix
+  - deviceID: 4C3J2NX-I6WJOAI-44YUXMV-SMW6CRV-2773SNL-G6VD6AF-DQQDKZT-HQLCXAR
+    name: Chenoska
     addresses:
-      - kalix.home.micahrl.com
+      - chenoska.home.micahrl.com
     introducer: true
     autoAcceptFolders: true
   - deviceID: IE32Y43-T7YZTSL-HFYHQRX-IZCHQHD-CQXJ7OS-RXALIX3-QTP7OKS-DIPEJAF
