@@ -3,7 +3,7 @@
   import_tasks: fedora31_cgroupsv1.yml
   when: ansible_distribution == "Fedora" and ansible_distribution_major_version >= '31'
 
-- name: Install prereqs (Ubuntu)
+- name: Install prereqs (DEB)
   apt:
     name:
       - apt-transport-https
@@ -12,7 +12,7 @@
       - gnupg-agent
       - software-properties-common
     state: latest
-  when: ansible_distribution == "Ubuntu"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Add Docker repo (Fedora)
   yum_repository:
@@ -51,7 +51,24 @@
         state: present
   when: ansible_distribution == "Ubuntu"
 
-- name: Install packages (RH)
+- name: Add Docker repo (Debian)
+  block:
+    - name: Download GPG key
+      get_url:
+        url: https://download.docker.com/linux/{{ ansible_facts.lsb.id | lower }}/gpg
+        dest: /usr/local/docker-apt-gpg-key
+      register: docker_apt_gpg_key
+    - name: Import GPG key
+      shell: apt-key add /usr/local/docker-apt-gpg-key
+      when: docker_apt_gpg_key.changed
+    - name: Add Docker repo (Debian)
+      apt_repository:
+        repo: deb https://download.docker.com/linux/{{ ansible_facts.lsb.id | lower }}/ {{ ansible_facts.lsb.codename }} stable
+        filename: docker
+        state: present
+  when: ansible_distribution == "Debian"
+
+- name: Install packages (RPM)
   dnf:
     name:
       - containerd.io
@@ -62,7 +79,7 @@
     update_cache: yes
   when: ansible_distribution in ["Fedora", "CentOS"]
 
-- name: Install packages (Ubuntu)
+- name: Install packages (DEB)
   apt:
     name:
       - containerd.io
@@ -71,7 +88,7 @@
       - python3-pip
     state: latest
     update_cache: yes
-  when: ansible_distribution == "Ubuntu"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Install pip packages
   pip:
@@ -81,7 +98,7 @@
       - pyyaml
     state: latest
 
-- name: Fix CentOS firewalld
+- name: Fix CentOS 8.x firewalld
   block:
     - name: Enable masquerading
       firewalld:

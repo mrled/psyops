@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+sudo install -o "{{ ircbnc_znc_user }}" -g "{{ ircbnc_znc_group }}" -m 0600 \
+    "{{ ircbnc_acmedns_updater_certificate_dir }}/certificates/{{ ircbnc_acmedns_updater_domain }}.fullchain.pem" \
+    "{{ ircbnc_znc_homedir }}/znc-cfg/znc.pem"

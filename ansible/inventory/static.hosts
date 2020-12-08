@@ -32,6 +32,7 @@ kilotah.home.micahrl.com
 
 [acmednsupdaters]
 kilotah.home.micahrl.com
+rosemustard.micahrl.com
 
 [matrixservers]
 olcott.micahrl.com
@@ -57,3 +58,6 @@ cloudkey.home.micahrl.com
 
 [syncthing_personal]
 kilotah.home.micahrl.com
+
+[ircbnc]
+rosemustard.micahrl.com

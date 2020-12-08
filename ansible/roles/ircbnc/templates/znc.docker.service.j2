@@ -1,0 +1,15 @@
+[Unit]
+Description=ZNC
+Requires=docker.service
+After=docker.service
+
+[Service]
+User={{ ircbnc_znc_user }}
+Group={{ ircbnc_znc_group }}
+Restart=always
+ExecStartPre=/usr/bin/docker pull znc
+ExecStart=/usr/bin/docker run --rm --name %n --user {{ ircbnc_znc_uid}}:{{ ircbnc_znc_gid }} -p {{ ircbnc_znc_port }}:{{ ircbnc_znc_port }} -v {{ ircbnc_znc_homedir }}/znc-cfg:/znc-data znc
+ExecStop=/usr/bin/docker stop %n
+
+[Install]
+WantedBy=multi-user.target

@@ -26,6 +26,13 @@ global_aws_access_key: "{{ vault_aws_access_key }}"
 global_aws_secret_key: "{{ vault_aws_secret_key }}"
 global_aws_region: us-east-2
 
+# For ACME DNS challenges in the micahrl.com domain
+# Used in multiple roles
+global_origin_zone_updater_aws_access_key: "{{ vault_origin_zone_updater_aws_access_key }}"
+global_orogin_zone_updater_aws_secret_key: "{{ vault_origin_zone_updater_aws_secret_key }}"
+global_origin_zone_zone_id: Z3HVGWA7OSS1TK
+global_origin_zone_aws_region: "{{ global_aws_region }}"
+
 # For ACME DNS challenges in the home.micahrl.com domain
 # Used in multiple roles
 global_home_zone_updater_access_key: "{{ vault_home_zone_updater_access_key }}"

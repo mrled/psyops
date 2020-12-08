@@ -1,0 +1,4 @@
+---
+ircbnc_acmedns_updater_script_path: /usr/local/bin/acmedns_update_znc.sh
+ircbnc_znc_install_pem_script: /usr/local/bin/install_znccert.sh
+ircbnc_acmedns_updater_cron_file: ircbnc_acmedns_update

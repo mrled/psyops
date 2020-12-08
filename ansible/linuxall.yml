@@ -66,3 +66,8 @@
   hosts: plexservers
   roles:
     - { name: plexserver, tags: ["plexserver"] }
+
+- name: Deploy IRC bounder
+  hosts: ircbnc
+  roles:
+    - { name: ircbnc, tags: ["ircbnc"] }

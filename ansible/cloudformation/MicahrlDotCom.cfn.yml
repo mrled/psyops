@@ -114,15 +114,15 @@ Resources:
           TTL: 300
           ResourceRecords: ["noradia.micahrl.com."]
 
-        # Architect
-        - Name: architect.micahrl.com.
+        # IRC
+        - Name: rosemustard.micahrl.com.
           Type: A
           TTL: 300
-          ResourceRecords: ["173.255.196.96"]
-        - Name: architect.micahrl.com.
+          ResourceRecords: ["159.89.230.13"]
+        - Name: rosemustard.micahrl.com.
           Type: AAAA
           TTL: 300
-          ResourceRecords: ["2600:3c00::f03c:91ff:fea7:c3ac"]
+          ResourceRecords: ["2604:a880:400:d0::1a3c:7001"]
 
         # Hosted email with fastmail.com
         - Name: micahrl.com.
@@ -332,6 +332,28 @@ Resources:
           TTL: 60
           ResourceRecords: ["tagasaw.home.micahrl.com."]
 
+  # A new group with permission to modify records in the OriginZone
+  # For use with Let's Encrypt / ACME
+  OriginZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+      - PolicyName: AllowUpdatingOriginZonePolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - route53:GetChange
+            - route53:ListHostedZonesByName
+            Resource: "*"
+          - Effect: Allow
+            Action:
+            - route53:ChangeResourceRecordSets
+            - route53:GetHostedZone
+            - route53:ListResourceRecordSets
+            Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "OriginZone"}]]}
+
   # A new group with permission to modify records in the BackchannelZone
   # Required permissions: https://github.com/xenolf/lego#aws-route-53
   BackchannelZoneUpdaterGroup:
@@ -380,6 +402,9 @@ Outputs:
   OriginZoneId:
     Description: The ID of the micahrl.com. root zone
     Value: !Ref OriginZone
+  OriginZoneUpdaterGroupArn:
+    Description: The ARN for a group with permission to modify records in the origin zone
+    Value: !GetAtt OriginZoneUpdaterGroup.Arn
   BackchannelZoneId:
     Description: The ID of the backchannel.micahrl.com. zone
     Value: !Ref BackchannelZone
