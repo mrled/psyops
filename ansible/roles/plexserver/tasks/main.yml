@@ -17,14 +17,17 @@
     line: 127.0.0.2 {{ inventory_hostname_short }} {{ inventory_hostname }} {{ plexserver_domain_name }}
   notify: Restart plex service
 
-- block:
-    - name: Install the Plex RPM from existing yum repo
-      dnf: name=plexmediaserver state=latest
-      notify: Restart plex service
-  rescue:
-    - name: Install the Plex RPM from URL
-      dnf: name={{ plexserver_rpm_url }} state=latest
-      notify: Restart plex service
+# - block:
+#     - name: Install the Plex RPM from existing yum repo
+#       dnf: name=plexmediaserver state=latest
+#       notify: Restart plex service
+#   rescue:
+#     - name: Install the Plex RPM from URL
+#       dnf: name={{ plexserver_rpm_url }} state=latest
+#       notify: Restart plex service
+- name: Install the Plex RPM from URL
+  dnf: name={{ plexserver_rpm_url }} state=latest
+  notify: Restart plex service
 
 # Manage the plex user and homedir situation
 # We have a plexserver_seedbox_username and plexserver_seedbox_groupname
