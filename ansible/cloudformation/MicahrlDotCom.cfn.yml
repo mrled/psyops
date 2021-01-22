@@ -67,6 +67,10 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["matrix.micahrl.com."]
+        - Name: element.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["matrix.micahrl.com."]
         - Name: jitsi.micahrl.com.
           Type: CNAME
           TTL: 300
