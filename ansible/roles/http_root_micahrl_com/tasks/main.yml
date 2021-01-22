@@ -63,7 +63,7 @@
 # Running certbot here does two things for us:
 # 1) If the cert doen't exist or is expired, it'll get us a valid cert
 # 2) It'll add RewriteCond entries to the port 80 vhost to redirect to HTTPS
-- name: Run certbox once
+- name: Run certbot once
   shell: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
 
 - name: Redirect / to real webserver
@@ -73,9 +73,17 @@
     insertbefore: '^\<\/VirtualHost\>$'
   notify: restart httpd
 
+- name: Install redirects file
+  template:
+    src: redirects.conf.j2
+    dest: /etc/httpd/conf.d/redirects.conf
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Cron certbot
   cron:
-    name: certbot_{{ http_root_micahrl_com_certname }} 
+    name: certbot_{{ http_root_micahrl_com_certname }}
     cron_file: certbot_{{ http_root_micahrl_com_certname }}
     job: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
     user: root

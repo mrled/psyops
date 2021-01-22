@@ -5,5 +5,14 @@ http_root_micahrl_com_domain_list:
   - nullyork.micahrl.com
   - micahrl.com
   - www.micahrl.com
+  - toys.micahrl.com
 http_root_micahrl_com_redirect_real_webserver: https://me.micahrl.com/
 http_root_micahrl_com_matrix_fqdn: matrix.micahrl.com
+
+# Note that redirects work for ALL domains
+# So I want to redirect toys.micahrl.com/biblemunger => biblemunger.micahrl.com
+# I'll also be redirecting nullyork.micahrl.com/biblemunger and every other
+# domain in the list above to biblemunger.micahrl.com
+http_root_micahrl_com_redirect_matches:
+  - old: ^/biblemunger/(.*)$
+    new: https://biblemunger.micahrl.com$1
