@@ -17,6 +17,7 @@
         KeyPairName: psyops_rsa
         InstanceType: t2.micro
         InstanceAmiId: ami-0e01ce4ee18447327 # Amazon Linux 2
+  tags: cloudformation
 
 # Note: I have no automated import of the SSH host key generated in the EC2 deployment phase
 # So you'll have to trust that one manually before running this play
@@ -24,3 +25,4 @@
   hosts: http_root_micahrl_com
   roles:
     - http_root_micahrl_com
+  tags: localrole
