@@ -108,15 +108,13 @@ Resources:
           TTL: 300
           ResourceRecords: ["apsylania.micahrl.com."]
 
-        # Old prod server
-        - Name: noradia.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["162.243.35.116"]
+        # Old server that hosted biblemunger
+        # Biblemunger app is now hosted on Vercel with the canonical url biblemunger.micahrl.com
+        # toys.micahrl.com exists to redirect toys.micahrl.com/biblemunger/* -> biblemunger.micahrl.com/*
         - Name: toys.micahrl.com.
           Type: CNAME
           TTL: 300
-          ResourceRecords: ["noradia.micahrl.com."]
+          ResourceRecords: ["nullyork.micahrl.com."]
 
         # IRC
         - Name: rosemustard.micahrl.com.
@@ -174,6 +172,18 @@ Resources:
             - ns2.no-ip.com.
             - ns3.no-ip.com.
             - ns4.no-ip.com.
+
+        - Name: cistercian.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - cname.vercel-dns.com
+
+        - Name: biblemunger.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - cname.vercel-dns.com
 
   # Backchannel zone - for VPN clients
   BackchannelZone:
