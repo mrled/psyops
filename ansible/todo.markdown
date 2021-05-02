@@ -3,6 +3,11 @@
 Outstanding items
 
 
+## Add Chenoska startup tasks to ansible
+
+* Task to fix Syncthing inotify thing: https://forum.syncthing.net/t/setting-inotify-limit-permanently-on-synology-diskstation/12221/4
+* Task to call capthook to request the cert check
+
 ## Use some other domain for seedbox
 
 Currently I'm using e.g. seedbox.home.micahrl.com/sabnzbd.
