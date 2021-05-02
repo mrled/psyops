@@ -1,7 +1,7 @@
 ---
-plexserver_version: 1.21.1.3759-7e23ef53c
+plexserver_version: 1.22.2.4264-b275c4330
 plexserver_arch: x86_64
-plexserver_rpm_checksum: sha1:42524204d4a6b65447e779f0c1edb110d4e5d8ce
+plexserver_rpm_checksum: sha1:21d19bd8690ebe6add7f6e75281131d330d311b3
 
 plexserver_creds_path: /etc/plex-share-creds
 plexserver_mountpoint: /mnt/plexmedia
