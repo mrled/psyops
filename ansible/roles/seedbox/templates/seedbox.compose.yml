@@ -123,7 +123,6 @@ services:
 
   jackett:
     image: linuxserver/jackett
-    container_name: jackett
     environment:
       PUID: "{{ seedbox_uid }}"
       PGID: "{{ seedbox_gid }}"
@@ -152,7 +151,7 @@ services:
       TZ: "{{ seedbox_timezone }}"
     volumes:
       - "{{ seedbox_cops_config_dir }}:/config"
-      - "{{ seedbox_media.books }}:/books"
+      - "{{ seedbox_media.books }}/Calibre:/books"
     networks:
       - dernetverk
     labels:
