@@ -20,7 +20,7 @@ if sys.version_info < MIN_PYTHON:
 
 SCRIPTPATH = os.path.realpath(__file__)
 SCRIPTDIR = os.path.dirname(SCRIPTPATH)
-DOCKERDIR = os.path.join(SCRIPTDIR, 'docker')
+DOCKERDIR = os.path.join(SCRIPTDIR, "docker")
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
@@ -35,13 +35,14 @@ def debugexchandler(exc_type, exc_value, exc_traceback):
     If sys.excepthook is set to this function, automatically enter the debugger when encountering
     an uncaught exception
     """
-    if hasattr(sys, 'ps1') or not sys.stderr.isatty():
+    if hasattr(sys, "ps1") or not sys.stderr.isatty():
         # we are in interactive mode or we don't have a tty-like
         # device, so we call the default hook
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
     else:
         import pdb
         import traceback
+
         # we are NOT in interactive mode, print the exception...
         traceback.print_exception(exc_type, exc_value, exc_traceback)
         print()
@@ -50,48 +51,63 @@ def debugexchandler(exc_type, exc_value, exc_traceback):
 
 
 def dockerrun(
-        imagename, imagetag, psyopsvol, tmpfsmount,
-        runargs=None, containerargs=None,
-        # Only used when running from Linux
-        linuxuid=None, linuxgid=None,
-        # Note: default tmpfs options are read only and noexec
-        tmpfsopts="exec,mode=1777", hostname="PSYOPS"):
+    imagename,
+    imagetag,
+    psyopsvol,
+    tmpfsmount,
+    runargs=None,
+    containerargs=None,
+    # Only used when running from Linux
+    linuxuid=None,
+    linuxgid=None,
+    # Note: default tmpfs options are read only and noexec
+    tmpfsopts="exec,mode=1777",
+    hostname="PSYOPS",
+):
     """Run the Docker container"""
 
     # On Windows, we need to set the MSYS_NO_PATHCONV flag to 1, or else volume
     # mounting fails with weird errors
     # https://lmonkiewicz.com/programming/get-noticed-2017/docker-problems-on-windows/
     env = os.environ.copy()
-    if sys.platform == 'win32':
-        env['MSYS_NO_PATHCONV'] = "1"
+    if sys.platform == "win32":
+        env["MSYS_NO_PATHCONV"] = "1"
 
-    if sys.platform == 'darwin':
+    if sys.platform == "darwin":
         # See also:
         # - https://docs.docker.com/docker-for-mac/osxfs-caching/
         # - https://www.docker.com/blog/user-guided-caching-in-docker-for-mac/
         volperms = "cached"
     else:
         volperms = "rw"
-    volume = f'{SCRIPTDIR}:{psyopsvol}:{volperms}'
+
+    volume = f"{SCRIPTDIR}:{psyopsvol}:{volperms}"
 
     runcli = [
-        'docker', 'run',
-        '--rm',
-        '--interactive',
-        '--tty',
-        '--volume', volume,
-        '--tmpfs', f'{tmpfsmount}:{tmpfsopts}',
-        '--hostname', hostname]
+        "docker",
+        "run",
+        "--rm",
+        "--interactive",
+        "--tty",
+        "--volume",
+        volume,
+        "--tmpfs",
+        f"{tmpfsmount}:{tmpfsopts}",
+        "--hostname",
+        hostname,
+    ]
 
     if sys.platform.startswith("linux"):
         runcli += [
-            "-e", "uid={}".format(linuxuid or os.geteuid()),
-            "-e", "gid={}".format(linuxgid or os.getegid()),
+            "-e",
+            "uid={}".format(linuxuid or os.geteuid()),
+            "-e",
+            "gid={}".format(linuxgid or os.getegid()),
         ]
 
     if runargs:
         runcli += runargs.split(" ")
-    runcli += [f'{imagename}:{imagetag}']
+    runcli += [f"{imagename}:{imagetag}"]
     if containerargs:
         runcli += containerargs.split(" ")
     logger.info(f"Running an image with: {' '.join(runcli)}")
@@ -107,15 +123,14 @@ def dockerrun(
 
 def dockerbuild(imagename, imagetag, buildargs=None):
     """Build the Docker container"""
-    buildcli = [
-        'docker', 'build', DOCKERDIR, '--tag', f'{imagename}:{imagetag}']
+    buildcli = ["docker", "build", DOCKERDIR, "--tag", f"{imagename}:{imagetag}"]
     if buildargs:
         buildcli += buildargs.split(" ")
     logger.info(f"Building an image with:\n{buildcli}")
     subprocess.check_call(buildcli)
 
 
-class GitRepoMetadata():
+class GitRepoMetadata:
     """Metadata of a checked-out Git repository"""
 
     _submodules = None
@@ -125,7 +140,7 @@ class GitRepoMetadata():
         if dotgitdir:
             self.dotgitdir = dotgitdir
         else:
-            self.dotgitdir = os.path.join(checkoutdir, '.git')
+            self.dotgitdir = os.path.join(checkoutdir, ".git")
 
     @property
     def submodules(self):
@@ -138,12 +153,11 @@ class GitRepoMetadata():
         if self._submodules is None:
             modconfig = configparser.ConfigParser()
             # This will return an empty config object if the file doesn't exist
-            modconfig.read(os.path.join(self.checkoutdir, '.gitmodules'))
+            modconfig.read(os.path.join(self.checkoutdir, ".gitmodules"))
             self._submodules = []
             for section in modconfig.sections():
-                copath = modconfig[section]['path']
-                dotgit = os.path.join(
-                    self.checkoutdir, '.git', 'modules', copath)
+                copath = modconfig[section]["path"]
+                dotgit = os.path.join(self.checkoutdir, ".git", "modules", copath)
                 self._submodules += [GitRepoMetadata(copath, dotgit)]
 
         return self._submodules
@@ -168,22 +182,21 @@ class GitRepoMetadata():
 
         logger.info(f"Fixing CRLF for module at {self.checkoutdir}")
 
-        status = subprocess.check_output(
-            ['git', 'status'], cwd=self.checkoutdir)
-        if 'nothing to commit, working tree clean' not in str(status):
+        status = subprocess.check_output(["git", "status"], cwd=self.checkoutdir)
+        if "nothing to commit, working tree clean" not in str(status):
             msg = f"Uncommitted changes in {self.checkoutdir}"
             logger.warning(msg)
             raise Exception(msg)
 
         # First, change the setting
         subprocess.check_call(
-            ['git', 'config', 'core.autocrlf', 'off'], cwd=self.checkoutdir)
+            ["git", "config", "core.autocrlf", "off"], cwd=self.checkoutdir
+        )
 
         # Now remove the existing index and reset the repo, so that it re-
         # checks out each file in the repository without autocrlf
-        os.remove(resolvepath(os.path.join(self.dotgitdir, 'index')))
-        subprocess.check_call(
-            ['git', 'reset', '--hard', 'HEAD'], cwd=self.checkoutdir)
+        os.remove(resolvepath(os.path.join(self.dotgitdir, "index")))
+        subprocess.check_call(["git", "reset", "--hard", "HEAD"], cwd=self.checkoutdir)
 
     def allfixcrlf(self):
         """Fix autocrlf in a repo and all its submodules
@@ -207,17 +220,15 @@ class GitRepoMetadata():
         missing = []
         for submodule in self.submodules:
             submodpath = os.path.join(SCRIPTDIR, submodule.checkoutdir)
-            if not os.path.exists(os.path.join(submodpath, '.git')):
-                logger.warning(
-                    f"Submodule at {submodule.checkoutdir} not checked out")
+            if not os.path.exists(os.path.join(submodpath, ".git")):
+                logger.warning(f"Submodule at {submodule.checkoutdir} not checked out")
                 missing += [submodpath]
         if missing and throw:
-            raise Exception(
-                f"These submodules are not properly checked out: {missing}")
+            raise Exception(f"These submodules are not properly checked out: {missing}")
         return missing == []
 
 
-class PsyopsArgumentCollection():
+class PsyopsArgumentCollection:
     """PSYOPS argument collection
 
     A container for the defined arguments.
@@ -226,7 +237,8 @@ class PsyopsArgumentCollection():
 
     def __init__(self, *args, **kwargs):
 
-        description = textwrap.dedent("""
+        description = textwrap.dedent(
+            """
             Wrap Docker for PSYOPS
 
             Basically, Docker can be a little precious sometimes.
@@ -237,79 +249,117 @@ class PsyopsArgumentCollection():
             - Volumes in Windows wont work unless $env:MSYS_NO_PATHCONV is set
             - Windows doesn't have &&, so you can't do 'docker build && docker run'
 
-            (This script is not intended to wrap all of Docker's functionality)""")
-        epilog = textwrap.dedent("""
+            (This script is not intended to wrap all of Docker's functionality)"""
+        )
+        epilog = textwrap.dedent(
+            """
             Note about the passthrough arguments:
 
             In the (likely) case that you want to pass arguments that begin with a
             dash, you may need to use an equals sign between the passthru argument
             and its value. For instance, '--build-passthru="--no-cache"'
-            """)
+            """
+        )
 
         self.parser = argparse.ArgumentParser(
-            description=description, epilog=epilog, add_help=True,
-            formatter_class=argparse.RawDescriptionHelpFormatter)
+            description=description,
+            epilog=epilog,
+            add_help=True,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
 
         self.parser.add_argument(
-            "--verbose", "-v", action="store_true", help="Print verbose messages")
+            "--verbose", "-v", action="store_true", help="Print verbose messages"
+        )
         self.parser.add_argument(
-            "--debug", "-d", action="store_true",
-            help="Invoke debugger on exceptions. (Implies --verbose.)")
+            "--debug",
+            "-d",
+            action="store_true",
+            help="Invoke debugger on exceptions. (Implies --verbose.)",
+        )
 
         self.dockeropts = argparse.ArgumentParser(add_help=False)
         self.dockeropts.add_argument(
-            "imagename", nargs='?', default="psyops",
-            help="The name of the Docker image to build. Defaults to 'psyops'.")
+            "imagename",
+            nargs="?",
+            default="psyops",
+            help="The name of the Docker image to build. Defaults to 'psyops'.",
+        )
         self.dockeropts.add_argument(
-            "imagetag", nargs='?', default="wip",
-            help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.")
+            "imagetag",
+            nargs="?",
+            default="wip",
+            help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.",
+        )
         self.dockeropts.add_argument(
-            "--sudo", action="store_true",
+            "--sudo",
+            action="store_true",
             help=(
                 "Pass the enablesudo=1 arg during build, and use the tag 'sudo' rather than the "
-                "default when building or running. (Overrides any other tag set.)"))
+                "default when building or running. (Overrides any other tag set.)"
+            ),
+        )
 
         self.dockerbuildopts = argparse.ArgumentParser(add_help=False)
         self.dockerbuildopts.add_argument(
-            '--build-passthru', dest='buildargs', default="",
-            help="Pass these additional arguments to 'docker build'")
+            "--build-passthru",
+            dest="buildargs",
+            default="",
+            help="Pass these additional arguments to 'docker build'",
+        )
 
         self.dockerrunopts = argparse.ArgumentParser(add_help=False)
         self.dockerrunopts.add_argument(
-            '--run-passthru', dest='runargs',
-            help="Pass these additional arguments to 'docker run'")
+            "--run-passthru",
+            dest="runargs",
+            help="Pass these additional arguments to 'docker run'",
+        )
         self.dockerrunopts.add_argument(
-            '--container-passthru', dest='containerargs',
-            help="Pass these additional arguments to the container itself")
+            "--container-passthru",
+            dest="containerargs",
+            help="Pass these additional arguments to the container itself",
+        )
         self.dockerrunopts.add_argument(
-            '--psyops-volume', dest='psyopsvol', default="/psyops",
-            help="Mount point for the psyops volume")
+            "--psyops-volume",
+            dest="psyopsvol",
+            default="/psyops",
+            help="Mount point for the psyops volume",
+        )
         self.dockerrunopts.add_argument(
-            '--secrets-tmpfs', dest='secretstmpfs', default="/secrets",
-            help="Mount point for the secrets tmpfs filesystem")
+            "--secrets-tmpfs",
+            dest="secretstmpfs",
+            default="/secrets",
+            help="Mount point for the secrets tmpfs filesystem",
+        )
 
         self.utilopts = argparse.ArgumentParser(add_help=False)
         self.utilsubparsers = self.utilopts.add_subparsers(dest="utilaction")
         self.utilsubparsers.required = True
+        self.utilsubparsers.add_parser("enumsubmod", help="List all Git submodules")
         self.utilsubparsers.add_parser(
-            'enumsubmod', help='List all Git submodules')
-        self.utilsubparsers.add_parser(
-            'fixcrlf', help='Disasble core.autocrlf on parent repo and all submodules')
+            "fixcrlf", help="Disasble core.autocrlf on parent repo and all submodules"
+        )
 
         self.subparsers = self.parser.add_subparsers(dest="action")
         self.subparsers.required = True
         self.subparsers.add_parser(
-            'build', parents=[self.dockeropts, self.dockerbuildopts],
-            help='Build the Docker image')
+            "build",
+            parents=[self.dockeropts, self.dockerbuildopts],
+            help="Build the Docker image",
+        )
         self.subparsers.add_parser(
-            'run', parents=[self.dockeropts, self.dockerrunopts],
-            help='Run the Docker image')
+            "run",
+            parents=[self.dockeropts, self.dockerrunopts],
+            help="Run the Docker image",
+        )
         self.subparsers.add_parser(
-            'buildrun', parents=[self.dockeropts, self.dockerbuildopts, self.dockerrunopts],
-            help='Build the Docker image, then immediately run it')
+            "buildrun",
+            parents=[self.dockeropts, self.dockerbuildopts, self.dockerrunopts],
+            help="Build the Docker image, then immediately run it",
+        )
         self.subparsers.add_parser(
-            'util', parents=[self.utilopts],
-            help='Utility functions')
+            "util", parents=[self.utilopts], help="Utility functions"
+        )
 
         self.parsed = self.parser.parse_args(*args, **kwargs)
 
@@ -329,8 +379,8 @@ def main(*args, **kwargs):  # pylint: disable=W0613
 
     parentrepo = GitRepoMetadata(SCRIPTDIR)
 
-    if 'sudo' in parsed and parsed.sudo:
-        if 'buildargs' in parsed:
+    if "sudo" in parsed and parsed.sudo:
+        if "buildargs" in parsed:
             parsed.buildargs += "--build-arg enablesudo=1"
         parsed.imagetag = "sudo"
 
@@ -340,21 +390,29 @@ def main(*args, **kwargs):  # pylint: disable=W0613
     elif parsed.action == "run":
         parentrepo.testcheckout(throw=True)
         dockerrun(
-            parsed.imagename, parsed.imagetag, parsed.psyopsvol,
-            parsed.secretstmpfs, runargs=parsed.runargs,
-            containerargs=parsed.containerargs)
+            parsed.imagename,
+            parsed.imagetag,
+            parsed.psyopsvol,
+            parsed.secretstmpfs,
+            runargs=parsed.runargs,
+            containerargs=parsed.containerargs,
+        )
     elif parsed.action == "buildrun":
         parentrepo.testcheckout(throw=True)
         dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
         dockerrun(
-            parsed.imagename, parsed.imagetag, parsed.psyopsvol,
-            parsed.secretstmpfs, runargs=parsed.runargs,
-            containerargs=parsed.containerargs)
+            parsed.imagename,
+            parsed.imagetag,
+            parsed.psyopsvol,
+            parsed.secretstmpfs,
+            runargs=parsed.runargs,
+            containerargs=parsed.containerargs,
+        )
     elif parsed.action == "util":
-        if parsed.utilaction == 'enumsubmod':
+        if parsed.utilaction == "enumsubmod":
             for submod in parentrepo.submodules:
                 print(submod.checkoutdir)
-        elif parsed.utilaction == 'fixcrlf':
+        elif parsed.utilaction == "fixcrlf":
             parentrepo.allfixcrlf()
         else:
             print(f"Unknown utilaction: '{parsed.utilaction}'")
@@ -366,5 +424,5 @@ def main(*args, **kwargs):  # pylint: disable=W0613
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(*sys.argv))
