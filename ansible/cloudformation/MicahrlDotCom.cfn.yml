@@ -185,6 +185,13 @@ Resources:
           ResourceRecords:
             - cname.vercel-dns.com
 
+        - Name: ogimage.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - cname.vercel-dns.com
+
+
   # Backchannel zone - for VPN clients
   BackchannelZone:
     Type: "AWS::Route53::HostedZone"
