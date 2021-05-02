@@ -101,6 +101,7 @@ RUN true \
         sudo sudo-doc \
         tmux tmux-doc \
         tzdata tzdata-doc \
+        wireguard-lts wireguard-tools wireguard-tools-doc wireguard-tools-wg \
         zip zip-doc \
     #
     && update-ca-certificates --fresh \
@@ -124,6 +125,9 @@ RUN true \
         # for (at least) PyNACL
         libffi-dev \
         openssl-dev \
+        # The cryptography package relies on rust to build;
+        # it is much easier to get it from the apk repo than build it with pip.
+        py3-cryptography \
     #
     # Configure Ruby stuff
     && apk add \

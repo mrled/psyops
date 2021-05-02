@@ -73,13 +73,13 @@ def dockerrun(
     if sys.platform == "win32":
         env["MSYS_NO_PATHCONV"] = "1"
 
-    if sys.platform == "darwin":
-        # See also:
-        # - https://docs.docker.com/docker-for-mac/osxfs-caching/
-        # - https://www.docker.com/blog/user-guided-caching-in-docker-for-mac/
-        volperms = "cached"
-    else:
-        volperms = "rw"
+    volperms = "rw"
+    # if sys.platform == "darwin":
+    #     # See also:
+    #     # - https://docs.docker.com/docker-for-mac/osxfs-caching/
+    #     # - https://www.docker.com/blog/user-guided-caching-in-docker-for-mac/
+    #     # This is only for legacy osxfs
+    #     volperms = "cached"
 
     volume = f"{SCRIPTDIR}:{psyopsvol}:{volperms}"
 
