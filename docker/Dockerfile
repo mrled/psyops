@@ -92,7 +92,9 @@ RUN true \
         openssh-client openssh-doc \
         openssl openssl-doc \
         parallel parallel-doc \
+        pwgen pwgen-doc \
         python3 python3-doc \
+        rsync rsync-doc \
         # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
         shadow shadow-doc \
         strace strace-doc \
