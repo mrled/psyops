@@ -66,10 +66,14 @@ def dockerrun(
 ):
     """Run the Docker container"""
 
+    env = os.environ.copy()
+
+    # For fuck's sake
+    env["DOCKER_SCAN_SUGGEST"] = "false"
+
     # On Windows, we need to set the MSYS_NO_PATHCONV flag to 1, or else volume
     # mounting fails with weird errors
     # https://lmonkiewicz.com/programming/get-noticed-2017/docker-problems-on-windows/
-    env = os.environ.copy()
     if sys.platform == "win32":
         env["MSYS_NO_PATHCONV"] = "1"
 
@@ -123,11 +127,19 @@ def dockerrun(
 
 def dockerbuild(imagename, imagetag, buildargs=None):
     """Build the Docker container"""
+
+    env = os.environ.copy()
+
+    # For fuck's sake
+    env["DOCKER_SCAN_SUGGEST"] = "false"
+
     buildcli = ["docker", "build", DOCKERDIR, "--tag", f"{imagename}:{imagetag}"]
     if buildargs:
         buildcli += buildargs.split(" ")
+
     logger.info(f"Building an image with:\n{buildcli}")
-    subprocess.check_call(buildcli)
+
+    subprocess.check_call(buildcli, env=env)
 
 
 class GitRepoMetadata:
