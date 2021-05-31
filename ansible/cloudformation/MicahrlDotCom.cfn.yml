@@ -55,14 +55,14 @@ Resources:
           ResourceRecords: ["clever-kepler-458884.netlify.com."]
 
         # Matrix server
-        - Name: olcott.micahrl.com.
+        - Name: remington.micahrl.com.
           Type: A
           TTL: 300
-          ResourceRecords: ["3.22.149.171"]
+          ResourceRecords: ["45.55.45.47"]
         - Name: matrix.micahrl.com.
           Type: CNAME
           TTL: 300
-          ResourceRecords: ["olcott.micahrl.com."]
+          ResourceRecords: ["remington.micahrl.com."]
         - Name: riot.micahrl.com.
           Type: CNAME
           TTL: 300
@@ -76,6 +76,14 @@ Resources:
           TTL: 300
           ResourceRecords: ["matrix.micahrl.com."]
         - Name: dimension.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["matrix.micahrl.com."]
+        - Name: stats.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["matrix.micahrl.com."]
+        - Name: goneb.micahrl.com.
           Type: CNAME
           TTL: 300
           ResourceRecords: ["matrix.micahrl.com."]
