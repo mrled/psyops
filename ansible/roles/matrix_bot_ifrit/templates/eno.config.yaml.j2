@@ -1,0 +1,48 @@
+# eno config file for ifrit
+
+# The string to prefix messages with to talk to the bot in group chats
+# Changed from original "!c" to "1z! because on cell phone "!c" seems too
+# complicated.
+command_prefix: "{{ matrix_bot_ifrit_command_prefix }}"
+
+matrix:
+  user_id: "{{ matrix_bot_ifrit_mxid }}"
+  user_password: "{{ matrix_bot_ifrit_matrix_password }}"
+  homeserver_url: "{{ matrix_bot_ifrit_homeserver_url }}"
+
+  # The device ID that is **non pre-existing** device
+  # If this device ID already exists, messages will be dropped
+  # silently in encrypted rooms
+  device_id: "{{ matrix_bot_ifrit_device_id }}"
+
+  device_name: "{{ matrix_bot_ifrit_device_name }}"
+
+  # Should the bot trust all the devices of its own Matrix account?
+  # Default: false
+  # If false, nothing is done. After login, no device will be automatically
+  # trusted.
+  # If true, once at startup, after logging in, the bot device will
+  # automatically establish trust to all other devices of the bot account.
+  trust_own_devices: true
+
+  # Do you want to change the device_name of the already existing bot?
+  # Default: false
+  # If false, nothing is done. After creation, device_name will be ignored.
+  # If true, device_name of bot will be changed to value given in device_name.
+  change_device_name: true
+  # encrytion is enabled by default
+
+storage:
+  database_filepath: "{{ matrix_bot_ifrit_eno_clone_path }}/bot.db"
+  store_filepath: "{{ matrix_bot_ifrit_eno_clone_path }}/store"
+  command_dict_filepath: "{{ matrix_bot_ifrit_eno_clone_path }}/commands.yaml"
+
+logging:
+  # Allowed levels are 'INFO', 'WARNING', 'ERROR', 'DEBUG'
+  # where DEBUG is most verbose
+  level: DEBUG
+  console_logging:
+    enabled: true
+  file_loggign:
+    enabled: false
+    filepath: /dev/null

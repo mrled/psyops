@@ -1,0 +1,6 @@
+---
+
+matrix_bot_ifrit_system_user: ifrit
+matrix_bot_ifrit_system_group: ifrit
+matrix_bot_ifrit_dir: "{{ matrix_bot_ifrit_home }}/ifrit"
+matrix_bot_ifrit_venv_path: "{{ matrix_bot_ifrit_dir }}/venv"

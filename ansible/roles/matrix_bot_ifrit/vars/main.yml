@@ -1,0 +1,4 @@
+---
+
+matrix_bot_ifrit_venv_path: "{{ matrix_bot_ifrit_dir }}/venv"
+matrix_bot_ifrit_eno_clone_path: "{{ matrix_bot_ifrit_dir }}/matrix-eno-bot"

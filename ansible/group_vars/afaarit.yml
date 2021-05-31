@@ -1,0 +1,8 @@
+---
+
+matrix_bot_ifrit_mxid: "@ifrit:micahrl.com"
+matrix_bot_ifrit_matrix_password: "{{ vault_matrix_bot_ifrit_matrix_password }}"
+matrix_bot_ifrit_homeserver_url: "https://matrix.micahrl.com"
+matrix_bot_ifrit_device_id: NOTALAMP
+matrix_bot_ifrit_device_name: Not a lamp
+matrix_bot_ifrit_command_prefix: "wish"
