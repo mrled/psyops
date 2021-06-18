@@ -1,0 +1,6 @@
+---
+
+- name: Deploy Plex
+  hosts: plexservers
+  roles:
+    - { name: plexserver, tags: ["plexserver"] }

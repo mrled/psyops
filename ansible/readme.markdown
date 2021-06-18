@@ -54,6 +54,12 @@ and only give credentials that allow updating one zone to the updater.
 - Save the access/secret keys from the new IAM user into the vault
 - Then reference the vault access/secret keys as well as the created zone ID when deploying your ACME updater
 
+## Playbooks
+
+Playbooks are prefixed with a single underscore (`_`), which keeps them nicely organized in my list.
+
+Playbooks that call other playbooks are sometimes useful too; these are prefixed with a double underscore (`__`).
+
 ## TODO
 
 - Clear out the fucking firewalld config on every god damned ansible run

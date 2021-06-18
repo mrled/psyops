@@ -1,0 +1,6 @@
+---
+
+- name: Configure base
+  hosts: all
+  roles:
+    - { name: base, tags: ["base"] }

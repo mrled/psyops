@@ -1,0 +1,9 @@
+---
+
+- name: Deploy ACME DNS base
+  hosts: acmednsupdaters
+  roles:
+    - { name: acmedns_base, tags: ["acmedns_base"] }
+    - { name: acmedns_syno_updater, tags: ["acmedns_syno_updater"] }
+    # acmedns_cloudkey_updater is broken :(
+    - { name: acmedns_cloudkey_updater, tags: ["acmedns_cloudkey_updater"] }

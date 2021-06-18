@@ -1,0 +1,6 @@
+---
+
+- name: Deploy privnet infrastructure
+  hosts: privnet
+  roles:
+    - { name: privnet, tags: ["privnet"] }

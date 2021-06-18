@@ -1,0 +1,6 @@
+---
+
+- name: Configure email forwarding
+  hosts: emailfwd
+  roles:
+    - { name: emailfwd, tags: ["emailfwd"] }
