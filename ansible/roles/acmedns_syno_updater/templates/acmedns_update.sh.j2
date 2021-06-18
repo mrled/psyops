@@ -1,49 +1,49 @@
 #!/bin/sh
 set -eu
 
-export AWS_REGION={{ acmedns_syno_updater_aws_region }}
-export AWS_ACCESS_KEY_ID={{ acmedns_syno_updater_aws_access_key }}
-export AWS_SECRET_ACCESS_KEY={{ acmedns_syno_updater_aws_secret_key }}
-export AWS_HOSTED_ZONE_ID={{ acmedns_syno_updater_aws_zone_id }}
+date="$(date +%Y%m%d)"
+
+export AWS_REGION="{{ acmedns_syno_updater_aws_region }}"
+export AWS_ACCESS_KEY_ID="{{ acmedns_syno_updater_aws_access_key }}"
+export AWS_SECRET_ACCESS_KEY="{{ acmedns_syno_updater_aws_secret_key }}"
+export AWS_HOSTED_ZONE_ID="{{ acmedns_syno_updater_aws_zone_id }}"
+
+updaterscript="{{ acmedns_syno_updater_on_synology_script }}"
+legodir="{{ acmedns_syno_updater_certificate_dir }}"
+email="{{ acmedns_syno_updater_email }}"
+domain="{{ acmedns_syno_updater_domain }}"
+synouser="{{ acmedns_syno_updater_syn_user }}"
+synohost="{{ acmedns_syno_updater_syn_server }}"
+sshhost="$synouser@$synohost"
+tmppath="/tmp/${date}-acme-update"
+tmppathcrt="$tmppath/$domain.crt"
+tmppathkey="$tmppath/$domain.key"
 
 echoexec() { echo "Running: $*"; $*; }
 
 echoexec /usr/local/bin/wraplego.py \
     --verbose \
-    --legodir "{{ acmedns_syno_updater_certificate_dir }}" \
-    --email "{{ acmedns_syno_updater_email }}" \
-    --domain "{{ acmedns_syno_updater_domain }}" \
+    --legodir "$legodir" \
+    --email "$email" \
+    --domain "$domain" \
     --authenticator "route53" \
 
-host="{{ acmedns_syno_updater_syn_user }}@{{ acmedns_syno_updater_syn_server }}"
-date=$(date +%Y%m%d)
-tmppath=/tmp/${date}-acme-update
-scp -r {{ acmedns_syno_updater_certificate_dir }}/certificates $host:$tmppath
-
-#
-# SSH to the remote server and install the certs:
-#
+scp -r "$legodir/certificates" "$sshhost:$tmppath"
+scp -r "$updaterscript" $sshhost:$tmppath/syno-tls-update.py
 
 echo "$(cat <<ENDSSH
 
 echo "$(cat <<ENDSUDO
 
-echo 'Copying files...'
-cd /usr/syno/etc/ssl
-if ! test -d /usr/syno/etc/certificate.acme_renew_hook_backup; then
-  cp -r /usr/syno/etc/certificate /usr/syno/etc/certificate.acme_renew_hook_backup
-fi
-chown -R root:root "$tmppath"
-mv $tmppath/{{ acmedns_syno_updater_domain }}.crt /usr/syno/etc/certificate/system/default/fullchain.pem
-mv $tmppath/{{ acmedns_syno_updater_domain }}.key /usr/syno/etc/certificate/system/default/privkey.pem
+echo python "$tmppath/syno-tls-update.py" synoweb,webdav "$tmppathcrt" "$tmppathkey"
+python "$tmppath/syno-tls-update.py" synoweb,webdav "$tmppathcrt" "$tmppathkey"
 echo 'Removing temp dir...'
 rm -rf $tmppath
-echo 'Reloading webserver...'
-sudo /usr/syno/sbin/synoservicecfg --reload nginx
+
 echo 'Done'
 
 ENDSUDO
 )" | sudo su -
 
 ENDSSH
-)" | ssh $host
+)" | ssh $sshhost

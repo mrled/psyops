@@ -18,6 +18,14 @@
     - src: acmedns_update.sh.j2
       dest: "{{ acmedns_syno_updater_script_path }}"
 
+- name: Install Python script for running on the Synology itself
+  copy:
+    src: syno-tls-update.py
+    dest: "{{ acmedns_syno_updater_on_synology_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Configure cronvar
   cronvar:
     name: "{{ item.name }}"

@@ -1,6 +1,7 @@
 ---
 # ACME DNS base updater settings
-acmedns_base_certificate_dir: "/etc/acmedns/certificates"
+acmedns_base_dir: "/etc/acmedns"
+acmedns_base_certificate_dir: "{{ acmedns_base_dir }}/certificates"
 acmedns_base_user: acmedns
 acmedns_base_group: acmedns
 acmedns_base_pubkey: "{{ global_acmedns_ssh_client_pubkey }}"
@@ -11,6 +12,7 @@ acmedns_syno_updater_cert_base: "{{ acmedns_base_certificate_dir }}"
 acmedns_syno_updater_user: "{{ acmedns_base_user }}"
 acmedns_syno_updater_group: "{{ acmedns_base_group }}"
 acmedns_syno_updater_job_name: chenoska
+acmedns_syno_updater_on_synology_script: "{{ acmedns_base_dir }}/syno-tls-update.py"
 acmedns_syno_updater_aws_access_key: "{{ global_home_zone_updater_access_key }}"
 acmedns_syno_updater_aws_secret_key: "{{ global_home_zone_updater_secret_key }}"
 acmedns_syno_updater_aws_region: "{{ global_home_zone_updater_region }}"
