@@ -7,7 +7,6 @@ Description: micahrl.com. Zone
 #   YES: `ResourceRecords: ["\"v=spf1 include:spf.example.com ?all\""]`
 
 Resources:
-
   # Origin zone, for most subdomains of micahrl.com.
   OriginZone:
     Type: "AWS::Route53::HostedZone"
@@ -26,7 +25,6 @@ Resources:
     Properties:
       HostedZoneId: !Ref OriginZone
       RecordSets:
-
         # $ORIGIN
         - Name: nullyork.micahrl.com.
           Type: A
@@ -139,23 +137,23 @@ Resources:
           Type: MX
           TTL: 300
           ResourceRecords:
-          - 10 in1-smtp.messagingengine.com.
-          - 20 in2-smtp.messagingengine.com.
+            - 10 in1-smtp.messagingengine.com.
+            - 20 in2-smtp.messagingengine.com.
         - Name: mesmtp._domainkey.micahrl.com.
           Type: TXT
           TTL: 300
           ResourceRecords:
-          - "\"v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC0djtWDjMwbbkE5MeE83dfB8jjMcnjBDOcrTBBBz/3KVSxyN/cl59VCGGUHzzGWY2HCGZ9cmh3tLJ1y+fDPa14/4/EvVTYR33Z0EI2F2GekuyXKBPoa+6ioSlYdfSm42oSoI42R4+RCVINuDNPXzaEbJ1cGPBw5bgf7tR28fWd3wIDAQAB\""
+            - '"v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC0djtWDjMwbbkE5MeE83dfB8jjMcnjBDOcrTBBBz/3KVSxyN/cl59VCGGUHzzGWY2HCGZ9cmh3tLJ1y+fDPa14/4/EvVTYR33Z0EI2F2GekuyXKBPoa+6ioSlYdfSm42oSoI42R4+RCVINuDNPXzaEbJ1cGPBw5bgf7tR28fWd3wIDAQAB"'
 
         # TXT records for various services
         - Name: micahrl.com.
           Type: TXT
           TTL: 300
           ResourceRecords:
-          # Keybase verification
-          - "\"keybase-site-verification=Z8Ro6BPCbOvBtJOG9CYDkdseYa0EgGBm6Z475VKMzWc\""
-          # SPF for Fastmail
-          - "\"v=spf1 include:spf.messagingengine.com ?all\""
+            # Keybase verification
+            - '"keybase-site-verification=Z8Ro6BPCbOvBtJOG9CYDkdseYa0EgGBm6Z475VKMzWc"'
+            # SPF for Fastmail
+            - '"v=spf1 include:spf.messagingengine.com ?all"'
           # DKIM for Fastmail
 
         # Nameserver delegation record for the backchannel subdomain
@@ -199,7 +197,6 @@ Resources:
           ResourceRecords:
             - cname.vercel-dns.com
 
-
   # Backchannel zone - for VPN clients
   BackchannelZone:
     Type: "AWS::Route53::HostedZone"
@@ -211,7 +208,6 @@ Resources:
     Properties:
       HostedZoneId: !Ref BackchannelZone
       RecordSets:
-
         - Name: haluth.backchannel.micahrl.com.
           Type: A
           TTL: 60
@@ -234,7 +230,6 @@ Resources:
     Properties:
       HostedZoneId: !Ref HomeZone
       RecordSets:
-
         # Network gear
         - Name: gateway.home.micahrl.com.
           Type: A
@@ -367,21 +362,31 @@ Resources:
     Type: AWS::IAM::Group
     Properties:
       Policies:
-      - PolicyName: AllowUpdatingOriginZonePolicy
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-          - Effect: Allow
-            Action:
-            - route53:GetChange
-            - route53:ListHostedZonesByName
-            Resource: "*"
-          - Effect: Allow
-            Action:
-            - route53:ChangeResourceRecordSets
-            - route53:GetHostedZone
-            - route53:ListResourceRecordSets
-            Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "OriginZone"}]]}
+        - PolicyName: AllowUpdatingOriginZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZonesByName
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetHostedZone
+                  - route53:ListResourceRecordSets
+                Resource:
+                  {
+                    "Fn::Join":
+                      [
+                        "",
+                        [
+                          "arn:aws:route53:::hostedzone/",
+                          { "Ref": "OriginZone" },
+                        ],
+                      ],
+                  }
 
   # A new group with permission to modify records in the BackchannelZone
   # Required permissions: https://github.com/xenolf/lego#aws-route-53
@@ -389,21 +394,31 @@ Resources:
     Type: AWS::IAM::Group
     Properties:
       Policies:
-      - PolicyName: AllowUpdatingBackchannelZonePolicy
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-          - Effect: Allow
-            Action:
-            - route53:GetChange
-            - route53:ListHostedZonesByName
-            Resource: "*"
-          - Effect: Allow
-            Action:
-            - route53:ChangeResourceRecordSets
-            - route53:GetHostedZone
-            - route53:ListResourceRecordSets
-            Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "BackchannelZone"}]]}
+        - PolicyName: AllowUpdatingBackchannelZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZonesByName
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetHostedZone
+                  - route53:ListResourceRecordSets
+                Resource:
+                  {
+                    "Fn::Join":
+                      [
+                        "",
+                        [
+                          "arn:aws:route53:::hostedzone/",
+                          { "Ref": "BackchannelZone" },
+                        ],
+                      ],
+                  }
 
   # A new group with permission to modify records in the HomeZone
   # For use with Let's Encrypt / ACME
@@ -411,21 +426,31 @@ Resources:
     Type: AWS::IAM::Group
     Properties:
       Policies:
-      - PolicyName: AllowUpdatingHomeZonePolicy
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-          - Effect: Allow
-            Action:
-            - route53:GetChange
-            - route53:ListHostedZonesByName
-            Resource: "*"
-          - Effect: Allow
-            Action:
-            - route53:ChangeResourceRecordSets
-            - route53:GetHostedZone
-            - route53:ListResourceRecordSets
-            Resource: {"Fn::Join": ["", ["arn:aws:route53:::hostedzone/", {"Ref": "HomeZone"}]]}
+        - PolicyName: AllowUpdatingHomeZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZonesByName
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetHostedZone
+                  - route53:ListResourceRecordSets
+                Resource:
+                  {
+                    "Fn::Join":
+                      [
+                        "",
+                        [
+                          "arn:aws:route53:::hostedzone/",
+                          { "Ref": "HomeZone" },
+                        ],
+                      ],
+                  }
 
 Outputs:
   OriginZoneId:
