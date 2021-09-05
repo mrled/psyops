@@ -197,6 +197,12 @@ Resources:
           ResourceRecords:
             - cname.vercel-dns.com
 
+        - Name: ansible-extension-cookbook.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - zen-yonath-3c05e2.netlify.app
+
   # Backchannel zone - for VPN clients
   BackchannelZone:
     Type: "AWS::Route53::HostedZone"
