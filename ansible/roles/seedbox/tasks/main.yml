@@ -89,7 +89,7 @@
 
 - name: Install seedbox compose file
   template:
-    src: seedbox.compose.yml
+    src: seedbox.compose.yml.j2
     dest: "{{ seedbox_compose_path }}"
     owner: "{{ seedbox_user }}"
     group: "{{ seedbox_group }}"
