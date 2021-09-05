@@ -41,13 +41,16 @@
   register: plexserver_getent
 
 - name: Set plex user facts
+  vars:
+    plexhome: "{{ getent_passwd[plexserver_seedbox_username][4] }}"
   set_fact:
     plexserver_desired_uid: "{{ getent_passwd[plexserver_seedbox_username][1] }}"
     plexserver_desired_gid: "{{ getent_passwd[plexserver_seedbox_username][2] }}"
-    plexserver_desired_home: "{{ getent_passwd[plexserver_seedbox_username][4] }}"
+    plexserver_desired_home: "{{ plexhome }}"
     plexserver_discovered_uid: "{{ getent_passwd[plexserver_rpm_username][1] }}"
     plexserver_discovered_gid: "{{ getent_passwd[plexserver_rpm_username][2] }}"
     plexserver_discovered_home: "{{ getent_passwd[plexserver_rpm_username][4] }}"
+    plexserver_appsupport_plex: "{{ plexhome }}/Library/Application Support"
 
 - name: Get plex homedir
   stat:
