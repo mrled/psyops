@@ -1,5 +1,0 @@
----
-plexserver_seedbox_username: seedbox
-plexserver_seedbox_groupname: seedbox
-plexserver_media_path: /4tbmirror
-plexserver_domain_name: "{{ global_seedbox_domain }}"

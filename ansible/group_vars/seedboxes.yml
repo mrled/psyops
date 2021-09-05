@@ -28,6 +28,7 @@ seedbox_tentacles_domain: tentacles.{{ seedbox_root_domain }}
 seedbox_transmission_domain: transmission.{{ seedbox_root_domain }}
 seedbox_cops_domain: books.{{ seedbox_root_domain }}
 seedbox_jackett_domain: jackett.{{ seedbox_root_domain }}
+seedbox_plex_domain: plex.{{ seedbox_root_domain }}
 
 seedbox_acme_email: psyops@micahrl.com
 seedbox_acme_aws_region: "{{ global_home_zone_updater_region }}"

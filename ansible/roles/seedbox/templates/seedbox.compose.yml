@@ -183,23 +183,31 @@ services:
       - "traefik.http.routers.seedbox-tentacles.service=seedbox-tentacles"
       - "traefik.http.services.seedbox-tentacles.loadbalancer.server.port=8096"
 
-  {#
   plex:
+    # Warning: options differ for Plex Inc vs LinuxServer.io Plex containers, e.g. PUID/PLEX_UID
     image: plexinc/pms-docker
     environment:
-      PUID: "{{ seedbox_uid }}"
-      PGID: "{{ seedbox_gid }}"
+      PLEX_UID: "{{ seedbox_uid }}"
+      PLEX_GID: "{{ seedbox_gid }}"
       TZ: "{{ seedbox_timezone }}"
       VERSION: docker
       UMASK_SET: "022"
       #PLEX_CLAIM: #optional
+      ADVERTISE_IP: "http://{{ seedbox_plex_domain }}:32400/"
+      CHANGE_CONFIG_DIR_OWNERSHIP: "false"
     volumes:
       - "{{ seedbox_plex_config_dir }}:/config"
       - "{{ seedbox_media_dir }}:/media"
+      - "{{ seedbox_plex_transcode_tmp }}:/transcode"
     devices:
       - /dev/dri:/dev/dri
     networks:
       - dernetverk
+    ports:
+    # Note that traefik isn't used for these ports - we're just exposing them directly
+{% for port in seedbox_plex_ports %}
+      - "{{ port.port }}:{{ port.port }}/{{ port.protocol }}"
+{% endfor %}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.seedbox-plex.rule=Host(`{{ seedbox_plex_domain }}`)"
@@ -207,7 +215,7 @@ services:
       - "traefik.http.routers.seedbox-plex.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-plex.service=seedbox-plex"
       - "traefik.http.services.seedbox-plex.loadbalancer.server.port=32400"
-  #}
+      - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
 
   whoami:
     image: containous/whoami:latest

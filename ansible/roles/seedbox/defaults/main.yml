@@ -29,3 +29,41 @@ seedbox_stack_name: seedbox
 
 # Set this to true to remove the docker stack before deploying
 seedbox_docker_greenfield_deploy: false
+
+seedbox_plex_ports:
+  - description: for access to the Plex Media Server [required]
+    port: 32400
+    protocol: tcp
+  - description: "https://forums.plex.tv/t/port-32401-is-listening-whats-it-used-for/83080"
+    port: 32401
+    protocol: tcp
+  - description: for access to the Plex DLNA Server
+    port: 1900
+    protocol: udp
+  - description: for controlling Plex Home Theater via Plex Companion
+    port: 3005
+    protocol: tcp
+  - description: for older Bonjour/Avahi network discovery
+    port: 5353
+    protocol: udp
+  - description: for controlling Plex for Roku via Plex Companion
+    port: 8324
+    protocol: tcp
+  - description: for current GDM network discovery
+    port: 32410
+    protocol: udp
+  - description: for current GDM network discovery
+    port: 32412
+    protocol: udp
+  - description: for current GDM network discovery
+    port: 32413
+    protocol: udp
+  - description: for current GDM network discovery
+    port: 32414
+    protocol: udp
+  - description: for access to the Plex DLNA Server
+    port: 32469
+    protocol: tcp
+
+seedbox_plex_transcode_tmp: /var/tmp/plex
+seedbox_plex_config_dir: "{{ seedbox_config_dir }}/plex"
