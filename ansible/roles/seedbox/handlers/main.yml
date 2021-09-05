@@ -5,7 +5,7 @@
 - name: seedbox stack redeploy
   docker_stack:
     state: present
-    name: seedbox
+    name: "{{ seedbox_stack_name }}"
     compose:
       - "{{ seedbox_compose_path }}"
 

@@ -192,7 +192,7 @@
     - name: Remove the Docker stack
       docker_stack:
         state: absent
-        name: seedbox
+        name: "{{ seedbox_stack_name }}"
         compose:
           - "{{ seedbox_compose_path }}"
     - name: Pause so the network gets deleted too
@@ -204,7 +204,7 @@
 - name: Deploy the Docker stack
   docker_stack:
     state: present
-    name: seedbox
+    name: "{{ seedbox_stack_name }}"
     prune: yes
     compose:
       - "{{ seedbox_compose_path }}"

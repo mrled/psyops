@@ -163,7 +163,8 @@ services:
       - "traefik.http.services.seedbox-cops.loadbalancer.server.port=80"
 
   tentacles:
-    image: linuxserver/jellyfin
+    # TODO: change to jellyfin/jellyfin ?
+    image: ghcr.io/linuxserver/jellyfin:latest
     environment:
       PUID: "{{ seedbox_uid }}"
       PGID: "{{ seedbox_gid }}"
@@ -221,8 +222,8 @@ services:
       - "traefik.http.services.seedbox-whoami.loadbalancer.server.port=80"
 
   balancer:
-    image: traefik
-    command: --web --docker --docker.swarmmode --docker.watch --docker.domain={{ seedbox_root_domain }} --logLevel=DEBUG
+    image: traefik:2.5
+    command: --web --docker --docker.swarmMode --docker.watch --docker.domain={{ seedbox_root_domain }} --logLevel=DEBUG
     ports:
       - "80:80/tcp"
       - "443:443/tcp"
@@ -238,6 +239,8 @@ services:
       - AWS_HOSTED_ZONE_ID={{ seedbox_acme_aws_zone }}
     labels:
       # Dashboard
+      # WARNING: A TRAILING SLASH IS MANDATORY IN THE BROWSER
+      # e.g. https://example.com/dashboard/, not merely /dashboard
       - "traefik.http.routers.seedbox-traefik-api.rule=Host(`{{ seedbox_root_domain }}`)&&(PathPrefix(`/api`)||PathPrefix(`/dashboard`)||PathPrefix(`/debug`))"
       - "traefik.http.routers.seedbox-traefik-api.service=api@internal"
       - "traefik.http.routers.seedbox-traefik-api.tls.certresolver=seedbox-resolver"
@@ -254,6 +257,10 @@ services:
 
       # middleware redirect
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      # Without this, traefik can get confused and forward traffic to wrong IPs
+      # https://community.traefik.io/t/traefik-routes-to-the-wrong-http-service-ip/5076
+      #- "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
 
     networks:
       - dernetverk
