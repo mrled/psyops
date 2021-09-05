@@ -33,8 +33,7 @@
   when: docker_standalone_swarm|bool
 
 - name: Inspect the swarm
-  docker_swarm:
-    state: inspect
+  community.docker.docker_swarm_info:
   register: docker_swarm_inspect
 
 - debug:
