@@ -64,6 +64,8 @@ RUN true \
     && apk update \
     #
     && apk add \
+        # For calculating a bcrypt password with htpasswd
+        apache2-utils \
         bash bash-doc \
         # For dig
         bind-tools \
@@ -157,6 +159,7 @@ RUN true \
     # Required for Ansible scripts and/or the EC2 inventory script
     && python3 -m pip install \
         ansible \
+        bcrypt \
         boto \
         boto3 \
         dnspython \
