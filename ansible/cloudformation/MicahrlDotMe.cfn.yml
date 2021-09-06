@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: micahrl.me. Zone
+
+Resources:
+  MicahrlDotMeZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      Name: micahrl.me.
+
+  MicahrlDotMeRecords:
+    Type: "AWS::Route53::RecordSetGroup"
+
+    Properties:
+      HostedZoneId: !Ref MicahrlDotMeZone
+      RecordSets:
+        - Name: com.micahrl.me.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["boring-perlman-92bf89.netlify.app."]
+        - Name: www.micahrl.me.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["com.micahrl.me."]
+
+
+Outputs:
+  OriginZoneId:
+    Description: The ID of the micahrl.me. root zone
+    Value: !Ref MicahrlDotMeZone

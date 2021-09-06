@@ -11,6 +11,11 @@
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
       tags: micahrl.com
     - name: cfn
+      cloudformation_stack_name: MicahrlDotMe
+      cloudformation_template_path: cloudformation/MicahrlDotMe.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      tags: micahrl.me
+    - name: cfn
       cloudformation_stack_name: SeedboxZone
       cloudformation_template_path: cloudformation/SeedboxZone.cfn.yml
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
