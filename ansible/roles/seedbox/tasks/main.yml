@@ -1,7 +1,15 @@
 ---
+- name: Install EPEL
+  dnf:
+    name:
+      - epel-release
+    state: latest
+    update_cache: yes
+
 - name: Install RPMs
   dnf:
     name:
+      - gnupg2
       - python3-lxml
       - python3-pip
       - samba
@@ -14,6 +22,10 @@
     name:
       - passlib
     state: latest
+
+- name: Configure seedbox backups
+  import_tasks: backups.yml
+  tags: seedbox_backups
 
 - name: Add seedbox group
   group:

@@ -56,3 +56,9 @@ seedbox_dex_client_id: SeedboxDexClientAuth-{{ seedbox_root_domain }}
 seedbox_dex_client_secret: "{{ vault_seedbox_dex_client_secret }}"
 seedbox_tfa_domain: bridgetroll.{{ seedbox_root_domain }}
 seedbox_tfa_secret: "{{ vault_seedbox_tfa_secret }}"
+
+# Backups
+seedbox_SeedboxBackupUser_wasabi_access_key: "{{ vault_seedbox_SeedboxBackupUser_wasabi_access_key }}"
+seedbox_SeedboxBackupUser_wasabi_secret_key: "{{ vault_seedbox_SeedboxBackupUser_wasabi_secret_key }}"
+seedbox_backup_s3_uri: boto3+s3://mrled-seedbox-backup
+seedbox_backup_s3_endpoint: https://s3.us-west-1.wasabisys.com

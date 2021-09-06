@@ -61,6 +61,22 @@ seedbox_plex_ports:
 
 seedbox_plex_transcode_tmp: /var/tmp/plex
 seedbox_plex_config_dir: "{{ seedbox_config_dir }}/plex"
+seedbox_plex_appsup_dir: "{{ seedbox_plex_config_dir }}/Library/Application Support/Plex Media Server"
 
 seedbox_dex_config_dir: "{{ seedbox_config_dir }}/dex"
 seedbox_heimdall_config_dir: "{{ seedbox_config_dir }}/heimdall"
+
+# Backups
+seedbox_backup_config_dir: "{{ seedbox_config_dir }}/backups"
+seedbox_backup_exclude_file: "{{ seedbox_backup_config_dir }}/excludes.txt"
+seedbox_backup_duplicity_archive_dir: "{{ seedbox_backup_config_dir }}/archive"
+seedbox_backup_script: "{{ seedbox_backup_config_dir }}/seedbox-backup.sh"
+seedbox_backup_exclude_paths:
+  - "{{ seedbox_backup_config_dir }}"
+  - "{{ seedbox_lidarr_config_dir }}/logs"
+  - "{{ seedbox_radarr_config_dir }}/logs"
+  - "{{ seedbox_sonarr_config_dir }}/logs"
+  - "{{ seedbox_lidarr_config_dir }}/MediaCover"
+  - "{{ seedbox_radarr_config_dir }}/MediaCover"
+  - "{{ seedbox_sonarr_config_dir }}/MediaCover"
+  - "{{ seedbox_plex_appsup_dir }}/Cache"
