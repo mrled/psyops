@@ -29,6 +29,13 @@ seedbox_transmission_domain: transmission.{{ seedbox_root_domain }}
 seedbox_cops_domain: books.{{ seedbox_root_domain }}
 seedbox_jackett_domain: jackett.{{ seedbox_root_domain }}
 seedbox_plex_domain: plex.{{ seedbox_root_domain }}
+seedbox_sonarr_domain: sonarr.{{ seedbox_root_domain }}
+seedbox_radarr_domain: radarr.{{ seedbox_root_domain }}
+seedbox_lidarr_domain: lidarr.{{ seedbox_root_domain }}
+seedbox_sabnzbd_domain: sabnzbd.{{ seedbox_root_domain }}
+seedbox_hydra2_domain: hydra2.{{ seedbox_root_domain }}
+seedbox_whoami_domain: whoami.{{ seedbox_root_domain }}
+seedbox_balancer_domain: balancer.{{ seedbox_root_domain }}
 
 seedbox_acme_email: psyops@micahrl.com
 seedbox_acme_aws_region: "{{ global_home_zone_updater_region }}"
@@ -41,3 +48,11 @@ seedbox_acme_aws_zone: Z10276202TLC17I3UZTK3
 # The traefik dashboard is at least configured with this
 seedbox_web_admin_user: freeleech
 seedbox_web_admin_pass: "{{ vault_seedbox_web_admin_pass }}"
+seedbox_web_admin_pass_bcrypt: "{{ vault_seedbox_web_admin_pass_bcrypt }}"
+
+# Authentication stuff
+seedbox_dex_domain: dex.{{ seedbox_root_domain }}
+seedbox_dex_client_id: SeedboxDexClientAuth-{{ seedbox_root_domain }}
+seedbox_dex_client_secret: "{{ vault_seedbox_dex_client_secret }}"
+seedbox_tfa_domain: bridgetroll.{{ seedbox_root_domain }}
+seedbox_tfa_secret: "{{ vault_seedbox_tfa_secret }}"

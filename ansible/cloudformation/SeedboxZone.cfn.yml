@@ -35,6 +35,42 @@ Resources:
           Type: CNAME
           TTL: "60"
           ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["balancer", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["whoami", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["sonarr", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["radarr", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["lidarr", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["sabnzbd", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["hydra2", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["dex", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["bridgetroll", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
         - Name: !Join [".", ["plex", !Ref DomainName]]
           Type: CNAME
           TTL: "60"

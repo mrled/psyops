@@ -32,14 +32,18 @@
     database: passwd
     key: "{{ seedbox_user }}"
   register: seedbox_getent
-  tags: seedbox_docker_deploy
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
 
 - name: Set UID/GID facts
   set_fact:
     seedbox_uid: "{{ getent_passwd[seedbox_user][1] }}"
     seedbox_gid: "{{ getent_passwd[seedbox_user][2] }}"
     seedbox_homedir: "{{ getent_passwd[seedbox_user][4] }}"
-  tags: seedbox_docker_deploy
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
 
 - import_tasks: samba.yml
   tags: samba
@@ -87,16 +91,6 @@
     - "{{ seedbox_torrent_downloads_dir }}"
     - "{{ seedbox_jackett_blackhole_dir }}"
 
-- name: Install seedbox compose file
-  template:
-    src: seedbox.compose.yml.j2
-    dest: "{{ seedbox_compose_path }}"
-    owner: "{{ seedbox_user }}"
-    group: "{{ seedbox_group }}"
-    mode: "0640"
-  tags: seedbox_docker_deploy
-  notify: seedbox stack redeploy
-
 - name: Configure ports in the trusted zone
   firewalld:
     port: "{{ item }}"
@@ -141,7 +135,7 @@
     force_tag: yes
     force_source: "{{ seedbox_transmission_docker_copy.changed }}"
     source: build
-  notify: seedbox stack redeploy
+  # notify: seedbox stack redeploy
 
 - name: Create Plex transcode temp dir
   file:
@@ -167,6 +161,62 @@
     state: enabled
     immediate: yes
   with_items: "{{ seedbox_plex_ports }}"
+
+- name: Create Dex config directory
+  file:
+    state: directory
+    path: "{{ seedbox_dex_config_dir }}"
+    owner: "{{ seedbox_uid }}"
+    group: "{{ seedbox_gid }}"
+    mode: "0700"
+  tags: seedbox_dex
+
+# This must be the same UID as the user running dex inside its container
+# ... sigh
+- name: Create Dex db directory
+  file:
+    state: directory
+    path: "{{ seedbox_dex_config_dir }}/db"
+    owner: "1001"
+    group: "1001"
+    mode: "0700"
+  tags: seedbox_dex
+
+- name: Install Dex config
+  template:
+    src: dex.config.yml.j2
+    dest: "{{ seedbox_dex_config_dir }}/config.yml"
+    owner: "{{ seedbox_uid }}"
+    group: "{{ seedbox_gid }}"
+    mode: "0600"
+  tags: seedbox_dex
+
+- name: Stat Dex config
+  stat:
+    path: "{{ seedbox_dex_config_dir }}/config.yml"
+  register: seedbox_dex_config_stat_result
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
+
+- name: Copy Dex theme directory
+  copy:
+    src: dex-theme-mindcontrol/
+    dest: "{{ seedbox_dex_config_dir }}/mindcontrol"
+    mode: "0755"
+    owner: root
+    group: root
+  tags: seedbox_dex
+
+# We need this so that we can set the config's name to be based on its file contents in the compose file
+# docker-compose won't allow the config to change value with the same name,
+# so we make sure the name changes every time the config file's contents change.
+- name: Set Dex config hash
+  set_fact:
+    seedbox_dex_config_hash: "{{ seedbox_dex_config_stat_result.stat.checksum }}"
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
 
 - name: Install traefik config
   template:
@@ -201,16 +251,16 @@
   notify: seedbox stack redeploy
   tags: seedbox_docker_deploy
 
-- name: Configure traefik htpasswd
-  htpasswd:
-    path: "{{ seedbox_traefik_api_users_file }}"
-    name: "{{ seedbox_web_admin_user }}"
-    password: "{{ seedbox_web_admin_pass }}"
-    owner: root
-    group: root
-    mode: "0600"
-  notify: seedbox stack redeploy
-  tags: seedbox_docker_deploy
+- name: Install seedbox compose file
+  template:
+    src: seedbox.compose.yml.j2
+    dest: "{{ seedbox_compose_path }}"
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0640"
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
 
 - name: Remove the Docker stack
   block:
@@ -233,7 +283,9 @@
     prune: yes
     compose:
       - "{{ seedbox_compose_path }}"
-  tags: seedbox_docker_deploy
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
 
 #
 # Light configuration of our apps
@@ -249,36 +301,5 @@
     path: "{{ seedbox_sabnzbd_config_dir }}/sabnzbd.ini"
     insertafter: '^\[misc\]$'
     regexp: "^host_whitelist ="
-    line: "host_whitelist = {{ ansible_fqdn }}, {{ seedbox_misc_domain }}, "
-  notify: seedbox stack redeploy
-
-# UrlBase/url_base:
-# This step is required for the traefik reverse proxy to work
-# The reverse proxy can pass traffic from any route (e.g. /blahblah-sonarr) to the backend (e.g. sonarr)
-# However, without this step, the backend application will not know that its accessed via a subdir,
-# so it'll return full paths to resources as if it were at the root (e.g. /example.js)
-# instead of under the subdir (e.g. /blahblah-sonarr/example.js)
-
-- name: Configure *arr UrlBase
-  xml:
-    path: "{{ item.value }}"
-    xpath: /Config/UrlBase
-    value: "/{{ item.key }}"
-  with_dict: "{{ seedbox_arr_configs }}"
-  notify: seedbox stack redeploy
-
-- name: Configure sabnzbd url_base
-  ini_file:
-    path: "{{ seedbox_sabnzbd_config_ini }}"
-    section: misc
-    option: url_base
-    value: /sabnzbd
-  notify: seedbox stack redeploy
-
-- name: Configure nzbhydra2 url base
-  lineinfile:
-    path: "{{ seedbox_hydra2_config_yaml }}"
-    line: '  urlBase: "/hydra2"'
-    insertafter: "main:"
-    regex: " *urlBase: .*"
+    line: "host_whitelist = {{ ansible_fqdn }}, {{ seedbox_sabnzbd_domain }}, "
   notify: seedbox stack redeploy

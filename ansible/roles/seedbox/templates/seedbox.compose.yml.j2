@@ -16,12 +16,12 @@ services:
       - dernetverk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.seedbox-sonarr.rule=Host(`{{ seedbox_misc_domain }}`) && PathPrefix(`/sonarr`)"
+      - "traefik.http.routers.seedbox-sonarr.rule=Host(`{{ seedbox_sonarr_domain }}`)"
       - "traefik.http.routers.seedbox-sonarr.tls=true"
       - "traefik.http.routers.seedbox-sonarr.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-sonarr.service=seedbox-sonarr"
       - "traefik.http.services.seedbox-sonarr.loadbalancer.server.port=8989"
-      - "traefik.http.routers.seedbox-sonarr.middlewares=seedbox-auth"
+      - "traefik.http.routers.seedbox-sonarr.middlewares=seedbox-auth-bridgetroll-mw"
 
   lidarr:
     image: "linuxserver/lidarr"
@@ -36,12 +36,12 @@ services:
       - dernetverk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.seedbox-lidarr.rule=Host(`{{ seedbox_misc_domain }}`) && PathPrefix(`/lidarr`)"
+      - "traefik.http.routers.seedbox-lidarr.rule=Host(`{{ seedbox_lidarr_domain }}`)"
       - "traefik.http.routers.seedbox-lidarr.tls=true"
       - "traefik.http.routers.seedbox-lidarr.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-lidarr.service=seedbox-lidarr"
       - "traefik.http.services.seedbox-lidarr.loadbalancer.server.port=8686"
-      - "traefik.http.routers.seedbox-lidarr.middlewares=seedbox-auth"
+      - "traefik.http.routers.seedbox-lidarr.middlewares=seedbox-auth-bridgetroll-mw"
 
   radarr:
     image: "linuxserver/radarr"
@@ -56,14 +56,14 @@ services:
       - dernetverk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.seedbox-radarr.rule=Host(`{{ seedbox_misc_domain }}`) && PathPrefix(`/radarr`)"
+      - "traefik.http.routers.seedbox-radarr.rule=Host(`{{ seedbox_radarr_domain }}`)"
       - "traefik.http.routers.seedbox-radarr.tls=true"
       - "traefik.http.routers.seedbox-radarr.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-radarr.service=seedbox-radarr"
       - "traefik.http.services.seedbox-radarr.loadbalancer.server.port=7878"
-      - "traefik.http.routers.seedbox-radarr.middlewares=seedbox-auth"
+      - "traefik.http.routers.seedbox-radarr.middlewares=seedbox-auth-bridgetroll-mw"
 
-  sabnzb:
+  sabnzbd:
     image: "linuxserver/sabnzbd"
     environment:
       PUID: "{{ seedbox_uid }}"
@@ -76,7 +76,7 @@ services:
       - dernetverk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.seedbox-sabnzb.rule=Host(`{{ seedbox_misc_domain }}`) && PathPrefix(`/sabnzbd`)"
+      - "traefik.http.routers.seedbox-sabnzb.rule=Host(`{{ seedbox_sabnzbd_domain }}`)"
       - "traefik.http.routers.seedbox-sabnzb.tls=true"
       - "traefik.http.routers.seedbox-sabnzb.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-sabnzb.service=seedbox-sabnzb"
@@ -115,11 +115,12 @@ services:
       - dernetverk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.seedbox-hydra2.rule=Host(`{{ seedbox_misc_domain }}`) && PathPrefix(`/hydra2`)"
+      - "traefik.http.routers.seedbox-hydra2.rule=Host(`{{ seedbox_hydra2_domain }}`)"
       - "traefik.http.routers.seedbox-hydra2.tls=true"
       - "traefik.http.routers.seedbox-hydra2.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-hydra2.service=seedbox-hydra2"
       - "traefik.http.services.seedbox-hydra2.loadbalancer.server.port=5076"
+      - "traefik.http.routers.seedbox-hydra2.middlewares=seedbox-auth-bridgetroll-mw"
 
   jackett:
     image: linuxserver/jackett
@@ -141,7 +142,7 @@ services:
       - "traefik.http.routers.seedbox-jackett.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-jackett.service=seedbox-jackett"
       - "traefik.http.services.seedbox-jackett.loadbalancer.server.port=9117"
-      - "traefik.http.routers.seedbox-jackett.middlewares=seedbox-auth"
+      - "traefik.http.routers.seedbox-jackett.middlewares=seedbox-auth-bridgetroll-mw"
 
   cops:
     image: linuxserver/cops
@@ -161,6 +162,7 @@ services:
       - "traefik.http.routers.seedbox-cops.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-cops.service=seedbox-cops"
       - "traefik.http.services.seedbox-cops.loadbalancer.server.port=80"
+      - "traefik.http.routers.seedbox-cops.middlewares=seedbox-auth-bridgetroll-mw"
 
   tentacles:
     # TODO: change to jellyfin/jellyfin ?
@@ -217,21 +219,82 @@ services:
       - "traefik.http.services.seedbox-plex.loadbalancer.server.port=32400"
       - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
 
+  dex:
+    image: dexidp/dex
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    # UID and GID of the dex user isn't configurable -- have to map the config to UID/GID 1001
+    configs:
+      - source: dex_config
+        target: /config.yml
+        uid: "1001"
+        gid: "1001"
+        mode: 0600
+    volumes:
+      - "{{ seedbox_dex_config_dir }}/db:/dexdb"
+      - "{{ seedbox_dex_config_dir }}/mindcontrol:/srv/dex/web/themes/mindcontrol"
+    networks:
+      - dernetverk
+    command: ['dex', 'serve','/config.yml']
+    labels:
+      - traefik.enable=true
+      - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
+      - "traefik.http.routers.seedbox-dex.rule=Host(`{{ seedbox_dex_domain }}`)"
+      - "traefik.http.routers.seedbox-dex.tls=true"
+      - "traefik.http.routers.seedbox-dex.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-dex.entrypoints=https"
+      - "traefik.http.routers.seedbox-dex.service=seedbox-dex"
+      - "traefik.http.services.seedbox-dex.loadbalancer.server.port=5556"
+
+  # traefik forward auth
+  # A bridge troll is a kind of authenticator
+  bridgetroll:
+    image: thomseddon/traefik-forward-auth:2
+    environment:
+      DEFAULT_PROVIDER: oidc
+      PROVIDERS_OIDC_CLIENT_ID: "{{ seedbox_dex_client_id }}"
+      PROVIDERS_OIDC_CLIENT_SECRET: "{{ seedbox_dex_client_secret }}"
+      PROVIDERS_OIDC_ISSUER_URL: https://{{ seedbox_dex_domain }}
+      SECRET: "{{ seedbox_tfa_secret }}"
+      AUTH_HOST: "{{ seedbox_tfa_domain }}"
+      COOKIE_DOMAIN: "{{ seedbox_root_domain }}"
+      LOG_LEVEL: debug
+    networks:
+      - dernetverk
+    labels:
+      - traefik.enable=true
+      - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
+      - "traefik.http.routers.seedbox-bridgetroll.rule=Host(`{{ seedbox_tfa_domain }}`)"
+      - "traefik.http.routers.seedbox-bridgetroll.entrypoints=https"
+      - "traefik.http.routers.seedbox-bridgetroll.tls=true"
+      - "traefik.http.routers.seedbox-bridgetroll.tls.domains[0].main={{ seedbox_root_domain }}"
+      - "traefik.http.routers.seedbox-bridgetroll.tls.domains[0].sans=*.{{ seedbox_root_domain }}"
+      - "traefik.http.routers.seedbox-bridgetroll.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-bridgetroll.service=seedbox-bridgetroll"
+      - "traefik.http.services.seedbox-bridgetroll.loadbalancer.server.port=4181"
+      - "traefik.http.middlewares.seedbox-auth-bridgetroll-mw.forwardauth.address=http://bridgetroll:4181"
+      - "traefik.http.middlewares.seedbox-auth-bridgetroll-mw.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.seedbox-auth-bridgetroll-mw.forwardauth.authResponseHeaders=X-Forwarded-User"
+      - "traefik.http.routers.seedbox-bridgetroll.middlewares=seedbox-auth-bridgetroll-mw"
+
   whoami:
     image: containous/whoami:latest
     networks:
       - dernetverk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.seedbox-whoami.rule=Host(`{{ seedbox_misc_domain }}`) && PathPrefix(`/whoami`)"
+      - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
+      - "traefik.http.routers.seedbox-whoami.rule=Host(`{{ seedbox_whoami_domain }}`)"
+      - "traefik.http.routers.seedbox-whoami.entrypoints=https"
       - "traefik.http.routers.seedbox-whoami.tls=true"
       - "traefik.http.routers.seedbox-whoami.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-whoami.service=seedbox-whoami"
       - "traefik.http.services.seedbox-whoami.loadbalancer.server.port=80"
+      - "traefik.http.routers.seedbox-whoami.middlewares=seedbox-auth-bridgetroll-mw"
 
   balancer:
     image: traefik:2.5
-    command: --web --docker --docker.swarmMode --docker.watch --docker.domain={{ seedbox_root_domain }} --logLevel=DEBUG
+    command: --web --docker --docker.swarmMode --docker.watch --docker.domain={{ seedbox_balancer_domain }} --logLevel=DEBUG
     ports:
       - "80:80/tcp"
       - "443:443/tcp"
@@ -241,7 +304,6 @@ services:
       - "{{ seedbox_traefik_config_file }}:/traefik.yml:ro"
       - "{{ seedbox_traefik_acme_json }}:/acme.json"
       - "{{ seedbox_traefik_aws_creds_file }}:/root/.aws/credentials"
-      - "{{ seedbox_traefik_api_users_file }}:/traefik-users.htpasswd"
     environment:
       - AWS_REGION={{ seedbox_acme_aws_region }}
       - AWS_HOSTED_ZONE_ID={{ seedbox_acme_aws_zone }}
@@ -249,14 +311,11 @@ services:
       # Dashboard
       # WARNING: A TRAILING SLASH IS MANDATORY IN THE BROWSER
       # e.g. https://example.com/dashboard/, not merely /dashboard
-      - "traefik.http.routers.seedbox-traefik-api.rule=Host(`{{ seedbox_root_domain }}`)&&(PathPrefix(`/api`)||PathPrefix(`/dashboard`)||PathPrefix(`/debug`))"
+      - "traefik.http.routers.seedbox-traefik-api.rule=Host(`{{ seedbox_balancer_domain }}`)&&(PathPrefix(`/api`)||PathPrefix(`/dashboard`)||PathPrefix(`/debug`))"
       - "traefik.http.routers.seedbox-traefik-api.service=api@internal"
       - "traefik.http.routers.seedbox-traefik-api.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-traefik-api.entrypoints=https"
-      - "traefik.http.routers.seedbox-traefik-api.middlewares=seedbox-auth"
-
-      # HTTP basic auth middleware
-      - "traefik.http.middlewares.seedbox-auth.basicauth.usersfile=/traefik-users.htpasswd"
+      - "traefik.http.routers.seedbox-traefik-api.middlewares=seedbox-auth-bridgetroll-mw"
 
       # global redirect to https
       - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
@@ -277,6 +336,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+
+configs:
+  dex_config:
+    file: "{{ seedbox_dex_config_dir }}/config.yml"
+    name: dex_config_{{ seedbox_dex_config_hash }}
 
 networks:
   dernetverk:
