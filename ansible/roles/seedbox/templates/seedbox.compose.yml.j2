@@ -185,6 +185,25 @@ services:
       - "traefik.http.routers.seedbox-tentacles.service=seedbox-tentacles"
       - "traefik.http.services.seedbox-tentacles.loadbalancer.server.port=8096"
 
+  heimdall:
+    image: ghcr.io/linuxserver/heimdall
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    volumes:
+      - "{{ seedbox_heimdall_config_dir }}:/config"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-heimdall.rule=Host(`{{ seedbox_misc_domain }}`)"
+      - "traefik.http.routers.seedbox-heimdall.tls=true"
+      - "traefik.http.routers.seedbox-heimdall.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-heimdall.service=seedbox-heimdall"
+      - "traefik.http.routers.seedbox-heimdall.middlewares=seedbox-auth-bridgetroll-mw"
+      - "traefik.http.services.seedbox-heimdall.loadbalancer.server.port=80"
+
   plex:
     # Warning: options differ for Plex Inc vs LinuxServer.io Plex containers, e.g. PUID/PLEX_UID
     image: plexinc/pms-docker

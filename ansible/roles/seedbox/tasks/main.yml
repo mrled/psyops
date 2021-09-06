@@ -67,6 +67,7 @@
     - "{{ seedbox_transmission_config_dir }}"
     - "{{ seedbox_tentacles_config_dir }}"
     - "{{ seedbox_jackett_config_dir }}"
+    - "{{ seedbox_heimdall_config_dir }}"
 
 - name: Make seedbox media subdirs
   file:

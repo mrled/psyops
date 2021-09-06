@@ -63,3 +63,4 @@ seedbox_plex_transcode_tmp: /var/tmp/plex
 seedbox_plex_config_dir: "{{ seedbox_config_dir }}/plex"
 
 seedbox_dex_config_dir: "{{ seedbox_config_dir }}/dex"
+seedbox_heimdall_config_dir: "{{ seedbox_config_dir }}/heimdall"
