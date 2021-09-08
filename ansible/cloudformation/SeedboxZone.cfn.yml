@@ -75,6 +75,10 @@ Resources:
           Type: CNAME
           TTL: "60"
           ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["tautulli", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
         - Name: !Join [".", ["tentacles", !Ref DomainName]]
           Type: CNAME
           TTL: "60"

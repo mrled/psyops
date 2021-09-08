@@ -66,6 +66,7 @@ seedbox_plex_appsup_dir: "{{ seedbox_plex_config_dir }}/Library/Application Supp
 
 seedbox_dex_config_dir: "{{ seedbox_config_dir }}/dex"
 seedbox_heimdall_config_dir: "{{ seedbox_config_dir }}/heimdall"
+seedbox_tautulli_config_dir: "{{ seedbox_config_dir }}/tautulli"
 
 # Backups
 seedbox_backup_config_dir: "{{ seedbox_config_dir }}/backups"

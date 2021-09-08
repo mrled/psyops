@@ -84,6 +84,7 @@
     - "{{ seedbox_tentacles_config_dir }}"
     - "{{ seedbox_jackett_config_dir }}"
     - "{{ seedbox_heimdall_config_dir }}"
+    - "{{ seedbox_tautulli_config_dir }}"
 
 - name: Make seedbox media subdirs
   file:
@@ -298,5 +299,5 @@
     path: "{{ seedbox_sabnzbd_config_dir }}/sabnzbd.ini"
     insertafter: '^\[misc\]$'
     regexp: "^host_whitelist ="
-    line: "host_whitelist = {{ ansible_fqdn }}, {{ seedbox_sabnzbd_domain }}, "
+    line: "host_whitelist = sabnzbd, {{ ansible_fqdn }}, {{ seedbox_sabnzbd_domain }}, "
   notify: seedbox stack redeploy

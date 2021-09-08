@@ -81,6 +81,7 @@ services:
       - "traefik.http.routers.seedbox-sabnzb.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-sabnzb.service=seedbox-sabnzb"
       - "traefik.http.services.seedbox-sabnzb.loadbalancer.server.port=8080"
+      - "traefik.http.routers.seedbox-sabnzb.middlewares=seedbox-auth-bridgetroll-mw"
 
   transmission:
     image: local/transmission:ansibuilt
@@ -101,6 +102,7 @@ services:
       - "traefik.http.routers.seedbox-transmission.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-transmission.service=seedbox-transmission"
       - "traefik.http.services.seedbox-transmission.loadbalancer.server.port=9091"
+      - "traefik.http.routers.seedbox-transmission.middlewares=seedbox-auth-bridgetroll-mw"
 
   hydra2:
     image: linuxserver/nzbhydra2
@@ -184,6 +186,25 @@ services:
       - "traefik.http.routers.seedbox-tentacles.tls.certresolver=seedbox-resolver"
       - "traefik.http.routers.seedbox-tentacles.service=seedbox-tentacles"
       - "traefik.http.services.seedbox-tentacles.loadbalancer.server.port=8096"
+
+  tautulli:
+    image: tautulli/tautulli
+    volumes:
+      - "{{ seedbox_tautulli_config_dir }}:/config"
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-tautulli.rule=Host(`{{ seedbox_tautulli_domain }}`)"
+      - "traefik.http.routers.seedbox-tautulli.tls=true"
+      - "traefik.http.routers.seedbox-tautulli.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-tautulli.service=seedbox-tautulli"
+      - "traefik.http.routers.seedbox-tautulli.middlewares=seedbox-auth-bridgetroll-mw"
+      - "traefik.http.services.seedbox-tautulli.loadbalancer.server.port=8181"
 
   heimdall:
     image: ghcr.io/linuxserver/heimdall
