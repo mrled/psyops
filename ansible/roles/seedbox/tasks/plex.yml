@@ -1,0 +1,46 @@
+---
+
+
+- name: Create Plex transcode temp dir
+  file:
+    state: directory
+    path: "{{ seedbox_plex_transcode_tmp }}"
+    owner: "{{ seedbox_uid }}"
+    group: "{{ seedbox_gid }}"
+    mode: "0700"
+
+- name: Configure the firewall default zone for Plex
+  firewalld:
+    port: "{{ item.port }}/{{ item.protocol }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  with_items: "{{ seedbox_plex_ports }}"
+
+- name: Configure the firewall trusted zone for Plex
+  firewalld:
+    port: "{{ item.port }}/{{ item.protocol }}"
+    permanent: yes
+    zone: trusted
+    state: enabled
+    immediate: yes
+  with_items: "{{ seedbox_plex_ports }}"
+
+- name: Install Plex compose file
+  template:
+    src: plex.compose.yml.j2
+    dest: "{{ seedbox_plex_compose_path }}"
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0640"
+  tags:
+  - seedbox_docker_deploy
+
+- name: Deploy Plex with docker-compose
+  docker_compose:
+    project_src: "{{ seedbox_config_dir }}"
+    project_name: plex
+    files:
+    - plex.compose.yml
+  tags:
+  - seedbox_docker_deploy

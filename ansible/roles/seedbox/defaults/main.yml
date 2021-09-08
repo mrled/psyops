@@ -59,6 +59,7 @@ seedbox_plex_ports:
     port: 32469
     protocol: tcp
 
+seedbox_plex_compose_path: "{{ seedbox_config_dir }}/plex.compose.yml"
 seedbox_plex_transcode_tmp: /var/tmp/plex
 seedbox_plex_config_dir: "{{ seedbox_config_dir }}/plex"
 seedbox_plex_appsup_dir: "{{ seedbox_plex_config_dir }}/Library/Application Support/Plex Media Server"

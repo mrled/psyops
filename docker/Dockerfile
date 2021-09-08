@@ -162,6 +162,7 @@ RUN true \
         bcrypt \
         boto \
         boto3 \
+        docker-compose \
         dnspython \
         mitogen \
         netaddr \

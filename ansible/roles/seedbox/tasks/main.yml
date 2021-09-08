@@ -10,6 +10,7 @@
   dnf:
     name:
       - gnupg2
+      - python3-cryptography
       - python3-lxml
       - python3-pip
       - samba
@@ -20,6 +21,7 @@
 - name: Install pip packages
   pip:
     name:
+      - docker-compose
       - passlib
     state: latest
 
@@ -47,6 +49,7 @@
   tags:
   - seedbox_docker_deploy
   - seedbox_dex
+  - seedbox_plex
 
 - name: Set UID/GID facts
   set_fact:
@@ -56,6 +59,7 @@
   tags:
   - seedbox_docker_deploy
   - seedbox_dex
+  - seedbox_plex
 
 - import_tasks: samba.yml
   tags: samba
@@ -149,31 +153,6 @@
     force_source: "{{ seedbox_transmission_docker_copy.changed }}"
     source: build
   # notify: seedbox stack redeploy
-
-- name: Create Plex transcode temp dir
-  file:
-    state: directory
-    path: "{{ seedbox_plex_transcode_tmp }}"
-    owner: "{{ seedbox_uid }}"
-    group: "{{ seedbox_gid }}"
-    mode: "0700"
-
-- name: Configure the firewall default zone for Plex
-  firewalld:
-    port: "{{ item.port }}/{{ item.protocol }}"
-    permanent: yes
-    state: enabled
-    immediate: yes
-  with_items: "{{ seedbox_plex_ports }}"
-
-- name: Configure the firewall trusted zone for Plex
-  firewalld:
-    port: "{{ item.port }}/{{ item.protocol }}"
-    permanent: yes
-    zone: trusted
-    state: enabled
-    immediate: yes
-  with_items: "{{ seedbox_plex_ports }}"
 
 - name: Create Dex config directory
   file:
@@ -299,6 +278,11 @@
   tags:
   - seedbox_docker_deploy
   - seedbox_dex
+
+- name: Run Plex tasks
+  import_tasks: plex.yml
+  tags:
+    - seedbox_plex
 
 #
 # Light configuration of our apps
