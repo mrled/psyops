@@ -37,6 +37,7 @@ seedbox_hydra2_domain: hydra2.{{ seedbox_root_domain }}
 seedbox_whoami_domain: whoami.{{ seedbox_root_domain }}
 seedbox_balancer_domain: balancer.{{ seedbox_root_domain }}
 seedbox_tautulli_domain: tautulli.{{ seedbox_root_domain }}
+seedbox_kibana_domain: kibana.{{ seedbox_root_domain }}
 
 seedbox_acme_email: psyops@micahrl.com
 seedbox_acme_aws_region: "{{ global_home_zone_updater_region }}"

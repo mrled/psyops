@@ -298,6 +298,67 @@ services:
       - "traefik.http.services.seedbox-whoami.loadbalancer.server.port=80"
       - "traefik.http.routers.seedbox-whoami.middlewares=seedbox-auth-bridgetroll-mw"
 
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+    environment:
+      "discovery.type": single-node
+      ES_JAVA_OPTS: -Xms2g -Xmx2g
+    networks:
+      - dernetverk
+    volumes:
+      - "{{ seedbox_elastic_config_dir }}:/data"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.14.1
+    depends_on:
+      - elastic
+    environment:
+      SERVER_NAME: "{{ seedbox_kibana_domain }}"
+    volumes:
+      - "{{ seedbox_kibana_config_dir }}/kibana.yml:/usr/share/kibana/config/kibana.yml"
+      - "{{ seedbox_kibana_config_dir }}/favicons:/usr/share/kibana/src/core/server/core_app/assets/favicons"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
+      - "traefik.http.routers.seedbox-kibana.rule=Host(`{{ seedbox_kibana_domain }}`)"
+      - "traefik.http.routers.seedbox-kibana.entrypoints=https"
+      - "traefik.http.routers.seedbox-kibana.tls=true"
+      - "traefik.http.routers.seedbox-kibana.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-kibana.service=seedbox-kibana"
+      - "traefik.http.services.seedbox-kibana.loadbalancer.server.port=5601"
+      - "traefik.http.routers.seedbox-kibana.middlewares=seedbox-auth-bridgetroll-mw"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.14.1
+    depends_on:
+      - elastic
+    ports:
+      # GELF (graylog format) log ingestion endpoint
+      - "12201:12201/udp"
+    networks:
+      - dernetverk
+    deploy:
+      mode: global
+    volumes:
+      - "{{ seedbox_logstash_config_dir }}:/usr/share/logstash/pipeline"
+
+  filebeater:
+    image: docker.elastic.co/beats/filebeat:7.14.1
+    user: root
+    depends_on:
+      - logstash
+    networks:
+      - dernetverk
+    deploy:
+      mode: global
+    volumes:
+      - "{{ seedbox_config_dir }}:/seedbox"
+      - "{{ seedbox_filebeat_config_dir }}/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   balancer:
     image: traefik:2.5
     command: --web --docker --docker.swarmMode --docker.watch --docker.domain={{ seedbox_balancer_domain }} --logLevel=DEBUG
@@ -342,6 +403,10 @@ services:
       placement:
         constraints:
           - node.role == manager
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logstash:12201"
 
 configs:
   dex_config:

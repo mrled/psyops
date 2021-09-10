@@ -82,3 +82,8 @@ seedbox_backup_exclude_paths:
   - "{{ seedbox_radarr_config_dir }}/MediaCover"
   - "{{ seedbox_sonarr_config_dir }}/MediaCover"
   - "{{ seedbox_plex_appsup_dir }}/Cache"
+
+seedbox_elastic_config_dir: "{{ seedbox_config_dir }}/elastic"
+seedbox_logstash_config_dir: "{{ seedbox_config_dir }}/logstash"
+seedbox_filebeat_config_dir: "{{ seedbox_config_dir }}/filebeat"
+seedbox_kibana_config_dir: "{{ seedbox_config_dir }}/kibana"

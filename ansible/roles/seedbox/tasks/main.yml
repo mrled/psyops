@@ -64,7 +64,7 @@
 - import_tasks: samba.yml
   tags: samba
 
-- name: Create seedbox config dirs
+- name: Create seedbox config dirs (0750 seedbox)
   file:
     path: "{{ item }}"
     state: directory
@@ -85,6 +85,19 @@
     - "{{ seedbox_jackett_config_dir }}"
     - "{{ seedbox_heimdall_config_dir }}"
     - "{{ seedbox_tautulli_config_dir }}"
+    - "{{ seedbox_elastic_config_dir }}"
+    - "{{ seedbox_filebeat_config_dir }}"
+    - "{{ seedbox_kibana_config_dir }}"
+
+- name: Create seedbox config dirs (0755 root)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  with_items:
+    - "{{ seedbox_logstash_config_dir }}"
 
 - name: Make seedbox media subdirs
   file:
@@ -210,6 +223,39 @@
   tags:
   - seedbox_docker_deploy
   - seedbox_dex
+
+- name: Install logstash config
+  template:
+    src: logstash.conf.j2
+    dest: "{{ seedbox_logstash_config_dir }}/logstash.conf"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install filebeat config
+  template:
+    src: filebeat.yml.j2
+    dest: "{{ seedbox_filebeat_config_dir }}/filebeat.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install Kibana config
+  template:
+    src: kibana.yml.j2
+    dest: "{{ seedbox_kibana_config_dir }}/kibana.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install Kibana favicons
+  copy:
+    src: kibana/favicons/
+    dest: "{{ seedbox_kibana_config_dir }}/favicons"
+    owner: root
+    group: root
+    mode: "0644"
+    directory_mode: "0755"
 
 - name: Install traefik config
   template:

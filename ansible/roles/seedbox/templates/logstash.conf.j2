@@ -1,0 +1,52 @@
+input {
+    beats {
+        port => 5044
+    }
+    gelf {
+        port => 12201
+    }
+}
+
+output {
+    elasticsearch {
+        hosts => ["elastic:9200"]
+        index => "logstash-%{+YYYY-MM-dd}"
+    }
+}
+
+filter {
+    # via: https://github.com/elastic/logstash/issues/11608#issuecomment-589150372
+    ## community workaround solution: https://discuss.elastic.co/t/avoiding-field-reference-grammer-in-json-parsing/177899/4
+    ## the goal of applying this only on JSON failures is that
+    ## filtering is way expensive which means it uses way more CPU + it slow things down (throughput)
+    ## (and i really mean it)
+    ## so by applying this only when it fails to parse we are ensuring
+    ## that only "messages" with issues will be filtered therefore optimizing performance
+    ## HEADS UP NOTE THAT IM ONLY REPLACING: "[" AND "]" as more appears it just a matter of adding them to the regex
+    if "_jsonparsefailure" in [tags] {
+        ruby {
+            code => "
+            def sanitize_field_reference(item)
+                case item
+                    when Hash
+                        item.keys.each{ |k| item[k.gsub(/[\[\]]/, '_')] = sanitize_field_reference(item.delete(k)) }
+                        return item
+                    when Array
+                        return item.map { |e| sanitize_field_reference(e) }
+                    else
+                        return item
+                end
+            end
+            event.set('[data]', sanitize_field_reference(event.get('[data]')))
+            "
+        }
+    }
+
+    mutate {
+        rename => {"traefik_http_routers_seedbox-bridgetroll_tls_domains[0]_sans" => "traefik_http_routers_seedbox-bridgetroll_tls_domains_0_sans"}
+        rename => {"traefik_http_routers_seedbox-bridgetroll_tls_domains[0]_main" => "traefik_http_routers_seedbox-bridgetroll_tls_domains_0_main"}
+    }
+    alter {
+        remove_field => ["traefik_http_routers_seedbox-bridgetroll_tls_domains\[0\]_main"]
+    }
+}
