@@ -91,6 +91,10 @@ Resources:
           Type: CNAME
           TTL: "60"
           ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["rtorrent", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
         - Name: !Join [".", ["books", !Ref DomainName]]
           Type: CNAME
           TTL: "60"

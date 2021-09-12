@@ -104,6 +104,34 @@ services:
       - "traefik.http.services.seedbox-transmission.loadbalancer.server.port=9091"
       - "traefik.http.routers.seedbox-transmission.middlewares=seedbox-auth-bridgetroll-mw"
 
+  rtorrent:
+    image: ghcr.io/crazy-max/rtorrent-rutorrent
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+      RT_LOG_LEVEL: debug
+      RT_DHT_PORT: "{{ seedbox_rtorrent_dht_port }}"
+      RT_INC_PORT: "{{ seedbox_rtorrent_peer_port }}"
+    ports:
+      - "{{ seedbox_rtorrent_dht_port }}/tcp"
+      - "{{ seedbox_rtorrent_dht_port }}/udp"
+      - "{{ seedbox_rtorrent_peer_port }}/tcp"
+      - "{{ seedbox_rtorrent_peer_port }}/udp"
+    networks:
+      - dernetverk
+    volumes:
+      - "{{ seedbox_rtorrent_config_dir }}:/data"
+      - "{{ seedbox_rtorrent_data_dir }}:/downloads"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-rtorrent.rule=Host(`{{ seedbox_rtorrent_domain }}`)"
+      - "traefik.http.routers.seedbox-rtorrent.tls=true"
+      - "traefik.http.routers.seedbox-rtorrent.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-rtorrent.service=seedbox-rtorrent"
+      - "traefik.http.services.seedbox-rtorrent.loadbalancer.server.port=8080"
+      - "traefik.http.routers.seedbox-rtorrent.middlewares=seedbox-auth-bridgetroll-mw"
+
   hydra2:
     image: linuxserver/nzbhydra2
     environment:

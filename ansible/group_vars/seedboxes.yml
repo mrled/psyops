@@ -10,8 +10,8 @@ seedbox_media_root: /4tbmirror
 seedbox_usenet_completes_dir: "{{ seedbox_media_root }}/usenet/completes"
 seedbox_usenet_incompletes_dir: "{{ seedbox_media_root }}/usenet/incompletes"
 seedbox_usenet_watch_dir: "{{ seedbox_media_root }}/usenet/watch"
-seedbox_torrent_downloads_dir: "{{ seedbox_media_root }}/torrents/incoming"
-seedbox_jackett_blackhole_dir: "{{ seedbox_media_root }}/torrents/jacket-blackhole"
+seedbox_torrent_downloads_dir: "{{ seedbox_media_root }}/torrent/incoming"
+seedbox_jackett_blackhole_dir: "{{ seedbox_media_root }}/torrent/jacket-blackhole"
 
 seedbox_media_dir: "{{ seedbox_media_root }}"
 seedbox_media:
@@ -26,6 +26,7 @@ seedbox_root_domain: "{{ global_seedbox_domain }}"
 seedbox_misc_domain: "seedbox.{{ seedbox_root_domain }}"
 seedbox_tentacles_domain: tentacles.{{ seedbox_root_domain }}
 seedbox_transmission_domain: transmission.{{ seedbox_root_domain }}
+seedbox_rtorrent_domain: rtorrent.{{ seedbox_root_domain }}
 seedbox_cops_domain: books.{{ seedbox_root_domain }}
 seedbox_jackett_domain: jackett.{{ seedbox_root_domain }}
 seedbox_plex_domain: plex.{{ seedbox_root_domain }}

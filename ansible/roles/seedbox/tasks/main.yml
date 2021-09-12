@@ -88,6 +88,8 @@
     - "{{ seedbox_elastic_config_dir }}"
     - "{{ seedbox_filebeat_config_dir }}"
     - "{{ seedbox_kibana_config_dir }}"
+    - "{{ seedbox_rtorrent_config_dir }}"
+    - "{{ seedbox_rtorrent_data_dir }}"
 
 - name: Create seedbox config dirs (0755 root)
   file:
@@ -134,6 +136,10 @@
     - "443/tcp"
     - "{{ seedbox_transmission_peer_port }}/tcp"
     - "{{ seedbox_transmission_peer_port }}/udp"
+    - "{{ seedbox_rtorrent_dht_port }}/tcp"
+    - "{{ seedbox_rtorrent_dht_port }}/udp"
+    - "{{ seedbox_rtorrent_peer_port }}/tcp"
+    - "{{ seedbox_rtorrent_peer_port }}/udp"
 
 - name: Configure ports in the default zone
   firewalld:
@@ -146,6 +152,10 @@
     - "443/tcp"
     - "{{ seedbox_transmission_peer_port }}/tcp"
     - "{{ seedbox_transmission_peer_port }}/udp"
+    - "{{ seedbox_rtorrent_dht_port }}/tcp"
+    - "{{ seedbox_rtorrent_dht_port }}/udp"
+    - "{{ seedbox_rtorrent_peer_port }}/tcp"
+    - "{{ seedbox_rtorrent_peer_port }}/udp"
 
 - name: Upload transmission image source
   copy:
