@@ -89,7 +89,6 @@
     - "{{ seedbox_filebeat_config_dir }}"
     - "{{ seedbox_kibana_config_dir }}"
     - "{{ seedbox_rtorrent_config_dir }}"
-    - "{{ seedbox_rtorrent_data_dir }}"
 
 - name: Create seedbox config dirs (0755 root)
   file:

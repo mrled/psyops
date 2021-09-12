@@ -123,7 +123,7 @@ services:
       - dernetverk
     volumes:
       - "{{ seedbox_rtorrent_config_dir }}:/data"
-      - "{{ seedbox_rtorrent_data_dir }}:/downloads"
+      - "{{ seedbox_media_dir }}:/downloads"
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"

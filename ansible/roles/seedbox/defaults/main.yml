@@ -18,7 +18,6 @@ seedbox_transmission_config_dir: "{{ seedbox_config_dir }}/transmission"
 seedbox_transmission_peer_port: 10298
 seedbox_transmission_docker_build_dir: "{{ seedbox_config_dir }}/transmission-docker-build"
 seedbox_rtorrent_config_dir: "{{ seedbox_config_dir }}/rtorrent"
-seedbox_rtorrent_data_dir: "{{ seedbox_media_dir }}/rtorrent"
 seedbox_rtorrent_peer_port: 10395
 seedbox_rtorrent_dht_port: 10396
 seedbox_tentacles_config_dir: "{{ seedbox_config_dir }}/tentacles"
