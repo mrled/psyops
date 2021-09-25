@@ -29,10 +29,12 @@ seedbox_transmission_domain: transmission.{{ seedbox_root_domain }}
 seedbox_rtorrent_domain: rtorrent.{{ seedbox_root_domain }}
 seedbox_cops_domain: books.{{ seedbox_root_domain }}
 seedbox_jackett_domain: jackett.{{ seedbox_root_domain }}
+seedbox_prowlarr_domain: prowlarr.{{ seedbox_root_domain }}
 seedbox_plex_domain: plex.{{ seedbox_root_domain }}
 seedbox_sonarr_domain: sonarr.{{ seedbox_root_domain }}
 seedbox_radarr_domain: radarr.{{ seedbox_root_domain }}
 seedbox_lidarr_domain: lidarr.{{ seedbox_root_domain }}
+seedbox_headphones_domain: headphones.{{ seedbox_root_domain }}
 seedbox_sabnzbd_domain: sabnzbd.{{ seedbox_root_domain }}
 seedbox_hydra2_domain: hydra2.{{ seedbox_root_domain }}
 seedbox_whoami_domain: whoami.{{ seedbox_root_domain }}

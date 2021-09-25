@@ -43,6 +43,26 @@ services:
       - "traefik.http.services.seedbox-lidarr.loadbalancer.server.port=8686"
       - "traefik.http.routers.seedbox-lidarr.middlewares=seedbox-auth-bridgetroll-mw"
 
+  headphones:
+    image: ghcr.io/linuxserver/headphones
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    volumes:
+      - "{{ seedbox_headphones_config_dir }}:/config"
+      - "{{ seedbox_media_dir }}:/media"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-headphones.rule=Host(`{{ seedbox_headphones_domain }}`)"
+      - "traefik.http.routers.seedbox-headphones.tls=true"
+      - "traefik.http.routers.seedbox-headphones.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-headphones.service=seedbox-headphones"
+      - "traefik.http.services.seedbox-headphones.loadbalancer.server.port=8181"
+      - "traefik.http.routers.seedbox-headphones.middlewares=seedbox-auth-bridgetroll-mw"
+
   radarr:
     image: "linuxserver/radarr"
     environment:
@@ -155,12 +175,16 @@ services:
       - "traefik.http.routers.seedbox-hydra2.middlewares=seedbox-auth-bridgetroll-mw"
 
   jackett:
-    image: linuxserver/jackett
+    #image: linuxserver/jackett
+    # For now, I have to build this image on the remote server out of band
+    # docker build . -t local/tailored-jackett:manual
+    image: local/tailored-jackett:manual
     environment:
       PUID: "{{ seedbox_uid }}"
       PGID: "{{ seedbox_gid }}"
       TZ: "{{ seedbox_timezone }}"
-      AUTO_UPDATE: "true" # recommended by jackett
+      #AUTO_UPDATE: "true" # recommended by jackett
+      AUTO_UPDATE: "false" # breaks customizations
       #RUN_OPTS: <run options here> #optional
     volumes:
       - "{{ seedbox_jackett_config_dir }}:/config"
@@ -175,6 +199,26 @@ services:
       - "traefik.http.routers.seedbox-jackett.service=seedbox-jackett"
       - "traefik.http.services.seedbox-jackett.loadbalancer.server.port=9117"
       - "traefik.http.routers.seedbox-jackett.middlewares=seedbox-auth-bridgetroll-mw"
+
+  prowlarr:
+    # This is very new / no docs on linuxserver.io for this yet, using :latest
+    image: ghcr.io/linuxserver/prowlarr:nightly
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+    volumes:
+      - "{{ seedbox_prowlarr_config_dir }}:/config"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-prowlarr.rule=Host(`{{ seedbox_prowlarr_domain }}`)"
+      - "traefik.http.routers.seedbox-prowlarr.tls=true"
+      - "traefik.http.routers.seedbox-prowlarr.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-prowlarr.service=seedbox-prowlarr"
+      - "traefik.http.services.seedbox-prowlarr.loadbalancer.server.port=9696"
+      - "traefik.http.routers.seedbox-prowlarr.middlewares=seedbox-auth-bridgetroll-mw"
 
   cops:
     image: linuxserver/cops

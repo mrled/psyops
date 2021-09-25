@@ -76,6 +76,7 @@
     - "{{ seedbox_traefik_config_dir }}"
     - "{{ seedbox_sabnzbd_config_dir }}"
     - "{{ seedbox_lidarr_config_dir }}"
+    - "{{ seedbox_headphones_config_dir }}"
     - "{{ seedbox_sonarr_config_dir }}"
     - "{{ seedbox_radarr_config_dir }}"
     - "{{ seedbox_hydra2_config_dir }}"
@@ -89,6 +90,7 @@
     - "{{ seedbox_filebeat_config_dir }}"
     - "{{ seedbox_kibana_config_dir }}"
     - "{{ seedbox_rtorrent_config_dir }}"
+    - "{{ seedbox_prowlarr_config_dir }}"
 
 - name: Create seedbox config dirs (0755 root)
   file:

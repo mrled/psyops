@@ -59,6 +59,10 @@ Resources:
           Type: CNAME
           TTL: "60"
           ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["headphones", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
         - Name: !Join [".", ["sabnzbd", !Ref DomainName]]
           Type: CNAME
           TTL: "60"
@@ -100,6 +104,10 @@ Resources:
           TTL: "60"
           ResourceRecords: [!Ref DomainName]
         - Name: !Join [".", ["jackett", !Ref DomainName]]
+          Type: CNAME
+          TTL: "60"
+          ResourceRecords: [!Ref DomainName]
+        - Name: !Join [".", ["prowlarr", !Ref DomainName]]
           Type: CNAME
           TTL: "60"
           ResourceRecords: [!Ref DomainName]

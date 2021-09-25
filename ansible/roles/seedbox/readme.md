@@ -28,3 +28,16 @@ Then I add custom logo.png and favicon.png along with that stylesheet,
 and mount that as a volume at /srv/dex/web/themes/mindcontrol.
 
 Icon from <https://thenounproject.com/search/?q=illuminati&i=3884008>
+
+## App configuration
+
+App configuration is mostly done manually in the admin UI for the apps.
+For this reason backups are important.
+I back /etc/seedbox up to wasabi, encrypted, via duplicity.
+
+Some important configuration:
+
+* Connect the *arr apps and sabnzbd/rtorrent, etc
+* Configure Jackett
+* Use `remote path mapping` in *arr apps for rtorrent, because rtorrent downloads to /downloads while sabnzbd downloads to /media.
+  <https://trash-guides.info/Sonarr/Sonarr-remote-path-mapping/>
