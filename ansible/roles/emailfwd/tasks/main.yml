@@ -8,14 +8,14 @@
     update_cache: yes
   when: ansible_distribution in ["Fedora", "CentOS"]
 
-- name: Install packages (Ubuntu)
+- name: Install packages (Debian)
   apt:
     name:
       - bsd-mailx
       - ssmtp
     state: latest
     update_cache: yes
-  when: ansible_distribution == "Ubuntu"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Copy ssmtp config
   template:

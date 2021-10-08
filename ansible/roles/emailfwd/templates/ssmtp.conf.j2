@@ -14,8 +14,15 @@ rewriteDomain={{ mailfwd_rewrite_domain }}
 # The full hostname.  Must be correctly formed, fully qualified domain name or GMail will reject connection.
 hostname={{ ansible_fqdn }}
 
-# Use SSL/TLS before starting negotiation
+{% if ansible_distribution in ["Fedora", "CentOS"] %}
 TLS_CA_FILE=/etc/ssl/certs/ca-bundle.crt
+{% elif ansible_distribution in ["Debian", "Ubuntu"] %}
+TLS_CA_FILE=/etc/ssl/certs/ca-certificates.crt
+{% else %}
+TLS_CA_FILE=/etc/ssl/certs/ca-bundle.crt
+{% endif %}
+
+# Use SSL/TLS before starting negotiation
 UseTLS={{ mailfwd_UseTLS }}
 UseSTARTTLS={{ mailfwd_UseSTARTTLS }}
 
@@ -26,4 +33,3 @@ AuthMethod=LOGIN
 
 # Email 'From header's can override the default domain?
 FromLineOverride=yes
-
