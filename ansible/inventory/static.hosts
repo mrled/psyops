@@ -1,7 +1,7 @@
 # Static inventory
 
 [http_root_micahrl_com]
-nullyork.micahrl.com
+abraxas.micahrl.com
 
 [seedboxes]
 tagasaw.home.micahrl.com
@@ -38,13 +38,12 @@ olcott.micahrl.com
 kilotah.home.micahrl.com
 
 [emailfwd]
-nullyork.micahrl.com
+abraxas.micahrl.com
 tagasaw.home.micahrl.com
 kilotah.home.micahrl.com
 olcott.micahrl.com
 
 [capthook]
-nullyork.micahrl.com
 tagasaw.home.micahrl.com
 kilotah.home.micahrl.com
 olcott.micahrl.com

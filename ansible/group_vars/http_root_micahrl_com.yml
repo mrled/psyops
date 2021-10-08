@@ -1,18 +1,26 @@
 ---
-http_root_micahrl_com_certname: nullyork_root
+http_root_micahrl_com_certname: micahrl.com_root
 http_root_micahrl_com_email: psyops@micahrl.com
+http_root_micahrl_com_indieauth_domain: indieauth.micahrl.com
 http_root_micahrl_com_domain_list:
-  - nullyork.micahrl.com
+  - abraxas.micahrl.com
   - micahrl.com
   - www.micahrl.com
   - toys.micahrl.com
+  - "{{ http_root_micahrl_com_indieauth_domain }}"
 http_root_micahrl_com_redirect_real_webserver: https://me.micahrl.com/
 http_root_micahrl_com_matrix_fqdn: matrix.micahrl.com
 
 # Note that redirects work for ALL domains
 # So I want to redirect toys.micahrl.com/biblemunger => biblemunger.micahrl.com
-# I'll also be redirecting nullyork.micahrl.com/biblemunger and every other
+# I'll also be redirecting www.micahrl.com/biblemunger and every other
 # domain in the list above to biblemunger.micahrl.com
 http_root_micahrl_com_redirect_matches:
+  # Redirect the root page of any of these domains to my main web presence
+  - old: ^/$
+    new: https://me.micahrl.com/
+  # Biblemunger used to live at toys.micahrl.com/biblemunger but now lives at https://biblemunger.micahrl.com
+  - old: ^/biblemunger$
+    new: https://biblemunger.micahrl.com
   - old: ^/biblemunger/(.*)$
     new: https://biblemunger.micahrl.com$1

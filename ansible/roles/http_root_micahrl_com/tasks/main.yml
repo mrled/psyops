@@ -1,60 +1,88 @@
 ---
 
-- name: Install EPEL
-  yum:
-    name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-  register: http_root_micahrl_com_epel
-
-- name: Enable EPEL
-  command: yum-config-manager --enable epel
-  when: http_root_micahrl_com_epel.changed
-
 - name: Install packages
   package:
     name:
-      - httpd
-      - python2-certbot-apache
+      - apache2
+      - python3-certbot-apache
     state: latest
     update_cache: yes
 
-- name: Start httpd
-  systemd:
-    name: httpd
-    state: started
-    enabled: yes
+- name: Enable Apache modules
+  apache2_module:
+    state: present
+    name: "{{ item }}"
+  with_items:
+    - proxy
+    - rewrite
 
-- name: Install vhost for port 80
+- name: Install micahrl.com site config
   template:
-    src: vhost_http.conf.j2
-    dest: /etc/httpd/conf.d/vhost_http.conf
+    src: micahrl.com.conf.j2
+    dest: /etc/apache2/sites-available/micahrl.com.conf
     owner: root
     group: root
     mode: "0644"
-  notify: restart httpd
-  register: http_root_micahrl_com_install_vhost
+  register: http_root_micahrl_com_install_site
 
-- name: Restart httpd
+- name: Enable micahrl.com site
+  file:
+    state: link
+    src: ../sites-available/micahrl.com.conf
+    dest: /etc/apache2/sites-enabled/micahrl.com.conf
+  register: http_root_micahrl_com_enable_site
+
+- name: Test config file
+  command: apachectl configtest
+  changed_when: false
+
+- name: Restart apache
   systemd:
-    name: httpd
+    name: apache2
     state: restarted
+  when: http_root_micahrl_com_install_site.changed or http_root_micahrl_com_enable_site.changed
+
+- name: Start apache
+  systemd:
+    name: apache2
+    state: started
     enabled: yes
-  when: http_root_micahrl_com_install_vhost.changed
+
+- name: Create /etc/letsencrypt
+  file:
+    path: /etc/letsencrypt
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create /var/www/letsencrypt
+  file:
+    path: /var/www/letsencrypt/.well-known/acme-challenge
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
 
 # This can be easily run from SSH as well
 - name: Create certbot wrapper
   copy:
     content: >+
-      certbot run
+      certbot certonly
       --noninteractive
       --agree-tos
-      --apache
+      --webroot
+      --webroot-path /var/www/letsencrypt
       --keep-until-expiring
       --redirect
       --hsts
       --uir
+      --renew-hook "apachectl graceful"
       --cert-name {{ http_root_micahrl_com_certname }}
       --email {{ http_root_micahrl_com_email }}
-      --domains {{ http_root_micahrl_com_domain_list | join(',') }}
+      --domains abraxas.micahrl.com
+      $*
+    #  --domains {{ http_root_micahrl_com_domain_list | join(',') }}
     dest: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
     owner: root
     group: root
@@ -63,23 +91,9 @@
 # Running certbot here does two things for us:
 # 1) If the cert doen't exist or is expired, it'll get us a valid cert
 # 2) It'll add RewriteCond entries to the port 80 vhost to redirect to HTTPS
+#    (which means we always have to run certbot after installing the config file)
 - name: Run certbot once
   shell: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
-
-- name: Redirect / to real webserver
-  lineinfile:
-    path: /etc/httpd/conf.d/vhost_http-le-ssl.conf
-    line: RedirectMatch permanent ^/$ {{ http_root_micahrl_com_redirect_real_webserver }}
-    insertbefore: '^\<\/VirtualHost\>$'
-  notify: restart httpd
-
-- name: Install redirects file
-  template:
-    src: redirects.conf.j2
-    dest: /etc/httpd/conf.d/redirects.conf
-    owner: root
-    group: root
-    mode: "0644"
 
 - name: Cron certbot
   cron:
@@ -90,25 +104,3 @@
     minute: '22'
     hour: '4'
     day: "*/14"
-
-- name: Install reverse proxy config file
-  template:
-    src: matrix.conf.include.j2
-    dest: /etc/httpd/matrix.conf.include
-    owner: root
-    group: root
-    mode: "0644"
-
-- name: Allow SSL proxying
-  lineinfile:
-    path: /etc/httpd/conf.d/vhost_http-le-ssl.conf
-    line: SSLProxyEngine On
-    insertbefore: '^\<\/VirtualHost\>$'
-  notify: restart httpd
-
-- name: Reference reverse proxy config file
-  lineinfile:
-    path: /etc/httpd/conf.d/vhost_http-le-ssl.conf
-    line: Include /etc/httpd/matrix.conf.include
-    insertbefore: '^\<\/VirtualHost\>$'
-  notify: restart httpd

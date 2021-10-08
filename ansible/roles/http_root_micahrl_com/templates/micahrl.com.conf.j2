@@ -1,0 +1,77 @@
+# Globally allow the ACME challenges through
+Alias /.well-known/acme-challenge/ /var/www/letsencrypt/.well-known/acme-challenge/
+# Bypass authentication, if any is set
+<IfModule mod_access_compat.c>
+    <Directory /var/www/letsencrypt/.well-known/acme-challenge/>
+        Satisfy any
+    </Directory>
+</IfModule>
+# Redirect before other rewrite rules
+RewriteCond %{REQUEST_URI} /\.well\-known/acme\-challenge/
+RewriteRule (.*) /.well-known/acme-challenge/$1 [L,QSA]
+
+<VirtualHost *:80>
+    ServerAdmin {{ http_root_micahrl_com_email }}
+    ServerName {{ http_root_micahrl_com_domain_list[0] }}
+
+{% for domain in http_root_micahrl_com_domain_list[1:] %}
+    ServerAlias {{ domain }}
+{% endfor %}
+
+    ErrorLog ${APACHE_LOG_DIR}/micahrl.com_error.log
+    CustomLog ${APACHE_LOG_DIR}/micahrl.com_access.log combined
+
+    DocumentRoot /var/www/html
+
+    RewriteEngine on
+
+    # Reverse-proxy the Matrix .well-known paths to the real Matrix server
+    <Location /.well-known/matrix>
+        ProxyPass "https://{{ http_root_micahrl_com_matrix_fqdn }}/.well-known/matrix"
+    </Location>
+
+    # Redirect all to HTTPS
+{% for domain in http_root_micahrl_com_domain_list[1:] %}
+    RewriteCond %{SERVER_NAME} ={{ domain }} [OR]
+{% endfor %}
+    RewriteCond %{SERVER_NAME} ={{ http_root_micahrl_com_domain_list[0] }}
+    RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+    <VirtualHost *:443>
+        ServerAdmin {{ http_root_micahrl_com_email }}
+        ServerName {{ http_root_micahrl_com_domain_list[0] }}
+
+{% for domain in http_root_micahrl_com_domain_list[1:] %}
+        ServerAlias {{ domain }}
+{% endfor %}
+
+        ServerAlias micahrl.com
+        ServerAlias www.micahrl.com
+        ServerAlias toys.micahrl.com
+
+        DocumentRoot /var/www/html
+
+        SSLCertificateFile /etc/letsencrypt/live/{{ http_root_micahrl_com_certname }}/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/{{ http_root_micahrl_com_certname }}/privkey.pem
+
+        Include /etc/letsencrypt/options-ssl-apache.conf
+        Header always set Strict-Transport-Security "max-age=31536000"
+        Header always set Content-Security-Policy upgrade-insecure-requests
+
+        SSLProxyEngine On
+
+        # Reverse-proxy the Matrix .well-known paths to the real Matrix server
+        <Location /.well-known/matrix>
+            ProxyPass "https://{{ http_root_micahrl_com_matrix_fqdn }}/.well-known/matrix"
+        </Location>
+
+        # Redirects defined in group vars
+{% for redir in http_root_micahrl_com_redirect_matches %}
+        RedirectMatch {{ redir.old }} {{ redir.new }}
+{% endfor %}
+
+    </VirtualHost>
+</IfModule>
