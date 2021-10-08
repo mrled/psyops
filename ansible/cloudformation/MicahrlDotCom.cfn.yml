@@ -39,6 +39,28 @@ Resources:
           TTL: 300
           ResourceRecords: ["nullyork.micahrl.com."]
 
+        # New $ORIGIN
+        - Name: abraxas.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["167.71.20.245"]
+        - Name: abraxas.micahrl.com.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2604:a880:400:d0::2100:1001"]
+        # - Name: micahrl.com.
+        #   Type: A
+        #   TTL: 300
+        #   ResourceRecords: ["167.71.20.245"]
+        # - Name: micahrl.com.
+        #   Type: AAAA
+        #   TTL: 300
+        #   ResourceRecords: ["2604:a880:400:d0::2100:1001"]
+        # - Name: www.micahrl.com.
+        #   Type: CNAME
+        #   TTL: 300
+        #   ResourceRecords: ["abraxas.micahrl.com."]
+
         # GitHub Pages
         # (Documentation for my projects is at pages.micahrl.com)
         - Name: pages.micahrl.com.
