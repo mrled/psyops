@@ -66,3 +66,13 @@ Especially for docker swarm services.
 
 Currently hardcoding cron job times.
 Should do something else, maybe?
+
+## Do not host Matrix images on S3
+
+This is V E R Y S L O W.
+
+Also, this will let me remove the CloudFormation template for deploying the EC2 instance + S3 bucket, which I should do at some point because it's no longer in EC2, but in Digital Ocean now, and I just deployed the server initially by hand.
+
+## Automatic updates of Matrix host
+
+... or email reminders? Or something? Bleh.
