@@ -18,8 +18,8 @@ RewriteRule (.*) /.well-known/acme-challenge/$1 [L,QSA]
     ServerAlias {{ domain }}
 {% endfor %}
 
-    ErrorLog ${APACHE_LOG_DIR}/micahrl.com_error.log
-    CustomLog ${APACHE_LOG_DIR}/micahrl.com_access.log combined
+    ErrorLog ${APACHE_LOG_DIR}/http.micahrl.com_error.log
+    CustomLog ${APACHE_LOG_DIR}/http.micahrl.com_access.log combined
 
     DocumentRoot /var/www/html
 
@@ -48,9 +48,8 @@ RewriteRule (.*) /.well-known/acme-challenge/$1 [L,QSA]
         ServerAlias {{ domain }}
 {% endfor %}
 
-        ServerAlias micahrl.com
-        ServerAlias www.micahrl.com
-        ServerAlias toys.micahrl.com
+        ErrorLog ${APACHE_LOG_DIR}/https.micahrl.com_error.log
+        CustomLog ${APACHE_LOG_DIR}/https.micahrl.com_access.log combined
 
         DocumentRoot /var/www/html
 

@@ -95,12 +95,4 @@
 - name: Run certbot once
   shell: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
 
-- name: Cron certbot
-  cron:
-    name: certbot_{{ http_root_micahrl_com_certname }}
-    cron_file: certbot_{{ http_root_micahrl_com_certname }}
-    job: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
-    user: root
-    minute: '22'
-    hour: '4'
-    day: "*/14"
+# Note that the Debian certbot package configures a systemd timer so we don't have to cron it
