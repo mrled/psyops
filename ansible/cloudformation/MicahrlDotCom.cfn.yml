@@ -90,30 +90,6 @@ Resources:
           TTL: 300
           ResourceRecords: ["10 0 443 matrix.micahrl.com"]
 
-        # Prod server
-        - Name: kenasus.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["67.207.80.196"]
-        - Name: kenasus.micahrl.com.
-          Type: AAAA
-          TTL: 300
-          ResourceRecords: ["2604:a880:400:d0::23fd:7001"]
-
-        # Dev server
-        - Name: apsylania.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["67.205.178.207"]
-        - Name: apsylania.micahrl.com.
-          Type: AAAA
-          TTL: 300
-          ResourceRecords: ["2604:a880:400:d0::221c:7001"]
-        - Name: dev.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["apsylania.micahrl.com."]
-
         # Old server that hosted biblemunger
         # Biblemunger app is now hosted on Vercel with the canonical url biblemunger.micahrl.com
         # toys.micahrl.com exists to redirect toys.micahrl.com/biblemunger/* -> biblemunger.micahrl.com/*
@@ -121,16 +97,6 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["nullyork.micahrl.com."]
-
-        # IRC
-        - Name: rosemustard.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["159.89.230.13"]
-        - Name: rosemustard.micahrl.com.
-          Type: AAAA
-          TTL: 300
-          ResourceRecords: ["2604:a880:400:d0::1a3c:7001"]
 
         # Hosted email with fastmail.com
         - Name: micahrl.com.
@@ -337,30 +303,6 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["kilotah.home.micahrl.com."]
-        - Name: git.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kilotah.home.micahrl.com."]
-        - Name: seedbox.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["tagasaw.home.micahrl.com."]
-        - Name: plex.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["tagasaw.home.micahrl.com."]
-        - Name: tentacles.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["tagasaw.home.micahrl.com."]
-        - Name: transmission.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["tagasaw.home.micahrl.com."]
-        - Name: books.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["tagasaw.home.micahrl.com."]
 
   # A new group with permission to modify records in the OriginZone
   # For use with Let's Encrypt / ACME
