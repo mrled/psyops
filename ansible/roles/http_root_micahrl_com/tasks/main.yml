@@ -13,8 +13,30 @@
     state: present
     name: "{{ item }}"
   with_items:
+    - headers
+    - http
     - proxy
+    - proxy_http
     - rewrite
+    - ssl
+
+- name: Install global Let's Encrypt config
+  copy:
+    src: 100-letsencrypt.conf
+    dest: /etc/apache2/sites-available/100-letsencrypt.conf
+    owner: root
+    group: root
+    mode: "0644"
+  register: http_root_micahrl_com_install_letsencrypt
+  tags: apache_conf
+
+- name: Enable Let's Encrypt config
+  file:
+    state: link
+    src: ../sites-available/100-letsencrypt.conf
+    dest: /etc/apache2/sites-enabled/100-letsencrypt.conf
+  register: http_root_micahrl_com_enable_letsencrypt
+  tags: apache_conf
 
 - name: Install micahrl.com site config
   template:
@@ -24,6 +46,7 @@
     group: root
     mode: "0644"
   register: http_root_micahrl_com_install_site
+  tags: apache_conf
 
 - name: Enable micahrl.com site
   file:
@@ -31,16 +54,19 @@
     src: ../sites-available/micahrl.com.conf
     dest: /etc/apache2/sites-enabled/micahrl.com.conf
   register: http_root_micahrl_com_enable_site
+  tags: apache_conf
 
 - name: Test config file
   command: apachectl configtest
   changed_when: false
+  tags: apache_conf
 
 - name: Restart apache
   systemd:
     name: apache2
     state: restarted
-  when: http_root_micahrl_com_install_site.changed or http_root_micahrl_com_enable_site.changed
+  when: http_root_micahrl_com_install_site.changed or http_root_micahrl_com_enable_site.changed or http_root_micahrl_com_install_letsencrypt.changed or http_root_micahrl_com_enable_letsencrypt.changed
+  tags: apache_conf
 
 - name: Start apache
   systemd:
@@ -56,13 +82,23 @@
     group: root
     mode: "0755"
 
-- name: Create /var/www/letsencrypt
+- name: Create acme-challenge dir
   file:
     path: /var/www/letsencrypt/.well-known/acme-challenge
     state: directory
     owner: root
     group: root
     mode: "0755"
+
+# Useful for testing with e.g. 'curl http://micahrl.com/.well-known/acme-challenge/test.txt'
+# to make sure all your apache rules are working before running certbot
+- name: Install test file into acme-challenge dir
+  copy:
+    content: "hello ACME"
+    dest: /var/www/letsencrypt/.well-known/acme-challenge/test.txt
+    owner: root
+    group: root
+    mode: "0644"
 
 # This can be easily run from SSH as well
 - name: Create certbot wrapper
@@ -80,9 +116,8 @@
       --renew-hook "apachectl graceful"
       --cert-name {{ http_root_micahrl_com_certname }}
       --email {{ http_root_micahrl_com_email }}
-      --domains abraxas.micahrl.com
+      --domains {{ http_root_micahrl_com_certbot_domain_list | join(',') }}
       $*
-    #  --domains {{ http_root_micahrl_com_domain_list | join(',') }}
     dest: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
     owner: root
     group: root

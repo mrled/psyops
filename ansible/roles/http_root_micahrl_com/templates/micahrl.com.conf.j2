@@ -1,19 +1,6 @@
-# Globally allow the ACME challenges through
-Alias /.well-known/acme-challenge/ /var/www/letsencrypt/.well-known/acme-challenge/
-# Bypass authentication, if any is set
-<IfModule mod_access_compat.c>
-    <Directory /var/www/letsencrypt/.well-known/acme-challenge/>
-        Satisfy any
-    </Directory>
-</IfModule>
-# Redirect before other rewrite rules
-RewriteCond %{REQUEST_URI} /\.well\-known/acme\-challenge/
-RewriteRule (.*) /.well-known/acme-challenge/$1 [L,QSA]
-
 <VirtualHost *:80>
     ServerAdmin {{ http_root_micahrl_com_email }}
     ServerName {{ http_root_micahrl_com_domain_list[0] }}
-
 {% for domain in http_root_micahrl_com_domain_list[1:] %}
     ServerAlias {{ domain }}
 {% endfor %}
@@ -25,10 +12,8 @@ RewriteRule (.*) /.well-known/acme-challenge/$1 [L,QSA]
 
     RewriteEngine on
 
-    # Reverse-proxy the Matrix .well-known paths to the real Matrix server
-    <Location /.well-known/matrix>
-        ProxyPass "https://{{ http_root_micahrl_com_matrix_fqdn }}/.well-known/matrix"
-    </Location>
+    # Skip HTTPS redirect for Let's Encrypt challenges
+    RewriteRule ^/.well-known/acme-challenge/ - [L]
 
     # Redirect all to HTTPS
 {% for domain in http_root_micahrl_com_domain_list[1:] %}
@@ -43,7 +28,6 @@ RewriteRule (.*) /.well-known/acme-challenge/$1 [L,QSA]
     <VirtualHost *:443>
         ServerAdmin {{ http_root_micahrl_com_email }}
         ServerName {{ http_root_micahrl_com_domain_list[0] }}
-
 {% for domain in http_root_micahrl_com_domain_list[1:] %}
         ServerAlias {{ domain }}
 {% endfor %}

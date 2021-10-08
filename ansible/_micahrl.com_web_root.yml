@@ -7,4 +7,5 @@
   roles:
     - autoupgrade
     - emailfwd
-    - http_root_micahrl_com
+    - name: http_root_micahrl_com
+      tags: http_root_micahrl_com

@@ -30,14 +30,6 @@ Resources:
           Type: A
           TTL: 300
           ResourceRecords: ["18.216.135.175"]
-        - Name: micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["18.216.135.175"]
-        - Name: www.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["nullyork.micahrl.com."]
 
         # New $ORIGIN
         - Name: abraxas.micahrl.com.
@@ -48,18 +40,36 @@ Resources:
           Type: AAAA
           TTL: 300
           ResourceRecords: ["2604:a880:400:d0::2100:1001"]
-        # - Name: micahrl.com.
-        #   Type: A
-        #   TTL: 300
-        #   ResourceRecords: ["167.71.20.245"]
-        # - Name: micahrl.com.
-        #   Type: AAAA
-        #   TTL: 300
-        #   ResourceRecords: ["2604:a880:400:d0::2100:1001"]
-        # - Name: www.micahrl.com.
-        #   Type: CNAME
-        #   TTL: 300
-        #   ResourceRecords: ["abraxas.micahrl.com."]
+        - Name: micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["167.71.20.245"]
+        - Name: micahrl.com.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2604:a880:400:d0::2100:1001"]
+        - Name: www.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["abraxas.micahrl.com."]
+
+        # Useful for testing Apache
+        - Name: abraxas2.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["abraxas.micahrl.com."]
+        # IndieAuth
+        - Name: indieauth.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["abraxas.micahrl.com."]
+        # Old server that hosted biblemunger
+        # Biblemunger app is now hosted on Vercel with the canonical url biblemunger.micahrl.com
+        # toys.micahrl.com exists to redirect toys.micahrl.com/biblemunger/* -> biblemunger.micahrl.com/*
+        - Name: toys.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["abraxas.micahrl.com."]
 
         # GitHub Pages
         # (Documentation for my projects is at pages.micahrl.com)
@@ -111,14 +121,6 @@ Resources:
           Type: SRV
           TTL: 300
           ResourceRecords: ["10 0 443 matrix.micahrl.com"]
-
-        # Old server that hosted biblemunger
-        # Biblemunger app is now hosted on Vercel with the canonical url biblemunger.micahrl.com
-        # toys.micahrl.com exists to redirect toys.micahrl.com/biblemunger/* -> biblemunger.micahrl.com/*
-        - Name: toys.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["nullyork.micahrl.com."]
 
         # Hosted email with fastmail.com
         - Name: micahrl.com.
