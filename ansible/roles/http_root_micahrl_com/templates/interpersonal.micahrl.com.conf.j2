@@ -1,0 +1,44 @@
+<VirtualHost *:80>
+    ServerAdmin {{ http_root_micahrl_com_email }}
+    ServerName {{ http_root_micahrl_com_interpersonal_domain }}
+
+    ErrorLog ${APACHE_LOG_DIR}/http.interpersonal.micahrl.com_error.log
+    CustomLog ${APACHE_LOG_DIR}/http.interpersonal.micahrl.com_access.log combined
+
+    DocumentRoot {{ http_root_micahrl_com_interpersonal_home }}
+
+    RewriteEngine on
+
+    # Skip HTTPS redirect for Let's Encrypt challenges
+    RewriteRule ^/.well-known/acme-challenge/ - [L]
+
+    # Redirect all to HTTPS
+    RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+    <VirtualHost *:443>
+        ServerAdmin {{ http_root_micahrl_com_email }}
+        ServerName {{ http_root_micahrl_com_interpersonal_domain }}
+
+        ErrorLog ${APACHE_LOG_DIR}/https.interpersonal.micahrl.com_error.log
+        CustomLog ${APACHE_LOG_DIR}/https.interpersonal.micahrl.com_access.log combined
+
+        DocumentRoot {{ http_root_micahrl_com_interpersonal_home }}
+
+        SSLCertificateFile /etc/letsencrypt/live/{{ http_root_micahrl_com_certname }}/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/{{ http_root_micahrl_com_certname }}/privkey.pem
+
+        Include /etc/letsencrypt/options-ssl-apache.conf
+        Header always set Strict-Transport-Security "max-age=31536000"
+        Header always set Content-Security-Policy upgrade-insecure-requests
+
+        WSGIDaemonProcess {{ http_root_micahrl_com_interpersonal_domain }} \
+            user={{ http_root_micahrl_com_interpersonal_user }} \
+            python-home={{ http_root_micahrl_com_interpersonal_venv }}
+        WSGIProcessGroup {{ http_root_micahrl_com_interpersonal_domain }}
+        WSGIScriptAlias / {{ http_root_micahrl_com_interpersonal_wsgi }}
+
+    </VirtualHost>
+</IfModule>

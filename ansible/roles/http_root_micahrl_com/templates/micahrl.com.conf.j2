@@ -1,7 +1,7 @@
 <VirtualHost *:80>
     ServerAdmin {{ http_root_micahrl_com_email }}
-    ServerName {{ http_root_micahrl_com_domain_list[0] }}
-{% for domain in http_root_micahrl_com_domain_list[1:] %}
+    ServerName {{ http_root_micahrl_com_root_site_primary_domain }}
+{% for domain in http_root_micahrl_com_root_site_alias_domains %}
     ServerAlias {{ domain }}
 {% endfor %}
 
@@ -16,10 +16,10 @@
     RewriteRule ^/.well-known/acme-challenge/ - [L]
 
     # Redirect all to HTTPS
-{% for domain in http_root_micahrl_com_domain_list[1:] %}
+{% for domain in http_root_micahrl_com_root_site_alias_domains %}
     RewriteCond %{SERVER_NAME} ={{ domain }} [OR]
 {% endfor %}
-    RewriteCond %{SERVER_NAME} ={{ http_root_micahrl_com_domain_list[0] }}
+    RewriteCond %{SERVER_NAME} ={{ http_root_micahrl_com_root_site_primary_domain }}
     RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
 
 </VirtualHost>
@@ -27,8 +27,8 @@
 <IfModule mod_ssl.c>
     <VirtualHost *:443>
         ServerAdmin {{ http_root_micahrl_com_email }}
-        ServerName {{ http_root_micahrl_com_domain_list[0] }}
-{% for domain in http_root_micahrl_com_domain_list[1:] %}
+        ServerName {{ http_root_micahrl_com_root_site_primary_domain }}
+{% for domain in http_root_micahrl_com_root_site_alias_domains %}
         ServerAlias {{ domain }}
 {% endfor %}
 

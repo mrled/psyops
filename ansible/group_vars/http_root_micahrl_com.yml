@@ -1,18 +1,26 @@
 ---
 http_root_micahrl_com_certname: micahrl.com_root
 http_root_micahrl_com_email: psyops@micahrl.com
-http_root_micahrl_com_indieauth_domain: indieauth.micahrl.com
-http_root_micahrl_com_domain_list:
-  - abraxas.micahrl.com
+
+#### Domains
+
+# Domains that all share the same Apache site configuration with the $ORIGIN site
+http_root_micahrl_com_root_site_primary_domain: abraxas.micahrl.com
+http_root_micahrl_com_root_site_alias_domains:
   - abraxas2.micahrl.com
   - toys.micahrl.com
-  - "{{ http_root_micahrl_com_indieauth_domain }}"
   - www.micahrl.com
   - micahrl.com
 
-# You can use this to move cerbot domains over slowly when bringing up a new webserver
-http_root_micahrl_com_certbot_domain_list: "{{ http_root_micahrl_com_domain_list }}"
-#http_root_micahrl_com_certbot_domain_list: "{{ http_root_micahrl_com_domain_list[0:4] }}"
+# Other domains, configured separately
+http_root_micahrl_com_interpersonal_domain: interpersonal.micahrl.com
+
+# Domains that we need certbot to get certificates for
+# You can use this to move cerbot domains over slowly when bringing up a new webserver by only putting some domains here at a time
+#http_root_micahrl_com_certbot_domain_list: "{{ [http_root_micahrl_com_root_site_primary_domain] }}"
+http_root_micahrl_com_certbot_domain_list: "{{ [http_root_micahrl_com_root_site_primary_domain] + http_root_micahrl_com_root_site_alias_domains + [http_root_micahrl_com_interpersonal_domain] }}"
+
+#### Other config
 
 http_root_micahrl_com_redirect_real_webserver: https://me.micahrl.com/
 http_root_micahrl_com_matrix_fqdn: matrix.micahrl.com
@@ -30,3 +38,6 @@ http_root_micahrl_com_redirect_matches:
     new: https://biblemunger.micahrl.com
   - old: ^/biblemunger/(.*)$
     new: https://biblemunger.micahrl.com/$1
+
+http_root_micahrl_com_interpersonal_passphrase: "{{ vault_http_root_micahrl_com_interpersonal_passphrase }}"
+http_root_micahrl_com_interpersonal_owner_profile: https://me.micahrl.com/

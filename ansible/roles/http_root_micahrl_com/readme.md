@@ -17,7 +17,7 @@ You can pass arguments to that script; to run against the staging server, try pa
 
 List certs that certbot has with `certbot certificates`.
 
-If you add a new domain to `http_root_micahrl_com_domain_list`, it should get a cert automatically.
+If you add a new domain to `http_root_micahrl_com_certbot_domain_list`, it should get a cert automatically.
 
 ## Notes
 
@@ -43,4 +43,4 @@ Wait for more critical domains until everything else is working.
 E.g. moving over the $ORIGIN domain `micahrl.com` will impact Matrix server if it isn't done correctly, so don't do that one until the others are moved over and working, and you've tested the `/.well-known/matrix` path against the other subdomains.
 (To test that, note that we are using Apache, but the `/.well-known/matrix` path is reverse-proxied to the Matrix server which is using nginx - you should be able to tell the difference in the `Server` header that gets returned. If you get a `403 Forbidden` by that path with an `nginx` Server header, it's working.)
 
-You can modify the `http_root_micahrl_com_certbot_domain_list` to just be a subset of the the complete `http_root_micahrl_com_domain_list` - that means that certbot will only request certs for the subset, but Apache will be configured for the full set of domains (even if they are not yet pointing to the new server), so you can examine the Apache config for errors without breaking the old webserver.
+You can modify the `http_root_micahrl_com_certbot_domain_list` to just be a subset of the the complete list - that means that certbot will only request certs for the subset, but Apache will be configured for the full set of domains (even if they are not yet pointing to the new server), so you can examine the Apache config for errors without breaking the old webserver.

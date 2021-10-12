@@ -1,2 +1,8 @@
 ---
 http_root_micahrl_com_servername: "{{ ansible_fqdn }}:80"
+
+http_root_micahrl_com_interpersonal_user: wsgi_interpersonal
+http_root_micahrl_com_interpersonal_group: wsgi_interpersonal
+
+# Make sure this is inside of /var/www so that apache config will allow it
+http_root_micahrl_com_interpersonal_home: /var/www/interpersonal

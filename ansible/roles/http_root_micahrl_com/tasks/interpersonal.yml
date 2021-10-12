@@ -1,0 +1,112 @@
+---
+
+- name: Install prerequisites
+  apt:
+    name:
+      - git
+      - python3-venv
+    state: latest
+
+- name: Add interpersonal group
+  group:
+    name: "{{ http_root_micahrl_com_interpersonal_group }}"
+    system: yes
+
+- name: Add interpersonal user
+  user:
+    name: "{{ http_root_micahrl_com_interpersonal_user }}"
+    group: "{{ http_root_micahrl_com_interpersonal_group }}"
+    system: yes
+    create_home: yes
+    home: "{{ http_root_micahrl_com_interpersonal_home }}"
+
+- name: Clone Interpersonal git repo
+  git:
+    repo: 'https://github.com/mrled/interpersonal'
+    dest: "{{ http_root_micahrl_com_interpersonal_checkout_dir }}"
+  become: true
+  become_user: "{{ http_root_micahrl_com_interpersonal_user }}"
+
+- name: Create "{{ http_root_micahrl_com_interpersonal_user }}-owned Interpersonal directories"
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ http_root_micahrl_com_interpersonal_user }}"
+    group: "{{ http_root_micahrl_com_interpersonal_group }}"
+    mode: "0750"
+  with_items:
+  - "{{ http_root_micahrl_com_interpersonal_private_dir }}"
+
+- name: Create Interpersonal venv and install package and prerequisites
+  pip:
+    name: "{{ http_root_micahrl_com_interpersonal_checkout_dir }}"
+    editable: true
+    virtualenv: "{{ http_root_micahrl_com_interpersonal_venv }}"
+    virtualenv_command: python3 -m venv
+  become: true
+  become_user: "{{ http_root_micahrl_com_interpersonal_user }}"
+
+- name: Generate the secret key for Flask's cookie encrypted sessions
+  command: python3 -c 'import base64, os; print(base64.b64encode(os.urandom(32)).decode())'
+  register: http_root_micahrl_com_interpersonal_cookie_secret_result
+  tags:
+    - apache_conf
+    - interpersonal_db
+
+- name: Set the cookie secret fact
+  set_fact:
+    http_root_micahrl_com_interpersonal_cookie_secret: "{{ http_root_micahrl_com_interpersonal_cookie_secret_result.stdout | trim }}"
+  tags:
+    - apache_conf
+    - interpersonal_db
+
+- name: Initialize the Interpersonal database
+  vars:
+    # You can call an executable installed to a venv directly
+    # and it'll use its own venv transparently
+    flask: "{{ http_root_micahrl_com_interpersonal_venv }}/bin/flask"
+  shell: |+
+    export FLASK_APP="interpersonal"
+    export INTERPERSONAL_DATABASE="{{ http_root_micahrl_com_interpersonal_db }}"
+    export INTERPERSONAL_COOKIE_SECRET_KEY="{{ http_root_micahrl_com_interpersonal_cookie_secret }}"
+    {{ flask }} init-db
+    {{ flask }} set-login-password "{{ http_root_micahrl_com_interpersonal_passphrase }}"
+    {{ flask }} set-owner-profile "{{ http_root_micahrl_com_interpersonal_owner_profile }}"
+  become: true
+  become_user: "{{ http_root_micahrl_com_interpersonal_user }}"
+  tags:
+    - interpersonal_db
+
+- name: Create Interpersonal WSGI file
+  template:
+    src: interpersonal.wsgi.py.j2
+    dest: "{{ http_root_micahrl_com_interpersonal_wsgi }}"
+    owner: "{{ http_root_micahrl_com_interpersonal_user }}"
+    group: "{{ http_root_micahrl_com_interpersonal_group }}"
+    mode: "0755"
+  register: http_root_micahrl_com_interpersonal_install_wsgi
+  tags: apache_conf
+
+- name: Install Interpersonal Apache site
+  template:
+    src: interpersonal.micahrl.com.conf.j2
+    dest: /etc/apache2/sites-available/interpersonal.micahrl.com.conf
+    owner: root
+    group: root
+    mode: "0644"
+  register: http_root_micahrl_com_interpersonal_install_site
+  tags: apache_conf
+
+- name: Enable Interpersonal site
+  file:
+    state: link
+    src: ../sites-available/interpersonal.micahrl.com.conf
+    dest: /etc/apache2/sites-enabled/interpersonal.micahrl.com.conf
+  register: http_root_micahrl_com_interpersonal_enable_site
+  tags: apache_conf
+
+- name: Restart Apache
+  systemd:
+    name: apache2
+    state: restarted
+  when: http_root_micahrl_com_interpersonal_install_wsgi.changed or http_root_micahrl_com_interpersonal_install_site.changed or http_root_micahrl_com_interpersonal_enable_site.changed

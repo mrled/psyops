@@ -58,8 +58,8 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["abraxas.micahrl.com."]
-        # IndieAuth
-        - Name: indieauth.micahrl.com.
+        # IndieWeb stuff like IndieAuth, etc
+        - Name: interpersonal.micahrl.com.
           Type: CNAME
           TTL: 300
           ResourceRecords: ["abraxas.micahrl.com."]
