@@ -24,6 +24,7 @@
   git:
     repo: 'https://github.com/mrled/interpersonal'
     dest: "{{ http_root_micahrl_com_interpersonal_checkout_dir }}"
+    force: yes
   become: true
   become_user: "{{ http_root_micahrl_com_interpersonal_user }}"
 
