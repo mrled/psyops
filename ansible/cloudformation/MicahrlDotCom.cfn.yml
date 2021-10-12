@@ -25,13 +25,7 @@ Resources:
     Properties:
       HostedZoneId: !Ref OriginZone
       RecordSets:
-        # $ORIGIN
-        - Name: nullyork.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["18.216.135.175"]
-
-        # New $ORIGIN
+        # Apex domain
         - Name: abraxas.micahrl.com.
           Type: A
           TTL: 300
@@ -70,6 +64,12 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["abraxas.micahrl.com."]
+
+        # Old apex server
+        - Name: nullyork.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["18.216.135.175"]
 
         # GitHub Pages
         # (Documentation for my projects is at pages.micahrl.com)

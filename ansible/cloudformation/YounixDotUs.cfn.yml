@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: younix.us. Zone
+
+Resources:
+  YounixDotUsZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      Name: younix.us.
+
+  YounixDotUsRecords:
+    Type: "AWS::Route53::RecordSetGroup"
+
+    Properties:
+      HostedZoneId: !Ref YounixDotUsZone
+      RecordSets:
+
+        # Redirect everything to the micahrl.com root HTTP server
+        - Name: younix.us.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["167.71.20.245"]
+        - Name: younix.us.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2604:a880:400:d0::2100:1001"]
+        - Name: www.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["younix.us."]
+        - Name: toys.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["younix.us."]
+
+        # Hosted email with fastmail.com
+        - Name: younix.us.
+          Type: MX
+          TTL: 300
+          ResourceRecords:
+            - 10 in1-smtp.messagingengine.com.
+            - 20 in2-smtp.messagingengine.com.
+        - Name: mesmtp._domainkey.younix.us.
+          Type: TXT
+          TTL: 300
+          ResourceRecords:
+            - '"v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCu7NyeQZZvQve/dAxVIaopz7PqwFYw/uoQQXCZgma5G83PRBuDYNsNbh5EMxk7Kaj28i9lj9c6kxUGcswfA8496vVTCcgNolgUInoXDqjw7S34rueUkxCODTyPovIW8Utvp8y+JHQr6ZhebDSiENPvUgrRhDKxXd/5ME7q//GhdQIDAQAB"'
+Outputs:
+  OriginZoneId:
+    Description: The ID of the younix.us. root zone
+    Value: !Ref YounixDotUsZone

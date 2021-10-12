@@ -11,6 +11,9 @@ http_root_micahrl_com_root_site_alias_domains:
   - toys.micahrl.com
   - www.micahrl.com
   - micahrl.com
+  - younix.us
+  - www.younix.us
+  - toys.younix.us
 
 # Other domains, configured separately
 http_root_micahrl_com_interpersonal_domain: interpersonal.micahrl.com
