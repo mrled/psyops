@@ -1,0 +1,108 @@
+version: "3.7"
+
+services:
+
+  giteaweb:
+    image: gitea/gitea:1.15.5
+    environment:
+      #- USER_UID=1000
+      #- USER_GID=1000
+      GITEA__database__DB_TYPE: postgres
+      GITEA__database__HOST: giteadb:5432
+      GITEA__database__NAME: gitea
+      GITEA__database__USER: gitea
+      GITEA__database__PASSWD: "{{ privcicd_giteadb_gitea_password }}"
+    networks:
+      - cicdnet
+    volumes:
+      - giteawebdata:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "{{ privcicd_git_ssh_port }}:22"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.privcicd-giteaweb.rule=Host(`{{ privcicd_giteaweb_domain }}`)"
+      - "traefik.http.routers.privcicd-giteaweb.tls=true"
+      - "traefik.http.routers.privcicd-giteaweb.tls.certresolver=privcicd-resolver"
+      - "traefik.http.routers.privcicd-giteaweb.service=privcicd-giteaweb"
+      - "traefik.http.services.privcicd-giteaweb.loadbalancer.server.port=3000"
+
+  giteadb:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: gitea
+      POSTGRES_PASSWORD: "{{ privcicd_giteadb_gitea_password }}"
+      POSTGRES_DB: gitea
+    networks:
+      - cicdnet
+    volumes:
+      - giteadbdata:/var/lib/postgresql/data
+
+  whoami:
+    image: containous/whoami:latest
+    networks:
+      - cicdnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ privcicd_stack_name }}_cicdnet"
+      - "traefik.http.routers.privcicd-whoami.rule=Host(`{{ privcicd_whoami_domain }}`)"
+      - "traefik.http.routers.privcicd-whoami.entrypoints=https"
+      - "traefik.http.routers.privcicd-whoami.tls=true"
+      - "traefik.http.routers.privcicd-whoami.tls.certresolver=privcicd-resolver"
+      - "traefik.http.routers.privcicd-whoami.service=privcicd-whoami"
+      - "traefik.http.services.privcicd-whoami.loadbalancer.server.port=80"
+
+  balancer:
+    image: traefik:2.5
+    command: --web --docker --docker.swarmMode --docker.watch --docker.domain={{ privcicd_balancer_domain }} --logLevel=DEBUG
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "8080:8080/tcp"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - "{{ privcicd_traefik_config_file }}:/traefik.yml:ro"
+      - "{{ privcicd_traefik_acme_json }}:/acme.json"
+      - "{{ privcicd_traefik_aws_creds_file }}:/root/.aws/credentials"
+    environment:
+      - AWS_REGION={{ privcicd_acme_aws_region }}
+      - AWS_HOSTED_ZONE_ID={{ privcicd_acme_aws_zone }}
+    labels:
+      # Dashboard
+      # WARNING: A TRAILING SLASH IS MANDATORY IN THE BROWSER
+      # e.g. https://example.com/dashboard/, not merely /dashboard
+      - "traefik.http.routers.privcicd-traefik-api.rule=Host(`{{ privcicd_balancer_domain }}`)&&(PathPrefix(`/api`)||PathPrefix(`/dashboard`)||PathPrefix(`/debug`))"
+      - "traefik.http.routers.privcicd-traefik-api.service=api@internal"
+      - "traefik.http.routers.privcicd-traefik-api.tls.certresolver=privcicd-resolver"
+      - "traefik.http.routers.privcicd-traefik-api.entrypoints=https"
+
+      # global redirect to https
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=http"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+
+      # middleware redirect
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      # Without this, traefik can get confused and forward traffic to wrong IPs
+      # https://community.traefik.io/t/traefik-routes-to-the-wrong-http-service-ip/5076
+      #- "traefik.docker.network={{ privcicd_stack_name }}_cicdnet"
+
+    networks:
+      - cicdnet
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+
+volumes:
+  giteawebdata:
+    driver: local
+  giteadbdata:
+    driver: local
+
+networks:
+  cicdnet:
+    driver: overlay

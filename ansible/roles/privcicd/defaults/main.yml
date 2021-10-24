@@ -1,0 +1,15 @@
+---
+
+privcicd_stack_needs_redeploy: false
+
+privcicd_stack_name: privcicd
+privcicd_docker_greenfield_deploy: false
+privcicd_config_dir: /var/privcicd
+privcicd_compose_path: "{{ privcicd_config_dir }}/privcicd.compose.yml"
+privcicd_traefik_config_dir: "{{ privcicd_config_dir }}/traefik"
+privcicd_traefik_config_file: "{{ privcicd_traefik_config_dir }}/traefik.yml"
+privcicd_traefik_acme_json: "{{ privcicd_traefik_config_dir }}/acme.json"
+privcicd_traefik_aws_creds_file: "{{ privcicd_traefik_config_dir }}/aws_credentials"
+privcicd_traefik_api_users_file: "{{ privcicd_traefik_config_dir }}/traefik-users.htpasswd"
+
+privcicd_acme_staging: false

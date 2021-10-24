@@ -1,0 +1,54 @@
+---
+
+# defaultEntryPoints must be at the top
+defaultEntryPoints:
+  - http
+  - https
+
+log:
+  level: DEBUG
+  format: common
+accessLog:
+  format: common
+#tracing:
+#  serviceName: traefik
+
+api:
+  dashboard: true
+
+entryPoints:
+  http:
+    address: ":80"
+  https:
+    address: ":443"
+
+http:
+  middlewares:
+    privcicd-https-redir:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+certificatesResolvers:
+  privcicd-resolver:
+    acme:
+      storage: /acme.json
+      email: "{{ privcicd_acme_email }}"
+{% if privcicd_acme_staging | bool %}
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+{% endif %}
+      dnsChallenge:
+        provider: route53
+
+providers:
+  docker: {}
+
+docker:
+  endpoint: unix:///var/run/docker.sock
+  domain: "{{ privcicd_misc_domain }}"
+  watch: true
+  exposedbydefault: false
+
+# smh https://github.com/traefik/traefik/issues/7360
+pilot:
+  dashboard: false

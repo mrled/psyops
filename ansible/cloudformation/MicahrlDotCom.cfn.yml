@@ -332,6 +332,26 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["kilotah.home.micahrl.com."]
+        - Name: cicd.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kilotah.home.micahrl.com."]
+        - Name: cicd-lb.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kilotah.home.micahrl.com."]
+        - Name: cicd-whoami.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kilotah.home.micahrl.com."]
+        - Name: git.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kilotah.home.micahrl.com."]
+        - Name: drone.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kilotah.home.micahrl.com."]
 
   # A new group with permission to modify records in the OriginZone
   # For use with Let's Encrypt / ACME

@@ -13,7 +13,6 @@ seedbox_traefik_config_dir: "{{ seedbox_config_dir }}/traefik"
 seedbox_traefik_config_file: "{{ seedbox_traefik_config_dir }}/traefik.yml"
 seedbox_traefik_acme_json: "{{ seedbox_traefik_config_dir }}/acme.json"
 seedbox_traefik_aws_creds_file: "{{ seedbox_traefik_config_dir }}/aws_credentials"
-seedbox_traefik_api_users_file: "{{ seedbox_traefik_config_dir }}/traefik-users.htpasswd"
 seedbox_acme_staging: false
 seedbox_hydra2_config_dir: "{{ seedbox_config_dir }}/hydra2"
 seedbox_transmission_config_dir: "{{ seedbox_config_dir }}/transmission"

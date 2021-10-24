@@ -1,0 +1,6 @@
+---
+
+- name: Deploy privcicd infrastructure
+  hosts: privcicd
+  roles:
+    - { name: privcicd, tags: ["privcicd"] }

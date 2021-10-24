@@ -1,0 +1,18 @@
+---
+
+privcicd_acme_email: psyops@micahrl.com
+
+# port 2 is 'compressnet', something about WAN compression
+privcicd_git_ssh_port: 2
+
+privcicd_giteadb_gitea_password: "{{ vault_privcicd_giteadb_gitea_password }}"
+
+privcicd_acme_aws_region: "{{ global_home_zone_updater_region }}"
+privcicd_acme_aws_zone: "{{ global_home_zone_updater_zone_id }}"
+privcicd_acme_aws_access_key: "{{ global_home_zone_updater_access_key }}"
+privcicd_acme_aws_secret_key: "{{ global_home_zone_updater_secret_key }}"
+
+privcicd_misc_domain: cicd.home.micahrl.com
+privcicd_balancer_domain: cicd-lb.home.micahrl.com
+privcicd_whoami_domain: cicd-whoami.home.micahrl.com
+privcicd_giteaweb_domain: git.home.micahrl.com

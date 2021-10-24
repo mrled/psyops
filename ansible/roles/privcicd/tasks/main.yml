@@ -1,0 +1,104 @@
+---
+
+- name: Install pip packages
+  pip:
+    name:
+      - docker-compose
+      - passlib
+    state: latest
+
+- name: Create directories (700 root)
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: "0700"
+  with_items:
+    - "{{ privcicd_config_dir }}"
+    - "{{ privcicd_traefik_config_dir }}"
+
+- name: Allow ports through firewall
+  ufw:
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    rule: allow
+  with_items:
+    - port: 80
+      proto: tcp
+    - port: 443
+      proto: tcp
+    - port: "{{ privcicd_git_ssh_port }}"
+      proto: tcp
+
+- name: Install traefik config
+  template:
+    src: traefik.yml.j2
+    dest: "{{ privcicd_traefik_config_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: privcicd stack redeploy
+  tags: privcicd_docker_deploy
+
+- name: Install traefik AWS credentials
+  copy:
+    content: |+
+      [default]
+      aws_access_key_id={{ privcicd_acme_aws_access_key }}
+      aws_secret_access_key={{ privcicd_acme_aws_secret_key }}
+    dest: "{{ privcicd_traefik_aws_creds_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: privcicd stack redeploy
+  tags: privcicd_docker_deploy
+
+- name: Ensure acme.json exists
+  # Create an empty file if one isn't present
+  # Do nothing if it already exists
+  copy:
+    content: ""
+    dest: "{{ privcicd_traefik_acme_json }}"
+    force: no
+    owner: root
+    group: root
+    mode: "0600"
+  notify: privcicd stack redeploy
+  tags: privcicd_docker_deploy
+
+- name: Install privcicd compose file
+  template:
+    src: privcicd.compose.yml.j2
+    dest: "{{ privcicd_compose_path }}"
+    owner: root
+    group: root
+    mode: "0640"
+  tags:
+  - privcicd_docker_deploy
+  - privcicd_dex
+
+- name: Remove the Docker stack
+  block:
+    - name: Remove the Docker stack
+      docker_stack:
+        state: absent
+        name: "{{ privcicd_stack_name }}"
+        compose:
+          - "{{ privcicd_compose_path }}"
+    - name: Pause so the network gets deleted too
+      pause:
+        seconds: 15
+  tags: privcicd_docker_deploy
+  when: privcicd_docker_greenfield_deploy
+
+- name: Deploy the Docker stack
+  docker_stack:
+    state: present
+    name: "{{ privcicd_stack_name }}"
+    prune: yes
+    compose:
+      - "{{ privcicd_compose_path }}"
+  tags:
+  - privcicd_docker_deploy
+  - privcicd_dex
