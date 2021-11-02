@@ -13,3 +13,5 @@ privcicd_traefik_aws_creds_file: "{{ privcicd_traefik_config_dir }}/aws_credenti
 privcicd_traefik_api_users_file: "{{ privcicd_traefik_config_dir }}/traefik-users.htpasswd"
 
 privcicd_acme_staging: false
+
+privcicd_drone_replica_count: 8
