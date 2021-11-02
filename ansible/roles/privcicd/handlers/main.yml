@@ -1,7 +1,0 @@
----
-- name: privcicd stack redeploy
-  docker_stack:
-    state: present
-    name: "{{ privcicd_stack_name }}"
-    compose:
-      - "{{ privcicd_compose_path }}"

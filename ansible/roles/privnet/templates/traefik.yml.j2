@@ -24,17 +24,17 @@ entryPoints:
 
 http:
   middlewares:
-    privcicd-https-redir:
+    privnet-https-redir:
       redirectScheme:
         scheme: https
         permanent: true
 
 certificatesResolvers:
-  privcicd-resolver:
+  privnet-resolver:
     acme:
       storage: /acme.json
-      email: "{{ privcicd_acme_email }}"
-{% if privcicd_acme_staging | bool %}
+      email: "{{ privnet_acme_email }}"
+{% if privnet_acme_staging | bool %}
       caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
 {% endif %}
       dnsChallenge:
@@ -45,7 +45,7 @@ providers:
 
 docker:
   endpoint: unix:///var/run/docker.sock
-  domain: "{{ privcicd_misc_domain }}"
+  domain: "{{ privnet_misc_domain }}"
   watch: true
   exposedbydefault: false
 

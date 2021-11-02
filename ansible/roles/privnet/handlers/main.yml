@@ -1,0 +1,7 @@
+---
+- name: privnet stack redeploy
+  docker_stack:
+    state: present
+    name: "{{ privnet_stack_name }}"
+    compose:
+      - "{{ privnet_compose_path }}"

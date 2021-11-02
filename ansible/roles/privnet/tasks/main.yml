@@ -1,0 +1,110 @@
+---
+
+- name: Install system packages
+  package:
+    name:
+      - python3-pip
+
+- name: Install pip packages
+  pip:
+    name:
+      - docker-compose
+      - jsondiff
+      - passlib
+    state: latest
+
+- name: Create directories (700 root)
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: "0700"
+  with_items:
+    - "{{ privnet_config_dir }}"
+    - "{{ privnet_traefik_config_dir }}"
+
+# - name: Allow ports through firewall
+#   ufw:
+#     port: "{{ item.port }}"
+#     proto: "{{ item.proto }}"
+#     rule: allow
+#   with_items:
+#     - port: 80
+#       proto: tcp
+#     - port: 443
+#       proto: tcp
+#     - port: "{{ privnet_git_ssh_port }}"
+#       proto: tcp
+
+- name: Install traefik config
+  template:
+    src: traefik.yml.j2
+    dest: "{{ privnet_traefik_config_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: privnet stack redeploy
+  tags: privnet_docker_deploy
+
+- name: Install traefik AWS credentials
+  copy:
+    content: |+
+      [default]
+      aws_access_key_id={{ privnet_acme_aws_access_key }}
+      aws_secret_access_key={{ privnet_acme_aws_secret_key }}
+    dest: "{{ privnet_traefik_aws_creds_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: privnet stack redeploy
+  tags: privnet_docker_deploy
+
+- name: Ensure acme.json exists
+  # Create an empty file if one isn't present
+  # Do nothing if it already exists
+  copy:
+    content: ""
+    dest: "{{ privnet_traefik_acme_json }}"
+    force: no
+    owner: root
+    group: root
+    mode: "0600"
+  notify: privnet stack redeploy
+  tags: privnet_docker_deploy
+
+- name: Install privnet compose file
+  template:
+    src: privnet.compose.yml.j2
+    dest: "{{ privnet_compose_path }}"
+    owner: root
+    group: root
+    mode: "0640"
+  tags:
+  - privnet_docker_deploy
+  - privnet_dex
+
+- name: Remove the Docker stack
+  block:
+    - name: Remove the Docker stack
+      docker_stack:
+        state: absent
+        name: "{{ privnet_stack_name }}"
+        compose:
+          - "{{ privnet_compose_path }}"
+    - name: Pause so the network gets deleted too
+      pause:
+        seconds: 15
+  tags: privnet_docker_deploy
+  when: privnet_docker_greenfield_deploy
+
+- name: Deploy the Docker stack
+  docker_stack:
+    state: present
+    name: "{{ privnet_stack_name }}"
+    prune: yes
+    compose:
+      - "{{ privnet_compose_path }}"
+  tags:
+  - privnet_docker_deploy
+  - privnet_dex
