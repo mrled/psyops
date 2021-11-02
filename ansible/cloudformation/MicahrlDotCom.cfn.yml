@@ -198,6 +198,15 @@ Resources:
           TTL: 300
           ResourceRecords: ["trusting-visvesvaraya-791291.netlify.app."]
 
+        - Name: qualia.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["suspicious-bell-3797fb.netlify.app."]
+        - Name: disquisition.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["suspicious-bell-3797fb.netlify.app."]
+
   # Backchannel zone - for VPN clients
   BackchannelZone:
     Type: "AWS::Route53::HostedZone"
