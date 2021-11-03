@@ -13,15 +13,16 @@ services:
       GITEA__database__USER: gitea
       GITEA__database__PASSWD: "{{ privnet_giteadb_gitea_password }}"
     networks:
-      - cicdnet
+      - privnet
     volumes:
-      - giteawebdata:/data
+      - giteaweb_data:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
       - "{{ privnet_git_ssh_port }}:22"
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network={{ privnet_stack_name }}_privnet"
       - "traefik.http.routers.privnet-giteaweb.rule=Host(`{{ privnet_giteaweb_domain }}`)"
       - "traefik.http.routers.privnet-giteaweb.tls=true"
       - "traefik.http.routers.privnet-giteaweb.tls.certresolver=privnet-resolver"
@@ -35,11 +36,11 @@ services:
       POSTGRES_PASSWORD: "{{ privnet_giteadb_gitea_password }}"
       POSTGRES_DB: gitea
     networks:
-      - cicdnet
+      - privnet
     volumes:
-      - giteadbdata:/var/lib/postgresql/data
+      - giteadb_data:/var/lib/postgresql/data
 
-  drone:
+  {# drone:
     image: drone/drone:2
     environment:
       DRONE_GITEA_SERVER: https://{{ privnet_giteaweb_domain }}
@@ -49,12 +50,12 @@ services:
       DRONE_SERVER_HOST: "{{ privnet_drone_domain }}"
       DRONE_SERVER_PROTO: https
     networks:
-      - cicdnet
+      - privnet
     volumes:
       - dronedata:/data
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network={{ privnet_stack_name }}_cicdnet"
+      - "traefik.docker.network={{ privnet_stack_name }}_privnet"
       - "traefik.http.routers.privnet-drone.rule=Host(`{{ privnet_drone_domain }}`)"
       - "traefik.http.routers.privnet-drone.entrypoints=https"
       - "traefik.http.routers.privnet-drone.tls=true"
@@ -76,15 +77,70 @@ services:
       DRONE_RUNNER_NAME: "runner"
     deploy:
       # This must be an integer; should not be quoted
-      replicas: {{ privnet_drone_replica_count }}
+      replicas: {{ privnet_drone_replica_count }} #}
+
+
+  archivebox:
+    image: archivebox/archivebox:master
+    command: server --quick-init 0.0.0.0:8000
+    #ports:
+    #  - 8000:8000
+    environment:
+      PUID: {{ privnet_archivebox_uid }}
+      PGID: {{ privnet_archivebox_gid }}
+      TZ: US/Central
+      USE_COLOR: "True"
+      ALLOWED_HOSTS: "*"
+      MEDIA_MAX_SIZE: 750m # youtube-dl might hit this
+      SEARCH_BACKEND_ENGINE: sonic # sonic allows full text search
+      SEARCH_BACKEND_HOST_NAME: sonic
+      SEARCH_BACKEND_PASSWORD: "{{ privnet_archivebox_sonic_backend_password }}"
+    volumes:
+      - {{ privnet_archivebox_data_dir }}:/data
+    networks:
+      - privnet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ privnet_stack_name }}_privnet"
+      - "traefik.http.routers.privnet-archivebox.rule=Host(`{{ privnet_archivebox_domain }}`)"
+      - "traefik.http.routers.privnet-archivebox.entrypoints=https"
+      - "traefik.http.routers.privnet-archivebox.tls=true"
+      - "traefik.http.routers.privnet-archivebox.tls.certresolver=privnet-resolver"
+      - "traefik.http.routers.privnet-archivebox.service=privnet-archivebox"
+      - "traefik.http.services.privnet-archivebox.loadbalancer.server.port=8000"
+
+  sonic:
+    image: valeriansaliou/sonic:v1.3.0
+    #expose:
+    #  - 1491
+    networks:
+      - privnet
+    environment:
+      SEARCH_BACKEND_PASSWORD: "{{ privnet_archivebox_sonic_backend_password }}"
+    volumes:
+      - {{ privnet_config_dir }}/archivebox_sonic/sonic.cfg:/etc/sonic.cfg:ro
+      - archivebox_sonic_data:/var/lib/sonic/store
+
+  ### Optional Addons: tweak these examples as needed for your specific use case
+
+  # Example: Run scheduled imports in a docker instead of using cron on the
+  # host machine, add tasks and see more info with archivebox schedule --help
+  # scheduler:
+  #    image: archivebox/archivebox:latest
+  #    command: schedule --foreground --every=day --depth=1 'https://getpocket.com/users/USERNAME/feed/all'
+  #    environment:
+  #        - USE_COLOR=True
+  #        - SHOW_PROGRESS=False
+  #    volumes:
+  #        - ./data:/data
 
   whoami:
     image: containous/whoami:latest
     networks:
-      - cicdnet
+      - privnet
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network={{ privnet_stack_name }}_cicdnet"
+      - "traefik.docker.network={{ privnet_stack_name }}_privnet"
       - "traefik.http.routers.privnet-whoami.rule=Host(`{{ privnet_whoami_domain }}`)"
       - "traefik.http.routers.privnet-whoami.entrypoints=https"
       - "traefik.http.routers.privnet-whoami.tls=true"
@@ -126,10 +182,10 @@ services:
 
       # Without this, traefik can get confused and forward traffic to wrong IPs
       # https://community.traefik.io/t/traefik-routes-to-the-wrong-http-service-ip/5076
-      #- "traefik.docker.network={{ privnet_stack_name }}_cicdnet"
+      #- "traefik.docker.network={{ privnet_stack_name }}_privnet"
 
     networks:
-      - cicdnet
+      - privnet
     deploy:
       mode: global
       placement:
@@ -137,13 +193,17 @@ services:
           - node.role == manager
 
 volumes:
-  giteawebdata:
+  giteaweb_data:
     driver: local
-  giteadbdata:
+  giteadb_data:
     driver: local
-  dronedata:
+  drone_data:
+    driver: local
+  archivebox_web_data:
+    driver: local
+  archivebox_sonic_data:
     driver: local
 
 networks:
-  cicdnet:
+  privnet:
     driver: overlay

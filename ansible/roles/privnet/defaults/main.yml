@@ -15,3 +15,14 @@ privnet_traefik_api_users_file: "{{ privnet_traefik_config_dir }}/traefik-users.
 privnet_acme_staging: false
 
 privnet_drone_replica_count: 8
+
+privnet_archivebox_user: archivebox
+privnet_archivebox_group: archivebox
+privnet_archivebox_data_dir: /var/archivebox
+privnet_archivebox_venv: "{{ privnet_archivebox_homedir }}/archivebox.venv"
+privnet_archivebox_home_bin: "{{ privnet_archivebox_homedir }}/bin"
+privnet_archivebox_script: "{{ privnet_archivebox_homedir }}/archivebox.sh"
+
+# Keys that are allowed to ssh to the archivebox user and run the archivebox.sh.j2 script.
+# Note that the archivebox python program might permit escaping the SSH command= restriction.
+privnet_archivebox_allow_ssh_keys: []

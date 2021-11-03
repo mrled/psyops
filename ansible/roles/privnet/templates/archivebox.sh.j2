@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+# Change to the archivebox directory and run archivebox from the venv.
+# Lets you run a single command for archivebox without worrying about directory context.
+# Especially useful for remote users.
+
+archivebox="{{ privnet_archivebox_venv }}/bin/archivebox"
+archivebox_dir="{{ privnet_archivebox_data_dir }}"
+
+#echo "Running $archivebox from $archivebox_dir with arguments: $SSH_ORIGINAL_COMMAND"
+
+cd "$archivebox_dir"
+if test "$SSH_ORIGINAL_COMMAND"; then
+    # If $SSH_ORIGINAL_COMMAND is present, then we are run via the forced command feature of ssh
+    "$archivebox" $SSH_ORIGINAL_COMMAND
+else
+    # Otherwise, assume we are run locally and arguments passed directly
+    "$archivebox" "$@"
+fi

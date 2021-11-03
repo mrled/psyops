@@ -4,6 +4,7 @@
   package:
     name:
       - python3-pip
+      - python3-venv
 
 - name: Install pip packages
   pip:
@@ -12,6 +13,45 @@
       - jsondiff
       - passlib
     state: latest
+
+- name: Add archivebox group
+  group:
+    name: "{{ privnet_archivebox_group }}"
+    system: yes
+
+- name: Add archivebox user
+  user:
+    name: "{{ privnet_archivebox_user }}"
+    group: "{{ privnet_archivebox_group }}"
+    system: yes
+    create_home: yes
+
+- name: getent archivebox
+  getent:
+    database: passwd
+    key: "{{ privnet_archivebox_user }}"
+  register: privnet_archivebox_getent
+  tags:
+  - privnet_docker_deploy
+
+- name: Set archivebox UID/GID facts
+  set_fact:
+    privnet_archivebox_uid: "{{ getent_passwd[privnet_archivebox_user][1] }}"
+    privnet_archivebox_gid: "{{ getent_passwd[privnet_archivebox_user][2] }}"
+    privnet_archivebox_homedir: "{{ getent_passwd[privnet_archivebox_user][4] }}"
+  tags:
+  - privnet_docker_deploy
+
+# This is useful so that the archivebox user can run archivebox commands without needing docker permissions
+# Sharing a data directory between multiple instances is explicityly allowed per
+# <https://docs.archivebox.io/en/latest/Usage.html>
+- name: Install archivebox in a venv owned by the archivebox user
+  pip:
+    name: archivebox
+    virtualenv: "{{ privnet_archivebox_venv }}"
+    virtualenv_command: "python3 -m venv"
+  become: yes
+  become_user: "{{ privnet_archivebox_user }}"
 
 - name: Create directories (700 root)
   file:
@@ -23,6 +63,39 @@
   with_items:
     - "{{ privnet_config_dir }}"
     - "{{ privnet_traefik_config_dir }}"
+    - "{{ privnet_config_dir }}/archivebox_sonic"
+
+- name: Create directories (700 archivebox)
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ privnet_archivebox_user }}"
+    group: "{{ privnet_archivebox_group }}"
+    mode: "0700"
+  with_items:
+    - "{{ privnet_archivebox_data_dir }}"
+    - "{{ privnet_archivebox_home_bin }}"
+    - "{{ privnet_archivebox_homedir }}/.ssh"
+
+- name: "Install archivebox script"
+  template:
+    src: "archivebox.sh.j2"
+    dest: "{{ privnet_archivebox_home_bin }}/archivebox"
+    owner: "{{ privnet_archivebox_user }}"
+    group: "{{ privnet_archivebox_group }}"
+    mode: "0700"
+
+- name: Configure archivebox authorized_keys
+  lineinfile:
+    line: >-
+      command="{{ privnet_archivebox_home_bin }}/archivebox ${SSH_ORIGINAL_COMMAND#* }",no-port-forwarding,no-X11-forwarding,no-agent-forwarding
+      {{ item }}"
+    path: "{{ privnet_archivebox_homedir }}/.ssh/authorized_keys"
+    create: true
+    owner: "{{ privnet_archivebox_user }}"
+    group: "{{ privnet_archivebox_group }}"
+    mode: "0600"
+  with_items: "{{ privnet_archivebox_allow_ssh_keys }}"
 
 # - name: Allow ports through firewall
 #   ufw:
@@ -72,6 +145,14 @@
     mode: "0600"
   notify: privnet stack redeploy
   tags: privnet_docker_deploy
+
+- name: Install Archivebox Sonic config
+  template:
+    src: archivebox.sonic.cfg.j2
+    dest: "{{ privnet_config_dir }}/archivebox_sonic/sonic.cfg"
+    owner: root
+    group: root
+    mode: "0644"
 
 - name: Install privnet compose file
   template:
