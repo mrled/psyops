@@ -27,3 +27,17 @@ privnet_archivebox_sonic_backend_password: "{{ vault_privnet_archivebox_sonic_ba
 
 privnet_archivebox_allow_ssh_keys:
 - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINHRJi0NIl9qe++nXM2vHg1ehqp61D5dbFqDa3JHiQdz mrled@Haluth.homeward.micahrl.com
+
+# Not blacklisting:
+# - youtube.com / youtu.be
+#   Not downloading with youtube-dl for now, but want full text search
+# - github.com
+#   Not downloading git repos for now, but want full text issue/wiki search
+privnet_archivebox_domain_blacklist:
+  - amazon.com
+  - duckduckgo.com
+  - google.com
+  - plex.tv
+
+# private/encrypted items
+privnet_archivebox_domain_blacklist_append: "{{ vault_privnet_archivebox_domain_blacklist_append }}"

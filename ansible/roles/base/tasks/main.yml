@@ -27,6 +27,11 @@
     update_cache: yes
   when: ansible_distribution == "Ubuntu"
 
+- name: Install base packages (Debian)
+  apt:
+    name:
+      - ntp
+
 - name: Set system hostname to inventory_hostname
   hostname:
     name: "{{ inventory_hostname }}"

@@ -14,4 +14,4 @@ archivebox_ssh_id="$HOME/.ssh/archivebox/archivebox_id_ed25519"
 archivebox_user=archivebox
 archivebox_host=archivebox.home.micahrl.com
 
-ssh -o AddKeysToAgent=no -i "$archivebox_ssh_id" -t "$archivebox_user@$archivebox_host" "$@"
+ssh -o AddKeysToAgent=no -i "$archivebox_ssh_id" "$archivebox_user@$archivebox_host" "$@"

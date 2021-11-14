@@ -33,6 +33,7 @@
   register: privnet_archivebox_getent
   tags:
   - privnet_docker_deploy
+  - privnet_archivebox_blacklist
 
 - name: Set archivebox UID/GID facts
   set_fact:
@@ -41,17 +42,18 @@
     privnet_archivebox_homedir: "{{ getent_passwd[privnet_archivebox_user][4] }}"
   tags:
   - privnet_docker_deploy
+  - privnet_archivebox_blacklist
 
-# This is useful so that the archivebox user can run archivebox commands without needing docker permissions
-# Sharing a data directory between multiple instances is explicityly allowed per
-# <https://docs.archivebox.io/en/latest/Usage.html>
-- name: Install archivebox in a venv owned by the archivebox user
-  pip:
-    name: archivebox
-    virtualenv: "{{ privnet_archivebox_venv }}"
-    virtualenv_command: "python3 -m venv"
-  become: yes
-  become_user: "{{ privnet_archivebox_user }}"
+# # This is useful so that the archivebox user can run archivebox commands without needing docker permissions
+# # Sharing a data directory between multiple instances is explicityly allowed per
+# # <https://docs.archivebox.io/en/latest/Usage.html>
+# - name: Install archivebox in a venv owned by the archivebox user
+#   pip:
+#     name: archivebox
+#     virtualenv: "{{ privnet_archivebox_venv }}"
+#     virtualenv_command: "python3 -m venv"
+#   become: yes
+#   become_user: "{{ privnet_archivebox_user }}"
 
 - name: Create directories (700 root)
   file:
@@ -77,18 +79,32 @@
     - "{{ privnet_archivebox_home_bin }}"
     - "{{ privnet_archivebox_homedir }}/.ssh"
 
-- name: "Install archivebox script"
+# - name: "Install archivebox script"
+#   template:
+#     src: "archivebox.sh.j2"
+#     dest: "{{ privnet_archivebox_home_bin }}/archivebox"
+#     owner: "{{ privnet_archivebox_user }}"
+#     group: "{{ privnet_archivebox_group }}"
+#     mode: "0700"
+
+- name: Install archivebox-docker script
   template:
-    src: "archivebox.sh.j2"
-    dest: "{{ privnet_archivebox_home_bin }}/archivebox"
-    owner: "{{ privnet_archivebox_user }}"
-    group: "{{ privnet_archivebox_group }}"
-    mode: "0700"
+    src: archivebox-docker.sh.j2
+    dest: /usr/local/bin/archivebox-docker
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Allow archivebox user to execute archivebox-docker script
+  copy:
+    content: "{{ privnet_archivebox_user }} ALL=(root) NOPASSWD: /usr/local/bin/archivebox-docker *"
+    dest: /etc/sudoers.d/archivebox_user_archivebox-docker
+    mode: "0640"
 
 - name: Configure archivebox authorized_keys
   lineinfile:
     line: >-
-      command="{{ privnet_archivebox_home_bin }}/archivebox ${SSH_ORIGINAL_COMMAND#* }",no-port-forwarding,no-X11-forwarding,no-agent-forwarding
+      command="sudo /usr/local/bin/archivebox-docker ${SSH_ORIGINAL_COMMAND#* }",no-port-forwarding,no-X11-forwarding,no-agent-forwarding
       {{ item }}"
     path: "{{ privnet_archivebox_homedir }}/.ssh/authorized_keys"
     create: true
@@ -96,6 +112,19 @@
     group: "{{ privnet_archivebox_group }}"
     mode: "0600"
   with_items: "{{ privnet_archivebox_allow_ssh_keys }}"
+
+- name: Write blacklist to file
+  copy:
+    content: |+
+      {{ privnet_archivebox_domain_blacklist_all }}
+
+      {{ privnet_archivebox_url_blacklist }}
+
+    dest: "{{ privnet_archivebox_homedir }}/archivebox_blacklist"
+    owner: "{{ privnet_archivebox_user }}"
+    group: "{{ privnet_archivebox_group }}"
+    mode: "0600"
+  tags: privnet_archivebox_blacklist
 
 # - name: Allow ports through firewall
 #   ufw:

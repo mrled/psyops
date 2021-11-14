@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+privnet_stack_name="{{ privnet_stack_name }}"
+
+container=$(docker ps -f name=${privnet_stack_name}_archivebox -q)
+if ! test "$container"; then
+    echo "Archivebox container is not running"
+    exit 1
+fi
+
+# You don't need a PTY (-t), but you do need "interactive" (-i);
+# without -i, the command in the container won't accept STDIN.
+docker exec -u archivebox -i "$container" archivebox "$@"
