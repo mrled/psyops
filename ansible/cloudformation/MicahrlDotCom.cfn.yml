@@ -207,6 +207,11 @@ Resources:
           TTL: 300
           ResourceRecords: ["suspicious-bell-3797fb.netlify.app."]
 
+        - Name: prism.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["lazarus-scientific.b-cdn.net."]
+
   # Backchannel zone - for VPN clients
   BackchannelZone:
     Type: "AWS::Route53::HostedZone"

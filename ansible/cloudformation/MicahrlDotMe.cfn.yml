@@ -22,6 +22,11 @@ Resources:
           TTL: 300
           ResourceRecords: ["com.micahrl.me."]
 
+        - Name: prism.micahrl.me.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["sixteen-jazzy.b-cdn.net."]
+
 
 Outputs:
   OriginZoneId:
