@@ -4,9 +4,5 @@ set -eu
 remote="{{ backup_unifi_controller_user }}@{{ backup_unifi_controller_hostname }}"
 dest="{{ backup_unifi_dest }}"
 
-# VERY stupid hack to ensure rsync exists on cloudkey
-# The cloudkey doesn't have it by default, and will remove it on firmware upgrade
-ssh "$remote" sh -c "command -v rsync 2>&1 >/dev/null || apt -y install rsync"
-
 scp -r "${remote}:/srv/unifi/data/backup/autobackup" "${dest}/unifi-controller"
 scp -r "${remote}:/etc/unifi-protect/backups" "${dest}/unifi-protect"
