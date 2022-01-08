@@ -5,7 +5,14 @@ seedbox_user: seedbox
 seedbox_group: seedbox
 seedbox_user_samba_passwd_ro: "{{ vault_seedbox_user_samba_passwd_ro }}"
 seedbox_timezone: "{{ global_timezone.zoneinfo_cityname }}"
-seedbox_media_root: /4tbmirror
+
+# Assume this is already created with a mounted filesystem.
+# It may be a symlink.
+# Filesystem mounting/creation is not handled in Ansible because it's not that helpful -
+# it only happens once, and we have to build the mdadm array as well.
+# And replacing the old volume with a new one is much easier to do manually
+# than to try to automate, and automation has no upside.
+seedbox_media_root: /seedboxmedia
 
 seedbox_usenet_completes_dir: "{{ seedbox_media_root }}/usenet/completes"
 seedbox_usenet_incompletes_dir: "{{ seedbox_media_root }}/usenet/incompletes"
