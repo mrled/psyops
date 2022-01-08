@@ -42,6 +42,16 @@
     user: "{{ backup_unifi_user }}"
     cron_file: "{{ backup_unifi_jobname }}"
 
+- name: Allow all users to run wrapper script as our user
+  lineinfile:
+    path: /etc/sudoers.d/acmedns_{{ backup_unifi_jobname }}
+    line: "ALL ALL=({{ backup_unifi_user }}) NOPASSWD: {{ backup_unifi_scriptpath }}"
+    owner: root
+    group: root
+    mode: "0640"
+    create: yes
+    validate: visudo -cf %s
+
 - name: Install hook
   template:
     src: hook.json.j2
