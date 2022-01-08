@@ -6,7 +6,7 @@
     owner: root
     group: root
     mode: "0644"
-    validate: testparm %s
+    validate: testparm --suppress-prompt %s
   notify: restart samba
 
 # TODO: check whether existing smbpasswd matches seedbox_user_samba_passwd_ro
