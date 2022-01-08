@@ -57,11 +57,6 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["abraxas.micahrl.com."]
-        # Interpersonal site used just for testing
-        - Name: interpersonal-test.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["boring-borg-344b69.netlify.app."]
         # Old server that hosted biblemunger
         # Biblemunger app is now hosted on Vercel with the canonical url biblemunger.micahrl.com
         # toys.micahrl.com exists to redirect toys.micahrl.com/biblemunger/* -> biblemunger.micahrl.com/*
@@ -283,6 +278,10 @@ Resources:
           Type: A
           TTL: 60
           ResourceRecords: ["192.168.1.143"]
+        - Name: yalda.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.171"]
 
         # Clients
         - Name: glitch.home.micahrl.com
