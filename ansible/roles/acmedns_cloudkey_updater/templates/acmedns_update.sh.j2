@@ -6,8 +6,19 @@ export AWS_ACCESS_KEY_ID={{ acmedns_cloudkey_updater_aws_access_key }}
 export AWS_SECRET_ACCESS_KEY={{ acmedns_cloudkey_updater_aws_secret_key }}
 export AWS_HOSTED_ZONE_ID={{ acmedns_cloudkey_updater_aws_zone_id }}
 
+date=$(date +%Y%m%d)
+cloudkeyuser="{{ acmedns_cloudkey_updater_server_user }}"
+cloudkeyhost="{{ acmedns_cloudkey_updater_server }}"
+sshremote="$cloudkeyuser@$cloudkeyhost"
+updatercertdir="{{ acmedns_cloudkey_updater_certificate_dir }}"
+updaterkeypath="$updatercertdir/certificates/$cloudkeyhost.key"
+updatercrtpath="$updatercertdir/certificates/$cloudkeyhost.crt"
+cloudkeydomain="{{ acmedns_cloudkey_updater_domain }}"
+cloudkeycertdir=/data/unifi-core/config
+
 echoexec() { echo "Running: $*"; $*; }
 
+# TODO: is this still valid for the 2.x firmware?
 # The java code that runs the Unifi Controller interface on :8443 on a CloudKey
 # can't understand ec384 certs, which are the lego default.
 # So we have to force it to use rsa4096.
@@ -21,83 +32,8 @@ echoexec /usr/local/bin/wraplego.py \
     --legodir "{{ acmedns_cloudkey_updater_certificate_dir }}" \
     --email "{{ acmedns_cloudkey_updater_email }}" \
     --domain "{{ acmedns_cloudkey_updater_domain }}" \
-    --authenticator "route53" \
-    --key-type rsa4096 \
+    --authenticator "route53"
 
-host="{{ acmedns_cloudkey_updater_server_user }}@{{ acmedns_cloudkey_updater_server }}"
-date=$(date +%Y%m%d)
-tmppath=/tmp/${date}-acme-update
-scp -r {{ acmedns_cloudkey_updater_certificate_dir }}/certificates $host:$tmppath
-dest="/etc/ssl/private"
-# Note that this password is NOT arbitrary - it's what the CloudKey expects
-badpass=aircontrolenterprise
-
-#
-# SSH to the remote server and install the certs:
-#
-
-# Note that the tarball we create may be required? I'm not clear on that, but I cargo culted it.
-
-echo "$(cat <<ENDSSH
-
-umask 0000
-
-if ! test -d $dest.acme_renew_hook_backup; then
-    echo 'Copying original files...'
-    cp -R "$dest" "$dest.acme_renew_hook_backup"
-    chown -R root:ssl-cert "$dest.acme_renew_hook_backup"
-fi
-rm -f "$dest"/*
-
-echo "Generating .p12 file for importing..."
-openssl pkcs12 -export \
-    -in "$tmppath/{{ acmedns_cloudkey_updater_domain }}.crt" \
-    -inkey "$tmppath/{{ acmedns_cloudkey_updater_domain }}.key" \
-    -out "$tmppath/cloudkey.p12" \
-    -name unifi \
-    -password pass:$badpass
-
-echo "Copying new cert..."
-mv $tmppath/{{ acmedns_cloudkey_updater_domain }}.crt $dest/cloudkey.crt
-mv $tmppath/{{ acmedns_cloudkey_updater_domain }}.key $dest/cloudkey.key
-
-echo 'Importing .p12...'
-#keytool -delete -alias unifi -storepass $badpass -keystore $dest/unifi.keystore.jks || true
-keytool -importkeystore -noprompt \
-    -deststorepass $badpass \
-    -destkeypass $badpass \
-    -destkeystore $dest/unifi.keystore.jks \
-    -srckeystore $tmppath/cloudkey.p12 \
-    -srcstoretype PKCS12 \
-    -srcstorepass $badpass \
-    -alias unifi
-
-echo "Calculating md5..."
-md5sum "$dest/unifi.keystore.jks" > "$dest/unifi.keystore.jks.md5"
-
-echo "Setting cert permissions..."
-chown -R root:ssl-cert "$dest"
-chmod 644 $dest/cloudkey.crt $dest/unifi.keystore.jks.md5
-chmod 640 $dest/cloudkey.key $dest/unifi.keystore.jks
-
-echo "Creating tarball..."
-cd "$dest"
-tar -cvf cert.tar unifi.keystore.jks unifi.keystore.jks.md5 cloudkey.crt cloudkey.key
-chown root:ssl-cert "$dest/cert.tar"
-chmod 640 "$dest/cert.tar"
-
-echo 'Removing temp dir...'
-rm -rf $tmppath
-
-echo 'Testing nginx configuration...'
-/usr/sbin/nginx -t || echo 'NGINX CONFIG TEST FAILED'
-
-echo 'Restarting nginx...'
-systemctl restart nginx
-echo 'Restarting unifi...'
-systemctl restart unifi
-
-echo 'Done'
-
-ENDSSH
-)" | ssh $host
+scp "$updatercrtpath" "$sshremote":/"$cloudkeycertdir/unifi-core.crt"
+scp "$updaterkeypath" "$sshremote":/"$cloudkeycertdir/unifi-core.key"
+ssh "$sshremote" systemctl restart unifi-core.service
