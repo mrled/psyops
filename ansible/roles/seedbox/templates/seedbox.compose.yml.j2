@@ -477,10 +477,10 @@ services:
       placement:
         constraints:
           - node.role == manager
-    logging:
-      driver: gelf
-      options:
-        gelf-address: "udp://logstash:12201"
+    # logging:
+    #   driver: gelf
+    #   options:
+    #     gelf-address: "udp://logstash:12201"
 
 configs:
   dex_config:
