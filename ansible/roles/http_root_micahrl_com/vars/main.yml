@@ -2,5 +2,7 @@
 http_root_micahrl_com_interpersonal_checkout_dir: "{{ http_root_micahrl_com_interpersonal_home }}/app"
 http_root_micahrl_com_interpersonal_private_dir: "{{ http_root_micahrl_com_interpersonal_home }}/private"
 http_root_micahrl_com_interpersonal_db: "{{ http_root_micahrl_com_interpersonal_private_dir }}/interpersonal.db"
+http_root_micahrl_com_interpersonal_config: "{{ http_root_micahrl_com_interpersonal_private_dir }}/interpersonal.config.yml"
 http_root_micahrl_com_interpersonal_venv: "{{ http_root_micahrl_com_interpersonal_home }}/venv"
+http_root_micahrl_com_interpersonal_mediastaging_dir: "{{ http_root_micahrl_com_interpersonal_home }}/staging"
 http_root_micahrl_com_interpersonal_wsgi: "{{ http_root_micahrl_com_interpersonal_home }}/interpersonal.wsgi.py"

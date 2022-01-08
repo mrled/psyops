@@ -27,6 +27,7 @@
     force: yes
   become: true
   become_user: "{{ http_root_micahrl_com_interpersonal_user }}"
+  when: not http_root_micahrl_com_interpersonal_skip_install
 
 - name: Create "{{ http_root_micahrl_com_interpersonal_user }}-owned Interpersonal directories"
   file:
@@ -37,6 +38,7 @@
     mode: "0750"
   with_items:
   - "{{ http_root_micahrl_com_interpersonal_private_dir }}"
+  - "{{ http_root_micahrl_com_interpersonal_mediastaging_dir }}"
 
 - name: Create Interpersonal venv and install package and prerequisites
   pip:
@@ -46,6 +48,7 @@
     virtualenv_command: python3 -m venv
   become: true
   become_user: "{{ http_root_micahrl_com_interpersonal_user }}"
+  when: not http_root_micahrl_com_interpersonal_skip_install
 
 - name: Generate the secret key for Flask's cookie encrypted sessions
   command: python3 -c 'import base64, os; print(base64.b64encode(os.urandom(32)).decode())'
@@ -61,6 +64,14 @@
     - apache_conf
     - interpersonal_db
 
+- name: Install the Interpersonal config file
+  template:
+    src: interpersonal.config.yml.j2
+    dest: "{{ http_root_micahrl_com_interpersonal_config }}"
+    owner: "{{ http_root_micahrl_com_interpersonal_user }}"
+    group: "{{ http_root_micahrl_com_interpersonal_group }}"
+    mode: "0600"
+
 - name: Initialize the Interpersonal database
   vars:
     # You can call an executable installed to a venv directly
@@ -68,11 +79,8 @@
     flask: "{{ http_root_micahrl_com_interpersonal_venv }}/bin/flask"
   shell: |+
     export FLASK_APP="interpersonal"
-    export INTERPERSONAL_DATABASE="{{ http_root_micahrl_com_interpersonal_db }}"
-    export INTERPERSONAL_COOKIE_SECRET_KEY="{{ http_root_micahrl_com_interpersonal_cookie_secret }}"
+    export INTERPERSONAL_CONFIG="{{ http_root_micahrl_com_interpersonal_config }}"
     {{ flask }} init-db
-    {{ flask }} set-login-password "{{ http_root_micahrl_com_interpersonal_passphrase }}"
-    {{ flask }} set-owner-profile "{{ http_root_micahrl_com_interpersonal_owner_profile }}"
   become: true
   become_user: "{{ http_root_micahrl_com_interpersonal_user }}"
   tags:

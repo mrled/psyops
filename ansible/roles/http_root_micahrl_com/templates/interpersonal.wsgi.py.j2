@@ -1,6 +1,5 @@
 """The Interpersonal WSGI file"""
 
 from interpersonal import create_app
-dbpath = "{{ http_root_micahrl_com_interpersonal_db }}"
-cookey = "{{ http_root_micahrl_com_interpersonal_cookie_secret }}"
-application = create_app(dbpath=dbpath, cookey=cookey, loglevel="DEBUG")
+configpath = "{{ http_root_micahrl_com_interpersonal_config }}"
+application = create_app(configpath=configpath)

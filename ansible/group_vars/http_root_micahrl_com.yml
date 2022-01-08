@@ -43,4 +43,7 @@ http_root_micahrl_com_redirect_matches:
     new: https://biblemunger.micahrl.com/$1
 
 http_root_micahrl_com_interpersonal_passphrase: "{{ vault_http_root_micahrl_com_interpersonal_passphrase }}"
-http_root_micahrl_com_interpersonal_owner_profile: https://me.micahrl.com/
+http_root_micahrl_com_interpersonal_uri: https://interpersonal.micahrl.com/
+
+http_root_micahrl_com_interpersonal_app_private_key: "{{ vault_http_root_micahrl_com_interpersonal_app_private_key }}"
+http_root_micahrl_com_interpersonal_app_id: 153329

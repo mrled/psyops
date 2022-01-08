@@ -6,3 +6,7 @@ http_root_micahrl_com_interpersonal_group: wsgi_interpersonal
 
 # Make sure this is inside of /var/www so that apache config will allow it
 http_root_micahrl_com_interpersonal_home: /var/www/interpersonal
+
+# When this is 'true', do not set up the venv or install Interpersonal or its dependencies.
+# Useful when you want to make changes to Interpersonal and test them without committing them.
+http_root_micahrl_com_interpersonal_skip_install: false

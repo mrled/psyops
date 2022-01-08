@@ -34,6 +34,7 @@
         Header always set Strict-Transport-Security "max-age=31536000"
         Header always set Content-Security-Policy upgrade-insecure-requests
 
+        WSGIPassAuthorization On
         WSGIDaemonProcess {{ http_root_micahrl_com_interpersonal_domain }} \
             user={{ http_root_micahrl_com_interpersonal_user }} \
             python-home={{ http_root_micahrl_com_interpersonal_venv }}
