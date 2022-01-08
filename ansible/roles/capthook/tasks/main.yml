@@ -129,4 +129,5 @@
   systemd:
     name: capthook
     state: started
+    enabled: yes
     daemon_reload: yes
