@@ -274,7 +274,7 @@ Resources:
           ResourceRecords: ["192.168.1.27"]
 
         # Management interfacess
-        - Name: tagasaw-tinypilot.home.micahrl.com.
+        - Name: edison.home.micahrl.com.
           Type: A
           TTL: 60
           ResourceRecords: ["192.168.1.143"]
@@ -453,6 +453,7 @@ Resources:
                 Action:
                   - route53:GetChange
                   - route53:ListHostedZonesByName
+                  - route53:ListHostedZones
                 Resource: "*"
               - Effect: Allow
                 Action:
