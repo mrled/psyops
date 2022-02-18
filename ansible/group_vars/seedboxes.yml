@@ -1,6 +1,10 @@
 ---
 # Seedbox settings
 
+# TODO: This isn't ideal, because it keeps the media in the same directory as the configs.
+# Would be better to separate them for sharing purposes.
+seedbox_config_dir: /seedboxmedia/seedboxconf
+
 seedbox_user: seedbox
 seedbox_group: seedbox
 seedbox_user_samba_passwd_ro: "{{ vault_seedbox_user_samba_passwd_ro }}"

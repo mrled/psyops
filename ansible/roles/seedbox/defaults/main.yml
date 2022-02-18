@@ -1,5 +1,4 @@
 ---
-seedbox_config_dir: /etc/seedbox
 seedbox_compose_path: "{{ seedbox_config_dir }}/seedbox.compose.yml"
 seedbox_sabnzbd_config_dir: "{{ seedbox_config_dir }}/sabnzbd"
 seedbox_sonarr_config_dir: "{{ seedbox_config_dir }}/sonarr"
