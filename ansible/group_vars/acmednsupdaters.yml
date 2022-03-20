@@ -1,4 +1,6 @@
 ---
+acmedns_updater_email: psyops@micahrl.com
+
 # ACME DNS base updater settings
 acmedns_base_dir: "/etc/acmedns"
 acmedns_base_certificate_dir: "{{ acmedns_base_dir }}/certificates"
@@ -17,7 +19,7 @@ acmedns_syno_updater_aws_access_key: "{{ global_home_zone_updater_access_key }}"
 acmedns_syno_updater_aws_secret_key: "{{ global_home_zone_updater_secret_key }}"
 acmedns_syno_updater_aws_region: "{{ global_home_zone_updater_region }}"
 acmedns_syno_updater_aws_zone_id: "{{ global_home_zone_updater_zone_id }}"
-acmedns_syno_updater_email: psyops@micahrl.com
+acmedns_syno_updater_email: "{{ acmedns_updater_email }}"
 acmedns_syno_updater_domain: chenoska.home.micahrl.com
 acmedns_syno_updater_syn_user: admin
 acmedns_syno_updater_syn_server: "{{ acmedns_syno_updater_domain }}"
@@ -39,7 +41,7 @@ acmedns_cloudkey_updater_aws_access_key: "{{ global_home_zone_updater_access_key
 acmedns_cloudkey_updater_aws_secret_key: "{{ global_home_zone_updater_secret_key }}"
 acmedns_cloudkey_updater_aws_region: "{{ global_home_zone_updater_region }}"
 acmedns_cloudkey_updater_aws_zone_id: "{{ global_home_zone_updater_zone_id }}"
-acmedns_cloudkey_updater_email: psyops@micahrl.com
+acmedns_cloudkey_updater_email: "{{ acmedns_updater_email }}"
 acmedns_cloudkey_updater_domain: "{{ global_cloudkey_hostname }}"
 acmedns_cloudkey_updater_server_user: "{{ acmedns_cloudkey_host_user }}"
 acmedns_cloudkey_updater_server: "{{ acmedns_cloudkey_updater_domain }}"
@@ -52,6 +54,6 @@ ircbnc_acmedns_updater_aws_access_key: "{{ global_origin_zone_updater_aws_access
 ircbnc_acmedns_updater_aws_secret_key: "{{ global_orogin_zone_updater_aws_secret_key }}"
 ircbnc_acmedns_updater_aws_zone_id: "{{ global_origin_zone_zone_id }}"
 ircbnc_acmedns_updater_certificate_dir: "{{ acmedns_base_certificate_dir }}/znc"
-ircbnc_acmedns_updater_email: psyops@micahrl.com
+ircbnc_acmedns_updater_email: "{{ acmedns_updater_email }}"
 ircbnc_acmedns_updater_domain: rosemustard.micahrl.com
 ircbnc_acmedns_updater_user: "{{ acmedns_base_user }}"
