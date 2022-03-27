@@ -27,6 +27,31 @@ Resources:
           TTL: 300
           ResourceRecords: ["sixteen-jazzy.b-cdn.net."]
 
+        # Hosted email with fastmail.com
+        - Name: micahrl.me.
+          Type: MX
+          TTL: 300
+          ResourceRecords:
+            - 10 in1-smtp.messagingengine.com.
+            - 20 in2-smtp.messagingengine.com.
+        - Name: micahrl.me.
+          Type: TXT
+          TTL: 300
+          ResourceRecords:
+            - '"v=spf1 include:spf.messagingengine.com ?all"'
+        - Name: fm1._domainkey.micahrl.me.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: [fm1.micahrl.me.dkim.fmhosted.com]
+        - Name: fm2._domainkey.micahrl.me.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: [fm2.micahrl.me.dkim.fmhosted.com]
+        - Name: fm3._domainkey.micahrl.me.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: [fm3.micahrl.me.dkim.fmhosted.com]
+
 
 Outputs:
   OriginZoneId:
