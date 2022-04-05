@@ -23,6 +23,24 @@ privnet_drone_gitea_client_id: 620893dd-aeb8-4117-8731-4e3291e885b8
 privnet_drone_gitea_client_secret: "{{ vault_privnet_drone_gitea_client_secret }}"
 privnet_drone_rpc_secret: "{{ vault_privnet_drone_rpc_secret }}"
 
+privnet_jenkins_domain: jenkins.home.micahrl.com
+privnet_jenkins_agents:
+  - name: jinx1
+    secret: "{{ vault_privnet_jenkins_agent_jinx1_secret }}"
+  - name: jinx2
+    secret: "{{ vault_privnet_jenkins_agent_jinx2_secret }}"
+  - name: jinx3
+    secret: "{{ vault_privnet_jenkins_agent_jinx3_secret }}"
+
+# privnet_concourse_postgres_user: concourse_user
+# privnet_concourse_postgres_password: "{{ vault_privnet_concourse_postgres_password }}"
+
+# # Apparently these two can be the same
+# privnet_concourse_client_secret: "{{ vault_privnet_concourse_client_secret }}"
+# privnet_concourse_tsa_client_secret: "{{ vault_privnet_concourse_client_secret }}"
+
+
+
 privnet_archivebox_sonic_backend_password: "{{ vault_privnet_archivebox_sonic_backend_password }}"
 
 privnet_archivebox_allow_ssh_keys:
