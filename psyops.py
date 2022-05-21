@@ -7,6 +7,7 @@ import base64
 import configparser
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -133,13 +134,38 @@ def dockerbuild(imagename, imagetag, buildargs=None):
     # For fuck's sake
     env["DOCKER_SCAN_SUGGEST"] = "false"
 
-    buildcli = ["docker", "build", DOCKERDIR, "--tag", f"{imagename}:{imagetag}"]
+    buildcli = [
+        "docker",
+        "build",
+        DOCKERDIR,
+        "--progress",
+        "plain",
+        "--tag",
+        f"{imagename}:{imagetag}",
+    ]
     if buildargs:
         buildcli += buildargs.split(" ")
 
     logger.info(f"Building an image with:\n{buildcli}")
 
     subprocess.check_call(buildcli, env=env)
+
+
+def clean():
+    """Clean nonpersistent data
+
+    Almost everything is handled when exiting the docker container,
+    but some data persists in ~/.local so that eg pipenv sticks around between invocations.
+    """
+    home_local = os.path.join(SCRIPTDIR, ".home.psyops.local")
+    for c in os.listdir(home_local):
+        if c == ".keep":
+            continue
+        c_path = os.path.join(home_local, c)
+        if os.path.isdir(c_path):
+            shutil.rmtree(c_path)
+        else:
+            os.unlink(c_path)
 
 
 class GitRepoMetadata:
@@ -373,6 +399,11 @@ class PsyopsArgumentCollection:
             "util", parents=[self.utilopts], help="Utility functions"
         )
 
+        # Most cached data is thrown away, but there is stuff in e.g. ~/.local/
+        self.subparsers.add_parser(
+            "clean", help="Clean any cached data from running the container."
+        )
+
         self.parsed = self.parser.parse_args(*args, **kwargs)
 
 
@@ -430,6 +461,8 @@ def main(*args, **kwargs):  # pylint: disable=W0613
             print(f"Unknown utilaction: '{parsed.utilaction}'")
             arguments.utilopts.print_help()
             return 1
+    elif parsed.action == "clean":
+        clean()
     else:
         print(f"Unknown action '{parsed.action}'")
         arguments.parser.print_usage()
