@@ -12,13 +12,14 @@ processes = []
 
   # wiki.js variables
   DB_TYPE = "sqlite"
-  DB_PATH = "/mrldata/wikijs.sqlite"
+  DB_FILEPATH = "/mrldata/wikijs.sqlite"
 
   # Handled by Litestream itself
-  LITESTREAM_DB_PATH = "/mrldata/wikijs.sqlite"
-
-  # Convention from the litestream-base Docker image
-  DATABASE_URL = "s3://com-micahrl-wiki-litestream-bucket/wikijs.sqlite"
+  LITESTREAM_S3_BUCKET = "com-micahrl-wiki-litestream-bucket"
+  LITESTREAM_S3_PATH = "wikijs.sqlite"
+  LITESTREAM_S3_REGION = "us-east-2"
+  # LITESTREAM_ACCESS_KEY_ID = "XXX" # Must be set with 'flyctl secrets'
+  # LITESTREAM_SECRET_ACCESS_KEY = "YYY" # Must be set with 'flyctl secrets'
 
 [experimental]
   allowed_public_ports = []
