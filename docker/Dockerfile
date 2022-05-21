@@ -99,6 +99,7 @@ RUN true \
         rsync rsync-doc \
         # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
         shadow shadow-doc \
+        sqlite sqlite-doc \
         strace strace-doc \
         # Useful to have the 'ipsec' command when working with Algo
         strongswan strongswan-doc \
@@ -208,6 +209,13 @@ RUN true \
     && true
 
 RUN true \
+    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" benbjohnson/litestream '^litestream.*linux-amd64-static.tar.gz$' \
+    && cd "$psysetup" \
+    && tar -zx -f litestream*.tar.gz \
+    && install -o root -g root -m 755 "$psysetup"/litestream /usr/local/bin \
+    && true
+
+RUN true \
     && set -x \
     # Final steps
     #
@@ -263,6 +271,12 @@ WORKDIR $homedir
 
 ARG gitname="Micah R Ledbetter"
 ARG gitemail="me@micahrl.com"
+
+# Install software as my user
+# This stuff isn't designed for system-wide installs anyway
+RUN true \
+    && curl -L https://fly.io/install.sh | sh \
+    && true
 
 # Run commands (as my user). Changes more often
 RUN true \
