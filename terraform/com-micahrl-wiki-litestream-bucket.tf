@@ -3,10 +3,8 @@
 # Create an S3 bucket and a group with permission to write to it,
 # as well as intermediate objects required to connect them together.
 #
-# Do not create an IAM user.
+# Create an IAM user, but don't create any security keys.
 # We assume that is done in the AWS web console.
-# You'll also have to create and retrieve credentials from the web console.
-# TODO: Is it a good pattern to create the user automatically here?
 
 provider "aws" {
   # I think I don't have to set these explicitly, but doing it to remind myself
@@ -20,21 +18,6 @@ locals {
   backup_writer_group_name = "com-micahrl-wiki-litestream-bucket-backup-writers"
   backup_writer_user_name = "com-micahrl-wiki-litestream-bucket-backup-writer"
 }
-
-# variable "bucket_name" {
-#   type = string
-#   default = "com-micahrl-wiki-litestream-bucket"
-# }
-
-# variable "backup_writer_policy_name" {
-#   type = string
-#   default = "com-micahrl-wiki-litestream-bucket-backup-writer-policy"
-# }
-
-# variable "backup_writer_group_name" {
-#   type = string
-#   default = "com-micahrl-wiki-litestream-bucket-backup-writer"
-# }
 
 resource "aws_s3_bucket" "bucket" {
   bucket = local.bucket_name
