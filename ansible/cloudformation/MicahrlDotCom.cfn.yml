@@ -217,6 +217,11 @@ Resources:
           TTL: 300
           ResourceRecords: ["nyxmicahrl.fly.dev"]
 
+        - Name: tweets.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["silly-kangaroo-242f44.netlify.app."]
+
   # Backchannel zone - for VPN clients
   BackchannelZone:
     Type: "AWS::Route53::HostedZone"
