@@ -194,6 +194,19 @@ RUN true \
     && install -o root -g root -m 755 "$psysetup"/ripgrep*linux-musl/rg /usr/local/bin \
     && true
 
+# Hashicorp doesn't recommend automatically getting the latest version but we are doing it anyway
+# <https://github.com/hashicorp/terraform/issues/9803#issuecomment-257903082>
+RUN true \
+    && export tf_latest="$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r -M '.current_version')" \
+    && echo "Detected latest version of terraform as: $tf_latest" \
+    && export tf_url="https://releases.hashicorp.com/terraform/${tf_latest}/terraform_${tf_latest}_linux_amd64.zip" \
+    && echo "Built URL for downloading latest version of terraform: $tf_url" \
+    && curl -o "$psysetup/terraform.zip" "$tf_url" \
+    && cd "$psysetup" \
+    && unzip "terraform.zip" \
+    && install -o root -g root -m 755 "$psysetup/terraform" /usr/local/bin \
+    && true
+
 RUN true \
     && set -x \
     # Final steps
