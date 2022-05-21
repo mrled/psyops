@@ -92,7 +92,7 @@ RUN true \
         ncurses \
         neovim neovim-doc \
         openssh-client openssh-doc \
-        openssl openssl-doc \
+        openssl \
         parallel parallel-doc \
         pwgen pwgen-doc \
         python3 python3-doc \
@@ -106,7 +106,7 @@ RUN true \
         sudo sudo-doc \
         tmux tmux-doc \
         tzdata tzdata-doc \
-        wireguard-lts wireguard-tools wireguard-tools-doc wireguard-tools-wg \
+        wireguard-tools wireguard-tools-doc wireguard-tools-wg \
         zip zip-doc \
     #
     && update-ca-certificates --fresh \
