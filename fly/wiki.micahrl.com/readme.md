@@ -41,6 +41,9 @@ flyctl deploy
 
 # Go to https://wiki.micahrl.com and set up the admin account and first settings.
 # Do this quickly as it will let you set any password on first run.
+
+# 1GB RAM is the wiki.js minimum requirement
+fly scale memory 1024
 ```
 
 ## Inspecting the wiki.js Dockerfile
@@ -71,7 +74,15 @@ Via:
 
 ## Wiki configuration
 
-- Change Guest group to not have access to any pages. (Admin -> Groups -> Guest)
+- Create a homepage for the wiki.
+    - It will prompt you to do this after your first login
+    - Give it the tag `public`
+- Change Guest group so it only has access to public pages
+    - Admin area -> Groups -> Guest -> Page Rules tab
+    - Allow `read:pages` and `read:assets` but not `read:comments`.
+    - If tag matches `public`.
+    - You must prohibit seeing comments, or else you'll get an error on every page load that says "An unexpected error occurred"
+    - Require the `public` tag so that pages are private by default
 
 ## To do
 
