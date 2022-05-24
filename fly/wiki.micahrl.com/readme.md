@@ -67,6 +67,21 @@ VOLUME {{$e}}
 {{with .Config.OnBuild}}ONBUILD {{json .}}{{end}}' requarks/wiki
 ```
 
+That results in
+
+```Dockerfile
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV NODE_VERSION=16.15.0
+ENV YARN_VERSION=1.22.18
+EXPOSE 3000/tcp
+EXPOSE 3443/tcp
+VOLUME /wiki/data/content
+USER node
+WORKDIR /wiki
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["node","server"]
+```
+
 Via:
 
 - <https://stackoverflow.com/questions/48716536/how-to-show-a-dockerfile-of-image-docker>
