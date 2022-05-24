@@ -2,6 +2,9 @@
 
 Currently just a testing ground for some things.
 
+Deployment howto at
+<https://me.micahrl.com/blog/wikijs-on-flyio/#restoring-the-database-after-losing-your-data-volume>
+
 ## Initial setup
 
 This just needs to be done once,
