@@ -7,6 +7,10 @@ cookie_secret_key: "{{ http_root_micahrl_com_interpersonal_cookie_secret }}"
 uri: "{{ http_root_micahrl_com_interpersonal_uri }}"
 mediastaging: "{{ http_root_micahrl_com_interpersonal_mediastaging_dir }}"
 
+csp_remote_trusted_sources:
+  - https://webmention.io
+  - https://indielogin.com
+
 blogs:
 
   - name: interpersonal-test
