@@ -24,7 +24,7 @@
           - logrotate
           - syslog-ng
         state: latest
-  when: ansible_distribution == "Ubuntu"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Configure firewall (Fedora)
   block:
@@ -77,7 +77,7 @@
     sysloghost_mount_args:
       - credentials={{ item.credsfile }}
       - uid=root
-      - gid=syslog
+      - gid=root
       - x-systemd.automount
       - x-systemd.requires=network-online.target
       - vers=3

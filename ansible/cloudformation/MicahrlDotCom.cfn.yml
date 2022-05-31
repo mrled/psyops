@@ -364,7 +364,7 @@ Resources:
         - Name: syslog.home.micahrl.com.
           Type: CNAME
           TTL: 60
-          ResourceRecords: ["kilotah.home.micahrl.com."]
+          ResourceRecords: ["kalix.home.micahrl.com."]
         - Name: cicd.home.micahrl.com.
           Type: CNAME
           TTL: 60
