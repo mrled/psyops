@@ -1,34 +1,22 @@
 # Static inventory
 
-[http_root_micahrl_com]
-abraxas.micahrl.com
-
-[seedboxes]
-tagasaw.home.micahrl.com
-
-[unifiusg]
-gateway.home.micahrl.com
-
-[synologynas]
+[acmednsremotes]
 chenoska.home.micahrl.com
-
-[cloudkey]
 cloudkey.home.micahrl.com
-
-[pullbackup]
-kilotah.home.micahrl.com
-
-[syslogserver]
-kilotah.home.micahrl.com
 
 [acmednsupdaters]
 kilotah.home.micahrl.com
 
-[matrixservers]
+[afaarit]
+kilotah.home.micahrl.com
+
+[capthook]
+tagasaw.home.micahrl.com
+kilotah.home.micahrl.com
 olcott.micahrl.com
 
-[interactive]
-kilotah.home.micahrl.com
+[cloudkey]
+cloudkey.home.micahrl.com
 
 [emailfwd]
 abraxas.micahrl.com
@@ -36,24 +24,36 @@ tagasaw.home.micahrl.com
 kilotah.home.micahrl.com
 olcott.micahrl.com
 
-[capthook]
-tagasaw.home.micahrl.com
+[http_root_micahrl_com]
+abraxas.micahrl.com
+
+[interactive]
 kilotah.home.micahrl.com
+
+[matrixservers]
 olcott.micahrl.com
-
-[acmednsremotes]
-chenoska.home.micahrl.com
-cloudkey.home.micahrl.com
-
-[syncthing_personal]
-kilotah.home.micahrl.com
-
-[afaarit]
-kilotah.home.micahrl.com
 
 [privnet]
 kalix.home.micahrl.com
 
+[pullbackup]
+kilotah.home.micahrl.com
+
+[seedboxes]
+tagasaw.home.micahrl.com
+
+[syncthing_personal]
+kilotah.home.micahrl.com
+
+[synologynas]
+chenoska.home.micahrl.com
+
+[syslogserver]
+kilotah.home.micahrl.com
+
 [tailscale]
 tagasaw.home.micahrl.com
 kalix.home.micahrl.com
+
+[unifiusg]
+gateway.home.micahrl.com
