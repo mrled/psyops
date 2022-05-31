@@ -6,6 +6,13 @@
       - offlineimap
     state: latest
 
+- name: Install Debian-specific prerequisites
+  apt:
+    name:
+      - cifs-utils
+    state: latest
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
 - name: Update CA certs
   command: update-ca-certificates
 
