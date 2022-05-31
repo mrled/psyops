@@ -18,6 +18,7 @@ privnet_whoami_domain: cicd-whoami.home.micahrl.com
 privnet_giteaweb_domain: git.home.micahrl.com
 privnet_drone_domain: drone.home.micahrl.com
 privnet_archivebox_domain: archivebox.home.micahrl.com
+privnet_uptime_kuma_domain: status.home.micahrl.com
 
 privnet_drone_gitea_client_id: 620893dd-aeb8-4117-8731-4e3291e885b8
 privnet_drone_gitea_client_secret: "{{ vault_privnet_drone_gitea_client_secret }}"

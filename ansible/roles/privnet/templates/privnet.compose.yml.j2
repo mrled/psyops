@@ -66,6 +66,23 @@ services:
 {% endfor %}
 
 
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    networks:
+      - privnet
+    volumes:
+      - uptime_kuma_data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ privnet_stack_name }}_privnet"
+      - "traefik.http.routers.uptime-kuma.rule=Host(`{{ privnet_uptime_kuma_domain }}`)"
+      - "traefik.http.routers.uptime-kuma.entrypoints=https"
+      - "traefik.http.routers.uptime-kuma.tls=true"
+      - "traefik.http.routers.uptime-kuma.tls.certresolver=privnet-resolver"
+      - "traefik.http.routers.uptime-kuma.service=uptime-kuma"
+      - "traefik.http.services.uptime-kuma.loadbalancer.server.port=3001"
+
+
   archivebox:
     image: archivebox/archivebox:master
     command: server --quick-init 0.0.0.0:8000
@@ -190,6 +207,8 @@ volumes:
   archivebox_sonic_data:
     driver: local
   jenkins_data:
+    driver: local
+  uptime_kuma_data:
     driver: local
 
 networks:
