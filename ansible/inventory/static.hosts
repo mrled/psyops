@@ -15,9 +15,6 @@ chenoska.home.micahrl.com
 [cloudkey]
 cloudkey.home.micahrl.com
 
-[wireguardservers]
-kilotah.home.micahrl.com
-
 [pullbackup]
 kilotah.home.micahrl.com
 
@@ -52,9 +49,6 @@ cloudkey.home.micahrl.com
 kilotah.home.micahrl.com
 
 [afaarit]
-kilotah.home.micahrl.com
-
-[wireguardservers]
 kilotah.home.micahrl.com
 
 [privnet]

@@ -1,5 +1,0 @@
----
-
-wireguard_server_listen_port: 51820
-
-wireguard_server_lan_interface: eth0
