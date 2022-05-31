@@ -1,26 +1,6 @@
 ---
 
-- name: Install wireguard COPR repo (Fedora)
-  get_url:
-    url: https://copr.fedorainfracloud.org/coprs/jdoss/wireguard/repo/epel-7/jdoss-wireguard-epel-7.repo
-    dest: /etc/yum.repos.d/jdoss-wireguard.repo 
-    mode: '0644'
-    owner: root
-    group: root
-  register: wireguard_install_repo
-  when: ansible_distribution == "Fedora"
-
-- name: Install wireguard (Fedora)
-  dnf:
-    name:
-      - wireguard-dkms
-      - wireguard-tools
-    state: latest
-    update_cache: yes
-  when: ansible_distribution == "Fedora"
-  notify: restart wireguard
-
-- name: Install wireguard (Ubuntu)
+- name: Install wireguard (Debian)
   apt:
     name:
       - wireguard
@@ -28,7 +8,7 @@
       - wireguard-tools
     state: latest
     update_cache: yes
-  when: ansible_distribution == "Ubuntu"
+  when: ansible_distribution in ["Debian", "Ubuntu"]
   notify: restart wireguard
 
 - name: Enable IP forwarding
@@ -36,15 +16,6 @@
   with_items:
     - net.ipv4.ip_forward
     - net.ipv6.conf.all.forwarding
-
-# Configure firewall
-# I think you actully have to add to BOTH the trusted and default zones?
-- name: Configure the firewall trusted zone (Fedora)
-  firewalld: port=51820/udp permanent=yes zone=trusted state=enabled immediate=yes
-  when: ansible_distribution == "Fedora"
-- name: Configure the firewall default zone (Fedora)
-  firewalld: port=51820/udp permanent=yes state=enabled immediate=yes
-  when: ansible_distribution == "Fedora"
 
 - name: Configure firewall (Ubuntu)
   ufw: rule=allow port=51820 proto=udp
