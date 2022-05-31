@@ -48,12 +48,3 @@ acmedns_cloudkey_updater_server: "{{ acmedns_cloudkey_updater_domain }}"
 acmedns_cloudkey_updater_host_ssh_pubkey: "{{ global_cloudkey_ssh_host_key }}"
 acmedns_cloudkey_updater_pubkey: "{{ global_acmedns_ssh_client_pubkey }}"
 acmedns_cloudkey_updater_privkey: "{{ acmedns_base_privkey }}"
-
-ircbnc_acmedns_updater_aws_region: "{{ global_aws_region }}"
-ircbnc_acmedns_updater_aws_access_key: "{{ global_origin_zone_updater_aws_access_key }}"
-ircbnc_acmedns_updater_aws_secret_key: "{{ global_orogin_zone_updater_aws_secret_key }}"
-ircbnc_acmedns_updater_aws_zone_id: "{{ global_origin_zone_zone_id }}"
-ircbnc_acmedns_updater_certificate_dir: "{{ acmedns_base_certificate_dir }}/znc"
-ircbnc_acmedns_updater_email: "{{ acmedns_updater_email }}"
-ircbnc_acmedns_updater_domain: rosemustard.micahrl.com
-ircbnc_acmedns_updater_user: "{{ acmedns_base_user }}"
