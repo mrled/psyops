@@ -54,13 +54,6 @@
     mode: "0644"
   notify: restart capthook
 
-- name: Run wrapper script once
-  # Wrapper script passes --days, so this won't contact Let's Encrypt unless necessary
-  command: "{{ acmedns_cloudkey_updater_script_path }}"
-  become: yes
-  become_user: "{{ acmedns_cloudkey_updater_user }}"
-  when: acmedns_cloudkey_updater_runonce|bool
-
 - name: Allow all users to run wrapper script as our user
   lineinfile:
     path: /etc/sudoers.d/acmedns_{{ acmedns_cloudkey_updater_job_name }}
@@ -70,3 +63,10 @@
     mode: "0640"
     create: yes
     validate: visudo -cf %s
+
+- name: Run wrapper script once
+  # Wrapper script passes --days, so this won't contact Let's Encrypt unless necessary
+  command: "{{ acmedns_cloudkey_updater_script_path }}"
+  become: yes
+  become_user: "{{ acmedns_cloudkey_updater_user }}"
+  when: acmedns_cloudkey_updater_runonce|bool
