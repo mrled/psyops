@@ -167,6 +167,7 @@ RUN true \
         dnspython \
         mitogen \
         netaddr \
+        passlib \
     && apk add \
         # Required for Ansible to use SSH password auth instead of public keys
         sshpass sshpass-doc \
