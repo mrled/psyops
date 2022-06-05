@@ -397,6 +397,18 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["kalix.home.micahrl.com."]
+        - Name: files.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kalix.home.micahrl.com."]
+        - Name: registry.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kalix.home.micahrl.com."]
+        - Name: registryauth.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kalix.home.micahrl.com."]
 
   # A new group with permission to modify records in the OriginZone
   # For use with Let's Encrypt / ACME

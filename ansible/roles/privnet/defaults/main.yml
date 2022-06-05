@@ -26,3 +26,14 @@ privnet_archivebox_script: "{{ privnet_archivebox_homedir }}/archivebox.sh"
 # Keys that are allowed to ssh to the archivebox user and run the archivebox.sh.j2 script.
 # Note that the archivebox python program might permit escaping the SSH command= restriction.
 privnet_archivebox_allow_ssh_keys: []
+
+privnet_fileshttp_config_file: "{{ privnet_config_dir }}/fileshttp.nginx.conf"
+# privnet_docker_registry_htpasswd_file: "{{ privnet_config_dir }}/docker-registry.htpasswd"
+privnet_docker_registry_auth_service_name: "registry-token-service"
+privnet_docker_registry_config_dir: "{{ privnet_config_dir }}/docker-registry"
+privnet_docker_registry_config:
+  auth_config: "{{ privnet_docker_registry_config_dir }}/docker-registry-auth.config.yml"
+  cert_csr: "{{ privnet_docker_registry_config_dir }}/tokencert.csr"
+  cert_key: "{{ privnet_docker_registry_config_dir }}/tokencert.key"
+  cert_pem: "{{ privnet_docker_registry_config_dir }}/tokencert.pem"
+privnet_docker_registry_auth_config_file: "{{ privnet_docker_registry_config_dir }}/docker-registry-auth.config.yml"

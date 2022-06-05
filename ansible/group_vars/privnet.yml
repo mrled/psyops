@@ -19,6 +19,9 @@ privnet_giteaweb_domain: git.home.micahrl.com
 privnet_drone_domain: drone.home.micahrl.com
 privnet_archivebox_domain: archivebox.home.micahrl.com
 privnet_uptime_kuma_domain: status.home.micahrl.com
+privnet_fileshttp_domain: files.home.micahrl.com
+privnet_docker_registry_domain: registry.home.micahrl.com
+privnet_docker_registry_auth_domain: registryauth.home.micahrl.com
 
 privnet_drone_gitea_client_id: 620893dd-aeb8-4117-8731-4e3291e885b8
 privnet_drone_gitea_client_secret: "{{ vault_privnet_drone_gitea_client_secret }}"
@@ -60,3 +63,29 @@ privnet_archivebox_domain_blacklist:
 
 # private/encrypted items
 privnet_archivebox_domain_blacklist_append: "{{ vault_privnet_archivebox_domain_blacklist_append }}"
+
+
+## Settings related to binary repositories, like docker registries etc
+
+privnet_binrepo_cifs_username: binrepo
+privnet_binrepo_cifs_password: "{{ vault_privnet_binrepo_cifs_password }}"
+privnet_binrepo_cifs_host: chenoska.home.micahrl.com
+privnet_binrepo_cifs_sharename: binrepo
+
+# The docker CIFS mounts require an IP address, not a hostname
+# https://github.com/docker/cli/issues/706
+# https://github.com/moby/moby/issues/42007
+privnet_binrepo_cifs_path: "//{{ lookup('community.general.dig', privnet_binrepo_cifs_host) }}/{{ privnet_binrepo_cifs_sharename }}"
+# privnet_docker_registry_auth_token_issuer: PSYOPS privnet auth server
+privnet_docker_registry_auth_token_issuer: registryauth
+privnet_docker_registry_auth_cert_subj: "/CN={{ privnet_docker_registry_auth_token_issuer }}"
+
+# I don't care about rainbow table attacks for this bc the passwords are randomly generated
+# I do care about idempotency so that files aren't unnecessarily updated
+privnet_docker_registry_htpasswd_salt: "1234567890123456789012"
+
+# WARNING: these _must_ be bcrypt, and bcrypt requires the Ansible controller have passlib installed
+privnet_docker_registry_htpasswd_account_mrled_password_hash: >-
+  {{ vault_privnet_docker_registry_htpasswd_account_mrled_password | password_hash('bcrypt', privnet_docker_registry_htpasswd_salt, ident='2y') }}
+privnet_docker_registry_htpasswd_account_jenkins_password_hash: >-
+  {{ vault_privnet_docker_registry_htpasswd_account_jenkins_password | password_hash('bcrypt', privnet_docker_registry_htpasswd_salt, ident='2y') }}

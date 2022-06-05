@@ -83,6 +83,70 @@ services:
       - "traefik.http.services.uptime-kuma.loadbalancer.server.port=3001"
 
 
+  fileshttp:
+    image: nginx
+    networks:
+      - privnet
+    volumes:
+      - binrepo_cifs_fileshttp_00:/data
+      - "{{ privnet_fileshttp_config_file }}:/etc/nginx/nginx.conf:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ privnet_stack_name }}_privnet"
+      - "traefik.http.routers.fileshttp.rule=Host(`{{ privnet_fileshttp_domain }}`)"
+      - "traefik.http.routers.fileshttp.entrypoints=https"
+      - "traefik.http.routers.fileshttp.tls=true"
+      - "traefik.http.routers.fileshttp.tls.certresolver=privnet-resolver"
+      - "traefik.http.routers.fileshttp.service=fileshttp"
+      - "traefik.http.services.fileshttp.loadbalancer.server.port=80"
+
+
+  docker-registry:
+    image: registry:2
+    networks:
+      - privnet
+    volumes:
+      - binrepo_cifs_registry_00:/var/lib/registry
+      - "{{ privnet_docker_registry_config.cert_pem }}:/tokencert.pem"
+    environment:
+      REGISTRY_AUTH: token
+      REGISTRY_AUTH_TOKEN_ISSUER: "{{ privnet_docker_registry_auth_token_issuer }}"
+      # The expected value for the docker_auth container is /auth
+      REGISTRY_AUTH_TOKEN_REALM: "https://{{ privnet_docker_registry_auth_domain }}/auth"
+      REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE: /tokencert.pem
+      REGISTRY_AUTH_TOKEN_SERVICE: "{{ privnet_docker_registry_auth_service_name }}"
+      REGISTRY_HTTP_ADDR: "0.0.0.0:5000"
+      REGISTRY_HTTP_HOST: "{{ privnet_docker_registry_domain }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ privnet_stack_name }}_privnet"
+      - "traefik.http.routers.docker-registry.rule=Host(`{{ privnet_docker_registry_domain }}`)"
+      - "traefik.http.routers.docker-registry.entrypoints=https"
+      - "traefik.http.routers.docker-registry.tls=true"
+      - "traefik.http.routers.docker-registry.tls.certresolver=privnet-resolver"
+      - "traefik.http.routers.docker-registry.service=docker-registry"
+      - "traefik.http.services.docker-registry.loadbalancer.server.port=5000"
+
+  docker-registry-auth:
+    image: cesanta/docker_auth
+    networks:
+      - privnet
+    volumes:
+      - "{{ privnet_docker_registry_auth_config_file }}:/config.yml:ro"
+      - "{{ privnet_docker_registry_config.cert_key }}:/tokencert.key"
+      - "{{ privnet_docker_registry_config.cert_pem }}:/tokencert.pem"
+    command: /config.yml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ privnet_stack_name }}_privnet"
+      - "traefik.http.routers.docker-registry-auth.rule=Host(`{{ privnet_docker_registry_auth_domain }}`)"
+      - "traefik.http.routers.docker-registry-auth.entrypoints=https"
+      - "traefik.http.routers.docker-registry-auth.tls=true"
+      - "traefik.http.routers.docker-registry-auth.tls.certresolver=privnet-resolver"
+      - "traefik.http.routers.docker-registry-auth.service=docker-registry-auth"
+      - "traefik.http.services.docker-registry-auth.loadbalancer.server.port=5001"
+
+
   archivebox:
     image: archivebox/archivebox:master
     command: server --quick-init 0.0.0.0:8000
@@ -210,6 +274,20 @@ volumes:
     driver: local
   uptime_kuma_data:
     driver: local
+  binrepo_cifs_fileshttp_00:
+    driver: local
+    driver_opts:
+      type: cifs
+      # uid 101 is used by the nginx container
+      # o: "uid=101,username={{ privnet_binrepo_cifs_username }},password={{ privnet_binrepo_cifs_password }}"
+      o: "username={{ privnet_binrepo_cifs_username }},password={{ privnet_binrepo_cifs_password }}"
+      device: "{{ privnet_binrepo_cifs_path }}"
+  binrepo_cifs_registry_00:
+    driver: local
+    driver_opts:
+      type: cifs
+      o: "username={{ privnet_binrepo_cifs_username }},password={{ privnet_binrepo_cifs_password }}"
+      device: "{{ privnet_binrepo_cifs_path }}/docker-registry"
 
 networks:
   privnet:

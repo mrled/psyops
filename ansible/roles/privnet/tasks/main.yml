@@ -66,6 +66,33 @@
     - "{{ privnet_config_dir }}"
     - "{{ privnet_traefik_config_dir }}"
     - "{{ privnet_config_dir }}/archivebox_sonic"
+    - "{{ privnet_docker_registry_config_dir }}"
+
+- name: Install fileshttp nginx configuration
+  template:
+    src: fileshttp.nginx.conf.j2
+    dest: "{{ privnet_fileshttp_config_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+# This is for token-signing, not HTTPS
+- name: Create self-signed token-signing certificate
+  command: >-
+    openssl req -new -newkey rsa:4096 -days 7300 -nodes -x509
+      -subj "{{ privnet_docker_registry_auth_cert_subj }}"
+      -keyout "{{ privnet_docker_registry_config.cert_key }}"
+      -out "{{ privnet_docker_registry_config.cert_pem }}"
+  args:
+    creates: "{{ privnet_docker_registry_config.cert_pem }}"
+
+- name: Install docker_auth configuration file
+  template:
+    src: docker-registry-auth.config.yml.j2
+    dest: "{{ privnet_docker_registry_auth_config_file }}"
+    owner: root
+    group: root
+    mode: 0600
 
 - name: Create directories (700 archivebox)
   file:
