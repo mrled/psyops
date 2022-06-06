@@ -31,7 +31,6 @@ mailbackup_share_pass: "{{ vault_mailbackup_share_pass }}"
 mailbackup_report_email: psyops@micahrl.com
 mailbackup_share_mountpoint: /netmount/chenoska/mailbackup
 mailbackup_me_micahrl_com_password: "{{ vault_mailbackup_me_micahrl_com_password }}"
-mailbackup_office_mrlproperties_com_password: "{{ vault_mailbackup_office_mrlproperties_com_password }}"
 
 mailbackup_mountpoints:
   - path: "{{ mailbackup_share_mountpoint }}"

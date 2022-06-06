@@ -1,6 +1,5 @@
 [general]
-accounts = me@micahrl.com, office@mrlproperties.com
-
+accounts = me@micahrl.com
 
 
 [Account me@micahrl.com]
@@ -18,22 +17,3 @@ sslcacertfile = /etc/ssl/certs/ca-certificates.crt
 [Repository me@micahrl.com-local]
 type = Maildir
 localfolders = {{ mailbackup_share_mountpoint }}/Maildirs/me@micahrl.com
-
-
-
-[Account office@mrlproperties.com]
-localrepository = office@mrlproperties.com-local
-remoterepository = office@mrlproperties.com-remote
-
-[Repository office@mrlproperties.com-remote]
-type = IMAP
-remotehost = imappro.zoho.com
-remoteuser = office@mrlproperties.com
-remotepass = {{ mailbackup_office_mrlproperties_com_password }}
-ssl = yes
-sslcacertfile = /etc/ssl/certs/ca-certificates.crt
-
-[Repository office@mrlproperties.com-local]
-type = Maildir
-localfolders = {{ mailbackup_share_mountpoint }}/Maildirs/office@mrlproperties.com
-
