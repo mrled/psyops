@@ -35,55 +35,39 @@
       - libsqlite3-dev
       - sqlite3
 
-- name: Install Python prerequisite packages
+# Others would probably prefer to just pip install trappedbot from pypi
+# It is nice to keep a local clone for development
+- name: Clone trappedbot
+  git:
+    repo: https://github.com/mrled/trappedbot
+    dest: "{{ matrix_bot_ifrit_trappedbot_clone_path }}"
+  register: matrix_bot_ifrit_clone_trappedbot
+  become: yes
+  become_user: "{{ matrix_bot_ifrit_system_user }}"
+  when: not matrix_bot_ifrit_skip_clone
+
+- name: Install trappedbot into venv
   pip:
-    name:
-      - Markdown
-      - PyYAML
-      - matrix-nio[e2e]
-      - pillow
-      - python-magic
-      - requests
-      - wheel
+    name: "{{ matrix_bot_ifrit_trappedbot_clone_path }}"
     virtualenv: "{{ matrix_bot_ifrit_venv_path }}"
     virtualenv_command: python3 -m venv
+    editable: yes
   become: yes
   become_user: "{{ matrix_bot_ifrit_system_user }}"
 
-- name: Clone eno
-  git:
-    repo: https://github.com/8go/matrix-eno-bot
-    dest: "{{ matrix_bot_ifrit_eno_clone_path }}"
-  register: matrix_bot_ifrit_clone_eno
-  become: yes
-  become_user: "{{ matrix_bot_ifrit_system_user }}"
-
-- name: Make eno scripts executable
-  # Some scripts don't have their executable bit set, lol
-  command: chmod 700 {{ matrix_bot_ifrit_eno_clone_path }}/eno/scripts/*
-
-- name: Install eno config file
+- name: Install bot config file
   template:
-    src: eno.config.yaml.j2
-    dest: "{{ matrix_bot_ifrit_eno_clone_path }}/config.yaml"
+    src: trappedbot.config.yml.j2
+    dest: "{{ matrix_bot_ifrit_trappedbot_config_path }}"
     owner: "{{ matrix_bot_ifrit_system_user }}"
     group: "{{ matrix_bot_ifrit_system_group }}"
     mode: "0600"
   register: matrix_bot_ifrit_install_config
 
-- name: Install eno commands file
-  template:
-    src: eno.commands.yaml.j2
-    dest: "{{ matrix_bot_ifrit_eno_clone_path }}/commands.yaml"
-    owner: "{{ matrix_bot_ifrit_system_user }}"
-    group: "{{ matrix_bot_ifrit_system_group }}"
-    mode: "0600"
-  register: matrix_bot_ifrit_install_commands
-
-- name: Create eno storage directory
+- name: Create bot storage directory
   file:
     state: directory
-    dest: "{{ matrix_bot_ifrit_eno_clone_path }}/store"
+    dest: "{{ matrix_bot_ifrit_trappedbot_store_path }}"
     owner: "{{ matrix_bot_ifrit_system_user }}"
     group: "{{ matrix_bot_ifrit_system_group }}"
     mode: "0700"
@@ -99,9 +83,8 @@
 
 - name: Start ifrit
   vars:
-    repo: "{{ matrix_bot_ifrit_clone_eno.changed }}"
+    repo: "{{ matrix_bot_ifrit_clone_trappedbot.changed }}"
     conf: "{{ matrix_bot_ifrit_install_config.changed }}"
-    cmds: "{{ matrix_bot_ifrit_install_commands.changed }}"
     srvc: "{{ matrix_bot_ifrit_install_systemd_service.changed }}"
   systemd:
     name: ifrit

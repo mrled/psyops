@@ -5,8 +5,7 @@ Description=ifrit
 User={{ matrix_bot_ifrit_system_user }}
 Group={{ matrix_bot_ifrit_system_group }}
 Environment=PYTHONUNBUFFERED=1
-Environment=PATH={{ matrix_bot_ifrit_eno_clone_path }}/eno/scripts:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart={{ matrix_bot_ifrit_venv_path }}/bin/python {{ matrix_bot_ifrit_eno_clone_path }}/main.py {{ matrix_bot_ifrit_eno_clone_path }}/config.yaml
+ExecStart={{ matrix_bot_ifrit_venv_path }}/bin/trappedbot bot "{{ matrix_bot_ifrit_trappedbot_config_path }}"
 ExecStop=/bin/kill -9 $MAINPID
 Restart=on-failure
 RestartSec=30
