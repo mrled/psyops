@@ -14,7 +14,7 @@ aliases /etc/aliases
 # printf 'From: root\nTo: mailbackup\nSubject: shit\n\nfuck\n' | sendmail -d -t psyops@micahrl.com
 set_from_header on
 
-{% if ansible_distribution in ["Fedora", "CentOS"] %}
+{% if ansible_distribution in ["CentOS", "Fedora", "Rocky"] %}
 tls_trust_file /etc/ssl/certs/ca-bundle.crt
 {% elif ansible_distribution in ["Debian", "Ubuntu"] %}
 tls_trust_file /etc/ssl/certs/ca-certificates.crt
