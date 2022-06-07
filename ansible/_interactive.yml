@@ -1,6 +1,0 @@
----
-
-- name: Configure interactive
-  hosts: interactive
-  roles:
-    - { name: interactive, tags: ["interactive"] }
