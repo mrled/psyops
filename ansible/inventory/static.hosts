@@ -13,7 +13,6 @@ kalix.home.micahrl.com
 [capthook]
 kalix.home.micahrl.com
 tagasaw.home.micahrl.com
-olcott.micahrl.com
 
 [cloudkey]
 cloudkey.home.micahrl.com
@@ -21,7 +20,6 @@ cloudkey.home.micahrl.com
 [emailfwd]
 abraxas.micahrl.com
 kalix.home.micahrl.com
-olcott.micahrl.com
 tagasaw.home.micahrl.com
 
 [http_root_micahrl_com]
@@ -29,9 +27,6 @@ abraxas.micahrl.com
 
 [interactive]
 kilotah.home.micahrl.com
-
-[matrixservers]
-olcott.micahrl.com
 
 [privnet]
 kalix.home.micahrl.com
