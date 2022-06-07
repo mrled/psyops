@@ -8,14 +8,6 @@ Outstanding items
 * Task to fix Syncthing inotify thing: https://forum.syncthing.net/t/setting-inotify-limit-permanently-on-synology-diskstation/12221/4
 * Task to call capthook to request the cert check
 
-## Unify seedbox authentication
-
-Currently, seedbox apps are all over the place for auth.
-Can I bring them all together somehow?
-
-The funkypenguin playbooks use oauth for this.
-They're tired to GitHub - could I do my own instead?
-
 ## Back up seedbox configs
 
 None of that stuff is backed up.
