@@ -1,0 +1,39 @@
+## msmtp config file
+
+defaults
+auth on
+tls on
+tls_starttls off
+syslog on
+aliases /etc/aliases
+
+# This re-writes the From header even if it's present in the email.
+# Without this, cron will send emails with 'From: root' or whatever and
+# I get "not authorised to send from this header address" from Fastmail when I try to send it.
+# Test this without waiting for crons to fire with
+# printf 'From: root\nTo: mailbackup\nSubject: shit\n\nfuck\n' | sendmail -d -t psyops@micahrl.com
+set_from_header on
+
+{% if ansible_distribution in ["Fedora", "CentOS"] %}
+tls_trust_file /etc/ssl/certs/ca-bundle.crt
+{% elif ansible_distribution in ["Debian", "Ubuntu"] %}
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+{% else %}
+tls_trust_file /etc/ssl/certs/ca-bundle.crt
+{% endif %}
+
+
+## The mailfwd account
+account mailfwd
+
+host {{ mailfwd_smtp_host }}
+port {{ mailfwd_smtp_port }}
+
+# Note that at least for Fastmail, this must be a "sending identity" in the web UI
+from {{ mailfwd_from_address }}
+
+# Credentials to log in to the email server
+user {{ mailfwd_smtp_user }}
+password {{ mailfwd_smtp_pass }}
+
+account default : mailfwd
