@@ -8,12 +8,6 @@ Outstanding items
 * Task to fix Syncthing inotify thing: https://forum.syncthing.net/t/setting-inotify-limit-permanently-on-synology-diskstation/12221/4
 * Task to call capthook to request the cert check
 
-## Use some other domain for seedbox
-
-Currently I'm using e.g. seedbox.home.micahrl.com/sabnzbd.
-Instead, use sabnzbd.seedbox.example.com.
-Use some other domain.
-
 ## Unify seedbox authentication
 
 Currently, seedbox apps are all over the place for auth.
@@ -56,11 +50,6 @@ Especially for docker swarm services.
 
 * If I have a backup and no local data, restore it
 * Easy system for manual restores
-
-## Deploy a git server interally
-
-* Place to handle totally private repos
-* Must also handle automatic mirrors of remote stuff
 
 ## Cron times should be smarter
 
