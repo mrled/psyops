@@ -2,6 +2,12 @@
 
 Outstanding items
 
+## Fix scripts that run with +x and set AWS creds
+
+- eg the acmeupdate_* scripts
+- they send emails with the AWS creds in them. lol.
+- make them read from a file?
+- never run with +x?
 
 ## Add Chenoska startup tasks to ansible
 
