@@ -64,6 +64,7 @@ RUN true \
     && apk update \
     #
     && apk add \
+        age age-doc \
         # For calculating a bcrypt password with htpasswd
         apache2-utils \
         bash bash-doc \
@@ -88,6 +89,7 @@ RUN true \
         # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
         less less-doc \
         man-db man-db-doc man-pages \
+        minisign minisign-doc \
         # provides tput
         ncurses \
         neovim neovim-doc \
@@ -143,6 +145,10 @@ RUN true \
         awscli \
         gandi.cli \
     #
+    # Other python3 dependencies
+    && python3 -m pip install \
+        PyYAML \
+        invoke \
     # Make sure basic Python2 tooling is installed too, ugh
     && python2 -m ensurepip \
     && python2 -m pip install --upgrade \
