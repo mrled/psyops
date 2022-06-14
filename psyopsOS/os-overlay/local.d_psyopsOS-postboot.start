@@ -1,0 +1,56 @@
+#!/bin/sh
+set -eu
+
+if test -e /etc/psyopsOS/postboot.finished; then
+	logger --stderr --priority user.info --tag psyopsOS-postboot "psyopsOS postboot has already run once, nothing to do"
+	exit 0
+fi
+
+# Set up networking FIRST
+# Even if the secrets volume fails to mount I should be able to at least ssh
+setup-interfaces -a # configures DHCP
+#setup-dns -d psyops.micahrl.com 8.8.8.8
+rc-service networking restart
+
+printf '\nLABEL=psyops-secret /mnt/psyops-secret/mount ext4 ro,noauto 0 0\n' >> /etc/fstab
+logger --stderr --priority user.debug --tag psyopsOS-postboot "Mounting psyopsOS secret volume..."
+mount /mnt/psyops-secret/mount
+
+# This is intended to make it easier during development
+if test -e /mnt/psyops-secret/mount/TESTONLYNOPROD.env; then
+	. /mnt/psyops-secret/mount/TESTONLYNOPROD.env
+	if test "$PSYOPSOS_TESTING_ONLY_NO_PROD_ADD_TOOR_BLANK_PW" = yes; then
+		useradd --home-dir /root --no-create-home --no-user-group --non-unique --uid 0 --gid 0 toor
+		passwd -d toor
+		logger --stderr --priority user.warn --tag psyopsOS-postboot "WARNING: Added toor user with blank password"
+	fi
+fi
+
+export PSYOPSOS_NODENAME="$(cat /mnt/psyops-secret/mount/nodename)"
+export PSYOPSOS_AGEKEY=/mnt/psyops-secret/mount/age.key
+
+logger --stderr --priority user.debug --tag psyopsOS-postboot "Values from the psyops-secret volume: $(env | grep '^PSYOPSOS_')"
+env | grep '^PSYOPSOS_' > /etc/profile.d/psyops-secret.sh
+chmod 644 /etc/profile.d/psyops-secret.sh
+
+setup-keymap us us
+setup-hostname "$PSYOPSOS_NODENAME"
+
+. /etc/psyopsOS/postboot.secrets
+
+logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished configuring keymap, hostname, dns"
+
+ssh_key_mrled_haluth='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMN/4Rdkz4vlGaQRvhmhLhkaH0CfhNnoggGBBknz17+u mrled@haluth.local'
+ssh_key_psyops='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS'
+
+usermod --password "$ROOTPASSWD" root
+install -o root -g root -m 0700 -d /root/.ssh
+echo "$ssh_key_psyops" >> /root/.ssh/authorized_keys
+
+useradd --home-dir /home/mrled --create-home --shell /bin/bash --user-group --password "$MRLEDPASSWD" mrled
+install -o mrled -g mrled -m 0700 -d /home/mrled/.ssh
+echo "$ssh_key_mrled_haluth" >> /home/mrled/.ssh/authorized_keys
+
+logger --stderr --priority user.debug --tag psyopsOS-postboot "Added users and configured ssh keys"
+
+touch /etc/psyopsOS/postboot.finished

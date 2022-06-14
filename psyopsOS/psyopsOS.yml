@@ -1,0 +1,10 @@
+# psyopsOS configuration
+
+global: {}
+nodes:
+  kntytest:
+    notes: This node is used for testing in various VMs, and the key might be re-used.
+    pubkey: age1djzr8h7ycsrnu5r55m7sd72esk04zm5nsuterlmx6vvcxyhcnd8qfhdapc
+    tags:
+      - kubernasty
+      - testhosts
