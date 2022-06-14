@@ -37,3 +37,11 @@ privnet_docker_registry_config:
   cert_key: "{{ privnet_docker_registry_config_dir }}/tokencert.key"
   cert_pem: "{{ privnet_docker_registry_config_dir }}/tokencert.pem"
 privnet_docker_registry_auth_config_file: "{{ privnet_docker_registry_config_dir }}/docker-registry-auth.config.yml"
+
+privnet_ldap_config_dir: "{{ privnet_config_dir }}/ldap"
+privnet_ldap_config:
+  lam_profile_staging: "{{ privnet_ldap_config_dir }}/lam.profile.privnet.ansiblestaging.cfg"
+  lam_profile: "{{ privnet_ldap_config_dir }}/lam.profile.privnet.cfg"
+  lam_config: "{{ privnet_ldap_config_dir }}/lam.config.cfg"
+  openldap_admin_passwd_file: "{{ privnet_ldap_config_dir }}/openldap.admin.passwd.txt"
+  openldap_slapd_d: "{{ privnet_ldap_config_dir }}/openldap.slapd.d"

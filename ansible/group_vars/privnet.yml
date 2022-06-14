@@ -22,6 +22,7 @@ privnet_uptime_kuma_domain: status.home.micahrl.com
 privnet_fileshttp_domain: files.home.micahrl.com
 privnet_docker_registry_domain: registry.home.micahrl.com
 privnet_docker_registry_auth_domain: registryauth.home.micahrl.com
+privnet_ldap_lam_domain: ldapadmin.home.micahrl.com
 
 privnet_drone_gitea_client_id: 620893dd-aeb8-4117-8731-4e3291e885b8
 privnet_drone_gitea_client_secret: "{{ vault_privnet_drone_gitea_client_secret }}"
@@ -89,3 +90,16 @@ privnet_docker_registry_htpasswd_account_mrled_password_hash: >-
   {{ vault_privnet_docker_registry_htpasswd_account_mrled_password | password_hash('bcrypt', privnet_docker_registry_htpasswd_salt, ident='2y') }}
 privnet_docker_registry_htpasswd_account_jenkins_password_hash: >-
   {{ vault_privnet_docker_registry_htpasswd_account_jenkins_password | password_hash('bcrypt', privnet_docker_registry_htpasswd_salt, ident='2y') }}
+
+
+# LDAP
+privnet_ldap_domain: micahrl.com
+privnet_ldap_domain_x500: "{{ privnet_ldap_domain | dnsname2x500domaincomponents }}"
+privnet_ldap_organization_name: Micah R Ledbetter, Bureau of Private Internetworking
+privnet_ldap_openldap_admin_password: "{{ vault_privnet_ldap_openldap_admin_password }}"
+privnet_ldap_lam_admin_password: "{{ vault_privnet_ldap_lam_admin_password }}"
+# I don't care about the salt as my password is random, so this makes it idempotent
+privnet_ldap_lam_admin_password_salt: asdf
+privnet_ldap_lam_admin_users: cn=admin,{{ privnet_ldap_domain_x500 }}
+privnet_ldap_suffix_user: ou=Users,{{ privnet_ldap_domain_x500 }}
+privnet_ldap_suffix_group: ou=Groups,{{ privnet_ldap_domain_x500 }}

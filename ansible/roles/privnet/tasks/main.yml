@@ -67,6 +67,16 @@
     - "{{ privnet_traefik_config_dir }}"
     - "{{ privnet_config_dir }}/archivebox_sonic"
     - "{{ privnet_docker_registry_config_dir }}"
+    - "{{ privnet_ldap_config_dir }}"
+    - "{{ privnet_ldap_config.openldap_slapd_d }}"
+
+- name: Create OpenLDAP admin password file
+  copy:
+    content: "{{ privnet_ldap_openldap_admin_password }}"
+    dest: "{{ privnet_ldap_config.openldap_admin_passwd_file }}"
+    owner: root
+    group: root
+    mode: "0600"
 
 - name: Install fileshttp nginx configuration
   template:
@@ -76,7 +86,7 @@
     group: root
     mode: "0644"
 
-# This is for token-signing, not HTTPS
+# This is for docker_auth/registry token-signing, not HTTPS
 - name: Create self-signed token-signing certificate
   command: >-
     openssl req -new -newkey rsa:4096 -days 7300 -nodes -x509

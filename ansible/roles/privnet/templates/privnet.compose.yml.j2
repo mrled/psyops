@@ -2,6 +2,35 @@ version: "3.7"
 
 services:
 
+  # openldap:
+  #   image: osixia/openldap:1.5.0
+  #   environment:
+  #     LDAP_DOMAIN: "{{ privnet_ldap_domain }}"
+  #     LDAP_ORGANISATION: "{{ privnet_ldap_organization_name }}"
+  #     LDAP_ADMIN_PASSWORD_FILE: /adminpw.txt
+  #     LDAP_TLS: false
+  #   volumes:
+  #     - "{{ privnet_ldap_config.openldap_admin_passwd_file }}:/adminpw.txt:ro"
+  #     - "{{ privnet_ldap_config.openldap_slapd_d }}:/etc/ldap/slapd.d:rw"
+  #   networks:
+  #     - privnet
+
+  # lam:
+  #   image: jacksgt/ldap-account-manager
+  #   networks:
+  #     - privnet
+  #   volumes:
+  #     - "{{ privnet_ldap_config.lam_config }}:/var/www/html/config/config.cfg"
+  #     - "{{ privnet_ldap_config.lam_profile }}:/var/www/html/config/privnet.conf"
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.docker.network={{ privnet_stack_name }}_privnet"
+  #     - "traefik.http.routers.lam.rule=Host(`{{ privnet_ldap_lam_domain }}`)"
+  #     - "traefik.http.routers.lam.tls=true"
+  #     - "traefik.http.routers.lam.tls.certresolver=privnet-resolver"
+  #     - "traefik.http.routers.lam.service=lam"
+  #     - "traefik.http.services.lam.loadbalancer.server.port=8080"
+
   giteaweb:
     image: gitea/gitea:1.15.5
     environment:
@@ -260,6 +289,8 @@ services:
           - node.role == manager
 
 volumes:
+  openldap_data:
+    driver: local
   giteaweb_data:
     driver: local
   giteadb_data:
