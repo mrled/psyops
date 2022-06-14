@@ -6,12 +6,6 @@
 # Create an IAM user, but don't create any security keys.
 # We assume that is done in the AWS web console.
 
-provider "aws" {
-  # I think I don't have to set these explicitly, but doing it to remind myself
-  shared_credentials_files = ["~/.aws/credentials"]
-  shared_config_files = ["~/.aws/config"]
-}
-
 locals {
   bucket_name = "com-micahrl-wiki-litestream-bucket"
   backup_writer_policy_name = "com-micahrl-wiki-litestream-bucket-backup-writer-policy"
