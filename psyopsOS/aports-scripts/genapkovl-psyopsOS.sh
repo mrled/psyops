@@ -55,6 +55,8 @@ install -o root -g root -m 0755 -d "$tmp"/etc/apk
 # http://mirrors.edge.kernel.org/alpine/v3.16/community
 # EOF
 
+install -o root -g root -m 0755 -d "$tmp"/var/psyopsOS
+
 install -o root -g root -m 0755 -d "$tmp"/etc/apk
 install -o root -g root -m 0644 "$PSYOPSOS_OVERLAY"/apk-world "$tmp"/etc/apk/world
 
@@ -62,8 +64,11 @@ install -o root -g root -m 0644 "$PSYOPSOS_OVERLAY"/issue "$tmp"/etc/issue
 install -o root -g root -m 0644 "$PSYOPSOS_OVERLAY"/motd "$tmp"/etc/motd
 
 install -o root -g root -m 0700 -d "$tmp"/etc/psyopsOS
+install -o root -g root -m 0700 -d "$tmp"/etc/psyopsOS/status
 
-install -o root -g root -m 0600 "$PSYOPSOS_OVERLAY"/etc-psyopsOS/postboot.secrets "$tmp"/etc/psyopsOS/postboot.secrets
+install -o root -g root -m 0600 "$PSYOPSOS_OVERLAY"/etc/psyopsOS/postboot.secrets "$tmp"/etc/psyopsOS/postboot.secrets
+install -o root -g root -m 0644 "$PSYOPSOS_OVERLAY"/etc/psyopsOS/init.env "$tmp"/etc/psyopsOS/init.env
+install -o root -g root -m 0700 "$PSYOPSOS_OVERLAY"/usr/local/bin/psyopsOS-init.sh "$tmp"/usr/local/bin/psyopsOS-init.sh
 
 # I don't configure this here bc it doesn't seem to work
 # I saw that this project did this: <https://github.com/mayarid/penyu/blob/master/genapkovl-penyu.sh>
@@ -76,7 +81,8 @@ install -o root -g root -m 0600 "$PSYOPSOS_OVERLAY"/etc-psyopsOS/postboot.secret
 # NO. Instead lets read setup-alpine, call the parts I care about in psyopsOS-postboot.start, and ignroe the rest.
 
 install -o root -g root -m 0755 -d "$tmp"/etc/local.d
-install -o root -g root -m 0755 "$PSYOPSOS_OVERLAY"/local.d_psyopsOS-postboot.start "$tmp"/etc/local.d/psyopsOS-postboot.start
+install -o root -g root -m 0755 "$PSYOPSOS_OVERLAY"/etc/local.d/000-psyopsOS-postboot.start "$tmp"/etc/local.d/000-psyopsOS-postboot.start
+install -o root -g root -m 0755 "$PSYOPSOS_OVERLAY"/etc/local.d/001-psyopsOS-async-init.start "$tmp"/etc/local.d/001-psyopsOS-async-init.start
 
 
 # Add a secret directory that is only readable by root.

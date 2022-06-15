@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-if test -e /etc/psyopsOS/postboot.finished; then
+if test -e /etc/psyopsOS/status/000-postboot.finished; then
 	logger --stderr --priority user.info --tag psyopsOS-postboot "psyopsOS postboot has already run once, nothing to do"
 	exit 0
 fi
@@ -35,6 +35,7 @@ chmod 644 /etc/profile.d/psyops-secret.sh
 
 setup-keymap us us
 setup-hostname "$PSYOPSOS_NODENAME"
+echo "export PSYOPS_NODENAME=$PSYOPS_NODENAME" > /etc/psyopsOS/nodename.env
 
 . /etc/psyopsOS/postboot.secrets
 
@@ -53,4 +54,5 @@ echo "$ssh_key_mrled_haluth" >> /home/mrled/.ssh/authorized_keys
 
 logger --stderr --priority user.debug --tag psyopsOS-postboot "Added users and configured ssh keys"
 
-touch /etc/psyopsOS/postboot.finished
+date +'%Y%m%d-%H%M%S %z' > /etc/psyopsOS/status/000-postboot.finished
+logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished postboot"

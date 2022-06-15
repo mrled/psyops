@@ -5,6 +5,7 @@ bind-tools
 busybox
 ca-certificates
 curl
+file
 git
 gzip
 k3s

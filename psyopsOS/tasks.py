@@ -38,6 +38,7 @@ psyopsos_minisign_encrypted_passwd_file = os.path.join(basedir, ".minisign-pass-
 staticdir = os.path.join(basedir, "static")
 psyopsos_cfg = os.path.join(basedir, "psyopsOS.yml")
 psyopsos_key = os.path.join(basedir, "minisign.seckey")
+progfiguration_dir = os.path.join(basedir, "progfiguration")
 
 # Output configuration
 sitedir = os.path.join(basedir, "public")
@@ -98,12 +99,17 @@ def parsecfg(filepath: str) -> Dict[str, Any]:
     return config
 
 
-def s3_upload_directory(directory, bucketname)
+def s3_upload_directory(directory, bucketname):
+    """Upload a directory to S3 using AWS creds from ~/.aws
+
+    TODO: keep track of all uploaded files, then at the end list all files in the bucket and delete any we didn't upload
+    """
     s3client = boto3.client("s3")
     for root, _, files in os.walk(directory):
         for filename in files:
             local_filepath = os.path.join(root, filename)
             relative_filepath = os.path.relpath(local_filepath, directory)
+            print(f"Uploading {local_filepath}...")
             s3client.upload_file(local_filepath, bucketname, relative_filepath)
 
 
@@ -143,3 +149,21 @@ def build(ctx):
 @invoke.task
 def deploy(ctx):
     s3_upload_directory(sitedir, site_bucket)
+
+
+@invoke.task
+def progfiguration(ctx):
+    print("Running build in progfiguration directory...")
+    with ctx.cd(progfiguration_dir):
+        ctx.run("./venv/bin/python -m build")
+    os.rename(
+        f"{progfiguration_dir}/dist/progfiguration-0.0.0.tar.gz",
+        f"{site_psyopsos_dir}/progfiguration-0.0.0.tar.gz",
+    )
+    os.rename(
+        f"{progfiguration_dir}/dist/progfiguration-0.0.0-py3-none-any.whl",
+        f"{site_psyopsos_dir}/progfiguration-0.0.0-py3-none-any.whl",
+    )
+    print("Signing builds...")
+    minisign(f"{site_psyopsos_dir}/progfiguration-0.0.0.tar.gz")
+    minisign(f"{site_psyopsos_dir}/progfiguration-0.0.0-py3-none-any.whl")

@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+# Do longer-running tasks asynchronously.
+# Because this is async, failures in this stage will not result in a failure of the 'local' service.
+# Check for logs in syslog and the postboot stage in /etc/psyopsOS/stages/001-postboot.finished
+
+logger --stderr --priority user.debug --tag psyopsOS-async-init "Calling psyopsOS-init.sh script asynchronously..."
+/usr/local/sbin/psyopsOS-init.sh &
