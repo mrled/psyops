@@ -102,13 +102,13 @@ def dockerrun(
         hostname,
     ]
 
-    if sys.platform.startswith("linux"):
-        runcli += [
-            "-e",
-            "uid={}".format(linuxuid or os.geteuid()),
-            "-e",
-            "gid={}".format(linuxgid or os.getegid()),
-        ]
+    # if sys.platform.startswith("linux"):
+    #     runcli += [
+    #         "-e",
+    #         "uid={}".format(linuxuid or os.geteuid()),
+    #         "-e",
+    #         "gid={}".format(linuxgid or os.getegid()),
+    #     ]
 
     if runargs:
         runcli += runargs.split(" ")
@@ -126,7 +126,7 @@ def dockerrun(
         raise Exception(f"'docker run' command exited with nonzero code '{retcode}'")
 
 
-def dockerbuild(imagename, imagetag, buildargs=None):
+def dockerbuild(imagename, imagetag, additional_build_args=None):
     """Build the Docker container"""
 
     env = os.environ.copy()
@@ -134,17 +134,29 @@ def dockerbuild(imagename, imagetag, buildargs=None):
     # For fuck's sake
     env["DOCKER_SCAN_SUGGEST"] = "false"
 
+    build_time_vars_arg = ""
+    if sys.platform.startswith("linux"):
+        build_time_vars_arg = [
+            "--build-arg",
+            f"PSYOPS_UID={os.geteuid()}",
+            "--build-arg",
+            f"PSYOPS_GID={os.getegid()}",
+        ]
+
     buildcli = [
         "docker",
         "build",
+    ]
+    buildcli += build_time_vars_arg
+    buildcli += [
         DOCKERDIR,
         "--progress",
         "plain",
         "--tag",
         f"{imagename}:{imagetag}",
     ]
-    if buildargs:
-        buildcli += buildargs.split(" ")
+    if additional_build_args:
+        buildcli += additional_build_args.split(" ")
 
     logger.info(f"Building an image with:\n{buildcli}")
 
@@ -429,7 +441,7 @@ def main(*args, **kwargs):  # pylint: disable=W0613
 
     if parsed.action == "build":
         parentrepo.testcheckout(throw=True)
-        dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
+        dockerbuild(parsed.imagename, parsed.imagetag, additional_build_args=parsed.buildargs)
     elif parsed.action == "run":
         parentrepo.testcheckout(throw=True)
         dockerrun(
@@ -442,7 +454,7 @@ def main(*args, **kwargs):  # pylint: disable=W0613
         )
     elif parsed.action == "buildrun":
         parentrepo.testcheckout(throw=True)
-        dockerbuild(parsed.imagename, parsed.imagetag, buildargs=parsed.buildargs)
+        dockerbuild(parsed.imagename, parsed.imagetag, additional_build_args=parsed.buildargs)
         dockerrun(
             parsed.imagename,
             parsed.imagetag,

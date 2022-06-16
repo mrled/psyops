@@ -8,8 +8,8 @@ LABEL maintainer "me@micahrl.com"
 ARG username=psyops
 ARG groupname=psyops
 ARG homedir=/home/$username
-ENV PSYOPS_UID=1000
-ENV PSYOPS_GID=1000
+ARG PSYOPS_UID=1000
+ARG PSYOPS_GID=1000
 
 # Location where we will mount the psyops repo as a volume. Note that even
 # though this is an environment variable, it's not changeable at runtime
@@ -80,7 +80,7 @@ RUN true \
         # Installs GPG 2.x, not 1.x (gnupg1 gnupg1-doc)
         # Sadly, Alpine doesn't offer a way to install them side by side
         gnupg gnupg-doc \
-        # for awscli, installed below from pip, to get its documentation
+        # Required for awscli to get its documentation
         groff groff-doc \
         # For non busybox ping; busybox ping requires root privs, or setting net.ipv4.ping_group_range on the Docker *host*,
         # which is problematic on Windows/macOS which both use a Linux VM that is difficult to directly configure.
@@ -98,6 +98,7 @@ RUN true \
         parallel parallel-doc \
         pwgen pwgen-doc \
         python3 python3-doc \
+        ripgrep ripgrep-bash-completion ripgrep-doc \
         rsync rsync-doc \
         # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
         shadow shadow-doc \
@@ -116,18 +117,14 @@ RUN true \
     # Configure Python stuff, including for later building C modules
     # (Useful to keep on the image permanently, so we can compile C modules in virtualenvs)
     # These prereqs include support for PyNACL
-    && python3 -m ensurepip \
+    # && python3 -m ensurepip \
     && python3 -m pip install --upgrade pip \
-    && python3 -m pip install \
-        pipenv \
-        virtualenv \
     && apk add \
         # general
         gcc \
         linux-headers \
         make \
         musl-dev \
-        python2-dev \
         python3-dev \
         # for (at least) PyNACL
         libffi-dev \
@@ -140,43 +137,28 @@ RUN true \
     && apk add \
         ruby \
     #
-    # Get AWS and Gandi command line tools
-    && python3 -m pip install \
-        awscli \
-        gandi.cli \
-    #
-    # Other python3 dependencies
-    && python3 -m pip install \
-        PyYAML \
-        invoke \
-    # Make sure basic Python2 tooling is installed too, ugh
-    && python2 -m ensurepip \
-    && python2 -m pip install --upgrade \
-        pip \
-        virtualenv \
-    #
-    && install -d -o root -g root -m 755 /usr/local/bin \
-    #
-    && true
-
-## Third party software that doesn't require the /setup dir
-
-RUN true \
-    # Install Ansible
-    # Required for Ansible scripts and/or the EC2 inventory script
-    && python3 -m pip install \
-        ansible \
-        bcrypt \
-        boto \
-        boto3 \
-        docker-compose \
-        dnspython \
-        mitogen \
-        netaddr \
-        passlib \
+    # Get more packages, idk what even this order is
     && apk add \
+        ansible ansible-core ansible-core-doc \
+        aws-cli \
+        docker-compose docker-compose-bash-completion \
+        py3-bcrypt \
+        # py3-boto \
+        py3-boto3 \
+        py3-dnspython \
+        py3-netaddr \
+        py3-passlib \
+        py3-yaml \
         # Required for Ansible to use SSH password auth instead of public keys
         sshpass sshpass-doc \
+    #
+    # Get some Python packages that are not in apk repos
+    && python3 -m pip install \
+        gandi.cli \
+        invoke \
+        mitogen \
+    && install -d -o root -g root -m 755 /usr/local/bin \
+    #
     && true
 
 ARG psysetup=/setup
@@ -193,13 +175,6 @@ RUN true \
         lolcat \
     && cp "$psysetup/figlet-fonts/"*.[ft]lf /usr/share/figlet/fonts \
     && chmod 644 /usr/share/figlet/fonts/* \
-    && true
-
-RUN true \
-    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" BurntSushi/ripgrep '^ripgrep.*linux-musl.tar.gz$' \
-    && cd "$psysetup" \
-    && tar -zx -f ripgrep*.tar.gz \
-    && install -o root -g root -m 755 "$psysetup"/ripgrep*linux-musl/rg /usr/local/bin \
     && true
 
 # Hashicorp doesn't recommend automatically getting the latest version but we are doing it anyway
@@ -233,7 +208,9 @@ RUN true \
     && chmod 0664 /etc/localtime \
     #
     # Configure my user
-    && addgroup -g "$PSYOPS_GID" "$groupname" \
+    # Forcibly install a group with the correct GID, even if there is already a group with that GID
+    # && addgroup -g "$PSYOPS_GID" "$groupname" \
+    && echo "${groupname}:x:${PSYOPS_GID}:" >> /etc/group \
     && adduser -D -G "$groupname" -u "$PSYOPS_UID" -s /bin/bash "$username" \
     && usermod --append --groups timekeeper "$username" \
     #
