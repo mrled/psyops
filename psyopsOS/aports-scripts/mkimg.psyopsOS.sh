@@ -3,7 +3,7 @@ if test -z "$PSYOPSOS_OVERLAY"; then
 	exit 1
 fi
 
-apkworld="$PSYOPSOS_OVERLAY"/apk-world
+apkworld="$PSYOPSOS_OVERLAY"/etc/apk/world
 apklist="$(cat "$apkworld")"
 
 profile_psyopsOS() {
