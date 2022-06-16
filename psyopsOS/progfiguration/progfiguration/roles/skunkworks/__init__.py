@@ -3,7 +3,8 @@
 This role is special - it's where I do research and development
 """
 
-from datetime import datetime
+import datetime
+import subprocess
 import textwrap
 from typing import Any, Dict
 
@@ -21,6 +22,7 @@ def apply(node: PsyopsOsNode, variables: Dict[str, Any]):
         """
     )
     node.set_file_contents("/etc/apk/repositories", repos)
+    subprocess.run("apk update", shell=True, check=True)
 
     # Set a temp file for testing
-    node.set_file_contents("/tmp/progfigurated", datetime.datetime.now())
+    node.set_file_contents("/tmp/progfigurated", f"{datetime.datetime.now()}\n")

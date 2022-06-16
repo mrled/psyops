@@ -11,6 +11,7 @@ gzip
 k3s
 logger
 lsblk
+minisign
 openssh
 pciutils
 python3

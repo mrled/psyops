@@ -68,7 +68,10 @@ install -o root -g root -m 0700 -d "$tmp"/etc/psyopsOS/status
 
 install -o root -g root -m 0600 "$PSYOPSOS_OVERLAY"/etc/psyopsOS/postboot.secrets "$tmp"/etc/psyopsOS/postboot.secrets
 install -o root -g root -m 0644 "$PSYOPSOS_OVERLAY"/etc/psyopsOS/init.env "$tmp"/etc/psyopsOS/init.env
-install -o root -g root -m 0700 "$PSYOPSOS_OVERLAY"/usr/local/bin/psyopsOS-init.sh "$tmp"/usr/local/bin/psyopsOS-init.sh
+
+install -o root -g root -m 0755 -d "$tmp"/usr/local/sbin
+install -o root -g root -m 0700 "$PSYOPSOS_OVERLAY"/usr/local/sbin/psyopsOS-init.sh "$tmp"/usr/local/sbin/psyopsOS-init.sh
+install -o root -g root -m 0700 "$PSYOPSOS_OVERLAY"/usr/local/sbin/psyopsOS-mount-secret.sh "$tmp"/usr/local/sbin/psyopsOS-mount-secret.sh
 
 # I don't configure this here bc it doesn't seem to work
 # I saw that this project did this: <https://github.com/mayarid/penyu/blob/master/genapkovl-penyu.sh>

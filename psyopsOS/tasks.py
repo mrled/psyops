@@ -1,5 +1,6 @@
 """PyInvoke tasks file for psyops.micahrl.com"""
 
+import glob
 import json
 import os
 import pdb
@@ -155,6 +156,7 @@ def deploy(ctx):
 def progfiguration(ctx):
     print("Running build in progfiguration directory...")
     with ctx.cd(progfiguration_dir):
+        # ctx.run("./venv/bin/pip install wheel")
         ctx.run("./venv/bin/python -m build")
     os.rename(
         f"{progfiguration_dir}/dist/progfiguration-0.0.0.tar.gz",
@@ -167,3 +169,49 @@ def progfiguration(ctx):
     print("Signing builds...")
     minisign(f"{site_psyopsos_dir}/progfiguration-0.0.0.tar.gz")
     minisign(f"{site_psyopsos_dir}/progfiguration-0.0.0-py3-none-any.whl")
+
+
+@invoke.task
+def mkimage(
+    ctx,
+    tag="0x001",
+    aportsdir=os.path.expanduser("~/aports"),
+    workdir=os.path.expanduser("~/tmp/mkimage-workdir"),
+    isodir=os.path.expanduser("~/tmp/isos")
+):
+    """Run mkimage.sh to build a new Alpine ISO
+
+    Copies prerequisites into the aports directory.
+    """
+    os.umask(0o022)
+    psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
+    aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
+
+    env = os.environ.copy()
+    env["PSYOPSOS_OVERLAY"] = os.path.join(psyopsosdir, "os-overlay")
+
+    # psyopsOS mkimage and genapkovl scripts expect this to be present
+    shutil.copy(f"{aportsscriptsdir}/genapkovl-psyopsOS.sh", f"{aportsdir}/scripts/genapkovl-psyopsOS.sh")
+    shutil.copy(f"{aportsscriptsdir}/mkimg.psyopsOS.sh", f"{aportsdir}/scripts/mkimg.psyopsOS.sh")
+
+    cleandirs = glob.glob("/tmp/mkimage*") + glob.glob(f"{workdir}/apkovl*") + glob.glob(f"{workdir}/apkroot*")
+    for d in cleandirs:
+        print(f"Removing {d}...")
+        ctx.run(f"sudo rm -rf '{d}'")
+
+    # Doing this just takes too long
+    # ctx.run("sudo apk update")
+
+    with ctx.cd(f"{aportsdir}/scripts"):
+        cmd = [
+            "./mkimage.sh",
+            "--tag", tag,
+            "--outdir", isodir,
+            "--arch", "x86_64",
+            "--repository", "http://mirrors.edge.kernel.org/alpine/v3.16/main",
+            "--repository", "http://mirrors.edge.kernel.org/alpine/v3.16/community",
+            "--workdir", workdir,
+            "--profile", "psyopsOS",
+        ]
+        ctx.run(" ".join(cmd), env=env)

@@ -47,7 +47,7 @@ class PsyopsOsNode(SystemNode):
 
     @property
     def alpine_release(self) -> List[int]:
-        return [int(n) for n in self.alpine_release_str]
+        return [int(n) for n in self.alpine_release_str.split(".")]
 
     @property
     def alpine_release_v(self) -> str:
