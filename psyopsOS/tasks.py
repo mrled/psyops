@@ -116,16 +116,22 @@ def s3_upload_directory(directory, bucketname):
 
 @invoke.task
 def clean(ctx):
+    """Clean the build"""
     shutil.rmtree(staticdir)
 
 
 @invoke.task
 def copystatic(ctx):
+    """Copy files from the static directory to the site directory"""
     shutil.copytree(staticdir, sitedir, dirs_exist_ok=True)
 
 
 @invoke.task
-def build(ctx):
+def copyconfig(ctx):
+    """Copy global/node/etc config from psyopsOS.yml into JSON files in the site directory
+
+    Sign the resulting files with minisign
+    """
     copystatic(ctx)
     config = parsecfg(psyopsos_cfg)
     for d in [site_psyopsos_dir_nodes, site_psyopsos_dir_tags]:
@@ -149,11 +155,13 @@ def build(ctx):
 
 @invoke.task
 def deploy(ctx):
+    """Deploy the site dir to S3"""
     s3_upload_directory(sitedir, site_bucket)
 
 
 @invoke.task
 def progfiguration(ctx):
+    """Build the progfiguration package, copy it to the site dir, and sign it with minisign"""
     print("Running build in progfiguration directory...")
     with ctx.cd(progfiguration_dir):
         # ctx.run("./venv/bin/pip install wheel")
