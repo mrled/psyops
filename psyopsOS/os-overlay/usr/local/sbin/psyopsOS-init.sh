@@ -46,7 +46,7 @@ python3 -m venv --upgrade-deps /var/psyopsOS/venv
 logger --stderr --priority user.debug --tag psyopsOS-postboot "Installing progfiguration..."
 /var/psyopsOS/venv/bin/python -m pip install /var/psyopsOS/"$progfig"
 logger --stderr --priority user.debug --tag psyopsOS-postboot "Running progfiguration..."
-/var/psyopsOS/venv/bin/psyopsOS-progfiguration "$PSYOPSOS_NODENAME"
+/var/psyopsOS/venv/bin/psyopsOS-progfiguration apply "$PSYOPSOS_NODENAME"
 logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished running progfiguration"
 
 date +'%Y%m%d-%H%M%S %z' > /etc/psyopsOS/status/001-async-init.finished

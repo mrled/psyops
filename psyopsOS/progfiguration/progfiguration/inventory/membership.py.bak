@@ -1,0 +1,128 @@
+"""Group membership definition
+
+We do this here so that we don't have to import all groups or nodes to know group membership
+
+Some terminology:
+
+- node:         A single host
+- group:        A collection of nodes with associated configuration values
+- function:     A collection of nodes with associated roles
+- role:         A Python module that configures a node
+"""
+
+from typing import Dict, List
+
+from progfiguration.inventory.invhelpers import Bunch
+
+
+groupmap = {
+    "kubernasty": [
+        "jesseta",
+        "kenasus",
+        "kntytest",
+        "zalas",
+    ],
+    "localhost": [
+        "localhost",
+    ],
+}
+
+
+class GroupMembership():
+
+    def __init__(self, groups: Dict[str, List[str]]):
+        self.groups = groups
+        self.nodes = {}
+        for group, members in groups.items():
+            for member in members:
+                if member not in self.nodes:
+                    self.nodes[member] = []
+                self.nodes[member].append(group)
+
+
+membership = GroupMembership(groupmap)
+
+
+Roster = dict(
+    jesseta=dict(groups=["kubernasty"], roles=["datadisk", "kubernasty"])
+    # host = Bunch(groups=["g1", "g2"], roles=["r1", "r2"])
+    jesseta = Bunch(groups=["kubernasty"], roles=["datadisk", "kubernasty"]),
+    kenasus = Bunch(groups=["kubernasty"], roles=["datadisk", "kubernasty"]),
+    zalas = Bunch(groups=["kubernasty"], roles=["datadisk", "kubernasty"]),
+
+    localhost = Bunch(groups=["localhost"], roles=["localhosttest"]),
+    zalas = Bunch(groups=["kubernasty"], roles=["datadisk", "kubernasty"]),
+)
+
+Roster = dict(
+    # host = Bunch(groups=["g1", "g2"], roles=["r1", "r2"])
+    jesseta = Bunch(groups=["kubernasty"], roles=["datadisk", "kubernasty"]),
+    kenasus = Bunch(groups=["kubernasty"], roles=["datadisk", "kubernasty"]),
+    zalas = Bunch(groups=["kubernasty"], roles=["datadisk", "kubernasty"]),
+
+    localhost = Bunch(groups=["localhost"], roles=["localhosttest"]),
+    zalas = Bunch(groups=["kubernasty"], roles=["datadisk", "kubernasty"]),
+)
+
+
+GroupMembership = {
+    'localhost': ["localhost"],
+    'kubernasty': [
+        "jesseta",
+        "kenasus",
+        "zalas",
+    ]
+}
+
+
+"""RoleApplication: the key is a group name, and the value is a list of roles that apply
+"""
+RoleApplication = {
+    'kubernasty': ["kubernasty"],
+}
+
+
+"""GroupNodeMap:
+
+Map a group name like 'testhosts' to a list of hosts like ['host1', 'host2']
+"""
+GroupNodeMap = {
+    "localhost": ["localhost"],
+    "kubernasty": ["jesseta", "kenasus", "zalas"]
+}
+
+
+"""FunctionNodeMap:
+
+Map function names like 'cluster_node' to a list of nodes.
+A node may only belong to one function.
+"""
+
+
+"""FunctionRoleMap:
+
+Map function names like 'cluster_node' to an ordered list of roles like ['provision_disk', 'swarm_init']
+"""
+FunctionRoleMap = {
+    "skunkworks": ["skunkworks"],
+    "kubernasty": ["datadisk", "k3s"],
+}
+
+
+"""FunctionMapping:
+
+Map function names like 'cluster_node' to a list of their nodes and a list of the roles to apply
+
+A node may only belong to one function,
+but a role can be applied to multiple functions.
+"""
+FunctionMapping = {
+    "skunkworks": {
+        "nodes": ["kntytest"],
+        "roles": ["skunkworks"],
+    },
+    "kubernasty": {
+        "nodes": ["jesseta", "kenasus", "zalas"]
+        "roles": ["datadisk", "k3s"]
+    }
+}

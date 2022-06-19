@@ -138,14 +138,15 @@ def copyconfig(ctx):
         os.makedirs(d, exist_ok=True)
     jsondump(config["global"], site_psyopsos_dir_global)
     tags: Dict[str, str] = {}
-    for node, nodecfg in config["nodes"].items():
-        nodepath = os.path.join(site_psyopsos_dir_nodes, f"{node}.json")
+    for nodename, nodecfg in config["nodes"].items():
+        nodepath = os.path.join(site_psyopsos_dir_nodes, f"{nodename}.json")
+        nodecfg["nodename"] = nodename
         jsondump(nodecfg, nodepath)
         if "tags" in nodecfg:
             for tag in nodecfg["tags"]:
                 if tag not in tags:
                     tags[tag] = []
-                tags[tag].append(node)
+                tags[tag].append(nodename)
     for tag, nodes in tags.items():
         tagdir = os.path.join(site_psyopsos_dir_tags, tag)
         os.makedirs(tagdir, exist_ok=True)

@@ -1,0 +1,27 @@
+---
+
+# Progfiguration inventory
+
+groupNodeMap:
+  localgroup:
+    - localhost
+  kubernasty:
+    - jesseta
+    - kenasus
+    - zalas
+    - kntytest
+
+nodeFunctionMap:
+  jesseta: kubernasty
+  kenasus: kubernasty
+  zalas: kubernasty
+  kntytest: kubernasty
+  localhost: localfunction
+
+functionRoleMap:
+  kubernasty:
+    - datadisk
+    - k3s
+  localfunction:
+    - localhosttest
+    - skunkworks
