@@ -10,6 +10,7 @@ It should contain the following:
 - `nodename`, a file containing the node's name. This might not be a proper hostname, but it should be unique.
 - `age.key`, a file containing an [age](https://age-encryption.org) private key.
 - Optionally `TESTONLYNOPROD.env`, which contains some variables that are useful in development but dangerous in production.
+- `minisign.pubkey`, used to verify file contents when downloading configuration from the Internet
 
 This information will be used to call out to the network and configure the system.
 
