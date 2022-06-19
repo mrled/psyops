@@ -45,7 +45,7 @@ Currently hosted on S3, see `../terraform/com-micahrl-psyops-http-bucket.tf`.
 python3 -m venv --upgrade-deps venv
 . venv/bin/activate
 pip install -r requirements.txt
-invoke build
+invoke --list
 ```
 
 ## To do
@@ -54,7 +54,7 @@ invoke build
     - Tailscale
     - The data storage for the system at /data or whatever
     - k3s
-- How to configure post boot?
+- How to configure post boot? TODO: document this in a separate file
     - Should this be Ansible?
     - Maybe it should be simple shell scripts? Ansible is so slow...
     - What kind of server will it need?
@@ -69,3 +69,6 @@ invoke build
     - In a real environment, you'd want the ability to roll back too.
 - Misc
     - It regenerates SSH host keys on each boot, which takes a minute; can we avoid this somehow? (Or only generate one pair?)
+        - I think the answer is to geneate SSH host keys on the psyops-secret volume.
+        - Mount psyops-secret early. Either include it in fstab, or make a service do it very early in boot. Do NOT fail boot if it doesn't exist.
+        - Create an openrc service that copies the SSH key to the right location if psyops-secret was mounted. Generate keys if psyops-secret wasn't mounted.
