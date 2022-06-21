@@ -184,43 +184,68 @@ def progfiguration(ctx):
 def mkimage(
     ctx,
     tag="0x001",
-    aportsdir=os.path.expanduser("~/aports"),
-    workdir=os.path.expanduser("~/tmp/mkimage-workdir"),
-    isodir=os.path.expanduser("~/tmp/isos")
+    aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
+    workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
+    isodir=os.path.expanduser("~/Downloads/"),
+    dockertag="psyopsos-builder",
 ):
-    """Run mkimage.sh to build a new Alpine ISO
-
-    Copies prerequisites into the aports directory.
-    """
+    """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO"""
     os.umask(0o022)
+
     psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
     aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
 
-    env = os.environ.copy()
-    env["PSYOPSOS_OVERLAY"] = os.path.join(psyopsosdir, "os-overlay")
-
     # psyopsOS mkimage and genapkovl scripts expect this to be present
-    shutil.copy(f"{aportsscriptsdir}/genapkovl-psyopsOS.sh", f"{aportsdir}/scripts/genapkovl-psyopsOS.sh")
-    shutil.copy(f"{aportsscriptsdir}/mkimg.psyopsOS.sh", f"{aportsdir}/scripts/mkimg.psyopsOS.sh")
+    shutil.copy(
+        f"{aportsscriptsdir}/genapkovl-psyopsOS.sh",
+        f"{aportsdir}/scripts/genapkovl-psyopsOS.sh",
+    )
+    shutil.copy(
+        f"{aportsscriptsdir}/mkimg.psyopsOS.sh",
+        f"{aportsdir}/scripts/mkimg.psyopsOS.sh",
+    )
 
-    cleandirs = glob.glob("/tmp/mkimage*") + glob.glob(f"{workdir}/apkovl*") + glob.glob(f"{workdir}/apkroot*")
+    cleandirs = []
+    # This would be necessary if the container filesystem is persistent
+    # cleandirs += glob.glob("/tmp/mkimage*")
+    cleandirs += glob.glob(f"{workdir}/apkovl*")
+    cleandirs += glob.glob(f"{workdir}/apkroot*")
     for d in cleandirs:
         print(f"Removing {d}...")
-        ctx.run(f"sudo rm -rf '{d}'")
+        # ctx.run(f"sudo rm -rf '{d}'")
+        ctx.run(f"rm -rf '{d}'")
 
-    # Doing this just takes too long
-    # ctx.run("sudo apk update")
+    docker_builder_dir = os.path.join(psyopsosdir, "build")
+    ctx.run(f"docker build --tag '{dockertag}' '{docker_builder_dir}'")
 
-    with ctx.cd(f"{aportsdir}/scripts"):
-        cmd = [
-            "./mkimage.sh",
-            "--tag", tag,
-            "--outdir", isodir,
-            "--arch", "x86_64",
-            "--repository", "http://mirrors.edge.kernel.org/alpine/v3.16/main",
-            "--repository", "http://mirrors.edge.kernel.org/alpine/v3.16/community",
-            "--workdir", workdir,
-            "--profile", "psyopsOS",
-        ]
-        ctx.run(" ".join(cmd), env=env)
+    docker_run_cmd = [
+        "docker",
+        "run",
+        "--rm",
+        "--volume",
+        f"{aportsdir}:/home/build/aports",
+        "--volume",
+        f"{workdir}:/home/build/bldtmp",
+        "--volume",
+        f"{isodir}:/home/build/iso",
+        "--volume",
+        f"{psyopsdir}:/home/build/psyops",
+        dockertag,
+        "./mkimage.sh",
+        "--tag",
+        tag,
+        "--outdir",
+        "/home/build/iso",
+        "--arch",
+        "x86_64",
+        "--repository",
+        "http://mirrors.edge.kernel.org/alpine/v3.16/main",
+        "--repository",
+        "http://mirrors.edge.kernel.org/alpine/v3.16/community",
+        "--workdir",
+        "/home/build/bldtmp",
+        "--profile",
+        "psyopsOS",
+    ]
+    ctx.run(" ".join(docker_run_cmd))
