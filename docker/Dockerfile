@@ -98,6 +98,7 @@ RUN true \
         parallel parallel-doc \
         pwgen pwgen-doc \
         python3 python3-doc \
+        py3-pip py3-pip-doc \
         ripgrep ripgrep-bash-completion ripgrep-doc \
         rsync rsync-doc \
         # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
