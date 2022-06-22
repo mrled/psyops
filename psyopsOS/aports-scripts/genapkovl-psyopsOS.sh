@@ -25,6 +25,9 @@ makefile() {
 	cat > "$FILENAME"
 	chown "$OWNER" "$FILENAME"
 	chmod "$PERMS" "$FILENAME"
+	echo "======== $FILENAME"
+	cat "$FILENAME"
+	echo "======== End $FILENAME"
 }
 
 rc_add() {
@@ -62,7 +65,19 @@ psyops_overlay_install root root 0644 etc/ssh/sshd_config
 psyops_overlay_install root root 0644 etc/issue
 psyops_overlay_install root root 0644 etc/motd
 
-install -o root -g root -m 0700 -d "$tmp"/etc/psyopsOS "$tmp"/etc/psyopsOS/status
+install -o root -g root -m 0755 -d "$tmp"/etc/psyopsOS "$tmp"/etc/psyopsOS/status
+
+# Could generate the date here: "$(date +%Y-%m-%dT%H:%M:%S%z)"
+# However, we do it in tasks.py so we can also get the git stats
+makefile root:root 0644 "$tmp"/etc/psyopsOS/iso.json <<EOF
+{
+	"generated": {
+		"iso8601": "$PSYOPSOS_BUILD_DATE_ISO8601",
+		"revision": "$PSYOPSOS_BUILD_GIT_REVISION",
+		"dirty": "$PSYOPSOS_BUILD_GIT_DIRTY"
+	}
+}
+EOF
 
 psyops_overlay_install root root 0600 etc/psyopsOS/postboot.secrets
 psyops_overlay_install root root 0644 etc/psyopsOS/init.env

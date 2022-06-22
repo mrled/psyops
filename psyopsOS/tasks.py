@@ -1,5 +1,6 @@
 """PyInvoke tasks file for psyopsOS"""
 
+import datetime
 import glob
 import json
 import os
@@ -215,6 +216,10 @@ def mkimage(
     psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
     aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
 
+    build_date = datetime.datetime.now()
+    build_git_revision = ctx.run("git rev-parse HEAD").stdout.strip()
+    build_git_dirty = ctx.run("git diff --quiet", warn=True).return_code != 0
+
     cleandirs = []
     # This would be necessary if the container /tmp filesystem is persistent
     # cleandirs += glob.glob("/tmp/mkimage*")
@@ -260,6 +265,13 @@ def mkimage(
         # Mounting this allows the build to access the psyopsOS/os-overlay/
         "--volume",
         f"{psyopsdir}:/home/build/psyops",
+        # Environment variables that mkimage.sh (or one of the scripts it calls) uses
+        "--env",
+        f"PSYOPSOS_BUILD_DATE_ISO8601={build_date.strftime('%Y-%m-%dT%H:%M:%S%z')}",
+        "--env",
+        f"PSYOPSOS_BUILD_GIT_REVISION={build_git_revision}",
+        "--env",
+        f"PSYOPSOS_BUILD_GIT_DIRTY={build_git_dirty}",
         dockertag,
     ]
     mkimage_cmd = [
@@ -279,6 +291,9 @@ def mkimage(
         "--profile",
         "psyopsOS",
     ]
-    ctx.run(" ".join(docker_cmd + mkimage_cmd))
+
+    full_cmd = " ".join(docker_cmd + mkimage_cmd)
+    print(f"Running docker with: {full_cmd}")
+    ctx.run(full_cmd)
 
     ctx.run(f"ls -alFh {isodir}*.iso")

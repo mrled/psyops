@@ -77,4 +77,9 @@ VOLUME /home/build/psyops
 # mkimg.psyopsOS.sh and genapkovl-psyopsOS.sh depend on this variable
 ENV PSYOPSOS_OVERLAY=/home/build/psyops/psyopsOS/os-overlay
 
+# We write some metadata to /etc/psyopsOS/iso.json that depends on these variables
+ENV PSYOPSOS_BUILD_DATE_ISO8601=
+ENV PSYOPSOS_BUILD_GIT_REVISION=
+ENV PSYOPSOS_BUILD_GIT_DIRTY=
+
 WORKDIR /home/build/aports/scripts

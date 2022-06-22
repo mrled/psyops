@@ -8,7 +8,7 @@ curl
 file
 git
 gzip
-k3s
+jq
 logger
 lsblk
 minisign
