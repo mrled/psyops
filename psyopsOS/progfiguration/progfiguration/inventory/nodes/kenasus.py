@@ -11,5 +11,5 @@ node = Bunch(
             "start_k3s": False,
         },
     ),
-    serial="",
+    serial="1023GQ2",
 )
