@@ -6,11 +6,12 @@ LABEL maintainer "me@micahrl.com"
 RUN true \
     && apk update \
     && apk add \
+        abuild \
         # abuild-doc \
         age \
         # age-doc \
+        alpine-base \
         alpine-conf \
-        alpine-sdk \
         alpine-sdk \
         apk-tools \
         bash \
@@ -18,10 +19,18 @@ RUN true \
         build-base \
         busybox \
         dosfstools \
+        e2fsprogs \
+        e2fsprogs-extra \
         fakeroot \
         git \
         gpg \
         grub-efi \
+        linux-firmware-intel \
+        linux-firmware-mediatek \
+        linux-firmware-rtl_bt \
+        linux-lts \
+        lsblk \
+        make \
         # man-db \
         # man-pages \
         minisign \
@@ -32,8 +41,8 @@ RUN true \
         ripgrep \
         rsync \
         shadow \
-        squashfs-tools \
         sqlite \
+        squashfs-tools \
         sudo \
         syslinux \
         tmux \
@@ -49,12 +58,18 @@ RUN true \
 
 USER build
 
-# WORKDIR /home/build
-# RUN true \
-#     && git clone --depth=1 https://gitlab.alpinelinux.org/alpine/aports.git \
-#     && true
+RUN true \
+    && abuild-keygen -i -a -n \
+    && ls -alF /etc/apk/keys \
+    && true
 
-VOLUME /home/build/bldtmp
+WORKDIR /home/build
+RUN true \
+    && mkdir workdir iso psyops aports \
+    # && git clone --depth=1 https://gitlab.alpinelinux.org/alpine/aports.git \
+    && true
+
+VOLUME /home/build/workdir
 VOLUME /home/build/aports
 VOLUME /home/build/iso
 VOLUME /home/build/psyops

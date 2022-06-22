@@ -117,7 +117,7 @@ def s3_upload_directory(directory, bucketname):
 @invoke.task
 def clean(ctx):
     """Clean the build"""
-    shutil.rmtree(staticdir)
+    shutil.rmtree(sitedir)
 
 
 @invoke.task
@@ -183,11 +183,12 @@ def progfiguration(ctx):
 @invoke.task
 def mkimage(
     ctx,
-    tag="0x001",
+    alpinetag="0x001",
     aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
     workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
     isodir=os.path.expanduser("~/Downloads/"),
     dockertag="psyopsos-builder",
+    volname_workdir="psyopsos-build-workdir",
 ):
     """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO"""
     os.umask(0o022)
@@ -196,45 +197,57 @@ def mkimage(
     psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
     aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
 
-    # psyopsOS mkimage and genapkovl scripts expect this to be present
-    shutil.copy(
-        f"{aportsscriptsdir}/genapkovl-psyopsOS.sh",
-        f"{aportsdir}/scripts/genapkovl-psyopsOS.sh",
-    )
-    shutil.copy(
-        f"{aportsscriptsdir}/mkimg.psyopsOS.sh",
-        f"{aportsdir}/scripts/mkimg.psyopsOS.sh",
-    )
-
     cleandirs = []
-    # This would be necessary if the container filesystem is persistent
+    # This would be necessary if the container /tmp filesystem is persistent
     # cleandirs += glob.glob("/tmp/mkimage*")
     cleandirs += glob.glob(f"{workdir}/apkovl*")
     cleandirs += glob.glob(f"{workdir}/apkroot*")
     for d in cleandirs:
         print(f"Removing {d}...")
-        # ctx.run(f"sudo rm -rf '{d}'")
         ctx.run(f"rm -rf '{d}'")
 
     docker_builder_dir = os.path.join(psyopsosdir, "build")
     ctx.run(f"docker build --tag '{dockertag}' '{docker_builder_dir}'")
 
-    docker_run_cmd = [
+    # We use a docker local volume for the workdir
+    # This would not be necessary on Linux, but
+    # on Docker Desktop for Mac (and probably also on Windows),
+    # permissions will get fucked up if you try to use a volume on the host.
+    try:
+        ctx.run(f"docker volume inspect {volname_workdir}")
+    except invoke.Failure:
+        ctx.run(f"docker volume create {volname_workdir}")
+
+    docker_cmd = [
         "docker",
         "run",
         "--rm",
+        # You must mount the aports scripts
+        # (And don't forget to update them)
         "--volume",
         f"{aportsdir}:/home/build/aports",
+        # genapkovl-psyopsOS.sh partially sets up the filesystem of the iso live OS
         "--volume",
-        f"{workdir}:/home/build/bldtmp",
+        f"{aportsscriptsdir}/genapkovl-psyopsOS.sh:/home/build/aports/scripts/genapkovl-psyopsOS.sh",
+        # mkimage.psyopsOS.sh defines the profile that we pass to mkimage.sh
+        "--volume",
+        f"{aportsscriptsdir}/mkimg.psyopsOS.sh:/home/build/aports/scripts/mkimg.psyopsOS.sh",
+        # Use the previously defined docker volume for temporary files etc when building the image.
+        # Saving this between runs makes rebuilds much faster.
+        "--volume",
+        f"{volname_workdir}:/home/build/workdir",
+        # This is where the iso will be copied after it is build
         "--volume",
         f"{isodir}:/home/build/iso",
+        # Mounting this allows the build to access the psyopsOS/os-overlay/
         "--volume",
         f"{psyopsdir}:/home/build/psyops",
         dockertag,
+    ]
+    mkimage_cmd = [
         "./mkimage.sh",
         "--tag",
-        tag,
+        alpinetag,
         "--outdir",
         "/home/build/iso",
         "--arch",
@@ -244,8 +257,10 @@ def mkimage(
         "--repository",
         "http://mirrors.edge.kernel.org/alpine/v3.16/community",
         "--workdir",
-        "/home/build/bldtmp",
+        "/home/build/workdir",
         "--profile",
         "psyopsOS",
     ]
-    ctx.run(" ".join(docker_run_cmd))
+    ctx.run(" ".join(docker_cmd + mkimage_cmd))
+
+    ctx.run(f"ls -alFh {isodir}*.iso")

@@ -28,6 +28,12 @@ profile_psyopsOS() {
 	done
 	apks="$apks linux-firmware"
 
+	echo "================================ psyopsOS apks:"
+	for apk in $apks; do
+		echo "	$apk"
+	done
+	echo "================================ end psyopsOS apks"
+
 	apkovl="genapkovl-psyopsOS.sh"
 
 	# This hostname gets set at boot
