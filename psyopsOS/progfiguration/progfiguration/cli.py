@@ -16,6 +16,8 @@ from progfiguration import age
 from progfiguration.facts import PsyopsOsNode
 from progfiguration.inventory import inventory
 from progfiguration.inventory.groups import universal
+from progfiguration.inventory.invhelpers import Bunch
+
 # from progfiguration.inventory.membership import membership
 from progfiguration.roles import skunkworks
 
@@ -45,7 +47,7 @@ def groupname2mod(groupname: str):
 
 def rolename2mod(rolename: str):
     rolemodule = importlib.import_module(f"progfiguration.roles.{rolename}")
-    return rolemod
+    return rolemodule
 
 
 def action_apply(nodename: str):
@@ -57,40 +59,42 @@ def action_apply(nodename: str):
     nodectx = PsyopsOsNode(nodename)
 
     groupmods = {
-        'universal': universal,
+        "universal": universal,
     }
-    for groupname in node.groups:
+    for groupname in inventory.node_groups[nodename]:
         groupmods[groupname] = groupname2mod(groupname)
 
     # for rolename, arguments in nodeconfig["roles"]:
-    for rolename, arguments in node.roles.__dict__.items():
+    for rolename in inventory.node_roles(nodename):
         rolemodule = rolename2mod(rolename)
 
+        # If the role module itself has defaults, set them
         rolevars = {}
         if hasattr(rolemodule, "defaults"):
-            rolevars.update(rolemodule.defaults.__dict__)
-        for gname, gmod in groupmods.items():
-            try:
-                group_role_vars = getattr(gmod.group.roles, rolename)
-                rolevars.update(group_role_vars.__dict__)
-            except (AttributeError, KeyError):
-                # This particular group doesn't set values for this particular role
-                pass
+            rolevars.update(rolemodule.defaults)
 
-        node_role_vars = getattr(node.roles, rolename)
-        rolevars.update(node_role_vars.__dict__)
+        # Check each group that the node is in for role arguments
+        for gmod in groupmods.values():
+            rolevars.update(getattr(gmod.group.roles, rolename, {}))
 
+        # Apply any role arguments from the node itself
+        rolevars.update(getattr(node.roles, rolename, {}))
+
+        # Secret values are encrypted values where the key name is preceded by `secret_`
+        # Find these and decrypt them
+        # TODO: This means a `secret_` value defined as a default will OVERRIDE a non `_secret` value defined more specifically. Fix this.
         decrypted_rolevars = {}
         for vname, vvalue in rolevars.items():
             if vname.startswith("secret_"):
                 nonsecret_vname = vname[7:]
                 # TODO: don't hard code key path here
-                decrypted_vvalue = age.decrypt(value, "/mnt/psyops-secret/mount/age.key")
-                decrypted_rolevars[nonsecret_vname] = decrypted_value
-        rolevars.update(decrypted_rolevars)
+                decrypted_vvalue = age.decrypt(vvalue, "/mnt/psyops-secret/mount/age.key")
+                decrypted_rolevars[nonsecret_vname] = decrypted_vvalue
+            else:
+                decrypted_rolevars[vname] = vvalue
 
         logging.debug(f"Running role {rolename}...")
-        rolemodule.apply(nodectx, rolevars)
+        rolemodule.apply(nodectx, **decrypted_rolevars)
         logging.debug(f"Finished running role {rolename}.")
 
 
@@ -191,7 +195,11 @@ def parseargs():
 
     sub_list = subparsers.add_parser("list", description="List inventory items")
     list_choices = ["nodes", "groups", "functions"]
-    sub_list.add_argument("collection", choices=list_choices, help=f"The items to list. Options: {list_choices}")
+    sub_list.add_argument(
+        "collection",
+        choices=list_choices,
+        help=f"The items to list. Options: {list_choices}",
+    )
 
     sub_info = subparsers.add_parser("info", description="Display info about nodes and groups")
     sub_info.add_argument("--group", "-g", action="append", help="Show info for this group")
@@ -217,9 +225,7 @@ def main():
 
     if parsed.log_stderr != "NONE":
         handler_stderr = logging.StreamHandler()
-        handler_stderr.setFormatter(
-            logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s')
-        )
+        handler_stderr.setFormatter(logging.Formatter("[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"))
         handler_stderr.setLevel(parsed.log_stderr)
         logger.addHandler(handler_stderr)
     if parsed.log_syslog != "NONE":

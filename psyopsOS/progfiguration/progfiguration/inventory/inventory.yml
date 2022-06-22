@@ -20,8 +20,10 @@ nodeFunctionMap:
 
 functionRoleMap:
   kubernasty:
+    - alpine_postboot_config
     - datadisk
     - k3s
   localfunction:
+    - alpine_postboot_config
     - localhosttest
     - skunkworks

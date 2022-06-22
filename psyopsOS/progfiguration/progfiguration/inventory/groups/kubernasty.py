@@ -23,11 +23,10 @@ PPhUGmZLadFuc2ngjbYP1A==
 """
 
 
-node = Bunch(
-    roles = Bunch(
-        datadisk = {},
-        k3s = {
-            'secret_server_token': kubernasty_k3s_server_token,
+group = Bunch(
+    roles=Bunch(
+        k3s={
+            "secret_server_token": kubernasty_k3s_server_token,
         },
     ),
 )

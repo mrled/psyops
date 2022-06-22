@@ -9,13 +9,12 @@ from progfiguration.facts import PsyopsOsNode
 from progfiguration.inventory.invhelpers import Bunch
 
 
-defaults = Bunch(
-    testval_from_role_defaults = "this is a test value from role defaults, lol",
-)
+defaults = {
+    "testval_from_role_defaults": "this is a test value from role defaults, lol",
+}
 
 
 def apply(node: PsyopsOsNode, variables: Dict[str, Any]):
-
 
     print(f"I am called for node {node.nodename}")
 

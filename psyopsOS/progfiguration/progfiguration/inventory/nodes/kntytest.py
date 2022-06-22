@@ -39,22 +39,15 @@ from progfiguration.inventory.invhelpers import Bunch
 
 
 node = Bunch(
-    notes = 'This node is used for testing in various VMs, and the key might be re-used.',
-    motd = Bunch(
-        flavor = "",
+    notes="This node is used for testing in various VMs, and the key might be re-used.",
+    motd=Bunch(
+        flavor="",
     ),
-    pubkey = 'age1djzr8h7ycsrnu5r55m7sd72esk04zm5nsuterlmx6vvcxyhcnd8qfhdapc',
-    # groups = [
-    #     "kubernasty",
-    #     "testhosts",
-    # ],
-    roles = Bunch(
-        skunkworks = {},
-        k3s = {
-            'start_k3s': False,
+    pubkey="age1djzr8h7ycsrnu5r55m7sd72esk04zm5nsuterlmx6vvcxyhcnd8qfhdapc",
+    roles=Bunch(
+        k3s={
+            "start_k3s": False,
         },
     ),
-    serial = "",
+    serial="",
 )
-
-

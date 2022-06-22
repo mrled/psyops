@@ -4,10 +4,8 @@ from progfiguration.inventory.invhelpers import Bunch
 
 
 group = Bunch(
-    testattribute = "test value",
-    roles = Bunch(
-        datadisk = Bunch(
-            mountpoint = "/data"
-        )
-    )
+    testattribute="test value",
+    roles=Bunch(
+        datadisk={},
+    ),
 )

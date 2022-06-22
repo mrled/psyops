@@ -1,4 +1,4 @@
-"""PyInvoke tasks file for psyops.micahrl.com"""
+"""PyInvoke tasks file for psyopsOS"""
 
 import glob
 import json
@@ -34,6 +34,8 @@ sys.excepthook = idb_excepthook
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 psyopsos_minisign_encrypted_passwd_file = os.path.join(basedir, ".minisign-pass-secret")
+
+docker_builder_volname_workdir = "psyopsos-build-workdir"
 
 # Input configuration
 staticdir = os.path.join(basedir, "static")
@@ -121,6 +123,15 @@ def clean(ctx):
 
 
 @invoke.task
+def cleandockervol(
+    ctx,
+    volname_workdir=docker_builder_volname_workdir,
+):
+    """Remove the Docker volume used for the mkimage.sh working directory"""
+    ctx.run(f"docker volume rm {volname_workdir}")
+
+
+@invoke.task
 def copystatic(ctx):
     """Copy files from the static directory to the site directory"""
     shutil.copytree(staticdir, sitedir, dirs_exist_ok=True)
@@ -181,6 +192,13 @@ def progfiguration(ctx):
 
 
 @invoke.task
+def upload_progfiguration(ctx, host):
+    ctx.run(
+        f"scp {site_psyopsos_dir}/progfiguration-0.0.0-py3-none-any.whl root@{host}:/tmp/"
+    )
+
+
+@invoke.task
 def mkimage(
     ctx,
     alpinetag="0x001",
@@ -188,7 +206,7 @@ def mkimage(
     workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
     isodir=os.path.expanduser("~/Downloads/"),
     dockertag="psyopsos-builder",
-    volname_workdir="psyopsos-build-workdir",
+    volname_workdir=docker_builder_volname_workdir,
 ):
     """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO"""
     os.umask(0o022)

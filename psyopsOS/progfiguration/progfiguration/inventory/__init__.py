@@ -1,12 +1,13 @@
 """The progfiguration inventory"""
 
 import os
+from importlib.resources import files as importlib_resources_files
+
 
 import yaml
 
 
-class Inventory():
-
+class Inventory:
     def __init__(self, invfile: str):
         self.invfile = invfile
         with open(invfile) as ifp:
@@ -60,41 +61,15 @@ class Inventory():
             for function, nodes in self.function_nodes.items():
                 for node in nodes:
                     if node not in self._role_functions:
-                        self._role_functions[member] = []
-                    self._role_functions[member].append(function)
+                        self._role_functions[node] = []
+                    self._role_functions[node].append(function)
         return self._role_functions
 
-    # def group_members(self, groupname: str):
-    #     return self.inventory_parsed["groupNodeMap"][groupname]
-
-    # def node_function(self, nodename: str):
-    #     return self.inventory_parsed["nodeFunctionMap"][nodename]
-
-    # def function_role(self, functionname: str):
-    #     return self.inventory_parsed["functionRoleMap"][functionname]
-
-    def node_role(self, nodename: str):
-        return self.function_role(self.node_function(nodename))
+    def node_roles(self, nodename: str):
+        return self.function_roles[self.node_function[nodename]]
 
 
-_inventory_file = os.path.join(os.path.dirname(__file__), "inventory.yml")
+# _inventory_file = os.path.join(os.path.dirname(__file__), "inventory.yml")
+_inventory_file = importlib_resources_files("progfiguration.inventory").joinpath("inventory.yml")
 
-
-# inventory = Inventory(os.path.join(os.path.dirname(__file__), "inventory.yml"))
 inventory = Inventory(_inventory_file)
-
-
-# def _build_inventory(path: str):
-#     with open(path) as fp:
-#         inventory = yaml.load(fp, Loader=yaml.Loader)
-
-#     inventory["nodeGroupMap"] = {}
-#     inventory["nodeRoleMap"]
-
-#     for gname, nodes in inventory["groupNodeMap"].items():
-
-
-#     return inventory
-
-
-# inventory = _build_inventory(_inventory_file)

@@ -24,7 +24,8 @@ fi
 . /etc/psyopsOS/psyops-secret.env
 setup-hostname "$PSYOPSOS_NODENAME"
 setup-interfaces -i < "$PSYOPSOS_INTERFACES"
-rc-service hostname restart # also restarts networking service
+rc-service hostname restart
+rc-service networking restart
 setup-keymap us us
 logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished configuring keymap, network, hostname"
 
