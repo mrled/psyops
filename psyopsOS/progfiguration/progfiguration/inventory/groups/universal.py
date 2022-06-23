@@ -6,6 +6,8 @@ from progfiguration.inventory.invhelpers import Bunch
 group = Bunch(
     testattribute="test value",
     roles=Bunch(
-        datadisk={},
+        datadisk={
+            'wipefs_if_no_vg': True,
+        },
     ),
 )

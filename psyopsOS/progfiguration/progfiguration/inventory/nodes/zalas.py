@@ -8,7 +8,7 @@ node = Bunch(
     pubkey="age1y2q4ftlq087sxetvm2uv8rqftn9x2maqsrhuyyf6zzjvfhr37afq56kwpk",
     roles=Bunch(
         k3s={
-            "start_k3s": False,
+            "start_k3s": True,
         },
     ),
     serial="10K7GQ2",
