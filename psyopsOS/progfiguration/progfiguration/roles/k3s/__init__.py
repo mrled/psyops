@@ -61,12 +61,12 @@ def apply(
     start_k3s: bool,
 ):
 
-    packages = " ".join(
-        [
-            "cni-plugin-flannel",
-            "k3s",
-        ]
-    )
+    package_list = [
+        "cni-plugin-flannel",
+        "helm@edgetesting", # helm isn't in the main repos yet
+        "k3s",
+    ]
+    packages = " ".join(package_list)
 
     subprocess.run(f"apk add {packages}", shell=True, check=True)
 
@@ -83,8 +83,9 @@ def apply(
     #     tfp.write(server_token)
 
     subprocess.run("rc-service cgroups start", shell=True, check=True)
-    if start_k3s:
-        logger.info("Starting k3s...")
-        subprocess.run("rc-service k3s start", shell=True, check=True)
-    else:
+    if not start_k3s:
         logger.info("start_k3s was False, not starting k3s or cgroups. If you are setting up a new cluster, refer to the psyopsOS/docs/kubernasty.md documentation")
+        return
+
+    logger.info("Starting k3s...")
+    subprocess.run("rc-service k3s start", shell=True, check=True)

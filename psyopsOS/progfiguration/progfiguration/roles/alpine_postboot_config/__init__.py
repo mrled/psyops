@@ -17,6 +17,9 @@ def apply(node: PsyopsOsNode):
         /media/cdrom/apks
         https://dl-cdn.alpinelinux.org/alpine/{node.alpine_release_v}/main
         https://dl-cdn.alpinelinux.org/alpine/{node.alpine_release_v}/community
+        @edgemain       http://dl-cdn.alpinelinux.org/alpine/edge/main
+        @edgecommunity  http://dl-cdn.alpinelinux.org/alpine/edge/community
+        @edgetesting    http://dl-cdn.alpinelinux.org/alpine/edge/testing
         """
     )
     node.set_file_contents("/etc/apk/repositories", repos)
