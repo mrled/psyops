@@ -27,17 +27,15 @@ nodename=millenium-falcon
 device=/dev/xxx
 
 # Make a filesystem
-mkfs.ext4 $device
-
 # Add a label that shows up in blkid and can be used in fstab
-e2label $device 'psyops-secret'
+mkfs.ext4 -L psyops-secret $device
 
 # Mount it
 mkdir -p /mnt/psyops-secret-new
 mount $device /mnt/psyops-secret-new
 
 # Save the nodename
-echo "$nodename" > /mnt/psyops-secret-new
+echo "$nodename" > /mnt/psyops-secret-new/nodename
 
 # Create an age private key
 # The public key will be displayed to stdout
@@ -47,7 +45,16 @@ age-keygen -o /mnt/psyops-secret-new/key.age
 cp minisign.pubkey /mnt/psyops-secret-new
 ```
 
-## TESTONLYNOPROD.env
+## Optional files
+
+Some files on the secret volume are optional.
+
+### network.interfaces
+
+If there is a `network.interfaces` file here, it will be placed in `/etc/network/interfaces`.
+If not, `setup-network -a` is run.
+
+### TESTONLYNOPROD.env
 
 This is dot-sourced if it exists.
 
