@@ -61,7 +61,20 @@ def apply(
     start_k3s: bool,
 ):
 
-    subprocess.run("apk add k3s", shell=True, check=True)
+    packages = " ".join(
+        [
+            "cni-plugin-flannel",
+            "k3s",
+        ]
+    )
+
+    subprocess.run(f"apk add {packages}", shell=True, check=True)
+
+    # ... wtf
+    # I'm not crazy though, this is a step that is listed here too
+    # <https://wiki.alpinelinux.org/wiki/K8s#2._Node_Setup_.F0.9F.96.A5.EF.B8.8F>
+    if not os.path.exists("/usr/libexec/cni/flannel"):
+        os.symlink("/usr/libexec/cni/flannel-amd64", "/usr/libexec/cni/flannel")
 
     mount_k3s_binds(data_mountpoint, data_k3s_subpath, data_containerd_subpath)
 
@@ -69,9 +82,9 @@ def apply(
     # with open(server_token_file, 'w') as tfp:
     #     tfp.write(server_token)
 
+    subprocess.run("rc-service cgroups start", shell=True, check=True)
     if start_k3s:
         logger.info("Starting k3s...")
-        subprocess.run("rc-service cgroups start", shell=True, check=True)
         subprocess.run("rc-service k3s start", shell=True, check=True)
     else:
-        logger.info("start_k3s was False, not starting k3s or cgroups")
+        logger.info("start_k3s was False, not starting k3s or cgroups. If you are setting up a new cluster, refer to the psyopsOS/docs/kubernasty.md documentation")
