@@ -67,6 +67,10 @@ invoke --list
     - If there's an update, download it to a temp dir, and overwrite the USB drive that contains the OS with it. I hope u tested it!
     - In a real environment, you'd want an atomic update, but I'm not going to make that here.
     - In a real environment, you'd want the ability to roll back too.
+- Build apks for scripts that are now in the apkovl
+    - This will mean I can install them at ISO build time, but also update them at boot time
+    - Also build progfiguration as an apk?
+    - If I do that, I might not need minisign at all? I could use apk signing keys instead.
 - Misc
     - It regenerates SSH host keys on each boot, which takes a minute; can we avoid this somehow? (Or only generate one pair?)
         - I think the answer is to geneate SSH host keys on the psyops-secret volume.
