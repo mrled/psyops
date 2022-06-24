@@ -19,10 +19,16 @@ The nodename and the age PUBLIC key (visible in the private key file) should be 
 Make one like this:
 
 ```sh
+# The mount path
+mountpath=/mnt/psyops-secret-new
+
 # The name you want to use for this node
 nodename=millenium-falcon
 
-# The name of the USB devie, e.g. 'device=/dev/sdb'
+# Its NIC card's MAC address
+nodemac="00:00:00:00:00:00"
+
+# The name of the USB device, e.g. 'device=/dev/sdb'
 # No need for partitions
 device=/dev/xxx
 
@@ -31,18 +37,38 @@ device=/dev/xxx
 mkfs.ext4 -L psyops-secret $device
 
 # Mount it
-mkdir -p /mnt/psyops-secret-new
-mount $device /mnt/psyops-secret-new
+mkdir -p "$mountpath"
+mount $device "$mountpath"
 
 # Save the nodename
-echo "$nodename" > /mnt/psyops-secret-new/nodename
+echo "$nodename" > "$mountpath"/nodename
 
 # Create an age private key
 # The public key will be displayed to stdout
-age-keygen -o /mnt/psyops-secret-new/key.age
+age-keygen -o "$mountpath"/key.age
 
 # Copy the minisign public key
-cp minisign.pubkey /mnt/psyops-secret-new
+cp minisign.pubkey "$mountpath"
+
+# Make an SSH host key
+ssh-keygen -q -f "$mountpath"/ssh_host_ed25519_key -N '' -t ed25519
+# No need to keep the pubkey around, we regenerate it on boot
+rm "$mountpath"/ssh_host_ed25519_key.pub
+
+# Create a mactab file
+# This is used to set a unique name for the network interface we use
+# It must be the real MAC address of the hardware NIC you want to use, assigned to an interface called 'psy0'
+# See networking.md for more info.
+echo "psy0 $nodemac" > "$mountpath"/mactab
+
+# Create a network.interfaces file for the psy0 interface
+cat >"$mountpath"/network.interfaces <<EOF
+auto lo
+iface lo inet loopback
+
+auto psy0
+iface psy0 inet dhcp
+EOF
 ```
 
 ## Optional files

@@ -1,43 +1,6 @@
 from progfiguration.inventory.invhelpers import Bunch
 
 
-# from progfiguration.inventory.nodes import Bunch, NodeConfiguration
-
-
-# node = {
-#     "notes": 'This node is used for testing in various VMs, and the key might be re-used.',
-#     'motd': {
-#         'flavor': "",
-#     },
-#     'pubkey': 'age1djzr8h7ycsrnu5r55m7sd72esk04zm5nsuterlmx6vvcxyhcnd8qfhdapc',
-#     'tags': [
-#         "kubernasty",
-#         "testhosts",
-#     ],
-#     'roles': [
-#         'skunkworks',
-#         'kubernasty',
-#     ],
-#     'serial': "",
-# }
-
-
-# notes = 'This node is used for testing in various VMs, and the key might be re-used.'
-# motd = {
-#     'flavor': "",
-# }
-# pubkey = 'age1djzr8h7ycsrnu5r55m7sd72esk04zm5nsuterlmx6vvcxyhcnd8qfhdapc'
-# tags = [
-#     "kubernasty",
-#     "testhosts",
-# ]
-# roles = [
-#     'skunkworks',
-#     'kubernasty',
-# ]
-# serial = ""
-
-
 node = Bunch(
     notes="This node is used for testing in various VMs, and the key might be re-used.",
     motd=Bunch(
@@ -49,5 +12,8 @@ node = Bunch(
             "start_k3s": False,
         },
     ),
+    nics={
+        'psy0': '00:0c:29:02:dd:01',
+    },
     serial="",
 )

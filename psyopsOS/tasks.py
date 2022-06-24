@@ -255,6 +255,9 @@ def mkimage(
         # mkimage.psyopsOS.sh defines the profile that we pass to mkimage.sh
         "--volume",
         f"{aportsscriptsdir}/mkimg.psyopsOS.sh:/home/build/aports/scripts/mkimg.psyopsOS.sh",
+        # mkimage.zzz-overrides.sh will let us customize any mkimage function by overriding it
+        "--volume",
+        f"{aportsscriptsdir}/mkimg.zzz-overrides.sh:/home/build/aports/scripts/mkimg.zzz-overrides.sh",
         # Use the previously defined docker volume for temporary files etc when building the image.
         # Saving this between runs makes rebuilds much faster.
         "--volume",

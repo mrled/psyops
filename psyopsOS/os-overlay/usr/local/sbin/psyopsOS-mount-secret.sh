@@ -28,7 +28,9 @@ fi
 export PSYOPSOS_NODENAME="$(cat /mnt/psyops-secret/mount/nodename)"
 export PSYOPSOS_AGEKEY=/mnt/psyops-secret/mount/age.key
 export PSYOPSOS_MINISIGN_PUB=/mnt/psyops-secret/mount/minisign.pubkey
+export PSYOPSOS_MACTAB=/mnt/psyops-secret/mount/mactab
 export PSYOPSOS_INTERFACES=/mnt/psyops-secret/mount/network.interfaces
+export PSYOPSOS_SSHD_ED25519_KEY=/mnt/psyops-secret/mount/ssh_host_ed25519_key
 
 logger --stderr --priority user.debug --tag "$loggertag" "Values from the psyops-secret volume: $(env | grep '^PSYOPSOS_')"
 

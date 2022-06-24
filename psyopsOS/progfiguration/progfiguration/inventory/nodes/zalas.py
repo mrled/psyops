@@ -11,5 +11,8 @@ node = Bunch(
             "start_k3s": True,
         },
     ),
+    nics={
+        'psy0': 'd8:9e:f3:9a:3f:2a',
+    },
     serial="10K7GQ2",
 )

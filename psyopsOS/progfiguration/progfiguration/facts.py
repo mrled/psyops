@@ -1,7 +1,9 @@
 """What the nodes have to say about themselves"""
 
 
-from typing import List
+import os
+import shutil
+from typing import List, Optional
 
 
 class SystemNode:
@@ -31,11 +33,16 @@ class SystemNode:
         else:
             return contents
 
-    def set_file_contents(self, path: str, contents: str):
+    def set_file_contents(self, path: str, contents: str, owner: Optional[str] = None, group: Optional[str] = None, mode: Optional[int] = None):
         if path in self._cache_files:
             del self._cache_files[path]
         with open(path, "w") as fp:
             fp.write(contents)
+        if owner or group:
+            shutil.chown(path, owner, group)
+        if mode:
+            os.chmod(path, mode)
+
 
 
 class PsyopsOsNode(SystemNode):

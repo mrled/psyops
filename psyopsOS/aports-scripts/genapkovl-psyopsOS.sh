@@ -47,7 +47,7 @@ umask 022
 tmp="$(mktemp -d)"
 trap cleanup EXIT
 
-install -o root -g root -m 0755 -d "$tmp"/etc
+install -o root -g root -m 0755 -d "$tmp"/etc "$tmp"/etc/conf.d "$tmp"/etc/runlevels
 install -o root -g root -m 0755 -d "$tmp"/etc/runlevels
 
 makefile root:root 0644 "$tmp"/etc/hostname <<EOF
@@ -61,6 +61,7 @@ psyops_overlay_install root root 0644 etc/apk/world
 
 install -o root -g root -m 0755 -d "$tmp"/etc/ssh
 psyops_overlay_install root root 0644 etc/ssh/sshd_config
+psyops_overlay_install root root 0644 etc/conf.d/sshd
 
 psyops_overlay_install root root 0644 etc/issue
 psyops_overlay_install root root 0644 etc/motd
@@ -85,6 +86,7 @@ psyops_overlay_install root root 0644 etc/psyopsOS/init.env
 install -o root -g root -m 0755 -d "$tmp"/usr/local/sbin
 psyops_overlay_install root root 0700 usr/local/sbin/psyopsOS-init.sh
 psyops_overlay_install root root 0700 usr/local/sbin/psyopsOS-mount-secret.sh
+psyops_overlay_install root root 0755 usr/local/sbin/psyopsOS-apply-update
 
 install -o root -g root -m 0755 -d "$tmp"/etc/local.d
 psyops_overlay_install root root 0755 etc/local.d/000-psyopsOS-postboot.start

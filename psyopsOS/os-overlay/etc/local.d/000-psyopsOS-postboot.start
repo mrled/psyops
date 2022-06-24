@@ -23,11 +23,19 @@ fi
 
 . /etc/psyopsOS/psyops-secret.env
 setup-hostname "$PSYOPSOS_NODENAME"
+install -o root -g root -m 0644 "$PSYOPSOS_MACTAB" /etc/mactab
+install -o root -g root -m 0600 "$PSYOPSOS_SSHD_ED25519_KEY" /etc/ssh/ssh_host_ed25519_key
+ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key > /etc/ssh/ssh_host_ed25519_key.pub
+chown root:root /etc/ssh/ssh_host_ed25519_key.pub
+chmod 0644 /etc/ssh/ssh_host_ed25519_key.pub
 setup-interfaces -i < "$PSYOPSOS_INTERFACES"
 rc-service hostname restart
-rc-service networking restart
+rc-service networking stop
+nameif -s
+rc-service networking start
+rc-service sshd restart
 setup-keymap us us
-logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished configuring keymap, network, hostname"
+logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished configuring keymap, network, hostname, mactab, ssh, etc"
 
 . /etc/psyopsOS/postboot.secrets
 

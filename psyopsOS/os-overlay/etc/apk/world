@@ -11,6 +11,7 @@ gzip
 jq
 logger
 lsblk
+lsof
 minisign
 openssh
 pciutils

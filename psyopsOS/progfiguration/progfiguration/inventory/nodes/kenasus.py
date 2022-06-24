@@ -9,7 +9,11 @@ node = Bunch(
     roles=Bunch(
         k3s={
             "start_k3s": True,
+            "kube_vip_interface": "eth1",
         },
     ),
+    nics={
+        'psy0': '00:e0:4c:00:00:52',
+    },
     serial="1023GQ2",
 )
