@@ -118,6 +118,7 @@ rc_add bootmisc boot
 rc_add syslog boot
 
 rc_add local default
+rc_add ntpd default
 rc_add sshd default
 
 rc_add mount-ro shutdown
