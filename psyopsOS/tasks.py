@@ -8,6 +8,7 @@ import pdb
 import shutil
 import subprocess
 import sys
+from this import s
 import traceback
 from typing import Any, Dict, NamedTuple, Optional
 
@@ -199,9 +200,119 @@ def upload_progfiguration(ctx, host):
     )
 
 
+def osflavorinfo(flavorname):
+    """Given the name of an OS flavor, return its Alpine profile and architecture
+
+    WARNING: the rpi flavor doesn't actually work yet.
+    It must be built on an aarch64 host, which I haven't bothered to configure.
+    """
+    osflavors = {
+        'pc': ["psyopsOS", "x86_64"],
+        'rpi': ["psyopsOS_rpi", "aarch64"],
+    }
+    if flavorname not in osflavors.keys():
+        print(f"The os flavor must be one of: {osflavors.keys()}")
+        sys.exit(1)
+    return osflavors[flavorname]
+
+
+class MkimageBuildInfo(NamedTuple):
+    date: datetime.datetime
+    revision: str
+    dirty: bool
+
+
+def mkimage_buildinfo(ctx):
+    build_date = datetime.datetime.now()
+    build_git_revision = ctx.run("git rev-parse HEAD").stdout.strip()
+    build_git_dirty = ctx.run("git diff --quiet", warn=True).return_code != 0
+    return MkimageBuildInfo(build_date, build_git_revision, build_git_dirty)
+
+
+def mkimage_clean(ctx, indocker, workdir):
+    """Clean directories before build
+
+    This should be done before any runs - it doesn't clean apk cache or other large working datasets.
+    That's why it's not a separate Invoke task.
+    """
+    cleandirs = []
+    if indocker:
+        # If /tmp is persistent, make sure we don't have old stuff lying around
+        # Not necessary in Docker, which has a clean /tmp every time
+        cleandirs += glob.glob("/tmp/mkimage*")
+    cleandirs += glob.glob(f"{workdir}/apkovl*")
+    cleandirs += glob.glob(f"{workdir}/apkroot*")
+    for d in cleandirs:
+        print(f"Removing {d}...")
+        ctx.run(f"rm -rf '{d}'")
+
+
+@invoke.task
+def mkimage_local(
+    ctx,
+    osflavor,
+    alpinetag="0x001",
+    aportsdir=os.path.expanduser("~/aports"),
+    workdir=os.path.expanduser("~/psyopsOS-build-tmp"),
+    isodir=os.path.expanduser("~/isos"),
+):
+    """Run mkimage.sh directly
+
+    Assumes you're running invoke on an Alpine system
+
+    This is not used as often as regular mkimage (which uses docker), and may be out of date!
+    """
+
+    mkimage_profile, architecture = osflavorinfo(osflavor)
+
+    os.umask(0o022)
+
+    psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
+    aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
+
+    buildinfo = mkimage_buildinfo(ctx)
+
+    mkimage_clean(ctx, indocker=True, workdir=workdir)
+
+    for directory in [workdir, isodir]:
+        os.makedirs(directory, exist_ok=True)
+    for script in ["genapkovl-psyopsOS.sh", "mkimg.psyopsOS.sh", "mkimg.zzz-overrides.sh"]:
+        shutil.copy(f"{aportsscriptsdir}/{script}", f"{aportsdir}/scripts/{script}")
+
+    os.environ["PSYOPSOS_OVERLAY"] = f"{psyopsosdir}/os-overlay"
+    os.environ["PSYOPSOS_BUILD_DATE_ISO8601"] = buildinfo.date.strftime('%Y-%m-%dT%H:%M:%S%z')
+    os.environ["PSYOPSOS_BUILD_GIT_REVISION"] = buildinfo.revision
+    os.environ["PSYOPSOS_BUILD_GIT_DIRTY"] = str(buildinfo.dirty)
+
+    mkimage_cmd = [
+        "./mkimage.sh",
+        "--tag",
+        alpinetag,
+        "--outdir",
+        "/home/build/iso",
+        "--arch",
+        architecture,
+        "--repository",
+        "http://mirrors.edge.kernel.org/alpine/v3.16/main",
+        "--repository",
+        "http://mirrors.edge.kernel.org/alpine/v3.16/community",
+        "--workdir",
+        "/home/build/workdir",
+        "--profile",
+        mkimage_profile,
+    ]
+    full_cmd = " ".join(mkimage_cmd)
+    print(f"Running {full_cmd}")
+    with ctx.cd(f"{aportsdir}/scripts"):
+        ctx.run(full_cmd)
+    ctx.run(f"ls -alFh {isodir}*.iso")
+
+
 @invoke.task
 def mkimage(
     ctx,
+    osflavor='pc',
     alpinetag="0x001",
     aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
     workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
@@ -210,24 +321,18 @@ def mkimage(
     volname_workdir=docker_builder_volname_workdir,
 ):
     """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO"""
+
+    mkimage_profile, architecture = osflavorinfo(osflavor)
+
     os.umask(0o022)
 
     psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
     aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
 
-    build_date = datetime.datetime.now()
-    build_git_revision = ctx.run("git rev-parse HEAD").stdout.strip()
-    build_git_dirty = ctx.run("git diff --quiet", warn=True).return_code != 0
+    buildinfo = mkimage_buildinfo(ctx)
 
-    cleandirs = []
-    # This would be necessary if the container /tmp filesystem is persistent
-    # cleandirs += glob.glob("/tmp/mkimage*")
-    cleandirs += glob.glob(f"{workdir}/apkovl*")
-    cleandirs += glob.glob(f"{workdir}/apkroot*")
-    for d in cleandirs:
-        print(f"Removing {d}...")
-        ctx.run(f"rm -rf '{d}'")
+    mkimage_clean(ctx, indocker=True, workdir=workdir)
 
     docker_builder_dir = os.path.join(psyopsosdir, "build")
     ctx.run(f"docker build --tag '{dockertag}' '{docker_builder_dir}'")
@@ -270,11 +375,11 @@ def mkimage(
         f"{psyopsdir}:/home/build/psyops",
         # Environment variables that mkimage.sh (or one of the scripts it calls) uses
         "--env",
-        f"PSYOPSOS_BUILD_DATE_ISO8601={build_date.strftime('%Y-%m-%dT%H:%M:%S%z')}",
+        f"PSYOPSOS_BUILD_DATE_ISO8601={buildinfo.date.strftime('%Y-%m-%dT%H:%M:%S%z')}",
         "--env",
-        f"PSYOPSOS_BUILD_GIT_REVISION={build_git_revision}",
+        f"PSYOPSOS_BUILD_GIT_REVISION={buildinfo.revision}",
         "--env",
-        f"PSYOPSOS_BUILD_GIT_DIRTY={build_git_dirty}",
+        f"PSYOPSOS_BUILD_GIT_DIRTY={str(buildinfo.dirty)}",
         dockertag,
     ]
     mkimage_cmd = [
@@ -284,7 +389,7 @@ def mkimage(
         "--outdir",
         "/home/build/iso",
         "--arch",
-        "x86_64",
+        architecture,
         "--repository",
         "http://mirrors.edge.kernel.org/alpine/v3.16/main",
         "--repository",
@@ -292,11 +397,9 @@ def mkimage(
         "--workdir",
         "/home/build/workdir",
         "--profile",
-        "psyopsOS",
+        mkimage_profile,
     ]
-
     full_cmd = " ".join(docker_cmd + mkimage_cmd)
     print(f"Running docker with: {full_cmd}")
     ctx.run(full_cmd)
-
     ctx.run(f"ls -alFh {isodir}*.iso")
