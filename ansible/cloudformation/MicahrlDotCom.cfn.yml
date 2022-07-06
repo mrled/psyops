@@ -283,6 +283,10 @@ Resources:
           Type: A
           TTL: 60
           ResourceRecords: ["192.168.1.27"]
+        - Name: newjutland.home.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.174"]
 
         # Management interfacess
         - Name: edison.home.micahrl.com.
