@@ -17,6 +17,7 @@ nodeFunctionMap:
   zalas: kubernasty
   kntytest: kubernasty
   localhost: localfunction
+  newjutland: synergycontroller
 
 functionRoleMap:
   kubernasty:
@@ -27,3 +28,8 @@ functionRoleMap:
     - alpine_postboot_config
     - localhosttest
     - skunkworks
+  synergycontroller:
+    - alpine_postboot_config
+    # We need datadisk bc we need Flatpak for Synergy, and Flatpak is too disk hungry for RAM
+    - datadisk
+    - synergycontroller

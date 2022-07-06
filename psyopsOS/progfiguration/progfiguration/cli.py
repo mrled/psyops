@@ -194,7 +194,7 @@ def parseargs():
     sub_apply.add_argument("nodename", help="The name of a node in the progfiguration inventory")
 
     sub_list = subparsers.add_parser("list", description="List inventory items")
-    list_choices = ["nodes", "groups", "functions"]
+    list_choices = ["nodes", "groups", "functions", "svcpreps"]
     sub_list.add_argument(
         "collection",
         choices=list_choices,

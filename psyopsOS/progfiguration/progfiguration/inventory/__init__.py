@@ -37,11 +37,17 @@ class Inventory:
     def node_groups(self):
         if not self._node_groups:
             self._node_groups = {}
+
+            # All nodes should be listed in the nodeFunctionMap, so we first give them all an empty group list.
+            # This gets us all nodes, even if they are not members of any explicit group.
+            for node in self.node_function.keys():
+                self._node_groups[node] = []
+
+            # Now we traverse the groupNodeMap and fill in the group list
             for group, members in self.group_members.items():
                 for member in members:
-                    if member not in self._node_groups:
-                        self._node_groups[member] = []
                     self._node_groups[member].append(group)
+
         return self._node_groups
 
     @property

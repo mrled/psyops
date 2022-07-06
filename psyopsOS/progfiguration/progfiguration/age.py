@@ -22,4 +22,4 @@ def decrypt(value: str, privkey_path: str):
         check=True,
         capture_output=True
     )
-    return proc.stdout
+    return proc.stdout.decode()

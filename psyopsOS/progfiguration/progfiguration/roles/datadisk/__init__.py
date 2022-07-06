@@ -1,6 +1,7 @@
 """Set up a data disk"""
 
 import os
+import shutil
 import subprocess
 
 from progfiguration import logger
@@ -17,7 +18,20 @@ defaults = {
     # fslabel is max 16 chars
     "fslabel": "psyopsos_data",
     "wipefs_if_no_vg": False,
+    # Anything path relative to the mountpoint in this list is wiped after mounting,
+    # like ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
+    # Take care with multiple groups that define this --
+    # subsequent definitions override this, they don't append to it.
+    # This happens after every time the mount command is run.
+    # If the filesystem is already mounted, nothing is removed.
+    "wipe_after_mounting": [],
 }
+
+
+def is_mountpoint(path: str) -> bool:
+    """Return true if a path is a mountpoint for a currently mounted filesystem"""
+    mtpt = subprocess.run(["mountpoint", path], check=False, capture_output=True)
+    return mtpt.returncode == 0
 
 
 def apply(
@@ -28,13 +42,13 @@ def apply(
     lvname: str,
     fslabel: str,
     wipefs_if_no_vg: bool,
+    wipe_after_mounting: None,
 ):
 
     subprocess.run(f"apk add e2fsprogs e2fsprogs-extra lvm2", shell=True, check=True)
     subprocess.run("rc-service lvm start", shell=True, check=True)
 
-    mtpt = subprocess.run(f"mountpoint {mountpoint}", shell=True, check=False, capture_output=True)
-    if mtpt.returncode == 0:
+    if is_mountpoint(mountpoint):
         logger.debug(f"Data disk already mounted at {mountpoint}")
         return
 
@@ -52,7 +66,7 @@ def apply(
     lvs = subprocess.run(f"lvs {vgname}", shell=True, check=False, capture_output=True)
     if lvname not in lvs.stdout.decode():
         logger.info(f"Creating volume {lvname} on vg {vgname}...")
-        subprocess.run(f"lvcreate -f -l 100%FREE -n {lvname} {vgname}", shell=True, check=True)
+        subprocess.run(f"lvcreate -l 100%FREE -n {lvname} {vgname}", shell=True, check=True)
 
     mapper_device = f"/dev/mapper/{vgname}-{lvname}"
 
@@ -64,3 +78,10 @@ def apply(
     logger.info(f"Mounting {mapper_device} on {mountpoint}...")
     os.makedirs(mountpoint, mode=0o755, exist_ok=True)
     subprocess.run(f"mount {mapper_device} {mountpoint}", shell=True, check=True)
+
+    wipe_after_mounting = wipe_after_mounting or []
+    for subpath in wipe_after_mounting:
+        path = os.path.join(mountpoint, subpath)
+        if os.path.exists(path):
+            logger.info(f"Removing path {path} after mounting {mountpoint}...")
+            shutil.rmtree(path)

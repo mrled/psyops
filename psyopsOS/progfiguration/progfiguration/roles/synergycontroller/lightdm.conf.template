@@ -1,0 +1,8 @@
+[LightDM]
+[Seat:*]
+autologin-user=$user
+autologin-user-timeout=1
+[XDMCPServer]
+enabled=false
+[VNCServer]
+enabled=false

@@ -16,6 +16,26 @@ class SystemNode:
         self.nodename = nodename
         self._cache_files = {}
 
+    def get_umask(self):
+        """Return the umask as integer
+
+        Only works on Linux
+        ... how the fuck is this not part of the standard library?
+        <https://stackoverflow.com/questions/7150826/how-can-i-get-the-default-file-permissions-in-python>
+        """
+        mask = None
+        with open('/proc/self/status') as fd:
+            for line in fd:
+                if line.startswith('Umask:'):
+                    mask = int(line[6:].strip(), 8)
+                    break
+
+        if not mask:
+            raise Exception("Could not find umask, lol")
+
+        return mask
+
+
     def get_file_contents(self, path: str, chomp=True, refresh=False):
         """Retrieve file contents
 
@@ -43,6 +63,23 @@ class SystemNode:
         if mode:
             os.chmod(path, mode)
 
+    def makedirs(self, path: str, owner: Optional[str] = None, group: Optional[str] = None, mode: Optional[int] = None):
+        path = os.path.abspath(path)
+        if not mode:
+            mode = 0o0777 - self.get_umask()
+        if os.path.exists(path):
+            return
+        head, tail = os.path.split(path)
+        if not os.path.exists(head):
+            self.makedirs(head, owner, group, mode)
+        # while os.path.islink(head):
+        #     head = os.readlink(head)
+        if not os.path.isdir(head):
+            raise Exception(f"Path component {head} exists but it is not a directory")
+        if not os.path.exists(path):
+            os.mkdir(path, mode)
+            if owner or group:
+                shutil.chown(path, user=owner, group=group)
 
 
 class PsyopsOsNode(SystemNode):
