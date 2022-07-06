@@ -45,7 +45,7 @@ echo "$nodename" > "$mountpath"/nodename
 
 # Create an age private key
 # The public key will be displayed to stdout
-age-keygen -o "$mountpath"/key.age
+age-keygen -o "$mountpath"/age.key
 
 # Copy the minisign public key
 cp minisign.pubkey "$mountpath"
@@ -78,7 +78,21 @@ Some files on the secret volume are optional.
 ### network.interfaces
 
 If there is a `network.interfaces` file here, it will be placed in `/etc/network/interfaces`.
+
 If not, `setup-network -a` is run.
+`setup-network -a` will prefer a `wlan0` interface if it exists, or `eth0` otherwise.
+
+The best thing to do is something like
+
+```
+auto lo
+iface lo inet loopback
+
+auto psy0
+iface psy0 inet dhcp
+```
+
+TODO: Doesn't that just mean I can ALWAYS do that?
 
 ### TESTONLYNOPROD.env
 
