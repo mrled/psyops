@@ -5,6 +5,7 @@ The synergy controller for my keyboard and mouse multiplexing setup.
 
 import datetime
 import os
+import re
 import shutil
 import string
 import subprocess
@@ -32,10 +33,25 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
         "adwaita-icon-theme",
         "dbus",
         "flatpak",
+        "libev-dev",
         "lightdm-gtk-greeter",
+        "plymouth",
+        "pm-utils",
+        "xf86-input-evdev",
+        "xf86-input-libinput",
         "xfce4",
         "xfce4-screensaver",
+        "xfce4-session",
         "xfce4-terminal",
+        "xorg-server",
+        "xorg-server-common",
+        "xorg-server-dev",
+        "xorgproto",
+        "xorgxrdp",
+        "xorgxrdp-dev",
+        "xrandr",
+        "xterm",
+        "udev",
     ]
 
     subprocess.run(["apk", "add"] + packages, check=True)
@@ -48,13 +64,47 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
         subprocess.run(["adduser", user, "input"])
         subprocess.run(["adduser", user, "video"])
 
+    # Tell lightdm to use 1920x1080
+    # Via <https://askubuntu.com/questions/73804/wrong-login-screen-resolution>
+    # The output name of HDMI-1 you can get from running `xrandr -q` in an xterm.
+    # This is useful for us bc it's reasonable for the monitor and works at 60hz.
+    # By default, it was doing 3840x1260 (? I think) and only 30hz,
+    # which I think is a limitation of the HDMI version on the hardware but I'm not sure.
+    displaysetup_path = "/var/psyopsOS/lightdm-display-setup.sh"
+    displaysetup_contents = textwrap.dedent("""\
+        #!/bin/sh
+        xrandr --output HDMI-1 --primary --mode 1920x1080
+        """)
+    node.set_file_contents(displaysetup_path, displaysetup_contents, "root", "root", 0o0755)
+
+    # Get rid of elogind from PAM
+    # By default all of this is optional anyway,
+    # but it results in log noise.
+    for pamd_file in os.listdir("/etc/pam.d"):
+        pamd_path = os.path.join("/etc/pam.d", pamd_file)
+        print(pamd_path)
+        if not os.path.isfile(pamd_path):
+            continue
+        if os.stat(pamd_path).st_size == 0:
+            continue
+        with open(pamd_path) as fd:
+            contents = fd.readlines()
+        newcontents = []
+        for line in contents:
+            if not line.startswith("#") and re.search(".*elogind.*", line):
+                newcontents.append(f"#{line}")
+            else:
+                newcontents.append(line)
+        with open(pamd_path, 'w') as fd:
+            fd.writelines(newcontents)
+
     lightdm_conf_template_path = module_files.joinpath("lightdm.conf.template")
     with open(lightdm_conf_template_path) as fp:
         lightdm_conf_template = string.Template(fp.read())
     lightdm_conf = lightdm_conf_template.substitute(user=user)
     node.set_file_contents("/etc/lightdm/lightdm.conf", lightdm_conf, "root", "root", 0o0644)
     subprocess.run(["rc-service", "dbus", "start"], check=True)
-    #subprocess.run(["rc-service", "udev", "start"], check=True)
+    subprocess.run(["rc-service", "udev", "start"], check=True)
     subprocess.run(["rc-service", "lightdm", "restart"], check=True)
 
     synergyhome = os.path.expanduser(f"~{user}")
@@ -62,15 +112,26 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
         raise Exception(f"Synergy user {user} does not have a homedir?")
 
     autostart_dir = os.path.join(synergyhome, ".config", "autostart")
-    synergys_autostart = os.path.join(autostart_dir, "synergys.desktop")
-    node.makedirs(autostart_dir)
-    with open(synergys_autostart, 'w') as fp:
+    # synergys_autostart = os.path.join(autostart_dir, "synergys.desktop")
+    # node.makedirs(autostart_dir, owner=user)
+    # with open(synergys_autostart, 'w') as fp:
+    #     fp.write(textwrap.dedent(
+    #         """\
+    #         [Desktop Entry]
+    #         Type=Application
+    #         Name=synergys
+    #         Exec=/usr/bin/xterm /usr/bin/synergys --enable-crypto --no-daemon
+    #         """
+    #     ))
+    xterm_autostart = os.path.join(autostart_dir, "test-xterm.desktop")
+    node.makedirs(autostart_dir, owner=user)
+    with open(xterm_autostart, 'w') as fp:
         fp.write(textwrap.dedent(
             """\
             [Desktop Entry]
             Type=Application
-            Name=synergys
-            Exec=/usr/bin/xterm /usr/bin/synergys --enable-crypto --no-daemon
+            Name=xterm
+            Exec=/usr/bin/xterm
             """
         ))
 
