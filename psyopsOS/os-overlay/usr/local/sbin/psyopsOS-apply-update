@@ -89,6 +89,9 @@ def main(*arguments):
         choices=_log_levels,
         help="Log level to send to syslog. Defaults to INFO. NONE to disable.",
     )
+    parser.add_argument(
+        "--no-progress", help="Don't show dd progress", action='store_true',
+    )
 
     parser.add_argument("isopath", help="The path to a new ISO image containing psyopsOS")
 
@@ -136,7 +139,11 @@ def main(*arguments):
     if bootmedia['mountpoint']:
         subprocess.run(f"umount {bootmedia['mountpoint']}", shell=True, check=True)
 
-    subprocess.run(["dd", f"if={parsed.isopath}", f"of={bootmedia['path']}"], check=True)
+    ddcmd = ["dd"]
+    if not parsed.no_progress:
+        ddcmd += ["status=progress"]
+    ddcmd += [f"if={parsed.isopath}", f"of={bootmedia['path']}"]
+    subprocess.run(ddcmd, check=True)
 
 
 if __name__ == "__main__":
