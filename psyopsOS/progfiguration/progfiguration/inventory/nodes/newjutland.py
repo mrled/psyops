@@ -84,6 +84,19 @@ synergy_fingerprints_local = """\
 """
 
 
+# An encrypted serial key for Synergy
+synergy_serial_key = """\
+-----BEGIN AGE ENCRYPTED FILE-----
+YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBlaFNLZUtMdmQyZjhnd2J0
+dEZXYWhLQndGb012aEgyamIwNWFUa0NLb2dZCmdEdGw3eC9vZkxUU0NlUTJaZVhN
+Q1lvZG9WRk51SGUzdThYclA5bzRjcG8KLS0tIG5Jcm9oTDZ3dUExdGRRYVhlcUpU
+cnJVZHd6Y20zRXE5eDdaeU5sTzlVUzgKjI/yFlS8ba0S1OPxqEPuTFbik1JP5+sP
+uoSeZsuXUhUGJJVvSWtXj4hO/GX9IhfihvS2lvsCyuywnI0TZQRBHFDj5IEINDE0
+h2dHwnEJqDd2JgPb4+3gIrZTUpKTOdMvOfUVem053Yk=
+-----END AGE ENCRYPTED FILE-----
+"""
+
+
 node = Bunch(
     notes="",
     motd=Bunch(
@@ -97,8 +110,10 @@ node = Bunch(
         },
         synergycontroller={
             'secret_synergy_priv_key': synergy_private_key,
+            'secret_synergy_serial_key': synergy_serial_key,
             'synergy_pub_key': synergy_public_key,
             'synergy_fingerprints_local': synergy_fingerprints_local,
+            'synergy_server_screenname': 'newjutland',
         }
     ),
     nics={

@@ -1,0 +1,4 @@
+[Desktop Entry]
+Type=Application
+Name=Terminal
+Exec=/usr/bin/xfce4-terminal

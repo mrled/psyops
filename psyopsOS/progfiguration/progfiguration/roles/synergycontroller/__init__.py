@@ -27,8 +27,10 @@ defaults = {
 }
 
 
-def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key: str, synergy_fingerprints_local: str):
+def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key: str, synergy_fingerprints_local: str, synergy_serial_key: str, synergy_server_screenname: str):
 
+    # Some of these are required or else X does not accept input at all
+    # <https://gitlab.alpinelinux.org/alpine/aports/-/issues/5422>
     packages = [
         "adwaita-icon-theme",
         "dbus",
@@ -77,9 +79,13 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
         """)
     node.set_file_contents(displaysetup_path, displaysetup_contents, "root", "root", 0o0755)
 
-    # Get rid of elogind from PAM
-    # By default all of this is optional anyway,
-    # but it results in log noise.
+    # Modify PAM configuration
+    # - Get rid of elogind from PAM
+    #   By default all of this is optional anyway,
+    #   but it results in log noise.
+    # - Disable GNOME keyring from lightdm-autologin
+    #   <https://github.com/canonical/lightdm/issues/178>
+    #   Also disable kwallet while we're at it I guess, idk
     for pamd_file in os.listdir("/etc/pam.d"):
         pamd_path = os.path.join("/etc/pam.d", pamd_file)
         print(pamd_path)
@@ -91,67 +97,75 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
             contents = fd.readlines()
         newcontents = []
         for line in contents:
-            if not line.startswith("#") and re.search(".*elogind.*", line):
+            if line.startswith("#"):
+                newcontents.append(line)
+            elif re.search(".*elogind.*", line):
+                newcontents.append(f"#{line}")
+            elif (
+                pamd_file == "lightdm-autologin" and
+                (re.search(".*gnome_keyring.*", line) or re.search(".*kwallet.*", line))
+            ):
                 newcontents.append(f"#{line}")
             else:
                 newcontents.append(line)
         with open(pamd_path, 'w') as fd:
             fd.writelines(newcontents)
 
-    lightdm_conf_template_path = module_files.joinpath("lightdm.conf.template")
-    with open(lightdm_conf_template_path) as fp:
-        lightdm_conf_template = string.Template(fp.read())
-    lightdm_conf = lightdm_conf_template.substitute(user=user)
-    node.set_file_contents("/etc/lightdm/lightdm.conf", lightdm_conf, "root", "root", 0o0644)
-    subprocess.run(["rc-service", "dbus", "start"], check=True)
-    subprocess.run(["rc-service", "udev", "start"], check=True)
-    subprocess.run(["rc-service", "lightdm", "restart"], check=True)
+    # Don't let the screensaver lock the screen
+    # This user has no password, so it cannot unlock the screen without restarting lightdm
+    xpx = f"/home/{user}/.config/xfce4/xfconf/xfce-perchannel-xml"
+    node.makedirs(xpx, owner=user, mode=0o0700)
+    for xfile in ["xfce4-screensaver.xml", "xfce4-power-manager.xml"]:
+        shutil.copy(module_files.joinpath(f"xfce_perchannel_xml/{xfile}"), f"{xpx}/{xfile}")
+        shutil.chown(f"{xpx}/{xfile}", user)
 
     synergyhome = os.path.expanduser(f"~{user}")
     if not synergyhome or not os.path.exists(synergyhome):
         raise Exception(f"Synergy user {user} does not have a homedir?")
 
     autostart_dir = os.path.join(synergyhome, ".config", "autostart")
-    # synergys_autostart = os.path.join(autostart_dir, "synergys.desktop")
-    # node.makedirs(autostart_dir, owner=user)
-    # with open(synergys_autostart, 'w') as fp:
-    #     fp.write(textwrap.dedent(
-    #         """\
-    #         [Desktop Entry]
-    #         Type=Application
-    #         Name=synergys
-    #         Exec=/usr/bin/xterm /usr/bin/synergys --enable-crypto --no-daemon
-    #         """
-    #     ))
-    xterm_autostart = os.path.join(autostart_dir, "test-xterm.desktop")
-    node.makedirs(autostart_dir, owner=user)
-    with open(xterm_autostart, 'w') as fp:
-        fp.write(textwrap.dedent(
-            """\
-            [Desktop Entry]
-            Type=Application
-            Name=xterm
-            Exec=/usr/bin/xterm
-            """
-        ))
+    node.cp(module_files.joinpath("autostart/Terminal.desktop"), f"{autostart_dir}/Terminal.desktop", owner=user, mode=0o0600, dirmode=0o0700)
+    node.template(module_files.joinpath("autostart/Synergy.desktop.template"), f"{autostart_dir}/Synergy.desktop", {'user': user}, owner=user, mode=0o0600, dirmode=0o0700)
 
+    # Configure Synergy itself
     dotsynergy = os.path.join(synergyhome, ".synergy")
-    synergy_pem_path = os.path.join(dotsynergy, "SSL", "Synergy.pem")
-    synergy_fprint_local_path = os.path.join(dotsynergy, "SSL", "Fingerprints", "Local.txt")
-    synergy_conf_path = os.path.join(synergyhome, ".synergy.conf")
-    synergy_pem_contents = "\n".join([synergy_priv_key, synergy_pub_key])
-    node.makedirs(f"{dotsynergy}/SSL/Fingerprints", user, 0o0700)
-    node.set_file_contents(synergy_pem_path, synergy_pem_contents, owner=user, mode=0o0600)
-    node.set_file_contents(synergy_fprint_local_path, synergy_fingerprints_local, owner=user, mode=0o0600)
-    shutil.copyfile(module_files.joinpath("synergy.conf"), synergy_conf_path)
-    shutil.chown(synergy_conf_path, user=user)
-    os.chmod(synergy_conf_path, 0o0644)
+    node.set_file_contents(
+        os.path.join(dotsynergy, "SSL", "Synergy.pem"),
+        "\n".join([synergy_priv_key, synergy_pub_key]),
+        owner=user,
+        mode=0o0600,
+        dirmode=0o0700
+    )
+    node.set_file_contents(
+        os.path.join(dotsynergy, "SSL", "Fingerprints", "Local.txt"),
+        synergy_fingerprints_local,
+        owner=user,
+        mode=0o0600,
+        dirmode=0o0700
+    )
+    node.cp(module_files.joinpath("synergy.conf"), os.path.join(synergyhome, "synergy.conf"), owner=user, mode=0o0644)
+    node.template(
+        module_files.joinpath("internal.Synergy.conf.template"),
+        f"{synergyhome}/.var/app/com.symless.Synergy/config/Synergy/Synergy.conf",
+        {'user': user, 'serial': synergy_serial_key, 'screenname': synergy_server_screenname},
+        owner=user,
+        mode=0o0600,
+    )
+
+    # Configure lightdm
+    node.template(
+        module_files.joinpath("lightdm.conf.template"),
+        "/etc/lightdm/lightdm.conf",
+        {'user': user},
+        owner="root",
+        group="root",
+        mode=0o0644
+    )
 
     flatpak_overlay = "/psyopsos-data/overlays/var-lib-flatpak"
     if not is_mountpoint("/var/lib/flatpak"):
         node.makedirs(flatpak_overlay, owner="root", group="root", mode=0o0755)
         subprocess.run(["mount", "-o", "bind", flatpak_overlay, "/var/lib/flatpak"])
-
 
     if not os.path.exists("/var/lib/flatpak/repo/flathub.trustedkeys.gpg"):
         flathub_gpg = requests.get("https://flathub.org/repo/flathub.gpg", allow_redirects=True)
@@ -176,6 +190,12 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
             raise Exception(f"Synergy flatpak not downloaded to {synergy_flatpak}, aborting...")
 
         subprocess.run(f"flatpak install -y {synergy_flatpak}", shell=True, check=True)
+
+    # Configure and start lightdm
+    node.template(module_files.joinpath("lightdm.conf.template"), "/etc/lightdm/lightdm.conf", {'user': user}, owner=user, mode=0o0644)
+    subprocess.run(["rc-service", "dbus", "start"], check=True)
+    subprocess.run(["rc-service", "udev", "start"], check=True)
+    subprocess.run(["rc-service", "lightdm", "restart"], check=True)
 
     # TODO:
     # Create an openrc script to launch synergyserver flatpak as my user
