@@ -3,7 +3,8 @@
 
 import os
 import shutil
-from typing import List, Optional
+import string
+from typing import Any, Dict, List, Optional
 
 
 class SystemNode:
@@ -53,7 +54,16 @@ class SystemNode:
         else:
             return contents
 
-    def set_file_contents(self, path: str, contents: str, owner: Optional[str] = None, group: Optional[str] = None, mode: Optional[int] = None):
+    def set_file_contents(
+        self,
+        path: str,
+        contents: str,
+        owner: Optional[str] = None,
+        group: Optional[str] = None,
+        mode: Optional[int] = None,
+        dirmode: Optional[int] = None,
+    ):
+        self.makedirs(os.path.dirname(path), owner, group, dirmode)
         if path in self._cache_files:
             del self._cache_files[path]
         with open(path, "w") as fp:
@@ -63,7 +73,13 @@ class SystemNode:
         if mode:
             os.chmod(path, mode)
 
-    def makedirs(self, path: str, owner: Optional[str] = None, group: Optional[str] = None, mode: Optional[int] = None):
+    def makedirs(
+        self,
+        path: str,
+        owner: Optional[str] = None,
+        group: Optional[str] = None,
+        mode: Optional[int] = None,
+    ):
         path = os.path.abspath(path)
         if not mode:
             mode = 0o0777 - self.get_umask()
@@ -80,6 +96,38 @@ class SystemNode:
             os.mkdir(path, mode)
             if owner or group:
                 shutil.chown(path, user=owner, group=group)
+
+    def cp(
+        self,
+        src: str,
+        dest: str,
+        owner: Optional[str] = None,
+        group: Optional[str] = None,
+        mode: Optional[int] = None,
+        dirmode: Optional[int] = None,
+    ):
+        self.makedirs(os.path.dirname(dest), owner, group, dirmode)
+        shutil.copy(src, dest)
+        if owner or group:
+            shutil.chown(dest, user=owner, group=group)
+        if mode:
+            os.chmod(dest, mode)
+
+    def template(
+        self,
+        src: str,
+        dest: str,
+        template_args: Dict[str, Any],
+        owner: Optional[str] = None,
+        group: Optional[str] = None,
+        mode: Optional[int] = None,
+        dirmode: Optional[int] = None,
+    ):
+        self.makedirs(os.path.dirname(dest), owner, group, dirmode)
+        with open(src) as fp:
+            template_contents = string.Template(fp.read())
+        inflated = template_contents.substitute(**template_args)
+        self.set_file_contents(dest, inflated, owner, group, mode)
 
 
 class PsyopsOsNode(SystemNode):
