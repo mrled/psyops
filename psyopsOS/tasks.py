@@ -5,6 +5,7 @@ import glob
 import json
 import os
 import pdb
+import re
 import shutil
 import subprocess
 import sys
@@ -175,27 +176,68 @@ def deploy(ctx):
 @invoke.task
 def progfiguration(ctx):
     """Build the progfiguration package, copy it to the site dir, and sign it with minisign"""
-    print("Running build in progfiguration directory...")
-    with ctx.cd(progfiguration_dir):
-        # ctx.run("./venv/bin/pip install wheel")
-        ctx.run("./venv/bin/python -m build")
+    versionfile = os.path.join(progfiguration_dir, "progfiguration", "build_version.py")
+    version = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.0")
+    try:
+        with open(versionfile, 'w') as vfd:
+            vfd.write(f"VERSION = '{version}'\n")
+        print("Running build in progfiguration directory...")
+        with ctx.cd(progfiguration_dir):
+            # ctx.run("./venv/bin/pip install wheel")
+            ctx.run("./venv/bin/python -m build")
+    finally:
+        try:
+            os.unlink(versionfile)
+        except Exception as rmexc:
+            raise Exception(f"When trying to remove version file at {versionfile}, got exception {rmexc}. ***REMOVE {versionfile} MANUALLY***.")
+
+    wheel = f"progfiguration-{version}-py3-none-any.whl"
+    wheel_sig = f"{wheel}.minisig"
+    sdist = f"progfiguration-{version}.tar.gz"
+    sdist_sig = f"{sdist}.minisig"
+    verfile = "progfiguration.version.json"
+    verfile_path = os.path.join(site_psyopsos_dir, verfile)
+    version_json = {
+        'version': version,
+        'wheel': wheel,
+        'wheelSig': wheel_sig,
+        'sdist': sdist,
+        'sdistSig': sdist_sig,
+    }
+
+    with open(verfile_path, 'w') as vfd:
+        json.dump(version_json, vfd, sort_keys=True, indent=2)
+    print(f"Saved progfiguration version data to {verfile_path}")
+
     os.rename(
-        f"{progfiguration_dir}/dist/progfiguration-0.0.0.tar.gz",
-        f"{site_psyopsos_dir}/progfiguration-0.0.0.tar.gz",
+        f"{progfiguration_dir}/dist/{sdist}",
+        f"{site_psyopsos_dir}/{sdist}",
     )
     os.rename(
-        f"{progfiguration_dir}/dist/progfiguration-0.0.0-py3-none-any.whl",
-        f"{site_psyopsos_dir}/progfiguration-0.0.0-py3-none-any.whl",
+        f"{progfiguration_dir}/dist/{wheel}",
+        f"{site_psyopsos_dir}/{wheel}",
     )
     print("Signing builds...")
-    minisign(f"{site_psyopsos_dir}/progfiguration-0.0.0.tar.gz")
-    minisign(f"{site_psyopsos_dir}/progfiguration-0.0.0-py3-none-any.whl")
+    minisign(verfile_path)
+    minisign(f"{site_psyopsos_dir}/{sdist}")
+    minisign(f"{site_psyopsos_dir}/{wheel}")
+
+    # Remove older versions
+    # Generally no reason to keep these
+    for file in glob.glob(f"{site_psyopsos_dir}/progfiguration*"):
+        print(f"Examining {file}...")
+        if file == verfile_path or file == f"{verfile_path}.minisig":
+            continue
+        elif re.match(f"{site_psyopsos_dir}/progfiguration-{version}.*", file):
+            continue
+        print(f"Removing old build {file}...")
+        os.remove(file)
 
 
 @invoke.task
 def upload_progfiguration(ctx, host):
     ctx.run(
-        f"scp {site_psyopsos_dir}/progfiguration-0.0.0-py3-none-any.whl root@{host}:/tmp/"
+        f"scp {site_psyopsos_dir}/progfiguration-*-py3-none-any.whl root@{host}:/tmp/"
     )
 
 

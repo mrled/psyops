@@ -19,6 +19,26 @@ This script is called asynchronously from the async-init script in local.d.
 ENDUSAGE
 }
 
+syslog() {
+    priority="$1"
+    message="$2"
+    logger --stderr --priority "$priority" --tag psyopsOS-init.sh "$message"
+}
+
+psyopsos_dl_vf() {
+    filename="$1"
+    localpath="/var/psyopsOS/$filename"
+    curl -o "$localpath" "$PSYOPSOS_SITE/psyopsOS/$filename"
+    curl -o "$localpath.minisig" "$PSYOPSOS_SITE/psyopsOS/$filename.minisig"
+    if minisign -V -p "$PSYOPSOS_MINISIGN_PUB" -m "$localpath"; then
+        syslog user.debug "psyopsOS file '$localpath' passed signature validation"
+    else
+        syslog user.error "psyopsOS file '$localpath' FAILED signature validation"
+        mkdir -p /var/psyopsOS/FAILED_SIG_VALIDATION
+        exit 1
+    fi
+}
+
 if test $# -gt 0; then
     usage
     exit
@@ -27,36 +47,24 @@ fi
 . /etc/psyopsOS/psyops-secret.env
 . /etc/psyopsOS/init.env
 
-# logger --stderr --priority user.debug --tag psyopsOS-init.sh "Fetching node configuration from $PSYOPSOS_NODE_CONFIG"
-# node_json=/etc/psyopsOS/node.json
-# curl -o "$node_json" "$PSYOPSOS_NODE_CONFIG"
-# curl -o "$node_json.minisig" "$PSYOPSOS_NODE_CONFIG.minisig"
-# if minisign -V -p "$PSYOPSOS_MINISIGN_PUB" -m "$node_json"; then
-#     logger --stderr --priority user.debug --tag psyopsOS-init.sh "node.json passed signature validation"
-# else
-#     logger --stderr --priority user.error --tag psyopsOS-init.sh "node.json FAILED signature validation"
-# fi
+psyopsos_dl_vf progfiguration.version.json
+verfile_path=/var/psyopsOS/progfiguration.version.json
 
-progfig=progfiguration-0.0.0-py3-none-any.whl
-progfig_path=/var/psyopsOS/"$progfig"
-curl -o "$progfig_path" "$PSYOPSOS_SITE/psyopsOS/$progfig"
-curl -o "$progfig_path.minisig" "$PSYOPSOS_SITE/psyopsOS/$progfig.minisig"
-if minisign -V -p "$PSYOPSOS_MINISIGN_PUB" -m "$progfig_path"; then
-    logger --stderr --priority user.debug --tag psyopsOS-init.sh "progfiguration package passed signature validation"
-else
-    logger --stderr --priority user.error --tag psyopsOS-init.sh "progfiguration package FAILED signature validation"
-    mkdir /var/psyopsOS/FAILED_SIG_VALIDATION
-    mv "$progfig_path" /var/psyopsOS/FAILED_SIG_VALIDATION
-    exit 1
-fi
+progfig_version="$(jq -r .version $verfile_path)"
+progfig="$(jq -r .wheel $verfile_path)"
+progfig_path="/var/psyopsOS/$progfig"
+progfig_url="$PSYOPSOS_SITE/psyopsOS/$progfig"
+syslog user.debug "progfiguration version file indicates version $progfig_version, will download $progfig_url to $progfig_path"
 
-logger --stderr --priority user.debug --tag psyopsOS-init.sh "Installing psyopsOS venv..."
+psyopsos_dl_vf "$progfig"
+
+syslog user.debug "Installing psyopsOS venv..."
 python3 -m venv --upgrade-deps /var/psyopsOS/venv
-logger --stderr --priority user.debug --tag psyopsOS-init.sh "Installing progfiguration..."
-/var/psyopsOS/venv/bin/python -m pip install --force-reinstall /var/psyopsOS/"$progfig"
+syslog user.debug "Installing progfiguration..."
+/var/psyopsOS/venv/bin/python -m pip install --force-reinstall "/var/psyopsOS/$progfig"
 ln -sf /var/psyopsOS/venv/bin/psyopsOS-progfiguration /usr/local/sbin/psyopsOS-progfiguration
-logger --stderr --priority user.debug --tag psyopsOS-init.sh "Running progfiguration..."
+syslog user.debug "Running progfiguration..."
 psyopsOS-progfiguration apply "$PSYOPSOS_NODENAME"
-logger --stderr --priority user.debug --tag psyopsOS-init.sh "Finished running progfiguration"
+syslog user.debug "Finished running progfiguration"
 
 date +'%Y%m%d-%H%M%S %z' > /etc/psyopsOS/status/001-async-init.finished

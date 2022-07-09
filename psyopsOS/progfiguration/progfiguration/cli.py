@@ -17,6 +17,7 @@ from progfiguration.facts import PsyopsOsNode
 from progfiguration.inventory import inventory
 from progfiguration.inventory.groups import universal
 from progfiguration.inventory.invhelpers import Bunch
+from progfiguration import version
 
 # from progfiguration.inventory.membership import membership
 from progfiguration.roles import skunkworks
@@ -95,7 +96,7 @@ def action_apply(nodename: str):
 
         logging.debug(f"Running role {rolename}...")
         rolemodule.apply(nodectx, **decrypted_rolevars)
-        logging.debug(f"Finished running role {rolename}.")
+        logging.info(f"Finished running role {rolename}.")
 
 
 def action_list(collection: str):
@@ -190,6 +191,8 @@ def parseargs():
 
     subparsers = parser.add_subparsers(dest="action", required=True)
 
+    svn = subparsers.add_parser("version", description="Show progfiguration version")
+
     sub_apply = subparsers.add_parser("apply", description="Apply configuration")
     sub_apply.add_argument("nodename", help="The name of a node in the progfiguration inventory")
 
@@ -233,7 +236,9 @@ def main():
         handler_syslog.setLevel(parsed.log_syslog)
         logger.addHandler(handler_syslog)
 
-    if parsed.action == "apply":
+    if parsed.action == "version":
+        print(version.getversion())
+    elif parsed.action == "apply":
         action_apply(parsed.nodename)
     elif parsed.action == "list":
         action_list(parsed.collection)
