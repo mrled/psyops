@@ -79,6 +79,11 @@ def apply(
     os.makedirs(mountpoint, mode=0o755, exist_ok=True)
     subprocess.run(f"mount {mapper_device} {mountpoint}", shell=True, check=True)
 
+    # TODO: We are always wiping scratch here, but we should integrate it with wipe_after_mounting
+    if os.path.exists(f"{mountpoint}/scratch"):
+        shutil.rmtree(f"{mountpoint}/scratch")
+    node.makedirs(f"{mountpoint}/scratch", "root", "root", 0o1777)
+
     wipe_after_mounting = wipe_after_mounting or []
     for subpath in wipe_after_mounting:
         path = os.path.join(mountpoint, subpath)
