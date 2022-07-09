@@ -58,6 +58,8 @@ RUN true \
 
 USER build
 
+# This Docker image builds only the operating system ISO
+# We don't need a real keypair, just generate this so that abuild is happy
 RUN true \
     && abuild-keygen -i -a -n \
     && ls -alF /etc/apk/keys \
