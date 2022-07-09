@@ -35,11 +35,18 @@ def apply(node: PsyopsOsNode, timezone: str):
     bootfs = None
     for blkdev in lsblk['blockdevices']:
         if str(blkdev.get("label")).startswith("psyopsos-boot"):
-            bootfs = blkdev
-            break
+            if blkdev.get('mountpoint'):
+                bootfs = blkdev
+                break
+            else:
+                for child in blkdev.get('children'):
+                    if child['mountpoint']:
+                        bootfs = child
+                        break
     if not bootfs:
         raise Exception("Could not find boot device from lsblk")
 
+    # TODO: this only works if it's mounted, hmm
     bootfs_apks = os.path.join(bootfs['mountpoint'], "apks")
 
     # Set /etc/apk/repositories
