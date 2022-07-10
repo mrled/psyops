@@ -7,4 +7,4 @@ Name=Synergy Server
 # otherwise it'll just run the Synergy desktop application.
 # Then after the package name of com.symless.Synergy,
 # you can pass arguments to the --command.
-Exec=/usr/bin/flatpak run --filesystem=/home/$user/synergy.conf --command=synergys com.symless.Synergy --enable-crypto --no-daemon
+Exec=/usr/bin/tmux new-session -d -s synsesh '/usr/bin/flatpak run --filesystem=/home/$user/synergy.conf --command=synergys com.symless.Synergy --enable-crypto --no-daemon --config /home/$user/synergy.conf'

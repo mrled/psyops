@@ -10,6 +10,7 @@ import shutil
 import string
 import subprocess
 import textwrap
+import time
 from importlib.resources import files as importlib_resources_files
 from typing import Any, Dict
 
@@ -39,6 +40,7 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
         "lightdm-gtk-greeter",
         "plymouth",
         "pm-utils",
+        "tmux",
         "xf86-input-evdev",
         "xf86-input-libinput",
         "xfce4",
@@ -195,6 +197,10 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
     node.template(module_files.joinpath("lightdm.conf.template"), "/etc/lightdm/lightdm.conf", {'user': user}, owner=user, mode=0o0644)
     subprocess.run(["rc-service", "dbus", "start"], check=True)
     subprocess.run(["rc-service", "udev", "start"], check=True)
+    subprocess.run(["rc-service", "lightdm", "start"], check=True)
+    time.sleep(2)
+    # The first start it doesn't seem to autologin correctly?
+    # So here's a fucked up hack.
     subprocess.run(["rc-service", "lightdm", "restart"], check=True)
 
     # TODO:

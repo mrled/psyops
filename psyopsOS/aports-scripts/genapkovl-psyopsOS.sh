@@ -85,7 +85,6 @@ EOF
 psyops_overlay_install root root 0600 etc/psyopsOS/postboot.secrets
 
 install -o root -g root -m 0755 -d "$tmp"/usr/local/sbin
-psyops_overlay_install root root 0700 usr/local/sbin/psyopsOS-init.sh
 psyops_overlay_install root root 0700 usr/local/sbin/psyopsOS-mount-secret.sh
 psyops_overlay_install root root 0755 usr/local/sbin/psyopsOS-apply-update
 
@@ -117,8 +116,11 @@ rc_add hostname boot
 rc_add bootmisc boot
 rc_add syslog boot
 
+# Don't start ntpd here.
+# Networking comes up properly in 000-psyopsOS-postboot.start in local.d;
+# start ntpd there instead.
+#rc_add ntpd default
 rc_add local default
-rc_add ntpd default
 rc_add sshd default
 
 rc_add mount-ro shutdown

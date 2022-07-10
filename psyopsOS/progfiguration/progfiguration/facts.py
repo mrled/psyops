@@ -93,7 +93,10 @@ class SystemNode:
         if not os.path.isdir(head):
             raise Exception(f"Path component {head} exists but it is not a directory")
         if not os.path.exists(path):
-            os.mkdir(path, mode)
+            # We have to set the mode separately, as os.mkdir()'s mode argument is umasked
+            # <https://stackoverflow.com/questions/37118558/python3-os-mkdir-does-not-enforce-correct-mode>
+            os.mkdir(path)
+            os.chmod(path, mode)
             if owner or group:
                 shutil.chown(path, user=owner, group=group)
 

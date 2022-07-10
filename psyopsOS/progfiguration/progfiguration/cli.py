@@ -168,14 +168,33 @@ def idb_excepthook(type, value, tb):
         pdb.pm()
 
 
+def syslog_excepthook(type, value, tb):
+    """Send an unhandled exception to syslog"""
+    # Note that format_exception() returns
+    # "a list of strings, each ending in a newline and some containing internal newlines"
+    # <https://docs.python.org/3/library/traceback.html#traceback.format_exception>
+    exc = "".join(traceback.format_exception(type, value, tb))
+    logger.error(f"Encountered unhandled exception and must exit :(")
+    for line in exc.splitlines():
+        logger.error(exc)
+
+
 def parseargs():
     parser = argparse.ArgumentParser("psyopsOS programmatic configuration")
-    parser.add_argument(
+
+    group_onerr = parser.add_mutually_exclusive_group()
+    group_onerr.add_argument(
         "--debug",
         "-d",
         action="store_true",
         help="Open the debugger if an unhandled exception is encountered",
     )
+    group_onerr.add_argument(
+        "--syslog-exception",
+        action="store_true",
+        help="When encountering an unhandle exception, print exception details to syslog before exiting",
+    )
+
     parser.add_argument(
         "--log-stderr",
         default="NOTSET",
@@ -225,6 +244,8 @@ def main():
 
     if parsed.debug:
         sys.excepthook = idb_excepthook
+    elif parsed.syslog_exception:
+        sys.excepthook = syslog_excepthook
 
     if parsed.log_stderr != "NONE":
         handler_stderr = logging.StreamHandler()

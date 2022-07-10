@@ -33,6 +33,7 @@ rc-service hostname restart
 rc-service networking stop
 nameif -s
 rc-service networking start
+rc-service ntpd start
 rc-service sshd restart
 setup-keymap us us
 logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished configuring keymap, network, hostname, mactab, ssh, etc"
@@ -59,7 +60,7 @@ fi
 logger --stderr --priority user.debug --tag psyopsOS-postboot "Upgrading progfiguration..."
 apk upgrade progfiguration
 logger --stderr --priority user.debug --tag psyopsOS-postboot "Starting progfiguration asynchronously, will continue in background..."
-psyopsOS-progfiguration apply "$PSYOPSOS_NODENAME" &
+psyopsOS-progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME" &
 
 date +'%Y%m%d-%H%M%S %z' > /etc/psyopsOS/status/000-postboot.finished
 logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished postboot"
