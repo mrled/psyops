@@ -34,7 +34,7 @@ fi
 echo "$(ansi mode=reset)"
 
 if sudo -v 2>/dev/null; then
-    echo "$(ansi fg=red mode=bold)WARNING: $(ansi fg=magenta)sudo$(ansi fg=red) is enbled for this user! This should only be used during development. Root in the PSYOPS container can likely escalate to root in the container host."
+    echo "$(ansi fg=red mode=bold)WARNING: $(ansi fg=magenta)sudo$(ansi fg=red) is enabled for this user! This should only be used during development. Root in the PSYOPS container can likely escalate to root in the container host."
 else
     echo "$(ansi fg=green mode=bold)For security reasons, $(ansi fg=magenta)sudo$(ansi fg=green) has been disabled in this container"
 fi

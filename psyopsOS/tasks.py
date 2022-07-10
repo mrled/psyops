@@ -7,8 +7,10 @@ import os
 import pdb
 import re
 import shutil
+import string
 import subprocess
 import sys
+import textwrap
 import traceback
 from typing import Any, Dict, NamedTuple, Optional
 
@@ -174,8 +176,69 @@ def deploy(ctx):
 
 
 @invoke.task
+def progfiguration_abuild(ctx):
+    """Build the progfiguration Python package as an Alpine package. Must be run from the psyops container.
+
+    Sign with the psyopsOS key.
+    """
+    versionfile = os.path.join(progfiguration_dir, "progfiguration", "build_version.py")
+    version = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.0")
+
+    apkbuild_template = string.Template(textwrap.dedent("""\
+        pkgname="progfiguration"
+        _pyname="progfiguration"
+        pkgver="$version"
+        pkgrel=0
+        pkgdesc="Programmatic configuration of hosts"
+        options="!check" # No tests, yolo
+        url="https://github.com/mrled/psyops"
+        arch="noarch"
+        license="WTFPL"
+        depends="python3 py3-requests py3-tz py3-yaml"
+        makedepends="py3-build py3-setuptools py3-wheel"
+
+        build() {
+            python3 -m build --no-isolation --wheel
+        }
+
+        package() {
+            python3 -m installer -d "$$pkgdir" dist/$$_pyname-$$pkgver-py3-none-any.whl
+        }
+        """)
+    )
+    apkbuild_contents = apkbuild_template.substitute(version=version)
+    apkbuild_path = os.path.join(progfiguration_dir, "APKBUILD")
+
+    # Place the apk repo inside the public dir
+    # This means that 'invoke deploy' will copy it
+    build_cmd = "abuild -P /psyops/psyopsOS/public/apk -D psyopsOS"
+
+    try:
+        with open(versionfile, 'w') as vfd:
+            vfd.write(f"VERSION = '{version}'\n")
+        with open(apkbuild_path, 'w') as afd:
+            afd.write(apkbuild_contents)
+        print("Running build in progfiguration directory...")
+        with ctx.cd(progfiguration_dir):
+            ctx.run(build_cmd)
+    finally:
+        failed = False
+        try:
+            os.unlink(versionfile)
+        except:
+            # raise Exception(f"When trying to remove version file at {versionfile}, got exception {rmexc}. ***REMOVE {versionfile} MANUALLY***.")
+            failed = True
+        try:
+            os.unlink(apkbuild_path)
+        except:
+            failed = True
+        if failed:
+            raise Exception(f"When trying to remove version file and/or ABKBUILD, got an exception. Manually remove these two files, if they exist: {versionfile}, {apkbuild_path}")
+
+
+@invoke.task
 def progfiguration(ctx):
-    """Build the progfiguration package, copy it to the site dir, and sign it with minisign"""
+    """Build the progfiguration Python project into sdist and wheel packages, copy it to the site dir, and sign it with minisign"""
     versionfile = os.path.join(progfiguration_dir, "progfiguration", "build_version.py")
     version = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.0")
     try:
@@ -288,66 +351,64 @@ def mkimage_clean(ctx, indocker, workdir):
         ctx.run(f"rm -rf '{d}'")
 
 
-@invoke.task
-def mkimage_local(
-    ctx,
-    osflavor,
-    alpinetag="0x001",
-    aportsdir=os.path.expanduser("~/aports"),
-    workdir=os.path.expanduser("~/psyopsOS-build-tmp"),
-    isodir=os.path.expanduser("~/isos"),
-):
-    """Run mkimage.sh directly
+# @invoke.task
+# def mkimage_local(
+#     ctx,
+#     osflavor,
+#     alpinetag="0x001",
+#     aportsdir=os.path.expanduser("~/aports"),
+#     workdir=os.path.expanduser("~/psyopsOS-build-tmp"),
+#     isodir=os.path.expanduser("~/isos"),
+# ):
+#     """Run mkimage.sh directly. Must be run from an Alpine system.
 
-    Assumes you're running invoke on an Alpine system
+#     This is not used as often as the regular 'mkimage' target (which uses docker), and may be out of date!
+#     """
 
-    This is not used as often as regular mkimage (which uses docker), and may be out of date!
-    """
+#     mkimage_profile, architecture = osflavorinfo(osflavor)
 
-    mkimage_profile, architecture = osflavorinfo(osflavor)
+#     os.umask(0o022)
 
-    os.umask(0o022)
+#     psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+#     psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
+#     aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
 
-    psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
-    aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
+#     buildinfo = mkimage_buildinfo(ctx)
 
-    buildinfo = mkimage_buildinfo(ctx)
+#     mkimage_clean(ctx, indocker=True, workdir=workdir)
 
-    mkimage_clean(ctx, indocker=True, workdir=workdir)
+#     for directory in [workdir, isodir]:
+#         os.makedirs(directory, exist_ok=True)
+#     for script in ["genapkovl-psyopsOS.sh", "mkimg.psyopsOS.sh", "mkimg.zzz-overrides.sh"]:
+#         shutil.copy(f"{aportsscriptsdir}/{script}", f"{aportsdir}/scripts/{script}")
 
-    for directory in [workdir, isodir]:
-        os.makedirs(directory, exist_ok=True)
-    for script in ["genapkovl-psyopsOS.sh", "mkimg.psyopsOS.sh", "mkimg.zzz-overrides.sh"]:
-        shutil.copy(f"{aportsscriptsdir}/{script}", f"{aportsdir}/scripts/{script}")
+#     os.environ["PSYOPSOS_OVERLAY"] = f"{psyopsosdir}/os-overlay"
+#     os.environ["PSYOPSOS_BUILD_DATE_ISO8601"] = buildinfo.date.strftime('%Y-%m-%dT%H:%M:%S%z')
+#     os.environ["PSYOPSOS_BUILD_GIT_REVISION"] = buildinfo.revision
+#     os.environ["PSYOPSOS_BUILD_GIT_DIRTY"] = str(buildinfo.dirty)
 
-    os.environ["PSYOPSOS_OVERLAY"] = f"{psyopsosdir}/os-overlay"
-    os.environ["PSYOPSOS_BUILD_DATE_ISO8601"] = buildinfo.date.strftime('%Y-%m-%dT%H:%M:%S%z')
-    os.environ["PSYOPSOS_BUILD_GIT_REVISION"] = buildinfo.revision
-    os.environ["PSYOPSOS_BUILD_GIT_DIRTY"] = str(buildinfo.dirty)
-
-    mkimage_cmd = [
-        "./mkimage.sh",
-        "--tag",
-        alpinetag,
-        "--outdir",
-        "/home/build/iso",
-        "--arch",
-        architecture,
-        "--repository",
-        "http://mirrors.edge.kernel.org/alpine/v3.16/main",
-        "--repository",
-        "http://mirrors.edge.kernel.org/alpine/v3.16/community",
-        "--workdir",
-        "/home/build/workdir",
-        "--profile",
-        mkimage_profile,
-    ]
-    full_cmd = " ".join(mkimage_cmd)
-    print(f"Running {full_cmd}")
-    with ctx.cd(f"{aportsdir}/scripts"):
-        ctx.run(full_cmd)
-    ctx.run(f"ls -alFh {isodir}*.iso")
+#     mkimage_cmd = [
+#         "./mkimage.sh",
+#         "--tag",
+#         alpinetag,
+#         "--outdir",
+#         "/home/build/iso",
+#         "--arch",
+#         architecture,
+#         "--repository",
+#         "http://mirrors.edge.kernel.org/alpine/v3.16/main",
+#         "--repository",
+#         "http://mirrors.edge.kernel.org/alpine/v3.16/community",
+#         "--workdir",
+#         "/home/build/workdir",
+#         "--profile",
+#         mkimage_profile,
+#     ]
+#     full_cmd = " ".join(mkimage_cmd)
+#     print(f"Running {full_cmd}")
+#     with ctx.cd(f"{aportsdir}/scripts"):
+#         ctx.run(full_cmd)
+#     ctx.run(f"ls -alFh {isodir}*.iso")
 
 
 @invoke.task
@@ -361,7 +422,7 @@ def mkimage(
     dockertag="psyopsos-builder",
     volname_workdir=docker_builder_volname_workdir,
 ):
-    """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO"""
+    """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO. Works from any host with Docker (doesn't require an Alpine host OS)."""
 
     mkimage_profile, architecture = osflavorinfo(osflavor)
 
@@ -411,7 +472,7 @@ def mkimage(
         # This is where the iso will be copied after it is build
         "--volume",
         f"{isodir}:/home/build/iso",
-        # Mounting this allows the build to access the psyopsOS/os-overlay/
+        # Mounting this allows the build to access the psyopsOS/os-overlay/ and the public APK packages directory.
         "--volume",
         f"{psyopsdir}:/home/build/psyops",
         # Environment variables that mkimage.sh (or one of the scripts it calls) uses
@@ -432,9 +493,13 @@ def mkimage(
         "--arch",
         architecture,
         "--repository",
-        "http://mirrors.edge.kernel.org/alpine/v3.16/main",
+        "http://dl-cdn.alpinelinux.org/alpine/v3.16/main",
         "--repository",
-        "http://mirrors.edge.kernel.org/alpine/v3.16/community",
+        "http://dl-cdn.alpinelinux.org/alpine/v3.16/community",
+        "--repository",
+        "/home/build/psyops/psyopsOS/public/apk/psyopsOS",
+        "--repository",
+        "https://com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com/apk/psyopsOS",
         "--workdir",
         "/home/build/workdir",
         "--profile",

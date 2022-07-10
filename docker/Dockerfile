@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.16
 LABEL maintainer "me@micahrl.com"
 
 #### Development notes
@@ -61,13 +61,23 @@ RUN true \
     # See also: https://github.com/gliderlabs/docker-alpine/issues/279#issuecomment-300859312
     #&& echo http://dl-2.alpinelinux.org/alpine/v3.6/main > /etc/apk/repositories \
     #&& echo http://dl-2.alpinelinux.org/alpine/v3.6/community >> /etc/apk/repositories \
+    #
+    # It's nice to have access to the various edge repos
+    # Nothing will install from them implicitly, you have to do 'apk add whatever@edgemain'
+    && echo '@edgemain       http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories \
+    && echo '@edgecommunity  http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories \
+    && echo '@edgetesting    http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
+    #
     && apk update \
     #
     && apk add \
+        abuild abuild-doc \
         age age-doc \
         # For calculating a bcrypt password with htpasswd
         apache2-utils \
+        alpine-sdk \
         bash bash-doc \
+        black \
         # For dig
         bind-tools \
         ca-certificates ca-certificates-doc \
@@ -98,7 +108,17 @@ RUN true \
         parallel parallel-doc \
         pwgen pwgen-doc \
         python3 python3-doc \
+        py3-build \
+        # Apparently required to install my whl into a directory for apk
+        # https://wiki.alpinelinux.org/wiki/APKBUILD_examples:Python
+        py3-installer \
+        py3-mypy \
         py3-pip py3-pip-doc \
+        py3-requests \
+        py3-setuptools \
+        py3-tz \
+        py3-wheel \
+        py3-yaml \
         ripgrep ripgrep-bash-completion ripgrep-doc \
         rsync rsync-doc \
         # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
@@ -271,7 +291,9 @@ RUN true \
     && ln -sf "$PSYOPS_SSH_ED25519_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && ln -sf "$PSYOPS_SSH_RSA_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && ln -s "$PSYOPS_VOLUME/.home.psyops.local" "$HOME/.local" \
-    && git config --global user.email "$gitemail" && git config --global user.name "$gitname" \
+    && git config --global user.email "$gitemail" \
+    && git config --global user.name "$gitname" \
+    && git config --global --add safe.directory "$PSYOPS_VOLUME" \
     # Useful when building on Windows hosts, which use open permissions by default
     && mkdir -p $HOME/.gnupg $HOME/.ssh \
     && chmod 700 $HOME/.gnupg $HOME/.ssh \

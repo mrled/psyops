@@ -15,6 +15,7 @@ lsof
 minisign
 openssh
 pciutils
+progfiguration
 python3
 ripgrep
 shadow

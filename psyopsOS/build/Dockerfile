@@ -56,6 +56,10 @@ RUN true \
     && echo '%abuild ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/abuild \
     && true
 
+COPY psyops@micahrl.com-62ca1973.rsa.pub /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub
+RUN chmod 644 /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub
+RUN echo "/home/build/psyops/psyopsOS/public/apk/psyopsOS" >> /etc/apk/repositories && cat /etc/apk/repositories
+
 USER build
 
 # This Docker image builds only the operating system ISO

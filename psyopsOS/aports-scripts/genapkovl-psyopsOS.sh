@@ -58,6 +58,8 @@ install -o root -g root -m 0755 -d "$tmp"/var/psyopsOS
 
 install -o root -g root -m 0755 -d "$tmp"/etc/apk
 psyops_overlay_install root root 0644 etc/apk/world
+install -o root -g root -m 0755 -d "$tmp"/etc/apk/keys
+psyops_overlay_install root root 0644 etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub
 
 install -o root -g root -m 0755 -d "$tmp"/etc/ssh
 psyops_overlay_install root root 0644 etc/ssh/sshd_config
@@ -81,7 +83,6 @@ makefile root:root 0644 "$tmp"/etc/psyopsOS/iso.json <<EOF
 EOF
 
 psyops_overlay_install root root 0600 etc/psyopsOS/postboot.secrets
-psyops_overlay_install root root 0644 etc/psyopsOS/init.env
 
 install -o root -g root -m 0755 -d "$tmp"/usr/local/sbin
 psyops_overlay_install root root 0700 usr/local/sbin/psyopsOS-init.sh
@@ -90,7 +91,6 @@ psyops_overlay_install root root 0755 usr/local/sbin/psyopsOS-apply-update
 
 install -o root -g root -m 0755 -d "$tmp"/etc/local.d
 psyops_overlay_install root root 0755 etc/local.d/000-psyopsOS-postboot.start
-psyops_overlay_install root root 0755 etc/local.d/001-psyopsOS-async-init.start
 
 
 # Add a secret directory that is only readable by root.
