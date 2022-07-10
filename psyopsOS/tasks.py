@@ -16,7 +16,6 @@ from typing import Any, Dict, NamedTuple, Optional
 
 import boto3
 import invoke
-import yaml
 
 
 def idb_excepthook(type, value, tb):
@@ -56,56 +55,6 @@ site_psyopsos_dir_global = os.path.join(site_psyopsos_dir, "global.json")
 site_bucket = "com-micahrl-psyops-http-bucket"
 
 
-class Minisign:
-    """A wrapper for minisign operations. Caches the password after retrieving it once."""
-
-    def __init__(self, seckey: str):
-        self.seckey = seckey
-        self._passwd = None
-
-    def __call__(self, path: str) -> None:
-        """Sign a file with minisign"""
-        subprocess.run(
-            ["minisign", "-S", "-s", self.seckey, "-m", path],
-            input=self.passwd,
-            check=True,
-        )
-
-    @property
-    def passwd(self) -> str:
-        """Decrypt the PSYOPS/OS minisign secret key password using standard PSYOPS GPG stuff"""
-        if not self._passwd:
-            proc = subprocess.run(
-                [
-                    "gpg",
-                    "--quiet",
-                    "--decrypt",
-                    psyopsos_minisign_encrypted_passwd_file,
-                ],
-                check=True,
-                capture_output=True,
-            )
-            self._passwd = proc.stdout
-        return self._passwd
-
-
-minisign = Minisign(psyopsos_key)
-
-
-def jsondump(obj: Any, path: str) -> None:
-    """A wrapper for json.dump that works the same way every time"""
-    with open(path, "w") as fp:
-        json.dump(obj, fp, sort_keys=True, indent=2)
-        fp.write("\n")
-    minisign(path)
-
-
-def parsecfg(filepath: str) -> Dict[str, Any]:
-    with open(filepath) as kfp:
-        config = yaml.load(kfp, Loader=yaml.Loader)
-    return config
-
-
 def s3_upload_directory(directory, bucketname):
     """Upload a directory to S3 using AWS creds from ~/.aws
 
@@ -139,34 +88,6 @@ def cleandockervol(
 def copystatic(ctx):
     """Copy files from the static directory to the site directory"""
     shutil.copytree(staticdir, sitedir, dirs_exist_ok=True)
-
-
-@invoke.task
-def copyconfig(ctx):
-    """Copy global/node/etc config from psyopsOS.yml into JSON files in the site directory
-
-    Sign the resulting files with minisign
-    """
-    copystatic(ctx)
-    config = parsecfg(psyopsos_cfg)
-    for d in [site_psyopsos_dir_nodes, site_psyopsos_dir_tags]:
-        os.makedirs(d, exist_ok=True)
-    jsondump(config["global"], site_psyopsos_dir_global)
-    tags: Dict[str, str] = {}
-    for nodename, nodecfg in config["nodes"].items():
-        nodepath = os.path.join(site_psyopsos_dir_nodes, f"{nodename}.json")
-        nodecfg["nodename"] = nodename
-        jsondump(nodecfg, nodepath)
-        if "tags" in nodecfg:
-            for tag in nodecfg["tags"]:
-                if tag not in tags:
-                    tags[tag] = []
-                tags[tag].append(nodename)
-    for tag, nodes in tags.items():
-        tagdir = os.path.join(site_psyopsos_dir_tags, tag)
-        os.makedirs(tagdir, exist_ok=True)
-        nodelistpath = os.path.join(tagdir, "nodes.json")
-        jsondump(nodes, nodelistpath)
 
 
 @invoke.task
@@ -234,74 +155,6 @@ def progfiguration_abuild(ctx):
             failed = True
         if failed:
             raise Exception(f"When trying to remove version file and/or ABKBUILD, got an exception. Manually remove these two files, if they exist: {versionfile}, {apkbuild_path}")
-
-
-@invoke.task
-def progfiguration(ctx):
-    """Build the progfiguration Python project into sdist and wheel packages, copy it to the site dir, and sign it with minisign"""
-    versionfile = os.path.join(progfiguration_dir, "progfiguration", "build_version.py")
-    version = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.0")
-    try:
-        with open(versionfile, 'w') as vfd:
-            vfd.write(f"VERSION = '{version}'\n")
-        print("Running build in progfiguration directory...")
-        with ctx.cd(progfiguration_dir):
-            # ctx.run("./venv/bin/pip install wheel")
-            ctx.run("./venv/bin/python -m build")
-    finally:
-        try:
-            os.unlink(versionfile)
-        except Exception as rmexc:
-            raise Exception(f"When trying to remove version file at {versionfile}, got exception {rmexc}. ***REMOVE {versionfile} MANUALLY***.")
-
-    wheel = f"progfiguration-{version}-py3-none-any.whl"
-    wheel_sig = f"{wheel}.minisig"
-    sdist = f"progfiguration-{version}.tar.gz"
-    sdist_sig = f"{sdist}.minisig"
-    verfile = "progfiguration.version.json"
-    verfile_path = os.path.join(site_psyopsos_dir, verfile)
-    version_json = {
-        'version': version,
-        'wheel': wheel,
-        'wheelSig': wheel_sig,
-        'sdist': sdist,
-        'sdistSig': sdist_sig,
-    }
-
-    with open(verfile_path, 'w') as vfd:
-        json.dump(version_json, vfd, sort_keys=True, indent=2)
-    print(f"Saved progfiguration version data to {verfile_path}")
-
-    os.rename(
-        f"{progfiguration_dir}/dist/{sdist}",
-        f"{site_psyopsos_dir}/{sdist}",
-    )
-    os.rename(
-        f"{progfiguration_dir}/dist/{wheel}",
-        f"{site_psyopsos_dir}/{wheel}",
-    )
-    print("Signing builds...")
-    minisign(verfile_path)
-    minisign(f"{site_psyopsos_dir}/{sdist}")
-    minisign(f"{site_psyopsos_dir}/{wheel}")
-
-    # Remove older versions
-    # Generally no reason to keep these
-    for file in glob.glob(f"{site_psyopsos_dir}/progfiguration*"):
-        print(f"Examining {file}...")
-        if file == verfile_path or file == f"{verfile_path}.minisig":
-            continue
-        elif re.match(f"{site_psyopsos_dir}/progfiguration-{version}.*", file):
-            continue
-        print(f"Removing old build {file}...")
-        os.remove(file)
-
-
-@invoke.task
-def upload_progfiguration(ctx, host):
-    ctx.run(
-        f"scp {site_psyopsos_dir}/progfiguration-*-py3-none-any.whl root@{host}:/tmp/"
-    )
 
 
 def osflavorinfo(flavorname):
