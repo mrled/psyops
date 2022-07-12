@@ -16,14 +16,13 @@ defaults = {
     # fslabel is max 16 chars
     "fslabel": "psyopsos_data",
     "wipefs_if_no_vg": False,
-    # Anything path relative to the mountpoint in this list is wiped after mounting,
-    # like ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
-    # Take care with multiple groups that define this --
-    # subsequent definitions override this, they don't append to it.
-    # This happens after every time the mount command is run.
+    # Anything path relative to the mountpoint in this list is wiped after mounting.
+    # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
     # If the filesystem is already mounted, nothing is removed.
-    "wipe_after_mounting": [],
+    "wipe_after_mounting": ['scratch'],
 }
+
+appends = ['wipe_after_mounting']
 
 
 def is_mountpoint(path: str) -> bool:
@@ -45,10 +44,6 @@ def apply(
 
     subprocess.run(f"apk add e2fsprogs e2fsprogs-extra lvm2", shell=True, check=True)
     subprocess.run("rc-service lvm start", shell=True, check=True)
-
-    if is_mountpoint(mountpoint):
-        logger.debug(f"Data disk already mounted at {mountpoint}")
-        return
 
     if subprocess.run(f"vgs {vgname}", shell=True, check=False).returncode != 0:
         logger.info(f"Volume group {vgname} does not exist")
@@ -73,18 +68,16 @@ def apply(
         logger.info(f"Creating filesystem on {mapper_device}...")
         subprocess.run(f"mkfs.ext4 -F -L {fslabel} {mapper_device}", shell=True, check=True)
 
-    logger.info(f"Mounting {mapper_device} on {mountpoint}...")
-    os.makedirs(mountpoint, mode=0o755, exist_ok=True)
-    subprocess.run(f"mount {mapper_device} {mountpoint}", shell=True, check=True)
+    if not is_mountpoint(mountpoint):
+        logger.info(f"Mounting {mapper_device} on {mountpoint}...")
+        os.makedirs(mountpoint, mode=0o755, exist_ok=True)
+        subprocess.run(f"mount {mapper_device} {mountpoint}", shell=True, check=True)
 
-    # TODO: We are always wiping scratch here, but we should integrate it with wipe_after_mounting
-    if os.path.exists(f"{mountpoint}/scratch"):
-        shutil.rmtree(f"{mountpoint}/scratch")
+        wipe_after_mounting = wipe_after_mounting or []
+        for subpath in wipe_after_mounting:
+            path = os.path.join(mountpoint, subpath)
+            if os.path.exists(path):
+                logger.info(f"Removing path {path} after mounting {mountpoint}...")
+                shutil.rmtree(path)
+
     node.makedirs(f"{mountpoint}/scratch", "root", "root", 0o1777)
-
-    wipe_after_mounting = wipe_after_mounting or []
-    for subpath in wipe_after_mounting:
-        path = os.path.join(mountpoint, subpath)
-        if os.path.exists(path):
-            logger.info(f"Removing path {path} after mounting {mountpoint}...")
-            shutil.rmtree(path)

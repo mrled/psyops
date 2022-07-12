@@ -4,6 +4,7 @@ import argparse
 import importlib
 import logging
 import logging.handlers
+import pdb
 import sys
 from typing import List
 
@@ -29,7 +30,7 @@ def rolename2mod(rolename: str):
     return rolemodule
 
 
-def action_apply(nodename: str):
+def action_apply(nodename: str, strace_before_applying: bool = False):
     """Apply configuration for the node 'nodename' to localhost"""
 
     node = nodename2mod(nodename).node
@@ -43,7 +44,7 @@ def action_apply(nodename: str):
     for groupname in inventory.node_groups[nodename]:
         groupmods[groupname] = groupname2mod(groupname)
 
-    # for rolename, arguments in nodeconfig["roles"]:
+    applyroles = {}
     for rolename in inventory.node_roles(nodename):
         rolemodule = rolename2mod(rolename)
 
@@ -52,12 +53,31 @@ def action_apply(nodename: str):
         if hasattr(rolemodule, "defaults"):
             rolevars.update(rolemodule.defaults)
 
+        # The role module may define some values as "appends",
+        # which means that they cannot be overridden by groups/nodes, only appended to.
+        appendvars = []
+        if hasattr(rolemodule, "appends"):
+            appendvars = rolemodule.appends
+            for append in appendvars:
+                if append not in rolevars:
+                    rolevars[append] = []
+
         # Check each group that the node is in for role arguments
         for gmod in groupmods.values():
-            rolevars.update(getattr(gmod.group.roles, rolename, {}))
+            group_rolevars = getattr(gmod.group.roles, rolename, {})
+            for key, value in group_rolevars.items():
+                if key in appendvars:
+                    rolevars[key].append(value)
+                else:
+                    rolevars[key] = value
 
         # Apply any role arguments from the node itself
-        rolevars.update(getattr(node.roles, rolename, {}))
+        node_rolevars = getattr(node.roles, rolename, {})
+        for key, value in node_rolevars.items():
+            if key in appendvars:
+                rolevars[key].append(value)
+            else:
+                rolevars[key] = value
 
         # Secret values are encrypted values where the key name is preceded by `secret_`
         # Find these and decrypt them
@@ -66,15 +86,24 @@ def action_apply(nodename: str):
         for vname, vvalue in rolevars.items():
             if vname.startswith("secret_"):
                 nonsecret_vname = vname[7:]
+                if vname in appendvars or nonsecret_vname in appendvars:
+                    raise Exception(f"The var {nonsecret_vname} is an append-only variable, but at least one of the role, group, or node values for it is secret, which is not currently supported. TODO: support this.")
                 # TODO: don't hard code key path here
                 decrypted_vvalue = age.decrypt(vvalue, "/mnt/psyops-secret/mount/age.key")
                 decrypted_rolevars[nonsecret_vname] = decrypted_vvalue
             else:
                 decrypted_rolevars[vname] = vvalue
 
-        logging.debug(f"Running role {rolename}...")
-        rolemodule.apply(nodectx, **decrypted_rolevars)
-        logging.info(f"Finished running role {rolename}.")
+        applyroles[rolename] = (rolemodule, decrypted_rolevars)
+
+    if strace_before_applying:
+        pdb.set_trace()
+    else:
+        for rolename, role in applyroles.items():
+            rolemodule, decrypted_rolevars = role
+            logging.debug(f"Running role {rolename}...")
+            rolemodule.apply(nodectx, **decrypted_rolevars)
+            logging.info(f"Finished running role {rolename}.")
 
 
 def action_list(collection: str):
@@ -167,6 +196,7 @@ def parseargs():
 
     sub_apply = subparsers.add_parser("apply", description="Apply configuration")
     sub_apply.add_argument("nodename", help="The name of a node in the progfiguration inventory")
+    sub_apply.add_argument("--strace-before-applying", action="store_true", help="Do not actually apply the role. Instead, launch a debugger. Intended for development.")
 
     sub_list = subparsers.add_parser("list", description="List inventory items")
     list_choices = ["nodes", "groups", "functions", "svcpreps"]
@@ -203,7 +233,7 @@ def main():
     if parsed.action == "version":
         print(version.getversion())
     elif parsed.action == "apply":
-        action_apply(parsed.nodename)
+        action_apply(parsed.nodename, strace_before_applying=parsed.strace_before_applying)
     elif parsed.action == "list":
         action_list(parsed.collection)
     elif parsed.action == "info":
