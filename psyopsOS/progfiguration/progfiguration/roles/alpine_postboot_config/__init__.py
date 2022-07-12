@@ -28,39 +28,22 @@ def set_timezone(timezone: str):
 
 def apply(node: PsyopsOsNode, timezone: str):
 
-    # We must use --bytes bc of a bug in util-linux
-    # https://github.com/util-linux/util-linux/issues/1636
-    lsblk = json.loads(subprocess.run(["lsblk", "--json", "--output-all", "--bytes"], capture_output=True, check=True).stdout)
-
-    bootfs = None
-    for blkdev in lsblk['blockdevices']:
-        if str(blkdev.get("label")).startswith("psyopsos-boot"):
-            if blkdev.get('mountpoint'):
-                bootfs = blkdev
-                break
-            else:
-                for child in blkdev.get('children'):
-                    if child['mountpoint']:
-                        bootfs = child
-                        break
-    if not bootfs:
-        raise Exception("Could not find boot device from lsblk")
-
-    # TODO: this only works if it's mounted, hmm
-    bootfs_apks = os.path.join(bootfs['mountpoint'], "apks")
-
-    # Set /etc/apk/repositories
-    repos = textwrap.dedent(
-        f"""\
-        {bootfs_apks}
-        https://dl-cdn.alpinelinux.org/alpine/{node.alpine_release_v}/main
-        https://dl-cdn.alpinelinux.org/alpine/{node.alpine_release_v}/community
-        @edgemain       http://dl-cdn.alpinelinux.org/alpine/edge/main
-        @edgecommunity  http://dl-cdn.alpinelinux.org/alpine/edge/community
-        @edgetesting    http://dl-cdn.alpinelinux.org/alpine/edge/testing
-        """
-    )
-    node.set_file_contents("/etc/apk/repositories", repos)
-    subprocess.run("apk update", shell=True, check=True)
-
     set_timezone(timezone)
+
+    apk_repositories_old = node.get_file_contents("/etc/apk/repositories")
+    apk_repositories_new = apk_repositories_old
+    add_repos = [
+        "@edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main",
+        "@edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community",
+        "@edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing",
+        "https://com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com/apk/psyopsOS",
+    ]
+    for repo in add_repos:
+        if repo not in apk_repositories_old:
+            if apk_repositories_new[-1] != "\n":
+                apk_repositories_new += "\n"
+            apk_repositories_new += f"{repo}"
+    if apk_repositories_new[-1] != "\n":
+        apk_repositories_new += "\n"
+    node.set_file_contents("/etc/apk/repositories", apk_repositories_new, "root", "root", 0o0644)
+    subprocess.run("apk update", shell=True, check=True)
