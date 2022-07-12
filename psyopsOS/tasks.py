@@ -107,6 +107,7 @@ def progfiguration_abuild(ctx):
     apkbuild_template = string.Template(textwrap.dedent("""\
         pkgname="progfiguration"
         _pyname="progfiguration"
+        maintainer="Micah R Ledbetter <psyops@micahrl.com>"
         pkgver="$version"
         pkgrel=0
         pkgdesc="Programmatic configuration of hosts"
