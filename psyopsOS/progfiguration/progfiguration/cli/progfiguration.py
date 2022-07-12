@@ -161,7 +161,7 @@ def action_encrypt(value: str, nodes: List[str], groups: List[str], functions: L
     print(age.encrypt(value, pubkeys).decode())
 
 
-def parseargs():
+def parseargs(arguments: List[str]):
     parser = argparse.ArgumentParser("psyopsOS programmatic configuration")
 
     group_onerr = parser.add_mutually_exclusive_group()
@@ -217,12 +217,12 @@ def parseargs():
     sub_encrypt.add_argument("--node", "-n", action="append", help="Encrypt for this node")
     sub_encrypt.add_argument("--function", "-f", action="append", help="Encrypt for this function")
 
-    parsed = parser.parse_args()
+    parsed = parser.parse_args(arguments)
     return parsed
 
 
-def main():
-    parsed = parseargs()
+def main(*arguments):
+    parsed = parseargs(arguments[1:])
 
     if parsed.debug:
         sys.excepthook = idb_excepthook
