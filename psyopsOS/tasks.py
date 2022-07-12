@@ -84,14 +84,9 @@ def cleandockervol(
 
 
 @invoke.task
-def copystatic(ctx):
-    """Copy files from the static directory to the site directory"""
-    shutil.copytree(staticdir, sitedir, dirs_exist_ok=True)
-
-
-@invoke.task
 def deploy(ctx):
-    """Deploy the site dir to S3"""
+    """Deploy the site dir to S3. First copies files from the static dirr to the deploy dir."""
+    shutil.copytree(staticdir, sitedir, dirs_exist_ok=True)
     s3_upload_directory(sitedir, site_bucket)
 
 
