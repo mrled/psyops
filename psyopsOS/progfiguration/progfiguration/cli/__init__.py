@@ -73,7 +73,7 @@ def syslog_excepthook(type, value, tb):
     exc = "".join(traceback.format_exception(type, value, tb))
     logger.error(f"Encountered unhandled exception and must exit :(")
     for line in exc.splitlines():
-        logger.error(exc)
+        logger.error(line)
 
 
 def configure_logging(log_stderr, log_syslog):
