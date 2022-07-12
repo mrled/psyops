@@ -7,7 +7,7 @@ import os
 import subprocess
 
 from progfiguration import logger
-from progfiguration.facts import PsyopsOsNode
+from progfiguration.nodes import PsyopsOsNode
 
 
 defaults = {

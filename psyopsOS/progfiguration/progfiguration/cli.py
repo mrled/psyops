@@ -2,25 +2,17 @@
 
 import argparse
 import importlib
-import json
 import logging
 import logging.handlers
 import pdb
-import subprocess
 import sys
 import traceback
 from typing import List
 
-from progfiguration import logger
-from progfiguration import age
-from progfiguration.facts import PsyopsOsNode
+from progfiguration import age, logger, version
 from progfiguration.inventory import inventory
 from progfiguration.inventory.groups import universal
-from progfiguration.inventory.invhelpers import Bunch
-from progfiguration import version
-
-# from progfiguration.inventory.membership import membership
-from progfiguration.roles import skunkworks
+from progfiguration.nodes import PsyopsOsNode
 
 
 _log_levels = [

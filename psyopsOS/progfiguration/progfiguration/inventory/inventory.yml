@@ -3,8 +3,6 @@
 # Progfiguration inventory
 
 groupNodeMap:
-  localgroup:
-    - localhost
   kubernasty:
     - jesseta
     - kenasus
@@ -16,7 +14,6 @@ nodeFunctionMap:
   kenasus: kubernasty
   zalas: kubernasty
   kntytest: kubernasty
-  localhost: localfunction
   newjutland: synergycontroller
 
 functionRoleMap:
@@ -24,10 +21,6 @@ functionRoleMap:
     - alpine_postboot_config
     - datadisk
     - k3s
-  localfunction:
-    - alpine_postboot_config
-    - localhosttest
-    - skunkworks
   synergycontroller:
     - alpine_postboot_config
     # We need datadisk bc we need Flatpak for Synergy, and Flatpak is too disk hungry for RAM

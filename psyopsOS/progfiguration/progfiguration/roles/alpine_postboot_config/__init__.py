@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import textwrap
 
-from progfiguration.facts import PsyopsOsNode
+from progfiguration.nodes import PsyopsOsNode
 
 
 defaults = {}

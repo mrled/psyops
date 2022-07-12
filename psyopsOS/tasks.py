@@ -42,7 +42,6 @@ docker_builder_volname_workdir = "psyopsos-build-workdir"
 
 # Input configuration
 staticdir = os.path.join(basedir, "static")
-psyopsos_cfg = os.path.join(basedir, "psyopsOS.yml")
 psyopsos_key = os.path.join(basedir, "minisign.seckey")
 progfiguration_dir = os.path.join(basedir, "progfiguration")
 

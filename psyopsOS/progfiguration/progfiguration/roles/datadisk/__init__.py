@@ -5,9 +5,7 @@ import shutil
 import subprocess
 
 from progfiguration import logger
-from progfiguration.facts import PsyopsOsNode
-from progfiguration.inventory.invhelpers import Bunch
-from progfiguration.roles import rolehelpers
+from progfiguration.nodes import PsyopsOsNode
 
 
 defaults = {

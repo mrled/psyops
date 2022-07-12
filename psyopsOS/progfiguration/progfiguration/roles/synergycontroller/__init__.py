@@ -10,9 +10,8 @@ import subprocess
 import textwrap
 import time
 from importlib.resources import files as importlib_resources_files
-from typing import Any, Dict
 
-from progfiguration.facts import PsyopsOsNode
+from progfiguration.nodes import PsyopsOsNode
 from progfiguration.roles.datadisk import is_mountpoint
 
 import requests
