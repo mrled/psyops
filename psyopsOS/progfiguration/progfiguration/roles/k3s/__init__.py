@@ -34,8 +34,8 @@ def mount_k3s_binds(
         "/etc/rancher": os.path.join(data_mountpoint, data_etcrancher_subpath),
     }
     for mountpoint, overlay in mounts.items():
-        os.makedirs(mountpoint, mode=0o0700, exist_o=True)
-        os.makedirs(overlay, mode=0o0700, exist_o=True)
+        os.makedirs(mountpoint, mode=0o0700, exist_ok=True)
+        os.makedirs(overlay, mode=0o0700, exist_ok=True)
         try:
             subprocess.run(["mountpoint", mountpoint], check=False, capture_output=True)
         except subprocess.CalledProcessError:
