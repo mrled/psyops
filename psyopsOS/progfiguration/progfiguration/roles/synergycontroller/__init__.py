@@ -3,11 +3,9 @@
 The synergy controller for my keyboard and mouse multiplexing setup.
 """
 
-import datetime
 import os
 import re
 import shutil
-import string
 import subprocess
 import textwrap
 import time
@@ -25,10 +23,20 @@ module_files = importlib_resources_files("progfiguration.roles.synergycontroller
 
 defaults = {
     'user': 'synergist',
+    'user_gecos': 'Synergist',
 }
 
 
-def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key: str, synergy_fingerprints_local: str, synergy_serial_key: str, synergy_server_screenname: str):
+def apply(
+    node: PsyopsOsNode,
+    user: str,
+    user_gecos: str,
+    synergy_priv_key: str,
+    synergy_pub_key: str,
+    synergy_fingerprints_local: str,
+    synergy_serial_key: str,
+    synergy_server_screenname: str
+):
 
     # Some of these are required or else X does not accept input at all
     # <https://gitlab.alpinelinux.org/alpine/aports/-/issues/5422>
@@ -63,7 +71,7 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
     try:
         subprocess.run(["id", user], check=True, capture_output=True)
     except subprocess.CalledProcessError:
-        subprocess.run(["adduser", "-D", user])
+        subprocess.run(["adduser", "-g", user_gecos, "-D", user])
         subprocess.run(["adduser", user, "flatpak"])
         subprocess.run(["adduser", user, "input"])
         subprocess.run(["adduser", user, "video"])
@@ -184,7 +192,7 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
 
         #subprocess.run(["curl", "-o", "/tmp/synergy.flatpak", synergy_flatpak_uri])
         #subprocess.run("flatpak install -y /tmp/synergy.flatpak", shell=True, check=True)
-        synergy_flatpak = "/psyopsos-data/roles/synergycontroller/synergy_1.14.4-stable.ad7273eb.flatpak"
+        synergy_flatpak = "/psyopsos-data/roles/synergycontroller/synergy_1.14.5-stable.0cafa5d7.flatpak"
         if not os.path.exists(synergy_flatpak):
             # TODO: Download this from Symless automatically
             # I'm not sure how their auth works so right now you have to copy it to this location manually
@@ -202,6 +210,3 @@ def apply(node: PsyopsOsNode, user: str, synergy_priv_key: str, synergy_pub_key:
     # The first start it doesn't seem to autologin correctly?
     # So here's a fucked up hack.
     subprocess.run(["rc-service", "lightdm", "restart"], check=True)
-
-    # TODO:
-    # Create an openrc script to launch synergyserver flatpak as my user
