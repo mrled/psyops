@@ -17,6 +17,15 @@ class SystemNode:
         self.nodename = nodename
         self._cache_files = {}
 
+    @property
+    def uptime(self) -> float:
+        """Return system uptime in seconds"""
+        # System uptime in seconds, and idle CPU time in seconds
+        # Note that idle CPU time accounts for idle seconds per CPU, and thus may be larger than system uptime
+        uptimestr, idletimestr = self.get_file_contents("/proc/uptime").split()
+        uptime = float(uptimestr)
+        return uptime
+
     def get_umask(self):
         """Return the umask as integer
 
