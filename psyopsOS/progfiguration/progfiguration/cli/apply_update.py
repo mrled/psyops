@@ -3,70 +3,12 @@
 
 import argparse
 import json
-import logging
 import logging.handlers
-import os
-import pdb
 import re
 import subprocess
 import sys
-import traceback
-import typing
-from collections.abc import Callable
 
-
-logger = logging.getLogger()
-logger.setLevel(logging.NOTSET)
-
-
-_log_levels = [
-    # Levels from the library
-    "CRITICAL",
-    "ERROR",
-    "WARNING",
-    "INFO",
-    "DEBUG",
-    "NOTSET",
-    # My customization
-    "NONE",
-]
-
-
-def idb_excepthook(type, value, tb):
-    """Call an interactive debugger in post-mortem mode
-
-    If you do "sys.excepthook = idb_excepthook", then an interactive debugger
-    will be spawned at an unhandled exception
-    """
-    if hasattr(sys, "ps1") or not sys.stderr.isatty():
-        sys.__excepthook__(type, value, tb)
-    else:
-        traceback.print_exception(type, value, tb)
-        print
-        pdb.pm()
-
-
-def broken_pipe_handler(
-    func: Callable[[typing.List[str]], int], *arguments: typing.List[str]
-) -> int:
-    """Handler for broken pipes
-
-    Wrap the main() function in this to properly handle broken pipes
-    without a giant nastsy backtrace.
-    The EPIPE signal is sent if you run e.g. `script.py | head`.
-    Wrapping the main function with this one exits cleanly if that happens.
-
-    See <https://docs.python.org/3/library/signal.html#note-on-sigpipe>
-    """
-    try:
-        returncode = func(*arguments)
-        sys.stdout.flush()
-    except BrokenPipeError:
-        devnull = os.open(os.devnull, os.O_WRONLY)
-        os.dup2(devnull, sys.stdout.fileno())
-        # Convention is 128 + whatever the return code would otherwise be
-        returncode = 128 + 1
-    return returncode
+from progfiguration.cli import broken_pipe_handler, configure_logging, idb_excepthook, progfiguration_log_levels
 
 
 def main(*arguments):
@@ -80,13 +22,13 @@ def main(*arguments):
     parser.add_argument(
         "--log-stderr",
         default="NOTSET",
-        choices=_log_levels,
+        choices=progfiguration_log_levels,
         help="Log level to send to stderr. Defaults to NOTSET (all messages, including debug). NONE to disable.",
     )
     parser.add_argument(
         "--log-syslog",
         default="INFO",
-        choices=_log_levels,
+        choices=progfiguration_log_levels,
         help="Log level to send to syslog. Defaults to INFO. NONE to disable.",
     )
     parser.add_argument(
@@ -99,16 +41,7 @@ def main(*arguments):
 
     if parsed.debug:
         sys.excepthook = idb_excepthook
-
-    if parsed.log_stderr != "NONE":
-        handler_stderr = logging.StreamHandler()
-        handler_stderr.setFormatter(logging.Formatter("[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"))
-        handler_stderr.setLevel(parsed.log_stderr)
-        logger.addHandler(handler_stderr)
-    if parsed.log_syslog != "NONE":
-        handler_syslog = logging.handlers.SysLogHandler(address="/dev/log")
-        handler_syslog.setLevel(parsed.log_syslog)
-        logger.addHandler(handler_syslog)
+    configure_logging(parsed.log_stderr, parsed.log_syslog)
 
     lsblk_proc = subprocess.run(["lsblk", "--output", "PATH,LABEL,MOUNTPOINT", "--json"], check=True, capture_output=True)
     lsblk = json.loads(lsblk_proc.stdout)
@@ -146,6 +79,5 @@ def main(*arguments):
     subprocess.run(ddcmd, check=True)
 
 
-if __name__ == "__main__":
-    exitcode = broken_pipe_handler(main, *sys.argv)
-    sys.exit(exitcode)
+def wrapped_main():
+    broken_pipe_handler(main, *sys.argv)
