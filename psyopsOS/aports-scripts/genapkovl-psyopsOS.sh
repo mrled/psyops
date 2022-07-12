@@ -86,7 +86,6 @@ psyops_overlay_install root root 0600 etc/psyopsOS/postboot.secrets
 
 install -o root -g root -m 0755 -d "$tmp"/usr/local/sbin
 psyops_overlay_install root root 0700 usr/local/sbin/psyopsOS-mount-secret.sh
-psyops_overlay_install root root 0755 usr/local/sbin/psyopsOS-apply-update
 
 install -o root -g root -m 0755 -d "$tmp"/etc/local.d
 psyops_overlay_install root root 0755 etc/local.d/000-psyopsOS-postboot.start
