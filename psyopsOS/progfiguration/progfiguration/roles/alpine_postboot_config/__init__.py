@@ -26,13 +26,16 @@ def set_timezone(timezone: str):
     # subprocess.run(f"apk del tzdata", shell=True, check=True)
 
 
-def apply(node: PsyopsOsNode, timezone: str):
+def set_apk_repositories(node: PsyopsOsNode):
+    """Set /etc/apk/repositories
 
-    set_timezone(timezone)
-
+    Note that by default ONLY the cdrom repo exists, so we have to add even the regular main repo.
+    """
     apk_repositories_old = node.get_file_contents("/etc/apk/repositories")
     apk_repositories_new = apk_repositories_old
     add_repos = [
+        f"https://dl-cdn.alpinelinux.org/alpine/{node.alpine_release_v}/main",
+        f"https://dl-cdn.alpinelinux.org/alpine/{node.alpine_release_v}/community",
         "@edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main",
         "@edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community",
         "@edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing",
@@ -47,3 +50,10 @@ def apply(node: PsyopsOsNode, timezone: str):
         apk_repositories_new += "\n"
     node.set_file_contents("/etc/apk/repositories", apk_repositories_new, "root", "root", 0o0644)
     subprocess.run("apk update", shell=True, check=True)
+
+
+def apply(node: PsyopsOsNode, timezone: str):
+
+    set_timezone(timezone)
+
+    set_apk_repositories(node)
