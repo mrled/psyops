@@ -8,6 +8,7 @@ import subprocess
 
 from progfiguration import logger
 from progfiguration.nodes import PsyopsOsNode
+from progfiguration.roles.datadisk import is_mountpoint
 
 
 defaults = {
@@ -36,41 +37,11 @@ def mount_k3s_binds(
     for mountpoint, overlay in mounts.items():
         os.makedirs(mountpoint, mode=0o0700, exist_ok=True)
         os.makedirs(overlay, mode=0o0700, exist_ok=True)
-        try:
-            subprocess.run(["mountpoint", mountpoint], check=False, capture_output=True)
-        except subprocess.CalledProcessError:
+        if not is_mountpoint(mountpoint):
+            logger.debug(f"Mounting {overlay} on {mountpoint}")
             subprocess.run(["mount", "--bind", overlay, mountpoint], check=True)
-
-    # k3s_dir = "/var/lib/rancher/k3s"
-    # data_k3s_dir_path = f"{data_mountpoint}/{data_k3s_subpath}"
-
-    # containerd_dir = "/var/lib/containerd"
-    # data_containerd_dir_path = f"{data_mountpoint}/{data_containerd_subpath}"
-
-    # etcrancher_dir = "/etc/rancher"
-    # data_etcrancher_dir_path = f"{data_mountpoint}/{data_etcrancher_subpath}"
-
-    # # TODO: do I need to manage /var/lib/docker also?
-
-    # for directory in [
-    #     data_k3s_dir_path,
-    #     data_containerd_dir_path,
-    #     k3s_dir,
-    #     containerd_dir,
-    # ]:
-    #     os.makedirs(directory, mode=0o0700, exist_ok=True)
-
-    # mtpt_k3s = subprocess.run(f"mountpoint {k3s_dir}", shell=True, check=False, capture_output=True)
-    # if mtpt_k3s.returncode != 0:
-    #     subprocess.run(f"mount --bind '{data_k3s_dir_path}' '{k3s_dir}'", shell=True, check=True)
-
-    # mtpt_nerd = subprocess.run(f"mountpoint {containerd_dir}", shell=True, check=False, capture_output=True)
-    # if mtpt_nerd.returncode != 0:
-    #     subprocess.run(
-    #         f"mount --bind '{data_containerd_dir_path}' '{containerd_dir}'",
-    #         shell=True,
-    #         check=True,
-    #     )
+        else:
+            logger.debug(f"Not mounting {overlay} on {mountpoint}, because something is already mounted there")
 
 
 def apply(
