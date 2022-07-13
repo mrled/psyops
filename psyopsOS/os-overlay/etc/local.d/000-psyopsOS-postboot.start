@@ -6,17 +6,23 @@ if test -e /etc/psyopsOS/status/000-postboot.finished; then
 	exit 0
 fi
 
+syslog() {
+	$_priority="$1"
+	$_msg="$2"
+	logger --stderr --priority "$_priority" --tag psyopsOS-postboot "$_msg"
+}
+
 
 # Mount the psyops-secret volume
 if ! /usr/local/sbin/psyopsOS-mount-secret.sh; then
-	logger --stderr --priority user.error --tag psyopsOS-postboot "psyops-secret volume did not mount properly"
+	syslog user.error "psyops-secret volume did not mount properly"
 	# If psyops-secret doesn't mount, try to configure automatically.
 	# On systems with a single network adapter on a DHCP network, this will work.
 	# Unfortunately, it detects wlan interfaces too, which will probably never work w/o configuration (password etc),
 	# so if the machine has a wifi interface, this will probably not be useful.
 	setup-interfaces -r -a
-	logger --stderr --priority user.error --tag psyopsOS-postboot "Default DHCP network configuration added because psyops-secret volume did not mount properly"
-	logger --stderr --priority user.error --tag psyopsOS-postboot "Terminating postboot script because psyops-secret volume did not mount properly"
+	syslog user.error "Default DHCP network configuration added because psyops-secret volume did not mount properly"
+	syslog user.error "Terminating postboot script because psyops-secret volume did not mount properly"
 	exit 1
 fi
 
@@ -36,7 +42,7 @@ rc-service networking start
 rc-service ntpd start
 rc-service sshd restart
 setup-keymap us us
-logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished configuring keymap, network, hostname, mactab, ssh, etc"
+syslog user.debug "Finished configuring keymap, network, hostname, mactab, ssh, etc"
 
 . /etc/psyopsOS/postboot.secrets
 
@@ -51,16 +57,22 @@ useradd --home-dir /home/mrled --create-home --shell /bin/bash --user-group --pa
 install -o mrled -g mrled -m 0700 -d /home/mrled/.ssh
 echo "$ssh_key_mrled_haluth" >> /home/mrled/.ssh/authorized_keys
 
-logger --stderr --priority user.debug --tag psyopsOS-postboot "Added users and configured ssh keys"
+syslog user.debug "Added users and configured ssh keys"
+
+progfig_old="$(apk list -I | grep progfiguration || true)"
+syslog user.debug "Preinstalled version of progfiguration: $progfig_old"
 
 if ! grep -q "com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com" /etc/apk/repositories; then
 	echo "https://com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com/apk/psyopsOS" >> /etc/apk/repositories
 fi
 
-logger --stderr --priority user.debug --tag psyopsOS-postboot "Upgrading progfiguration..."
+syslog user.debug "Upgrading progfiguration..."
 apk upgrade progfiguration
-logger --stderr --priority user.debug --tag psyopsOS-postboot "Starting progfiguration asynchronously, will continue in background..."
+progfig_new="$(apk list -I | grep progfiguration || true)"
+syslog user.debug "Version of progfiguration after running 'apk upgrade': $progfig_new"
+
+syslog user.debug "Starting progfiguration asynchronously, will continue in background..."
 psyopsOS-progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME" &
 
 date +'%Y%m%d-%H%M%S %z' > /etc/psyopsOS/status/000-postboot.finished
-logger --stderr --priority user.debug --tag psyopsOS-postboot "Finished postboot"
+syslog user.debug "Finished postboot"
