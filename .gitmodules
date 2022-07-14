@@ -1,9 +1,6 @@
 [submodule "submod/dhd"]
 	path = submod/dhd
 	url = git@github.com:mrled/dhd.git
-[submodule "submod/wintriallab"]
-	path = submod/wintriallab
-	url = git@github.com:mrled/wintriallab.git
 [submodule "submod/fourgang"]
 	path = submod/fourgang
 	url = git@github.com:mrled/fourgang.git
