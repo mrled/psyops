@@ -4,9 +4,6 @@
 [submodule "submod/wintriallab"]
 	path = submod/wintriallab
 	url = git@github.com:mrled/wintriallab.git
-[submodule "submod/algo"]
-	path = submod/algo
-	url = git@github.com:mrled/algo.git
 [submodule "submod/fourgang"]
 	path = submod/fourgang
 	url = git@github.com:mrled/fourgang.git
