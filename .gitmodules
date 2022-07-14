@@ -7,12 +7,6 @@
 [submodule "submod/algo"]
 	path = submod/algo
 	url = git@github.com:mrled/algo.git
-[submodule "submod/architect"]
-	path = submod/architect
-	url = git@github.com:mrled/architect.git
-[submodule "submod/automata"]
-	path = submod/automata
-	url = git@github.com:mrled/automata.git
 [submodule "submod/fourgang"]
 	path = submod/fourgang
 	url = git@github.com:mrled/fourgang.git
