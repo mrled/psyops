@@ -10,7 +10,7 @@ group = Bunch(
             "timezone": "US/Central",
         },
         datadisk={
-            'wipefs_if_no_vg': True,
+            "wipefs_if_no_vg": True,
         },
     ),
 )

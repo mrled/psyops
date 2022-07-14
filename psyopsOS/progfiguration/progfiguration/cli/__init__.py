@@ -27,9 +27,7 @@ progfiguration_log_levels = [
 ]
 
 
-def broken_pipe_handler(
-    func: Callable[[List[str]], int], *arguments: List[str]
-) -> int:
+def broken_pipe_handler(func: Callable[[List[str]], int], *arguments: List[str]) -> int:
     """Handler for broken pipes
 
     Wrap the main() function in this to properly handle broken pipes

@@ -100,25 +100,24 @@ h2dHwnEJqDd2JgPb4+3gIrZTUpKTOdMvOfUVem053Yk=
 node = Bunch(
     notes="",
     motd=Bunch(
-        flavor='NEW JUTLAND: The final destination of all train graffiti. The glyphs slither down from their cars and become three-dimensional aberrations.',
+        flavor="NEW JUTLAND: The final destination of all train graffiti. The glyphs slither down from their cars and become three-dimensional aberrations.",
     ),
     pubkey="age12sdqyt4pj3luus62qklyusj4ykk5sr6wr44jhtv0q84suzg5n9vqgkhru0",
     roles=Bunch(
         datadisk={
-            'underlying_device': '/dev/mmcblk1',
-            'wipe_after_mounting': ['overlays/var-lib-flatpak/']
+            "underlying_device": "/dev/mmcblk1",
+            "wipe_after_mounting": ["overlays/var-lib-flatpak/"],
         },
         synergycontroller={
-            'secret_synergy_priv_key': synergy_private_key,
-            'secret_synergy_serial_key': synergy_serial_key,
-            'synergy_pub_key': synergy_public_key,
-            'synergy_fingerprints_local': synergy_fingerprints_local,
-            'synergy_server_screenname': 'newjutland',
-        }
+            "secret_synergy_priv_key": synergy_private_key,
+            "secret_synergy_serial_key": synergy_serial_key,
+            "synergy_pub_key": synergy_public_key,
+            "synergy_fingerprints_local": synergy_fingerprints_local,
+            "synergy_server_screenname": "newjutland",
+        },
     ),
     nics={
-        'psy0': '00:07:32:4c:eb:9a',
+        "psy0": "00:07:32:4c:eb:9a",
     },
     serial="",
 )
-

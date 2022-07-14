@@ -34,9 +34,9 @@ class SystemNode:
         <https://stackoverflow.com/questions/7150826/how-can-i-get-the-default-file-permissions-in-python>
         """
         mask = None
-        with open('/proc/self/status') as fd:
+        with open("/proc/self/status") as fd:
             for line in fd:
-                if line.startswith('Umask:'):
+                if line.startswith("Umask:"):
                     mask = int(line[6:].strip(), 8)
                     break
 
@@ -44,7 +44,6 @@ class SystemNode:
             raise Exception("Could not find umask, lol")
 
         return mask
-
 
     def get_file_contents(self, path: str, chomp=True, refresh=False):
         """Retrieve file contents

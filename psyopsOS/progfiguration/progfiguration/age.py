@@ -20,6 +20,6 @@ def decrypt(value: str, privkey_path: str):
         ["age", "--decrypt", "--identity", privkey_path],
         input=value.encode(),
         check=True,
-        capture_output=True
+        capture_output=True,
     )
     return proc.stdout.decode()

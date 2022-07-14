@@ -3,7 +3,6 @@
 
 import argparse
 import json
-import logging.handlers
 import re
 import subprocess
 import sys
@@ -32,7 +31,9 @@ def main(*arguments):
         help="Log level to send to syslog. Defaults to INFO. NONE to disable.",
     )
     parser.add_argument(
-        "--progress", help="Show dd progress (requires GNU dd)", action='store_true',
+        "--progress",
+        help="Show dd progress (requires GNU dd)",
+        action="store_true",
     )
 
     parser.add_argument("isopath", help="The path to a new ISO image containing psyopsOS")
@@ -43,11 +44,13 @@ def main(*arguments):
         sys.excepthook = idb_excepthook
     configure_logging(parsed.log_stderr, parsed.log_syslog)
 
-    lsblk_proc = subprocess.run(["lsblk", "--output", "PATH,LABEL,MOUNTPOINT", "--json"], check=True, capture_output=True)
+    lsblk_proc = subprocess.run(
+        ["lsblk", "--output", "PATH,LABEL,MOUNTPOINT", "--json"], check=True, capture_output=True
+    )
     lsblk = json.loads(lsblk_proc.stdout)
 
     bootmedia = None
-    for device in lsblk['blockdevices']:
+    for device in lsblk["blockdevices"]:
         # Look for the iso9660 volume ID that starts with psyopsos-boot.
         # This value is set in our override in mkimage.zzz-overrides.sh.
         label = device.get("label", "") or ""
@@ -57,7 +60,7 @@ def main(*arguments):
         # Make sure we find the main device, not a partition.
         # If the USB drive is /dev/sdq, then lsblk will see that both /dev/sdq and /dev/sdq1 have our volume ID.
         devpath = device.get("path", "") or ""
-        if not devpath or not re.match(f'^/dev/[a-zA-Z]+$', devpath):
+        if not devpath or not re.match(f"^/dev/[a-zA-Z]+$", devpath):
             continue
 
         bootmedia = device
@@ -69,7 +72,7 @@ def main(*arguments):
     if mtpt_modloop.returncode == 0:
         subprocess.run(f"umount /.modloop", shell=True, check=True)
 
-    if bootmedia['mountpoint']:
+    if bootmedia["mountpoint"]:
         subprocess.run(f"umount {bootmedia['mountpoint']}", shell=True, check=True)
 
     ddcmd = ["dd"]

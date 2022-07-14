@@ -1,6 +1,5 @@
 """The progfiguration inventory"""
 
-import os
 from importlib.resources import files as importlib_resources_files
 
 
@@ -75,7 +74,6 @@ class Inventory:
         return self.function_roles[self.node_function[nodename]]
 
 
-# _inventory_file = os.path.join(os.path.dirname(__file__), "inventory.yml")
 _inventory_file = importlib_resources_files("progfiguration.inventory").joinpath("inventory.yml")
 
 inventory = Inventory(_inventory_file)

@@ -9,6 +9,7 @@ def getversion():
 
     try:
         from progfiguration import build_version
+
         return build_version.VERSION
     except ImportError:
         pass
@@ -21,7 +22,9 @@ def getversion():
         git_revision = None
 
     if not git_revision:
-        raise Exception(f"Detected neither build_version.py module or git repository; not sure how to determine version")
+        raise Exception(
+            f"Detected neither build_version.py module or git repository; not sure how to determine version"
+        )
 
     try:
         subprocess.run(["git", "diff", "--quiet"], check=True, capture_output=True, cwd=parent)

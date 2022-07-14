@@ -19,10 +19,10 @@ defaults = {
     # Anything path relative to the mountpoint in this list is wiped after mounting.
     # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
     # If the filesystem is already mounted, nothing is removed.
-    "wipe_after_mounting": ['scratch'],
+    "wipe_after_mounting": ["scratch"],
 }
 
-appends = ['wipe_after_mounting']
+appends = ["wipe_after_mounting"]
 
 
 def is_mountpoint(path: str) -> bool:

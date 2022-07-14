@@ -78,7 +78,9 @@ def apply(
     subprocess.run("rc-service containerd start", shell=True, check=True)
 
     if not start_k3s:
-        logger.info("start_k3s was False, not starting k3s or cgroups. If you are setting up a new cluster, refer to the psyopsOS/docs/kubernasty.md documentation")
+        logger.info(
+            "start_k3s was False, not starting k3s or cgroups. If you are setting up a new cluster, refer to the psyopsOS/docs/kubernasty.md documentation"
+        )
         return
 
     logger.info("Starting k3s...")

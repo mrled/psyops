@@ -12,7 +12,7 @@ node = Bunch(
         },
     ),
     nics={
-        'psy0': 'd8:9e:f3:90:cd:98',
+        "psy0": "d8:9e:f3:90:cd:98",
     },
     serial="J4S0WP2",
 )

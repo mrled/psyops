@@ -1,10 +1,7 @@
 """Configure Alpine after its boot scripts"""
 
-import json
-import os
 import shutil
 import subprocess
-import textwrap
 
 from progfiguration.nodes import PsyopsOsNode
 
@@ -16,7 +13,7 @@ def set_timezone(timezone: str):
     subprocess.run(f"apk add tzdata", shell=True, check=True)
 
     shutil.copyfile(f"/usr/share/zoneinfo/{timezone}", "/etc/localtime")
-    with open(f"/etc/timezone", 'w') as tzfp:
+    with open(f"/etc/timezone", "w") as tzfp:
         tzfp.write(timezone)
 
     subprocess.run("rc-service ntpd restart", shell=True, check=True)

@@ -3,13 +3,18 @@
 import argparse
 import importlib
 import logging
-import logging.handlers
 import pdb
 import sys
 from typing import List
 
 from progfiguration import age, version
-from progfiguration.cli import broken_pipe_handler, configure_logging, idb_excepthook, progfiguration_log_levels, syslog_excepthook
+from progfiguration.cli import (
+    broken_pipe_handler,
+    configure_logging,
+    idb_excepthook,
+    progfiguration_log_levels,
+    syslog_excepthook,
+)
 from progfiguration.inventory import inventory
 from progfiguration.inventory.groups import universal
 from progfiguration.nodes import PsyopsOsNode
@@ -87,7 +92,9 @@ def action_apply(nodename: str, strace_before_applying: bool = False):
             if vname.startswith("secret_"):
                 nonsecret_vname = vname[7:]
                 if vname in appendvars or nonsecret_vname in appendvars:
-                    raise Exception(f"The var {nonsecret_vname} is an append-only variable, but at least one of the role, group, or node values for it is secret, which is not currently supported. TODO: support this.")
+                    raise Exception(
+                        f"The var {nonsecret_vname} is an append-only variable, but at least one of the role, group, or node values for it is secret, which is not currently supported. TODO: support this."
+                    )
                 # TODO: don't hard code key path here
                 decrypted_vvalue = age.decrypt(vvalue, "/mnt/psyops-secret/mount/age.key")
                 decrypted_rolevars[nonsecret_vname] = decrypted_vvalue
@@ -196,7 +203,11 @@ def parseargs(arguments: List[str]):
 
     sub_apply = subparsers.add_parser("apply", description="Apply configuration")
     sub_apply.add_argument("nodename", help="The name of a node in the progfiguration inventory")
-    sub_apply.add_argument("--strace-before-applying", action="store_true", help="Do not actually apply the role. Instead, launch a debugger. Intended for development.")
+    sub_apply.add_argument(
+        "--strace-before-applying",
+        action="store_true",
+        help="Do not actually apply the role. Instead, launch a debugger. Intended for development.",
+    )
 
     sub_list = subparsers.add_parser("list", description="List inventory items")
     list_choices = ["nodes", "groups", "functions", "svcpreps"]
