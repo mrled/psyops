@@ -121,7 +121,6 @@ RUN true \
         py3-yaml \
         ripgrep ripgrep-bash-completion ripgrep-doc \
         rsync rsync-doc \
-        # For usermod. Native busybox has 'adduser' for more standard 'useradd', but there is no 'usermod' equivalent
         shadow shadow-doc \
         sqlite sqlite-doc \
         strace strace-doc \
@@ -233,7 +232,8 @@ RUN true \
     # && addgroup -g "$PSYOPS_GID" "$groupname" \
     && echo "${groupname}:x:${PSYOPS_GID}:" >> /etc/group \
     && adduser -D -G "$groupname" -u "$PSYOPS_UID" -s /bin/bash "$username" \
-    && usermod --append --groups timekeeper "$username" \
+    && adduser "$username" abuild \
+    && adduser "$username" timekeeper \
     #
     && true
 
