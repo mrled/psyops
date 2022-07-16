@@ -76,6 +76,7 @@ RUN true \
         # For calculating a bcrypt password with htpasswd
         apache2-utils \
         alpine-sdk \
+        apk-tools-doc \
         bash bash-doc \
         black \
         # For dig
