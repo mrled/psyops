@@ -1,12 +1,56 @@
 """Configure Alpine after its boot scripts"""
 
+import os.path
+import pwd
+import re
 import shutil
 import subprocess
+from typing import List
 
 from progfiguration.nodes import PsyopsOsNode
 
 
 defaults = {}
+
+
+_users = [
+    {
+        "name": "mrled",
+        "password": r"$6$123$AYzXO51WqiIiN0TbNAhGsCru1.tid3VGQmAdfFRz8NajosFP73tF7Btq4huF82nMDDQ0arcNnmcZ6KYiuvqje/",
+        "pubkeys": [
+            r"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS",
+        ],
+        "shell": "/bin/bash",
+    }
+]
+
+
+def configure_user(node: PsyopsOsNode, name: str, password: str, pubkeys: List[str], shell=None):
+    exists = False
+    with open("/etc/passwd") as fp:
+        for line in fp.readlines():
+            if line and re.match(f"{name}:", line):
+                exists = True
+                break
+    if not exists:
+        cmd = ["useradd", "--create-home", "--user-group", "--password", password]
+        if shell:
+            cmd += ["--shell", shell]
+        cmd += [name]
+        subprocess.run(cmd, check=True)
+    if pubkeys:
+        authkeys = os.path.expanduser(f"~{name}/.ssh/authorized_keys")
+        pw = pwd.getpwnam(name)
+        if os.path.exists(authkeys):
+            authkeys_contents = node.get_file_contents(authkeys)
+            authkeys_appends = []
+            for pubkey in pubkeys:
+                if pubkey not in authkeys_contents:
+                    authkeys_appends.append(pubkey)
+            authkeys_contents += "\n".join(authkeys_appends)
+            node.set_file_contents(authkeys_contents)
+        else:
+            node.set_file_contents(authkeys, "\n".join(pubkeys), name, pw.pw_gid, 0o0600, 0o0700)
 
 
 def set_timezone(timezone: str):
@@ -54,3 +98,6 @@ def apply(node: PsyopsOsNode, timezone: str):
     set_timezone(timezone)
 
     set_apk_repositories(node)
+
+    for user in _users:
+        configure_user(node, **user)

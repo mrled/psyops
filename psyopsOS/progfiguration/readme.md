@@ -13,6 +13,14 @@ To build, run `invoke progfiguration-abuild` in the parent directory.
 
 To deploy the repo to S3 (so that nodes can download it), run `invoke progfiguration-abuild deploy` in the parent directory.
 
+## Relationship to psyopsOS
+
+psyopsOS is an Alpine-based distribution that uses progfiguration,
+but progfiguration might be used to configure non-psyopsOS distributions in the future.
+There is a separate package, `psyopsOS-base`, for stuff that should be psyopsOS-specific.
+
+TODO: Move the apply-update command to the `psyopsOS-base` package.
+
 ## Commands
 
 progfiguration installs these commands:

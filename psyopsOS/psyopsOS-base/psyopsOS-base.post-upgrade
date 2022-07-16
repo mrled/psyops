@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+/usr/sbin/psyopsOS-base-setup.sh

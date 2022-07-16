@@ -1,0 +1,20 @@
+pkgname=psyopsOS-base
+pkgver=$version
+pkgrel=0
+pkgdesc="Configuration of the psyopsOS base"
+url="https://github.com/mrled/psyops"
+arch="all"
+license="WTFPL"
+options="!check"
+install="$$pkgname.post-install $$pkgname.post-upgrade"
+source="psyopsOS-base-setup.sh"
+builddir="$$srcdir/build"
+
+package() {
+	mkdir -p "$$pkgdir"
+	cd "$$pkgdir"
+	install -m0755 -d usr/sbin
+	install -m0700 \
+		"$$srcdir"/psyopsOS-base-setup.sh \
+		"$$pkgdir"/usr/sbin
+}

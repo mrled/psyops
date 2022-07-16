@@ -1,28 +1,32 @@
 #!/bin/sh
 set -eu
 
+rundate="$(date +%Y%m%d-%H%M%S)"
+exec >"/var/log/postboot.$rundate"
+exec 2>&1
+
 if test -e /etc/psyopsOS/status/000-postboot.finished; then
-	logger --stderr --priority user.info --tag psyopsOS-postboot "psyopsOS postboot has already run once, nothing to do"
+	echo "psyopsOS postboot has already run once, nothing to do"
 	exit 0
 fi
 
-syslog() {
-	$_priority="$1"
-	$_msg="$2"
-	logger --stderr --priority "$_priority" --tag psyopsOS-postboot "$_msg"
+dying_breath() {
+	_exitcode="$1"
+	_line="$2"
+	echo "Script exiting with error $_exitcode on line $_line"
 }
-
+trap 'dying_breath $? $LINENO' ERR
 
 # Mount the psyops-secret volume
 if ! /usr/local/sbin/psyopsOS-mount-secret.sh; then
-	syslog user.error "psyops-secret volume did not mount properly"
+	echo "psyops-secret volume did not mount properly"
 	# If psyops-secret doesn't mount, try to configure automatically.
 	# On systems with a single network adapter on a DHCP network, this will work.
 	# Unfortunately, it detects wlan interfaces too, which will probably never work w/o configuration (password etc),
 	# so if the machine has a wifi interface, this will probably not be useful.
 	setup-interfaces -r -a
-	syslog user.error "Default DHCP network configuration added because psyops-secret volume did not mount properly"
-	syslog user.error "Terminating postboot script because psyops-secret volume did not mount properly"
+	echo "Default DHCP network configuration added because psyops-secret volume did not mount properly"
+	echo "Terminating postboot script because psyops-secret volume did not mount properly"
 	exit 1
 fi
 
@@ -35,44 +39,38 @@ ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key > /etc/ssh/ssh_host_ed25519_key.p
 chown root:root /etc/ssh/ssh_host_ed25519_key.pub
 chmod 0644 /etc/ssh/ssh_host_ed25519_key.pub
 setup-interfaces -i < "$PSYOPSOS_INTERFACES"
-rc-service hostname restart
+
+# We want to 'rc-service hostname restart',
+# but that (sometimes?) causes syslog to restart,
+# and that sometimes has errors like
+#     * Call to flock failed: Resource temporarily unavailable
+#     * ERROR: networking stopped by something else
+# So instead we do them separately and that doesn't seem to trigger that?
+# I also switch to not having THIS script log to syslog,
+# maybe that is helping too?
+# idk man
+hostname -F /etc/hostname
+rc-service syslog restart
+
 rc-service networking stop
 nameif -s
 rc-service networking start
 rc-service ntpd start
 rc-service sshd restart
 setup-keymap us us
-syslog user.debug "Finished configuring keymap, network, hostname, mactab, ssh, etc"
+echo "Finished configuring keymap, network, hostname, mactab, ssh, etc"
 
-. /etc/psyopsOS/postboot.secrets
-
-ssh_key_mrled_haluth='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMN/4Rdkz4vlGaQRvhmhLhkaH0CfhNnoggGBBknz17+u mrled@haluth.local'
-ssh_key_psyops='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS'
-
-usermod --password "$ROOTPASSWD" root
-install -o root -g root -m 0700 -d /root/.ssh
-echo "$ssh_key_psyops" >> /root/.ssh/authorized_keys
-
-useradd --home-dir /home/mrled --create-home --shell /bin/bash --user-group --password "$MRLEDPASSWD" mrled
-install -o mrled -g mrled -m 0700 -d /home/mrled/.ssh
-echo "$ssh_key_mrled_haluth" >> /home/mrled/.ssh/authorized_keys
-
-syslog user.debug "Added users and configured ssh keys"
 
 progfig_old="$(apk list -I progfiguration)"
-syslog user.debug "Preinstalled version of progfiguration: $progfig_old"
-
-if ! grep -q "com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com" /etc/apk/repositories; then
-	echo "https://com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com/apk/psyopsOS" >> /etc/apk/repositories
-fi
-
-syslog user.debug "Upgrading progfiguration..."
+echo "Preinstalled version of progfiguration: $progfig_old"
+echo "Upgrading progfiguration..."
 apk upgrade progfiguration
 progfig_new="$(apk list -I progfiguration)"
-syslog user.debug "Version of progfiguration after running 'apk upgrade': $progfig_new"
+echo "Version of progfiguration after running 'apk upgrade': $progfig_new"
 
-syslog user.debug "Starting progfiguration asynchronously, will continue in background..."
+
+echo "Starting progfiguration asynchronously, will continue in background..."
 psyopsOS-progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME" &
 
 date +'%Y%m%d-%H%M%S %z' > /etc/psyopsOS/status/000-postboot.finished
-syslog user.debug "Finished postboot"
+echo "Finished postboot"

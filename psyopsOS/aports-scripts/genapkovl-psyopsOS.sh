@@ -58,6 +58,8 @@ install -o root -g root -m 0755 -d "$tmp"/var/psyopsOS
 
 install -o root -g root -m 0755 -d "$tmp"/etc/apk
 psyops_overlay_install root root 0644 etc/apk/world
+install -o root -g root -m 0755 -d "$tmp"/etc/apk/repositories.d
+psyops_overlay_install root root 0644 etc/apk/repositories.d/psyopsOS.list
 install -o root -g root -m 0755 -d "$tmp"/etc/apk/keys
 psyops_overlay_install root root 0644 etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub
 
@@ -81,8 +83,6 @@ makefile root:root 0644 "$tmp"/etc/psyopsOS/iso.json <<EOF
 	}
 }
 EOF
-
-psyops_overlay_install root root 0600 etc/psyopsOS/postboot.secrets
 
 install -o root -g root -m 0755 -d "$tmp"/usr/local/sbin
 psyops_overlay_install root root 0700 usr/local/sbin/psyopsOS-mount-secret.sh

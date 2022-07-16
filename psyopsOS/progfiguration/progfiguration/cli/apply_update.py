@@ -31,8 +31,8 @@ def main(*arguments):
         help="Log level to send to syslog. Defaults to INFO. NONE to disable.",
     )
     parser.add_argument(
-        "--progress",
-        help="Show dd progress (requires GNU dd)",
+        "--no-progress",
+        help="By default, it shows progress, which requires coreutils dd. With this flag, BusyBox dd will work instead, but you will get no progress as the file is written.",
         action="store_true",
     )
 
@@ -76,7 +76,7 @@ def main(*arguments):
         subprocess.run(f"umount {bootmedia['mountpoint']}", shell=True, check=True)
 
     ddcmd = ["dd"]
-    if parsed.progress:
+    if not parsed.no_progress:
         ddcmd += ["status=progress"]
     ddcmd += [f"if={parsed.isopath}", f"of={bootmedia['path']}"]
     subprocess.run(ddcmd, check=True)

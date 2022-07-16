@@ -2,17 +2,14 @@
 
 import datetime
 import glob
-import json
 import os
 import pdb
-import re
 import shutil
 import string
-import subprocess
 import sys
-import textwrap
+import time
 import traceback
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, NamedTuple
 
 import boto3
 import invoke
@@ -44,6 +41,7 @@ docker_builder_volname_workdir = "psyopsos-build-workdir"
 staticdir = os.path.join(basedir, "static")
 psyopsos_key = os.path.join(basedir, "minisign.seckey")
 progfiguration_dir = os.path.join(basedir, "progfiguration")
+psyopsOS_base_dir = os.path.join(basedir, "psyopsOS-base")
 
 # Output configuration
 sitedir = os.path.join(basedir, "public")
@@ -52,6 +50,9 @@ site_psyopsos_dir_nodes = os.path.join(site_psyopsos_dir, "nodes")
 site_psyopsos_dir_tags = os.path.join(site_psyopsos_dir, "tags")
 site_psyopsos_dir_global = os.path.join(site_psyopsos_dir, "global.json")
 site_bucket = "com-micahrl-psyops-http-bucket"
+
+# When inside the psyops container, the path to the public/ directory's apk repository
+incontainer_apks_path = "/psyops/psyopsOS/public/apk"
 
 
 def s3_upload_directory(directory, bucketname):
@@ -97,42 +98,23 @@ def progfiguration_abuild(ctx):
     Sign with the psyopsOS key.
     """
     versionfile = os.path.join(progfiguration_dir, "progfiguration", "build_version.py")
-    version = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.0")
+    # version = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.0")
+    epochsecs = int(time.time())
+    version = f"1.0.{epochsecs}"
 
-    apkbuild_template = string.Template(textwrap.dedent("""\
-        pkgname="progfiguration"
-        _pyname="progfiguration"
-        maintainer="Micah R Ledbetter <psyops@micahrl.com>"
-        pkgver="$version"
-        pkgrel=0
-        pkgdesc="Programmatic configuration of hosts"
-        options="!check" # No tests, yolo
-        url="https://github.com/mrled/psyops"
-        arch="noarch"
-        license="WTFPL"
-        depends="python3 py3-requests py3-tz py3-yaml"
-        makedepends="py3-build py3-setuptools py3-wheel"
-
-        build() {
-            python3 -m build --no-isolation --wheel
-        }
-
-        package() {
-            python3 -m installer -d "$$pkgdir" dist/$$_pyname-$$pkgver-py3-none-any.whl
-        }
-        """)
-    )
+    with open(f"{progfiguration_dir}/APKBUILD.template") as fp:
+        apkbuild_template = string.Template(fp.read())
     apkbuild_contents = apkbuild_template.substitute(version=version)
     apkbuild_path = os.path.join(progfiguration_dir, "APKBUILD")
 
     # Place the apk repo inside the public dir
     # This means that 'invoke deploy' will copy it
-    build_cmd = "abuild -P /psyops/psyopsOS/public/apk -D psyopsOS"
+    build_cmd = f"abuild -P {incontainer_apks_path} -D psyopsOS"
 
     try:
-        with open(versionfile, 'w') as vfd:
+        with open(versionfile, "w") as vfd:
             vfd.write(f"VERSION = '{version}'\n")
-        with open(apkbuild_path, 'w') as afd:
+        with open(apkbuild_path, "w") as afd:
             afd.write(apkbuild_contents)
         print("Running build in progfiguration directory...")
         with ctx.cd(progfiguration_dir):
@@ -149,7 +131,43 @@ def progfiguration_abuild(ctx):
         except:
             failed = True
         if failed:
-            raise Exception(f"When trying to remove version file and/or ABKBUILD, got an exception. Manually remove these two files, if they exist: {versionfile}, {apkbuild_path}")
+            raise Exception(
+                f"When trying to remove version file and/or ABKBUILD, got an exception. Manually remove these two files, if they exist: {versionfile}, {apkbuild_path}"
+            )
+
+
+@invoke.task
+def psyopsOS_base_abuild(ctx):
+    """Build the psyopsOS-base Python package as an Alpine package. Must be run from the psyops container.
+
+    Sign with the psyopsOS key.
+    """
+    epochsecs = int(time.time())
+    version = f"1.0.{epochsecs}"
+
+    with open(f"{psyopsOS_base_dir}/APKBUILD.template") as fp:
+        apkbuild_template = string.Template(fp.read())
+    apkbuild_contents = apkbuild_template.substitute(version=version)
+    apkbuild_path = os.path.join(psyopsOS_base_dir, "APKBUILD")
+
+    # Place the apk repo inside the public dir
+    # This means that 'invoke deploy' will copy it
+    build_cmd = f"abuild -P {incontainer_apks_path} -D psyopsOS"
+
+    try:
+        with open(apkbuild_path, "w") as afd:
+            afd.write(apkbuild_contents)
+        print("Running build in progfiguration directory...")
+        with ctx.cd(psyopsOS_base_dir):
+            ctx.run("abuild checksum")
+            ctx.run(build_cmd)
+    finally:
+        try:
+            os.unlink(apkbuild_path)
+        except:
+            raise Exception(
+                f"When trying to remove ABKBUILD, got an exception. Manually remove: {apkbuild_path}"
+            )
 
 
 def osflavorinfo(flavorname):
@@ -159,8 +177,8 @@ def osflavorinfo(flavorname):
     It must be built on an aarch64 host, which I haven't bothered to configure.
     """
     osflavors = {
-        'pc': ["psyopsOS", "x86_64"],
-        'rpi': ["psyopsOS_rpi", "aarch64"],
+        "pc": ["psyopsOS", "x86_64"],
+        "rpi": ["psyopsOS_rpi", "aarch64"],
     }
     if flavorname not in osflavors.keys():
         print(f"The os flavor must be one of: {osflavors.keys()}")
@@ -262,7 +280,7 @@ def mkimage_clean(ctx, indocker, workdir):
 @invoke.task
 def mkimage(
     ctx,
-    osflavor='pc',
+    osflavor="pc",
     alpinetag="0x001",
     aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
     workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),

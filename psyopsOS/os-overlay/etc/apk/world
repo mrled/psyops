@@ -4,6 +4,7 @@ bash
 bind-tools
 busybox
 ca-certificates
+coreutils
 curl
 file
 git
@@ -16,6 +17,7 @@ minisign
 openssh
 pciutils
 progfiguration
+psyopsOS-base
 python3
 ripgrep
 shadow
