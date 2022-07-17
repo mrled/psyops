@@ -19,14 +19,11 @@ psyopsOS is an Alpine-based distribution that uses progfiguration,
 but progfiguration might be used to configure non-psyopsOS distributions in the future.
 There is a separate package, `psyopsOS-base`, for stuff that should be psyopsOS-specific.
 
-TODO: Move the apply-update command to the `psyopsOS-base` package.
-
 ## Commands
 
 progfiguration installs these commands:
 
 - `psyopsOS-progfiguration`: Run progfiguration against localhost, and perform some ancillary tasks like per-host encryption
-- `psyopsOS-apply-update`: Write a new version of the ISO image to the boot media
 
 ## Adding the psyopsOS repo and installing progfiguration on a host that isn't configured properly
 

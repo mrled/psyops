@@ -1,14 +1,23 @@
 pkgname=psyopsOS-base
+maintainer="Micah R Ledbetter <psyops@micahrl.com>"
 pkgver=$version
 pkgrel=0
 pkgdesc="Configuration of the psyopsOS base"
 url="https://github.com/mrled/psyops"
-arch="all"
+arch="noarch"
 license="WTFPL"
 options="!check"
 install="$$pkgname.post-install $$pkgname.post-upgrade"
-source="psyopsOS-base-setup.sh"
+source="
+	psyops@micahrl.com-62ca1973.rsa.pub
+	psyopsOS.list
+	psyopsOS-base-setup.sh
+	psyopsOS-write-bootmedia
+"
 builddir="$$srcdir/build"
+
+# coreutils dd has status=progress
+depends="python3 coreutils"
 
 package() {
 	mkdir -p "$$pkgdir"
@@ -16,5 +25,9 @@ package() {
 	install -m0755 -d usr/sbin
 	install -m0700 \
 		"$$srcdir"/psyopsOS-base-setup.sh \
+		"$$srcdir"/psyopsOS-write-bootmedia \
 		"$$pkgdir"/usr/sbin
+	install -m0755 -d etc/apk/repositories.d etc/apk/keys
+	install -m0644 "$$srcdir"/psyops@micahrl.com-62ca1973.rsa.pub "$$pkgdir"/etc/apk/keys
+	install -m0644 "$$srcdir"/psyopsOS.list "$$pkgdir"/etc/apk/repositories.d
 }

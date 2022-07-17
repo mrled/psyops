@@ -58,10 +58,6 @@ install -o root -g root -m 0755 -d "$tmp"/var/psyopsOS
 
 install -o root -g root -m 0755 -d "$tmp"/etc/apk
 psyops_overlay_install root root 0644 etc/apk/world
-install -o root -g root -m 0755 -d "$tmp"/etc/apk/repositories.d
-psyops_overlay_install root root 0644 etc/apk/repositories.d/psyopsOS.list
-install -o root -g root -m 0755 -d "$tmp"/etc/apk/keys
-psyops_overlay_install root root 0644 etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub
 
 install -o root -g root -m 0755 -d "$tmp"/etc/ssh
 psyops_overlay_install root root 0644 etc/ssh/sshd_config

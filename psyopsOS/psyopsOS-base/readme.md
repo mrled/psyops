@@ -20,3 +20,31 @@ but modifying a base file, like /etc/shadow, is not possible from genapkovl.
 When installed in psyopsOS,
 it maybe installed after this package,
 so we do not depend on it here.
+
+## Installing on old or broken psyopsOS systems
+
+To get psyopsOS-base and progfiguration on an older or broken psyopsOS system,
+try this.
+
+```sh
+mkdir -p /etc/apk/keys /etc/apk/repositories.d
+
+cat > /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub  <<EOF
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApzwpOtJbg8G3JkDI+24H
+JeQlMvvPVhlP2AEZjERorXHpMFHgJdfvnGuYOISsznkc0pTfYF1W7aYa8PBoRfBk
+Fz2PLKAQjqtpZe5hXm792pdVvW05/0Wsy53qacRxspHcHgkH4M1FqUEvdfzurXvP
+dstUSFtIxAwbtrObY/R1X62RzVVOeQ1vM5yrkhkTtF8JTdDX1DX5EZL7KM/VsOkc
+tXad6c4HeXLMEDrzCPqPvO8KycBV5HxXIxd6CHbNnY20A5OcqvqWUffEFXrvLaYO
+VD+LEhUQfEN4Xaj0nOUeLyDKh7bidgMuOsllATNSbTYpoRMe8fyQQtzfvIfTa0oj
+mwIDAQAB
+-----END PUBLIC KEY-----
+EOF
+
+echo 'https://com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com/apk/psyopsOS' > /etc/apk/repositories.d/psyopsOS.list
+apk update
+apk add psyopsOS-base progfiguration
+```
+
+This is useful so you can upgrade parts of the old system without rebooting,
+and also so you can get the latest version of scripts like `psyopsOS-write-bootmedia`.
