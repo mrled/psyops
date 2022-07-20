@@ -50,29 +50,16 @@ invoke --list
 
 ## To do
 
-- Configure more complex stuff after boot.
-    - Tailscale
-    - The data storage for the system at /data or whatever
-    - k3s
-- How to configure post boot? TODO: document this in a separate file
-    - Should this be Ansible?
-    - Maybe it should be simple shell scripts? Ansible is so slow...
-    - What kind of server will it need?
-    - I'd like this to be a simple object store, so I could put it anywhere on HTTP/S3 and be able to move it wherever I want
-    - Maybe something like a `psyops.micahrl.com/postboot.json` page that contains a dict of nodename:instructions paired, built by hand maybe, or with a SSG.
-    - Encrypt the instructions per host so that the host can be sure that instructions it gets over the network are trustworthy
-    - Instructions could be location of a script to download and run, or a tarball to download/extract/run some specific script from. In either case, it would also be encrypted.
 - Make an update mechanism
     - Service that checks for OS updates once/day or something, maybe via similar method like `psyops.micahrl.com/os-update.json`
     - If there's an update, download it to a temp dir, and overwrite the USB drive that contains the OS with it. I hope u tested it!
     - In a real environment, you'd want an atomic update, but I'm not going to make that here.
     - In a real environment, you'd want the ability to roll back too.
-- Build apks for scripts that are now in the apkovl
-    - This will mean I can install them at ISO build time, but also update them at boot time
-    - Also build progfiguration as an apk?
-    - If I do that, I might not need minisign at all? I could use apk signing keys instead.
+- Private networking
+    - Wireguard? This would be really nice. Would require a maintained server :/
+    - Tor for management from anywhere. Punch thru NATs or whatever, no worry about a wireguard server. Need to keep a list of all public keys for all nodes, same way I do now for age keys.
+    - A Tor for all networking mode. Could implement as a role in progfiguration, but better to do as a different flavor of ISO, so that it is up before anything uses the network at all.
 - Misc
-    - It regenerates SSH host keys on each boot, which takes a minute; can we avoid this somehow? (Or only generate one pair?)
-        - I think the answer is to geneate SSH host keys on the psyops-secret volume.
-        - Mount psyops-secret early. Either include it in fstab, or make a service do it very early in boot. Do NOT fail boot if it doesn't exist.
-        - Create an openrc service that copies the SSH key to the right location if psyops-secret was mounted. Generate keys if psyops-secret wasn't mounted.
+    - Use `AuthorizedKeysCommand` as described [in this GH issue](https://github.com/coreos/afterburn/issues/157) to support an `authorized_keys.d` directory (maybe named so as not to conflict with a possible future support of this, like `psyopsos_authorized_keys.d`.) This would make psyopsOS-base's installation of root SSH keys easier and less error prone.
+    - Run a daemon to share non-secret info like ISO generation time, installed version of important packages, postboot log.
+    - Better host for the apk repos than S3. Swear to god, how do you make something called "amazon web services" with a service that stores files and require a fucking PhD to connect those two over HTTPS.
