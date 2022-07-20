@@ -5,10 +5,14 @@
 
 import os
 import subprocess
+from importlib.resources import files as importlib_resources_files
 
 from progfiguration import logger
 from progfiguration.nodes import PsyopsOsNode
 from progfiguration.roles.datadisk import is_mountpoint
+
+
+module_files = importlib_resources_files("progfiguration.roles.k3s")
 
 
 defaults = {
@@ -65,6 +69,14 @@ def apply(
     packages = " ".join(package_list)
 
     subprocess.run(f"apk add {packages}", shell=True, check=True)
+
+    node.cp(
+        module_files.joinpath("k3s-killall.sh"),
+        "/usr/local/sbin/k3s-killall.sh",
+        owner="root",
+        group="root",
+        mode=0o0755,
+    )
 
     # ... wtf
     # I'm not crazy though, this is a step that is listed here too

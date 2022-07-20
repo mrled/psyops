@@ -9,7 +9,6 @@ node = Bunch(
     roles=Bunch(
         k3s={
             "start_k3s": True,
-            "kube_vip_interface": "eth1",
         },
     ),
     nics={
