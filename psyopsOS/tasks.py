@@ -372,7 +372,7 @@ def mkimage(
         "--repository",
         "/home/build/psyops/psyopsOS/public/apk/psyopsOS",
         "--repository",
-        "https://com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com/apk/psyopsOS",
+        "https://psyops.micahrl.com/apk/psyopsOS",
         "--workdir",
         "/home/build/workdir",
         "--profile",

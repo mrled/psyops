@@ -44,8 +44,8 @@ mwIDAQAB
 -----END PUBLIC KEY-----
 EOF
 
-if ! grep -q "com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com" /etc/apk/repositories; then
-    echo "https://com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com/apk/psyopsOS" >> /etc/apk/repositories
+if ! grep -q "psyops.micahrl.com" /etc/apk/repositories; then
+    echo "https://psyops.micahrl.com/apk/psyopsOS" >> /etc/apk/repositories
 fi
 
 apk update

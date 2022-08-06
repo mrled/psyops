@@ -41,7 +41,7 @@ mwIDAQAB
 -----END PUBLIC KEY-----
 EOF
 
-echo 'https://com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com/apk/psyopsOS' > /etc/apk/repositories.d/psyopsOS.list
+echo 'https://psyops.micahrl.com/apk/psyopsOS' > /etc/apk/repositories.d/psyopsOS.list
 apk update
 apk add psyopsOS-base progfiguration
 ```

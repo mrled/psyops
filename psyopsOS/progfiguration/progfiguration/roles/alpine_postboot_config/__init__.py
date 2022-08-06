@@ -80,7 +80,7 @@ def set_apk_repositories(node: PsyopsOsNode):
         "@edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main",
         "@edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community",
         "@edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing",
-        "https://com-micahrl-psyops-http-bucket.s3.us-east-2.amazonaws.com/apk/psyopsOS",
+        "https://psyops.micahrl.com/apk/psyopsOS",
     ]
     for repo in add_repos:
         if repo not in apk_repositories_old:
