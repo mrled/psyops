@@ -5,6 +5,8 @@
 #
 # Create an IAM user, but don't create any security keys.
 # We assume that is done in the AWS web console.
+#
+# The record for psyops_http_bucket_domain is created separately in a CloudFormation template
 
 locals {
   psyops_http_bucket_domain = "psyops.micahrl.com"
@@ -12,6 +14,7 @@ locals {
   psyops_http_bucket_deployer_policy_name = "com-micahrl-psyops-http-bucket-deployer-policy"
   psyops_http_bucket_deployer_group_name = "com-micahrl-psyops-http-bucket-deployers"
   psyops_http_bucket_deployer_user_name = "com-micahrl-psyops-http-bucket-deployer"
+  origin_zone_id = "Z3HVGWA7OSS1TK" # the micahrl.com root zone
 }
 
 resource "aws_s3_bucket" "psyops_http_bucket" {
@@ -31,15 +34,6 @@ resource "aws_s3_bucket_website_configuration" "psyops_http_bucket_website_confi
   error_document {
     key = "error.html"
   }
-
-  # routing_rule {
-  #   condition {
-  #     key_prefix_equals = "docs/"
-  #   }
-  #   redirect {
-  #     replace_key_prefix_with = "documents/"
-  #   }
-  # }
 }
 
 resource "aws_s3_bucket_policy" "psyops_http_bucket_website_site_policy" {
@@ -69,7 +63,6 @@ resource "aws_s3_bucket_cors_configuration" "psyops_http_bucket_cors_config" {
     allowed_headers = ["*"]
     allowed_methods = ["GET"]
     allowed_origins = ["*"]
-    # expose_headers  = ["ETag"]
     max_age_seconds = 3000
   }
 }
@@ -82,13 +75,6 @@ resource "aws_iam_policy" "psyops_http_bucket_deployer_group_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # {
-      #   Effect: "Allow",
-      #   Action: "s3:GetObject",
-      #   Resource: [
-      #     "${aws_s3_bucket.psyops_http_bucket.arn}/*"
-      #   ]
-      # },
       {
         Effect: "Allow",
         Action: [
@@ -132,24 +118,84 @@ resource "aws_iam_group_membership" "psyops_http_bucket_deployer_gmemb" {
   group = "${aws_iam_group.psyops_http_bucket_deployer_group.name}"
 }
 
-# data "aws_route53_record" "psyops_http_bucket_record" {
-#   zone_id = "Z3HVGWA7OSS1TK" # the micahrl.com root zone
-#   name = local.psyops_http_bucket_domain
-# }
+# This is the record for the certificate validation, NOT the record for psyops_http_bucket_domain
+# The record for psyops_http_bucket_domain is defined in a MicahrlDotCom.cfn.yml
+# alongside other records in the micahrl.com zone.
+resource "aws_route53_record" "psyops_http_bucket_record" {
+  for_each = {
+    for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+  # allow_overwrite = true
+  name = each.value.name
+  records = [each.value.record]
+  ttl = 300
+  type = each.value.type
+  zone_id = local.origin_zone_id
+}
 
-# resource "aws_acm_certificate" "psyops_http_bucket_tls_certificate" {
-#   provider = aws.acm_provider
-#   domain_name = local.psyops_http_bucket_uri
-#   validation_method = "DNS"
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
+resource "aws_acm_certificate" "cert" {
+  provider = aws.acm_provider
+  domain_name = local.psyops_http_bucket_domain
+  validation_method = "DNS"
+  lifecycle {
+    create_before_destroy = true
+  }
+}
 
-# # Uncomment the validation_record_fqdns line if you do DNS validation instead of Email.
-# resource "aws_acm_certificate_validation" "cert_validation" {
-#   provider = aws.acm_provider
-#   certificate_arn = aws_acm_certificate.ssl_certificate.arn
-#   # validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
-#   validation_record_fqdns = [aws_route53_record.psyops_http_bucket_record.cert_validation.fqdn]
-# }
+resource "aws_acm_certificate_validation" "cert_validation" {
+  provider = aws.acm_provider
+  certificate_arn = aws_acm_certificate.cert.arn
+  validation_record_fqdns = [for record in aws_route53_record.psyops_http_bucket_record : record.fqdn]
+}
+
+resource "aws_cloudfront_distribution" "www_distribution" {
+  origin {
+    custom_origin_config {
+      http_port              = "80"
+      https_port             = "443"
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1", "TLSv1.1", "TLSv1.2"]
+    }
+
+    domain_name = "${aws_s3_bucket.psyops_http_bucket.website_endpoint}"
+    origin_id   = "${local.psyops_http_bucket_domain}"
+  }
+
+  enabled             = true
+  default_root_object = "index.html"
+
+  default_cache_behavior {
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "${local.psyops_http_bucket_domain}"
+    min_ttl                = 0
+    default_ttl            = 86400
+    max_ttl                = 31536000
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+  }
+
+  aliases = ["${local.psyops_http_bucket_domain}"]
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    acm_certificate_arn = "${aws_acm_certificate.cert.arn}"
+    ssl_support_method  = "sni-only"
+  }
+}

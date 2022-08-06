@@ -227,6 +227,11 @@ Resources:
           TTL: 300
           ResourceRecords: ["com-micahrl-wiki.fly.dev"]
 
+        - Name: psyops.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["df9oxkpvyda4s.cloudfront.net"]
+
   # Backchannel zone - for VPN clients
   BackchannelZone:
     Type: "AWS::Route53::HostedZone"
