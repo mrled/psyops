@@ -210,6 +210,14 @@ RUN true \
     && cd "$psysetup" \
     && unzip "terraform.zip" \
     && install -o root -g root -m 755 "$psysetup/terraform" /usr/local/bin \
+    # This doesn't work
+    # Linked against GNU libc
+    # && export PROVIDER={all,google,aws,kubernetes} \
+    # && export tfer_provider=all \
+    # && export tfer_latest="$(curl -s https://api.github.com/repos/GoogleCloudPlatform/terraformer/releases/latest | jq -r -M '.tag_name')" \
+    # && export tfer_url="https://github.com/GoogleCloudPlatform/terraformer/releases/download/${tfer_latest}/terraformer-${tfer_provider}-linux-amd64" \
+    # && curl -o "$psysetup/terraformer" "$tfer_url" \
+    # && install -o root -g root -m 755 "$psysetup/terraformer" /usr/local/bin \
     && true
 
 RUN true \
