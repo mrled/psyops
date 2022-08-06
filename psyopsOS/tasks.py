@@ -66,7 +66,14 @@ def s3_upload_directory(directory, bucketname):
             local_filepath = os.path.join(root, filename)
             relative_filepath = os.path.relpath(local_filepath, directory)
             print(f"Uploading {local_filepath}...")
-            s3client.upload_file(local_filepath, bucketname, relative_filepath)
+            extra_args = {}
+            # If you don't do this, browsing to these files will download them without displaying them.
+            # We mostly just care about this for the index/error html files.
+            if filename.endswith(".html"):
+                extra_args["ContentType"] = "text/html"
+            s3client.upload_file(
+                local_filepath, bucketname, relative_filepath, ExtraArgs=extra_args
+            )
 
 
 @invoke.task
