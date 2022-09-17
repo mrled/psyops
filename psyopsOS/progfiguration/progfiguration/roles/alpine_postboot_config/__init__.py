@@ -48,7 +48,7 @@ def configure_user(node: PsyopsOsNode, name: str, password: str, pubkeys: List[s
                 if pubkey not in authkeys_contents:
                     authkeys_appends.append(pubkey)
             authkeys_contents += "\n".join(authkeys_appends)
-            node.set_file_contents(authkeys_contents)
+            node.set_file_contents(authkeys, authkeys_contents, owner=name, mode=0o600, dirmode=0o700)
         else:
             node.set_file_contents(authkeys, "\n".join(pubkeys), name, pw.pw_gid, 0o0600, 0o0700)
 
