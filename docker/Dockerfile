@@ -281,6 +281,8 @@ VOLUME $PSYOPS_VOLUME
 
 RUN chown "$username:$groupname" "$PSYOPS_VOLUME"
 
+COPY --chmod=644 "psyops@micahrl.com-62ca1973.rsa.pub" "/etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub"
+
 USER $username
 WORKDIR $homedir
 
