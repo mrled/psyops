@@ -1,0 +1,9 @@
+---
+
+psynet_lighthouse_ca_crt: |+
+  -----BEGIN NEBULA CERTIFICATE-----
+  ClcKJXBzeW9wc09TIE5lYnVsYSBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkosa6UmQYw
+  sZWZqAY6IJj2hkZMjwqIgSzvpRCIWOpXewIN92c2GNS8y6rUK23BQAESQD/qelFP
+  vVP8RHA7Egh1Zi2z8XZDk2rqRJfttz+4nO/9NIhl1g4e0p0AR+N4V/SqfpTpcpms
+  D2dN0v2kvDa05wI=
+  -----END NEBULA CERTIFICATE-----

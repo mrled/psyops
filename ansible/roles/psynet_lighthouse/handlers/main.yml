@@ -1,0 +1,8 @@
+---
+
+- name: reload and restart psynet
+  systemd:
+    name: psynet
+    state: restarted
+    enabled: yes
+    daemon_reload: yes

@@ -28,6 +28,10 @@ abraxas.micahrl.com
 [privnet]
 kalix.home.micahrl.com
 
+[psynet_lighthouses]
+psynet-lighthouse1
+psynet-lighthouse2
+
 [pullbackup]
 kalix.home.micahrl.com
 

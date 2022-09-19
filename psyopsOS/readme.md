@@ -30,6 +30,16 @@ And the password must be GPG-encrypted and the result saved to `.minisign-pass-s
 echo -n '<MINISIGN PASSPHRASE>' | gpg --encrypt --output .minisign-pass-secret --recipient conspirator@PSYOPS
 ```
 
+## The Nebula backchannel network
+
+There is a backchannel network for _all_ psyopsOS nodes.
+
+- `10.10.8.0/22` (`10.10.8.0`-`10.10.11.255`) is the total network
+- `10.10.8.0/24` (`10.10.8.1`-`10.10.8.255`) is reserved for lighthouses
+- The remainder is for nodes
+
+See [Nebula](./docs/nebula.md) for how this is bootstrapped.
+
 ## The psyops.micahrl.com website
 
 A very simple machine-readable site for configuring psyopsOS and maybe other projects in the future.
@@ -62,4 +72,3 @@ invoke --list
 - Misc
     - Use `AuthorizedKeysCommand` as described [in this GH issue](https://github.com/coreos/afterburn/issues/157) to support an `authorized_keys.d` directory (maybe named so as not to conflict with a possible future support of this, like `psyopsos_authorized_keys.d`.) This would make psyopsOS-base's installation of root SSH keys easier and less error prone.
     - Run a daemon to share non-secret info like ISO generation time, installed version of important packages, postboot log.
-    - Better host for the apk repos than S3. Swear to god, how do you make something called "amazon web services" with a service that stores files and require a fucking PhD to connect those two over HTTPS.

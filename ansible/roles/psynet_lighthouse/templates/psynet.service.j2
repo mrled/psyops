@@ -1,0 +1,14 @@
+[Unit]
+Description=Psynet Nebula Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User={{ psynet_lighthouse_nebula_user }}
+ExecStart=/usr/local/bin/nebula -config /etc/nebula/config.yaml
+
+[Install]
+WantedBy=multi-user.target
