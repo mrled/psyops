@@ -17,6 +17,8 @@ dying_breath() {
 }
 trap 'dying_breath $? $LINENO' ERR
 
+setup-keymap us us
+
 # Mount the psyops-secret volume
 if ! /usr/local/sbin/psyopsOS-mount-secret.sh; then
 	echo "psyops-secret volume did not mount properly"
@@ -39,6 +41,13 @@ ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key > /etc/ssh/ssh_host_ed25519_key.p
 chown root:root /etc/ssh/ssh_host_ed25519_key.pub
 chmod 0644 /etc/ssh/ssh_host_ed25519_key.pub
 setup-interfaces -i < "$PSYOPSOS_INTERFACES"
+install -o root -g root -m 0600 "$PSYOPSOS_PSYNET_HOST_CRT" /etc/nebula/psynet.host.crt
+install -o root -g root -m 0600 "$PSYOPSOS_PSYNET_HOST_KEY" /etc/nebula/psynet.host.key
+chown -R nebula:nebula /etc/nebula
+
+# Take advantage of built-in rc script functionality
+# Copying the rc script to nebula.psynet will caust it to look for /etc/nebula/psynet.yml automatically
+cp /etc/init.d/nebula /etc/init.d/nebula.psynet
 
 # We want to 'rc-service hostname restart',
 # but that (sometimes?) causes syslog to restart,
@@ -57,8 +66,10 @@ nameif -s
 rc-service networking start
 rc-service ntpd start
 rc-service sshd restart
-setup-keymap us us
-echo "Finished configuring keymap, network, hostname, mactab, ssh, etc"
+echo "Finished configuring network, mactab, ssh, etc"
+
+rc-service nebula start
+echo "Started nebula service"
 
 
 progfig_old="$(apk list -I progfiguration)"

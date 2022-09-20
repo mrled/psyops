@@ -9,3 +9,7 @@ We use `psy0` for the main psyopsOS NIC.
 
 We do this by creating a separate `mactab` file for each host.
 See [System secrets and individuation](./system-secrets-individuation.md) for more info.
+
+## psynet overlay network
+
+See [Psynet](./psynet.md) for information on this network.

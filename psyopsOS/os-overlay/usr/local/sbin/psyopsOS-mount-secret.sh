@@ -31,6 +31,8 @@ export PSYOPSOS_MINISIGN_PUB=/mnt/psyops-secret/mount/minisign.pubkey
 export PSYOPSOS_MACTAB=/mnt/psyops-secret/mount/mactab
 export PSYOPSOS_INTERFACES=/mnt/psyops-secret/mount/network.interfaces
 export PSYOPSOS_SSHD_ED25519_KEY=/mnt/psyops-secret/mount/ssh_host_ed25519_key
+export PSYOPSOS_PSYNET_HOST_CRT=/mnt/psyops-secret/mount/psynet.host.crt
+export PSYOPSOS_PSYNET_HOST_KEY=/mnt/psyops-secret/mount/psynet.host.key
 
 logger --stderr --priority user.debug --tag "$loggertag" "Values from the psyops-secret volume: $(env | grep '^PSYOPSOS_')"
 

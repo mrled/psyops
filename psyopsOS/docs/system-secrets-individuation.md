@@ -11,6 +11,7 @@ It should contain the following:
 - `age.key`, a file containing an [age](https://age-encryption.org) private key.
 - Optionally `TESTONLYNOPROD.env`, which contains some variables that are useful in development but dangerous in production.
 - `minisign.pubkey`, used to verify file contents when downloading configuration from the Internet
+- Nebula networking configuration for [psynet](./psynet.md), including `psynet.key` and `psynet.crt` generated from `nebula-cert`.
 
 This information will be used to call out to the network and configure the system.
 
@@ -69,6 +70,8 @@ iface lo inet loopback
 auto psy0
 iface psy0 inet dhcp
 EOF
+
+#
 ```
 
 ## Optional files
