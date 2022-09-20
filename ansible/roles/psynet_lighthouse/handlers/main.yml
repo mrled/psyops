@@ -6,3 +6,9 @@
     state: restarted
     enabled: yes
     daemon_reload: yes
+
+- name: restart psynet
+  systemd:
+    name: psynet
+    state: restarted
+    enabled: yes

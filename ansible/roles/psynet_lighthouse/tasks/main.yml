@@ -54,6 +54,7 @@
     mode: 0600
   with_items:
     - { src: nebula.config.yaml, dest: /etc/nebula/config.yaml }
+  notify: restart psynet
 
 - name: Install systemd unit
   template:
@@ -78,6 +79,7 @@
       dest: /etc/nebula/host.crt
     - content: "{{ psynet_lighthouse_host_key }}"
       dest: /etc/nebula/host.key
+  notify: restart psynet
 
 - name: Start service
   systemd:

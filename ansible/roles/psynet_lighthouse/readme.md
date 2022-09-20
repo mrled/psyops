@@ -2,4 +2,4 @@
 
 Configure lighthouse instances for psynet.
 
-See the `psyopsOS/docs/nebula.md` in the root of this repo for more info.
+See the `psyopsOS/docs/psynet.md` in the root of this repo for more info.
