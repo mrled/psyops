@@ -1,6 +1,6 @@
 # psyopsOS-base package
 
-This is an Alpine package for the psyopsOS base system.o
+This is an Alpine package for the psyopsOS base system.
 
 ## Installed to the ISO directly
 
