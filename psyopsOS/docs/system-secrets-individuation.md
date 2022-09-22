@@ -19,6 +19,35 @@ The nodename and the age PUBLIC key (visible in the private key file) should be 
 
 Make one like this:
 
+First, create the psynet nebula key and certificate.
+This must be done from within the psyops container after running `psecrets unlock`.
+
+```sh
+# Make sure the IP address is unique
+# Add the IP address to `ansible/cloudformation/PsynetZone.cfn.yml
+# This command has to be run from the nebula CA directory, see ./psynet.md for more information.
+cd /secrets/psyops-secrets/psynet
+nebula-cert sign \
+    -ca-key /path/to/ca.key \
+    -ca-crt /path/to/ca.crt \
+    -name millenium-falcon \
+    -ip 10.10.10.x/22 \
+    -groups psyopsOS
+
+# Now copy it to the host
+# For it to be configured correctly on boot,
+# it must be called psynet.host.(key|crt) in the secrets filesystem that we are about to create in the next step.
+mkdir /psyops/tmp
+cp millenium-falcon.key millenium-falcon.crt /psyops/tmp
+```
+
+Next, create the psyops-secret volume on a USB key or similar device.
+psyopsOS finds this volume by looking for its label,
+so any filesystem on any device that `mount` can find with the correct label will work.
+Creating the filesystem and label requires running this on a Linux host, however;
+I tend to use an Alpine Linux VM on my macOS laptop,
+using USB passthrough to attach a physical USB drive.
+
 ```sh
 # The mount path
 mountpath=/mnt/psyops-secret-new
@@ -71,18 +100,9 @@ auto psy0
 iface psy0 inet dhcp
 EOF
 
-# You also need to create the psynet Nebula key and cert.
-# Make sure the IP address is unique
-# For it to be configured correctly on boot, it must be called psynet.host.key/crt in that directory.
-# Add the IP address to `ansible/cloudformation/PsynetZone.cfn.yml
-nebula-cert sign \
-    -ca-key /path/to/ca.key \
-    -ca-crt /path/to/ca.crt \
-    -out-key psynet.host.key \
-    -out-crt psynet.host.crt \
-    -name millenium-falcon \
-    -ip 10.10.10.x/22 \
-    -groups psyopsOS
+# Copy the psynet key and certificate created in the previous step
+cp /path/to/psyops/tmp/millenium-falcon.key "$mountpath"/psynet.host.key
+cp /path/to/psyops/tmp/millenium-falcon.crt "$mountpath"/psynet.host.crt
 ```
 
 ## Optional files

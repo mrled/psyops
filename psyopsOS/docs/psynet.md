@@ -16,6 +16,13 @@ In the future, some nodes (which may or not run psyopsOS) might define app-speci
 
 Nodes should be added to the `ansible/cloudformation/PsynetZone.cfn.yml` file for Route53 DNS entries.
 
+## Where are the certificates stored for the CA and the nodes?
+
+I only use them inside the psyops container.
+I keep them in the encrypted `docker/psyops-secrets.tar.gz.gpg` in the root of this repo.
+When `psecrets unlock` is run, they are decrypted to `/secrets/psyops-secrets/psynet` in the container.
+All of the `nebula-cert` commands should be run from that location.
+
 ## Bootstrap process
 
 ```sh
