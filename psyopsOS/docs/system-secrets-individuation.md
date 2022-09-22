@@ -71,7 +71,18 @@ auto psy0
 iface psy0 inet dhcp
 EOF
 
-#
+# You also need to create the psynet Nebula key and cert.
+# Make sure the IP address is unique
+# For it to be configured correctly on boot, it must be called psynet.host.key/crt in that directory.
+# Add the IP address to `ansible/cloudformation/PsynetZone.cfn.yml
+nebula-cert sign \
+    -ca-key /path/to/ca.key \
+    -ca-crt /path/to/ca.crt \
+    -out-key psynet.host.key \
+    -out-crt psynet.host.crt \
+    -name millenium-falcon \
+    -ip 10.10.10.x/22 \
+    -groups psyopsOS
 ```
 
 ## Optional files

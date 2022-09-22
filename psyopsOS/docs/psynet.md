@@ -6,7 +6,15 @@ There is a backchannel network for _all_ psyopsOS nodes.
 - `10.10.8.0/24` (`10.10.8.1`-`10.10.8.255`) is reserved for lighthouses
 - `10.10.9.0/24` (`10.10.9.1`-`10.10.9.255`) is reserved for non-psyopsOS nodes, clients like my laptop and phone
 - `10.10.10.0/23` (`10.10.10.1`-`10.10.11.255`) is reserved for psyopsOS nodes
-- The remainder is for nodes
+
+We use some base groups.
+In the future, some nodes (which may or not run psyopsOS) might define app-specific groups.
+
+- `clients` is for my personal laptop, phone, etc and have access to any host in the network
+- `lighthouses` is just the lighthouses and has access to no hosts in the network, except by ICMP
+- `psyopsOS` is for psyopsOS nodes
+
+Nodes should be added to the `ansible/cloudformation/PsynetZone.cfn.yml` file for Route53 DNS entries.
 
 ## Bootstrap process
 
@@ -27,6 +35,7 @@ etc.
 
 psyopsOS nodes will be created in the same way as the clients, and belong to the `psyopsOS` group.
 (See also [System secrets and individuation](./system-secrets-individuation.md).)
+psyopsOS brings up psynet automatically when it boots.
 
 For client nodes, we don't mind a more manual solution.
 
@@ -36,7 +45,7 @@ I did something like this for my laptop.
 
 ```sh
 # Laptop
-nebula-cert sign -name haluth -ip 10.10.9.1/22 -groups clients,psyopsOS
+nebula-cert sign -name haluth -ip 10.10.9.1/22 -groups clients
 ```
 
 Then we want to install it as a launchd service.
@@ -143,7 +152,8 @@ To get this on my phone (iOS), I had to:
 
 - Generate the key on my phone in the Nebula app. It only shows the public key, and will not export the private key.
 - Copy the public key to my Nebula CA machine as `copland.pub`
-- Sign that public key with `nebula-cert sign -in-pub copland.pub -name copland -ip 10.10.9.2/22 -groups clients,psyopsOS`
+- Sign that public key with `nebula-cert sign -in-pub copland.pub -name copland -ip 10.10.9.2/22 -groups clients`
+- (You can also use `-out-qr copland.qr.png` to make the next two steps easier.)
 - Copy the resulting `copland.crt` back to the Nebula app and click "Load certificate"
 - I also had to copy the contents of `ca.crt` (NOT the private `ca.key`) to the iOS app, and configure static hosts for the lighthouses
 
