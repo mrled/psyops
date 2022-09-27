@@ -7,13 +7,13 @@ groupNodeMap:
     - jesseta
     - kenasus
     - zalas
-    - kntytest
+    - psyopsos-test-1
 
 nodeFunctionMap:
   jesseta: kubernasty
   kenasus: kubernasty
   zalas: kubernasty
-  kntytest: kubernasty
+  psyopsos-test-1: kubernasty
   newjutland: synergycontroller
 
 functionRoleMap:
