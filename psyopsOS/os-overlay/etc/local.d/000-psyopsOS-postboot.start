@@ -68,8 +68,9 @@ rc-service ntpd start
 rc-service sshd restart
 echo "Finished configuring network, mactab, ssh, etc"
 
-rc-service nebula start
-echo "Started nebula service"
+modprobe tun
+rc-service nebula.psynet start
+echo "Started nebula.psynet service"
 
 
 progfig_old="$(apk list -I progfiguration)"
