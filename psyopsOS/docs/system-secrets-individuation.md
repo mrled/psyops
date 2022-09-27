@@ -28,8 +28,6 @@ This must be done from within the psyops container after running `psecrets unloc
 # This command has to be run from the nebula CA directory, see ./psynet.md for more information.
 cd /secrets/psyops-secrets/psynet
 nebula-cert sign \
-    -ca-key /path/to/ca.key \
-    -ca-crt /path/to/ca.crt \
     -name millenium-falcon \
     -ip 10.10.10.x/22 \
     -groups psyopsOS
