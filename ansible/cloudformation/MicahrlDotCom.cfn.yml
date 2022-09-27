@@ -169,6 +169,16 @@ Resources:
             - ns3.no-ip.com.
             - ns4.no-ip.com.
 
+        # psynet sub-zone
+        - Name: psynet.micahrl.com.
+          Type: NS
+          TTL: 60
+          ResourceRecords:
+            - ns-1300.awsdns-34.org.
+            - ns-243.awsdns-30.com.
+            - ns-678.awsdns-20.net.
+            - ns-1666.awsdns-16.co.uk.
+
         - Name: cistercian.micahrl.com
           Type: CNAME
           TTL: 300
