@@ -4,6 +4,7 @@ import datetime
 import glob
 import os
 import pdb
+import shlex
 import shutil
 import string
 import sys
@@ -38,10 +39,15 @@ psyopsos_minisign_encrypted_passwd_file = os.path.join(basedir, ".minisign-pass-
 docker_builder_volname_workdir = "psyopsos-build-workdir"
 
 # Input configuration
+psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
+aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
 staticdir = os.path.join(basedir, "static")
 psyopsos_key = os.path.join(basedir, "minisign.seckey")
 progfiguration_dir = os.path.join(basedir, "progfiguration")
 psyopsOS_base_dir = os.path.join(basedir, "psyopsOS-base")
+docker_builder_tag = "psyopsos-builder"
+docker_builder_dir = os.path.join(psyopsosdir, "build")
 
 # Output configuration
 sitedir = os.path.join(basedir, "public")
@@ -79,7 +85,10 @@ def s3_upload_directory(directory, bucketname):
 @invoke.task
 def clean(ctx):
     """Clean the build"""
-    shutil.rmtree(sitedir)
+    try:
+        shutil.rmtree(sitedir)
+    except FileNotFoundError:
+        pass
 
 
 @invoke.task
@@ -159,7 +168,7 @@ def psyopsOS_base_abuild(ctx):
 
     # Place the apk repo inside the public dir
     # This means that 'invoke deploy' will copy it
-    build_cmd = f"abuild -P {incontainer_apks_path} -D psyopsOS"
+    build_cmd = f"abuild -r -P {incontainer_apks_path} -D psyopsOS"
 
     try:
         with open(apkbuild_path, "w") as afd:
@@ -234,49 +243,27 @@ def mkimage_clean(ctx, indocker, workdir):
 #     isodir=os.path.expanduser("~/isos"),
 # ):
 #     """Run mkimage.sh directly. Must be run from an Alpine system.
-
+#
 #     This is not used as often as the regular 'mkimage' target (which uses docker), and may be out of date!
 #     """
-
+#
 #     mkimage_profile, architecture = osflavorinfo(osflavor)
-
 #     os.umask(0o022)
-
-#     psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-#     psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
-#     aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
-
 #     buildinfo = mkimage_buildinfo(ctx)
-
+#
 #     mkimage_clean(ctx, indocker=True, workdir=workdir)
-
+#
 #     for directory in [workdir, isodir]:
 #         os.makedirs(directory, exist_ok=True)
 #     for script in ["genapkovl-psyopsOS.sh", "mkimg.psyopsOS.sh", "mkimg.zzz-overrides.sh"]:
 #         shutil.copy(f"{aportsscriptsdir}/{script}", f"{aportsdir}/scripts/{script}")
-
+#
 #     os.environ["PSYOPSOS_OVERLAY"] = f"{psyopsosdir}/os-overlay"
 #     os.environ["PSYOPSOS_BUILD_DATE_ISO8601"] = buildinfo.date.strftime('%Y-%m-%dT%H:%M:%S%z')
 #     os.environ["PSYOPSOS_BUILD_GIT_REVISION"] = buildinfo.revision
 #     os.environ["PSYOPSOS_BUILD_GIT_DIRTY"] = str(buildinfo.dirty)
-
-#     mkimage_cmd = [
-#         "./mkimage.sh",
-#         "--tag",
-#         alpinetag,
-#         "--outdir",
-#         "/home/build/iso",
-#         "--arch",
-#         architecture,
-#         "--repository",
-#         "http://mirrors.edge.kernel.org/alpine/v3.16/main",
-#         "--repository",
-#         "http://mirrors.edge.kernel.org/alpine/v3.16/community",
-#         "--workdir",
-#         "/home/build/workdir",
-#         "--profile",
-#         mkimage_profile,
-#     ]
+#
+#     mkimage_cmd = get_mkimage_cmd(osflavor, alpinetag)
 #     full_cmd = " ".join(mkimage_cmd)
 #     print(f"Running {full_cmd}")
 #     with ctx.cd(f"{aportsdir}/scripts"):
@@ -285,46 +272,37 @@ def mkimage_clean(ctx, indocker, workdir):
 
 
 @invoke.task
-def mkimage(
-    ctx,
-    osflavor="pc",
-    alpinetag="0x001",
-    aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
-    workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
-    isodir=os.path.expanduser("~/Downloads/"),
-    dockertag="psyopsos-builder",
-    volname_workdir=docker_builder_volname_workdir,
+def build_docker_container(ctx, rebuild=False):
+    """Build the docker container that builds the ISO image"""
+    cmd = ["docker", "build"]
+    if rebuild:
+        cmd += ["--no-cache"]
+    cmd += ["--tag", shlex.quote(docker_builder_tag), shlex.quote(docker_builder_dir)]
+    ctx.run(" ".join(cmd))
+
+
+def get_docker_cmd_for_mkimage(
+    buildinfo: MkimageBuildInfo,
+    aportsdir,
+    isodir,
+    volname_workdir,
+    shell_or_prefix,
 ):
-    """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO. Works from any host with Docker (doesn't require an Alpine host OS)."""
-
-    mkimage_profile, architecture = osflavorinfo(osflavor)
-
-    os.umask(0o022)
-
-    psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
-    aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
-
-    buildinfo = mkimage_buildinfo(ctx)
-
-    mkimage_clean(ctx, indocker=True, workdir=workdir)
-
-    docker_builder_dir = os.path.join(psyopsosdir, "build")
-    ctx.run(f"docker build --tag '{dockertag}' '{docker_builder_dir}'")
-
-    # We use a docker local volume for the workdir
-    # This would not be necessary on Linux, but
-    # on Docker Desktop for Mac (and probably also on Windows),
-    # permissions will get fucked up if you try to use a volume on the host.
-    try:
-        ctx.run(f"docker volume inspect {volname_workdir}")
-    except invoke.Failure:
-        ctx.run(f"docker volume create {volname_workdir}")
-
+    shell = False
+    if shell_or_prefix == "shell":
+        shell = True
+    elif shell_or_prefix == "prefix":
+        pass
+    else:
+        raise Exception("shell_or_prefix argument must be 'shell' or 'prefix'")
     docker_cmd = [
         "docker",
         "run",
         "--rm",
+    ]
+    if shell:
+        docker_cmd += ["--interactive", "--tty"]
+    docker_cmd += [
         # You must mount the aports scripts
         # (And don't forget to update them)
         "--volume",
@@ -355,8 +333,18 @@ def mkimage(
         f"PSYOPSOS_BUILD_GIT_REVISION={buildinfo.revision}",
         "--env",
         f"PSYOPSOS_BUILD_GIT_DIRTY={str(buildinfo.dirty)}",
-        dockertag,
+        docker_builder_tag,
     ]
+    if shell:
+        docker_cmd += ["/bin/bash"]
+    return docker_cmd
+
+
+def get_mkimage_cmd(
+    osflavor="pc",
+    alpinetag="0x001",
+):
+    mkimage_profile, architecture = osflavorinfo(osflavor)
     mkimage_cmd = [
         "./mkimage.sh",
         "--tag",
@@ -378,7 +366,72 @@ def mkimage(
         "--profile",
         mkimage_profile,
     ]
-    full_cmd = " ".join(docker_cmd + mkimage_cmd)
-    print(f"Running docker with: {full_cmd}")
-    ctx.run(full_cmd)
+    return mkimage_cmd
+
+
+def prettycmd(cmd):
+    """Given a command for ctx.run(), return a pretty version with arguments on separate lines"""
+    return " \\\n  ".join(cmd)
+
+
+@invoke.task
+def mkimage(
+    ctx,
+    osflavor="pc",
+    alpinetag="0x001",
+    aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
+    workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
+    isodir=os.path.expanduser("~/Downloads/"),
+    volname_workdir=docker_builder_volname_workdir,
+    whatif=False,
+):
+    """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO. Works from any host with Docker (doesn't require an Alpine host OS), but does require an x86_64 host."""
+
+    os.umask(0o022)
+    buildinfo = mkimage_buildinfo(ctx)
+    mkimage_clean(ctx, indocker=True, workdir=workdir)
+    build_docker_container(ctx)
+
+    # We use a docker local volume for the workdir
+    # This would not be necessary on Linux, but
+    # on Docker Desktop for Mac (and probably also on Windows),
+    # permissions will get fucked up if you try to use a volume on the host.
+    try:
+        ctx.run(f"docker volume inspect {volname_workdir}")
+    except invoke.Failure:
+        ctx.run(f"docker volume create {volname_workdir}")
+
+    docker_cmd_with_shell = get_docker_cmd_for_mkimage(
+        buildinfo,
+        aportsdir,
+        isodir,
+        volname_workdir,
+        "shell",
+    )
+    docker_cmd_prefix = get_docker_cmd_for_mkimage(
+        buildinfo,
+        aportsdir,
+        isodir,
+        volname_workdir,
+        "prefix",
+    )
+    mkimage_cmd = get_mkimage_cmd(osflavor, alpinetag)
+    full_cmd = docker_cmd_prefix + mkimage_cmd
+    print(f"========")
+    print(
+        f"Run mkimage inside docker. This will happen next if you didn't pass --whatif:"
+    )
+    print(prettycmd(full_cmd))
+    print(f"========")
+    print(
+        f"Run the Docker container and get a shell. This can be helpful for debugging"
+    )
+    print(prettycmd(docker_cmd_with_shell))
+    print(f"========")
+    print(f"From a shell in the docker image, you can run a command like this:")
+    print(prettycmd(mkimage_cmd))
+    print(f"========")
+    if whatif:
+        return
+    ctx.run(" ".join(full_cmd))
     ctx.run(f"ls -alFh {isodir}*.iso")
