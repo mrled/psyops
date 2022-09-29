@@ -22,7 +22,7 @@ class SystemNode:
         """Return system uptime in seconds"""
         # System uptime in seconds, and idle CPU time in seconds
         # Note that idle CPU time accounts for idle seconds per CPU, and thus may be larger than system uptime
-        uptimestr, idletimestr = self.get_file_contents("/proc/uptime").split()
+        uptimestr, idletimestr = self.get_file_contents("/proc/uptime", refresh=True).split()
         uptime = float(uptimestr)
         return uptime
 
