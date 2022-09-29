@@ -7,8 +7,8 @@ import string
 from typing import Any, Dict, List, Optional
 
 
-class SystemNode:
-    """A node managed by progfiguration
+class LocalhostLinux:
+    """An interface to localhost running Linux.
 
     Maintains a cache of files it has read before.
     """
@@ -141,8 +141,8 @@ class SystemNode:
         self.set_file_contents(dest, inflated, owner, group, mode)
 
 
-class PsyopsOsNode(SystemNode):
-    """The node running psyopsOS"""
+class LocalhostLinuxPsyopsOs(LocalhostLinux):
+    """An interface to localhost running psyopsOS"""
 
     @property
     def alpine_release_str(self) -> str:

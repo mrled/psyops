@@ -5,7 +5,7 @@ import shutil
 import subprocess
 
 from progfiguration import logger
-from progfiguration.nodes import PsyopsOsNode
+from progfiguration.localhost import LocalhostLinuxPsyopsOs
 
 
 defaults = {
@@ -32,7 +32,7 @@ def is_mountpoint(path: str) -> bool:
 
 
 def apply(
-    node: PsyopsOsNode,
+    localhost: LocalhostLinuxPsyopsOs,
     underlying_device: str,
     mountpoint: str,
     vgname: str,
@@ -80,4 +80,4 @@ def apply(
                 logger.info(f"Removing path {path} after mounting {mountpoint}...")
                 shutil.rmtree(path)
 
-    node.makedirs(f"{mountpoint}/scratch", "root", "root", 0o1777)
+    localhost.makedirs(f"{mountpoint}/scratch", "root", "root", 0o1777)

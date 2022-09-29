@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from typing import List
 
-from progfiguration.nodes import PsyopsOsNode
+from progfiguration.localhost import LocalhostLinuxPsyopsOs
 
 
 defaults = {}
@@ -25,7 +25,7 @@ _users = [
 ]
 
 
-def configure_user(node: PsyopsOsNode, name: str, password: str, pubkeys: List[str], shell=None):
+def configure_user(localhost: LocalhostLinuxPsyopsOs, name: str, password: str, pubkeys: List[str], shell=None):
     exists = False
     with open("/etc/passwd") as fp:
         for line in fp.readlines():
@@ -42,15 +42,15 @@ def configure_user(node: PsyopsOsNode, name: str, password: str, pubkeys: List[s
         authkeys = os.path.expanduser(f"~{name}/.ssh/authorized_keys")
         pw = pwd.getpwnam(name)
         if os.path.exists(authkeys):
-            authkeys_contents = node.get_file_contents(authkeys)
+            authkeys_contents = localhost.get_file_contents(authkeys)
             authkeys_appends = []
             for pubkey in pubkeys:
                 if pubkey not in authkeys_contents:
                     authkeys_appends.append(pubkey)
             authkeys_contents += "\n".join(authkeys_appends)
-            node.set_file_contents(authkeys, authkeys_contents, owner=name, mode=0o600, dirmode=0o700)
+            localhost.set_file_contents(authkeys, authkeys_contents, owner=name, mode=0o600, dirmode=0o700)
         else:
-            node.set_file_contents(authkeys, "\n".join(pubkeys), name, pw.pw_gid, 0o0600, 0o0700)
+            localhost.set_file_contents(authkeys, "\n".join(pubkeys), name, pw.pw_gid, 0o0600, 0o0700)
 
 
 def set_timezone(timezone: str):
@@ -67,16 +67,16 @@ def set_timezone(timezone: str):
     # subprocess.run(f"apk del tzdata", shell=True, check=True)
 
 
-def set_apk_repositories(node: PsyopsOsNode):
+def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
     """Set /etc/apk/repositories
 
     Note that by default ONLY the cdrom repo exists, so we have to add even the regular main repo.
     """
-    apk_repositories_old = node.get_file_contents("/etc/apk/repositories")
+    apk_repositories_old = localhost.get_file_contents("/etc/apk/repositories")
     apk_repositories_new = apk_repositories_old
     add_repos = [
-        f"https://dl-cdn.alpinelinux.org/alpine/{node.alpine_release_v}/main",
-        f"https://dl-cdn.alpinelinux.org/alpine/{node.alpine_release_v}/community",
+        f"https://dl-cdn.alpinelinux.org/alpine/{localhost.alpine_release_v}/main",
+        f"https://dl-cdn.alpinelinux.org/alpine/{localhost.alpine_release_v}/community",
         "@edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main",
         "@edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community",
         "@edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing",
@@ -89,15 +89,15 @@ def set_apk_repositories(node: PsyopsOsNode):
             apk_repositories_new += f"{repo}"
     if apk_repositories_new[-1] != "\n":
         apk_repositories_new += "\n"
-    node.set_file_contents("/etc/apk/repositories", apk_repositories_new, "root", "root", 0o0644)
+    localhost.set_file_contents("/etc/apk/repositories", apk_repositories_new, "root", "root", 0o0644)
     subprocess.run("apk update", shell=True, check=True)
 
 
-def apply(node: PsyopsOsNode, timezone: str):
+def apply(localhost: LocalhostLinuxPsyopsOs, timezone: str):
 
     set_timezone(timezone)
 
-    set_apk_repositories(node)
+    set_apk_repositories(localhost)
 
     for user in _users:
-        configure_user(node, **user)
+        configure_user(localhost, **user)

@@ -11,7 +11,7 @@ import textwrap
 import time
 from importlib.resources import files as importlib_resources_files
 
-from progfiguration.nodes import PsyopsOsNode
+from progfiguration.localhost import LocalhostLinuxPsyopsOs
 from progfiguration.roles.datadisk import is_mountpoint
 
 import requests
@@ -27,7 +27,7 @@ defaults = {
 
 
 def apply(
-    node: PsyopsOsNode,
+    localhost: LocalhostLinuxPsyopsOs,
     user: str,
     user_gecos: str,
     synergy_priv_key: str,
@@ -88,7 +88,7 @@ def apply(
         xrandr --output HDMI-1 --primary --mode 1920x1080
         """
     )
-    node.set_file_contents(displaysetup_path, displaysetup_contents, "root", "root", 0o0755)
+    localhost.set_file_contents(displaysetup_path, displaysetup_contents, "root", "root", 0o0755)
 
     # Modify PAM configuration
     # - Get rid of elogind from PAM
@@ -124,7 +124,7 @@ def apply(
     # Don't let the screensaver lock the screen
     # This user has no password, so it cannot unlock the screen without restarting lightdm
     xpx = f"/home/{user}/.config/xfce4/xfconf/xfce-perchannel-xml"
-    node.makedirs(xpx, owner=user, mode=0o0700)
+    localhost.makedirs(xpx, owner=user, mode=0o0700)
     for xfile in ["xfce4-screensaver.xml", "xfce4-power-manager.xml"]:
         shutil.copy(module_files.joinpath(f"xfce_perchannel_xml/{xfile}"), f"{xpx}/{xfile}")
         shutil.chown(f"{xpx}/{xfile}", user)
@@ -134,14 +134,14 @@ def apply(
         raise Exception(f"Synergy user {user} does not have a homedir?")
 
     autostart_dir = os.path.join(synergyhome, ".config", "autostart")
-    node.cp(
+    localhost.cp(
         module_files.joinpath("autostart/Terminal.desktop"),
         f"{autostart_dir}/Terminal.desktop",
         owner=user,
         mode=0o0600,
         dirmode=0o0700,
     )
-    node.template(
+    localhost.template(
         module_files.joinpath("autostart/Synergy.desktop.template"),
         f"{autostart_dir}/Synergy.desktop",
         {"user": user},
@@ -152,22 +152,24 @@ def apply(
 
     # Configure Synergy itself
     dotsynergy = os.path.join(synergyhome, ".synergy")
-    node.set_file_contents(
+    localhost.set_file_contents(
         os.path.join(dotsynergy, "SSL", "Synergy.pem"),
         "\n".join([synergy_priv_key, synergy_pub_key]),
         owner=user,
         mode=0o0600,
         dirmode=0o0700,
     )
-    node.set_file_contents(
+    localhost.set_file_contents(
         os.path.join(dotsynergy, "SSL", "Fingerprints", "Local.txt"),
         synergy_fingerprints_local,
         owner=user,
         mode=0o0600,
         dirmode=0o0700,
     )
-    node.cp(module_files.joinpath("synergy.conf"), os.path.join(synergyhome, "synergy.conf"), owner=user, mode=0o0644)
-    node.template(
+    localhost.cp(
+        module_files.joinpath("synergy.conf"), os.path.join(synergyhome, "synergy.conf"), owner=user, mode=0o0644
+    )
+    localhost.template(
         module_files.joinpath("internal.Synergy.conf.template"),
         f"{synergyhome}/.var/app/com.symless.Synergy/config/Synergy/Synergy.conf",
         {"user": user, "serial": synergy_serial_key, "screenname": synergy_server_screenname},
@@ -176,7 +178,7 @@ def apply(
     )
 
     # Configure lightdm
-    node.template(
+    localhost.template(
         module_files.joinpath("lightdm.conf.template"),
         "/etc/lightdm/lightdm.conf",
         {"user": user},
@@ -187,7 +189,7 @@ def apply(
 
     flatpak_overlay = "/psyopsos-data/overlays/var-lib-flatpak"
     if not is_mountpoint("/var/lib/flatpak"):
-        node.makedirs(flatpak_overlay, owner="root", group="root", mode=0o0755)
+        localhost.makedirs(flatpak_overlay, owner="root", group="root", mode=0o0755)
         subprocess.run(["mount", "-o", "bind", flatpak_overlay, "/var/lib/flatpak"])
 
     if not os.path.exists("/var/lib/flatpak/repo/flathub.trustedkeys.gpg"):
@@ -215,7 +217,7 @@ def apply(
         subprocess.run(f"flatpak install -y {synergy_flatpak}", shell=True, check=True)
 
     # Configure and start lightdm
-    node.template(
+    localhost.template(
         module_files.joinpath("lightdm.conf.template"),
         "/etc/lightdm/lightdm.conf",
         {"user": user},

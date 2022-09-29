@@ -8,7 +8,7 @@ import subprocess
 from importlib.resources import files as importlib_resources_files
 
 from progfiguration import logger
-from progfiguration.nodes import PsyopsOsNode
+from progfiguration.localhost import LocalhostLinuxPsyopsOs
 from progfiguration.roles.datadisk import is_mountpoint
 
 
@@ -49,7 +49,7 @@ def mount_k3s_binds(
 
 
 def apply(
-    node: PsyopsOsNode,
+    localhost: LocalhostLinuxPsyopsOs,
     data_mountpoint: str,
     data_k3s_subpath: str,
     data_containerd_subpath: str,
@@ -70,7 +70,7 @@ def apply(
 
     subprocess.run(f"apk add {packages}", shell=True, check=True)
 
-    node.cp(
+    localhost.cp(
         module_files.joinpath("k3s-killall.sh"),
         "/usr/local/sbin/k3s-killall.sh",
         owner="root",

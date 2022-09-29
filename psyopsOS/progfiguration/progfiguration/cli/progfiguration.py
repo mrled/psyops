@@ -17,7 +17,7 @@ from progfiguration.cli import (
 )
 from progfiguration.inventory import inventory
 from progfiguration.inventory.groups import universal
-from progfiguration.nodes import PsyopsOsNode
+from progfiguration.localhost import LocalhostLinuxPsyopsOs
 
 
 def nodename2mod(nodename: str):
@@ -41,7 +41,7 @@ def action_apply(nodename: str, strace_before_applying: bool = False):
     node = nodename2mod(nodename).node
 
     # TODO: call this something else
-    nodectx = PsyopsOsNode(nodename)
+    nodectx = LocalhostLinuxPsyopsOs(nodename)
 
     groupmods = {
         "universal": universal,
