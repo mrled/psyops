@@ -4,6 +4,7 @@
 import os
 import shutil
 import string
+import subprocess
 from typing import Any, Dict, List, Optional
 
 
@@ -139,6 +140,27 @@ class LocalhostLinux:
             template_contents = string.Template(fp.read())
         inflated = template_contents.substitute(**template_args)
         self.set_file_contents(dest, inflated, owner, group, mode)
+
+    def linesinfile(self, file: str, lines: List[str]):
+        """Ensure all lines in the input list exist in a file.
+
+        Inspired by Ansible's lineinfile module, but simpler and less featureful
+        """
+        oldlines = self.get_file_contents(file, refresh=True).split("\n")
+        newlines = oldlines.copy()
+        for line in lines:
+            if line not in oldlines:
+                newlines += [line]
+        self.set_file_contents(file, "\n".join(newlines))
+
+    def get_user_primary_group(self, user: str):
+        """Get the primary group for a user.
+
+        Use the `id` command because it is POSIX compliant
+        and works with non-local users and groups like LDAP etc.
+        """
+        result = subprocess.run(["id", "-g", "-n", user], capture_output=True, check=True)
+        return result.stdout.decode().strip()
 
 
 class LocalhostLinuxPsyopsOs(LocalhostLinux):

@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from typing import List
 
-from progfiguration.localhost import LocalhostLinuxPsyopsOs
+from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
 
 
 defaults = {}
@@ -19,6 +19,7 @@ _users = [
         "password": r"$6$123$AYzXO51WqiIiN0TbNAhGsCru1.tid3VGQmAdfFRz8NajosFP73tF7Btq4huF82nMDDQ0arcNnmcZ6KYiuvqje/",
         "pubkeys": [
             r"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS",
+            r"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMN/4Rdkz4vlGaQRvhmhLhkaH0CfhNnoggGBBknz17+u mrled@haluth.local",
         ],
         "shell": "/bin/bash",
     }
@@ -39,18 +40,7 @@ def configure_user(localhost: LocalhostLinuxPsyopsOs, name: str, password: str, 
         cmd += [name]
         subprocess.run(cmd, check=True)
     if pubkeys:
-        authkeys = os.path.expanduser(f"~{name}/.ssh/authorized_keys")
-        pw = pwd.getpwnam(name)
-        if os.path.exists(authkeys):
-            authkeys_contents = localhost.get_file_contents(authkeys)
-            authkeys_appends = []
-            for pubkey in pubkeys:
-                if pubkey not in authkeys_contents:
-                    authkeys_appends.append(pubkey)
-            authkeys_contents += "\n".join(authkeys_appends)
-            localhost.set_file_contents(authkeys, authkeys_contents, owner=name, mode=0o600, dirmode=0o700)
-        else:
-            localhost.set_file_contents(authkeys, "\n".join(pubkeys), name, pw.pw_gid, 0o0600, 0o0700)
+        authorized_keys.add_idempotently(localhost, name, pubkeys)
 
 
 def set_timezone(timezone: str):

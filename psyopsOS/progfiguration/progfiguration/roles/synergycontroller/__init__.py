@@ -10,8 +10,9 @@ import subprocess
 import textwrap
 import time
 from importlib.resources import files as importlib_resources_files
+from typing import List
 
-from progfiguration.localhost import LocalhostLinuxPsyopsOs
+from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
 from progfiguration.roles.datadisk import is_mountpoint
 
 import requests
@@ -23,12 +24,17 @@ module_files = importlib_resources_files("progfiguration.roles.synergycontroller
 defaults = {
     "user": "synergist",
     "user_gecos": "Synergist",
+    "user_authorized_keys": [
+        r"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS",
+        r"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMN/4Rdkz4vlGaQRvhmhLhkaH0CfhNnoggGBBknz17+u mrled@haluth.local",
+    ],
 }
 
 
 def apply(
     localhost: LocalhostLinuxPsyopsOs,
     user: str,
+    user_authorized_keys: List[str],
     user_gecos: str,
     synergy_priv_key: str,
     synergy_pub_key: str,
@@ -70,10 +76,15 @@ def apply(
     try:
         subprocess.run(["id", user], check=True, capture_output=True)
     except subprocess.CalledProcessError:
+        # Create the user
         subprocess.run(["adduser", "-g", user_gecos, "-D", user])
+        # Unlock the account without setting a password (only SSH keys can be used to connect)
+        subprocess.run(["usermod", "-p", "*", user])
+        # Add the user to required groups
         subprocess.run(["adduser", user, "flatpak"])
         subprocess.run(["adduser", user, "input"])
         subprocess.run(["adduser", user, "video"])
+    authorized_keys.add_idempotently(localhost, user, user_authorized_keys)
 
     # Tell lightdm to use 1920x1080
     # Via <https://askubuntu.com/questions/73804/wrong-login-screen-resolution>
