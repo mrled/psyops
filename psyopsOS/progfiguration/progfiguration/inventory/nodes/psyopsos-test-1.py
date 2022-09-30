@@ -8,6 +8,9 @@ node = Bunch(
     ),
     pubkey="age1djzr8h7ycsrnu5r55m7sd72esk04zm5nsuterlmx6vvcxyhcnd8qfhdapc",
     roles=Bunch(
+        datadisk={
+            "ramoffload": True,
+        },
         k3s={
             "start_k3s": False,
         },
