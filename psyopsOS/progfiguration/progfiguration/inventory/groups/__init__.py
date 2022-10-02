@@ -1,1 +1,1 @@
-"""Nodes managed by progfiguration"""
+"""Groups of nodes managed by progfiguration"""
