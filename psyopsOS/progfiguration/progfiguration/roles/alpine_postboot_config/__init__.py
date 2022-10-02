@@ -83,11 +83,40 @@ def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
     subprocess.run("apk update", shell=True, check=True)
 
 
+def install_base_packages():
+    """Install things we expect to be on every psyopsOS macahine"""
+    packages = [
+        "py3-pip",
+    ]
+    subprocess.run(["apk", "add"] + packages, check=True)
+
+
+_psyopsOS_path_sh = r"""\
+# Append "$1" to $PATH when not already in.
+# Copied from Alpine /etc/profile, which copied from Arch.
+__psyopsOS_append_path() {
+    case ":$PATH:" in
+        *:"$1":*)
+            ;;
+        *)
+            PATH="${PATH:+$PATH:}$1"
+            ;;
+    esac
+}
+
+__psyopsOS_append_path "$HOME/.local/bin"
+"""
+
+
 def apply(localhost: LocalhostLinuxPsyopsOs, timezone: str):
 
     set_timezone(timezone)
 
     set_apk_repositories(localhost)
+
+    install_base_packages()
+
+    localhost.set_file_contents("/etc/profile.d/psyopsOS_path.sh", _psyopsOS_path_sh, "root", "root", 0o0644, 0o0755)
 
     for user in _users:
         configure_user(localhost, **user)
