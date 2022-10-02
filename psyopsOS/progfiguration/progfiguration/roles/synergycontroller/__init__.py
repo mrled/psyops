@@ -31,17 +31,70 @@ defaults = {
 }
 
 
-def apply(
+def install_vscode_remote_prereqs():
+    """Install these for vscode server
+
+    The user may need to have bash set as their shell
+    """
+    packages = [
+        "bash",
+        "gcompat",
+        "libstdc++6",
+        "libuser",
+        "wget",
+    ]
+    subprocess.run(["apk", "add"] + packages, check=True)
+
+    # We have to allow TCP forwarding for VS Code remoting to work
+    with open("/etc/ssh/sshd_config") as fp:
+        sshd_config = fp.readlines()
+    new_sshd_config = []
+
+    did_set_tcp_forwarding = False
+    for line in sshd_config:
+        if line.startswith("AllowTcpForwarding "):
+            new_sshd_config += ["AllowTcpForwarding yes"]
+            did_set_tcp_forwarding = True
+        else:
+            new_sshd_config += [line]
+    if not did_set_tcp_forwarding:
+        new_sshd_config == ["AllowTcpForwarding yes"]
+
+    with open("/etc/ssh/sshd_config", "w") as fp:
+        fp.writelines(new_sshd_config)
+
+
+def install_teensy_loader_cli(
     localhost: LocalhostLinuxPsyopsOs,
-    user: str,
-    user_authorized_keys: List[str],
-    user_gecos: str,
-    synergy_priv_key: str,
-    synergy_pub_key: str,
-    synergy_fingerprints_local: str,
-    synergy_serial_key: str,
-    synergy_server_screenname: str,
+    clone_user: str,
+    clone_parent: str,
+    repo_uri="https://github.com/PaulStoffregen/teensy_loader_cli",
+    repo_name="teensy_loader_cli",
 ):
+    """Install teensy_loader_cli, which is required to flash QMK firmware
+
+    `qmk flash` tries to use this behind the scenes to flash my ErgoDox.
+    You can also run it directly to flash.
+    """
+    packages = [
+        "libusb",
+        "libusb-compat",
+        "libusb-compat-dev",
+        "libusb-dev",
+        "make",
+        "musl-dev",
+    ]
+    subprocess.run(["apk", "add"] + packages, check=True)
+    clone_path = os.path.join(clone_parent, repo_name)
+    if os.path.exists(clone_path):
+        subprocess.run(["git", "pull"], user=clone_user, cwd=clone_path)
+    else:
+        subprocess.run(["git", "clone", repo_uri], user=clone_user, cwd=clone_parent)
+    subprocess.run(["make"], user=clone_user, cwd=clone_path)
+    shutil.copy(f"{clone_path}/teensy_loader_cli", "/usr/local/bin")
+
+
+def install_synergy():
 
     # Some of these are required or else X does not accept input at all
     # <https://gitlab.alpinelinux.org/alpine/aports/-/issues/5422>
@@ -70,14 +123,45 @@ def apply(
         "xterm",
         "udev",
     ]
+    subprocess.run(["apk", "add"] + packages, check=True)
+
+
+def install_qmk_prereqs():
+    packages = [
+        # Required for QMK, including compiling and flashing firmware
+        "avr-libc",
+        "avrdude",
+        "gcc-arm-none-eabi",
+        "gcc-avr",
+        "dfu-util@edgetesting",
+        "dfu-programmer@edgetesting",
+        "make",
+    ]
 
     subprocess.run(["apk", "add"] + packages, check=True)
+
+
+def apply(
+    localhost: LocalhostLinuxPsyopsOs,
+    user: str,
+    user_authorized_keys: List[str],
+    user_gecos: str,
+    synergy_priv_key: str,
+    synergy_pub_key: str,
+    synergy_fingerprints_local: str,
+    synergy_serial_key: str,
+    synergy_server_screenname: str,
+):
+
+    install_synergy()
 
     try:
         subprocess.run(["id", user], check=True, capture_output=True)
     except subprocess.CalledProcessError:
+        # Bash is required to be the user's shell for vscode remote
+        subprocess.run(["apk", "add", "bash"])
         # Create the user
-        subprocess.run(["adduser", "-g", user_gecos, "-D", user])
+        subprocess.run(["adduser", "-g", user_gecos, "-D", "-s", "/bin/bash", user])
         # Unlock the account without setting a password (only SSH keys can be used to connect)
         subprocess.run(["usermod", "-p", "*", user])
         # Add the user to required groups
@@ -85,6 +169,13 @@ def apply(
         subprocess.run(["adduser", user, "input"])
         subprocess.run(["adduser", user, "video"])
     authorized_keys.add_idempotently(localhost, user, user_authorized_keys)
+    localhost.set_file_contents(
+        "/etc/sudoers.d/synergist-teensy",
+        "synergist ALL = NOPASSWD: /usr/local/bin/teensy_loader_cli",
+        "root",
+        "root",
+        0o600,
+    )
 
     # Tell lightdm to use 1920x1080
     # Via <https://askubuntu.com/questions/73804/wrong-login-screen-resolution>
@@ -242,3 +333,27 @@ def apply(
     # The first start it doesn't seem to autologin correctly?
     # So here's a fucked up hack.
     subprocess.run(["rc-service", "lightdm", "restart"], check=True)
+
+    synergist_data = "/psyopsos-data/roles/synergycontroller/synergist"
+    localhost.makedirs(synergist_data, user, mode=0o0755)
+
+    install_qmk_prereqs()
+    install_teensy_loader_cli(localhost, user, synergist_data)
+
+    qmk_home = "/psyopsos-data/roles/synergycontroller/qmk_firmware"
+    subprocess.run(["python3", "-m", "pip", "install", "--user", "qmk"])
+
+    install_vscode_remote_prereqs()
+
+    # Can now configure QMK:
+    # qmk setup -H /psyopsos-data/roles/synergycontroller/synergist/qmk_firmware mrled/qmk_firmware
+    #
+    # And build firmware:
+    # qmk compile -kb ergodox_ez/shine -km mrled
+    #
+    # In theory you can flash with
+    # qmk flash -kb ergodox_ez/shine -km mrled
+    #
+    # However, because something something udev something Alpine something something,
+    # it's easier to just do
+    # sudo teensy_loader_cli -w -v -mmcu=atmega32u4 /psyopsos-data/roles/synergycontroller/synergist/qmk_firmware/.build/ergodox_ez_shine_mrled.hex

@@ -107,6 +107,7 @@ node = Bunch(
         datadisk={
             "underlying_device": "/dev/mmcblk1",
             "wipe_after_mounting": ["overlays/var-lib-flatpak/"],
+            "ramoffload": True,
         },
         synergycontroller={
             "secret_synergy_priv_key": synergy_private_key,
