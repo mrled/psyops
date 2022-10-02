@@ -17,7 +17,6 @@ from progfiguration.cli import (
     syslog_excepthook,
 )
 from progfiguration.inventory import Inventory, package_inventory_file
-from progfiguration.inventory.groups import universal
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
 
 
@@ -31,8 +30,7 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
 
     node = inventory.node(nodename).node
 
-    # TODO: call this something else
-    nodectx = LocalhostLinuxPsyopsOs(nodename)
+    localhost = LocalhostLinuxPsyopsOs(nodename)
 
     groupmods = {}
     for groupname in inventory.node_groups[nodename]:
@@ -60,35 +58,24 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
         for gmod in groupmods.values():
             group_rolevars = getattr(gmod.group.roles, rolename, {})
             for key, value in group_rolevars.items():
+                unencrypted_value = value
+                if isinstance(value, age.AgeSecret):
+                    unencrypted_value = value.decrypt()
                 if key in appendvars:
-                    rolevars[key].append(value)
+                    rolevars[key].append(unencrypted_value)
                 else:
-                    rolevars[key] = value
+                    rolevars[key] = unencrypted_value
 
         # Apply any role arguments from the node itself
         node_rolevars = getattr(node.roles, rolename, {})
         for key, value in node_rolevars.items():
+            unencrypted_value = value
+            if isinstance(value, age.AgeSecret):
+                unencrypted_value = value.decrypt()
             if key in appendvars:
-                rolevars[key].append(value)
+                rolevars[key].append(unencrypted_value)
             else:
-                rolevars[key] = value
-
-        # Secret values are encrypted values where the key name is preceded by `secret_`
-        # Find these and decrypt them
-        # TODO: This means a `secret_` value defined as a default will OVERRIDE a non `_secret` value defined more specifically. Fix this.
-        decrypted_rolevars = {}
-        for vname, vvalue in rolevars.items():
-            if vname.startswith("secret_"):
-                nonsecret_vname = vname[7:]
-                if vname in appendvars or nonsecret_vname in appendvars:
-                    raise Exception(
-                        f"The var {nonsecret_vname} is an append-only variable, but at least one of the role, group, or node values for it is secret, which is not currently supported. TODO: support this."
-                    )
-                # TODO: don't hard code key path here
-                decrypted_vvalue = age.decrypt(vvalue, "/mnt/psyops-secret/mount/age.key")
-                decrypted_rolevars[nonsecret_vname] = decrypted_vvalue
-            else:
-                decrypted_rolevars[vname] = vvalue
+                rolevars[key] = unencrypted_value
 
         applyroles[rolename] = (rolemodule, decrypted_rolevars)
 
@@ -98,7 +85,7 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
         for rolename, role in applyroles.items():
             rolemodule, decrypted_rolevars = role
             logging.debug(f"Running role {rolename}...")
-            rolemodule.apply(nodectx, **decrypted_rolevars)
+            rolemodule.apply(localhost, **decrypted_rolevars)
             logging.info(f"Finished running role {rolename}.")
 
     logging.info(f"Finished running all roles")
