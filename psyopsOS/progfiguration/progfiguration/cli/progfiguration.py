@@ -112,6 +112,8 @@ def action_apply(nodename: str, strace_before_applying: bool = False):
             rolemodule.apply(nodectx, **decrypted_rolevars)
             logging.info(f"Finished running role {rolename}.")
 
+    logging.info(f"Finished running all roles")
+
 
 def action_list(collection: str):
     if collection == "nodes":
