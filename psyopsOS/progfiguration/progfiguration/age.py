@@ -1,5 +1,6 @@
 """A wrapper for the age binary to encrypt and decrypt secret values"""
 
+from dataclasses import dataclass
 import datetime
 import subprocess
 from typing import List
@@ -36,6 +37,21 @@ class AgeKey:
         return cls.from_output(content)
 
 
+@dataclass
+class AgeSecret:
+    """An age-encrypted secret value"""
+
+    secret: str
+
+    _decrypted: str = ""
+
+    def decrypt(self, privkey_path: str):
+        """Decrypt a secret and cache the result."""
+        if not self._decrypted:
+            self._decrypted = decrypt(self.secret, privkey_path)
+        return self._decrypted
+
+
 def encrypt(value: str, pubkeys: List[str]):
     """Encrypt a value to a list of public age keys"""
     age_cmd = ["age", "--armor"]
@@ -43,7 +59,7 @@ def encrypt(value: str, pubkeys: List[str]):
         age_cmd.append("--recipient")
         age_cmd.append(pubkey)
     proc = subprocess.run(age_cmd, input=value.encode(), check=True, capture_output=True)
-    return proc.stdout
+    return proc.stdout.decode()
 
 
 def decrypt(value: str, privkey_path: str):

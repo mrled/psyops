@@ -16,7 +16,7 @@ from progfiguration.cli import (
     progfiguration_log_levels,
     syslog_excepthook,
 )
-from progfiguration.inventory import inventory
+from progfiguration.inventory import Inventory, package_inventory_file
 from progfiguration.inventory.groups import universal
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
 
@@ -26,38 +26,21 @@ def ResolvedPath(p: str) -> str:
     return os.path.realpath(os.path.normpath(os.path.expanduser(p)))
 
 
-def nodename2mod(nodename: str):
-    nodemod = importlib.import_module(f"progfiguration.inventory.nodes.{nodename}")
-    return nodemod
-
-
-def groupname2mod(groupname: str):
-    gmod = importlib.import_module(f"progfiguration.inventory.groups.{groupname}")
-    return gmod
-
-
-def rolename2mod(rolename: str):
-    rolemodule = importlib.import_module(f"progfiguration.roles.{rolename}")
-    return rolemodule
-
-
-def action_apply(nodename: str, strace_before_applying: bool = False):
+def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bool = False):
     """Apply configuration for the node 'nodename' to localhost"""
 
-    node = nodename2mod(nodename).node
+    node = inventory.node(nodename).node
 
     # TODO: call this something else
     nodectx = LocalhostLinuxPsyopsOs(nodename)
 
-    groupmods = {
-        "universal": universal,
-    }
+    groupmods = {}
     for groupname in inventory.node_groups[nodename]:
-        groupmods[groupname] = groupname2mod(groupname)
+        groupmods[groupname] = inventory.group(groupname)
 
     applyroles = {}
     for rolename in inventory.node_roles(nodename):
-        rolemodule = rolename2mod(rolename)
+        rolemodule = inventory.role(rolename)
 
         # If the role module itself has defaults, set them
         rolevars = {}
@@ -121,7 +104,7 @@ def action_apply(nodename: str, strace_before_applying: bool = False):
     logging.info(f"Finished running all roles")
 
 
-def action_list(collection: str):
+def action_list(inventory: Inventory, collection: str):
     if collection == "nodes":
         for node in inventory.nodes:
             print(node)
@@ -135,7 +118,7 @@ def action_list(collection: str):
         raise Exception(f"Unknown collection {collection}")
 
 
-def action_info(nodes: List[str], groups: List[str], functions: List[str]):
+def action_info(inventory: Inventory, nodes: List[str], groups: List[str], functions: List[str]):
     if not any([nodes, groups, functions]):
         print("Request info on a node, group, or function. (See also the 'list' subcommand.)")
     for nodename in nodes:
@@ -160,24 +143,37 @@ def action_info(nodes: List[str], groups: List[str], functions: List[str]):
         print(f"  Roles: {function_roles}")
 
 
-def action_encrypt(value: str, nodes: List[str], groups: List[str], functions: List[str], controller_key: bool):
-    for group in groups:
-        nodes += inventory.group_members[group]
-    for function in functions:
-        nodes += inventory.function_nodes[function]
-    nodes = set(nodes)
-
-    nmods = [nodename2mod(n) for n in nodes]
-    pubkeys = [nm.node.pubkey for nm in nmods]
-
-    if controller_key:
-        pubkeys += [inventory.controller.agepub]
-
-    print("Encrypting for all of these recipients:")
-    for pk in pubkeys:
+def action_encrypt(
+    inventory: Inventory,
+    name: str,
+    value: str,
+    nodes: List[str],
+    groups: List[str],
+    controller_key: bool,
+    store: bool,
+    stdout: bool,
+):
+    encrypted_value, recipients = inventory.encrypt_secret(name, value, nodes, groups, controller_key, store=store)
+    print("Encrypted for all of these recipients:")
+    for pk in recipients:
         print(pk)
+    if stdout:
+        print(encrypted_value)
 
-    print(age.encrypt(value, pubkeys).decode())
+
+def action_decrypt(inventory: Inventory, nodes: List[str], groups: List[str], controller_key: bool):
+    for node in nodes:
+        print(f"Secrets for node {node}:")
+        for key, value in inventory.get_node_secrets(node).items():
+            print(f"{key}: {value.decrypt(inventory.age_path)}")
+    for group in groups:
+        print(f"Secrets for group {group}:")
+        for key, value in inventory.get_group_secrets(group).items():
+            print(f"{key}: {value.decrypt(inventory.age_path)}")
+    if controller_key:
+        print(f"Secrets for the controller:")
+        for key, value in inventory.get_controller_secrets().items():
+            print(f"{key}: {value.decrypt(inventory.age_path)}")
 
 
 def action_build_action_apk(apkdir: str):
@@ -238,11 +234,22 @@ def parseargs(arguments: List[str]):
         choices=progfiguration_log_levels,
         help="Log level to send to syslog. Defaults to INFO. NONE to disable.",
     )
+    parser.add_argument(
+        "--inventory-file",
+        "-f",
+        default=package_inventory_file,
+        help="The path to an inventory yaml file. By default, use the one in the package",
+    )
+    parser.add_argument(
+        "--age-private-key", "-k", help="The path to an age private key that decrypts inventory secrets"
+    )
 
     subparsers = parser.add_subparsers(dest="action", required=True)
 
+    # version subcommand
     svn = subparsers.add_parser("version", description="Show progfiguration version")
 
+    # apply subcommand
     sub_apply = subparsers.add_parser("apply", description="Apply configuration")
     sub_apply.add_argument("nodename", help="The name of a node in the progfiguration inventory")
     sub_apply.add_argument(
@@ -251,6 +258,7 @@ def parseargs(arguments: List[str]):
         help="Do not actually apply the role. Instead, launch a debugger. Intended for development.",
     )
 
+    # list subcommand
     sub_list = subparsers.add_parser("list", description="List inventory items")
     list_choices = ["nodes", "groups", "functions", "svcpreps"]
     sub_list.add_argument(
@@ -259,18 +267,40 @@ def parseargs(arguments: List[str]):
         help=f"The items to list. Options: {list_choices}",
     )
 
+    # info subcommand
     sub_info = subparsers.add_parser("info", description="Display info about nodes and groups")
-    sub_info.add_argument("--group", "-g", action="append", help="Show info for this group")
-    sub_info.add_argument("--node", "-n", action="append", help="Show info for this node")
-    sub_info.add_argument("--function", "-f", action="append", help="Show info for this function")
+    sub_info.add_argument("--group", "-g", default=[], action="append", help="Show info for this group")
+    sub_info.add_argument("--node", "-n", default=[], action="append", help="Show info for this node")
+    sub_info.add_argument("--function", "-f", default=[], action="append", help="Show info for this function")
 
+    # encrypt subcommand
     sub_encrypt = subparsers.add_parser("encrypt", description="Encrypt a value with age")
     sub_encrypt.add_argument("value", help="Encrypt this value")
-    sub_encrypt.add_argument("--group", "-g", action="append", help="Encrypt for every node in this group")
-    sub_encrypt.add_argument("--node", "-n", action="append", help="Encrypt for this node")
-    sub_encrypt.add_argument("--function", "-f", action="append", help="Encrypt for all nodes with this function")
+    sub_encrypt.add_argument(
+        "--node", "-n", default=[], action="append", help="Encrypt for this node. Can be repeated."
+    )
+    sub_encrypt.add_argument(
+        "--group", "-g", action="append", default=[], help="Encrypt for every node in this group. Can be repeated."
+    )
+    # TODO: document that everything is always encrypted for the controller
+    # This flag does nothing unless --save-as is also passed
     sub_encrypt.add_argument("--controller", "-c", action="store_true", help="Encrypt for the controller")
+    sub_encrypt.add_argument("--stdout", action="store_true", help="Print encrypted value to stdout")
+    sub_encrypt.add_argument("--save-as", help="If present, save under this name in each node/group's secret store")
 
+    # decrypt subcommand
+    sub_decrypt = subparsers.add_parser("decrypt", description="Decrypt secrets from the secret store")
+    sub_decrypt.add_argument(
+        "--node", "-n", default=[], action="append", help="Decrypt secrets for this node. Can be repeated."
+    )
+    sub_decrypt.add_argument(
+        "--group", "-g", default=[], action="append", help="Decrypt secrets for this group. Can be repeated."
+    )
+    sub_decrypt.add_argument(
+        "--controller", "-c", action="store_true", help="Decrypt secrets stored for the controller"
+    )
+
+    # build subcommand
     sub_build = subparsers.add_parser("build", description="Build the package")
     sub_build_subparsers = sub_build.add_subparsers(dest="buildaction", required=True)
     sub_build_sub_apk = sub_build_subparsers.add_parser(
@@ -285,6 +315,7 @@ def parseargs(arguments: List[str]):
         "--version", help="Set the version to this string. If not present, use a version based on the epoch."
     )
 
+    # Parse and return
     parsed = parser.parse_args(arguments)
     return parsed
 
@@ -298,18 +329,33 @@ def main(*arguments):
         sys.excepthook = syslog_excepthook
     configure_logging(parsed.log_stderr, parsed.log_syslog)
 
+    inventory = Inventory(parsed.inventory_file, parsed.age_private_key)
+
     if parsed.action == "version":
         print(version.getversion())
     elif parsed.action == "apply":
-        action_apply(parsed.nodename, strace_before_applying=parsed.strace_before_applying)
+        action_apply(inventory, parsed.nodename, strace_before_applying=parsed.strace_before_applying)
     elif parsed.action == "list":
-        action_list(parsed.collection)
+        action_list(inventory, parsed.collection)
     elif parsed.action == "info":
-        action_info(parsed.node or [], parsed.group or [], parsed.function or [])
+        action_info(inventory, parsed.node or [], parsed.group or [], parsed.function or [])
     elif parsed.action == "encrypt":
+        if not parsed.node and not parsed.group and not parsed.controller:
+            raise Exception("You must pass at least one of --node, --group, or --controller-key")
         action_encrypt(
-            parsed.value, parsed.node or [], parsed.group or [], parsed.function or [], controller_key=parsed.controller
+            inventory,
+            parsed.save_as or "",
+            parsed.value,
+            parsed.node or [],
+            parsed.group or [],
+            parsed.controller,
+            bool(parsed.save_as),
+            parsed.stdout,
         )
+    elif parsed.action == "decrypt":
+        if not parsed.node and not parsed.group and not parsed.controller:
+            raise Exception("You must pass at least one of --node, --group, or --controller-key")
+        action_decrypt(inventory, parsed.node, parsed.group, parsed.controller)
     elif parsed.action == "build":
         if parsed.buildaction == "apk":
             action_build_action_apk(parsed.apkdir)

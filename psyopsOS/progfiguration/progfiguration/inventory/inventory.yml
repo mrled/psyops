@@ -9,6 +9,7 @@ groupNodeMap:
     - zalas
     - psyopsos-test-1
 
+# WARNING: Any host not listed in the nodeFunctionMap is not visible and will not be in the 'universal' group.
 nodeFunctionMap:
   jesseta: kubernasty
   kenasus: kubernasty
@@ -26,6 +27,12 @@ functionRoleMap:
     # We need datadisk bc we need Flatpak for Synergy, and Flatpak is too disk hungry for RAM
     - datadisk
     - synergycontroller
+
+nodeSettings:
+  # The location for the age key on each node
+  # If multiple items are specified here, they are checked in order and the first found is used
+  age:
+    - /mnt/psyops-secret/mount/age.key
 
 controller:
   # The controller has an age key which can be used to decrypt any secret.
