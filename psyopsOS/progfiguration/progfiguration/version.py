@@ -8,28 +8,15 @@ def getversion():
     """Find the version of the package"""
 
     try:
+        # The build_version.py file is created by the build process (tasks.py)
+        # It isn't and shouldn't be in git
         from progfiguration import build_version
 
         return build_version.VERSION
     except ImportError:
         pass
 
-    parent = os.path.dirname(__file__)
-    try:
-        result = subprocess.run(["git", "rev-parse", "HEAD"], check=True, capture_output=True, cwd=parent)
-        git_revision = result.stdout.decode().strip()
-    except BaseException:
-        git_revision = None
-
-    if not git_revision:
-        raise Exception(
-            f"Detected neither build_version.py module or git repository; not sure how to determine version"
-        )
-
-    try:
-        subprocess.run(["git", "diff", "--quiet"], check=True, capture_output=True, cwd=parent)
-        dirty = ""
-    except subprocess.CalledProcessError:
-        dirty = "-dirty"
-
-    return f"{git_revision}{dirty}"
+    # If we don't have a build_version module, we aren't being called from tasks.py.
+    # Probably we are trying to install the package as editable, like 'pip install -e .'
+    # Return a useless static version number in that case.
+    return "0.0.1-alpha"
