@@ -3,11 +3,12 @@
 import argparse
 import importlib
 import logging
+import os
 import pdb
 import sys
-from typing import List
+from typing import List, Union
 
-from progfiguration import age, version
+from progfiguration import age, progfiguration_build_path, version
 from progfiguration.cli import (
     broken_pipe_handler,
     configure_logging,
@@ -18,6 +19,11 @@ from progfiguration.cli import (
 from progfiguration.inventory import inventory
 from progfiguration.inventory.groups import universal
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
+
+
+def ResolvedPath(p: str) -> str:
+    """Convert a user-input path to an absolute path"""
+    return os.path.realpath(os.path.normpath(os.path.expanduser(p)))
 
 
 def nodename2mod(nodename: str):
@@ -170,6 +176,36 @@ def action_encrypt(value: str, nodes: List[str], groups: List[str], functions: L
     print(age.encrypt(value, pubkeys).decode())
 
 
+def action_build_action_apk(apkdir: str):
+
+    # Get the module by path
+    spec = importlib.util.spec_from_file_location("progfiguration_build", progfiguration_build_path)
+    progfiguration_build = importlib.util.module_from_spec(spec)
+    sys.modules["progfiguration_build"] = progfiguration_build
+    spec.loader.exec_module(progfiguration_build)
+
+    # Run the build
+    progfiguration_build.build_alpine(apkdir)
+
+
+def action_build_action_save_version(version: Union[str, None]):
+
+    # Get the module by path
+    spec = importlib.util.spec_from_file_location("progfiguration_build", progfiguration_build_path)
+    progfiguration_build = importlib.util.module_from_spec(spec)
+    sys.modules["progfiguration_build"] = progfiguration_build
+    spec.loader.exec_module(progfiguration_build)
+
+    # Save the version
+    if not version:
+        version = progfiguration_build.get_epoch_build_version()
+    progfiguration_build.set_build_version(version)
+    print("Saved APKBUILD and package version files:")
+    print(progfiguration_build.APKBUILD_FILE)
+    print(progfiguration_build.PKG_VERSION_FILE)
+    print("Take care not to commit these files to git")
+
+
 def parseargs(arguments: List[str]):
     parser = argparse.ArgumentParser("psyopsOS programmatic configuration")
 
@@ -230,6 +266,20 @@ def parseargs(arguments: List[str]):
     sub_encrypt.add_argument("--node", "-n", action="append", help="Encrypt for this node")
     sub_encrypt.add_argument("--function", "-f", action="append", help="Encrypt for this function")
 
+    sub_build = subparsers.add_parser("build", description="Build the package")
+    sub_build_subparsers = sub_build.add_subparsers(dest="buildaction", required=True)
+    sub_build_sub_apk = sub_build_subparsers.add_parser(
+        "apk",
+        description="Build an Alpine APK package. Must be run from an editable install on an Alpine linux system with the appropriate signing keys.",
+    )
+    sub_build_sub_apk.add_argument("apkdir", type=ResolvedPath, help="Save the resulting package to this directory")
+    sub_build_sub_version = sub_build_subparsers.add_parser(
+        "save-version", description="Save the Python module and APKBUILD file with a version number"
+    )
+    sub_build_sub_version.add_argument(
+        "--version", help="Set the version to this string. If not present, use a version based on the epoch."
+    )
+
     parsed = parser.parse_args(arguments)
     return parsed
 
@@ -253,6 +303,14 @@ def main(*arguments):
         action_info(parsed.node or [], parsed.group or [], parsed.function or [])
     elif parsed.action == "encrypt":
         action_encrypt(parsed.value, parsed.node or [], parsed.group or [], parsed.function or [])
+
+    elif parsed.action == "build":
+        if parsed.buildaction == "apk":
+            action_build_action_apk(parsed.apkdir)
+        elif parsed.buildaction == "save-version":
+            action_build_action_save_version(parsed.version)
+        else:
+            raise Exception(f"Unknown build action {parsed.buildaction}")
     else:
         raise Exception(f"Unknown action {parsed.action}")
 

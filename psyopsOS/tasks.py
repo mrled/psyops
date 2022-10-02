@@ -2,6 +2,7 @@
 
 import datetime
 import glob
+import importlib.util
 import os
 import pdb
 import shlex
@@ -113,43 +114,18 @@ def progfiguration_abuild(ctx):
 
     Sign with the psyopsOS key.
     """
-    versionfile = os.path.join(progfiguration_dir, "progfiguration", "build_version.py")
-    # version = datetime.datetime.now().strftime("%Y%m%d.%H%M%S.0")
-    epochsecs = int(time.time())
-    version = f"1.0.{epochsecs}"
 
-    with open(f"{progfiguration_dir}/APKBUILD.template") as fp:
-        apkbuild_template = string.Template(fp.read())
-    apkbuild_contents = apkbuild_template.substitute(version=version)
-    apkbuild_path = os.path.join(progfiguration_dir, "APKBUILD")
+    # Get the module by path
+    spec = importlib.util.spec_from_file_location(
+        "progfiguration_build",
+        os.path.join(progfiguration_dir, "progfiguration_build.py"),
+    )
+    progfiguration_build = importlib.util.module_from_spec(spec)
+    sys.modules["progfiguration_build"] = progfiguration_build
+    spec.loader.exec_module(progfiguration_build)
 
-    # Place the apk repo inside the public dir
-    # This means that 'invoke deploy' will copy it
-    build_cmd = f"abuild -P {incontainer_apks_path} -D psyopsOS"
-
-    try:
-        with open(versionfile, "w") as vfd:
-            vfd.write(f"VERSION = '{version}'\n")
-        with open(apkbuild_path, "w") as afd:
-            afd.write(apkbuild_contents)
-        print("Running build in progfiguration directory...")
-        with ctx.cd(progfiguration_dir):
-            ctx.run(build_cmd)
-    finally:
-        failed = False
-        try:
-            os.unlink(versionfile)
-        except:
-            # raise Exception(f"When trying to remove version file at {versionfile}, got exception {rmexc}. ***REMOVE {versionfile} MANUALLY***.")
-            failed = True
-        try:
-            os.unlink(apkbuild_path)
-        except:
-            failed = True
-        if failed:
-            raise Exception(
-                f"When trying to remove version file and/or ABKBUILD, got an exception. Manually remove these two files, if they exist: {versionfile}, {apkbuild_path}"
-            )
+    # Run the build
+    progfiguration_build.build_alpine(incontainer_apks_path)
 
 
 @invoke.task
