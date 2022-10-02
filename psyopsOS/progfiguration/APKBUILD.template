@@ -14,7 +14,7 @@ arch="noarch"
 license="WTFPL"
 # We depend on shadow for usermod in pre-install
 depends="python3 py3-requests py3-tz py3-yaml shadow"
-makedepends="py3-build py3-setuptools py3-wheel"
+makedepends="py3-build py3-setuptools py3-wheel py3-installer"
 
 build() {
     python3 -m build --no-isolation --wheel

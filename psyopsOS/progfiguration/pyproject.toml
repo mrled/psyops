@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel", "black", "mypy"]
+requires = ["setuptools", "installer", "wheel", "black", "mypy"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
