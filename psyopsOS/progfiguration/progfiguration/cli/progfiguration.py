@@ -160,14 +160,18 @@ def action_info(nodes: List[str], groups: List[str], functions: List[str]):
         print(f"  Roles: {function_roles}")
 
 
-def action_encrypt(value: str, nodes: List[str], groups: List[str], functions: List[str]):
+def action_encrypt(value: str, nodes: List[str], groups: List[str], functions: List[str], controller_key: bool):
     for group in groups:
         nodes += inventory.group_members[group]
     for function in functions:
         nodes += inventory.function_nodes[function]
     nodes = set(nodes)
+
     nmods = [nodename2mod(n) for n in nodes]
     pubkeys = [nm.node.pubkey for nm in nmods]
+
+    if controller_key:
+        pubkeys += [inventory.controller.agepub]
 
     print("Encrypting for all of these recipients:")
     for pk in pubkeys:
@@ -264,7 +268,8 @@ def parseargs(arguments: List[str]):
     sub_encrypt.add_argument("value", help="Encrypt this value")
     sub_encrypt.add_argument("--group", "-g", action="append", help="Encrypt for every node in this group")
     sub_encrypt.add_argument("--node", "-n", action="append", help="Encrypt for this node")
-    sub_encrypt.add_argument("--function", "-f", action="append", help="Encrypt for this function")
+    sub_encrypt.add_argument("--function", "-f", action="append", help="Encrypt for all nodes with this function")
+    sub_encrypt.add_argument("--controller", "-c", action="store_true", help="Encrypt for the controller")
 
     sub_build = subparsers.add_parser("build", description="Build the package")
     sub_build_subparsers = sub_build.add_subparsers(dest="buildaction", required=True)
@@ -302,8 +307,9 @@ def main(*arguments):
     elif parsed.action == "info":
         action_info(parsed.node or [], parsed.group or [], parsed.function or [])
     elif parsed.action == "encrypt":
-        action_encrypt(parsed.value, parsed.node or [], parsed.group or [], parsed.function or [])
-
+        action_encrypt(
+            parsed.value, parsed.node or [], parsed.group or [], parsed.function or [], controller_key=parsed.controller
+        )
     elif parsed.action == "build":
         if parsed.buildaction == "apk":
             action_build_action_apk(parsed.apkdir)

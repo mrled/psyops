@@ -1,9 +1,19 @@
 """The progfiguration inventory"""
 
+from dataclasses import dataclass
+import os
 from importlib.resources import files as importlib_resources_files
-
+from typing import Optional
 
 import yaml
+
+from progfiguration import age
+
+
+@dataclass
+class Controller:
+    age: Optional[age.AgeKey]
+    agepub: str
 
 
 class Inventory:
@@ -19,6 +29,13 @@ class Inventory:
         self._node_groups = None
         self._function_nodes = None
         self._role_functions = None
+
+        ctrlrdata = self.inventory_parsed["controller"]
+        if os.path.exists(ctrlrdata["age"]):
+            ctrlrage = age.AgeKey.from_file(ctrlrdata["age"])
+        else:
+            ctrlrage = None
+        self.controller = Controller(ctrlrage, ctrlrdata["agepub"])
 
     @property
     def groups(self):

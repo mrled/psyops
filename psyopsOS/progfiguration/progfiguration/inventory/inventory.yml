@@ -26,3 +26,13 @@ functionRoleMap:
     # We need datadisk bc we need Flatpak for Synergy, and Flatpak is too disk hungry for RAM
     - datadisk
     - synergycontroller
+
+controller:
+  # The controller has an age key which can be used to decrypt any secret.
+  # When this file is not present, progfiguration will still work,
+  # but activities that require the secret key will throw errors.
+  age: /secrets/psyops-secrets/progfiguration/controller.age
+
+  # We must hard code the public key in this file as well,
+  # so that it is available even when we aren't running on the controller.
+  agepub: age18mfpm3htk5dvtygtcajqkcmr8775dy35uykgx5tmfanpmwznyc2qs3smh2
