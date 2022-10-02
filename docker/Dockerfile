@@ -125,6 +125,7 @@ RUN true \
         ripgrep ripgrep-bash-completion ripgrep-doc \
         rsync rsync-doc \
         shadow shadow-doc \
+        sops@edgetesting \
         sqlite sqlite-doc \
         strace strace-doc \
         # Useful to have the 'ipsec' command when working with Algo
