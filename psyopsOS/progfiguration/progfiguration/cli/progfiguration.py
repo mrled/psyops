@@ -18,6 +18,7 @@ from progfiguration.cli import (
 )
 from progfiguration.inventory import Inventory, package_inventory_file
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
+from progfiguration.roles.util import yaml_dump_str
 
 
 def ResolvedPath(p: str) -> str:
@@ -59,8 +60,9 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
             group_rolevars = getattr(gmod.group.roles, rolename, {})
             for key, value in group_rolevars.items():
                 unencrypted_value = value
-                if isinstance(value, age.AgeSecret):
-                    unencrypted_value = value.decrypt()
+                if isinstance(value, age.AgeSecretReference):
+                    secret = inventory.get_group_secrets(key)[value.name]
+                    unencrypted_value = secret.decrypt()
                 if key in appendvars:
                     rolevars[key].append(unencrypted_value)
                 else:
@@ -70,8 +72,9 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
         node_rolevars = getattr(node.roles, rolename, {})
         for key, value in node_rolevars.items():
             unencrypted_value = value
-            if isinstance(value, age.AgeSecret):
-                unencrypted_value = value.decrypt()
+            if isinstance(value, age.AgeSecretReference):
+                secret = inventory.get_node_secrets(key)[value.name]
+                unencrypted_value = secret.decrypt()
             if key in appendvars:
                 rolevars[key].append(unencrypted_value)
             else:
@@ -151,16 +154,22 @@ def action_encrypt(
 def action_decrypt(inventory: Inventory, nodes: List[str], groups: List[str], controller_key: bool):
     for node in nodes:
         print(f"Secrets for node {node}:")
-        for key, value in inventory.get_node_secrets(node).items():
-            print(f"{key}: {value.decrypt(inventory.age_path)}")
+        print("---")
+        decrypted_secrets = {k: v.decrypt(inventory.age_path) for k, v in inventory.get_node_secrets(node).items()}
+        print(yaml_dump_str(decrypted_secrets, {"default_style": "|"}))
+        print("---")
     for group in groups:
         print(f"Secrets for group {group}:")
-        for key, value in inventory.get_group_secrets(group).items():
-            print(f"{key}: {value.decrypt(inventory.age_path)}")
+        print("---")
+        decrypted_secrets = {k: v.decrypt(inventory.age_path) for k, v in inventory.get_group_secrets(group).items()}
+        print(yaml_dump_str(decrypted_secrets, {"default_style": "|"}))
+        print("---")
     if controller_key:
         print(f"Secrets for the controller:")
-        for key, value in inventory.get_controller_secrets().items():
-            print(f"{key}: {value.decrypt(inventory.age_path)}")
+        print("---")
+        decrypted_secrets = {k: v.decrypt(inventory.age_path) for k, v in inventory.get_controller_secrets().items()}
+        print(yaml_dump_str(decrypted_secrets, {"default_style": "|"}))
+        print("---")
 
 
 def action_build_action_apk(apkdir: str):
@@ -262,7 +271,9 @@ def parseargs(arguments: List[str]):
 
     # encrypt subcommand
     sub_encrypt = subparsers.add_parser("encrypt", description="Encrypt a value with age")
-    sub_encrypt.add_argument("value", help="Encrypt this value")
+    sub_encrypt_value_group = sub_encrypt.add_mutually_exclusive_group()
+    sub_encrypt_value_group.add_argument("--value", help="Encrypt this value")
+    sub_encrypt_value_group.add_argument("--file", help="Encrypt the contents of this file")
     sub_encrypt.add_argument(
         "--node", "-n", default=[], action="append", help="Encrypt for this node. Can be repeated."
     )
@@ -304,11 +315,11 @@ def parseargs(arguments: List[str]):
 
     # Parse and return
     parsed = parser.parse_args(arguments)
-    return parsed
+    return parser, parsed
 
 
 def main(*arguments):
-    parsed = parseargs(arguments[1:])
+    parser, parsed = parseargs(arguments[1:])
 
     if parsed.debug:
         sys.excepthook = idb_excepthook
@@ -328,11 +339,18 @@ def main(*arguments):
         action_info(inventory, parsed.node or [], parsed.group or [], parsed.function or [])
     elif parsed.action == "encrypt":
         if not parsed.node and not parsed.group and not parsed.controller:
-            raise Exception("You must pass at least one of --node, --group, or --controller-key")
+            parser.error("You must pass at least one of --node, --group, or --controller-key")
+        if not parsed.value and not parsed.file:
+            parser.error("You must pass one of --value or --file")
+        if parsed.file:
+            with open(parsed.file) as fp:
+                value = fp.read()
+        else:
+            value = parsed.value
         action_encrypt(
             inventory,
             parsed.save_as or "",
-            parsed.value,
+            value,
             parsed.node or [],
             parsed.group or [],
             parsed.controller,
@@ -341,7 +359,7 @@ def main(*arguments):
         )
     elif parsed.action == "decrypt":
         if not parsed.node and not parsed.group and not parsed.controller:
-            raise Exception("You must pass at least one of --node, --group, or --controller-key")
+            parser.error("You must pass at least one of --node, --group, or --controller-key")
         action_decrypt(inventory, parsed.node, parsed.group, parsed.controller)
     elif parsed.action == "build":
         if parsed.buildaction == "apk":

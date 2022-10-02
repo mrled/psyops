@@ -1,5 +1,6 @@
 """My home k3s cluster"""
 
+from progfiguration.age import AgeSecretReference
 from progfiguration.inventory.invhelpers import Bunch
 
 
@@ -26,7 +27,7 @@ PPhUGmZLadFuc2ngjbYP1A==
 group = Bunch(
     roles=Bunch(
         k3s={
-            # "secret_server_token": kubernasty_k3s_server_token,
+            # "secret_server_token": AgeSecretReference("kubernasty_k3s_server_token"),
             "kube_vip_address": "192.168.1.200",
         },
     ),

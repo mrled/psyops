@@ -52,6 +52,13 @@ class AgeSecret:
         return self._decrypted
 
 
+@dataclass
+class AgeSecretReference:
+    """A reference to a secret by name"""
+
+    name: str
+
+
 def encrypt(value: str, pubkeys: List[str]):
     """Encrypt a value to a list of public age keys"""
     age_cmd = ["age", "--armor"]
