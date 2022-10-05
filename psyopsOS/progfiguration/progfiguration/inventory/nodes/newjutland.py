@@ -5,6 +5,7 @@ Untested so far
 
 from progfiguration.age import AgeSecretReference
 from progfiguration.inventory.invhelpers import Bunch
+from progfiguration.inventory.nodes import InventoryNode
 
 
 # The public key, not encrypted
@@ -38,12 +39,15 @@ synergy_fingerprints_local = """\
 """
 
 
-node = Bunch(
+node = InventoryNode(
+    address="newjutland.home.micahrl.com",
+    user="root",
     notes="",
-    motd=Bunch(
-        flavor="NEW JUTLAND: The final destination of all train graffiti. The glyphs slither down from their cars and become three-dimensional aberrations.",
-    ),
-    pubkey="age12sdqyt4pj3luus62qklyusj4ykk5sr6wr44jhtv0q84suzg5n9vqgkhru0",
+    flavortext="NEW JUTLAND: The final destination of all train graffiti. The glyphs slither down from their cars and become three-dimensional aberrations.",
+    age_pubkey="age12sdqyt4pj3luus62qklyusj4ykk5sr6wr44jhtv0q84suzg5n9vqgkhru0",
+    ssh_host_fingerprint="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMV71LKt9qu15k32QcuQFZWWO/bmEEbZD5W3a43i5mZH",
+    psy0mac="00:07:32:4c:eb:9a",
+    serial="",
     roles=Bunch(
         datadisk={
             "underlying_device": "/dev/mmcblk1",
@@ -58,8 +62,4 @@ node = Bunch(
             "synergy_server_screenname": "newjutland",
         },
     ),
-    nics={
-        "psy0": "00:07:32:4c:eb:9a",
-    },
-    serial="",
 )
