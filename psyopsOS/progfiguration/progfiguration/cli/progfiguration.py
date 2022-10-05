@@ -26,6 +26,11 @@ def ResolvedPath(p: str) -> str:
     return os.path.realpath(os.path.normpath(os.path.expanduser(p)))
 
 
+def CommaSeparatedStrList(cssl: str) -> List[str]:
+    """Convert a string with commas into a list of strings"""
+    return cssl.split(",")
+
+
 def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bool = False):
     """Apply configuration for the node 'nodename' to localhost"""
 
@@ -240,6 +245,32 @@ def parseargs(arguments: List[str]):
         "--age-private-key", "-k", help="The path to an age private key that decrypts inventory secrets"
     )
 
+    # node/group related options
+    node_opts = argparse.ArgumentParser(add_help=False)
+    node_opts.add_argument(
+        "--nodes", "-n", default=[], type=CommaSeparatedStrList, help="A node, or list of nodes separated by commas"
+    )
+    node_opts.add_argument(
+        "--groups", "-g", default=[], type=CommaSeparatedStrList, help="A group, or list of groups separated by commas"
+    )
+
+    # function related options
+    func_opts = argparse.ArgumentParser(add_help=False)
+    func_opts.add_argument(
+        "--functions",
+        "-f",
+        default=[],
+        type=CommaSeparatedStrList,
+        help="A function, or list of functions separated by commas",
+    )
+
+    # --controller option
+    # TODO: document that everything is always encrypted for the controller
+    ctrl_opts = argparse.ArgumentParser(add_help=False)
+    ctrl_opts.add_argument(
+        "--controller", "-c", action="store_true", help="En/decrypt to/from the controller secret store"
+    )
+
     subparsers = parser.add_subparsers(dest="action", required=True)
 
     # version subcommand
@@ -264,38 +295,26 @@ def parseargs(arguments: List[str]):
     )
 
     # info subcommand
-    sub_info = subparsers.add_parser("info", description="Display info about nodes and groups")
-    sub_info.add_argument("--group", "-g", default=[], action="append", help="Show info for this group")
-    sub_info.add_argument("--node", "-n", default=[], action="append", help="Show info for this node")
-    sub_info.add_argument("--function", "-f", default=[], action="append", help="Show info for this function")
+    sub_info = subparsers.add_parser(
+        "info", parents=[node_opts, func_opts], description="Display info about nodes and groups"
+    )
 
     # encrypt subcommand
-    sub_encrypt = subparsers.add_parser("encrypt", description="Encrypt a value with age")
+    sub_encrypt = subparsers.add_parser(
+        "encrypt", parents=[node_opts, ctrl_opts], description="Encrypt a value with age"
+    )
     sub_encrypt_value_group = sub_encrypt.add_mutually_exclusive_group()
     sub_encrypt_value_group.add_argument("--value", help="Encrypt this value")
     sub_encrypt_value_group.add_argument("--file", help="Encrypt the contents of this file")
     sub_encrypt.add_argument(
-        "--node", "-n", default=[], action="append", help="Encrypt for this node. Can be repeated."
+        "--save-as",
+        help="Save under this name in each node/group's secret store. Otherwise, just print to stdout and do not save.",
     )
-    sub_encrypt.add_argument(
-        "--group", "-g", action="append", default=[], help="Encrypt for every node in this group. Can be repeated."
-    )
-    # TODO: document that everything is always encrypted for the controller
-    # This flag does nothing unless --save-as is also passed
-    sub_encrypt.add_argument("--controller", "-c", action="store_true", help="Encrypt for the controller")
     sub_encrypt.add_argument("--stdout", action="store_true", help="Print encrypted value to stdout")
-    sub_encrypt.add_argument("--save-as", help="If present, save under this name in each node/group's secret store")
 
     # decrypt subcommand
-    sub_decrypt = subparsers.add_parser("decrypt", description="Decrypt secrets from the secret store")
-    sub_decrypt.add_argument(
-        "--node", "-n", default=[], action="append", help="Decrypt secrets for this node. Can be repeated."
-    )
-    sub_decrypt.add_argument(
-        "--group", "-g", default=[], action="append", help="Decrypt secrets for this group. Can be repeated."
-    )
-    sub_decrypt.add_argument(
-        "--controller", "-c", action="store_true", help="Decrypt secrets stored for the controller"
+    sub_decrypt = subparsers.add_parser(
+        "decrypt", parents=[node_opts, ctrl_opts], description="Decrypt secrets from the secret store"
     )
 
     # build subcommand
@@ -318,7 +337,7 @@ def parseargs(arguments: List[str]):
     return parser, parsed
 
 
-def main(*arguments):
+def process_arguments(*arguments):
     parser, parsed = parseargs(arguments[1:])
 
     if parsed.debug:
@@ -336,10 +355,10 @@ def main(*arguments):
     elif parsed.action == "list":
         action_list(inventory, parsed.collection)
     elif parsed.action == "info":
-        action_info(inventory, parsed.node or [], parsed.group or [], parsed.function or [])
+        action_info(inventory, parsed.nodes, parsed.groups, parsed.functions)
     elif parsed.action == "encrypt":
-        if not parsed.node and not parsed.group and not parsed.controller:
-            parser.error("You must pass at least one of --node, --group, or --controller-key")
+        if not parsed.nodes and not parsed.groups and not parsed.controller:
+            parser.error("You must pass at least one of --nodes, --groups, or --controller")
         if not parsed.value and not parsed.file:
             parser.error("You must pass one of --value or --file")
         if parsed.file:
@@ -351,16 +370,16 @@ def main(*arguments):
             inventory,
             parsed.save_as or "",
             value,
-            parsed.node or [],
-            parsed.group or [],
+            parsed.nodes,
+            parsed.groups,
             parsed.controller,
             bool(parsed.save_as),
             parsed.stdout,
         )
     elif parsed.action == "decrypt":
-        if not parsed.node and not parsed.group and not parsed.controller:
-            parser.error("You must pass at least one of --node, --group, or --controller-key")
-        action_decrypt(inventory, parsed.node, parsed.group, parsed.controller)
+        if not parsed.nodes and not parsed.groups and not parsed.controller:
+            parser.error("You must pass at least one of --nodes, --groups, or --controller")
+        action_decrypt(inventory, parsed.nodes, parsed.groups, parsed.controller)
     elif parsed.action == "build":
         if parsed.buildaction == "apk":
             action_build_action_apk(parsed.apkdir)
@@ -372,5 +391,5 @@ def main(*arguments):
         raise Exception(f"Unknown action {parsed.action}")
 
 
-def wrapped_main():
-    broken_pipe_handler(main, *sys.argv)
+def main():
+    broken_pipe_handler(process_arguments, *sys.argv)
