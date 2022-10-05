@@ -7,19 +7,17 @@ We support building for the following circumstances:
   This way the package can be installed locally, and told to build itself and install itself remotely on managed nodes.
 """
 
-# import argparse
 import os
 import string
 import subprocess
-
-# import sys
 import time
+import zipapp
 from typing import List
 
 
 PKG_ROOT = os.path.dirname(__file__)
-
-PKG_VERSION_FILE = os.path.join(PKG_ROOT, "progfiguration", "build_version.py")
+PROGFIGURATION_ROOT = os.path.join(PKG_ROOT, "progfiguration")
+PKG_VERSION_FILE = os.path.join(PROGFIGURATION_ROOT, "build_version.py")
 APKBUILD_TEMPLATE = os.path.join(PKG_ROOT, "APKBUILD.template")
 APKBUILD_FILE = os.path.join(PKG_ROOT, "APKBUILD")
 
@@ -76,17 +74,6 @@ def build_alpine(apk_index_path: str, abuild_repodest: str = "psyopsOS"):
             )
 
 
-# def main(arguments: List[str]) -> int:
-#     parser = argparse.ArgumentParser(description="Build progfiguration")
-#     subparsers = parser.add_subparsers(dest="action", required=True)
-#     sub_build = subparsers.add_parser("build", description="Build the package")
-#     sub_build.add_arugment("--apk-index-path", required=True, help="Path to ")
-#     sub_save_version = subparsers.add_parser("save-version", description="Save the version files")
-#     parsed = parser.parse_args()
-
-#     if parsed.action == "build":
-#         build_alpine(parsed.apk_index_path, parsed.abuild_repodest)
-
-
-# if __name__ == "__main__":
-#     sys.exit(main(*sys.argv))
+def build_zipapp(outfile: str):
+    """Build a .pyz file with the zipapp module"""
+    zipapp.create_archive(source=PROGFIGURATION_ROOT, target=outfile, main="cli.progfiguration:main")
