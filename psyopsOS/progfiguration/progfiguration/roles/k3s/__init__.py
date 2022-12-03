@@ -63,8 +63,10 @@ def apply(
     package_list = [
         "cni-plugin-flannel",
         "etcd-ctl@edgetesting",
-        "helm@edgetesting",
+        "helm@edgecommunity",
         "k3s",
+        "nfs-utils",
+        "open-iscsi",
     ]
     packages = " ".join(package_list)
 
@@ -88,12 +90,24 @@ def apply(
 
     subprocess.run("rc-service cgroups start", shell=True, check=True)
     subprocess.run("rc-service containerd start", shell=True, check=True)
+    subprocess.run("rc-service iscsid start", shell=True, check=True)
 
     if not start_k3s:
         logger.info(
             "start_k3s was False, not starting k3s or cgroups. If you are setting up a new cluster, refer to the psyopsOS/docs/kubernasty.md documentation"
         )
         return
+
+    # Required for Longhorn
+    subprocess.run("mount --make-rshared /", shell=True, check=True)
+
+    # Required for Helm to work
+    localhost.set_file_contents(
+        "/etc/profile.d/kubeconfig.sh", "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml", "root", "root", 0o0644
+    )
+
+    # Create role storage
+    localhost.makedirs(os.path.join(data_mountpoint, "roles/k3s/longhorn/data"), "root", "root", 0o0700)
 
     logger.info("Starting k3s...")
     subprocess.run("rc-service k3s start", shell=True, check=True)
