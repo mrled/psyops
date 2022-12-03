@@ -92,15 +92,15 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
             else:
                 rolevars[key] = unencrypted_value
 
-        applyroles[rolename] = (rolemodule, decrypted_rolevars)
+        applyroles[rolename] = (rolemodule, rolevars)
 
     if strace_before_applying:
         pdb.set_trace()
     else:
         for rolename, role in applyroles.items():
-            rolemodule, decrypted_rolevars = role
+            rolemodule, rolevars = role
             logging.debug(f"Running role {rolename}...")
-            rolemodule.apply(localhost, **decrypted_rolevars)
+            rolemodule.apply(localhost, **rolevars)
             logging.info(f"Finished running role {rolename}.")
 
     logging.info(f"Finished running all roles")
