@@ -20,6 +20,13 @@ from progfiguration.inventory import Inventory, package_inventory_file
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
 from progfiguration.roles.util import yaml_dump_str
 
+try:
+    from progfiguration import remoting
+
+    REMOTING = True
+except ModuleNotFoundError:
+    REMOTING = False
+
 
 def ResolvedPath(p: str) -> str:
     """Convert a user-input path to an absolute path"""
@@ -207,6 +214,10 @@ def action_build_action_save_version(version: Union[str, None]):
     print("Take care not to commit these files to git")
 
 
+def action_rcmd(inventory: Inventory, nodes: List[str], groups: List[str], cmd: str):
+    remoting.command(inventory, nodes, groups, cmd)
+
+
 def parseargs(arguments: List[str]):
     parser = argparse.ArgumentParser("psyopsOS programmatic configuration")
 
@@ -234,6 +245,18 @@ def parseargs(arguments: List[str]):
         default="INFO",
         choices=progfiguration_log_levels,
         help="Log level to send to syslog. Defaults to INFO. NONE to disable.",
+    )
+    parser.add_argument(
+        "--mitogen-log-stderr",
+        default="CRITICAL",
+        choices=progfiguration_log_levels,
+        help="Log level for mitogen messages to stderr. Only used for remote commands from the controller.",
+    )
+    parser.add_argument(
+        "--mitogen-io-log-stderr",
+        default="CRITICAL",
+        choices=progfiguration_log_levels,
+        help="Log level for mitogen IO messages to stderr. Only used for remote commands from the controller.",
     )
     parser.add_argument(
         "--inventory-file",
@@ -332,12 +355,23 @@ def parseargs(arguments: List[str]):
         "--version", help="Set the version to this string. If not present, use a version based on the epoch."
     )
 
+    # rcmd subcommand
+    sub_rcmd = subparsers.add_parser(
+        "rcmd",
+        parents=[node_opts],
+        description="Run a command on remote nodes. Intended to be run from the controller.",
+    )
+    sub_rcmd.add_argument(
+        "--sh", action="store_true", help="Run the command inside a shell, rather than directly on the host"
+    )
+    sub_rcmd.add_argument("command", help="A command to run remotely")
+
     # Parse and return
     parsed = parser.parse_args(arguments)
     return parser, parsed
 
 
-def process_arguments(*arguments):
+def main_implementation(*arguments):
     parser, parsed = parseargs(arguments[1:])
 
     if parsed.debug:
@@ -345,6 +379,11 @@ def process_arguments(*arguments):
     elif parsed.syslog_exception:
         sys.excepthook = syslog_excepthook
     configure_logging(parsed.log_stderr, parsed.log_syslog)
+
+    if REMOTING:
+        mitogen_core_level = logging._nameToLevel[parsed.mitogen_log_stderr]
+        mitogen_io_level = logging._nameToLevel[parsed.mitogen_io_log_stderr]
+        remoting.configure_mitogen_logging(mitogen_core_level, mitogen_io_level)
 
     inventory = Inventory(parsed.inventory_file, parsed.age_private_key)
 
@@ -380,6 +419,13 @@ def process_arguments(*arguments):
         if not parsed.nodes and not parsed.groups and not parsed.controller:
             parser.error("You must pass at least one of --nodes, --groups, or --controller")
         action_decrypt(inventory, parsed.nodes, parsed.groups, parsed.controller)
+    elif parsed.action == "rcmd":
+        if not REMOTING:
+            raise Exception("Could not import remoting module - make sure mitogen is installed")
+        if not parsed.nodes and not parsed.groups:
+            parser.error("You must pass at least one of --nodes or --groups")
+        # action_rcmd(inventory, parsed.nodes, parsed.groups, parsed.command)
+        remoting.mitogen_example()
     elif parsed.action == "build":
         if parsed.buildaction == "apk":
             action_build_action_apk(parsed.apkdir)
@@ -392,4 +438,4 @@ def process_arguments(*arguments):
 
 
 def main():
-    broken_pipe_handler(process_arguments, *sys.argv)
+    broken_pipe_handler(main_implementation, *sys.argv)
