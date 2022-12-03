@@ -8,7 +8,7 @@ usermod --password "$rootpasswd" root
 
 ssh_key_psyops='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS'
 install -o root -g root -m 0700 -d /root/.ssh
-if test -e /root/.ssh/authorized_keys && ! grep -q "$ssh_key_psyops" /root/.ssh/authorized_keys; then
+if ! test -e /root/.ssh/authorized_keys || ! grep -q "$ssh_key_psyops" /root/.ssh/authorized_keys; then
     echo "$ssh_key_psyops" >> /root/.ssh/authorized_keys
 fi
 
