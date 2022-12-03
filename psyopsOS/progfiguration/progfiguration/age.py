@@ -6,6 +6,10 @@ import subprocess
 from typing import List
 
 
+class AgeParseException(Exception):
+    pass
+
+
 class AgeKey:
     def __init__(self, secret: str, public: str, created: datetime.datetime):
         self.secret = secret
@@ -19,10 +23,18 @@ class AgeKey:
             # public key: age14e42u048nehghjj3ch9mmnkdh4nsujn774klqxn02mznppx3gflsuj6y5m
             AGE-SECRET-KEY-1ASKGXED4DVGUH7SA50DHE2UHAYQ00PV87N2RQ5J5S6AUN9MLNSGQ3TKFGJ
         """
-        outlines = output.split("\n")
-        created = datetime.datetime.fromisoformat(outlines[0][11:])
-        public = outlines[1][14:]
-        secret = outlines[2]
+        outlines = [l for l in output.split("\n") if l]
+        if len(outlines) == 3:
+            created = datetime.datetime.fromisoformat(outlines[0][11:])
+            public = outlines[1][14:]
+            secret = outlines[2]
+        elif len(outlines) == 1:
+            secret = outlines[0]
+            result = subprocess.run(["age-keygen", "-y"], input=secret.encode(), check=True, capture_output=True)
+            public = result.stdout.decode()
+            created = datetime.datetime.now()
+        else:
+            raise AgeParseException(f"Could not parse age output")
         return cls(secret, public, created)
 
     @classmethod
@@ -34,7 +46,10 @@ class AgeKey:
     def from_file(cls, path: str) -> "AgeKey":
         with open(path) as fp:
             content = fp.read()
-        return cls.from_output(content)
+        try:
+            return cls.from_output(content)
+        except AgeParseException:
+            raise AgeParseException(f"Could not parse age key file at {path}")
 
 
 @dataclass
