@@ -1,0 +1,48 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: whoami-cert-staging
+  namespace: whoami
+spec:
+  issuerRef:
+    name: letsencrypt-issuer-staging
+    # Setting the kind to ClusterIssuer is required
+    # <https://github.com/cert-manager/cert-manager/discussions/3066#discussioncomment-219121>
+    kind: ClusterIssuer
+  dnsNames:
+    - whoami-https-staging.kubernasty.micahrl.com
+  # It apperas that cert-manager Certificate resources require a backing secret
+  # We use a different name for it so we don't get confused
+  secretName: whoami-cert-staging-backing-secret
+
+## This is an https ONLY ingress definition
+# the router.tls: true annotation means that traefik will only serve this over HTTPS
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: whoami-https-staging
+  namespace: whoami
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-issuer-staging
+spec:
+  rules:
+    - host: whoami-https-staging.kubernasty.micahrl.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: whoami
+                port:
+                  number: 5678
+  tls:
+    # This secretName must match the name of the cert-manager Certificate backing secret
+    - secretName: whoami-cert-staging-backing-secret
+      hosts:
+        - whoami-https-staging.kubernasty.micahrl.com

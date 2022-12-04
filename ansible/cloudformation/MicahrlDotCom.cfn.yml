@@ -284,7 +284,15 @@ Resources:
           Type: A
           TTL: 300
           ResourceRecords: ["192.168.1.200"]
-        - Name: whoami.kubernasty.micahrl.com.
+        - Name: whoami-http.kubernasty.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kubernasty.micahrl.com."]
+        - Name: whoami-https-staging.kubernasty.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kubernasty.micahrl.com."]
+        - Name: whoami-https-prod.kubernasty.micahrl.com.
           Type: CNAME
           TTL: 60
           ResourceRecords: ["kubernasty.micahrl.com."]

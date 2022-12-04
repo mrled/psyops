@@ -2,19 +2,39 @@
 
 How to configure ingress with and without HTTPS certificates.
 
+## Prerequisites
+
+* DNS configured, including
+    * A dedicated zone in Route53 for cluster records
+    * `kubernasty.micahrl.com` pointing to the kube-vip IP address `192.168.1.200`
+    * `whoami-http`, `whoami-https-staging`, `whoami-https-prod` subdomains of `kubernasty.micahrl.com` CNAME'd to `kubernasty.micahrl.com`
+    * I handle this in CloudFormation under `ansible/cloudformation/MicahrlDotCom.cfn.yml` in this repo
+* An AWS IAM user with permission to modify the zone, for DNS challenges with Let's Encrypt
+    * I create a group in the CloudFormation template, and then an IAM user in the AWS console
+
 ## whoami service
 
 A useful service for testing.
-Deploy with: `kubectl apply -f whoami/whoami.yml`.
-This includes an HTTP-only `IngressRoute` resource;
-we will enable HTTPS after configuring `cert-manager`.
+Deploy with: `kubectl apply -f whoami/deployments/whoami.yml`.
 
-This requires DNS configured properly, with `whoami.kubernasty.micahrl.com` pointing to the kube-vip IP address.
-
-Once this is up, you can `curl http://whoami.kubernasty.micahrl.com` and see results:
+Note that this does _not_ include any ingress definitions,
+which means that you can't access this deployment from outside your cluster,
+even if DNS is set up properly.
 
 ```txt
-21:20:34 E0 haluth J1 ~ > curl http://whoami.kubernasty.micahrl.com/
+> curl http://whoami-http.kubernasty.micahrl.com
+404 page not found
+```
+
+## HTTP ingress for whoami service
+
+HTTP ingresses are pretty easy.
+Deploy with `kubectl apply -f whoami/ingresses/http.yml`.
+
+Once this is up, you can `curl http://whoami-http.kubernasty.micahrl.com` and see results:
+
+```txt
+> curl http://whoami-http.kubernasty.micahrl.com/
 Hostname: whoami-5d4d578786-v724l
 IP: 127.0.0.1
 IP: ::1
@@ -22,12 +42,12 @@ IP: 10.42.1.12
 IP: fe80::309c:1ff:fe40:1bae
 RemoteAddr: 10.42.0.4:37916
 GET / HTTP/1.1
-Host: whoami.kubernasty.micahrl.com
+Host: whoami-http.kubernasty.micahrl.com
 User-Agent: curl/7.84.0
 Accept: */*
 Accept-Encoding: gzip
 X-Forwarded-For: 10.42.0.2
-X-Forwarded-Host: whoami.kubernasty.micahrl.com
+X-Forwarded-Host: whoami-http.kubernasty.micahrl.com
 X-Forwarded-Port: 80
 X-Forwarded-Proto: http
 X-Forwarded-Server: traefik-df4ff85d6-f5wxf
@@ -43,7 +63,7 @@ See also:
 
 * <https://github.com/sleighzy/k3s-traefik-v2-kubernetes-crd>
 
-## Using `cert-manager` for HTTPS certificates
+## HTTPS ingress and cert-manager
 
 * Traefik can handle Let's Encrypt certs itself...
 * ... but the fucking thing charges money for this if using with HA, as we are in k3s.
@@ -63,7 +83,7 @@ This step requires an AWS Route53 zone,
 and an IAM user that has permission to update records in the zone.
 I created a Kubernasty zone for this (see `ansible/cloudformation/MicahrlDotCom.cfn.yml` in this repository).
 It contains an A record `kubernasty.micahrl.com` pointing to the cluster IP address of `192.168.1.200`,
-and CNAME records for each service as subdomains, like `whoami.kubernasty.micahrl.com`.
+and CNAME records for each service as subdomains, like `whoami-https-staging.kubernasty.micahrl.com`.
 (TODO: also show more advanced configurations that support multiple zones.)
 I also created an IAM access key in the AWS console.
 
@@ -87,29 +107,117 @@ sopsandstrip --decrypt cert-manager/secrets/aws-route53-credential.yml | kubectl
 ```
 
 Then apply the issuer.
-We have both a staging and a production issuer available;
-we'll use the staging issuer first so that Let's Encrypt doesn't give us a temp ban for too many requests
-while we are trying to make this work.
+We have both a staging and a production issuer available,
+and we can apply them both now.
+We'll use the staging issuer first so that Let's Encrypt doesn't give us a temp ban for too many requests
+while we are trying to make this work,
+but we can go ahead and apply the prod one as well.
 
 ```sh
 kubectl apply -f cert-manager/clusterissuers/letsencrypt-issuer-staging.yml
+kubectl apply -f cert-manager/clusterissuers/letsencrypt-issuer-prod.yml
 ```
 
-Then enable HTTPS for the whoami service.
+Now we're ready to start requesting certificates.
+
+TODO: explain why using DNS challenges is important with Let's Encrypt.
+Short version: they work well for clusters that aren't on the public Internet.
+
+## HTTPS ingress for whoami service using Let's Encrypt staging certificates
+
+Now we can enable HTTPS for the whoami service.
+We'll use the Let's Encrypt staging infrastructure first so that they don't ban us if something is wrong.
+
 Note that we have to define a `Certificate` resource in this file.
 Traefik can do this if you pay for Enterprise or are not using HA,
 but when using Traefik Proxy + Cert Manager, we have to create it ourselves.
 
 ```sh
-kubectl apply -f whoami/enable-https.yml
+kubectl apply -f whoami/ingresses/https-staging.yml
 ```
 
-TODO: explain why using DNS challenges is important with Let's Encrypt.
-Short version: they work well for clusters that aren't on the public Internet.
+Verify things are working with commands like:
+
+```sh
+kubectl get certificates -A
+kubectl get certificaterequests -A
+kubectl get ingress -A
+kubectl describe certificate ...
+kubectl describe certificaterequest ...
+
+# If certs are not going to 'Ready' state, look at the logs in the cert-manager container
+kubectl get pods -n cert-manager
+# Returns a list like:
+# NAME                                       READY   STATUS    RESTARTS   AGE
+# cert-manager-6544c44c6b-v25jr              1/1     Running   0          14h
+# cert-manager-cainjector-5687864d5f-88kgf   1/1     Running   0          14h
+# cert-manager-webhook-785bb86798-f9dn6      1/1     Running   0          14h
+kubectl logs -f cert-manager-6544c44c6b-v25jr -n cert-manager
+
+# If the certs look like they're being created, but the wrong cert is being served (see below),
+# you may also want to see traefik logs
+kubectl get pods -n kube-system
+# Returns a list that includes:
+# ... snip ...
+# kube-system    svclb-traefik-75ce313c-74ggl               2/2     Running     2 (28h ago)   28h
+# kube-system    svclb-traefik-75ce313c-9745x               2/2     Running     6 (28h ago)   29h
+# kube-system    svclb-traefik-75ce313c-f76c6               2/2     Running     4 (28h ago)   28h
+# kube-system    traefik-df4ff85d6-f5wxf                    1/1     Running     3 (28h ago)   29h
+# ... snip ...
+# You'll want the traefik container, not the svclb-traefik containers
+kubectl logs -f traefik-df4ff85d6-f5wxf -n kube-system
+```
+
+It will take a few minutes for the certificate to be issued.
+Once it is issued, check that it's working with `curl` (ignoring SSL errors, as this is the staging server)
+and `openssl`.
+
+```sh
+whoamistaging=whoami-https-staging.kubernasty.micahrl.com
+
+curl -k https://$whoamistaging
+# Should return results similar to those returned by the http request earlier
+
+echo "" |
+    openssl s_client -showcerts -servername $whoamistaging -connect $whoamistaging:443 2>/dev/null |
+    openssl x509 -inform pem -noout -text |
+    grep Issuer
+# Should show the staging Let's Encrypt CA, something like:
+# Issuer: C=US, O=(STAGING) Let's Encrypt, CN=(STAGING) Artificial Apricot R3
+```
+
+Make sure that it's showing the staging LE CA!
+If it is instead showing something like `Issuer: CN=TRAEFIK DEFAULT CERT`,
+that means that you don't have certificates configured properly,
+and getting a production LE cert in the next step will not work.
 
 See also:
 
 * <https://blog.crafteo.io/2021/11/26/traefik-high-availability-on-kubernetes-with-lets-encrypt-cert-manager-and-aws-route53/>
+
+## HTTPS ingress for whoami service using Let's Encrypt production certificates
+
+This is very similar to the staging setup, just using a different ClusterIssuer to get real certs.
+
+```sh
+kubectl apply -f whoami/ingresses/https-prod.yml
+
+# ... wait ...
+
+# Note that this uses a different DNS name
+whoamiprod=whoami-https-prod.kubernasty.micahrl.com
+
+# Don't use -k - we want this to fail if the cert isn't trusted
+curl https://$whoamiprod
+# Shoudl return results similar to last time
+
+echo "" |
+    openssl s_client -showcerts -servername $whoamistaging -connect $whoamistaging:443 2>/dev/null |
+    openssl x509 -inform pem -noout -text |
+    grep Issuer
+# Should show the production Let's Encrypt CA, something like:
+# Issuer: C=US, O=Let's Encrypt, CN=R3
+```
 
 ## Appendix: background on certificates
 
@@ -150,7 +258,3 @@ and comparing different methods of accomplishing the same result can be very con
     * WARNING: `kubernetes/ingress-nginx` is an ingress controller maintained by the Kubernetes community; `nginxinc/kubernetes-nginx` is an ingress controller maintained by F5 NGINX. <https://www.nginx.com/blog/guide-to-choosing-ingress-controller-part-4-nginx-ingress-controller-options/>. Naturally, there are two versions of the one maintained by F5, and F5 is also contracted to maintain the community one, so who knows.
     * maybe try this? <https://gist.github.com/pkeech/24ed00b699509732c4cd33ee89767f49>
 * So for Cert Manager, we need to use the first party `Ingress` resources.
-
-## Todo
-
-TODO: have separate hostnames for plain HTTP ingress, HTTPS ingress with a staging LE cert, and HTTPS ingress with a production LE .

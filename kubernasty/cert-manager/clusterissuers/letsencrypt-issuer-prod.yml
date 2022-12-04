@@ -7,7 +7,7 @@ spec:
     email: psyops@micahrl.com
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
-      name: letsencrypt-issuer-account-key
+      name: letsencrypt-issuer-prod-account-key
     solvers:
       # The _selector_ defines the zones to use this solver for
       # If you only have one solver, then you can use an empty object for a selector like 'selector: {}'.

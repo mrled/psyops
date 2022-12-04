@@ -36,27 +36,3 @@ spec:
       targetPort: 80
   selector:
     app: whoami
-
-# This is an http ONLY ingress definition
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: whoami-http
-  namespace: whoami
-  annotations:
-    kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/router.entrypoints: web
-spec:
-  rules:
-    - host: whoami.kubernasty.micahrl.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: whoami
-                port:
-                  number: 5678
-
