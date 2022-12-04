@@ -9,9 +9,10 @@ Introduction:
 Deploying the cluster:
 
 * [Initial cluster creation](docs/initial-cluster-creation.md) shows how the bare cluster is created.
-* [Basic services](docs/basic-services.md) shows how to configure basic services once the cluster is up.
+* [Ingress and certificates](docs/ingress-and-certificates.md) uses the `whoami` container to show how to allow web traffic into your cluster.
+* [Longhorn](docs/longhorn.md) describes configuring the Longhorn persistent volume manager
 
 Appendix:
 
 * [Troubleshooting](docs/troubleshooting.md) is a grab bag of bullshit I ran into and swear words I said when I figured it out.
-* [Todo](docs/todo.md) is a list of improvements to make in the future
+* [Todo](docs/todo.md) is a list of improvements to make in the future.
