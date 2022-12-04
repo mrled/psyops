@@ -2,6 +2,31 @@
 
 jesus h christ this is the most insane system i've ever seen in my life
 
+## Kubernetes basics
+
+* `kubectl get nodes` shows all nodes
+* Everything is in a 'namespace'.
+  If you do a `kubectl get ...` or similar command that returns nothing, try looking in all namespaces with `-A`.
+  `kubectl get pods -A` shows all pods in all namespaces
+* In general, `kubectl get <RESOURCE TYPE>` lists resources,
+  while `kubectl describe <RESOURCE TYPE>` shows details about them;
+  kind of like `ls` and `cat` but for Kubernetes objects.
+* `kubectl logs -n <NAMESPACE> <PODNAME>` shows the logs for a particular pod
+* `kubectl api-resources` shows a list of all resources that your Kubernetes cluster knows about --
+  resources like Pods, DaemonSets, Ingresses, etc.
+* `kubectl describe <RESOURCE>` provides some documentation on a resource type
+* You can apply a YAML manifest file with `kubectl apply -f filename.yml`.
+  This works with stdin, so you can `cat filename.yml | kubectl apply -f -`.
+* You can remove objects defined in a manifest file with `kubectl delete -f filename.yml`.
+
+### k3s Traefik basics
+
+* Traefik defines an `IngressRoute` resource --
+  **if you see `IngressRoute`, it's Traefik-specific**.
+* `IngressRoute` resources is how you actually allow a client outside the cluster to talk to a service running in a pod.
+* This is an example of a "Custom Resource Definition", or CRD.
+  Installing Traefik via the official manifest also installs the CRDs like `IngressRoute`.
+
 ## What does 'Evicted' mean?
 
 ```
@@ -45,3 +70,39 @@ When I fixed that problem, kube-vip and svclb-traefik pods automatically started
 See also:
 
 * <https://www.padok.fr/en/blog/kubernetes-pods-evicted>
+
+## `netstat -an` doesn't include Kubernetes services
+
+I'm used to doing `netstat -an| grep LISTEN` to see what ports are open on a machine.
+But Kubernetes services don't seem to show up there.
+
+I'm not sure what to look at instead.
+Probably some `kubectl` command.
+
+## traefik, ServiceLB, and kube-vip: wtf
+
+* Kubernetes doesn't have an implementation of LoadBalancer for bare-metal clusters.
+  Cloud providers use their own external load balancers, which are configured outside the cluster,
+  to do something like this, e.g. AWS load balancer services for AWS EKS clusters.
+
+* kube-vip provides a virtual IP address which moves around to a working cluster node.
+  This provides high availability; any node can go down and the cluster keeps working.
+
+---
+
+* See <https://docs.k3s.io/networking>
+
+* k3s ships with traefik by default, as an "ingress controller".
+  * e.g. in the output of `kubectl get pods -A`:
+        kube-system   traefik-df4ff85d6-f5wxf                   1/1     Running     3 (23m ago)   82m
+* k3s ships with ServiceLB (formerli Klipper) by default, as a "load balancer".
+  * e.g.:
+        kube-system   svclb-traefik-75ce313c-74ggl              2/2     Running     2 (28m ago)   51m
+        kube-system   svclb-traefik-75ce313c-9745x              2/2     Running     6 (23m ago)   82m
+        kube-system   svclb-traefik-75ce313c-f76c6              2/2     Running     4 (22m ago)   62m
+* Some documentation on the web tells you to install traefik, but you don't need to do this, because it comes with k3s.
+* To configure traefik, don't change the file that ships with k3s which gets installed to `/var/lib/rancher/k3s/server/manifests/traefik.yaml`.
+  Instead, create an extra `HelmChargConfig` manifest that modifies the existing k3s installation.
+  See <https://docs.k3s.io/helm#customizing-packaged-components-with-helmchartconfig>
+  and <https://github.com/traefik/traefik-helm-chart/tree/master/traefik>
+* TODO: show example traefik configuration using HelmChartConfig
