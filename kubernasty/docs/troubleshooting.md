@@ -106,3 +106,13 @@ Probably some `kubectl` command.
   See <https://docs.k3s.io/helm#customizing-packaged-components-with-helmchartconfig>
   and <https://github.com/traefik/traefik-helm-chart/tree/master/traefik>
 * TODO: show example traefik configuration using HelmChartConfig
+
+## `subset not found`
+
+This error could mean literally anything, because Traefik is insane.
+
+* It might be that the `Service` and `IngressRoute` are being deployed at the same time.
+  [Via](https://www.reddit.com/r/kubernetes/comments/lfi838/k3s_traefik_24_tls_doesnt_work/hyxbqfe/).
+  "You'll get this error because you create the Service and the IngressRoute resource in one go. It takes longer to create a resource of kind Service than of kind IngressRoute and therefore Traefik can't find the service to your ingress route in the first few seconds. To prevent this error from showing create the IngressRoute resource after your Service resource is created (shouldn't take longer than 5 seconds)."
+* I also had this happen when I created a `Service` resource as `type: LoadBalancer` rather than `type: ClusterIP`.
+  (`ClusterIP` is actually the default, so you can remove the `spec.type` altogether from the `Service` resource to create a `ClusterIP` service.)
