@@ -2,9 +2,9 @@
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  name: traefik-dashboard-auth-mw
+  name: clusteradmin-auth-mw
   namespace: kube-system
 spec:
   basicAuth:
     removeHeader: true
-    secret: traefik-dashboard-httpba
+    secret: clusteradmin-httpba

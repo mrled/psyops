@@ -45,20 +45,22 @@ See also:
 ## How to require authentication for the dashboard
 
 Create a secret containing a username/password to use with HTTP Basic Authentication.
-Copy the example in `traefik/secrets/traefik-dashboard-httpba.example.yml` to `tmp.yml`
+We will create a user called `clusteradmin` that is allowed to log in to the Traefik dashboard
+(and later will be allowed to perform other cluster administrative tasks as well).
+Copy the example in `traefik/secrets/clusteradmin-httpba.example.yml` to `tmp.yml`
 set the username and password, and encrypt with `sops`.
 
 ```sh
-cp traefik/secrets/traefik-dashboard-httpba.example.yml tmp.yml
+cp traefik/secrets/clusteradmin-httpba.example.yml tmp.yml
 vim tmp.yml # set the username/password ...
-sops --encrypt tmp.yml > traefik/secrets/traefik-dashboard-httpba.yml
+sops --encrypt tmp.yml > traefik/secrets/clusteradmin-httpba.yml
 ```
 
 Apply the secret.
 Create a middleware that applies HTTP Basic Authentication using the credentials you just saved in the secret.
 
 ```sh
-sopsandstrip --decrypt traefik/secrets/traefik-dashboard-httpba.yml |
+sopsandstrip --decrypt traefik/secrets/clusteradmin-httpba.yml |
     kubectl apply -f -
 kubectl apply -f traefik/middlewares/traefik-dashboard-auth-mw.yml
 ```

@@ -10,7 +10,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls: "true"
     cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
     # The middleware name must be NAMESPACE-MIDDLEWARENAME@kubenetescrd
-    traefik.ingress.kubernetes.io/router.middlewares: kube-system-traefik-dashboard-auth-mw@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-clusteradmin-auth-mw@kubernetescrd
 spec:
   rules:
     - host: traefik.kubernasty.micahrl.com
