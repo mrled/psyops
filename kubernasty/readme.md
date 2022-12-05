@@ -10,7 +10,8 @@ Deploying the cluster:
 
 * [Initial cluster creation](docs/initial-cluster-creation.md) shows how the bare cluster is created.
 * [Ingress and certificates](docs/ingress-and-certificates.md) uses the `whoami` container to show how to allow web traffic into your cluster.
-* [Longhorn](docs/longhorn.md) describes configuring the Longhorn persistent volume manager
+* [Traefik dashboard](docs/traefik-dashboard.md) configures access to the Traefik dashboard, including authentication and HTTP-to-HTTPS redirects.
+* [Longhorn](docs/longhorn.md) describes installation of the Longhorn persistent volume manager.
 
 Appendix:
 
