@@ -1,0 +1,66 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: longhorn-cert
+  namespace: longhorn-system
+spec:
+  issuerRef:
+    name: letsencrypt-issuer-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - longhorn.kubernasty.micahrl.com
+  secretName: longhorn-cert-backing-secret
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: longhorn-in
+  namespace: longhorn-system
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-clusteradmin-auth-mw@kubernetescrd
+
+spec:
+  rules:
+  - host: longhorn.kubernasty.micahrl.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: longhorn-frontend
+            port:
+              number: 80
+  tls:
+    - secretName: longhorn-cert-backing-secret
+      hosts:
+        - longhorn.kubernasty.micahrl.com
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: longhorn-in-http
+  namespace: longhorn-system
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-redirect-https-mw@kubernetescrd
+
+spec:
+  rules:
+  - host: longhorn.kubernasty.micahrl.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: longhorn-frontend
+            port:
+              number: 80
