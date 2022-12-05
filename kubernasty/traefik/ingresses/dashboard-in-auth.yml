@@ -1,0 +1,30 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefik-dashboard
+  namespace: kube-system
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
+    # The middleware name must be NAMESPACE-MIDDLEWARENAME@kubenetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-traefik-dashboard-auth-mw@kubernetescrd
+spec:
+  rules:
+    - host: traefik.kubernasty.micahrl.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: traefik-dashboard
+                port:
+                  number: 9000
+  tls:
+    # This secretName must match the name of the cert-manager Certificate backing secret
+    - secretName: traefik-dashboard-cert-backing-secret
+      hosts:
+        - traefik.kubernasty.micahrl.com

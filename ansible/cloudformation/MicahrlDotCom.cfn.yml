@@ -296,6 +296,10 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["kubernasty.micahrl.com."]
+        - Name: traefik.kubernasty.micahrl.com
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kubernasty.micahrl.com."]
   KubernastyZoneUpdaterGroup:
     Type: AWS::IAM::Group
     Properties:

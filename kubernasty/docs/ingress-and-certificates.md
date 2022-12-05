@@ -90,7 +90,8 @@ I also created an IAM access key in the AWS console.
 Now create a secret containing the IAM access key id and secret
 so that cert-manager can use it to make Route53 changes for DNS challenges.
 See the unencrypted example at `cert-manager/secrets/aws-route53-credential.example.yml`.
-Use our normal [convention](./conventions.md) to en/de-crypt with `sopsandstrip`,
+Use our normal [convention](./conventions.md) to encrypt with `sops`
+(and you can decrypt with `sopsandstrip`),
 and save the encrypted version of the real manifest as `cert-manager/secrets/aws-route53-credential.yml`
 before applying it.
 
@@ -98,7 +99,7 @@ before applying it.
 # Write the manifest
 vim tmpsecret.yml
 # Encrypt the manifest
-sopsandstrip --encrypt tmpsecret.yml > cert-manager/secrets/aws-route53-credential.yml
+sops --encrypt tmpsecret.yml > cert-manager/secrets/aws-route53-credential.yml
 # Remove the unencrypted manifest
 rm tmpsecret.yml
 

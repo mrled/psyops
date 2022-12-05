@@ -88,6 +88,7 @@ EOF
 
 # Use sops to encrypt it
 # We save it to the right location for the psyops container, adjust to your own needs if not using psyops.
+# We do NOT use `sopsandstrip` for this, because we don't want to strip the '_unencrypted' suffix from keys.
 sops --encrypt secret.tmp > /psyops/kubernasty/SERVICENAME/secrets/SECRETNAME.yml
 # Then you can delete the tmp secret file
 rm secret.tmp
