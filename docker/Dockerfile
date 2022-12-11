@@ -78,6 +78,7 @@ RUN true \
         alpine-sdk \
         apk-tools-doc \
         bash bash-doc \
+        bash-completion \
         black \
         # For dig
         bind-tools \
@@ -97,7 +98,7 @@ RUN true \
         # which is problematic on Windows/macOS which both use a Linux VM that is difficult to directly configure.
         iputils \
         jq jq-doc \
-        kubectl@edgetesting \
+        kubectl@edgetesting kubectl-bash-completion@edgetesting \
         # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
         less less-doc \
         man-db man-db-doc man-pages \
