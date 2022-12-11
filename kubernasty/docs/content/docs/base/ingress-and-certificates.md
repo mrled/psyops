@@ -1,4 +1,7 @@
-# Ingress and certificates
+---
+title: Ingress and certificates
+weight: 20
+---
 
 How to configure ingress with and without HTTPS certificates.
 

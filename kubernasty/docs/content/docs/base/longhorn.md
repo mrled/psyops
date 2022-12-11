@@ -1,4 +1,7 @@
-# Storage - Longhorn
+---
+title: Longhorn storage
+weight: 40
+---
 
 Longhorn is a distributed storage system.
 

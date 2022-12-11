@@ -1,4 +1,7 @@
-# Troubleshooting
+---
+weight: 10
+title: Troubleshooting
+---
 
 jesus h christ this is the most insane system i've ever seen in my life
 

@@ -1,4 +1,7 @@
-# Cluster creation
+---
+weight: 10
+title: Cluster creation
+---
 
 You have to do initial cluster setup manually.
 

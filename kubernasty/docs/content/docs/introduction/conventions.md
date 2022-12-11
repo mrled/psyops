@@ -1,4 +1,7 @@
-# Conventions and notes
+---
+title: Conventions and notes
+weight: 10
+---
 
 These are optional, but good places to start if you're totally unfamiliar with Kubernetes cluster administration.
 

@@ -1,4 +1,7 @@
-# Traefik dashboard
+---
+title: Traefik dashboard
+weight: 30
+---
 
 Now that we have [ingress and certificates](ingress-and-certificates.md) configured,
 we can enable the Traefik dashboard.

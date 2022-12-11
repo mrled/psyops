@@ -1,4 +1,7 @@
-# Todo
+---
+weight: 80
+title: Todo
+---
 
 * Using `flannel` for networking; is this encrypted? If not, can we move to a SDN that is encrypted?
 * Consider using a separate subnet for kubernasty. Requires separate switch.
