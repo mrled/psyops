@@ -304,6 +304,10 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["kubernasty.micahrl.com."]
+        - Name: dashboard.kubernasty.micahrl.com
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["kubernasty.micahrl.com."]
   KubernastyZoneUpdaterGroup:
     Type: AWS::IAM::Group
     Properties:

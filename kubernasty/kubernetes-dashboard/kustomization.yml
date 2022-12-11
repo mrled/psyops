@@ -1,0 +1,11 @@
+---
+
+namespace: kubernetes-dashboard
+commonLabels:
+  app: kubernetes-dashboard
+
+resources:
+- deploy-aio.yml
+- admin-user.yml
+- certificate.yml
+- ingress.yml
