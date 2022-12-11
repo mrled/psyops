@@ -61,3 +61,9 @@ kubectl -n kubernetes-dashboard describe secret admin-user-token | grep '^token'
 Wait until the cert is issued, and then navigate to
 `https://dashboard.kubernasty.micahrl.com`.
 Enter the token from the previous command to log in.
+
+## Updating the dashboard
+
+You must apply updates manually by removing the dashboard resources and re-applying them.
+You probably _don't_ want to delete the whole `kubernetes-dashboard` namespace,
+as we are storing our Let's Encrypt certificate there.
