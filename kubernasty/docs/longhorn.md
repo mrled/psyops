@@ -49,3 +49,8 @@ and log in with the `clusteradmin` user.
 * Change the data path as appropriate
 * TODO: can you set a default data path without having to change it for each node?
   On my psyopsOS nodes I want it to always be `/psyopsos-data/roles/k3s/longhorn/data`.
+
+### Backups
+
+TODO: configure Longhorn backups
+TODO: test Longhorn restores
