@@ -88,6 +88,8 @@ RUN true \
         docker docker-doc docker-bash-completion \
         emacs-nox emacs-doc \
         file file-doc \
+        # Used for kubenrasty
+        flux@edgetesting flux-bash-completion@edgetesting \
         git git-doc \
         # Installs GPG 2.x, not 1.x (gnupg1 gnupg1-doc)
         # Sadly, Alpine doesn't offer a way to install them side by side
