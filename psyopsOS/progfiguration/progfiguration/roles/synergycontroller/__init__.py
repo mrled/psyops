@@ -187,7 +187,7 @@ def apply(
     displaysetup_contents = textwrap.dedent(
         """\
         #!/bin/sh
-        xrandr --output HDMI-1 --primary --mode 1920x1080
+        xrandr --output HDMI-1 --primary --mode 1920x1080 || true
         """
     )
     localhost.set_file_contents(displaysetup_path, displaysetup_contents, "root", "root", 0o0755)
@@ -333,6 +333,8 @@ def apply(
     # The first start it doesn't seem to autologin correctly?
     # So here's a fucked up hack.
     subprocess.run(["rc-service", "lightdm", "restart"], check=True)
+
+    # TODO: !!! autologin STILL isn't working correctly !!! FIXME !!!
 
     synergist_data = "/psyopsos-data/roles/synergycontroller/synergist"
     localhost.makedirs(synergist_data, user, mode=0o0755)

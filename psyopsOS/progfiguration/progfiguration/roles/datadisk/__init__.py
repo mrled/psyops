@@ -144,8 +144,12 @@ def apply(
         os.makedirs(mountpoint, mode=0o755, exist_ok=True)
         subprocess.run(f"mount {mapper_device} {mountpoint}", shell=True, check=True)
 
+        # TODO: Don't require list flattening.
+        # We are flattening the list here because it is a list of lists
+        # Instead fix the caller to not make it pass a list of lists
         wipe_after_mounting = wipe_after_mounting or []
-        for subpath in wipe_after_mounting:
+        wipes = [item for sublist in wipe_after_mounting for item in sublist]
+        for subpath in wipes:
             path = os.path.join(mountpoint, subpath)
             if os.path.exists(path):
                 logger.info(f"Removing path {path} after mounting {mountpoint}...")
