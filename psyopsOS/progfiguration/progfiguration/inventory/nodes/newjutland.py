@@ -55,8 +55,8 @@ node = InventoryNode(
             "ramoffload": True,
         },
         synergycontroller={
-            "secret_synergy_priv_key": AgeSecretReference("synergy_private_key"),
-            "secret_synergy_serial_key": AgeSecretReference("synergy_serial_key"),
+            "synergy_priv_key": AgeSecretReference("synergy_private_key"),
+            "synergy_serial_key": AgeSecretReference("synergy_serial_key"),
             "synergy_pub_key": synergy_public_key,
             "synergy_fingerprints_local": synergy_fingerprints_local,
             "synergy_server_screenname": "newjutland",

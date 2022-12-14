@@ -68,12 +68,12 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
                     rolevars[append] = []
 
         # Check each group that the node is in for role arguments
-        for gmod in groupmods.values():
+        for groupname, gmod in groupmods.items():
             group_rolevars = getattr(gmod.group.roles, rolename, {})
             for key, value in group_rolevars.items():
                 unencrypted_value = value
                 if isinstance(value, age.AgeSecretReference):
-                    secret = inventory.get_group_secrets(key)[value.name]
+                    secret = inventory.get_group_secrets(groupname)[value.name]
                     unencrypted_value = secret.decrypt()
                 if key in appendvars:
                     rolevars[key].append(unencrypted_value)
@@ -85,8 +85,8 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
         for key, value in node_rolevars.items():
             unencrypted_value = value
             if isinstance(value, age.AgeSecretReference):
-                secret = inventory.get_node_secrets(key)[value.name]
-                unencrypted_value = secret.decrypt()
+                secret = inventory.get_node_secrets(nodename)[value.name]
+                unencrypted_value = secret.decrypt("/mnt/psyops-secret/mount/age.key")
             if key in appendvars:
                 rolevars[key].append(unencrypted_value)
             else:
