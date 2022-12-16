@@ -99,6 +99,13 @@ Our exported key and associated information was exported as follows. Note that t
 
 See the section below on the secrets module for more information about how it is used.
 
+## Using secrets
+
+* We store a passphrase-protected GPG key and GPG-encrypted SSH keys in this repo directly.
+* Run `psecrets unlock` in the container to configure GPG and launch the GPG agent, prompting for the key passphrase
+* After the GPG agent holds the passphrase, `psecrets` will decrypt the SSH keys and run `psecrets-postunlock`
+* `psecrets-postunlock` clones the `gopass` repo, and also copies some secrets where we expect them like AWS credentials to `~/.aws`
+
 ## Submodules
 
 We make heavy use of submodules, to avoid checking out code during build, which slows down the build and can incur rate limit errors. Understanding how Git interacts with submodules is important to understanding how PSYOPS works. In a bad case, an improper understanding of submodules can cause loss of data - for instance, if you don't realize that a change to a submodule has to be committed and pushed separately from changes to the parent module.
@@ -106,20 +113,6 @@ We make heavy use of submodules, to avoid checking out code during build, which 
 Submodules should be available inside the container as well, as long as this repo is mounted to the `$PSYOPS_VOLUME` volume. They can be used exactly the same way on the host or in the container, and you can edit files on the host while using them in the container - it's very useful to use a graphical editor on the host to modify files that are used on the command line in the container.
 
 That said, see above for notes about line endings if your docker host is running Windows.
-
-## Setting up the secrets tarfile
-
-We use an encrypted tarfile to manage secrets.
-
-To create the encrypted secrets file:
-
-1.  Start the PSYOPS container
-2.  Place your secrets in `$PSYOPS_SECRETS_PATH`
-3.  Add your symlink script (named the same as the value of `$PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH`)
-4.  Call `psecrets encrypt`
-5.  The encrypted secrets file is now saved to `$PSYOPS_SECRETS_ENCRYPTED_PATH`
-6.  Make sure to commit that file to the PSYOPS repository
-
 
 ## Build and run -time variables
 

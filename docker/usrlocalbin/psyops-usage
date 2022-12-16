@@ -16,6 +16,13 @@ $(ansi mode=reset)
 You can $(ansi fg=magenta)sudo$(ansi mode=reset mode=bold) to run commands with root privileges, but take care; root privileges in this container is probably sufficient for root privileges in your Docker host.
 ENDHEADER
 
+if ssh-add -l | grep -q 'conspirator@PSYOPS'; then
+    echo "$(ansi fg=green mode=bold)ssh key added to agent"
+else
+    echo "$(ansi fg=red mode=bold)WARNING: ssh key NOT in agent, run $(ansi fg=magenta)ssh-add$(ansi fg=red)."
+fi
+echo "$(ansi mode=reset)"
+
 if psecrets testlock; then
     echo "$(ansi fg=green mode=bold)Secrets decrypted and symlinked successfully"
 else

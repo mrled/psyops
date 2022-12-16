@@ -29,6 +29,8 @@ ENV PSYOPS_GPG_IMPORT_OWNERTRUST_DB="$homedir/.gnupg/psyops.secret.gpg.ownertrus
 ENV PSYOPS_GPG_SECRET_KEY_ID="3426CF80"
 # Public GPG key ID
 ENV PSYOPS_GPG_PUBLIC_KEY_ID="664C82AD"
+# Email address field for our private key
+ENV PSYOPS_GPG_EMAIL="conspirator@PSYOPS"
 
 # Encrypted private SSH ED25519 key path
 ENV PSYOPS_SSH_ED25519_ENCRYPTED_PRIVATE_KEY_PATH="$homedir/.ssh/id_ed25519.gpg"
@@ -44,13 +46,11 @@ ENV PSYOPS_SSH_RSA_DECRYPTED_PRIVATE_KEY_PATH="$PSYOPS_SECRETS_PATH/id_rsa"
 # Unencrypted public SSH RSA key path
 ENV PSYOPS_SSH_RSA_PUBLIC_KEY_PATH="$homedir/.ssh/id_rsa.pub"
 
-# Encrypted secrets path
-ENV PSYOPS_SECRETS_ENCRYPTED_PATH="$PSYOPS_VOLUME/docker/psyops-secrets.tar.gz.gpg"
 # Location to decrypt secrets
 ENV PSYOPS_SECRETS_DECRYPTED_PATH="$PSYOPS_SECRETS_PATH/psyops-secrets"
 # The encrypted secrets file contains a script to symlink its config files into
 # the homedir... if it exists, the repo was successfully decrypted
-ENV PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH="symlink.sh"
+ENV PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH="/usr/local/bin/psecrets-postunlock"
 # Allow setting the timezone at runtime
 ENV PSYOPS_TIMEZONE="US/Central"
 
@@ -313,7 +313,6 @@ RUN true \
     && setup-psyops-dhd \
     && ln -sf "$PSYOPS_SSH_ED25519_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
     && ln -sf "$PSYOPS_SSH_RSA_DECRYPTED_PRIVATE_KEY_PATH" "$HOME/.ssh/" \
-    && ln -s "$PSYOPS_VOLUME/.home.psyops.local" "$HOME/.local" \
     && git config --global user.email "$gitemail" \
     && git config --global user.name "$gitname" \
     && git config --global --add safe.directory "$PSYOPS_VOLUME" \

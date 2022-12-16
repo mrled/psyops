@@ -11,7 +11,7 @@ These are optional, but good places to start if you're totally unfamiliar with K
   [Similar to this suggestion](https://boxunix.com/2020/05/15/a-better-way-of-organizing-your-kubernetes-manifest-files/).
 * Use `sops` to encrypt secrets.
   In my case, I'm using my `psyops` container built from code in this repo to run `kubectl`,
-  so I store my `sops` age key in the `psyops-secrets.tar.gz.gpg` file next to other psyops secrets.
+  so I store my `sops` age key in my gopass repository.
   See below subsection for some examples.
   This is particularly well suited to tiny clusters and teams.
   [Based on this suggestion](https://frederic-hemberger.de/notes/kubernetes/manage-secrets-with-sops/).

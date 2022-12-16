@@ -19,8 +19,9 @@ Nodes should be added to the `ansible/cloudformation/PsynetZone.cfn.yml` file fo
 ## Where are the certificates stored for the CA and the nodes?
 
 I only use them inside the psyops container.
-I keep them in the encrypted `docker/psyops-secrets.tar.gz.gpg` in the root of this repo.
-When `psecrets unlock` is run, they are decrypted to `/secrets/psyops-secrets/psynet` in the container.
+I store them in my `gopass` repository.
+When `psecrets unlock` is run,
+the CA key and cert are automatically decrypted to `/secrets/psyops-secrets/psynet` in the container.
 All of the `nebula-cert` commands should be run from that location.
 
 ## Bootstrap process

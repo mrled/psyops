@@ -146,9 +146,10 @@ To use it in the psyops container,
 first start the container and run `psecrets unlock`.
 Then save the config file (don't forget to change the `server` line)
 to `/secrets/psyops-secrets/kubernasty/kubeconfig.yml`.
-Finally, run `psecrets encrypt` to generate a new `psyops-secrets.tar.gz.gpg`,
-and commit the result to git.
-After this, it will automaticlaly exist at that location after running `psecrets unlock` inside the psyops container.
+Finally, add it to the gopass repo with eg
+`cat /secrets/psyops-secrets/kubernasty/kubeconfig.yml | gopass insert -m kubernasty/kubeconfig`.
+My `psecrets-postunlock` script automatically saves a copy to that location again
+after running `psecrets unlock` inside the psyops container.
 
 See [Conventions](./conventions.md) for more specifics.
 
