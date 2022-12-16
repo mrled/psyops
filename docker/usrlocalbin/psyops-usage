@@ -12,6 +12,8 @@ This Docker image is used for $(ansi fg=magenta)Personal SYsOPS$(ansi mode=reset
 
 It is intended to be run with the $(ansi fg=magenta)--rm$(ansi mode=reset mode=bold) flag, with the psyops git repository mounted as a Docker volume to $(ansi fg=magenta)$PSYOPS_VOLUME$(ansi mode=reset mode=bold). Persistent data should *not* be stored in $(ansi fg=magenta)\$HOME$(ansi mode=reset mode=bold) or anywhere on the filesystem other than $(ansi fg=magenta)$PSYOPS_VOLUME$(ansi mode=reset mode=bold).
 $(ansi mode=reset)
+
+You can $(ansi fg=magenta)sudo$(ansi mode=reset mode=bold) to run commands with root privileges, but take care; root privileges in this container is probably sufficient for root privileges in your Docker host.
 ENDHEADER
 
 if psecrets testlock; then
@@ -30,12 +32,5 @@ $(ansi fg=red mode=bold)If your host OS is Windows, there may be a firewall issu
 $(ansi fg=red mode=bold)1. Check Docker settings to ensure that the drive on the host containing the psyops repository checkout directory is shared
 $(ansi fg=red mode=bold)2. Run a command like: $(ansi fg=magenta)Set-NetConnectionProfile -interfacealias 'vEthernet (DockerNAT)' -NetworkCategory Private$(ansi fg=red), or have the wrapper script do that for you: $(ansi fg=magenta)psyops.py util --netvolfix$(ansi fg=red)
 ENDPSYOPSERR
-fi
-echo "$(ansi mode=reset)"
-
-if sudo -v 2>/dev/null; then
-    echo "$(ansi fg=red mode=bold)WARNING: $(ansi fg=magenta)sudo$(ansi fg=red) is enabled for this user! This should only be used during development. Root in the PSYOPS container can likely escalate to root in the container host."
-else
-    echo "$(ansi fg=green mode=bold)For security reasons, $(ansi fg=magenta)sudo$(ansi fg=green) has been disabled in this container"
 fi
 echo "$(ansi mode=reset)"

@@ -341,14 +341,6 @@ class PsyopsArgumentCollection:
             default="wip",
             help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.",
         )
-        self.dockeropts.add_argument(
-            "--sudo",
-            action="store_true",
-            help=(
-                "Pass the enablesudo=1 arg during build, and use the tag 'sudo' rather than the "
-                "default when building or running. (Overrides any other tag set.)"
-            ),
-        )
 
         self.dockerbuildopts = argparse.ArgumentParser(add_help=False)
         self.dockerbuildopts.add_argument(
@@ -434,14 +426,11 @@ def main(*args, **kwargs):  # pylint: disable=W0613
 
     parentrepo = GitRepoMetadata(SCRIPTDIR)
 
-    if "sudo" in parsed and parsed.sudo:
-        if "buildargs" in parsed:
-            parsed.buildargs += "--build-arg enablesudo=1"
-        parsed.imagetag = "sudo"
-
     if parsed.action == "build":
         parentrepo.testcheckout(throw=True)
-        dockerbuild(parsed.imagename, parsed.imagetag, additional_build_args=parsed.buildargs)
+        dockerbuild(
+            parsed.imagename, parsed.imagetag, additional_build_args=parsed.buildargs
+        )
     elif parsed.action == "run":
         parentrepo.testcheckout(throw=True)
         dockerrun(
@@ -454,7 +443,9 @@ def main(*args, **kwargs):  # pylint: disable=W0613
         )
     elif parsed.action == "buildrun":
         parentrepo.testcheckout(throw=True)
-        dockerbuild(parsed.imagename, parsed.imagetag, additional_build_args=parsed.buildargs)
+        dockerbuild(
+            parsed.imagename, parsed.imagetag, additional_build_args=parsed.buildargs
+        )
         dockerrun(
             parsed.imagename,
             parsed.imagetag,

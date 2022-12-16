@@ -10,6 +10,8 @@ ARG groupname=psyops
 ARG homedir=/home/$username
 ARG PSYOPS_UID=1000
 ARG PSYOPS_GID=1000
+# The psyops user's password so we can sudo (generate with busybox's mkpasswd)
+ARG PSYOPS_USER_PASSWORD='$6$uVLEWQVe2v.e9dzz$QhxJ6fdTcAqaYeuXV6vxNVpWLbjrhnnaimpvEpICD3zcmGpU5XCtt39Adsc1uixapmKekWqFetEgbzOkfmMMU.'
 
 # Location where we will mount the psyops repo as a volume. Note that even
 # though this is an environment variable, it's not changeable at runtime
@@ -91,6 +93,7 @@ RUN true \
         # Used for kubenrasty
         flux@edgetesting flux-bash-completion@edgetesting \
         git git-doc \
+        gopass gopass-doc gopass-bash-completion \
         # Installs GPG 2.x, not 1.x (gnupg1 gnupg1-doc)
         # Sadly, Alpine doesn't offer a way to install them side by side
         gnupg gnupg-doc \
@@ -247,6 +250,9 @@ RUN true \
     # && addgroup -g "$PSYOPS_GID" "$groupname" \
     && echo "${groupname}:x:${PSYOPS_GID}:" >> /etc/group \
     && adduser -D -G "$groupname" -u "$PSYOPS_UID" -s /bin/bash "$username" \
+    && usermod --password "$PSYOPS_USER_PASSWORD" "$username" \
+    && echo "$username ALL=(ALL) ALL" > "/etc/sudoers.d/$username" \
+    && chmod 0440 "/etc/sudoers.d/$username" \
     && adduser "$username" abuild \
     && adduser "$username" timekeeper \
     #
