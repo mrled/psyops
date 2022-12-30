@@ -240,26 +240,30 @@ services:
       - "traefik.http.services.seedbox-cops.loadbalancer.server.port=80"
       - "traefik.http.routers.seedbox-cops.middlewares=seedbox-auth-bridgetroll-mw"
 
-  tentacles:
-    # TODO: change to jellyfin/jellyfin ?
-    image: ghcr.io/linuxserver/jellyfin:latest
+  stash:
+    image: local/x3:ansibuilt
     environment:
-      PUID: "{{ seedbox_uid }}"
-      PGID: "{{ seedbox_gid }}"
-      TZ: "{{ seedbox_timezone }}"
-      UMASK_SET: "022"
+      USER: "{{ seedbox_uid }}"
+      STASH_STASH: /data/stash
+      STASH_GENERATED: /data/generated
+      STASH_METADATA: /data/metadata
+      STASH_CACHE: /data/cache
+      STASH_CONFIG_FILE: /config/stash.yml
+    # Note that this requires we _also_ set the USER environment variable
+    user: "{{ seedbox_uid }}"
     volumes:
-      - "{{ seedbox_tentacles_config_dir }}:/config"
-      - "{{ seedbox_media_dir }}:/media"
+      - "{{ seedbox_stash_config_dir }}:/config"
+      - "{{ seedbox_media.trix }}:/data"
     networks:
       - dernetverk
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.seedbox-tentacles.rule=Host(`{{ seedbox_tentacles_domain }}`)"
-      - "traefik.http.routers.seedbox-tentacles.tls=true"
-      - "traefik.http.routers.seedbox-tentacles.tls.certresolver=seedbox-resolver"
-      - "traefik.http.routers.seedbox-tentacles.service=seedbox-tentacles"
-      - "traefik.http.services.seedbox-tentacles.loadbalancer.server.port=8096"
+      - "traefik.http.routers.seedbox-stash.rule=Host(`{{ seedbox_stash_domain }}`)"
+      - "traefik.http.routers.seedbox-stash.tls=true"
+      - "traefik.http.routers.seedbox-stash.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-stash.service=seedbox-stash"
+      - "traefik.http.services.seedbox-stash.loadbalancer.server.port=9999"
+      - "traefik.http.routers.seedbox-stash.middlewares=seedbox-auth-bridgetroll-mw"
 
   tautulli:
     image: tautulli/tautulli
