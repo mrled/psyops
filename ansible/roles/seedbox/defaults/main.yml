@@ -29,6 +29,9 @@ seedbox_stack_name: seedbox
 # Set this to true to remove the docker stack before deploying
 seedbox_docker_greenfield_deploy: false
 
+# Set this to true to force building the x3 image even if it is cached
+seedbox_x3_docker_force_build: false
+
 seedbox_plex_ports:
   - description: for access to the Plex Media Server [required]
     port: 32400
