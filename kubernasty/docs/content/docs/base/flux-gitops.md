@@ -105,6 +105,12 @@ decrypting them transparently first.
 TODO: Test sops secrets in Flux.
 This isn't tested at all yet.
 
+## Flux logs
+
+You can check flux logs with `flux logs`.
+When it detects a new change from Git, it will show the commit message in the logs.
+You can limit it to just recent lots with e.g. `flux logs --since 20m` for the past 20 minutes.
+
 ## TODO: consider enabling Flux earlier
 
 Currently, we've deployed several things by hand, and only added Flux and GitOps at the end.
