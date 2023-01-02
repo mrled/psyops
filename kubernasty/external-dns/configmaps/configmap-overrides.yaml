@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: external-dns-helm-chart-value-overrides
+  namespace: external-dns
+data:
+  values.yaml: |-
+
+    # This cluster will require explicitly creating the domain name via the external-dns Custom Resource Definition (CRD).
+    # <https://geek-cookbook.funkypenguin.co.nz/kubernetes/external-dns/>
+    sources:
+      - crd
+
+    aws:
+      credentials:
+        secretName: "external-dns-aws-credential-secret"
+      region: "us-east-2"
+      # Use generic CNAME records instead of AWS-specific ALIAS records
+      preferCNAME: true
