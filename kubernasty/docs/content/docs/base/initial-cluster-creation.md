@@ -151,6 +151,13 @@ Finally, add it to the gopass repo with eg
 My `psecrets-postunlock` script automatically saves a copy to that location again
 after running `psecrets unlock` inside the psyops container.
 
+WARNING: when retrieving a structured document like the YAML kubeconfig file,
+make sure to pass the `-n` argument to `gopass`, like
+`gopass -n kubernasty/kubeconfig`.
+If you don't do this, `gopass` will try to parse the secret output as key:value pairs,
+flattening and alphabetizing all the keys and making a mess of the YAML structure.
+The `psecrets-postunlock` script in psyops does this automatically.
+
 See [Conventions](./conventions.md) for more specifics.
 
 ## Reboot all the nodes
