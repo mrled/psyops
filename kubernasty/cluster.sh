@@ -25,3 +25,11 @@ certinfo() {
 certissuer() {
     certinfo "$1" | grep 'Issuer: '
 }
+
+# Use sops to encrypt for Flux in the cluster
+fluxsops() {
+    sops \
+        --age="$SOPS_AGE_RECIPIENTS" \
+        --encrypted-regex '^(data|stringData)$' \
+        "$@"
+}

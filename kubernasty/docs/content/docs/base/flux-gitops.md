@@ -38,6 +38,73 @@ Instead you can commit manifests to this repository under `kubernasty/flux/<app 
 (with the kustomization optionally referencing other manifests in the same subdirectory)
 and Flux will automatically apply them to the cluster.
 
+## Better secrets with sops in flux
+
+Via <https://fluxcd.io/flux/guides/mozilla-sops/#encrypting-secrets-using-age>.
+
+Flux can handle `sops` secrets for you automatically,
+which is less kludgy than our way with `sopsandstrip` defined in `cluster.sh`.
+From this point forward, we'll use secrets like that, without `sopsandstrip`.
+
+First, you need an age key file for the cluster.
+We've already done this (see [Conventions](conventions.md)),
+but to recap, run `age-keygen -o cluster.age`,
+and save the public key value to `cluster.sh` like
+`export SOPS_AGE_RECIPIENTS=age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9`.
+We also added it to gopass.
+
+Now we need to add it to the cluster as a secret:
+
+```sh
+gopass -n kubernasty/sops.age |
+    kubectl create secret generic sops-age --namespace flux-system --from-file=age.agekey=/dev/stdin
+```
+
+We need a place to store secrets.
+For this cluster, I want to use the `kubernasty/secrets` path in the psyops repo --
+the repo containing this file,
+which is also the main Flux repo we specified to `flux bootstrap ...`.
+Flux sees git repositories as "sources";
+you can see the source that Flux created during `flux bootstrap ...` with
+`flux get sources all`.
+Note that, _unlike_ when we ran `flux bootstrap ...`,
+this directory must already exist before we tell Flux about it.
+I created a file `kubernasty/secrets/.keep` and committed/pushed it before creating the kustomization.
+
+Now we can configure Flux to use sops.
+(Note that `gitrepository/flux-system` is a name that `flux get sources all` shows us.)
+
+```sh
+flux create kustomization kubernasty-secrets \
+    --source=gitrepository/flux-system \
+    --path=./kubernasty/secrets \
+    --prune=true \
+    --interval=10m \
+    --decryption-provider=sops \
+    --decryption-secret=sops-age
+```
+
+Now you can use your newly created key for cluster secrets.
+We save this function as `fluxsops` in our `cluster.sh` file.
+
+```sh
+fluxsops() {
+    sops \
+        --age="$SOPS_AGE_RECIPIENTS" \
+        --encrypted-regex '^(data|stringData)$' \
+        "$@"
+}
+```
+
+We can create manifest files containing secrets,
+use the `fluxsops` function to encrypt them in-place on disk,
+then commit the encrypted version to Git.
+Flux will pull them down from the Git server and be able to apply them like any other manifest,
+decrypting them transparently first.
+
+TODO: Test sops secrets in Flux.
+This isn't tested at all yet.
+
 ## TODO: consider enabling Flux earlier
 
 Currently, we've deployed several things by hand, and only added Flux and GitOps at the end.
