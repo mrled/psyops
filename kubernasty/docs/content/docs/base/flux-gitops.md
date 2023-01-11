@@ -109,7 +109,11 @@ This isn't tested at all yet.
 
 You can check flux logs with `flux logs`.
 When it detects a new change from Git, it will show the commit message in the logs.
-You can limit it to just recent lots with e.g. `flux logs --since 20m` for the past 20 minutes.
+You can limit it to just recent lots with e.g. `--since 20m` for the past 20 minutes,
+and/or follow the logs (like `tail -f`) with `--follow`.
+
+You might also want to see flux kustomization status with
+`kubectl get kustomization -n flux-system`.
 
 ## TODO: consider enabling Flux earlier
 
