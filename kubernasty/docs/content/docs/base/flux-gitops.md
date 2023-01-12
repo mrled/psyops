@@ -85,19 +85,29 @@ flux create kustomization kubernasty-secrets \
 ```
 
 Now you can use your newly created key for cluster secrets.
-We save this function as `fluxsops` in our `cluster.sh` file.
+You could run `sops` like this:
 
 ```sh
-fluxsops() {
-    sops \
-        --age="$SOPS_AGE_RECIPIENTS" \
-        --encrypted-regex '^(data|stringData)$' \
-        "$@"
-}
+sops \
+    --age="$SOPS_AGE_RECIPIENTS" \
+    --encrypted-regex '^(data|stringData)$' \
+    ...
 ```
 
+... however, it's nicer to create a sops config file.
+Save this to `secrets/.sops.yaml`:
+
+```yaml
+creation_rules:
+  - path_regex: .*.yaml
+    encrypted_regex: ^(data|stringData)$
+    age: age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9
+```
+
+`sops` looks for this file in every parent directory of a file you try to de/en-crypt,
+so it will find it automatically for files under `secrets`.
+
 We can create manifest files containing secrets,
-use the `fluxsops` function to encrypt them in-place on disk,
 then commit the encrypted version to Git.
 Flux will pull them down from the Git server and be able to apply them like any other manifest,
 decrypting them transparently first.
