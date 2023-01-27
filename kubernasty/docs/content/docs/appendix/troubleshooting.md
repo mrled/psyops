@@ -122,4 +122,5 @@ This error could mean literally anything, because Traefik is insane.
 
 ## Writing manifests from scratch
 
-See [The beginners guide to creating Kubernetes manifests](https://prefetch.net/blog/2019/10/16/the-beginners-guide-to-creating-kubernetes-manifests/).
+* See [The beginners guide to creating Kubernetes manifests](https://prefetch.net/blog/2019/10/16/the-beginners-guide-to-creating-kubernetes-manifests/).
+* [kubeconform](https://github.com/yannh/kubeconform) may help when something gives a bullshit low-level YAML decoding error rather than something useful with the specific key it's having trouble with
