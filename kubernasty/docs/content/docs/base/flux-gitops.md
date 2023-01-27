@@ -117,13 +117,13 @@ This isn't tested at all yet.
 
 ## Flux logs
 
-You can check flux logs with `flux logs`.
-When it detects a new change from Git, it will show the commit message in the logs.
-You can limit it to just recent lots with e.g. `--since 20m` for the past 20 minutes,
-and/or follow the logs (like `tail -f`) with `--follow`.
-
-You might also want to see flux kustomization status with
-`kubectl get kustomization -n flux-system`.
+* You can check flux logs with `flux logs`;
+  I typically use `flux logs --since 202m --follow`.
+  When it detects a new change from Git, it will show the commit message in the logs.
+* You might also want to see flux kustomization status with
+  `kubectl get kustomization -n flux-system`.
+* `kubectl describe pod helm-controller -n flux-system` sometimes helps too.
+* `flux get all` can show errors if something is failing to deploy
 
 ## TODO: consider enabling Flux earlier
 
