@@ -7,7 +7,7 @@
     chart:
       spec:
         chart: external-dns
-        version: 4.*
+        version: 6.*
         sourceRef:
           kind: HelmRepository
           name: bitnami
