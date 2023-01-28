@@ -12,6 +12,9 @@ data:
     sources:
       - crd
 
+    crd:
+      create: true
+
     aws:
       credentials:
         secretName: "external-dns-aws-credential-secret"
