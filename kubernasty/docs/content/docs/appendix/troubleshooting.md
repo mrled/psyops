@@ -21,6 +21,8 @@ jesus h christ this is the most insane system i've ever seen in my life
 * You can apply a YAML manifest file with `kubectl apply -f filename.yml`.
   This works with stdin, so you can `cat filename.yml | kubectl apply -f -`.
 * You can remove objects defined in a manifest file with `kubectl delete -f filename.yml`.
+* You can exec into containers with
+  `kubectl exec --stdin --tty <container> -n <namespace> -- /bin/bash`.
 
 ### k3s Traefik basics
 
