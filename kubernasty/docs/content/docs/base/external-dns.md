@@ -6,7 +6,18 @@ weight: 70
 External DNS lets us define public DNS entries in our Kubernetes configuration,
 and has the cluster create those DNS entries via Route53 (or whatever) API when they're applied.
 
-See also <https://geek-cookbook.funkypenguin.co.nz/kubernetes/external-dns/>.
+## Create an IAM role with permission to create DNS entries
+
+There are lots of ways to do this;
+here's what I do:
+
+* Create a group in `ansible/cloudformation/MicahrlDotCom.cfn.yml` called `KubernastyZoneUpdaterGroup`
+  with permissions to update the zone(s).
+  See the [external-dns IAM policy example](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md#iam-policy)
+  for what permissions this group needs.
+* Create a user manually in the AWS console that's a member of that group
+* Create access key/secret for the user in the console
+* Save the key/secret as creds (see below)
 
 ## Configure Route53 credentials
 
@@ -120,6 +131,14 @@ which will ensure that it picks up the latest.
 {{< /hint >}}
 
 ## Configure and deploy external-dns
+
+* I followed <https://geek-cookbook.funkypenguin.co.nz/kubernetes/external-dns/>.
+* It is also worth looking at the readme for the bitnami external-dns chart at
+  <https://github.com/bitnami/charts/tree/main/bitnami/external-dns>.
+* The [external-dns documentation for AWS](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md)
+  was also helpful, but note that the bitnami chart handles some things for you.
+  For instance, specifying `secretName` to the chart the way we did
+  handles mounting the credentials file as a volume in the container.
 
 Create `external-dns/configmap-overrides.yaml`.
 I also added `configmap.yaml.dist.txt` containing the entirety of the
