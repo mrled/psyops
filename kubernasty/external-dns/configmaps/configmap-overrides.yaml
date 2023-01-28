@@ -12,8 +12,15 @@ data:
     sources:
       - crd
 
+    # Without this it just doesn't work. ?????/
+    # Values for apiversion and kind taken from
+    # <https://github.com/kubernetes-sigs/external-dns/blob/master/docs/contributing/crd-source.md#usage>
     crd:
       create: true
+      apiversion: externaldns.k8s.io/v1alpha1
+      kind: DNSEndpoint
+
+    logLevel: debug
 
     aws:
       credentials:
