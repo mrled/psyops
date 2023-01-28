@@ -1,9 +1,9 @@
 [submodule "submod/dhd"]
 	path = submod/dhd
-	url = git@github.com:mrled/dhd.git
+	url = https://github.com/mrled/dhd
 [submodule "submod/fourgang"]
 	path = submod/fourgang
-	url = git@github.com:mrled/fourgang.git
+	url = https://github.com/mrled/fourgang
 [submodule "submod/matrix-docker-ansible-deploy"]
 	path = submod/matrix-docker-ansible-deploy
-	url = git@github.com:mrled/matrix-docker-ansible-deploy.git
+	url = https://github.com/mrled/matrix-docker-ansible-deploy
