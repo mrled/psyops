@@ -22,3 +22,6 @@ title: Todo
     * Private container registry
     * Private artifact server that can host arbitrary packages - Pip, Deb, Alpine APK...
     * Some kind of build server - Gitea CI, or Jenkins, or whatever
+* Secure everything
+    * I don't understand Kubernetes RBAC, and I'm not sure if my cluster is horribly insecure by default or something
+    * Secret data is [not encrypted at rest by default](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
