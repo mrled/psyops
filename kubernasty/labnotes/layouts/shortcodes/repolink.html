@@ -1,5 +1,6 @@
 {{- $path := .Get 0 }}
 {{- $uri := printf "https://github.com/mrled/psyops/tree/master/%s" $path }}
 <a href="{{ $uri }}">
-<code>{{ $path }}</code>
+  <span class="psyops-symbol">♘</span>
+  <code>{{ $path }}</code>
 </a>
