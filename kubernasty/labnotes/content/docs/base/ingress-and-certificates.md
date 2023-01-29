@@ -11,7 +11,7 @@ How to configure ingress with and without HTTPS certificates.
     * A dedicated zone in Route53 for cluster records
     * `kubernasty.micahrl.com` pointing to the kube-vip IP address `192.168.1.200`
     * `whoami-http`, `whoami-https-staging`, `whoami-https-prod` subdomains of `kubernasty.micahrl.com` CNAME'd to `kubernasty.micahrl.com`
-    * I handle this in CloudFormation under `ansible/cloudformation/MicahrlDotCom.cfn.yml` in this repo
+    * I handle this in CloudFormation under {{< repolink "ansible/cloudformation/MicahrlDotCom.cfn.yml" >}}
 * An AWS IAM user with permission to modify the zone, for DNS challenges with Let's Encrypt
     * I create a group in the CloudFormation template, and then an IAM user in the AWS console
 
@@ -84,7 +84,7 @@ This will create the `cert-manager` namespace and deploy the resources.
 
 This step requires an AWS Route53 zone,
 and an IAM user that has permission to update records in the zone.
-I created a Kubernasty zone for this (see `ansible/cloudformation/MicahrlDotCom.cfn.yml` in this repository).
+I created a Kubernasty zone for this (see {{< repolink "ansible/cloudformation/MicahrlDotCom.cfn.yml" >}}).
 It contains an A record `kubernasty.micahrl.com` pointing to the cluster IP address of `192.168.1.200`,
 and CNAME records for each service as subdomains, like `whoami-https-staging.kubernasty.micahrl.com`.
 (TODO: also show more advanced configurations that support multiple zones.)
@@ -92,10 +92,12 @@ I also created an IAM access key in the AWS console.
 
 Now create a secret containing the IAM access key id and secret
 so that cert-manager can use it to make Route53 changes for DNS challenges.
-See the unencrypted example at `cert-manager/secrets/aws-route53-credential.example.yml`.
-Use our normal [convention](./conventions.md) to encrypt with `sops`
+See the unencrypted example at
+{{< repolink "kubernasty/cert-manager/secrets/aws-route53-credential.example.yml" >}}
+Use our normal [convention]({{< ref "conventions" >}}) to encrypt with `sops`
 (and you can decrypt with `sopsandstrip`),
-and save the encrypted version of the real manifest as `cert-manager/secrets/aws-route53-credential.yml`
+and save the encrypted version of the real manifest as
+{{< repolink "kubernasty/cert-manager/secrets/aws-route53-credential.yml" >}}
 before applying it.
 
 ```sh

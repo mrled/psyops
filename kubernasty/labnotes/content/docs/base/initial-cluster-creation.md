@@ -7,7 +7,7 @@ You have to do initial cluster setup manually.
 
 In this cluster, I have just 3 nodes, which are both manager and worker nodes.
 
-See [Conventions](./conventions.md) for how I do certain specific things,
+See [Conventions]({{< ref "conventions" >}}) for how I do certain specific things,
 including secrets management and how I store manifest files.
 
 ## Make sure k3s is not set to start in progfiguration
@@ -158,7 +158,7 @@ If you don't do this, `gopass` will try to parse the secret output as key:value 
 flattening and alphabetizing all the keys and making a mess of the YAML structure.
 The `psecrets-postunlock` script in psyops does this automatically.
 
-See [Conventions](./conventions.md) for more specifics.
+See [Conventions]({{< ref "conventions" >}}) for more specifics.
 
 ## Reboot all the nodes
 

@@ -3,7 +3,7 @@ title: Traefik dashboard
 weight: 30
 ---
 
-Now that we have [ingress and certificates](ingress-and-certificates.md) configured,
+Now that we have [ingress and certificates]({{< ref "ingress-and-certificates" >}}) configured,
 we can enable the Traefik dashboard.
 
 ## How to enable access to the dashboard
@@ -50,8 +50,9 @@ See also:
 Create a secret containing a username/password to use with HTTP Basic Authentication.
 We will create a user called `clusteradmin` that is allowed to log in to the Traefik dashboard
 (and later will be allowed to perform other cluster administrative tasks as well).
-Copy the example in `traefik/secrets/clusteradmin-httpba.example.yml` to `tmp.yml`
-set the username and password, and encrypt with `sops`.
+Copy the example in
+{{< repolink "kubernasty/traefik/secrets/clusteradmin-httpba.example.yml" >}}
+to `tmp.yml`, set the username and password, and encrypt with `sops`.
 
 ```sh
 cp traefik/secrets/clusteradmin-httpba.example.yml tmp.yml

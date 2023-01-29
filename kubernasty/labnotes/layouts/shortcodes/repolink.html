@@ -1,0 +1,5 @@
+{{- $path := .Get 0 }}
+{{- $uri := printf "https://github.com/mrled/psyops/tree/master/%s" $path }}
+<a href="{{ $uri }}">
+<code>{{ $path }}</code>
+</a>

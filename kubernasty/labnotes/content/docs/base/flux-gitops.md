@@ -47,7 +47,7 @@ which is less kludgy than our way with `sopsandstrip` defined in `cluster.sh`.
 From this point forward, we'll use secrets like that, without `sopsandstrip`.
 
 First, you need an age key file for the cluster.
-We've already done this (see [Conventions](conventions.md)),
+We've already done this (see [Conventions]({{< ref "conventions" >}})),
 but to recap, run `age-keygen -o cluster.age`,
 and save the public key value to `cluster.sh` like
 `export SOPS_AGE_RECIPIENTS=age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9`.

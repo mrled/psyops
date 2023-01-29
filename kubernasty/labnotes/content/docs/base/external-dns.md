@@ -11,8 +11,8 @@ and has the cluster create those DNS entries via Route53 (or whatever) API when 
 There are lots of ways to do this;
 here's what I do:
 
-* Create a group in `ansible/cloudformation/MicahrlDotCom.cfn.yml` called `KubernastyZoneUpdaterGroup`
-  with permissions to update the zone(s).
+* Create a group in {{< repolink "ansible/cloudformation/MicahrlDotCom.cfn.yml" >}}
+  called `KubernastyZoneUpdaterGroup` with permissions to update the zone(s).
   See the [external-dns IAM policy example](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md#iam-policy)
   for what permissions this group needs.
 * Create a user manually in the AWS console that's a member of that group
@@ -140,7 +140,7 @@ which will ensure that it picks up the latest.
   For instance, specifying `secretName` to the chart the way we did
   handles mounting the credentials file as a volume in the container.
 
-Create `external-dns/configmap-overrides.yaml`.
+Create {{< repolink "kubernasty/external-dns/configmaps/configmap-overrides.yaml" >}}.
 I also added `configmap.yaml.dist.txt` containing the entirety of the
 [external-dns parameters](https://github.com/bitnami/charts/blob/main/bitnami/external-dns/values.yaml).
 This way when I'm upgrading external-dns I can diff the defaults I configured previously
@@ -148,7 +148,8 @@ and the new version's defaults.
 I prefer this to inlining the entire default parameter list into the overrides file
 since it makes it much easier to see what I'm trying to configure.
 
-Finally, I add a test DNS record under `external-dns/dnsendpoints/test-endpoints.yaml`.
+Finally, I add a test DNS record under
+{{< repolink "kubernasty/external-dns/dnsendpoints/test-endpoints.yaml" >}}.
 This isn't used except for me to test that everything really is working properly from end to end.
 
 Then commit everything to git, push, and wait for Flux to apply.
