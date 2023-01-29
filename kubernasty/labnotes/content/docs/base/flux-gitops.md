@@ -42,34 +42,19 @@ and Flux will automatically apply them to the cluster.
 
 Via <https://fluxcd.io/flux/guides/mozilla-sops/#encrypting-secrets-using-age>.
 
-Flux can handle `sops` secrets for you automatically,
-which is less kludgy than our way with `sopsandstrip` defined in `cluster.sh`.
-From this point forward, we'll use secrets like that, without `sopsandstrip`.
+Flux can handle `sops` secrets for you automatically.
 
 First, you need an age key file for the cluster.
 We've already done this (see [Conventions]({{< ref "conventions" >}})),
 but to recap, run `age-keygen -o cluster.age`,
 and save the public key value to `cluster.sh` like
 `export SOPS_AGE_RECIPIENTS=age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9`.
-We also added it to gopass.
-
 Now we need to add it to the cluster as a secret:
 
 ```sh
 gopass -n kubernasty/sops.age |
     kubectl create secret generic sops-age --namespace flux-system --from-file=age.agekey=/dev/stdin
 ```
-
-We need a place to store secrets.
-For this cluster, I want to use the `kubernasty/secrets` path in the psyops repo --
-the repo containing this file,
-which is also the main Flux repo we specified to `flux bootstrap ...`.
-Flux sees git repositories as "sources";
-you can see the source that Flux created during `flux bootstrap ...` with
-`flux get sources all`.
-Note that, _unlike_ when we ran `flux bootstrap ...`,
-this directory must already exist before we tell Flux about it.
-I created a file `kubernasty/secrets/.keep` and committed/pushed it before creating the kustomization.
 
 Now we can configure Flux to use sops.
 (Note that `gitrepository/flux-system` is a name that `flux get sources all` shows us.)
@@ -94,8 +79,7 @@ sops \
     ...
 ```
 
-... however, it's nicer to create a sops config file.
-Save this to `secrets/.sops.yaml`:
+... however, it's nicer to create a sops config file under {{< repolink "kubernasty/.sops.yaml" >}}:
 
 ```yaml
 creation_rules:
@@ -105,7 +89,10 @@ creation_rules:
 ```
 
 `sops` looks for this file in every parent directory of a file you try to de/en-crypt,
-so it will find it automatically for files under `secrets`.
+so it will find it automatically for files under `kubernasty/`.
+It will only try to encrypt the `data`/`stringData` keys,
+which is required because if we encrypt other keys in a secret manifest,
+Kubernetes will not be able to use it.
 
 We can create manifest files containing secrets,
 then commit the encrypted version to Git.

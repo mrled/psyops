@@ -39,7 +39,28 @@ First, I had to create an `age` key for Kubernasty's `sops` encryption.
 age-keygen -o /path/to/somewhere/safe/kubernasty-sops.age
 ```
 
-Then I can use it in `cluster.sh` below.
+Now you can use your newly created key for cluster secrets.
+You could run `sops` like this:
+
+```sh
+sops \
+    --age="$SOPS_AGE_RECIPIENTS" \
+    --encrypted-regex '^(data|stringData)$' \
+    ...
+```
+
+... however, it's nicer to create a sops config file under {{< repolink "kubernasty/.sops.yaml" >}}:
+
+```yaml
+creation_rules:
+  - path_regex: .*.yaml
+    encrypted_regex: ^(data|stringData)$
+    age: age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9
+```
+
+With that file in place,
+sops will find it when you're trying to encrypt any item from a pwd of `kubernasty/`
+or any of its subdirectories.
 
 ## `cluster.sh` script
 
@@ -57,10 +78,6 @@ export KUBECONFIG=/secrets/psyops-secrets/kubernasty/kubeconfig.yml
 export SOPS_AGE_RECIPIENTS=age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9
 # Exporting this variable means that sops will find the private key at this path.
 export SOPS_AGE_KEY_FILE=/secrets/psyops-secrets/kubernasty/kubernasty-sops.age
-# A simple function that strips the '_unencrypted' suffix -- see below for more on that.
-sopsandstrip() {
-    sops "$@" | sed 's/_unencrypted:$/:/g'
-}
 ```
 
 I can dot-source that script and then use it to easily encrypt secrets and store the encrypted result in this git repo.
@@ -70,19 +87,13 @@ I can dot-source that script and then use it to easily encrypt secrets and store
 . cluster.sh
 
 # Create a secrets file... this is just an example.
-# Note the '_unencrypted' suffix to 'metadata'.
-# This is optional, but it means that you can still see the name and namespace.
-# You will need to strip this suffix before applying with kubectl,
-# see sops_kubernasty function above.
-# Also, note that even comments are encrypted by sops,
-# but comments under the 'metadata_unencrypted' section will remain plaintext.
 # Remember that it must be created in the same namespace as the service that will use it.
 cat > secret.tmp <<EOF
 ---
 kind: Secret
 apiVersion: v1
 type: Opaque
-metadata_unencrypted:
+metadata:
   name: example-credential-name
   namespace: asdfwhatever
 stringData:
@@ -91,15 +102,14 @@ EOF
 
 # Use sops to encrypt it
 # We save it to the right location for the psyops container, adjust to your own needs if not using psyops.
-# We do NOT use `sopsandstrip` for this, because we don't want to strip the '_unencrypted' suffix from keys.
 sops --encrypt secret.tmp > /psyops/kubernasty/SERVICENAME/secrets/SECRETNAME.yml
 # Then you can delete the tmp secret file
 rm secret.tmp
 
 # Use sops to decrypt the encrypted file for viewing.
-sopsandstrip --decrypt /psyops/kubernasty/SERVICENAME/secrets/SECRETNAME.yml
+sops --decrypt /psyops/kubernasty/SERVICENAME/secrets/SECRETNAME.yml
 
 # Use sops to decrypt the file to apply with kubectl
-sopsandstrip --decrypt /psyops/kubernasty/SERVICENAME/secrets/SECRETNAME.yml |
+sops --decrypt /psyops/kubernasty/SERVICENAME/secrets/SECRETNAME.yml |
   kubectl apply -f -
 ```

@@ -25,7 +25,3 @@ title: Todo
 * Secure everything
     * I don't understand Kubernetes RBAC, and I'm not sure if my cluster is horribly insecure by default or something
     * Secret data is [not encrypted at rest by default](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
-* Remove old stuff that is no longer relevant
-    * sopsandstrip
-    * fluxsops
-    * kubernasty/secrets directory

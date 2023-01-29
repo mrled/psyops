@@ -95,21 +95,20 @@ so that cert-manager can use it to make Route53 changes for DNS challenges.
 See the unencrypted example at
 {{< repolink "kubernasty/cert-manager/secrets/aws-route53-credential.example.yml" >}}
 Use our normal [convention]({{< ref "conventions" >}}) to encrypt with `sops`
-(and you can decrypt with `sopsandstrip`),
 and save the encrypted version of the real manifest as
-{{< repolink "kubernasty/cert-manager/secrets/aws-route53-credential.yml" >}}
+{{< repolink "kubernasty/cert-manager/secrets/aws-route53-credential.yaml" >}}
 before applying it.
 
 ```sh
 # Write the manifest
 vim tmpsecret.yml
 # Encrypt the manifest
-sops --encrypt tmpsecret.yml > cert-manager/secrets/aws-route53-credential.yml
+sops --encrypt tmpsecret.yml > cert-manager/secrets/aws-route53-credential.yaml
 # Remove the unencrypted manifest
 rm tmpsecret.yml
 
 # Apply the encrypted manifest
-sopsandstrip --decrypt cert-manager/secrets/aws-route53-credential.yml | kubectl apply -f -
+sops --decrypt cert-manager/secrets/aws-route53-credential.yaml | kubectl apply -f -
 ```
 
 Then apply the issuer.
