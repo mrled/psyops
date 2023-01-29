@@ -15,6 +15,6 @@ clean: ## Remove venv, builds, etc
 dev: ## Run a dev server for the lab notes
 	hugo serve --port $(DEVPORT)
 
-.PHONY: site
-site: ## Build the lab notes site for production
+.PHONY: production
+production: ## Build the lab notes site for production
 	hugo
