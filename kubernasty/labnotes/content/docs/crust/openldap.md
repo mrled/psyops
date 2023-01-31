@@ -1,7 +1,13 @@
 ---
-title: OpenLDAP
+title: OpenLDAP (INCOMPLETE)
 weight: 80
 ---
+
+{{< hint warning >}}
+**Incomplete**
+
+This section is not yet finished.
+{{< /hint >}}
 
 We install OpenLDAP for a single source of truth for users and service accounts.
 
