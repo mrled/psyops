@@ -1,6 +1,6 @@
 ---
 title: External DNS
-weight: 70
+weight: 20
 ---
 
 External DNS lets us define public DNS entries in our Kubernetes configuration,
