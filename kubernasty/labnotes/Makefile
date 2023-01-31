@@ -11,10 +11,14 @@ help: ## Show this help
 clean: ## Remove venv, builds, etc
 	rm -rf public resources
 
+.PHONY: modget
+modget:
+	hugo mod get
+
 .PHONY: dev
-dev: ## Run a dev server for the lab notes
+dev: modget ## Run a dev server for the lab notes
 	hugo serve --port $(DEVPORT)
 
 .PHONY: production
-production: ## Build the lab notes site for production
+production: modget ## Build the lab notes site for production
 	hugo
