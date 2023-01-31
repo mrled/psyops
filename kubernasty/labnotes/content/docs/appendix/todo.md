@@ -17,6 +17,8 @@ title: Todo
 * Bootstrap Gitea (or similar) onto the cluster, and do gitops based on that.
     * Similar to [kubefirst](https://kubefirst.io/), which looks dope except it doesn't work with local bare metal.
 * Apps
+    * Keycloak
+    * OpenLDAP?
     * Gitea private git server
     * Grafana
     * Private container registry
