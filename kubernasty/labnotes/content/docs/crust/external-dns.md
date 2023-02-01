@@ -106,12 +106,13 @@ We have to use static credentials because our cluster is bare metal.
 
 {{< /details >}}
 
-Save this as `external-dns/aws-route53-credential.example.yaml`,
+Save this as
+{{< repolink "kubernasty/manifests/crust/external-dns/aws-route53-credential.example.yaml" >}},
 and modify it to contain a real credential.
 Then encrypt it with `sops`:
 
 ```sh
-sops --encrypt external-dns/aws-route53-credential.example.yaml > external-dns/aws-route53-credential.yaml
+sops --encrypt kubernasty/manifests/crust/external-dns/aws-route53-credential.example.yaml > kubernasty/manifests/crust/external-dns/aws-route53-credential.yaml
 ```
 
 **Make sure not to commit any unencrypted credentials files**.
@@ -140,7 +141,7 @@ which will ensure that it picks up the latest.
   For instance, specifying `secretName` to the chart the way we did
   handles mounting the credentials file as a volume in the container.
 
-Create {{< repolink "kubernasty/external-dns/configmaps/configmap-overrides.yaml" >}}.
+Create {{< repolink "kubernasty/manifests/crust/external-dns/configmaps/configmap-overrides.yaml" >}}.
 I also added `configmap.yaml.dist.txt` containing the entirety of the
 [external-dns parameters](https://github.com/bitnami/charts/blob/main/bitnami/external-dns/values.yaml).
 This way when I'm upgrading external-dns I can diff the defaults I configured previously
@@ -149,7 +150,7 @@ I prefer this to inlining the entire default parameter list into the overrides f
 since it makes it much easier to see what I'm trying to configure.
 
 Finally, I add a test DNS record under
-{{< repolink "kubernasty/external-dns/dnsendpoints/test-endpoints.yaml" >}}.
+{{< repolink "kubernasty/manifests/crust/external-dns/dnsendpoints/test-endpoints.yaml" >}}.
 This isn't used except for me to test that everything really is working properly from end to end.
 
 Then commit everything to git, push, and wait for Flux to apply.
