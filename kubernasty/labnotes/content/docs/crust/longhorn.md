@@ -33,6 +33,7 @@ we can monitor the deployment with this command.
 Don't proceed until all pods and certs are READY.
 
 ```sh
+kubectl describe kustomization longhorn -n flux-system
 kubectl get pods -n longhorn-system
 kubectl get certs -n longhorn-system
 ```

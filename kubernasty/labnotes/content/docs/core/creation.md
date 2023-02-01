@@ -1,5 +1,5 @@
 ---
-weight: 10
+weight: 20
 title: Cluster creation
 ---
 
@@ -9,10 +9,6 @@ In this cluster, I have just 3 nodes, which are both manager and worker nodes.
 
 See [Conventions]({{< ref "conventions" >}}) for how I do certain specific things,
 including secrets management and how I store manifest files.
-
-## Make sure k3s is not set to start in progfiguration
-
-Set `start_k3s` to `False` for all of the nodes in the cluster in progfiguration.
 
 ## Bring up the first cluster node
 
@@ -100,6 +96,31 @@ export PATH="/usr/libexec/cni/:$PATH"
 k3s server --server https://$vipaddress:6443
 ```
 
+{{< hint "warning" >}}
+**Do you get an error like `failed to get CA certs` after uninstalling and reinstalling k3s?**
+
+```text
+kenasus:~# k3s server --server https://$vipaddress:6443
+INFO[0000] Starting k3s v1.23.12+k3s1 (AlpineLinux)
+FATA[0000] starting kubernetes: preparing server: failed to get CA certs: Get "https://192.168.1.200:6443/cacerts": dial tcp 192.168.1.200:6443: connect: connection refused
+```
+
+Make sure that your system isn't holding on to the `$vipaddress`.
+
+```text
+kenasus:~# ip addr | grep "$vipaddress"
+    inet 192.168.1.200/32 scope global psy0
+```
+
+If the above command returns something, delete the address with something like this
+(note that my network card is called `psy0`; yours might be `eth0` or similar):
+
+```sh
+ip addr del $vipaddress/32 dev psy0
+```
+
+{{< /hint >}}
+
 Wait until this node has finished initializing.
 
 * Check with `kubectl get nodes` from the original server says that the new node is `Ready`.
@@ -170,6 +191,3 @@ Now you have a Kubernetes cluster!
 
 It does have a load balancer, as k3s ships with traefik.
 It isn't running any services and it has no HTTPS certificates.
-
-## Resetting the cluster to brand-new
-

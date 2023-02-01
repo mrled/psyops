@@ -16,8 +16,9 @@ weight: 80
     [the kube-vip k3s documentation](https://kube-vip.io/docs/usage/k3s/).
   * **Make sure that `/psyopsos-data/overlays/var-lib-rancher-k3s` is bind-mounted to `/var/lib/rancher/k3s`**,
     I have seen this bind mount be missing when trying to reset my cluster,
-    maybe something wrong with my `umount` command above?
-* Start over from the top of this document
+    and it seems to be something that k3s-killall.sh does.
+    If it isn't already mounted, run
+    `mount -o bind /psyopsos-data/overlays/var-lib-rancher-k3s /var/lib/rancher/k3s`.
 
 See the [uninstall script code](https://github.com/k3s-io/k3s/blob/03885fc38532afcb944c892121ffe96b201fc020/install.sh#L407-L449)
 for more context.
