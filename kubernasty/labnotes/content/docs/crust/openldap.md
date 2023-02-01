@@ -86,7 +86,7 @@ First, I created the various manifest files under `openldap/...`.
 ### Create `openldap-users.secret.yaml`
 
 To make the openldap-secret.yaml, create a manifest like
-{{< repolink "kubernasty/openldap/secrets/openldap-secret.UNENCRYPTED.yaml" >}}.
+{{< repolink "kubernasty/manifests/crust/openldap/secrets/openldap-secret.UNENCRYPTED.yaml" >}}.
 Include an `adminpassword`, which is the password for the admin LDAP user;
 a list of `users` separated by commas, which will be created on the first startup;
 and a list of `passwords` separated by commas for those users.
@@ -129,7 +129,7 @@ sops --encrypt --in-place openldap-users.secret.yaml
 
 ### Create the other manifests
 
-* Note that what's there in {{< repolink "kubernasty/openldap" >}}
+* Note that what's there in {{< repolink "kubernasty/manifests/crust/openldap" >}}
   has some hardcoded values like my DNS and x509 names.
 * Per [the readme](https://github.com/bitnami/containers/tree/main/bitnami/openldap),
   the container users unprivileged ports 1389/1689 for LDAP/LDAPS by default,
