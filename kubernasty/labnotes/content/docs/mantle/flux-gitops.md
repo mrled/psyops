@@ -56,19 +56,6 @@ gopass -n kubernasty/sops.age |
     kubectl create secret generic sops-age --namespace flux-system --from-file=age.agekey=/dev/stdin
 ```
 
-Now we can configure Flux to use sops.
-(Note that `gitrepository/flux-system` is a name that `flux get sources all` shows us.)
-
-```sh
-flux create kustomization kubernasty-secrets \
-    --source=gitrepository/flux-system \
-    --path=./kubernasty/secrets \
-    --prune=true \
-    --interval=10m \
-    --decryption-provider=sops \
-    --decryption-secret=sops-age
-```
-
 Now you can use your newly created key for cluster secrets.
 You could run `sops` like this:
 
