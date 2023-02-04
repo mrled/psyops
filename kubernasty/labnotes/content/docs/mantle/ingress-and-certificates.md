@@ -18,7 +18,7 @@ How to configure ingress with and without HTTPS certificates.
 ## whoami service
 
 A useful service for testing.
-Deploy with: `kubectl apply -f whoami/deployments/whoami.yml`.
+Deploy with: `kubectl apply -f manifests/mantle/whoami/deployments/whoami.yml`.
 
 Note that this does _not_ include any ingress definitions,
 which means that you can't access this deployment from outside your cluster,
@@ -32,7 +32,7 @@ even if DNS is set up properly.
 ## HTTP ingress for whoami service
 
 HTTP ingresses are pretty easy.
-Deploy with `kubectl apply -f whoami/ingresses/http.yml`.
+Deploy with `kubectl apply -f manifests/mantle/whoami/ingresses/http.yml`.
 
 Once this is up, you can `curl http://whoami-http.kubernasty.micahrl.com` and see results:
 
@@ -75,9 +75,9 @@ See also:
 First, install cert-manager using kubectl with cert-manager’s release file:
 
 ```sh
-mkdir -p cert-manager/{deployments,secrets,clusterissuers}
-curl -L -o cert-manager/deployments/cert-manager.yml https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cert-manager.yaml
-kubectl apply -f cert-manager/deployments/cert-manager.yml
+mkdir -p manifests/mantle/cert-manager/{deployments,secrets,clusterissuers}
+curl -L -o manifests/mantle/cert-manager/deployments/cert-manager.yml https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cert-manager.yaml
+kubectl apply -f manifests/mantle/cert-manager/deployments/cert-manager.yml
 ```
 
 This will create the `cert-manager` namespace and deploy the resources.
@@ -93,22 +93,22 @@ I also created an IAM access key in the AWS console.
 Now create a secret containing the IAM access key id and secret
 so that cert-manager can use it to make Route53 changes for DNS challenges.
 See the unencrypted example at
-{{< repolink "kubernasty/cert-manager/secrets/aws-route53-credential.example.yml" >}}
+{{< repolink "kubernasty/manifests/mantle/cert-manager/secrets/aws-route53-credential.example.yml" >}}
 Use our normal [convention]({{< ref "conventions" >}}) to encrypt with `sops`
 and save the encrypted version of the real manifest as
-{{< repolink "kubernasty/cert-manager/secrets/aws-route53-credential.yaml" >}}
+{{< repolink "kubernasty/manifests/mantle/cert-manager/secrets/aws-route53-credential.yaml" >}}
 before applying it.
 
 ```sh
 # Write the manifest
 vim tmpsecret.yml
 # Encrypt the manifest
-sops --encrypt tmpsecret.yml > cert-manager/secrets/aws-route53-credential.yaml
+sops --encrypt tmpsecret.yml > manifests/mantle/cert-manager/secrets/aws-route53-credential.yaml
 # Remove the unencrypted manifest
 rm tmpsecret.yml
 
 # Apply the encrypted manifest
-sops --decrypt cert-manager/secrets/aws-route53-credential.yaml | kubectl apply -f -
+sops --decrypt manifests/mantle/cert-manager/secrets/aws-route53-credential.yaml | kubectl apply -f -
 ```
 
 Then apply the issuer.
@@ -119,8 +119,8 @@ while we are trying to make this work,
 but we can go ahead and apply the prod one as well.
 
 ```sh
-kubectl apply -f cert-manager/clusterissuers/letsencrypt-issuer-staging.yml
-kubectl apply -f cert-manager/clusterissuers/letsencrypt-issuer-prod.yml
+kubectl apply -f manifests/mantle/cert-manager/clusterissuers/letsencrypt-issuer-staging.yml
+kubectl apply -f manifests/mantle/cert-manager/clusterissuers/letsencrypt-issuer-prod.yml
 ```
 
 Now we're ready to start requesting certificates.
@@ -138,7 +138,7 @@ Traefik can do this if you pay for Enterprise or are not using HA,
 but when using Traefik Proxy + Cert Manager, we have to create it ourselves.
 
 ```sh
-kubectl apply -f whoami/ingresses/https-staging.yml
+kubectl apply -f manifests/mantle/whoami/ingresses/https-staging.yml
 ```
 
 Verify things are working with commands like:
@@ -149,7 +149,21 @@ kubectl get certificaterequests -A
 kubectl get ingress -A
 kubectl describe certificate ...
 kubectl describe certificaterequest ...
+```
 
+{{< hint info >}}
+**It can take a while for certificates to become READY.**
+
+In my experience on AWS Route53, it seems to usually take 2-5 minutes.
+
+I have heard that other providers may take 30 minutes or longer.
+
+Wait to proceed until your certificates enter the READY state.
+{{< /hint >}}
+
+Deeper troubleshooting:
+
+```sh
 # If certs are not going to 'Ready' state, look at the logs in the cert-manager container
 kubectl get pods -n cert-manager
 # Returns a list like:
@@ -205,7 +219,7 @@ See also:
 This is very similar to the staging setup, just using a different ClusterIssuer to get real certs.
 
 ```sh
-kubectl apply -f whoami/ingresses/https-prod.yml
+kubectl apply -f manifests/mantle/whoami/ingresses/https-prod.yml
 
 # ... wait ...
 
