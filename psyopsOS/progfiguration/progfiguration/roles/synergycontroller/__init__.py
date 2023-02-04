@@ -329,6 +329,7 @@ def apply(
     subprocess.run(["rc-service", "dbus", "start"], check=True)
     subprocess.run(["rc-service", "udev", "start"], check=True)
     subprocess.run(["rc-service", "mdev", "start"], check=True)
+    subprocess.run(["setup-xorg-base"], check=True)
     subprocess.run(["rc-service", "lightdm", "start"], check=True)
     time.sleep(2)
     # The first start it doesn't seem to autologin correctly?
