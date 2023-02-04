@@ -50,7 +50,7 @@ node = InventoryNode(
     serial="",
     roles=Bunch(
         datadisk={
-            "underlying_device": "/dev/mmcblk1",
+            "underlying_device": "/dev/sda",
             "wipe_after_mounting": ["overlays/var-lib-flatpak/"],
             "ramoffload": True,
         },
