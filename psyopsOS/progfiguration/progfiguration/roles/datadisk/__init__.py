@@ -62,6 +62,7 @@ def setup_ramoffload(
         os.remove(ramoffload_img_path)
     except FileNotFoundError:
         pass
+    localhost.makedirs(os.path.dirname(ramoffload_img_path))
     subprocess.run(
         ["dd", "if=/dev/zero", f"of={ramoffload_img_path}", "bs=1024", "count=0", f"seek={size_kb}"], check=True
     )

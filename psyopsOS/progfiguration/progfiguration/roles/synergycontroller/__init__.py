@@ -309,7 +309,7 @@ def apply(
 
         # subprocess.run(["curl", "-o", "/tmp/synergy.flatpak", synergy_flatpak_uri])
         # subprocess.run("flatpak install -y /tmp/synergy.flatpak", shell=True, check=True)
-        synergy_flatpak = "/psyopsos-data/roles/synergycontroller/synergy_1.14.5-stable.0cafa5d7.flatpak"
+        synergy_flatpak = "/psyopsos-data/roles/synergycontroller/synergy_1.14.6-snapshot.88fdd263.flatpak"
         if not os.path.exists(synergy_flatpak):
             # TODO: Download this from Symless automatically
             # I'm not sure how their auth works so right now you have to copy it to this location manually
@@ -328,6 +328,7 @@ def apply(
     )
     subprocess.run(["rc-service", "dbus", "start"], check=True)
     subprocess.run(["rc-service", "udev", "start"], check=True)
+    subprocess.run(["rc-service", "mdev", "start"], check=True)
     subprocess.run(["rc-service", "lightdm", "start"], check=True)
     time.sleep(2)
     # The first start it doesn't seem to autologin correctly?
