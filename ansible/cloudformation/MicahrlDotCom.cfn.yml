@@ -255,6 +255,11 @@ Resources:
           TTL: 300
           ResourceRecords: ["df9oxkpvyda4s.cloudfront.net"]
 
+        - Name: bullshit.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["micahrl.micro.blog"]
+
   # Backchannel zone - for VPN clients
   BackchannelZone:
     Type: "AWS::Route53::HostedZone"
