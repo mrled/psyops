@@ -13,8 +13,12 @@ See also the [official Flux documentation](https://fluxcd.io/flux/installation).
 * Create a GitHub Personal Access Token.
   (See the official docs for details.)
   I made mine a new-style fine-grained token, rather than a "classic" token with whole-account access.
-  I gave it access just to this `mrled/psyops` repo,
-  and gave it just `Administration` and `Content` repository permissions.
+  * Give access to just this `mrled/psyops` repo
+    * Read and Write: `Administration`
+    * Read and Write: `Contents`
+    * Read: _everything else_
+  * If you modify the repository permissions after generating the token,
+    make sure to _regenerate the token_.
 
 Now bootstrap.
 Bootstrapping is idempotent, so running the bootstrap command multiple times won't hurt anything.

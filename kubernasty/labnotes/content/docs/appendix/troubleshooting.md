@@ -126,3 +126,16 @@ This error could mean literally anything, because Traefik is insane.
 
 * See [The beginners guide to creating Kubernetes manifests](https://prefetch.net/blog/2019/10/16/the-beginners-guide-to-creating-kubernetes-manifests/).
 * [kubeconform](https://github.com/yannh/kubeconform) may help when something gives a bullshit low-level YAML decoding error rather than something useful with the specific key it's having trouble with
+
+## Reboots and power outages
+
+Note that if the entire cluster is taken down
+(for instance, by a power outage),
+you will need to boot _at least two nodes_ of the control plane
+before Kubernetes will start the API server and become ready.
+
+(psyopsOS-specific note: since the OS is stateless and all configuration happens after boot,
+the easiest thing to do here is sometimes to just reboot the host again.
+This is especially true if the network is not available immediately on boot,
+which is sometimes the case for power outages
+if eg the network equipment is booting slower than the cluster nodes.)

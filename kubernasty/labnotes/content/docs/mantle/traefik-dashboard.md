@@ -15,9 +15,9 @@ In subsequent steps we'll add authentication and an HTTP-to-HTTPS redirect.
 
 ```sh
 # Apply the manifest creating the cert and service
-kubectl apply -f traefik/deployments/dashboard.yml
+kubectl apply -f manifests/mantle/traefik/deployments/dashboard.yml
 # Apply the manifest creating the ingress without authentication
-kubectl apply -f traefik/ingresses/dashboard-in-noauth.yml
+kubectl apply -f manifests/mantle/traefik/ingresses/dashboard-in-noauth.yml
 
 # Watch for the certificate to get generated
 kubectl logs --tail=20 -f cert-manager-<SUFFIX> -n cert-manager &
@@ -51,22 +51,22 @@ Create a secret containing a username/password to use with HTTP Basic Authentica
 We will create a user called `clusteradmin` that is allowed to log in to the Traefik dashboard
 (and later will be allowed to perform other cluster administrative tasks as well).
 Copy the example in
-{{< repolink "kubernasty/traefik/secrets/clusteradmin-httpba.example.yaml" >}}
+{{< repolink "kubernasty/manifests/mantle/traefik/secrets/clusteradmin-httpba.example.yaml" >}}
 to `tmp.yml`, set the username and password, and encrypt with `sops`.
 
 ```sh
-cp traefik/secrets/clusteradmin-httpba.example.yaml tmp.yml
+cp manifests/mantle/traefik/secrets/clusteradmin-httpba.example.yaml tmp.yml
 vim tmp.yml # set the username/password ...
-sops --encrypt tmp.yml > traefik/secrets/clusteradmin-httpba.yaml
+sops --encrypt tmp.yml > manifests/mantle/traefik/secrets/clusteradmin-httpba.yaml
 ```
 
 Apply the secret.
 Create a middleware that applies HTTP Basic Authentication using the credentials you just saved in the secret.
 
 ```sh
-sops --decrypt traefik/secrets/clusteradmin-httpba.yaml |
+sops --decrypt manifests/mantle/traefik/secrets/clusteradmin-httpba.yaml |
     kubectl apply -f -
-kubectl apply -f traefik/middlewares/traefik-dashboard-auth-mw.yml
+kubectl apply -f manifests/mantle/traefik/middlewares/clusteradmin-auth-mw.yml
 ```
 
 Now add the new middleware to the dashboard Ingress object we created earlier.
@@ -79,7 +79,7 @@ but doing it this way proves that the dashboard is working before attempting to 
 and also helps explain it better.
 
 ```sh
-kubectl apply -f traefik/ingresses/dashboard-in-auth.yml
+kubectl apply -f manifests/mantle/traefik/ingresses/dashboard-in-auth.yml
 ```
 
 You can test this in the browser by visiting <https://traefik.kubernasty.micahrl.com/dashboard/>.
@@ -107,7 +107,7 @@ it would be nice if it just redirected users to `https` automatically.
 First we have to create a middleware that does HTTP-to-HTTPS redirects.
 
 ```sh
-kubectl apply -f traefik/middlewares/redirect-https-mw.yml
+kubectl apply -f manifests/mantle/traefik/middlewares/redirect-https-mw.yml
 ```
 
 To redirect from HTTP to HTTPS, we actually need a separate `Ingress` resource for each scheme.
@@ -116,7 +116,7 @@ Instead, we'll add a new HTTP `Ingress` resource which we'll annotated with the 
 To be clear, this is a _new_ resource, not an update of the one we created above.
 
 ```sh
-kubectl apply -f traefik/ingresses/dashboard-in-http.yml
+kubectl apply -f manifests/mantle/traefik/ingresses/dashboard-in-http.yml
 ```
 
 You should test this with a real web browser, not curl.

@@ -1,5 +1,5 @@
 ---
-title: Kubernetes dashboard
+title: Kubernetes dashboard, Kustomizations
 weight: 50
 ---
 
@@ -28,8 +28,8 @@ DEPLOY_AIO_URL="https://raw.githubusercontent.com/kubernetes/dashboard/${VERSION
 curl -o kubernetes-dashboard/deploy-aio.yml "$DEPLOY_AIO_URL"
 ```
 
-Then examine the `kustomization.yml` file.
-It's already present in this repo, and it looks like this:
+Then examine {{< repolink "manifests/mantle/kubernetes-dashboard/kustomization.yml" >}},
+which should look something like this:
 
 ```yaml
 namespace: kubernetes-dashboard
@@ -49,17 +49,17 @@ we just duplicate it here so that it applies to all of the resources we've added
 
 ```sh
 # Show the result of the Kustomize transformations - what will actually be deployed
-kubectl kustomize ./kubernetes-dashboard/
+kubectl kustomize manifests/mantle/kubernetes-dashboard
 
 # Deploy the dashboard
-kubectl apply -k ./kubernetes-dashboard/
+kubectl apply -k manifests/mantle/kubernetes-dashboard
 
 # Retrieve the bearer token
 kubectl -n kubernetes-dashboard describe secret admin-user-token | grep '^token'
 ```
 
 Wait until the cert is issued, and then navigate to
-`https://dashboard.kubernasty.micahrl.com`.
+<https://dashboard.kubernasty.micahrl.com>.
 Enter the token from the previous command to log in.
 
 ## Updating the dashboard

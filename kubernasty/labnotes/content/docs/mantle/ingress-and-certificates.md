@@ -189,18 +189,13 @@ kubectl logs -f traefik-df4ff85d6-f5wxf -n kube-system
 
 It will take a few minutes for the certificate to be issued.
 Once it is issued, check that it's working with `curl` (ignoring SSL errors, as this is the staging server)
-and `openssl`.
+and `certissuer`, which is a function defined in {{< repolink "kubernasty/cluster.sh" >}}.
 
 ```sh
-whoamistaging=whoami-https-staging.kubernasty.micahrl.com
-
-curl -k https://$whoamistaging
+curl -k https://whoami-https-staging.kubernasty.micahrl.com
 # Should return results similar to those returned by the http request earlier
 
-echo "" |
-    openssl s_client -showcerts -servername $whoamistaging -connect $whoamistaging:443 2>/dev/null |
-    openssl x509 -inform pem -noout -text |
-    grep Issuer
+certissuer whoami-https-staging.kubernasty.micahrl.com
 # Should show the staging Let's Encrypt CA, something like:
 # Issuer: C=US, O=(STAGING) Let's Encrypt, CN=(STAGING) Artificial Apricot R3
 ```
@@ -223,20 +218,23 @@ kubectl apply -f manifests/mantle/whoami/ingresses/https-prod.yml
 
 # ... wait ...
 
-# Note that this uses a different DNS name
-whoamiprod=whoami-https-prod.kubernasty.micahrl.com
-
 # Don't use -k - we want this to fail if the cert isn't trusted
-curl https://$whoamiprod
-# Shoudl return results similar to last time
+curl https://whoami-https-prod.kubernasty.micahrl.com
+# Should return results similar to last time
 
-echo "" |
-    openssl s_client -showcerts -servername $whoamistaging -connect $whoamistaging:443 2>/dev/null |
-    openssl x509 -inform pem -noout -text |
-    grep Issuer
+certissuer whoami-https-prod.kubernasty.micahrl.com
 # Should show the production Let's Encrypt CA, something like:
 # Issuer: C=US, O=Let's Encrypt, CN=R3
 ```
+
+## Troubleshooting
+
+* Try commands like `kubectl describe certificate whoami-cert-prod -n whoami`
+* Note the message `Issuing certificate as Secret does not exist` is a generic error --
+  it just means the cert doesn't exist locally.
+  If it stays in this state for a long time,
+  you'll have to do some cert-manager troubleshooting.
+* See the [cert-manager troubleshooting guide](https://cert-manager.io/docs/troubleshooting/)
 
 ## Appendix: background on certificates
 
