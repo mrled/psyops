@@ -150,7 +150,9 @@ I prefer this to inlining the entire default parameter list into the overrides f
 since it makes it much easier to see what I'm trying to configure.
 
 Finally, I add a test DNS record under
-{{< repolink "kubernasty/manifests/crust/external-dns/dnsendpoints/test-endpoints.yaml" >}}.
+{{< repolink "kubernasty/manifests/crust/external-dns-test-endpoints/dnsendpoints/test-endpoints.yaml" >}}.
 This isn't used except for me to test that everything really is working properly from end to end.
+It needs to be in a separate kustomization from the `external-dns` stuff,
+because the `external-dns` deployment installs the CRD for DNSEndpoint.
 
 Then commit everything to git, push, and wait for Flux to apply.
