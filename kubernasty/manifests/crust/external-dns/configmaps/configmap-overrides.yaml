@@ -34,4 +34,6 @@ data:
     # https://github.com/kubernetes-sigs/external-dns/issues/825
     # https://github.com/kubernetes-sigs/external-dns/blob/master/docs/faq.md#im-using-an-elb-with-txt-registry-but-the-cname-record-clashes-with-the-txt-record-how-to-avoid-this
     # https://github.com/kubernetes-sigs/external-dns/issues/262
-    txtPrefix: workaround
+    # You probably want this to end with a dot
+    # https://github.com/kubernetes-sigs/external-dns/issues/1416#issuecomment-671909985
+    txtPrefix: "extdns."
