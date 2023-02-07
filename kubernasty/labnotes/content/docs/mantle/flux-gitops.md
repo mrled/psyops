@@ -5,43 +5,6 @@ weight: 60
 
 We'll use Flux for GitOps.
 
-## Bootstrapping Flux
-
-See also the [official Flux documentation](https://fluxcd.io/flux/installation).
-
-* Obtain the `flux` binary from the [releases page](https://github.com/fluxcd/flux2/releases).
-* Create a GitHub Personal Access Token.
-  (See the official docs for details.)
-  I made mine a new-style fine-grained token, rather than a "classic" token with whole-account access.
-  * Give access to just this `mrled/psyops` repo
-    * Read and Write: `Administration`
-    * Read and Write: `Contents`
-    * Read: _everything else_
-  * If you modify the repository permissions after generating the token,
-    make sure to _regenerate the token_.
-
-Now bootstrap.
-Bootstrapping is idempotent, so running the bootstrap command multiple times won't hurt anything.
-
-```sh
-export GITHUB_TOKEN="<the personal access token created previously>"
-
-flux bootstrap github \
-    --owner=mrled \
-    --repository=psyops \
-    --path=kubernasty/flux \
-    --branch=master \
-    --personal
-```
-
-When I ran this, there was no `kubernasty/flux` subdirectory of this repository;
-this was ok, flux created it.
-
-From this point forward, you shouldn't need to apply manifests with `kubectl apply ...` any more.
-Instead you can commit manifests to this repository under `kubernasty/flux/<app name>/kustomization.yml`
-(with the kustomization optionally referencing other manifests in the same subdirectory)
-and Flux will automatically apply them to the cluster.
-
 ## Better secrets with sops in flux
 
 Via <https://fluxcd.io/flux/guides/mozilla-sops/#encrypting-secrets-using-age>.
@@ -92,6 +55,74 @@ decrypting them transparently first.
 
 TODO: Test sops secrets in Flux.
 This isn't tested at all yet.
+
+## Bootstrapping Flux
+
+See also the [official Flux documentation](https://fluxcd.io/flux/installation).
+
+* Obtain the `flux` binary from the [releases page](https://github.com/fluxcd/flux2/releases).
+* Create a GitHub Personal Access Token.
+  (See the official docs for details.)
+  I made mine a new-style fine-grained token, rather than a "classic" token with whole-account access.
+  * Give access to just this `mrled/psyops` repo
+    * Read and Write: `Administration`
+    * Read and Write: `Contents`
+    * Read: _everything else_
+  * If you modify the repository permissions after generating the token,
+    make sure to _regenerate the token_.
+
+Now bootstrap.
+Bootstrapping is idempotent, so running the bootstrap command multiple times won't hurt anything.
+
+```sh
+export GITHUB_TOKEN="<the personal access token created previously>"
+
+flux bootstrap github \
+    --owner=mrled \
+    --repository=psyops \
+    --path=kubernasty/manifests/mantle/flux \
+    --branch=master \
+    --personal
+```
+
+From this point forward, you shouldn't need to apply manifests with `kubectl apply ...` any more.
+Instead you can commit manifests to this repository under `kubernasty/manifests/mantle/flux/<app name>/kustomization.yml`
+(with the kustomization optionally referencing other manifests in the same subdirectory)
+and Flux will automatically apply them to the cluster.
+
+## What happens after Flux installs itself?
+
+Now what happens depends on whether the Git repo you're using has Flux kustomizations in it or not.
+
+### If you're installing Flux for the first time in this repo
+
+When I first ran this, there was no `kubernasty/manifests/mantle/flux` subdirectory of this repository;
+this was ok, flux created it.
+
+Skip to the next section.
+
+### If the repo already has Kustomizations in it
+
+If there are already kustomizations at the `--path` listed above,
+Flux will install itself and then immediately start trying to install those kustomizations.
+That means that the rest of this page,
+along with all other pages in this guide that were finished happen automatically;
+you just need to monitor them to make sure they complete successfully.
+
+Note that applying all existing kustomizations may time out.
+Investigate with:
+
+```sh
+flux check
+flux get kustomizations
+```
+
+### If you have uninstalled Flux and are reinstalling it to the same cluster
+
+This is supported and should work without surprises.
+Per the [uninstallation documentation](https://fluxcd.io/flux/installation/#uninstall):
+
+> Note that the uninstall command will not remove any Kubernetes objects or Helm releases that were reconciled on the cluster by Flux. It is safe to uninstall Flux and rerun the bootstrap, any existing workloads will not be affected.
 
 ## Flux logs
 
