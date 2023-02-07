@@ -28,3 +28,10 @@ data:
       region: "us-east-2"
       # Use generic CNAME records instead of AWS-specific ALIAS records
       preferCNAME: true
+
+    # Work around issue where TXT and CNAME records cannot have the same hostname
+    # for some DNS providers, including Route53
+    # https://github.com/kubernetes-sigs/external-dns/issues/825
+    # https://github.com/kubernetes-sigs/external-dns/blob/master/docs/faq.md#im-using-an-elb-with-txt-registry-but-the-cname-record-clashes-with-the-txt-record-how-to-avoid-this
+    # https://github.com/kubernetes-sigs/external-dns/issues/262
+    txtPrefix: true
