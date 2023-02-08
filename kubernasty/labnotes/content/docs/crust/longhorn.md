@@ -41,6 +41,14 @@ kubectl get certs -n longhorn-system
 Once that's done, browse to the admin UI at <https://longhorn.kubernasty.micahrl.com/>,
 and log in with the `clusteradmin` user.
 
+## Storage Classes
+
+We create storage classes that consumers can use to request volumes.
+
+* `knty-rep3`,
+  {{< repolink "kubernasty/manifests/crust/longhorn/storageclasses/longhorn.knty-rep3.storageclass.yaml" >}}:
+  Require 3 replicas
+
 ## Configuring Longhorn
 
 * Change the data path as appropriate
