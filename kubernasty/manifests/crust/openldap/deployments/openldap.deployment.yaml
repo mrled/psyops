@@ -57,6 +57,7 @@ spec:
           secret:
             secretName: openldap-tls
             optional: false
+            mountPath: /secrets
         # - name: ldap_tls_cert_file
         #   secret:
         #     secretName: openldap-tls-cert
