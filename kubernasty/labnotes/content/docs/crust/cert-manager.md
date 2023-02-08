@@ -81,3 +81,13 @@ E0208 01:35:57.904547       1 sync.go:190] cert-manager/challenges "msg"="propag
 To fix, we have to pass additional arguments `--dns01-recursive-nameservers-only` and `--dns01-recursive-nameservers=1.1.1.1:53`.
 To do that, we use the `extraArgs` key in
 {{< repolink "kubernasty/manifests/crust/cert-manager/configmaps/cert-manager.overrides.yaml" >}}.
+
+... or actually maybe that's wrong?
+[Per this bug](https://github.com/cert-manager/cert-manager/issues/2741),
+this is what finally got me un-stuck:
+
+```sh
+kubectl rollout restart deployment -n cert-manager cert-manager
+```
+
+ffs
