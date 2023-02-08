@@ -104,6 +104,12 @@ stringData:
   passwords: user1p@ssw0rd,user2p@ssw0rd
 ```
 
+{{< hint warning >}}
+You must provide at least one user and password, aside from the administrator password.
+If you don't set these, or pass an empty string,
+default users with dictionary passwords will be created.
+{{< /hint >}}
+
 Then do the normal `sops --encrypt --in-place manifests/crust/openldap/secrets/openldap-users.secret.yaml`.
 
 ### Create `openldap-tls.secret.yaml`
@@ -136,4 +142,40 @@ sops --encrypt --in-place manifests/crust/openldap/secrets/openldap-tls.secret.y
   rather than the well-known but privileged values of 389/689.
   However, we can make the _Kubernetes service_ listen in the well-known ports.
 
-***TODO: UNFINISHED: WARNING: ASDF: Must mount persistent storage at /bitnami/openldap/***
+### Log in
+
+Commit and push, and Flux will deploy OpenLDAP automatically.
+
+How can we log in to it?
+The LDAP service isn't exposed to the network.
+
+One way is to create an ephemeral container and install LDAP clients in it.
+From your kubectl client machine:
+
+```sh
+kubectl get pods -n openldap
+# Returning e.g.:
+# NAME                        READY   STATUS    RESTARTS   AGE
+# openldap-56f79f9b57-8mrw7   1/1     Running   0          12m
+
+kubectl debug -it openldap-56f79f9b57-8mrw7 --image=alpine:latest --target=openldap --namespace=openldap
+# Now you will be in a shell in a new ephemeral container
+```
+
+From that shell we can:
+
+```sh
+apk add openldap-clients
+
+nslookup openldap
+# Server:		10.43.0.10
+# Address:	10.43.0.10:53
+# Name:	openldap.openldap.svc.cluster.local
+# Address: 10.43.96.231
+# ...
+
+ldapsearch -x -H ldap://openldap:389 -b dc=kubernasty,dc=micahrl,dc=com
+# ... should list the users you created
+
+ldapwhoami -x -H ldap://openldap:389 -b dc=kubernasty,dc=micahrl,dc=com
+```

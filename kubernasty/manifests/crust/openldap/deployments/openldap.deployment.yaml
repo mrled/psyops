@@ -58,7 +58,13 @@ spec:
             - name: openldap-tls-vol
               mountPath: /secrets
               readOnly: true
+            - name: openldap-data
+              mountPath: /bitnami/openldap
+              readOnly: false
       volumes:
         - name: openldap-tls-vol
           secret:
             secretName: openldap-tls
+        - name: openldap-data
+          persistentVolumeClaim:
+            claimName: openldap-vol
