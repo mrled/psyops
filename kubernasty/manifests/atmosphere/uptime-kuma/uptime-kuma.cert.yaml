@@ -1,0 +1,13 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: uptime-kuma-cert
+  namespace: uptime-kuma
+spec:
+  issuerRef:
+    name: letsencrypt-issuer-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - uptime.kubernasty.micahrl.com
+  secretName: uptime-kuma-backing-secret
