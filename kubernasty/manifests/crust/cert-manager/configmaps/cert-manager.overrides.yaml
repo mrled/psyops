@@ -9,5 +9,7 @@ data:
     controller:
       extraArgs:
         # Required to fix errors about DNS propagation
-        - "--dns01-recursive-nameservers-only"
-        - "--dns01-recursive-nameservers=1.1.1.1:53"
+        - name: "--dns01-recursive-nameservers-only"
+          value: true
+        - name: "--dns01-recursive-nameservers"
+          value: "1.1.1.1:53"
