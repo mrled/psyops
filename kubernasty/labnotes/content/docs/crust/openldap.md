@@ -21,9 +21,8 @@ We will use this for:
 
 Specifics of LDAP vary widely.
 
-The mostly widely used LDAP deployment type is Active Directory.
-When in doubt, doing things the AD way will make it easier to integrate with.
-For example, using the AD schema.
+The mostly widely used LDAP deployment type is Active Directory;
+keep in mind you may need to do some translation of other docs to make use of them.
 
 ## Prerequisite TLS certificate
 
@@ -52,7 +51,7 @@ validdays=7300
 # The simple hostname for the container in your cluster
 svchostname=openldap
 # The namespace the container will be running in
-svcnamespace=kubernasty-ldap
+svcnamespace=openldap
 # I am not sure if there are constraints on the subject; something like this is typical:
 certsubj="/C=US/ST=TX/O=Kubernasty LDAP Service/CN=$svchostname.$svcnamespace"
 
@@ -85,8 +84,9 @@ First, I created the various manifest files under `openldap/...`.
 
 ### Create `openldap-users.secret.yaml`
 
-To make the openldap-secret.yaml, create a manifest like
-{{< repolink "kubernasty/manifests/crust/openldap/secrets/openldap-secret.UNENCRYPTED.yaml" >}}.
+To make the openldap-secret.yaml, copy
+{{< repolink "kubernasty/manifests/crust/openldap/secrets/openldap-secret.UNENCRYPTED.yaml" >}}
+to `openldap-users.secret.yaml`.
 Include an `adminpassword`, which is the password for the admin LDAP user;
 a list of `users` separated by commas, which will be created on the first startup;
 and a list of `passwords` separated by commas for those users.
@@ -96,7 +96,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: openldap-users
-  namespace: kube-system
+  namespace: openldap
 type: generic
 stringData:
   adminpassword: p@ssw0rd
@@ -104,7 +104,7 @@ stringData:
   passwords: user1p@ssw0rd,user2p@ssw0rd
 ```
 
-Then do the normal `sops --encrypt openldap-users.secret.UNENCRYPTED.yaml > openldap-users.secret.yaml`.
+Then do the normal `sops --encrypt --in-place manifests/crust/openldap/secrets/openldap-users.secret.yaml`.
 
 ### Create `openldap-tls.secret.yaml`
 
@@ -112,19 +112,19 @@ Then do the normal `sops --encrypt openldap-users.secret.UNENCRYPTED.yaml > open
 key="$(gopass -n kubernasty/slapd.key.pem | base64 -w 0)"
 certificate="$(gopass -n kubernasty/slapd.crt.pem | base64 -w 0)"
 
-cat > openldap-tls.secret.yaml <<EOF
+cat > manifests/crust/openldap/secrets/openldap-tls.secret.yaml <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: openldap-secret
-  namespace: kube-system
+  name: openldap-tls
+  namespace: openldap
 type: generic
 data:
   key: $key
   certificate: $certificate
 EOF
 
-sops --encrypt --in-place openldap-users.secret.yaml
+sops --encrypt --in-place manifests/crust/openldap/secrets/openldap-tls.secret.yaml
 ```
 
 ### Create the other manifests

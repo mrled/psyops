@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: openldap
-  namespace: kubernasty-ldap
+  namespace: openldap
   labels:
     app.kubernetes.io/name: openldap
 spec:
@@ -42,20 +42,26 @@ spec:
             - name: LDAP_ENABLE_TLS
               value: yes
             - name: LDAP_TLS_CERT_FILE
-              value: /secrets/slapd.crt.pem
+              # value: /secrets/slapd.crt.pem
+              value: /secrets/openldap-tls/certificate
             - name: LDAP_TLS_KEY_FILE
-              value: /secrets/slapd.key.pem
+              # value: /secrets/slapd.key.pem
+              value: /secrets/openldap-tls/key
           ports:
             - name: tcp-ldap
               containerPort: 1389
             - name: tcp-ldaps
               containerPort: 1689
       volumes:
-        - name: ldap_tls_cert_file
+        - name: openldap-tls-vol
           secret:
-            secretName: openldap-tls-cert
+            secretName: openldap-tls
             optional: false
-        - name: ldap_tls_key_file
-          secret:
-            secretName: openldap-tls-key
-            optional: false
+        # - name: ldap_tls_cert_file
+        #   secret:
+        #     secretName: openldap-tls-cert
+        #     optional: false
+        # - name: ldap_tls_key_file
+        #   secret:
+        #     secretName: openldap-tls-key
+        #     optional: false
