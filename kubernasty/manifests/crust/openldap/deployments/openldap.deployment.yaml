@@ -45,11 +45,15 @@ spec:
               value: /secrets/certificate
             - name: LDAP_TLS_KEY_FILE
               value: /secrets/key
+            # Our cert is self-signed
+            - name: LDAP_TLS_CA_FILE
+              value: /secrets/certificate
           ports:
             - name: tcp-ldap
               containerPort: 1389
             - name: tcp-ldaps
               containerPort: 1689
+          # TODO: how do I set the permissions on this mount? it's 777
           volumeMounts:
             - name: openldap-tls-vol
               mountPath: /secrets
