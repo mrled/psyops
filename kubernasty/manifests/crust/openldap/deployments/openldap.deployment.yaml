@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: openldap
-          image: docker.io/alpine:latest
+          image: docker.io/nginx:latest
           imagePullPolicy: "Always"
           env:
             - name: LDAP_ADMIN_USERNAME
