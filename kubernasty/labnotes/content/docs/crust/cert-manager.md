@@ -68,3 +68,16 @@ making them more appropriate for home labs.
 We also need a programmatic DNS service anyway for
 [external-dns]({{< ref "external-dns" >}}),
 and we can use the same credentials here.
+
+## Fixing DNS propagation errors
+
+I was seeing errors like this in the cert-manager pod,
+not resolving and repeating every few seconds:
+
+```text
+E0208 01:35:57.904547       1 sync.go:190] cert-manager/challenges "msg"="propagation check failed" "error"="Could not determine authoritative nameservers for \"_acme-challenge.longhorn.kubernasty.micahrl.com.\"" "dnsName"="longhorn.kubernasty.micahrl.com" "resource_kind"="Challenge" "resource_name"="longhorn-cert-backing-secret-lhmbc-2271850782-994157330" "resource_namespace"="longhorn-system" "resource_version"="v1" "type"="DNS-01"
+```
+
+To fix, we have to pass additional arguments `--dns01-recursive-nameservers-only` and `--dns01-recursive-nameservers=1.1.1.1:53`.
+To do that, we use the `extraArgs` key in
+{{< repolink "kubernasty/manifests/crust/cert-manager/configmaps/cert-manager.overrides.yaml" >}}.
