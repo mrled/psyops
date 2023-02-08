@@ -17,4 +17,4 @@ resources:
   - longhorn.yaml
 
   # My deploymnets: Atmosphere
-  # ...
+  - uptime-kuma.yaml
