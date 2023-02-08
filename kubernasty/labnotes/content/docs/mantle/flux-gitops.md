@@ -19,6 +19,7 @@ and save the public key value to `cluster.sh` like
 Now we need to add it to the cluster as a secret:
 
 ```sh
+kubectl create namespace flux-system
 gopass -n kubernasty/sops.age |
     kubectl create secret generic sops-age --namespace flux-system --from-file=age.agekey=/dev/stdin
 ```
@@ -108,14 +109,6 @@ Flux will install itself and then immediately start trying to install those kust
 That means that the rest of this page,
 along with all other pages in this guide that were finished happen automatically;
 you just need to monitor them to make sure they complete successfully.
-
-Note that applying all existing kustomizations may time out.
-Investigate with:
-
-```sh
-flux check
-flux get kustomizations
-```
 
 ### If you have uninstalled Flux and are reinstalling it to the same cluster
 
