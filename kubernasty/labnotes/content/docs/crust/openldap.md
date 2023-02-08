@@ -85,7 +85,7 @@ First, I created the various manifest files under `openldap/...`.
 ### Create `openldap-users.secret.yaml`
 
 To make the openldap-secret.yaml, copy
-{{< repolink "kubernasty/manifests/crust/openldap/secrets/openldap-secret.UNENCRYPTED.yaml" >}}
+{{< repolink "kubernasty/manifests/crust/openldap/secrets/openldap-secret.UNENCRYPTED.yaml.txt" >}}
 to `openldap-users.secret.yaml`.
 Include an `adminpassword`, which is the password for the admin LDAP user;
 a list of `users` separated by commas, which will be created on the first startup;
