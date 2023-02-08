@@ -79,5 +79,9 @@ E0208 01:35:57.904547       1 sync.go:190] cert-manager/challenges "msg"="propag
 ```
 
 To fix, we have to pass additional arguments `--dns01-recursive-nameservers-only` and `--dns01-recursive-nameservers=1.1.1.1:53`.
-To do that, we use the `extraArgs` key in
-{{< repolink "kubernasty/manifests/crust/cert-manager/configmaps/cert-manager.overrides.yaml" >}}.
+To do THAT, we use the `extraArgs` key in
+{{< repolink "kubernasty/manifests/crust/cert-manager/configmaps/cert-manager.overrides.yaml" >}}...
+oh no just kidding that doesn't fucking work???
+<https://github.com/cert-manager/cert-manager-olm/issues/17>.
+We have to create a whole weird overrides file at
+{{< repolink "kubernasty/manifests/crust/cert-manager/configmaps/cert-manager.unsupported-overrides.yaml" >}}.

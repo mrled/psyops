@@ -6,8 +6,3 @@ metadata:
 data:
   values.yaml: |-
     installCRDs: true
-    controller:
-      extraArgs:
-        # Required to fix errors about DNS propagation
-        - "--dns01-recursive-nameservers-only"
-        - "--dns01-recursive-nameservers=1.1.1.1:53"
