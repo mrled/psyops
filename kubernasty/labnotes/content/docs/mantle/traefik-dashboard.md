@@ -3,6 +3,13 @@ title: Traefik dashboard
 weight: 30
 ---
 
+{{< hint "danger" >}}
+**TOOD: refactor kubernetes-dashboard**
+
+This section was written when I didn't yet have [Flux]({{< ref "flux-gitops" >}}) installed.
+Now that Flux is available, we should use it to deploy.
+{{< /hint >}}
+
 Now that we have [ingress and certificates]({{< ref "ingress-and-certificates" >}}) configured,
 we can enable the Traefik dashboard.
 

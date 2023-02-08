@@ -1,7 +1,19 @@
 ---
-title: Ingress and certificates
+title: ⚠️ Ingress and certificates
 weight: 20
 ---
+
+{{< hint "danger" >}}
+⚠️ **These steps are not necessary** ⚠️
+
+This section was written when I didn't yet have [Flux]({{< ref "flux-gitops" >}}) installed.
+Now that Flux is available, this is handled automatically
+[in the crust]({{< ref "cert-manager" >}}).
+We keep this section around for historical reasons,
+and because it's helpful for a from-scratch understanding of things like Ingresses.
+
+When deploying a cluster, you can skip this.
+{{< /hint >}}
 
 How to configure ingress with and without HTTPS certificates.
 

@@ -3,6 +3,13 @@ title: Kubernetes dashboard, Kustomizations
 weight: 50
 ---
 
+{{< hint "danger" >}}
+**TOOD: refactor kubernetes-dashboard**
+
+This section was written when I didn't yet have [Flux]({{< ref "flux-gitops" >}}) installed.
+Now that Flux is available, we should use it to deploy.
+{{< /hint >}}
+
 Using what we've learned so far,
 we'll install the official Kubernetes dashboard,
 adapted from [these instructions](https://docs.k3s.io/installation/kube-dashboard).
