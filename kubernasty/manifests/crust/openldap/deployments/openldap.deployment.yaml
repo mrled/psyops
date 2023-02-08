@@ -42,10 +42,8 @@ spec:
             - name: LDAP_ENABLE_TLS
               value: yes
             - name: LDAP_TLS_CERT_FILE
-              # value: /secrets/slapd.crt.pem
               value: /secrets/certificate
             - name: LDAP_TLS_KEY_FILE
-              # value: /secrets/slapd.key.pem
               value: /secrets/key
           ports:
             - name: tcp-ldap
@@ -56,13 +54,7 @@ spec:
         - name: openldap-tls-vol
           secret:
             secretName: openldap-tls
-            optional: false
-            mountPath: /secrets
-        # - name: ldap_tls_cert_file
-        #   secret:
-        #     secretName: openldap-tls-cert
-        #     optional: false
-        # - name: ldap_tls_key_file
-        #   secret:
-        #     secretName: openldap-tls-key
-        #     optional: false
+      volumeMounts:
+        - name: openldap-tls-vol
+          mountPath: /secrets
+          readOnly: true
