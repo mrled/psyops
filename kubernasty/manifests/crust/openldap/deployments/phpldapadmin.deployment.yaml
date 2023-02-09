@@ -25,15 +25,23 @@ spec:
             # Apparently it's some osixia fucking special magic built in to the base docker container??? fuck you
             - name: PHPLDAPADMIN_LDAP_HOSTS
               # note: "openldap" is the hostname (inside the cluster)
-              value: "#PYTHON2BASH:[{'openldap': [{'server': [{'tls': 'true'}]}]}]"
+              value: "#PYTHON2BASH:[{'openldap': [{'server': [{'tls': True}, {'port': 689}] }] }]"
+            # This is required bc Traefik terminates SSL
             - name: PHPLDAPADMIN_TRUST_PROXY_SSL
               value: "true"
+            # Do not enable in-container HTTPS server; just serve over HTTP and let Traefik terminate SSL
             - name: PHPLDAPADMIN_HTTPS
               value: "false"
+            # Connect to the LDAP server over TLS
             - name: PHPLDAPADMIN_LDAP_CLIENT_TLS
               value: "true"
+            # Use this as the CA cert for the LDAP server TLS.
+            # (Our LDAP server is self-signed so we just use the certificate here.)
             - name: PHPLDAPADMIN_LDAP_CLIENT_TLS_CA_CRT_FILENAME
               value: /openldap-cert/certificate
+            # ...?
+            - name: LDAP_CLIENT_SSL_HELPER_PREFIX
+              value: ldaps
           ports:
             - name: phpldapweb
               containerPort: 80
