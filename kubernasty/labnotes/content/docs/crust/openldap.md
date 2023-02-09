@@ -106,7 +106,7 @@ default users with dictionary passwords will be created.
 
 Then do the normal `sops --encrypt --in-place manifests/crust/openldap/secrets/openldap-users.secret.yaml`.
 
-### Create `openldap-tls.secret.yaml`
+### Create `openldap-tls.secret.yaml` and `openldap-cert.configmap.yaml`
 
 ```sh
 key="$(gopass -n kubernasty/slapd.key.pem | base64 -w 0)"
@@ -125,6 +125,15 @@ data:
 EOF
 
 sops --encrypt --in-place manifests/crust/openldap/secrets/openldap-tls.secret.yaml
+
+cat > manifests/crust/openldap/configmaps/openldap-cert.configmap.yaml <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openldap-cert
+binaryData:
+  certificate: $certificate
+EOF
 ```
 
 ### Create the other manifests
@@ -209,6 +218,5 @@ The admin user has a DN of
 
 ## Remaining work
 
-* TODO: phpldapadmin should connect over TLS
 * TODO: should we disable anonymous binds?
 * TODO: schema????????

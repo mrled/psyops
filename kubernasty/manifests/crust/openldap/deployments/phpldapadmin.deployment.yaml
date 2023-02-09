@@ -22,15 +22,26 @@ spec:
           imagePullPolicy: "Always"
           env:
             # what the FUCK is #PYTHON2BASH ???
-            # Apparently it's some osixia fucking special magic, fuck you
-            # - name: PHPLDAPADMIN_LDAP_HOSTS
-            #   value: "#PYTHON2BASH:[{'ldap.example.org': [{'server': [{'tls': 'true'}]}]}]"
+            # Apparently it's some osixia fucking special magic built in to the base docker container??? fuck you
             - name: PHPLDAPADMIN_LDAP_HOSTS
-              value: "openldap"
+              # note: "openldap" is the hostname (inside the cluster)
+              value: "#PYTHON2BASH:[{'openldap': [{'server': [{'tls': 'true'}]}]}]"
             - name: PHPLDAPADMIN_TRUST_PROXY_SSL
               value: "true"
             - name: PHPLDAPADMIN_HTTPS
               value: "false"
+            - name: PHPLDAPADMIN_LDAP_CLIENT_TLS
+              value: "true"
+            - name: PHPLDAPADMIN_LDAP_CLIENT_TLS_CA_CRT_FILENAME
+              value: /openldap-cert/certificate
           ports:
             - name: phpldapweb
               containerPort: 80
+          volumeMounts:
+            - name: openldap-cert-vol
+              mountPath: /openldap-cert
+              readOnly: true
+      volumes:
+        - name: openldap-cert-vol
+          configMap:
+            name: openldap-cert
