@@ -1,0 +1,14 @@
+apiVersion: v2
+kind: Service
+metadata:
+  name: phpldapadmin
+  namespace: openldap
+  labels:
+    app.kubernetes.io/name: phpldapadmin
+spec:
+  type: ClusterIP
+  ports:
+    - name: phpldapweb
+      port: 80
+  selector:
+    app.kubernetes.io/name: phpldapadmin
