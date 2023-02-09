@@ -50,18 +50,24 @@ svcnamespace=openldap
 certsubj="/C=US/ST=TX/O=Kubernasty LDAP Service/CN=$svchostname.$svcnamespace"
 
 # Generate an RSA key
-#openssl req -newkey rsa:4096 -x509 -nodes -out slapd.crt.pem -keyout slapd.key.pem -days "$validdays"
-
-# Actually scratch that, let's see if we can use an ECDSA key
-# Note, this requires OpenSSL 1.1.1
-# <https://security.stackexchange.com/questions/74345/provide-subjectaltname-to-openssl-directly-on-the-command-line>
-openssl ecparam -name secp521r1 -genkey -param_enc explicit -out slapd.key.pem
-openssl req -new -x509 \
-    -key slapd.key.pem \
+# ECDSA does NOT work!
+openssl req -newkey rsa:4096 -x509 -nodes \
     -out slapd.crt.pem \
+    -keyout slapd.key.pem \
     -days "$validdays" \
     -subj "$certsubj" \
-    -addext "subjectAltName = DNS:$svchostname,DNS:$svchostname.$svcnamespace"
+    -addext "subjectAltName = DNS:$svchostname,DNS:$svchostname.$svcnamespace,DNS:$svchostname.$svcnamespace.svc.cluster.local"
+
+# # Actually scratch that, let's see if we can use an ECDSA key
+# # Note, this requires OpenSSL 1.1.1
+# # <https://security.stackexchange.com/questions/74345/provide-subjectaltname-to-openssl-directly-on-the-command-line>
+# openssl ecparam -name secp521r1 -genkey -param_enc explicit -out slapd.key.pem
+# openssl req -new -x509 \
+#     -key slapd.key.pem \
+#     -out slapd.crt.pem \
+#     -days "$validdays" \
+#     -subj "$certsubj" \
+#     -addext "subjectAltName = DNS:$svchostname,DNS:$svchostname.$svcnamespace"
 
 # Verify that the common name and subject alt names are as intended
 openssl x509 -noout -text -in slapd.crt.pem | less
@@ -220,3 +226,12 @@ The admin user has a DN of
 
 * TODO: should we disable anonymous binds?
 * TODO: schema????????
+
+## Troubleshooting
+
+* Use the simplest query for binding anonymously
+* Check connectivity to the server over SSL by `exec`ing into a container and running a command like
+  `openssl s_client -connect openldap:636`.
+  If it shows your certificate, the host has network access.
+  (This is kind of tricky because ping is blocked(?)
+  and you can't talk to the TLS service directly over netcat.)

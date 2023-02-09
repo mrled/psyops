@@ -23,14 +23,8 @@ spec:
         - name: volume-permissions
           image: alpine:latest
           command: ["/bin/sh", "-c"]
-          # WARNING: MAKE SURE ALL LINES ARE TERMINATED WITH A SEMICOLON.
-          # The YAML parser turns this into a string, and turns newlines into spaces.
-          # This means we have to insert semicolons and cannot rely on newlines here to terminate commands.
           args:
             - |+
-              mkdir -p /secrets/openldap-tls
-              chown 1001 /secrets/openldap-tls
-              chmod 0700 /secrets/openldap-tls
               cp /mnt/openldap-cert/certificate /mnt/permissioned-config/certificate
               chmod 666 /mnt/permissioned-config/certificate
           volumeMounts:
