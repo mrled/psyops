@@ -15,6 +15,32 @@ spec:
       labels:
         app.kubernetes.io/name: phpldapadmin
     spec:
+      initContainers:
+        # We must let phpldapadmin chown the certificate,
+        # and mounting a secret as a volume doesn't allow that.
+        # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        # So we'll copy it to a place where it can chown it when it starts.
+        - name: volume-permissions
+          image: alpine:latest
+          command: ["/bin/sh", "-c"]
+          # WARNING: MAKE SURE ALL LINES ARE TERMINATED WITH A SEMICOLON.
+          # The YAML parser turns this into a string, and turns newlines into spaces.
+          # This means we have to insert semicolons and cannot rely on newlines here to terminate commands.
+          args:
+            - |+
+              mkdir -p /secrets/openldap-tls
+              chown 1001 /secrets/openldap-tls
+              chmod 0700 /secrets/openldap-tls
+              cp /mnt/openldap-cert/certificate /mnt/permissioned-config/certificate
+              chmod 666 /mnt/permissioned-config/certificate
+          volumeMounts:
+            - name: openldap-cert-vol
+              mountPath: /mnt/openldap-cert
+              readOnly: true
+          volumeMounts:
+            - name: permissioned-config-vol
+              mountPath: /mnt/permissioned-config
+              readOnly: false
       containers:
         - name: phpldapadmin
           # image: docker.io/nginx:latest
@@ -44,11 +70,12 @@ spec:
             - name: phpldapweb
               containerPort: 80
           volumeMounts:
-            - name: openldap-cert-vol
-              mountPath: /container/service/ldap-client/assets/certs/openldap-cert
-              # ... it chowns/chmods these on startup so they have to be writable, lol
-              readOnly: false
+            - name: permissioned-config-vol
+              mountPath: /container/service/ldap-client/assets/certs/permissioned-config
       volumes:
         - name: openldap-cert-vol
           configMap:
             name: openldap-cert
+        - name: permissioned-config-vol
+          persistentVolumeClaim:
+            claimName: phpldapadmin-permissioned-config-claim
