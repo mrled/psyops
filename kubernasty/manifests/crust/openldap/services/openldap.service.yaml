@@ -10,9 +10,9 @@ spec:
   ports:
     - name: tcp-ldap-privileged
       port: 389
-      targetPort: tcp-ldap
+      targetPort: 1389
     - name: tcp-ldaps-privileged
       port: 689
-      targetPort: tcp-ldaps
+      targetPort: 1689
   selector:
     app.kubernetes.io/name: openldap
