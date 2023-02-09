@@ -3,12 +3,6 @@ title: OpenLDAP (INCOMPLETE)
 weight: 80
 ---
 
-{{< hint warning >}}
-**Incomplete**
-
-This section is not yet finished.
-{{< /hint >}}
-
 We install OpenLDAP for a single source of truth for users and service accounts.
 
 We will use this for:
@@ -142,12 +136,16 @@ sops --encrypt --in-place manifests/crust/openldap/secrets/openldap-tls.secret.y
   rather than the well-known but privileged values of 389/689.
   However, we can make the _Kubernetes service_ listen in the well-known ports.
 
-### Log in
+### Deploy
 
 Commit and push, and Flux will deploy OpenLDAP automatically.
 
+## Log in
+
 How can we log in to it?
 The LDAP service isn't exposed to the network.
+
+### Log in on the command line from an ephemeral container
 
 One way is to create an ephemeral container and install LDAP clients in it.
 From your kubectl client machine:
@@ -176,16 +174,41 @@ nslookup openldap
 
 # Anonymously query the LDAP server
 ldapwhoami -x -H ldap://openldap:389
-# anonymous
+# Should return: anonymous
 ldapsearch -x -H ldap://openldap:389 -b dc=kubernasty,dc=micahrl,dc=com
 # ... should list the users you created
 
-# Authenticate and query the ldap server
-username=testuser
-password="user1p@ssw0rd"
-# Use your own value for $username and $password
-ldapwhoami -x -H ldap://openldap:389 -D cn=$username,ou=users,dc=kubernasty,dc=micahrl,dc=com -w $password
-# dn:cn=testuser,ou=users,dc=kubernasty,dc=micahrl,dc=com
-ldapsearch -x -H ldap://openldap:389 -D cn=$username,ou=users,dc=kubernasty,dc=micahrl,dc=com -w $password -b ou=users,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
+# AUthenticate and query the ldap server as the admin user
+admindn="cn=admin,dc=kubernasty,dc=micahrl,dc=com"
+adminpw="adminp@ssw0rd"
+ldapwhoami -x -H ldap://openldap:389 -D "$admindn" -w "$adminpw"
+# Should return: dn:cn=admin,dc=kubernasty,dc=micahrl,dc=com
+ldapsearch -x -H ldap://openldap:389 -D "$admindn" -w "$adminpw" -b ou=users,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
+# ... should list the users you created
+
+# Authenticate and query the ldap server as the test user
+userdn="cn=testuser,ou=users,dc=kubernasty,dc=micahrl,dc=com"
+userpw="user1p@ssw0rd"
+ldapwhoami -x -H ldap://openldap:389 -D "$userdn" -w "$userpw"
+# Should return: dn:cn=testuser,ou=users,dc=kubernasty,dc=micahrl,dc=com
+ldapsearch -x -H ldap://openldap:389 -D "$userdn" -w "$userpw" -b ou=users,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
 # ... should list the users you created
 ```
+
+### Log in from phpLDAPAdmin
+
+Flux has also deployed phpLDAPAdmin.
+
+<https://phpldapadmin.kubernasty.micahrl.com/>
+
+You log in with a **DN**, not just the username.
+For instance, the `testuser` we created in the openldap users secret has a DN of
+`cn=testuser,ou=users,dc=kubernasty,dc=micahrl,dc=com`.
+The admin user has a DN of
+`cn=admin,dc=kubernasty,dc=micahrl,dc=com`.
+
+## Remaining work
+
+* TODO: phpldapadmin should connect over TLS
+* TODO: should we disable anonymous binds?
+* TODO: schema????????
