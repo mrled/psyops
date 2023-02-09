@@ -100,7 +100,7 @@ metadata:
 type: generic
 stringData:
   adminpassword: p@ssw0rd
-  users: user1,user2
+  users: testuser,testotheruser
   passwords: user1p@ssw0rd,user2p@ssw0rd
 ```
 
@@ -174,8 +174,18 @@ nslookup openldap
 # Address: 10.43.96.231
 # ...
 
+# Anonymously query the LDAP server
+ldapwhoami -x -H ldap://openldap:389
+# anonymous
 ldapsearch -x -H ldap://openldap:389 -b dc=kubernasty,dc=micahrl,dc=com
 # ... should list the users you created
 
-ldapwhoami -x -H ldap://openldap:389 -b dc=kubernasty,dc=micahrl,dc=com
+# Authenticate and query the ldap server
+username=testuser
+password="user1p@ssw0rd"
+# Use your own value for $username and $password
+ldapwhoami -x -H ldap://openldap:389 -D cn=$username,ou=users,dc=kubernasty,dc=micahrl,dc=com -w $password
+# dn:cn=testuser,ou=users,dc=kubernasty,dc=micahrl,dc=com
+ldapsearch -x -H ldap://openldap:389 -D cn=$username,ou=users,dc=kubernasty,dc=micahrl,dc=com -w $password -b ou=users,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
+# ... should list the users you created
 ```
