@@ -46,7 +46,8 @@ spec:
           volumeMounts:
             - name: openldap-cert-vol
               mountPath: /container/service/ldap-client/assets/certs/openldap-cert
-              readOnly: true
+              # ... it chowns/chmods these on startup so they have to be writable, lol
+              readOnly: false
       volumes:
         - name: openldap-cert-vol
           configMap:
