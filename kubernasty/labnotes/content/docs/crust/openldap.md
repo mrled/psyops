@@ -141,8 +141,8 @@ EOF
 * Note that what's there in {{< repolink "kubernasty/manifests/crust/openldap" >}}
   has some hardcoded values like my DNS and x509 names.
 * Per [the readme](https://github.com/bitnami/containers/tree/main/bitnami/openldap),
-  the container users unprivileged ports 1389/1689 for LDAP/LDAPS by default,
-  rather than the well-known but privileged values of 389/689.
+  the container users unprivileged ports 1389/1636 for LDAP/LDAPS by default,
+  rather than the well-known but privileged values of 389/636.
   However, we can make the _Kubernetes service_ listen in the well-known ports.
 
 ### Deploy
