@@ -64,7 +64,7 @@ spec:
             # (Our LDAP server is self-signed so we just use the certificate here.)
             # This value is RELATIVE TO /container/service/ldap-client/assets/certs/openldap-cert ON THE CONTAINER.
             - name: PHPLDAPADMIN_LDAP_CLIENT_TLS_CA_CRT_FILENAME
-              value: openldap-cert/certificate
+              value: permissioned-config/certificate
           ports:
             - name: phpldapweb
               containerPort: 80
