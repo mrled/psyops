@@ -37,14 +37,15 @@ spec:
               value: "true"
             # Use this as the CA cert for the LDAP server TLS.
             # (Our LDAP server is self-signed so we just use the certificate here.)
+            # This value is RELATIVE TO /container/service/ldap-client/assets/certs/openldap-cert ON THE CONTAINER.
             - name: PHPLDAPADMIN_LDAP_CLIENT_TLS_CA_CRT_FILENAME
-              value: /openldap-cert/certificate
+              value: openldap-cert/certificate
           ports:
             - name: phpldapweb
               containerPort: 80
           volumeMounts:
             - name: openldap-cert-vol
-              mountPath: /openldap-cert
+              mountPath: /container/service/ldap-client/assets/certs/openldap-cert
               readOnly: true
       volumes:
         - name: openldap-cert-vol
