@@ -37,7 +37,6 @@ spec:
             - name: openldap-cert-vol
               mountPath: /mnt/openldap-cert
               readOnly: true
-          volumeMounts:
             - name: permissioned-config-vol
               mountPath: /mnt/permissioned-config
               readOnly: false
