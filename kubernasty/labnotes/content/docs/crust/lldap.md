@@ -184,51 +184,31 @@ nslookup lldap
 # Address: 10.43.96.231
 # ...
 
-# Anonymously query the LDAP server
+# Try to query the LDAP server anonymously - this should fail
 ldapwhoami -x -H ldap://lldap:389
-# Should return: anonymous
-ldapsearch -x -H ldap://lldap:389 -b dc=kubernasty,dc=micahrl,dc=com
-# ... should list the users you created
 
-# AUthenticate and query the ldap server as the admin user
-admindn="cn=admin,dc=kubernasty,dc=micahrl,dc=com"
+# Authenticate and query the ldap server as the admin user
+admindn="cn=admin,ou=people,dc=kubernasty,dc=micahrl,dc=com"
 adminpw="adminp@ssw0rd"
-ldapwhoami -x -H ldap://lldap:389 -D "$admindn" -w "$adminpw"
-# Should return: dn:cn=admin,dc=kubernasty,dc=micahrl,dc=com
-ldapsearch -x -H ldap://lldap:389 -D "$admindn" -w "$adminpw" -b ou=users,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
-# ... should list the users you created
+ldapsearch -x -H ldap://lldap:389 -D "$admindn" -w "$adminpw" -b ou=people,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
+# ... should list the admin user
 
-# Authenticate and query the ldap server as the test user
-userdn="cn=testuser,ou=users,dc=kubernasty,dc=micahrl,dc=com"
-userpw="user1p@ssw0rd"
-ldapwhoami -x -H ldap://lldap:389 -D "$userdn" -w "$userpw"
-# Should return: dn:cn=testuser,ou=users,dc=kubernasty,dc=micahrl,dc=com
-ldapsearch -x -H ldap://lldap:389 -D "$userdn" -w "$userpw" -b ou=users,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
-# ... should list the users you created
+# To test connecting over TLS, you have to copy the certificate to the ephemeral container
+# You catn just cat >/cert.pem and paste it into your terminal.
+# Once that's done:
+export LDAPTLS_CACERT=/cert.pem
+ldapsearch -x -H ldaps://lldap:636 -D "$admindn" -w "$adminpw" -b ou=people,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
+# ... should list the admin user again
 ```
-
-However, connecting over TLS will require the certificate,
-which is mounted from a configmap.
-I'm not sure if that's possible on ephemeral containers?
-But you can use the phphldapadmin container once it is running.
-
-```sh
-apt-get update && apt-get install ldap-utils
-admindn="cn=admin,dc=kubernasty,dc=micahrl,dc=com"
-adminpw="adminp@ssw0rd"
-ldapwhoami -x -H ldaps://lldap:636 -D "$admindn" -w "$adminpw"
-```
-
-## Remaining work
-
-* TODO: should we disable anonymous binds?
-* TODO: schema????????
 
 ## Troubleshooting
 
-* Use the simplest query for binding anonymously
-* Check connectivity to the server over SSL by `exec`ing into a container and running a command like
+* Older LDAP commands like `ldapsearch` will give a generic error like
+  `ldap_sasl_bind(SIMPLE): Can't contact LDAP server (-1)`
+  if they can't authenticate the TLS certificate for `ldaps://`.
+  Differentiate between no network connectivity to the lldap service and an untrusted CA cert
+  by `exec`ing into a container and running a command like
   `openssl s_client -connect lldap:636`.
   If it shows your certificate, the host has network access.
-  (This is kind of tricky because ping is blocked(?)
+  (We use this method because ping is blocked(?)
   and you can't talk to the TLS service directly over netcat.)
