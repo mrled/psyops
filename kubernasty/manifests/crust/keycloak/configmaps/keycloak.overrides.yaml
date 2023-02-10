@@ -10,6 +10,7 @@ data:
     database:
       vendor: postgres
       hostname: keycloakdb
+      port: 5432
       database: keycloak
       username: '{{ .Values.dbUser }}'
       password: '{{ .Values.dbPassword }}'
