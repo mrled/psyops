@@ -133,6 +133,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: lldap-cert
+  namespace: lldap
 binaryData:
   certificate: $certificate
 EOF
