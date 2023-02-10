@@ -1,0 +1,26 @@
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ldap-account-manager-etc-claim
+  namespace: openldap
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 512Mi
+  storageClassName: knty-rep3
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ldap-account-manager-varlib-claim
+  namespace: openldap
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 512Mi
+  storageClassName: knty-rep3
