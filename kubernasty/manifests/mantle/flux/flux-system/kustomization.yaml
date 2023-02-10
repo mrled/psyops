@@ -16,6 +16,7 @@ resources:
   - external-dns-test-endpoints.yaml
   - longhorn.yaml
   - openldap.yaml
+  - lldap.yaml
 
   # My deploymnets: Atmosphere
   - uptime-kuma.yaml
