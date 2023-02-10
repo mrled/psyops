@@ -11,7 +11,9 @@ data:
     password: {SSHA}E8vRlmRwmjG5FUSMTQYEDi/1Lxs= q0Tens8AoE2OjpPZGSdCBgel2wYgud7QaYsQeiPePz/FM4OJPrd3i1AXg+m8pWrY5+czbLfojDS8zoT6jK/n7Q==
 
     # default profile, without ".conf"
-    default: kubernasty
+    # The Docker container basically forces us to call this 'lam',
+    # as the startup script looks for lam.cfg.
+    default: lam
 
     logLevel: 4
     logDestination: SYSLOG
@@ -41,9 +43,8 @@ data:
   kubernasty.DEFAULT.cfg: |+
     # LDAP Account Manager configuration
     #
-    # WARNING: This file is only copied to
-    # It is copied to {{ privnet_ldap_lam_profile_path }} only if there is not already a file at that location.
-    # This allows Ansible to do the initial configuration, but the user to make subsequent changes via LAM GUI.
+    # WARNING: This file is only the default configuration; changes here after first deployment do not affect the deployment
+    # We set the default here, and subsequent changes must be made through the LAM GUI.
     #
     ###################################################################################################
 

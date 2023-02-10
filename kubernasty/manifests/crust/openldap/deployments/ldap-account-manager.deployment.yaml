@@ -19,24 +19,51 @@ spec:
         - name: initial-configurator
           image: alpine:latest
           command: ["/bin/sh", "-c"]
-          # WARNING: MAKE SURE ALL LINES ARE TERMINATED WITH A SEMICOLON.
-          # The YAML parser turns this into a string, and turns newlines into spaces.
-          # This means we have to insert semicolons and cannot rely on newlines here to terminate commands.
-          #
           # We copy the LAM config always,
           # but the kubernasty.cfg file can be modified by the web UI itself,
           # so we only create that if it isn't already in the persistent storage.
           args:
             - |+
-              cp /etc/ldap-account-manager-defaults/config.cfg /etc/ldap-account-manager;
-              if ! test -e /etc/ldap-account-manager/kubernasty.cfg; then
-                cp /etc/ldap-account-manager-defaults/kubernasty.DEFAULT.cfg /etc/ldap-account-manager;
+              # rm -rf /etc/ldap-account-manager/* /var/lib/ldap-account-manager/config/*
+
+              mkdir -p /var/lib/ldap-account-manager/config
+
+              echo "/etc/ldap-account-manager"
+              ls -alF /etc/ldap-account-manager
+              echo "/var/lib/ldap-account-manager"
+              ls -alF /var/lib/ldap-account-manager
+              echo "/ldap-account-manager-default"
+              ls -alF /ldap-account-manager-default
+
+              echo "Copying config.cfg..."
+              cp -L /ldap-account-manager-default/config.cfg /var/lib/ldap-account-manager/config
+              #cp -L /ldap-account-manager-default/config.cfg /etc/ldap-account-manager
+              cat "/var/lib/ldap-account-manager/config.cfg"
+
+              if ! test -e /var/lib/ldap-account-manager/config/lam.cfg; then
+                echo "Copying kubernasty.DEFAULT.cfg... to lam.cfg"
+                cp -L /ldap-account-manager-default/kubernasty.DEFAULT.cfg /var/lib/ldap-account-manager/config/lam.cfg
+              else
+                echo "lam.cfg already exists"
               fi;
+              cat /var/lib/ldap-account-manager/config/lam.cfg
+
+              # UID 33 is www-data in the LAM container
+              chown 33 \
+                /var/lib/ldap-account-manager/config/config.cfg \
+                /var/lib/ldap-account-manager/config/lam.cfg
+
+              ls -alF \
+                /var/lib/ldap-account-manager/config \
+                /etc/ldap-account-manager
+
           volumeMounts:
             - name: ldap-account-manager-etc-vol
               mountPath: /etc/ldap-account-manager
-            - name: ldap-account-manager-default-etc-vol
-              mountPath: /etc/ldap-account-manager-default
+            - name: ldap-account-manager-varlib-vol
+              mountPath: /var/lib/ldap-account-manager/config
+            - name: ldap-account-manager-default-config-vol
+              mountPath: /ldap-account-manager-default
       containers:
         - name: ldap-account-manager
           # image: docker.io/nginx:latest
@@ -49,7 +76,7 @@ spec:
             # skip LAM preconfiguration (lam.conf + config.cfg), values: (true/false)
             # If set to true the other variables below have no effect.
             - name: LAM_SKIP_PRECONFIGURE
-              value: "false"
+              value: "true"
             # domain of LDAP database root entry, will be converted to dc=...,dc=...
             - name: LDAP_DOMAIN
               value: "kubernasty.micahrl.com"
@@ -100,10 +127,10 @@ spec:
             - name: lam-web
               containerPort: 80
           volumeMounts:
-            - name: ldap-account-manager-etc-vol
-              mountPath: /etc/ldap-account-manager
+            # - name: ldap-account-manager-etc-vol
+            #   mountPath: /etc/ldap-account-manager
             - name: ldap-account-manager-varlib-vol
-              mountPath: /var/lib/ldap-account-manager
+              mountPath: /var/lib/ldap-account-manager/config
       volumes:
         - name: ldap-account-manager-varlib-vol
           persistentVolumeClaim:
@@ -111,6 +138,6 @@ spec:
         - name: ldap-account-manager-etc-vol
           persistentVolumeClaim:
             claimName: ldap-account-manager-etc-claim
-        - name: ldap-account-manager-default-etc-vol
+        - name: ldap-account-manager-default-config-vol
           configMap:
             name: ldap-account-manager-conf
