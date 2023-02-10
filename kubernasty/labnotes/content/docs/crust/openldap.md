@@ -90,6 +90,32 @@ gopass insert -m kubernasty/slapd.combined.pem < slapd.combined.pem
 
 First, I created the various manifest files under `openldap/...`.
 
+### Create `ldap-account-manager-conf.configmap.yaml`
+
+To create the password, see {{< repolink "ansible/filter_plugins/ssha.py" >}}.
+
+```sh
+# Create a password for the LDAP Account Manager config file and save it to gopass
+gopass generate kubernasty/ldap-account-manager-admin
+# Retrieve it from gopass and compte the SSHA of it
+python3 ../ansible/filter_plugins/ssha.py "$(gopass cat kubernasty/ldap-account-manager-admin)"
+```
+
+Then save it to the `config.cfg` key in
+{{< repolink "kubernasty/manifests/crust/openldap/configmaps/ldap-account-manager-conf.configmap.yaml" >}}.
+
+Also create a separate password for the default value for the admin user of the kubernasty profile.
+
+```sh
+# Create a password for the LDAP Account Manager config file and save it to gopass
+gopass generate kubernasty/ldap-account-manager-kubernasty-profile-password
+# Retrieve it from gopass and compte the SSHA of it
+python3 ../ansible/filter_plugins/ssha.py "$(gopass cat kubernasty/ldap-account-manager-kubernasty-profile-password)"
+```
+
+Then save it to the `kubernasty.DEFAULT.cfg` key in
+{{< repolink "kubernasty/manifests/crust/openldap/configmaps/ldap-account-manager-conf.configmap.yaml" >}}.
+
 ### Create `openldap-users.secret.yaml`
 
 To make the openldap-secret.yaml, copy

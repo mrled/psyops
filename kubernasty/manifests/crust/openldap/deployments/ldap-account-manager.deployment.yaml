@@ -15,7 +15,29 @@ spec:
       labels:
         app.kubernetes.io/name: ldap-account-manager
     spec:
-      containers:
+      initContainers:
+        - name: initial-configurator
+          image: alpine:latest
+          command: ["/bin/sh", "-c"]
+          # WARNING: MAKE SURE ALL LINES ARE TERMINATED WITH A SEMICOLON.
+          # The YAML parser turns this into a string, and turns newlines into spaces.
+          # This means we have to insert semicolons and cannot rely on newlines here to terminate commands.
+          #
+          # We copy the LAM config always,
+          # but the kubernasty.cfg file can be modified by the web UI itself,
+          # so we only create that if it isn't already in the persistent storage.
+          args:
+            - |+
+              cp /etc/ldap-account-manager-defaults/config.cfg /etc/ldap-account-manager;
+              if ! test -e /etc/ldap-account-manager/kubernasty.cfg; then
+                cp /etc/ldap-account-manager-defaults/kubernasty.DEFAULT.cfg /etc/ldap-account-manager;
+              fi;
+          volumeMounts:
+            - name: ldap-account-manager-etc-vol
+              mountPath: /etc/ldap-account-manager
+            - name: ldap-account-manager-default-etc-vol
+              mountPath: /etc/ldap-account-manager-default
+       containers:
         - name: ldap-account-manager
           # image: docker.io/nginx:latest
           image: docker.io/ldapaccountmanager/lam:stable
@@ -89,3 +111,6 @@ spec:
         - name: ldap-account-manager-etc-vol
           persistentVolumeClaim:
             claimName: ldap-account-manager-etc-claim
+        - name: ldap-account-manager-default-etc-vol
+          configMap:
+            name: ldap-account-manager-conf
