@@ -12,6 +12,7 @@ data:
           # Reads from the .password key on this secret
           existingSecret: keycloakdb-pass
           database: keycloak
+      storageClass: knty-rep3
     primary:
       extraVolumes:
         - name: keycloakdb-data-vol
