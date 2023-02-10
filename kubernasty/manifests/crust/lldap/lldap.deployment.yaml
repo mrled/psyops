@@ -31,14 +31,14 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: lldapJwtSecret
-                  name: lldap-secret
+                  name: lldap-credentials
             - name: LLDAP_USER_DN
               value: "admin"
             - name: LLDAP_LDAP_USER_PASS
               valueFrom:
                 secretKeyRef:
                   key: lldapLdapUserPass
-                  name: lldap-secret
+                  name: lldap-credentials
             - name: LLDAP_LDAP_BASE_DN
               value: "dc=kubernasty,dc=micahrl,dc=com"
             - name: LLDAP_LDAPS_OPTIONS__ENABLED
