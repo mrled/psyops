@@ -1,0 +1,13 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: keycloak-cert
+  namespace: keycloak
+spec:
+  issuerRef:
+    name: letsencrypt-issuer-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - keycloak.kubernasty.micahrl.com
+  secretName: keycloak-cert-backing-secret

@@ -3,8 +3,9 @@ kind: Kustomization
 resources:
 
   # Helm repositories
-  - bitnami-helm.yaml
-  - jetstack-helm.yaml
+  - helm/bitnami.helmrepo.yaml
+  - helm/codecentric.helmrepo.yaml
+  - helm/jetstack.helmrepo.yaml
 
   # Default stuff installed by Flux itselfj
   - gotk-components.yaml
@@ -16,6 +17,7 @@ resources:
   - external-dns-test-endpoints.yaml
   - longhorn.yaml
   - lldap.yaml
+  - keycloak.yaml
 
   # My deploymnets: Atmosphere
   - uptime-kuma.yaml

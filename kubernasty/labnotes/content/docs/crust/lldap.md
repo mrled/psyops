@@ -1,6 +1,6 @@
 ---
 title: LLDAP
-weight: 80
+weight: 40
 ---
 
 We use LDAP for a single source of truth for users and service accounts,

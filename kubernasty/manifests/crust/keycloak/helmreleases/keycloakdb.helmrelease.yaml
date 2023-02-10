@@ -1,0 +1,21 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: keycloakdb
+  namespace: keycloak
+spec:
+  chart:
+    spec:
+      chart: postgresql
+      version: v2.2.0
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux-system
+  interval: 15m
+  timeout: 5m
+  releaseName: postgresql
+  valuesFrom:
+  - kind: ConfigMap
+    name: keycloakdb-value-overrides
+    valuesKey: values.yaml # This is the default, but best to be explicit for clarity
