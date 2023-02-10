@@ -5,8 +5,9 @@ metadata:
   namespace: keycloak
 data:
   values.yaml: |-
-    dbchecker:
-      enabled: true
+    # This seems to just fucking break the deployment completely
+    # dbchecker:
+    #   enabled: true
     database:
       vendor: postgres
       hostname: keycloakdb
