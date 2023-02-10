@@ -80,13 +80,9 @@ spec:
           volumeMounts:
             - name: ldap-account-manager-etc-vol
               mountPath: /etc/ldap-account-manager
-          volumeMounts:
             - name: ldap-account-manager-varlib-vol
               mountPath: /var/lib/ldap-account-manager
       volumes:
-        - name: openldap-cert-vol
-          configMap:
-            name: openldap-cert
         - name: ldap-account-manager-varlib-vol
           persistentVolumeClaim:
             claimName: ldap-account-manager-varlib-claim
