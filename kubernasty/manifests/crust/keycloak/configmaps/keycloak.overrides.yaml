@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-value-overrides
+  namespace: keycloak
+data:
+  values.yaml: |-
+    # This seems to just fucking break the deployment completely
+    # dbchecker:
+    #   enabled: true
+    database:
+      vendor: postgres
+      hostname: keycloakdb
+      port: 5432
+      database: keycloak
+      username: keycloak
+      existingSecret: keycloakdb-pass
+    extraEnv: |
+      - name: KEYCLOAK_ADMIN
+        value: admin
+      - name: KEYCLOAK_ADMIN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: keycloak-credentials
+            key: adminpw
+      # Per the docs:
+      # > When running Keycloak behind a reverse proxy,
+      # > which is the case when using an ingress controller,
+      # > proxy address forwarding must be enabled as follows:
+      - name: KC_PROXY
+        value: "passthrough"
