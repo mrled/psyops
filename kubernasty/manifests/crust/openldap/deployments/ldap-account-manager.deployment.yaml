@@ -75,7 +75,7 @@ spec:
             # # password for LDAP read-only user
             # LDAP_READONLY_USER_PASSWORD=readonlypw
           ports:
-            - name: ldap-account-manager-web
+            - name: lam-web
               containerPort: 80
           volumeMounts:
             - name: ldap-account-manager-etc-vol

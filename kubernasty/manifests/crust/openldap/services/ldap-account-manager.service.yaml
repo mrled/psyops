@@ -10,5 +10,6 @@ spec:
   ports:
     - name: ldap-account-manager
       port: 80
+      targetPort: lam-web
   selector:
     app.kubernetes.io/name: ldap-account-manager
