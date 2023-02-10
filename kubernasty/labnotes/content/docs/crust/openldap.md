@@ -96,9 +96,9 @@ To create the password, see {{< repolink "ansible/filter_plugins/ssha.py" >}}.
 
 ```sh
 # Create a password for the LDAP Account Manager config file and save it to gopass
-gopass generate kubernasty/ldap-account-manager-admin
+gopass generate kubernasty/ldap-account-manager-master
 # Retrieve it from gopass and compte the SSHA of it
-python3 ../ansible/filter_plugins/ssha.py "$(gopass cat kubernasty/ldap-account-manager-admin)"
+python3 ../ansible/filter_plugins/ssha.py "$(gopass cat kubernasty/ldap-account-manager-master)"
 ```
 
 Then save it to the `config.cfg` key in
