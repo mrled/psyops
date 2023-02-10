@@ -37,7 +37,7 @@ spec:
               mountPath: /etc/ldap-account-manager
             - name: ldap-account-manager-default-etc-vol
               mountPath: /etc/ldap-account-manager-default
-       containers:
+      containers:
         - name: ldap-account-manager
           # image: docker.io/nginx:latest
           image: docker.io/ldapaccountmanager/lam:stable
