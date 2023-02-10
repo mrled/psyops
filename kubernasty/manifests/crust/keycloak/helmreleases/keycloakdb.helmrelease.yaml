@@ -13,6 +13,10 @@ spec:
         namespace: flux-system
   interval: 15m
   timeout: 5m
+  install:
+    disableWait: true
+  upgrade:
+    disableWait: true
   valuesFrom:
   - kind: ConfigMap
     name: keycloakdb-value-overrides
