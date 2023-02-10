@@ -63,7 +63,7 @@ spec:
             - name: VIRTUAL_HOST
               value: accounts.kubernasty.micahrl.com
             - name: VIRTUAL_PORT
-              value: 443
+              value: "443"
 
             # #
             # # docker-compose only, LDAP server setup
