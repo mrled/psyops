@@ -38,6 +38,14 @@ We will generate a self-signed certificate for the OpenLDAP server
   with the same level of effort as just deploying a new self-signed cert
 * It means we don't have to learn about and configure encrypted Kubernetes network fabric now
 
+
+{{< hint danger >}}
+You cannot use ECDSA keys for OpenLDAP --
+they must be RSA.
+
+.. maybe?
+{{< /hint >}}
+
 ```sh
 # Some tunable options
 # 7300 days is 20 years, ur cluster won't last 20 weeks u piece of shit
@@ -208,6 +216,18 @@ ldapwhoami -x -H ldap://openldap:389 -D "$userdn" -w "$userpw"
 # Should return: dn:cn=testuser,ou=users,dc=kubernasty,dc=micahrl,dc=com
 ldapsearch -x -H ldap://openldap:389 -D "$userdn" -w "$userpw" -b ou=users,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
 # ... should list the users you created
+```
+
+However, connecting over TLS will require the certificate,
+which is mounted from a configmap.
+I'm not sure if that's possible on ephemeral containers?
+But you can use the phphldapadmin container once it is running.
+
+```sh
+apt-get update && apt-get install ldap-utils
+admindn="cn=admin,dc=kubernasty,dc=micahrl,dc=com"
+adminpw="adminp@ssw0rd"
+ldapwhoami -x -H ldaps://openldap:636 -D "$admindn" -w "$adminpw"
 ```
 
 ### Log in from phpLDAPAdmin
