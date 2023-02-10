@@ -10,12 +10,12 @@ spec:
   ports:
     - name: lldap-ldap-plain-privileged
       port: 389
-      targetPort: lldap-ldap-plain
+      targetPort: ldap-plain
     - name: lldap-ldap-tls-privileged
       port: 636
-      targetPort: lldap-ldap-tls
+      targetPort: ldap-tls
     - name: lldap-web-plain-privileged
       port: 80
-      targetPort: lldap-web-plain
+      targetPort: web-plain
   selector:
     app.kubernetes.io/name: lldap

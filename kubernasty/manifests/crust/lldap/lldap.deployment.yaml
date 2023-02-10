@@ -48,11 +48,11 @@ spec:
             - name: LLDAP_LDAPS_OPTIONS__KEY_FILE
               value: /lldap-tls/key
           ports:
-            - name: lldap-ldap-plain
+            - name: ldap-plain
               containerPort: 3890
-            - name: lldap-ldap-tls
+            - name: ldap-tls
               containerPort: 6360
-            - name: lldap-web-plain
+            - name: web-plain
               containerPort: 17170
           volumeMounts:
             - name: lldap-data-vol
