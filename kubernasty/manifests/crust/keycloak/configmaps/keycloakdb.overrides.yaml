@@ -8,7 +8,7 @@ data:
     global:
       postgresql:
         auth:
-          username: dbusername
+          username: keycloak
           # Reads from the .password key on this secret
           existingSecret: keycloakdb-pass
           database: keycloak

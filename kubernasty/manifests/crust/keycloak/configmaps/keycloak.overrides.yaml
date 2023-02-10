@@ -12,8 +12,8 @@ data:
       hostname: keycloakdb
       port: 5432
       database: keycloak
-      username: '{{ .Values.dbUser }}'
-      password: '{{ .Values.dbPassword }}'
+      username: keycloak
+      existingSecret: keycloakdb-pass
     extraEnv: |
       - name: KEYCLOAK_ADMIN
         value: admin
