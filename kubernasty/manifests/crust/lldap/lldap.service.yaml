@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lldap
+  namespace: lldap
+  labels:
+    app.kubernetes.io/name: lldap
+spec:
+  type: ClusterIP
+  ports:
+    - name: lldap-ldap-plain-privileged
+      port: 389
+      targetPort: lldap-ldap-plain
+    - name: lldap-ldap-tls-privileged
+      port: 636
+      targetPort: lldap-ldap-tls
+    - name: lldap-web-plain-privileged
+      port: 80
+      targetPort: lldap-web-plain
+  selector:
+    app.kubernetes.io/name: lldap

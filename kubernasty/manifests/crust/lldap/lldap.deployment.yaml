@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lldap
+  namespace: lldap
+  labels:
+    app.kubernetes.io/name: lldap
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lldap
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lldap
+    spec:
+      containers:
+        - name: lldap
+          # image: docker.io/nginx:latest
+          image: docker.io/nitnelave/lldap:stable
+          imagePullPolicy: "Always"
+          env:
+            # See environment variables in
+            # <https://github.com/nitnelave/lldap/blob/main/lldap_config.docker_template.toml>
+            - name: LLDAP_VERBOSE
+              value: "true"
+            - name: LLDAP_HTTP_URL
+              value: "https://lldap.kubernasty.micahrl.com"
+            - name: LLDAP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: lldapJwtSecret
+                  name: lldap-secret
+            - name: LLDAP_USER_DN
+              value: "admin"
+            - name: LLDAP_LDAP_USER_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: lldapLdapUserPass
+                  name: lldap-secret
+            - name: LLDAP_LDAP_BASE_DN
+              value: "dc=kubernasty,dc=micahrl,dc=com"
+            - name: LLDAP_LDAPS_OPTIONS__ENABLED
+              value: "true"
+            - name: LLDAP_LDAPS_OPTIONS__CERT_FILE
+              value: /lldap-tls/certificate
+            - name: LLDAP_LDAPS_OPTIONS__KEY_FILE
+              value: /lldap-tls/key
+          ports:
+            - name: lldap-ldap-plain
+              containerPort: 3890
+            - name: lldap-ldap-tls
+              containerPort: 6360
+            - name: lldap-web-plain
+              containerPort: 17170
+          volumeMounts:
+            - name: lldap-data-vol
+              mountPath: /data
+            - name: lldap-tls-vol
+              mountPath: /lldap-tls
+      volumes:
+        - name: lldap-data-vol
+          persistentVolumeClaim:
+            claimName: lldap-data-claim
+        - name: lldap-tls-vol
+          secret:
+            secretName: lldap-tls
