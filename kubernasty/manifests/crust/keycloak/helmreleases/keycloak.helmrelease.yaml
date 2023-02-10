@@ -14,8 +14,7 @@ spec:
         namespace: flux-system
   interval: 15m
   timeout: 5m
-  releaseName: keycloakx
   valuesFrom:
   - kind: ConfigMap
     name: keycloak-value-overrides
-    valuesKey: values.yaml # This is the default, but best to be explicit for clarity
+    valuesKey: values.yaml
