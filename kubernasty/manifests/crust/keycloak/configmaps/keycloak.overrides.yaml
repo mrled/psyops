@@ -60,13 +60,13 @@ data:
             secretName: keycloak-console-cert-backing-secret
 
     extraEnv: |
-      - name: KEYCLOAK_ADMIN
-        value: admin
-      - name: KEYCLOAK_ADMIN_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: keycloak-credentials
-            key: adminpw
+      # - name: KEYCLOAK_ADMIN
+      #   value: admin
+      # - name: KEYCLOAK_ADMIN_PASSWORD
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: keycloak-credentials
+      #       key: adminpw
       # Per the docs:
       # > When running Keycloak behind a reverse proxy,
       # > which is the case when using an ingress controller,
