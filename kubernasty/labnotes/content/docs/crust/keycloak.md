@@ -8,7 +8,7 @@ weight: 50
 * The Helm chart we use creates the ingress for us
   (as we specify in our override config),
   so we have to adapt that section of
-  {{< repolinke "kubernasty/manifests/crust/keycloak/configmaps/keycloak.overrides.yaml" >}}
+  {{< repolink "kubernasty/manifests/crust/keycloak/configmaps/keycloak.overrides.yaml" >}}
   to look like other Ingress objects we've created.
 
 ### Create `keycloak-credentials.secret.yaml`
