@@ -39,6 +39,24 @@ jesus h christ this is the most insane system i've ever seen in my life
 * Specifically note that Flux ships some CRDs which are also in k3s,
   so you have to use a fully qualified CRD names.
 
+A few commands that are useful to keep running as you're deploying stuff.
+(Run this in separate terminals.)
+
+```sh
+watch kubectl get kustomizations -A
+
+watch kubectl get helmrelease -A
+
+watch kubectl get certs -A
+```
+
+* If your `helmreleases` are saying things like `initial retries exhausted`,
+  you can force them to try again with
+  `flux suspend hr -n NAMESPACE RELEASENAME`
+  and `flux resume hr -n NAMESPACE RELEASENAME`.
+* Note that trying to reconcile a Helm release like that does not necessarily redploy its pods.
+  You may also need to `kubectl delete pod -n NAMESPACE PODNAME` too.
+
 ## What does 'Evicted' mean?
 
 ```
