@@ -45,7 +45,7 @@ stringData:
   # The password for the 'keycloak' user
   password: $kcpass
   # The password for the 'postgres' database admin user
-  postgresPassword: $pgpass
+  postgres-password: $pgpass
 EOF
 
 sops --encrypt --in-place manifests/crust/keycloak/secrets/keycloak-pass.secret.yaml
