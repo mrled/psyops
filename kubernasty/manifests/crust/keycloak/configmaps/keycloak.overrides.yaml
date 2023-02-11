@@ -30,10 +30,10 @@ data:
       existingSecret: keycloakdb-pass
     ingress:
       enabled: true
+      ingressClassName: traefik
       rules:
         - host: keycloak.kubernasty.micahrl.com
           annotations:
-            kubernetes.io/ingress.class: traefik
             cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
             traefik.ingress.kubernetes.io/router.middlewares: kube-system-clusteradmin-auth-mw@kubernetescrd
           paths:
@@ -44,10 +44,10 @@ data:
               secretName: keycloak-cert-backing-secret
       console:
         enabled: true
+        ingressClassName: traefik
         rules:
           - host: keycloak-console.kubernasty.micahrl.com
             annotations:
-              kubernetes.io/ingress.class: traefik
               cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
               traefik.ingress.kubernetes.io/router.middlewares: kube-system-clusteradmin-auth-mw@kubernetescrd
             paths:
