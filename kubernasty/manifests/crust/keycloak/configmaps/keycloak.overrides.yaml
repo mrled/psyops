@@ -38,3 +38,5 @@ data:
       # > proxy address forwarding must be enabled as follows:
       - name: KC_PROXY
         value: "passthrough"
+      - name: jgroups.dns.query
+        value: keycloak-keycloakx-0.keycloak.svc.cluster.local
