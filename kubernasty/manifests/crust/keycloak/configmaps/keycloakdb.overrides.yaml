@@ -15,7 +15,7 @@ data:
       storageClass: knty-rep3
     primary:
       extraEnvVars:
-        - name: POSTGRESQL_DATA_DIR
+        - name: PGDATA
           value: /pgsql-data/data
       initContainers:
         - name: perpermission
