@@ -32,6 +32,13 @@ jesus h christ this is the most insane system i've ever seen in my life
 * This is an example of a "Custom Resource Definition", or CRD.
   Installing Traefik via the official manifest also installs the CRDs like `IngressRoute`.
 
+### Flux basics
+
+* You definitely want to read the
+  [troubleshooting guide](https://fluxcd.io/flux/cheatsheets/troubleshooting).
+* Specifically note that Flux ships some CRDs which are also in k3s,
+  so you have to use a fully qualified CRD names.
+
 ## What does 'Evicted' mean?
 
 ```
