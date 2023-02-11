@@ -31,6 +31,8 @@ data:
     ingress:
       enabled: true
       ingressClassName: traefik
+      labels:
+        app.kubernetes.io/instance: keycloak
       rules:
         - host: keycloak.kubernasty.micahrl.com
           annotations:
@@ -71,6 +73,8 @@ data:
       # > proxy address forwarding must be enabled as follows:
       - name: KC_PROXY
         value: "passthrough"
+      - name: PROXY_ADDRESS_FORWARDING
+        value: "true"
       # Required per
       # <https://keycloak.discourse.group/t/keycloak-17-container-with-dns-ping-clustering/14010>
       - name: jgroups.dns.query
