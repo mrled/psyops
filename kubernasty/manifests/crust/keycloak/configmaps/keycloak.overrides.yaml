@@ -39,9 +39,9 @@ data:
           paths:
             - path: /
               pathType: Prefix
-          tls:
-            - hosts: [keycloak.kubernasty.micahrl.com]
-              secretName: keycloak-cert-backing-secret
+      tls:
+        - hosts: [keycloak.kubernasty.micahrl.com]
+          secretName: keycloak-cert-backing-secret
       console:
         enabled: true
         ingressClassName: traefik
@@ -53,9 +53,9 @@ data:
             paths:
               - path: /
                 pathType: Prefix
-            tls:
-              - hosts: [keycloak-console.kubernasty.micahrl.com]
-                secretName: keycloak-console-cert-backing-secret
+        tls:
+          - hosts: [keycloak-console.kubernasty.micahrl.com]
+            secretName: keycloak-console-cert-backing-secret
 
     extraEnv: |
       - name: KEYCLOAK_ADMIN
