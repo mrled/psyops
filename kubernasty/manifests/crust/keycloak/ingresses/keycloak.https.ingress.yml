@@ -20,7 +20,7 @@ spec:
           service:
             name: keycloak-keycloakx-http
             port:
-              number: 8080
+              number: 80
   tls:
     - secretName: keycloak-cert-backing-secret
       hosts:
