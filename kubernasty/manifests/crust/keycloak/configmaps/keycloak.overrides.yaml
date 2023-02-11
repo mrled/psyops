@@ -19,7 +19,7 @@ data:
       enabled: true
     database:
       vendor: postgres
-      hostname: keycloakdb
+      hostname: keycloakdb-postgresql
       port: 5432
       database: keycloak
       username: keycloak
