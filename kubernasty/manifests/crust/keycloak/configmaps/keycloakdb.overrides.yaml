@@ -14,6 +14,18 @@ data:
           database: keycloak
       storageClass: knty-rep3
     primary:
+      initContainers:
+        - name: perpermission
+          image: busybox:1.28
+          command: ['sh', '-c']
+          volumeMounts:
+          - name: keycloakdb-data-vol
+            mountPath: /pgsql-data
+            readOnly: false
+          arguments:
+            - |+
+              ls -alF /pgsql-data
+              sleep infinity
       extraVolumes:
         - name: keycloakdb-data-vol
           persistentVolumeClaim:
