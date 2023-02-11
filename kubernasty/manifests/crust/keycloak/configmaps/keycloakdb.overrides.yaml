@@ -14,25 +14,30 @@ data:
           database: keycloak
       storageClass: knty-rep3
     primary:
-      # initContainers:
-      #   - name: perpermission
-      #     image: busybox:1.28
-      #     command: ['sh', '-c']
-      #     args:
-      #       - |+
-      #         ls -alF /pgsql-data
-      #         sleep infinity
-      #     volumeMounts:
-      #     - name: keycloakdb-data-vol
-      #       mountPath: /pgsql-data
-      #       readOnly: false
+      extraEnvVars:
+        - name: POSTGRESQL_DATA_DIR
+          value: /pgsql-data/data
+      initContainers:
+        - name: perpermission
+          image: busybox:1.28
+          command: ['sh', '-c']
+          args:
+            - |+
+              mkdir -p /pgsql-data/data
+              chown 1001 /pgsql-data/data
+              chmod 700 /pgsql-data/data
+              ls -alF /pgsql-data/data
+          volumeMounts:
+          - name: keycloakdb-data-vol
+            mountPath: /pgsql-data
+            readOnly: false
       extraVolumes:
         - name: keycloakdb-data-vol
           persistentVolumeClaim:
             claimName: keycloakdb-data-claim
       extraVolumeMounts:
         - name: keycloakdb-data-vol
-          mountPath: /bitnami/postgresql/data
+          mountPath: /pgsql-data
           readOnly: false
     volumePermissions:
       enabled: true
