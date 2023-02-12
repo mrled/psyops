@@ -10,6 +10,8 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
     # This should not be required since
     # <https://github.com/thomseddon/traefik-forward-auth/pull/217>
+    # However, as of SUPERBOWL SUNDAY 20230212 this requires using the `:latest` tag of the container...
+    # the recommendedd `:2` tag is too old!
     # traefik.ingress.kubernetes.io/router.middlewares: kube-system-traefik-forward-auth-mw@kubernetescrd
 spec:
   rules:
