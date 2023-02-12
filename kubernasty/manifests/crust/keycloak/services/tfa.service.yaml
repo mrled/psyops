@@ -4,11 +4,11 @@ metadata:
   name: traefik-forward-auth
   namespace: keycloak
   labels:
-    app: traefik-forward-auth
+    app.kubernetes.io/name: traefik-forward-auth
 spec:
   type: ClusterIP
   selector:
-    app: traefik-forward-auth
+    app.kubernetes.io/name: traefik-forward-auth
   ports:
   - name: auth-http
     port: 4181
