@@ -7,7 +7,9 @@ data:
   values.yaml: |-
     config:
       existingSecret: oauth2-proxy-secrets
-      extraArgs:
-        - "--reverse-proxy"
       httpScheme: http
       containerPort: 80
+      configFile: |+
+        reverse_proxy = true
+        email_domains = [ "*" ]
+        upstreams = [ "file:///dev/null" ]
