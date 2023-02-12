@@ -45,3 +45,4 @@ spec:
           ports:
             - name: tfa-port
               containerPort: 4181
+              protocol: TCP
