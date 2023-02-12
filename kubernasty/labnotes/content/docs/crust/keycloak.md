@@ -183,7 +183,7 @@ sops --encrypt --in-place manifests/crust/keycloak/secrets/tfa-secrets.secret.ya
   * Client type: `OpenID Connect`
   * Name: `kubernasty-oauth2-proxy`
   * Client authentication: `on`
-  * Valid redirect URIs: `https://*.kubernasty.micahrl.com/*`
+  * Valid redirect URIs: `https://oauth2-proxy.kubernasty.micahrl.com/oauth2/callback`
   * Valid post logout redirect URIs: `https://*.kubernasty.micahrl.com/*`
   * Client scopes -> scope named after the client, like `kubernasty-oauth2-proxy-dedicated`
     * Configure new mapper -> Group Membership
