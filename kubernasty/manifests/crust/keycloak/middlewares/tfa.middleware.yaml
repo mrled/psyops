@@ -5,7 +5,7 @@ metadata:
   namespace: kube-system
 spec:
   forwardAuth:
-    address: http://traefik-forward-auth.keycloak.svc.cluster.local:4181
+    address: https://traefik-forward-auth.kubernasty.micahrl.com/
     trustForwardHeader: true
     authResponseHeaders:
       - X-Forwarded-User
