@@ -227,7 +227,7 @@ clientid_plain="kubernasty-oauth2-proxy"
 clientsecret_plain="... SECRET VALUE ..."
 # We generate a random value here
 # This must be 32 bytes
-cookiesecret="$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_')"
+cookiesecret="$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr '+' '/' | tr '-' '_')"
 
 clientid="$(echo -n "$clientid_plain" | base64 -w 0)"
 clientsecret="$(echo -n "$clientsecret_plain" | base64 -w 0)"
