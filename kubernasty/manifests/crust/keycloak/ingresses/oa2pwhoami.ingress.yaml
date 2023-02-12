@@ -22,6 +22,6 @@ spec:
                 port:
                   number: 5678
   tls:
-    - secretName: tfawhoami-cert-backing-secret
+    - secretName: oa2pwhoami-cert-backing-secret
       hosts:
         - oa2pwhoami.keycloak.kubernasty.micahrl.com
