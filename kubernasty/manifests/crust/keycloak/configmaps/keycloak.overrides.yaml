@@ -58,7 +58,10 @@ data:
 
     extraEnv: |
       - name: KEYCLOAK_ADMIN
-        value: keymaker
+        # I want this to be 'keymaker',
+        # but it won't let me change it after initial deployment when I called it 'admin'
+        # value: keymaker
+        value: admin
       - name: KEYCLOAK_ADMIN_PASSWORD
         valueFrom:
           secretKeyRef:
