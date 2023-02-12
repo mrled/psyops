@@ -18,5 +18,5 @@ data:
         tls:
           - hosts: [oauth2-proxy.kubernasty.micahrl.com]
             secretName: oauth2-proxy-cert-backing-secret
-      configFile: |-
-        reverse-proxy: true
+      extraArgs:
+        - "--reverse-proxy"
