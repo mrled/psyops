@@ -23,6 +23,8 @@ jesus h christ this is the most insane system i've ever seen in my life
 * You can remove objects defined in a manifest file with `kubectl delete -f filename.yml`.
 * You can exec into containers with
   `kubectl exec --stdin --tty <container> -n <namespace> -- /bin/bash`.
+* Browse the [kubectl cheatsheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+  when you're stuck.
 
 ### k3s Traefik basics
 

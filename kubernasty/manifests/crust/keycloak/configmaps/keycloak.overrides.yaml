@@ -58,7 +58,7 @@ data:
 
     extraEnv: |
       - name: KEYCLOAK_ADMIN
-        value: admin
+        value: keymaker
       - name: KEYCLOAK_ADMIN_PASSWORD
         valueFrom:
           secretKeyRef:

@@ -33,7 +33,7 @@ spec:
                   key: lldapJwtSecret
                   name: lldap-credentials
             - name: LLDAP_USER_DN
-              value: "admin"
+              value: "0p3r4t0r"
             - name: LLDAP_LDAP_USER_PASS
               valueFrom:
                 secretKeyRef:
