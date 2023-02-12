@@ -87,11 +87,13 @@ Create the various manifest files under
 
 ### Create `lldap-credentials.secret.yaml`
 
+The admin username will be `0p3r4t0r`, and the password we generate below.
+
 ```sh
 lldapJwtSecret="$(pwgen 64)"
 
-gopass generate kubernasty/lldap-admin-pw
-lldapLdapUserPass="$(gopass cat kubernasty/lldap-admin-pw)"
+gopass generate kubernasty/lldap-0p3r4t0r-pw
+lldapLdapUserPass="$(gopass cat kubernasty/lldap-0p3r4t0r-pw)"
 
 cat > kubernasty/manifests/crust/lldap/secrets/lldap-credentials.secret.yaml <<EOF
 apiVersion: v1
@@ -188,7 +190,7 @@ nslookup lldap
 ldapwhoami -x -H ldap://lldap:389
 
 # Authenticate and query the ldap server as the admin user
-admindn="cn=admin,ou=people,dc=kubernasty,dc=micahrl,dc=com"
+admindn="cn=0p3r4t0r,ou=people,dc=kubernasty,dc=micahrl,dc=com"
 adminpw="adminp@ssw0rd"
 ldapsearch -x -H ldap://lldap:389 -D "$admindn" -w "$adminpw" -b ou=people,dc=kubernasty,dc=micahrl,dc=com -s sub '(objectClass=*)' 'givenName=username*'
 # ... should list the admin user
