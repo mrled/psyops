@@ -1,11 +1,11 @@
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
-  name: tfawhoami.keycloak.kubernasty.micahrl.com
+  name: tfawhoami-keycloak.kubernasty.micahrl.com
   namespace: external-dns
 spec:
   endpoints:
-  - dnsName: tfawhoami.keycloak.kubernasty.micahrl.com
+  - dnsName: tfawhoami-keycloak.kubernasty.micahrl.com
     recordTTL: 60
     recordType: CNAME
     targets:
