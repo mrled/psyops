@@ -222,12 +222,15 @@ The oauth2-proxy helm chart requires this.
 
 ```sh
 # Must match what was entered into Keycloak above
-clientid="kubernasty-oauth2-proxy"
+clientid_plain="kubernasty-oauth2-proxy"
 # The key we copied above
-clientsecret="... SECRET VALUE ..."
+clientsecret_plain="... SECRET VALUE ..."
 # We generate a random value here
 # This must be 32 bytes
-cookiesecret="$(pwgen 32)"
+cookiesecret="$(openssl rand -base64 32 | tr -- '+/' '-_')"
+
+clientid="$(echo -n "$clientid_plain" | base64 -w 0)"
+clientsecret="$(echo -n "$clientsecret_plain" | base64 -w 0)"
 
 cat > manifests/crust/keycloak/secrets/oauth2-proxy-secrets.secret.yaml <<EOF
 apiVersion: v1
@@ -239,9 +242,9 @@ metadata:
     app: oauth2-proxy
 type: Opaque
 data:
-  client-id: $(echo -n "$clientid" | base64 -w 0)
-  client-secret: $(echo -n "$clientsecret" | base64 -w 0)
-  cookie-secret: $(echo -n "$cookiesecret" | base64 -w 0)
+  client-id: $clientid
+  client-secret: $clientsecret
+  cookie-secret: $cookiesecret
 EOF
 
 sops --encrypt --in-place manifests/crust/keycloak/secrets/oauth2-proxy-secrets.secret.yaml
