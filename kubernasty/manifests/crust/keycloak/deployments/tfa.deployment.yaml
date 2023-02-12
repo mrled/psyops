@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: traefik-forward-auth
-          image: docker.io/thomseddon/traefik-forward-auth:2
+          image: docker.io/thomseddon/traefik-forward-auth:latest
           imagePullPolicy: "Always"
           env:
             - name: LOG_LEVEL
