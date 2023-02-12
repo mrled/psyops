@@ -42,6 +42,8 @@ spec:
                 secretKeyRef:
                   name: tfa-secrets
                   key: tfa-auth-secret
+            - name: AUTH_HOST
+              value: traefik-forward-auth.kubernasty.micahrl.com
           ports:
             - name: tfa-port
               containerPort: 4181
