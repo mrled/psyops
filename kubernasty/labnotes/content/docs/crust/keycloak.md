@@ -193,6 +193,7 @@ sops --encrypt --in-place manifests/crust/keycloak/secrets/tfa-secrets.secret.ya
     * Add mapper -> By configuration -> Audience
       * Name: `aud-mapper-client`
       * Included client audience: select the name of the client, like `kubernasty-oauth2-proxy`
+      * Included custom audience: select the name of the client, like `kubernasty-oauth2-proxy`
 * Show whether it's working
   * Client -> the client we created -> Client scopes -> Evaluate tab
     * Enter a user. It looks like this should populate with a list, but it doesn't just start typing.

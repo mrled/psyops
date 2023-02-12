@@ -22,3 +22,6 @@ data:
         oidc_issuer_url = "https://keycloak.kubernasty.micahrl.com/auth/realms/master"
         allowed_roles = "kubernasty-oauth2-proxy:kubernasty-apps-all"
         user_id_claim = "oid"
+
+        # <https://github.com/oauth2-proxy/oauth2-proxy/issues/1669#issuecomment-1166633784>
+        scope = "user_email"
