@@ -10,4 +10,4 @@ data:
       extraArgs:
         - "--reverse-proxy"
       httpScheme: http
-      containerPort: 4180
+      containerPort: 80

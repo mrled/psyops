@@ -19,7 +19,7 @@ spec:
               service:
                 name: oauth2-proxy
                 port:
-                  number: 4180
+                  number: 80
   tls:
     - secretName: oauth2-proxy-cert-backing-secret
       hosts:
