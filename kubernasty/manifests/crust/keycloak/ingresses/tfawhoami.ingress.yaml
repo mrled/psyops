@@ -8,9 +8,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
-    ingress.kubernetes.io/auth-type: forward
-    ingress.kubernetes.io/auth-url: http://traefik-forward-auth:4181
-    ingress.kubernetes.io/auth-response-headers: X-Forwarded-User
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-traefik-forward-auth-mw@kubernetescrd
 spec:
   rules:
     - host: tfawhoami.keycloak.kubernasty.micahrl.com
