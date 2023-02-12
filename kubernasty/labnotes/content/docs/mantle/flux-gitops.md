@@ -142,3 +142,15 @@ We could deploy Flux as soon as the cluster is up,
 and leave configuration of all of those items to Flux itself.
 
 On the other hand, progressing from a new cluster to `kubectl apply` to Flux and GitOps seems natural.
+
+## Forcing flux to reconcile
+
+When you push changes to the Git repo,
+you can just wait for Flux to find them,
+but you can also force it to look immediately with this command:
+
+```sh
+kubectl annotate --field-manager=flux-client-side-apply --overwrite gitrepository/flux-system -n flux-system reconcile.fluxcd.io/requestedAt="$(date +%s)"
+```
+
+See also <https://fluxcd.io/flux/components/source/gitrepositories/#triggering-a-reconcile>
