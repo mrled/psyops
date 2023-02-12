@@ -24,10 +24,12 @@ spec:
               value: kubernasty.micahrl.com
             - name: DEFAULT_PROVIDER
               value: oidc
+            # This will always be https://<your keycloak URL>/auth/realms/master
             - name: PROVIDERS_OIDC_ISSUER_URL
-              value:
+              value: https://keycloak.kubernasty.micahrl.com/auth/realms/master
+            # This is the name of the client you createdd in Keycloak UI
             - name: PROVIDERS_OIDC_CLIENT_ID
-              value:
+              value: kubernasty-tfa
             - name: PROVIDERS_OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
