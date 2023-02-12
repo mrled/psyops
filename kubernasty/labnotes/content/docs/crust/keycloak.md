@@ -215,6 +215,10 @@ sops --encrypt --in-place manifests/crust/keycloak/secrets/tfa-secrets.secret.ya
 
 Get the client secret from Keycloak -> the client we created -> Credentials tab.
 
+Note that we have to do this as a `data` secret with base64-encoded values.
+It doesn't work as a `stringData` secret with string values.
+The oauth2-proxy helm chart requires this.
+
 ```sh
 # Must match what was entered into Keycloak above
 clientid="kubernasty-oauth2-proxy"
@@ -232,10 +236,10 @@ metadata:
   labels:
     app: oauth2-proxy
 type: Opaque
-stringData:
-  oidc-client-id: $clientid
-  oidc-client-secret: $clientsecret
-  auth-secret: $authsecret
+data:
+  oidc-client-id: $(echo "$clientid" | base64 -w 0)
+  oidc-client-secret: $(echo "$clientsecret" | base64 -w 0)
+  auth-secret: $(echo "$authsecret" | base64 -w 0)
 EOF
 
 sops --encrypt --in-place manifests/crust/keycloak/secrets/oauth2-proxy-secrets.secret.yaml
