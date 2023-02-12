@@ -21,3 +21,4 @@ data:
         redirect_url = "https://oauth2-proxy.kubernasty.micahrl.com/oauth2/callback"
         oidc_issuer_url = "https://keycloak.kubernasty.micahrl.com/auth/realms/master"
         allowed_roles = "kubernasty-oauth2-proxy:kubernasty-apps-all"
+        user_id_claim = "oid"
