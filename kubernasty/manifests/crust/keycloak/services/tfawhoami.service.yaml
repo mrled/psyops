@@ -1,0 +1,10 @@
+kind: Service
+metadata:
+  name: tfawhoami
+  namespace: keycloak
+spec:
+  ports:
+    - port: 5678
+      targetPort: 80
+  selector:
+    app: tfawhoami

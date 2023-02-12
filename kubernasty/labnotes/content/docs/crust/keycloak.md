@@ -139,3 +139,18 @@ EOF
 
 sops --encrypt --in-place manifests/crust/keycloak/secrets/tfa-secrets.secret.yaml
 ```
+
+### Testing `traefik-forward-auth`
+
+* We deploy `tfawhoami` pod for this purpose
+* Note that in the `traefik-forward-auth-mw` at
+  {{< repolink "kubernasty/manifests/crust/keycloak/middlewares/tfa.middleware.yaml" >}},
+  we create the middleware in the `kube-system` namespace.
+  I think this is required, but I don't remember for sure.
+* Note that in the `twawhoami` ingress at
+  {{< repolink "kubernasty/manifests/crust/keycloak/ingresses/tfawhoami.ingress.yaml" >}},
+  we add a label
+  `traefik.ingress.kubernetes.io/router.middlewares: kube-system-traefik-forward-auth-mw@kubernetescrd`.
+  See that the middleware specifier is `NAMESPACE-NAME@kubernetescrd`.
+* Adding that label will protect other ingresses behind Keycloak.
+* Be careful: if you don't add that label, an ingress is open to anyone who can talk to your cluster.
