@@ -6,21 +6,7 @@ metadata:
 data:
   values.yaml: |-
     config:
-      clientID:
-        valueFrom:
-          secretKeyRef:
-            name: oauth2proxy-secrets
-            key: oidc-client-id
-      clientSecret:
-        valueFrom:
-          secretKeyRef:
-            name: oauth2proxy-secrets
-            key: oidc-client-secret
-      cookieSecret:
-        valueFrom:
-          secretKeyRef:
-            name: oauth2proxy-secrets
-            key: auth-secret
+      existingSecret: oauth2-proxy-secrets
       ingress:
         enabled: true
         path: /

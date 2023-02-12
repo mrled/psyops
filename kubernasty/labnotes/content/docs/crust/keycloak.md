@@ -225,7 +225,7 @@ clientid="kubernasty-oauth2-proxy"
 # The key we copied above
 clientsecret="... SECRET VALUE ..."
 # We generate a random value here
-authsecret="$(pwgen 64)"
+cookiesecret="$(pwgen 64)"
 
 cat > manifests/crust/keycloak/secrets/oauth2-proxy-secrets.secret.yaml <<EOF
 apiVersion: v1
@@ -237,9 +237,9 @@ metadata:
     app: oauth2-proxy
 type: Opaque
 data:
-  oidc-client-id: $(echo "$clientid" | base64 -w 0)
-  oidc-client-secret: $(echo "$clientsecret" | base64 -w 0)
-  auth-secret: $(echo "$authsecret" | base64 -w 0)
+  client-id: $(echo "$clientid" | base64 -w 0)
+  client-secret: $(echo "$clientsecret" | base64 -w 0)
+  cookie-secret: $(echo "$authsecret" | base64 -w 0)
 EOF
 
 sops --encrypt --in-place manifests/crust/keycloak/secrets/oauth2-proxy-secrets.secret.yaml
