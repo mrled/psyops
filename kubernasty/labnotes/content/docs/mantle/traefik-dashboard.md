@@ -35,6 +35,9 @@ Once it's finished, you can access the dashboard at <https://traefik.kubernasty.
 There is nothing at the root domain, and the trailing slash on `dashboard/` is important;
 without it, you'll get a 404.
 
+TODO: redirect anything that doesn't start with `/dashboard/` to `/dashboard/`
+for this hostname.
+
 See also:
 
 * <https://k3s.rocks/traefik-dashboard/>
