@@ -25,9 +25,10 @@ data:
         # Troubleshooting errors
         # See also:
         # <https://github.com/oauth2-proxy/oauth2-proxy/issues/1732>
+        # <https://github.com/oauth2-proxy/oauth2-proxy/issues/46#issuecomment-687155032>
 
         # <https://github.com/oauth2-proxy/oauth2-proxy/pull/499>
-        user_id_claim = "email"
+        # user_id_claim = "email"
 
         # Suggesting the 'user:email' scope for Github:
         # <https://github.com/oauth2-proxy/oauth2-proxy/issues/1669#issuecomment-1166633784>
@@ -36,6 +37,15 @@ data:
         # If we get "token response did not contain an id_token",
         # it could be because we are missing the "openid" scope, per
         # <https://github.com/kubernetes/kubernetes/issues/51501>
-        scope = "openid email"
+        # scope = "openid email"
 
-        oidc_email_claim = "email"
+        # oidc_email_claim = "email"
+
+        pass_access_token = "true"
+        pass_authorization_header = "true"
+        set_authorization_header = "true"
+        set_xauthrequest = "true"
+
+        # Once things are working, uncomment this.
+        # It will skip the sign-in page and just redirect to oauth if necessary
+        #skip_provider_button = "true"
