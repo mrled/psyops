@@ -44,6 +44,8 @@ spec:
                   key: tfa-auth-secret
             - name: AUTH_HOST
               value: traefik-forward-auth.kubernasty.micahrl.com
+            - name: COOKIE_DOMAIN
+              value: kubernasty.micahrl.com
           ports:
             - name: tfa-port
               containerPort: 4181
