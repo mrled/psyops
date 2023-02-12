@@ -41,6 +41,7 @@ data:
 
         # oidc_email_claim = "email"
 
+        pass_host_header = "false"
         pass_access_token = "true"
         pass_authorization_header = "true"
         set_authorization_header = "true"
