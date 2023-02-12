@@ -227,7 +227,7 @@ clientid_plain="kubernasty-oauth2-proxy"
 clientsecret_plain="... SECRET VALUE ..."
 # We generate a random value here
 # This must be 32 bytes
-cookiesecret="$(openssl rand -base64 32 | tr -- '+/' '-_')"
+cookiesecret="$(python3 -c 'import os,base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())')"
 
 clientid="$(echo -n "$clientid_plain" | base64 -w 0)"
 clientsecret="$(echo -n "$clientsecret_plain" | base64 -w 0)"
