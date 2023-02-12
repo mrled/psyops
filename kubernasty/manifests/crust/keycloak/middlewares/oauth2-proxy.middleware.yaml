@@ -5,7 +5,7 @@ metadata:
   namespace: kube-system
 spec:
   forwardAuth:
-    address: https://oauth2-proxy.kubernasty.micahrl.com/
+    address: https://oauth2-proxy.kubernasty.micahrl.com/oauth2/auth_or_start
     trustForwardHeader: true
     authResponseHeaders:
       - X-Auth-Request-Access-Token
