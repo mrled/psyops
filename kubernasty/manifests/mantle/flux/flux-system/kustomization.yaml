@@ -6,6 +6,7 @@ resources:
   - helm/bitnami.helmrepo.yaml
   - helm/codecentric.helmrepo.yaml
   - helm/jetstack.helmrepo.yaml
+  - helm/oauth2-proxy.helmrepo.yaml
 
   # Default stuff installed by Flux itselfj
   - gotk-components.yaml

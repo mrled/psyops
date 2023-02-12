@@ -29,7 +29,7 @@ spec:
             # This will always be https://<your keycloak URL>/auth/realms/master
             - name: PROVIDERS_OIDC_ISSUER_URL
               value: https://keycloak.kubernasty.micahrl.com/auth/realms/master
-            # This is the name of the client you createdd in Keycloak UI
+            # This is the name of the client you created in Keycloak UI
             - name: PROVIDERS_OIDC_CLIENT_ID
               value: kubernasty-tfa
             - name: PROVIDERS_OIDC_CLIENT_SECRET
