@@ -1,0 +1,12 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: oauth2-proxy-mw
+  namespace: kube-system
+spec:
+  forwardAuth:
+    address: https://oauth2-proxy.kubernasty.micahrl.com/
+    trustForwardHeader: true
+    authResponseHeaders:
+      - X-Auth-Request-Access-Token
+      - Authorization
