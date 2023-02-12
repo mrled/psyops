@@ -22,6 +22,8 @@ spec:
           env:
             - name: DOMAIN
               value: kubernasty.micahrl.com
+            - name: DEFAULT_PROVIDER
+              value: oidc
             - name: PROVIDERS_OIDC_ISSUER_URL
               value:
             - name: PROVIDERS_OIDC_CLIENT_ID
