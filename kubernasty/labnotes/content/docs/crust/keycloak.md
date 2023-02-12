@@ -215,10 +215,23 @@ sops --encrypt --in-place manifests/crust/keycloak/secrets/tfa-secrets.secret.ya
 
 Get the client secret from Keycloak -> the client we created -> Credentials tab.
 
+{{< hint warning >}}
+**You must create a base64-encoded `data` secret.**
+
 Note that we have to do this as a `data` secret with base64-encoded values.
 It doesn't work as a `stringData` secret with string values.
 Be careful to `echo -n`, so that we don't get spurious newlines.
 The oauth2-proxy helm chart requires this.
+{{< /hint >}}
+
+{{< hint warning >}}
+**The oauth2-proxy documentation on generating the cookie secret is unreliable.**
+
+I'm not sure if their `tr` invocations are GNU or just wrong,
+but you probably want `| tr '+' '/' | tr '-' '_'` rather than `| tr -- '+/' '-_'`.
+
+The Python, Bash, and OpenSSL options they provide all failed to deploy for me.
+{{< /hint >}}
 
 ```sh
 # Must match what was entered into Keycloak above
@@ -227,7 +240,7 @@ clientid_plain="kubernasty-oauth2-proxy"
 clientsecret_plain="... SECRET VALUE ..."
 # We generate a random value here
 # This must be 32 bytes
-cookiesecret="$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr '+' '/' | tr '-' '_')"
+cookiesecret="$(pwgen 32 | tr -d '\n' | base64 -w 0)"
 
 clientid="$(echo -n "$clientid_plain" | base64 -w 0)"
 clientsecret="$(echo -n "$clientsecret_plain" | base64 -w 0)"
