@@ -7,16 +7,7 @@ data:
   values.yaml: |-
     config:
       existingSecret: oauth2-proxy-secrets
-      ingress:
-        enabled: true
-        path: /
-        pathType: Prefix
-        hosts: [oauth2-proxy.kubernasty.micahrl.com]
-        annotations:
-          cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
-          kubernetes.io/ingress.class: traefik
-        tls:
-          - hosts: [oauth2-proxy.kubernasty.micahrl.com]
-            secretName: oauth2-proxy-cert-backing-secret
       extraArgs:
         - "--reverse-proxy"
+      httpScheme: http
+      containerPort: 4180
