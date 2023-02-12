@@ -18,6 +18,5 @@ data:
         whitelist_domains = [ ".kubernasty.micahrl.com" ]
         provider = "keycloak-oidc"
         provider_display_name = "Kubernasty Keycloak"
-        redirect_url = "https://whoami.kubernasty.micahrl.com/oauth2/callback"
         oidc_issuer_url = "https://keycloak.kubernasty.micahrl.com/auth/realms/master"
         allowed_roles = "kubernasty-oauth2-proxy:kubernasty-apps-all"
