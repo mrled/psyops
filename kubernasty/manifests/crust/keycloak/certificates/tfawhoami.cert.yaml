@@ -9,5 +9,5 @@ spec:
     name: letsencrypt-issuer-prod
     kind: ClusterIssuer
   dnsNames:
-    - tfawhoami-keycloak.kubernasty.micahrl.com
+    - tfawhoami.keycloak.kubernasty.micahrl.com
   secretName: tfawhoami-cert-backing-secret
