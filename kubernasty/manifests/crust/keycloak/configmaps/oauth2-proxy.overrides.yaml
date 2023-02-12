@@ -27,7 +27,7 @@ data:
         # <https://github.com/oauth2-proxy/oauth2-proxy/issues/1732>
 
         # <https://github.com/oauth2-proxy/oauth2-proxy/pull/499>
-        #user_id_claim = "oid"
+        user_id_claim = "email"
 
         # Suggesting the 'user:email' scope for Github:
         # <https://github.com/oauth2-proxy/oauth2-proxy/issues/1669#issuecomment-1166633784>
@@ -36,6 +36,6 @@ data:
         # If we get "token response did not contain an id_token",
         # it could be because we are missing the "openid" scope, per
         # <https://github.com/kubernetes/kubernetes/issues/51501>
-        #scope = "openid email"
+        scope = "openid email"
 
-        #oidc_email_claim = "email"
+        oidc_email_claim = "email"
