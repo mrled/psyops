@@ -22,8 +22,11 @@ spec:
           env:
             - name: LOG_LEVEL
               value: debug
-            - name: DOMAIN
-              value: kubernasty.micahrl.com
+            # Only accounts with emails in this list are authorized.
+            # Comma-separated, I think
+            # <https://github.com/thomseddon/traefik-forward-auth/commit/c3b4ba8244629255f1c03c54ebfe5f25650e37e4>
+            - name: WHITELIST
+              value: me@micahrl.com,0p3r4t0r@kubernasty.micahrl.com
             - name: DEFAULT_PROVIDER
               value: oidc
             # This will always be https://<your keycloak URL>/auth/realms/master
