@@ -33,10 +33,11 @@ spec:
             - name: PROVIDERS_OIDC_CLIENT_ID
               value: kubernasty-tfa
             - name: PROVIDERS_OIDC_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: tfa-secrets
-                  key: tfa-oidc-client-id
+              value: GODFUCKINGDAMMIT
+              # valueFrom:
+              #   secretKeyRef:
+              #     name: tfa-secrets
+              #     key: tfa-oidc-client-id
             - name: SECRET
               valueFrom:
                 secretKeyRef:
