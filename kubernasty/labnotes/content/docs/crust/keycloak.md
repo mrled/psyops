@@ -97,10 +97,11 @@ sops --encrypt --in-place manifests/crust/keycloak/secrets/keycloak-pass.secret.
     * Bind DN: `uid=keycloak,ou=people,dc=kubernasty,dc=micahrl,dc=com`
     * When it says to "sync users",
       this is done from the action dropdown in the upper right of the LDAP integration page.
-    * I can't get it to sync only changed users --
+    * TODO: I can't get it to sync only changed users --
       when I try, LLDAP logs
       `🚨 [error]: [LDAP] Service Error: while handling incoming messages: while receiving LDAP op: ldapmsg invalid` --
       but my directory will be small enough that I just have it do a full sync every 30 seconds.
+    * Make sure to enable the `Trust email` option, so that Keycloak considers email address in LLDAP as "verified"
 
 ## Deploying `traefik-forward-auth`
 
