@@ -5,9 +5,6 @@ metadata:
   namespace: gitea
 data:
   values.yaml: |-
-    ingress:
-      enabled: false
-
     persistence:
       enabled: true
       existingClaim: gitea-data-claim
@@ -24,6 +21,9 @@ data:
           adminFilter: (memberof=cn=gitadmins,ou=groups,dc=kubernasty,dc=micahrl,dc=com)
           emailAttribute: mail
           usernameAttribute: uid
+
+      # TODO: enable oauth so that users who are already SSO'd in don't have to log in to Gitea separately
+      #oauth:
 
       # <https://docs.gitea.io/en-us/config-cheat-sheet/>
       config:
@@ -60,7 +60,8 @@ data:
         cron:
           ENABLED: true
 
-        # We handle oauth2 with Keycloak
+        # This is to enable the oauth2 provider in Gitea,
+        # which we don't need because we have Keycloak
         oauth2:
           ENABLE: false
 
@@ -80,26 +81,26 @@ data:
               name: giteadb-credentials
               key: pgsql-gitea-password
 
-      # We deploy our own Postgres container instead
-      postgresql:
-        enabled: false
+    # We deploy our own Postgres container instead
+    postgresql:
+      enabled: false
 
-      ingress:
-        enabled: true
-        annotations:
-          cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
-          kubernetes.io/ingress.class: traefik
-        hosts:
-          - host: gitea.kubernasty.micahrl.com
-            paths:
-              - path: /
-                pathType: Prefix
-        tls:
-          - hosts: [gitea.kubernasty.micahrl.com]
-            secretName: gitea-cert-backing-secret
+    ingress:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
+        kubernetes.io/ingress.class: traefik
+      hosts:
+        - host: gitea.kubernasty.micahrl.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts: [gitea.kubernasty.micahrl.com]
+          secretName: gitea-cert-backing-secret
 
-      service:
-        http:
-          port: 3000
-        ssh:
-          port: 22
+    service:
+      http:
+        port: 3000
+      ssh:
+        port: 22
