@@ -31,8 +31,9 @@ data:
         APP_NAME: The Branch Office
         server:
 
-          # Used for displayed HTTP clone URLs
-          PROTOCOL: https
+          # If you set this to https, you also need CERT_FILE/KEY_FILE or ENABLE_ACME.
+          PROTOCOL: http
+
           DOMAIN: gitea.kubernasty.micahrl.com
 
           # Used for displayed SSH clone URLs
@@ -66,6 +67,9 @@ data:
         # which we don't need because we have Keycloak
         oauth2:
           ENABLE: false
+
+        session:
+          COOKIE_SECURE: true
 
         time:
           FORMAT: 2006-01-02 15:04:05
