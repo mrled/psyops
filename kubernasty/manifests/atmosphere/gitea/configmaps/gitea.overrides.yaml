@@ -24,7 +24,7 @@ data:
           adminFilter: (memberof=cn=gitadmins,ou=groups,dc=kubernasty,dc=micahrl,dc=com)
           emailAttribute: mail
           usernameAttribute: uid
-          firstNameAttribute: givenName
+          firstnameAttribute: givenName
           surnameAttribute: sn
           avatarAttribute: jpegPhoto
           synchronizeUsers: true
