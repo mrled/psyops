@@ -40,7 +40,7 @@ data:
 
         database:
           DB_TYPE: postgres
-          HOST: giteadb
+          HOST: giteadb-postgresql
           PORT: 5432
           NAME: gitea
           USER: gitea
