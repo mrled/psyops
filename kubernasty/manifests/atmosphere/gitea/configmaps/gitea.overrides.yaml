@@ -11,16 +11,16 @@ data:
 
     gitea:
 
-      ldap:
-        - name: LLDAP
-          existingSecret: lldap-secret
-          host: lldap.lldap
-          port: 389
-          userSearchBase: ou=people,dc=kubernasty,dc=micahrl,dc=com
-          userFilter: (&(memberof=cn=totalgits,ou=groups,dc=kubernasty,dc=micahrl,dc=com)(|(uid=%[1]s)(mail=%[1]s)))
-          adminFilter: (memberof=cn=gitadmins,ou=groups,dc=kubernasty,dc=micahrl,dc=com)
-          emailAttribute: mail
-          usernameAttribute: uid
+      # ldap:
+      #   - name: LLDAP
+      #     existingSecret: lldap-secret
+      #     host: lldap.lldap
+      #     port: 389
+      #     userSearchBase: ou=people,dc=kubernasty,dc=micahrl,dc=com
+      #     userFilter: (&(memberof=cn=totalgits,ou=groups,dc=kubernasty,dc=micahrl,dc=com)(|(uid=%[1]s)(mail=%[1]s)))
+      #     adminFilter: (memberof=cn=gitadmins,ou=groups,dc=kubernasty,dc=micahrl,dc=com)
+      #     emailAttribute: mail
+      #     usernameAttribute: uid
 
       # TODO: enable oauth so that users who are already SSO'd in don't have to log in to Gitea separately
       #oauth:
