@@ -96,10 +96,10 @@ data:
           paths:
             - path: /
               pathType: Prefix
-      tls:
-        - secretName: gitea-cert-backing-secret
-          hosts:
-            - gitea.kubernasty.micahrl.com
+      # tls:
+      #   - secretName: gitea-cert-backing-secret
+      #     hosts:
+      #       - gitea.kubernasty.micahrl.com
 
     service:
       http:
