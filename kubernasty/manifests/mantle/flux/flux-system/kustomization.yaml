@@ -5,6 +5,7 @@ resources:
   # Helm repositories
   - helm/bitnami.helmrepo.yaml
   - helm/codecentric.helmrepo.yaml
+  - helm/gitea.helmrepo.yaml
   - helm/jetstack.helmrepo.yaml
   - helm/oauth2-proxy.helmrepo.yaml
 
@@ -22,3 +23,4 @@ resources:
 
   # My deploymnets: Atmosphere
   - uptime-kuma.yaml
+  - atmosphere/gitea.yaml

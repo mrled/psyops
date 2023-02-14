@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: giteadb-value-overrides
+  namespace: gitea
+data:
+  values.yaml: |-
+    global:
+      postgresql:
+        auth:
+          username: gitea
+          # Reads from the .password key on this secret
+          existingSecret: giteadb-credentials
+          secretKeys:
+            adminPasswordKey: pgsql-admin-password
+            userPasswordKey: pgsql-gitea-password
+          database: gitea
+      storageClass: knty-rep3
+    primary:
+      extraEnvVars:
+        - name: PGDATA
+          value: /pgsql-data/data
+      initContainers:
+        - name: perpermission
+          image: busybox:1.28
+          command: ['sh', '-c']
+          args:
+            - |+
+              mkdir -p /pgsql-data/data
+              chown 1001 /pgsql-data/data
+              chmod 700 /pgsql-data/data
+              ls -alF /pgsql-data/data
+          volumeMounts:
+          - name: giteadb-data-vol
+            mountPath: /pgsql-data
+            readOnly: false
+      extraVolumes:
+        - name: giteadb-data-vol
+          persistentVolumeClaim:
+            claimName: giteadb-data-claim
+      extraVolumeMounts:
+        - name: giteadb-data-vol
+          mountPath: /pgsql-data
+          readOnly: false
+    volumePermissions:
+      enabled: true

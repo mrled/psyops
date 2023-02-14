@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-value-overrides
+  namespace: gitea
+data:
+  values.yaml: |-
+    ingress:
+      enabled: false
+
+    persistence:
+      enabled: true
+      existingClaim: gitea-data-claim
+
+    gitea:
+
+      ldap:
+        - name: LLDAP
+          existingSecret: lldap-secret
+          host: lldap.lldap
+          port: 389
+          userSearchBase: ou=people,dc=kubernasty,dc=micahrl,dc=com
+          userFilter: (&(memberof=cn=totalgits,ou=groups,dc=kubernasty,dc=micahrl,dc=com)(|(uid=%[1]s)(mail=%[1]s)))
+          adminFilter: (memberof=cn=gitadmins,ou=groups,dc=kubernasty,dc=micahrl,dc=com)
+          emailAttribute: mail
+          usernameAttribute: uid
+
+      # <https://docs.gitea.io/en-us/config-cheat-sheet/>
+      config:
+        APP_NAME: The Branch Office
+        server:
+
+          # Used for displayed HTTP clone URLs
+          PROTOCOL: https
+          DOMAIN: gitea.kubernasty.micahrl.com
+
+          # Used for displayed SSH clone URLs
+          SSH_PORT: 22
+          #SSH_HOST: asdf
+
+        database:
+          DB_TYPE: postgres
+          HOST: giteadb:5432
+          NAME: gitea
+          USER: gitea
+
+        service:
+          # We require users to already be in our LLDAP server
+          DISABLE_REGISTRATION: true
+
+        log:
+          LEVEL: Debug
+          ENABLE_SSH_LOG: true
+
+        # WARNING: I think this runs it on all instances,
+        # so we might have to turn this off if we later upgrade to HA gitea.
+        #
+        # See <https://docs.gitea.io/en-us/config-cheat-sheet/#cron-cron>
+        # for all the cron jobs Gitea can perform.
+        cron:
+          ENABLED: true
+
+        # We handle oauth2 with Keycloak
+        oauth2:
+          ENABLE: false
+
+        time:
+          FORMAT: 2006-01-02 15:04:05
+          DEFAULT_UI_LOCATION: US/Central
+
+      admin:
+        existingSecret: gitea-admin-credentials
+        email: teamaster@kubernasty.micahrl.com
+
+      # See <https://github.com/go-gitea/gitea/tree/main/contrib/environment-to-ini>
+      additionalConfigFromEnvs:
+        - name: ENV_TO_INI__DATABASE__PASSWD
+          valueFrom:
+            secretKeyRef:
+              name: giteadb-credentials
+              key: pgsql-gitea-password
+
+      # We deploy our own Postgres container instead
+      postgresql:
+        enabled: false
+
+      ingress:
+        enabled: true
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
+          kubernetes.io/ingress.class: traefik
+        hosts:
+          - host: gitea.kubernasty.micahrl.com
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts: [gitea.kubernasty.micahrl.com]
+            secretName: gitea-cert-backing-secret
+
+      service:
+        http:
+          port: 3000
+        ssh:
+          port: 22
