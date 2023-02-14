@@ -92,7 +92,7 @@ data:
         cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
         kubernetes.io/ingress.class: traefik
       hosts:
-        - host: gitea.kubernasty.micahrl.com
+        - host: gitea.example.com
           paths:
             - path: /
               pathType: Prefix
