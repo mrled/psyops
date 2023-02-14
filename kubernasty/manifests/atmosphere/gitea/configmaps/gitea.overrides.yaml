@@ -16,6 +16,7 @@ data:
           existingSecret: lldap-secret
           host: lldap.lldap
           port: 389
+          securityProtocol: unencrypted
           userSearchBase: ou=people,dc=kubernasty,dc=micahrl,dc=com
           userFilter: (&(memberof=cn=totalgits,ou=groups,dc=kubernasty,dc=micahrl,dc=com)(|(uid=%[1]s)(mail=%[1]s)))
           adminFilter: (memberof=cn=gitadmins,ou=groups,dc=kubernasty,dc=micahrl,dc=com)
