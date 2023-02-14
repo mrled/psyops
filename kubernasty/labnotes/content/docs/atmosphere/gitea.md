@@ -80,3 +80,11 @@ sops --encrypt --in-place manifests/atmosphere/gitea/secrets/lldap-credentials.s
 * Enable Git LFS.
   I think this will require minio.
   <https://docs.gitea.io/en-us/config-cheat-sheet/#lfs-lfs>
+
+## Log in as the administrator
+
+* Log in as `teamaster` with the admin creds from `gitea-admin-credentials` secret
+* Top right button -> Site Administration
+    * Configuration tab
+        * Picture and Avatar Configuration section (... scroll down ...)
+            * Disable Gravatar: true

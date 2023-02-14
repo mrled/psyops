@@ -11,6 +11,8 @@ data:
 
     gitea:
 
+      # Note that the Helm chart docs are not complete on this; see command line values at
+      # <https://docs.gitea.io/en-us/command-line/#admin>
       ldap:
         - name: LLDAP
           existingSecret: lldap-secret
@@ -22,6 +24,10 @@ data:
           adminFilter: (memberof=cn=gitadmins,ou=groups,dc=kubernasty,dc=micahrl,dc=com)
           emailAttribute: mail
           usernameAttribute: uid
+          firstNameAttribute: givenName
+          surnameAttribute: sn
+          avatarAttribute: jpegPhoto
+          synchronizeUsers: true
 
       # TODO: enable oauth so that users who are already SSO'd in don't have to log in to Gitea separately
       #oauth:
