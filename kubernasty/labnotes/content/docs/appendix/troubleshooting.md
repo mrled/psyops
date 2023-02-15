@@ -52,12 +52,32 @@ watch kubectl get helmrelease -A
 watch kubectl get certs -A
 ```
 
+* When you push a change to Git and want Flux to notice immediately,
+  `kubectl annotate --field-manager=flux-client-side-apply --overwrite gitrepository/flux-system -n flux-system reconcile.fluxcd.io/requestedAt="$(date +%s)"`
 * If your `helmreleases` are saying things like `initial retries exhausted`,
   you can force them to try again with
   `flux suspend hr -n NAMESPACE RELEASENAME`
   and `flux resume hr -n NAMESPACE RELEASENAME`.
 * Note that trying to reconcile a Helm release like that does not necessarily redploy its pods.
   You may also need to `kubectl delete pod -n NAMESPACE PODNAME` too.
+* A better thing to do is probably `kubectl delete helmrelease -n NAMESPACE HRNAME`,
+  and then `flux reconcile kustomization KUSTOMIZATION_NAME` for the kustomization that deploys that helmrelease.
+
+
+You will often need to do things in this order:
+
+```sh
+kubectl annotate ...
+
+#...
+
+flux reconcile kustomization ...
+```
+
+And sometimes may need to delete pods or deployments,
+and/or suspend/resume the release,
+as well.
+
 
 ## What does 'Evicted' mean?
 

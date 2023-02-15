@@ -70,10 +70,32 @@ sops --encrypt --in-place manifests/atmosphere/gitea/secrets/gitea-admin-credent
 sops --encrypt --in-place manifests/atmosphere/gitea/secrets/lldap-credentials.secret.yaml
 ```
 
-### Create a gitea user in LLDAP
+### Configure LLDAP
+
+Create a gitea service account in LLDAP
 
 * This must match the LLDAP secret created above
 * Add this user to the `lldap_strict_readonly` group (TODO: is this ok?)
+
+Create auth groups.
+Note that group names must match what is in
+{{< repolink "kubernasty/manifests/atmosphere/gitea/configmaps/gitea.overrides.yaml" >}}
+
+* Add `gitadmins` group
+    * Add a user to it
+    * I add my `0p3r4t0r` administrative user to this.
+* Add `totalgits` group
+    * Add a user to it
+    * You must also add your admin user to it, or else they will not be able to log in
+
+## Log in as the administrator
+
+* Log in as `teamaster` with the admin creds from `gitea-admin-credentials` secret,
+  or a user in the `gitadmins` LLDAP group
+* Top right button -> Site Administration
+    * Configuration tab
+        * Picture and Avatar Configuration section (... scroll down ...)
+            * Disable Gravatar: true
 
 ## TODO
 
@@ -81,10 +103,6 @@ sops --encrypt --in-place manifests/atmosphere/gitea/secrets/lldap-credentials.s
   I think this will require minio.
   <https://docs.gitea.io/en-us/config-cheat-sheet/#lfs-lfs>
 
-## Log in as the administrator
+## See also
 
-* Log in as `teamaster` with the admin creds from `gitea-admin-credentials` secret
-* Top right button -> Site Administration
-    * Configuration tab
-        * Picture and Avatar Configuration section (... scroll down ...)
-            * Disable Gravatar: true
+* <https://github.com/nitnelave/lldap/blob/main/example_configs/gitea.md>
