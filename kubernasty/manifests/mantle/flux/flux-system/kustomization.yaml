@@ -20,6 +20,7 @@ resources:
   - longhorn.yaml
   - lldap.yaml
   - keycloak.yaml
+  - crust/traefik.kustomization.yaml
 
   # My deploymnets: Atmosphere
   - uptime-kuma.yaml

@@ -97,11 +97,33 @@ Note that group names must match what is in
         * Picture and Avatar Configuration section (... scroll down ...)
             * Disable Gravatar: true
 
+## SSH connections from outside the cluster
+
+Kubernetes does not have any native concept of a non-http(s) ingress.
+However, Traefik can handle this.
+
+First, we need to configure Traefik.
+
+* Note the [k3s documentation](https://docs.k3s.io/networking) on configuring Traefik
+* See the [Helm chart](https://github.com/traefik/traefik-helm-chart/blob/master/traefik/values.yaml)
+  for a full list of Traefik configuration values.
+
+We can do so with
+{{< repolink "kubernasty/manifests/crust/traefik/traefik.config.yaml" >}}.
+
+Once that's in place, we can use Traefik's custom `IngressRouteTCP` resource definition
+to pass SSH traffic to the gitea-ssh service, in
+{{< repolink "kubernasty/manifests/atmosphere/gitea/ingresses/gitea-ssh.in.yaml" >}}
+
+We are restricted from using port 22 for reasons I haven't looked into yet,
+so we have to use port 44822 instead.
+
 ## TODO
 
 * Enable Git LFS.
   I think this will require minio.
   <https://docs.gitea.io/en-us/config-cheat-sheet/#lfs-lfs>
+* Run Git SSH on port 22.
 
 ## See also
 

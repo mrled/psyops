@@ -1,0 +1,13 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    ports:
+      ssh:
+        port: 44822
+        expose: true
+        exposedPort: 44822
+        protocol: TCP
