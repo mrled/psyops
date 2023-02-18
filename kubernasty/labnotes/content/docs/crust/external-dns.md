@@ -8,16 +8,7 @@ and has the cluster create those DNS entries via Route53 (or whatever) API when 
 
 ## Create an IAM role with permission to create DNS entries
 
-There are lots of ways to do this;
-here's what I do:
-
-* Create a group in {{< repolink "ansible/cloudformation/MicahrlDotCom.cfn.yml" >}}
-  called `KubernastyZoneUpdaterGroup` with permissions to update the zone(s).
-  See the [external-dns IAM policy example](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md#iam-policy)
-  for what permissions this group needs.
-* Create a user manually in the AWS console that's a member of that group
-* Create access key/secret for the user in the console
-* Save the key/secret as creds (see below)
+We already created this in [cert-manager]({{< ref "cert-manager" >}}).
 
 ## Configure Route53 credentials
 
@@ -36,7 +27,7 @@ EOF
 
 credsfile="$(base64 aws.creds.txt -w 0)"
 
-cat > aws-route53-credential.UNENCRYPTED.yaml <<EOF
+cat > manifests/crust/external-dns/secrets/aws-route53-credential.yaml <<EOF
 kind: Secret
 apiVersion: v1
 type: Opaque
@@ -47,7 +38,9 @@ data:
   credentials: $credsfile
 EOF
 
-sops --encrypt ./aws-route53-credential.UNENCRYPTED.yaml  > aws-route53-credential.yaml
+rm aws.creds.txt
+
+sops --encrypt --in-place manifests/crust/external-dns/secrets/aws-route53-credential.yaml
 ```
 
 {{< details "An annoyed aside" >}}
@@ -112,7 +105,7 @@ and modify it to contain a real credential.
 Then encrypt it with `sops`:
 
 ```sh
-sops --encrypt kubernasty/manifests/crust/external-dns/aws-route53-credential.example.yaml > kubernasty/manifests/crust/external-dns/aws-route53-credential.yaml
+sops --encrypt --in-place kubernasty/manifests/crust/external-dns/aws-route53-credential.yaml
 ```
 
 **Make sure not to commit any unencrypted credentials files**.
@@ -149,10 +142,9 @@ and the new version's defaults.
 I prefer this to inlining the entire default parameter list into the overrides file
 since it makes it much easier to see what I'm trying to configure.
 
-Finally, I add a test DNS record under
-{{< repolink "kubernasty/manifests/crust/external-dns-test-endpoints/dnsendpoints/test-endpoints.yaml" >}}.
-This isn't used except for me to test that everything really is working properly from end to end.
-It needs to be in a separate kustomization from the `external-dns` stuff,
-because the `external-dns` deployment installs the CRD for DNSEndpoint.
+We have a cluster primary endpoint we create in
+{{< repolink "kubernasty/manifests/crust/external-dns-endpoints/" >}};
+this lets us confirm that everything really is working.
+It will also be the target for app-specific CNAMEs going forward.
 
 Then commit everything to git, push, and wait for Flux to apply.
