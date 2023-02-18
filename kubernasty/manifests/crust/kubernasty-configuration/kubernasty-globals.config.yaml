@@ -5,3 +5,5 @@ metadata:
   namespace: flux-system
 data:
   clusterTld: micahrl.me
+  clusterPrimaryDns: kubernasty-primary.micahrl.me
+  clusterPrimaryIp: "192.168.1.200"

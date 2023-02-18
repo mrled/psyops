@@ -21,7 +21,7 @@ resources:
   - crust/cert-manager.yaml
   - crust/cert-manager-issuers.yaml
   - crust/external-dns.yaml
-  - crust/external-dns-test-endpoints.yaml
+  - crust/external-dns-endpoints.yaml
   - crust/longhorn.yaml
   - crust/lldap.yaml
   - crust/keycloak.yaml
