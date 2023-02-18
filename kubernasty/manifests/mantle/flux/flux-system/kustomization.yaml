@@ -14,7 +14,8 @@ resources:
   - gotk-sync.yaml
 
   # My deployments: Crust
-  - cert-manager.yaml
+  - crust/cert-manager.yaml
+  - crust/cert-manager-issuers.yaml
   - external-dns.yaml
   - external-dns-test-endpoints.yaml
   - longhorn.yaml
