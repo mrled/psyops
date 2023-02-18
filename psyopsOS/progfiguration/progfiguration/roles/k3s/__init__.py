@@ -48,6 +48,14 @@ def mount_k3s_binds(
             logger.debug(f"Not mounting {overlay} on {mountpoint}, because something is already mounted there")
 
 
+#### TODO:  Have Kubernetes nodes listen only on their main IP address on port 22
+#           Also listen on some other port on truly all interfaces
+#           This allows Kubernetes ingresses to use port 22 on the kubernetes VIPs
+#           Add these 2 lines to /etc/ssh/sshd_config:
+#               ListenAddress 0.0.0.0:9922
+#               ListenAddress 192.168.1.153:22
+
+
 def apply(
     localhost: LocalhostLinuxPsyopsOs,
     data_mountpoint: str,
