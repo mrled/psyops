@@ -5,6 +5,7 @@ resources:
   # Helm repositories
   - helm/bitnami.helmrepo.yaml
   - helm/codecentric.helmrepo.yaml
+  - helm/emberstack.helmrepo.yaml
   - helm/gitea.helmrepo.yaml
   - helm/jetstack.helmrepo.yaml
   - helm/oauth2-proxy.helmrepo.yaml

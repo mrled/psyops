@@ -109,6 +109,16 @@ kubectl rollout restart deployment -n cert-manager cert-manager
 
 ffs
 
+## Replicating the wildcard
+
+* An ingress can only use a secret defined in its namespace
+* When using individual certificates for each hostname, you can just put the secret in the right namespace
+* However the wildcard cert exists in the cert-manager namespace
+* We use [reflector](https://github.com/emberstack/kubernetes-reflector) to copy it where it is needed.
+* See {{< repolink "manifests/crust/reflector" >}},
+  and note that we provide reflector annotations in
+  {{< repolink "manifests/crust/cert-manager/certificates/micahrl.me.cert.yaml" >}}.
+
 ## A note on dependencies
 
 Flux can represent dependency relationship for kustomizations in
