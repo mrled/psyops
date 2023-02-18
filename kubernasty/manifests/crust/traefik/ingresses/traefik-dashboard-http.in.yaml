@@ -10,7 +10,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.middlewares: kube-system-redirect-https-mw@kubernetescrd
 spec:
   rules:
-    - host: traefik.kubernasty.micahrl.com
+    - host: traefik.${clusterTld}
       http:
         paths:
           - path: /

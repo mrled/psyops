@@ -14,7 +14,7 @@ we can enable the Traefik dashboard.
 
 Flux will have deployed the required ingresses, certificiates, secrets, and service
 to enable access the dashboard already.
-Go to <https://traefik.kubernasty.micahrl.com/dashboard/>.
+Go to <https://traefik.traefik.micahrl.me/dashboard/>.
 
 **Note that the `/dashboard/` is required, with the trailing slash.**
 Without it, the server will return a 404.
@@ -22,9 +22,9 @@ Without it, the server will return a 404.
 You can also test it with `curl`:
 
 ```txt
-> curl https://traefik.kubernasty.micahrl.com/dashboard/
+> curl https://traefik.traefik.micahrl.me/dashboard/
 401 Unauthorized
-> curl https://username:password@traefik.kubernasty.micahrl.com/dashboard/
+> curl https://username:password@traefik.traefik.micahrl.me/dashboard/
 <!DOCTYPE html><html><head><title>Traefik</title>... etc
 ```
 
@@ -97,7 +97,7 @@ Setting the same annotation twice for the same resource overwrites it.
 
 ### Redirect HTTP traffic to HTTPS
 
-As created above, accessing <http://traefik.kubernasty.micahrl.com/dashboard/> (with `http`, not `https`)
+As created above, accessing <http://traefik.micahrl.me/dashboard/> (with `http`, not `https`)
 results in a 404 error.
 This is fine, but a bit unergonomic;
 it would be nice if it just redirected users to `https` automatically.
@@ -113,7 +113,7 @@ and {{< repolink "kubernasty/manifests/crust/traefik/secrets/traefik-dashboard.i
 The redirect middleware is placed on the HTTP-only Ingress.
 
 You should test this with a real web browser, not curl.
-You can do `curl -L http://user:password@traefik.kubernasty.micahrl.com/dashboard/`,
+You can do `curl -L http://user:password@traefik.micahrl.me/dashboard/`,
 however when it follows the redirect it will strip the `user:password@` portion of the URL,
 and just give you a `401 Unauthorized` error.
 A web browser will follow the redirect and then prompt you for the username/password,
