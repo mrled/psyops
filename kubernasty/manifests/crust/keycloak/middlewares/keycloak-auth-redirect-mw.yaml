@@ -1,0 +1,10 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: keycloak-auth-redirect-mw
+  namespace: kube-system
+spec:
+  redirectRegex:
+    # Keycloak doesn't serve anything at the / path, so we just redirect it to the landing page
+    regex: ^https://keycloak.kubernasty.micahrl.com/$
+    replacement: https://keycloak.kubernasty.micahrl.com/auth/

@@ -5,5 +5,5 @@ metadata:
   namespace: kube-system
 spec:
   redirectRegex:
-    regex: ^https://traefik.kubernasty.micahrl.com/(|dashboard)
+    regex: ^https://traefik.kubernasty.micahrl.com/(|dashboard)$
     replacement: https://traefik.kubernasty.micahrl.com/dashboard/
