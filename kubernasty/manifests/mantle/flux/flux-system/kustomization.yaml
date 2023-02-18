@@ -14,7 +14,7 @@ resources:
   - gotk-sync.yaml
 
   # Static configuration and resources that don't depend on anything else
-  - crust/kubernasty-system.yaml
+  - crust/kubernasty-configuration.yaml
 
   # My deployments: Crust
   - crust/cert-manager.yaml
