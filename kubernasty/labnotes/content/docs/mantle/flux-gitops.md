@@ -165,3 +165,12 @@ This can be confusing, as we use Flux to install Helm things.
 You can try to force this, but it might not fully work.
 See also "Helm fails to update manifests that have been installed by hand"
 on the [Troubleshooting]({{< ref "troubleshooting" >}}) page.
+
+## Flux and kustomizations
+
+Flux leans heavily into [Kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/).
+Even though it's apparently named by Kandy in Killeen who runs a shop called the Kountry Korner,
+it's a useful way to:
+
+* Deploy all of a service's manifests in a single command
+* Apply (sigh) "kustomizations" to a given deployment so that the manifests are reusable in multiple environments
