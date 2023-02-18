@@ -157,6 +157,8 @@ and use it for SSH and set SSH to port 22.
   I think this will require minio.
   <https://docs.gitea.io/en-us/config-cheat-sheet/#lfs-lfs>
 * Run Git SSH on port 22.
+  Actually not going to do this for now.
+  Would require changing SSH config on k8s nodes.
 
 ## See also
 
