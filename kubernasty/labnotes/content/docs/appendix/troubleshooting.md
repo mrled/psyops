@@ -186,3 +186,62 @@ the easiest thing to do here is sometimes to just reboot the host again.
 This is especially true if the network is not available immediately on boot,
 which is sometimes the case for power outages
 if eg the network equipment is booting slower than the cluster nodes.)
+
+## Longhorn issues after power outage
+
+* See [#3207](https://github.com/longhorn/longhorn/issues/3207).
+* Note errors in `/var/log/k3s.log`
+  like `E0217 11:29:42.115751   28640 pod_workers.go:951] "Error syncing pod, skipping" err="unmounted volumes=[data], unattached volumes=[dshm kube-api-access-k7jhz keycloakdb-data-vol data]: timed out waiting for the condition" pod="keycloak/keycloakdb-postgresql-0" podUID=ee7d21e6-b441-4416-a12a-afc004439ade`
+* From a longhorn dev:
+
+  > Two options:
+  >
+  > "You don't need to delete the dangling vol_data.json in the old mountpoint directory by manual.
+  > After restart of the longhorn-csi plugin automatically and waiting for several minutes, the pod with a new volume mountpoint will be at Running state again." - in case crashed replica is rescheduled on same node.
+  >
+  > But If replica has been rescheduled to different node and you have dangling vol_data.json you need to go to
+  > /var/lib/kubelet/pods/$pod_id/volumes/kubernetes.io~csi/pvc_$pvc_id/
+  > and delete vol_data.json after making sure this is not "live" volume.
+  >
+  > As Derek said, this is not longhorn bug, that's how kubelet is handling folder cleanup (calling rmdir will always fail if this directory contains anything)
+
+  and
+
+  > I think if it attempts to cleanup it's not live, but you can check volume details in longhorn web ui. If it's not scheduled on that node, it should be safe to delete.
+
+* Deleting that didn't change the error for me. Odd.
+* After deleting that one with the exact pod_id (... I can't remember where I got the pod id, lol) I notice that I actually end up with multiples.
+
+  ```text
+  # ls -alF /var/lib/kubelet/pods/*/volumes/kubernetes.io\~csi/pvc-bd3cec31-4032-4433-adf6-f436c7834654/vol_data.json
+  -rw-r--r-- 1 root root 291 Feb 17 00:27 /var/lib/kubelet/pods/bc52b9ea-b89a-41e3-baee-574d405240fc/volumes/kubernetes.io~csi/pvc-bd3cec31-4032-4433-adf6-f436c7834654/vol_data.json
+  -rw-r--r-- 1 root root 291 Feb 17 11:47 /var/lib/kubelet/pods/ee7d21e6-b441-4416-a12a-afc004439ade/volumes/kubernetes.io~csi/pvc-bd3cec31-4032-4433-adf6-f436c7834654/vol_data.json
+  ```
+
+* Ok, delete BOTH of those that remain after deleting the first one.
+* Still same errors. It created another vol_data.json. Deleting that too, just in case.
+* And same errors. So it's just in one directory now, but still seeing errors in `k3s.log` like
+  `E0217 12:09:27.160361   28640 nestedpendingoperations.go:348] Operation for "{volumeName:kubernetes.io/csi/driver.longhorn.io^pvc-bd3cec31-4032-4433-adf6-f436c7834654 podName: nodeName:}" failed. No retries permitted until 2023-02-17 12:11:29.160347027 -0600 CST m=+676618.002244475 (durationBeforeRetry 2m2s). Error: MountVolume.MountDevice failed for volume "pvc-bd3cec31-4032-4433-adf6-f436c7834654" (UniqueName: "kubernetes.io/csi/driver.longhorn.io^pvc-bd3cec31-4032-4433-adf6-f436c7834654") pod "keycloakdb-postgresql-0" (UID: "ee7d21e6-b441-4416-a12a-afc004439ade") : rpc error: code = DeadlineExceeded desc = context deadline exceeded`
+* Double checking other nodes, they don't have a `vol_data.json` for `pvc-bd3cec31-4032-4433-adf6-f436c7834654`. It's confined to just one node (`jesseta`)
+* Deleted replica from Jesseta node in the Longhorn web UI.
+  It added it back.
+  ... and is giving the same errors again, aaaaaaaa
+* Maybe this is [filesystem corruption](https://longhorn.io/kb/troubleshooting-volume-filesystem-corruption/)?
+  * Scale down workload with `kubectl scale`.
+    This [should work with Flux](https://github.com/fluxcd/flux/pull/2908).
+    This subcommand operates on `deployment, replica set, replication controller, or stateful set`
+    per its `--help`.
+    Keycloak Helm chart deploys statefulsets.
+    `kubectl scale --replicas=0 statefulset/keycloak-keycloakx -n keycloak && kubectl scale --replicas=0 statefulset/keycloakdb-postgresql -n keycloak`,
+    then wait for all pods to go away with `kubectl get pods -n keycloak`.
+  * Got into an attach/fail/detach loop trying to attach to Jesseta.
+    Maybe this is a problem bc I deleted the replica from Jesseta?
+    It recreated the replica on Jesseta at the time,
+    but now it isn't there.
+* Ended up thinking it is just corrupted due to power outage and deleting
+  * TODO: Graceful power outage shutdown
+  * TODO: backup all longhorn volumes
+  * `kubectl scale --replicas=1 statefulset/keycloak-keycloakx -n keycloak && kubectl scale --replicas=1 statefulset/keycloakdb-postgresql -n keycloak`
+  * It creats a new volume for me
+  * Then I have to go reconfigure Keycloak manually -- wait what, it's already configured?
+    I'm very confused. What was in the database??
