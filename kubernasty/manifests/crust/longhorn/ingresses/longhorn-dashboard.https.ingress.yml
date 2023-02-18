@@ -22,6 +22,6 @@ spec:
             port:
               number: 80
   tls:
-    - secretName: longhorn-cert-backing-secret
+    - secretName: micahrl-dot-me-wildcard-backing-secret
       hosts:
         - longhorn.${clusterTld}
