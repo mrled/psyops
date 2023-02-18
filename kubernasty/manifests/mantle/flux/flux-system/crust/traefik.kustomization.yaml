@@ -4,6 +4,8 @@ metadata:
   name: traefik
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: cert-manager
   interval: 15m
   path: /kubernasty/manifests/crust/traefik
   prune: true

@@ -4,6 +4,9 @@ metadata:
   name: keycloak
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: cert-manager
+    - name: longhorn
   interval: 15m
   path: /kubernasty/manifests/crust/keycloak
   prune: true

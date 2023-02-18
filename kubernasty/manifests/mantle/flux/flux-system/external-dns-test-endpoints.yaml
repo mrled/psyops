@@ -4,6 +4,8 @@ metadata:
   name: external-dns-test-endpoints
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: external-dns
   interval: 15m
   path: /kubernasty/manifests/crust/external-dns-test-endpoints
   prune: true

@@ -4,6 +4,8 @@ metadata:
   name: uptime-kuma
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: cert-manager
   interval: 15m
   path: /kubernasty/manifests/atmosphere/uptime-kuma
   prune: true # remove any elements later removed from the above path

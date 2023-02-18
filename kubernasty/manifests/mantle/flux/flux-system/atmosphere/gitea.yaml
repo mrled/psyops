@@ -4,6 +4,9 @@ metadata:
   name: gitea
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: cert-manager
+    - name: longhorn
   interval: 15m
   path: /kubernasty/manifests/atmosphere/gitea
   prune: true # remove any elements later removed from the above path
