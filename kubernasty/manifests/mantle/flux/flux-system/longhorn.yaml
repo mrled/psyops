@@ -15,7 +15,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: cert-manager
+    - name: cert-manager-issuers
   interval: 15m
   path: /kubernasty/manifests/crust/longhorn
   prune: true # remove any elements later removed from the above path

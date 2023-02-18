@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: cert-manager
+    - name: cert-manager-issuers
     - name: longhorn
   interval: 15m
   path: /kubernasty/manifests/atmosphere/gitea
