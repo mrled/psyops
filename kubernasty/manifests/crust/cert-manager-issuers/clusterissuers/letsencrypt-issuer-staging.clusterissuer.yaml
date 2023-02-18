@@ -20,8 +20,21 @@ spec:
             region: us-east-2
             hostedZoneID: Z09496691SNVOLQKRDFFB
             accessKeyIDSecretRef:
-              name: aws-route53-credential
+              name: aws-route53-credential-kubernasty-micahrl-com
               key: access-key-id
             secretAccessKeySecretRef:
-              name: aws-route53-credential
+              name: aws-route53-credential-kubernasty-micahrl-com
+              key: secret-access-key
+      - selector:
+          dnsZones:
+            - micahrl.me
+        dns01:
+          route53:
+            region: us-east-2
+            hostedZoneID: Z07595192SLZBNGVVCYFR
+            accessKeyIDSecretRef:
+              name: aws-route53-credential-kubernasty-micahrl-com
+              key: access-key-id
+            secretAccessKeySecretRef:
+              name: aws-route53-credential-kubernasty-micahrl-com
               key: secret-access-key

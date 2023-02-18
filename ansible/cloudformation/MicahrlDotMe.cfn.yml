@@ -53,7 +53,40 @@ Resources:
           ResourceRecords: [fm3.micahrl.me.dkim.fmhosted.com]
 
 
+  KubernastyMicahrlDotMeZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+        - PolicyName: KubernastyAllowUpdatingMicahrlDotMeZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZones
+                  - route53:ListResourceRecordSets
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                Resource:
+                  {
+                    "Fn::Join":
+                      [
+                        "",
+                        [
+                          "arn:aws:route53:::hostedzone/",
+                          { "Ref": "MicahrlDotMeZone" },
+                        ],
+                      ],
+                  }
+
+
 Outputs:
   OriginZoneId:
     Description: The ID of the micahrl.me. root zone
     Value: !Ref MicahrlDotMeZone
+  KubernastyMicahrlDotMeZoneUpdaterGroupArn:
+    Description: The ARN for a group for Kubernasty cluster to use to modify records in the origin zone
+    Value: !GetAtt KubernastyMicahrlDotMeZoneUpdaterGroup.Arn

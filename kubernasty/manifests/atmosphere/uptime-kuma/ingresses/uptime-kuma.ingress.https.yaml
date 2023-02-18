@@ -21,6 +21,6 @@ spec:
             port:
               number: 3001
   tls:
-    - secretName: uptime-kuma-cert-backing-secret
+    - secretName: micahrl-dot-me-wildcard-backing-secret
       hosts:
         - uptime.${clusterTld}

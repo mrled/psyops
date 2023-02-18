@@ -4,4 +4,4 @@ metadata:
   name: kubernasty-globals
   namespace: flux-system
 data:
-  clusterTld: kubernasty.micahrl.com
+  clusterTld: micahrl.me

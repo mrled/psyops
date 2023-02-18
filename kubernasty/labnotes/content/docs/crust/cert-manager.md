@@ -3,6 +3,14 @@ title: cert-manager
 weight: 10
 ---
 
+{{< hint warning >}}
+This is undergoing updates.
+
+I am moving from using individual certificates for domains under `.kubernasty.micahrl.com`
+to a single wildcard certificate for domains under `.micahrl.me`.
+Currently the repo supports both, until I can migrate everything to the new way.
+{{< /hint >}}
+
 cert-manager issues certificates for us automatically.
 
 It should be created when Flux bootstraps.
@@ -11,41 +19,51 @@ like create the secret object containing AWS credentials.
 
 ## Prerequisites
 
+I am using `.micahrl.me` for my cluster.
+This is otherwise used for my [mirror universe](https://com.micahrl.me).
+
 * DNS configured, including
     * A dedicated zone in Route53 for cluster records
-    * `kubernasty.micahrl.com` pointing to the kube-vip IP address `192.168.1.200`
-    * `whoami-http`, `whoami-https-staging`, `whoami-https-prod` subdomains of `kubernasty.micahrl.com` CNAME'd to `kubernasty.micahrl.com`
-    * I handle this in CloudFormation under {{< repolink "ansible/cloudformation/MicahrlDotCom.cfn.yml" >}}
+    * I handle this in CloudFormation under {{< repolink "ansible/cloudformation/MicahrlDotMe.cfn.yml" >}}
 * An AWS IAM user with permission to modify the zone, for DNS challenges with Let's Encrypt
     * I create a group in the CloudFormation template, and then an IAM user in the AWS console
 
-I created a Kubernasty zone for this (see {{< repolink "ansible/cloudformation/MicahrlDotCom.cfn.yml" >}}).
-It contains an A record `kubernasty.micahrl.com` pointing to the cluster IP address of `192.168.1.200`,
-and CNAME records for each service as subdomains, like `whoami-https-staging.kubernasty.micahrl.com`.
-(TODO: also show more advanced configurations that support multiple zones.)
-I also created an IAM access key in the AWS console.
+{{< hint warning >}}
+When using the production issuer we define here,
+cert-manager requests Let's Encrypt certs for this domain.
+
+If the cluster is misconfigured (requesting too many times, losing certs in a botched backup restore, etc),
+it could cause Let's Encrypt to temporarily block certificate requests for the entire domain.
+If the cluster is using a TLD that is also used elsewhere,
+this could mean that Let's Encrypt prevents those certs from being renewed for a while.
+
+* Consider using the staging issuer when appropriate (development, testing, etc)
+* Consider using a domain name that isn't used for other services
+{{< /hint >}}
 
 ## Setting secrets
 
 Now create a secret containing the IAM access key id and secret
 so that cert-manager can use it to make Route53 changes for DNS challenges.
-See the unencrypted example at
-{{< repolink "kubernasty/manifests/crust/cert-manager/secrets/aws-route53-credential.example.yaml" >}}
-Use our normal [convention]({{< ref "conventions" >}}) to encrypt with `sops`
-and save the encrypted version of the real manifest as
-{{< repolink "kubernasty/manifests/crust/cert-manager/secrets/aws-route53-credential.yaml" >}}
-before applying it.
 
 ```sh
-# Write the manifest
-vim tmpsecret.yml
-# Encrypt the manifest
-sops --encrypt tmpsecret.yml > manifests/crust/cert-manager/secrets/aws-route53-credential.yaml
-# Remove the unencrypted manifest
-rm tmpsecret.yml
+keyid=xxxx
+keysecret=yyyy
 
-# Apply the encrypted manifest
-sops --decrypt manifests/crust/cert-manager/secrets/aws-route53-credential.yaml | kubectl apply -f -
+cat >manifests/crust/cert-manager/secrets/aws-route53-credential-micahrl-me.yaml <<EOF
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+    name: aws-route53-credential-micahrl-me
+    # Must be in same namespace as Cert Manager deployment
+    namespace: cert-manager
+stringData:
+    access-key-id: $keyid
+    secret-access-key: $keysecret
+EOF
+
+sops --encrypt --in-place manifests/crust/cert-manager/secrets/aws-route53-credential-micahrl-me.yaml
 ```
 
 Then apply the issuer.
@@ -60,14 +78,13 @@ Now we're ready to start requesting certificates.
 ## Why do we use DNS challenges?
 
 We require Route53 credentials so we can do ACME DNS challenges.
-The ACME protocol also supports other kinds of challenges, like HTTP,
-however, HTTP challenges require your Kubernetes server to be accessible on the open Internet.
-DNS challenges can be used for clusters that are never exposed to the Internet,
-making them more appropriate for home labs.
 
-We also need a programmatic DNS service anyway for
-[external-dns]({{< ref "external-dns" >}}),
-and we can use the same credentials here.
+* DNS challenges are required for wildcard certs
+* DNS challenges work even if you're not exposing HTTP ports from your cluster to the Internet
+  (unlike HTTP challenges, which require an Internet-accessible webserver)
+* We also need a programmatic DNS service anyway for
+  [external-dns]({{< ref "external-dns" >}}),
+  and we can use the same credentials here.
 
 ## Fixing DNS propagation errors
 
@@ -124,7 +141,7 @@ this could impact you.
 Let's Encrypt has a relatively low limit of the number of certificate requests per week,
 and this limit applies to the TLD -- not just the specific hostname or subdomain.
 
-TODO: Have an early section on domain name considerations for the cluster.
+This repository never sets `--enable-certificate-owner-ref`.
 {{< /hint >}}
 
 As long as there are no issues with `--enable-certificate-owner-ref`:

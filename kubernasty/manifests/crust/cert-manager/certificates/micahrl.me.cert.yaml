@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: micahrl-dot-me-wildcard
+  namespace: cert-manager
+spec:
+  dnsNames:
+  - '*.micahrl.me'
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-issuer-prod
+  secretName: micahrl-dot-me-wildcardd-backing-secret
