@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - cert-manager
+    - name: cert-manager
   interval: 15m
   path: /kubernasty/manifests/crust/cert-manager-issuers
   prune: true
