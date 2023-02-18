@@ -8,7 +8,7 @@ spec:
     ports:
       gitea-ssh:
         hostIP: 192.168.1.201
-        port: 22
+        port: 44822
         expose: true
-        exposedPort: 22
+        exposedPort: 44822
         protocol: TCP
