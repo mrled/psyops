@@ -1,0 +1,9 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-dasbhoard-redirect-mw
+  namespace: kube-system
+spec:
+  redirectRegex:
+    regex: ^https://traefik.kubernasty.micahrl.com/(|dashboard)
+    replacement: https://traefik.kubernasty.micahrl.com/dashboard/

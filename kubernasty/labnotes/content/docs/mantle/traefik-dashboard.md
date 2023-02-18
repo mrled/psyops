@@ -1,13 +1,19 @@
 ---
-title: Traefik dashboard
+title: ⚠️  Traefik Dashboard
 weight: 30
 ---
 
+
 {{< hint "danger" >}}
-**TOOD: refactor kubernetes-dashboard**
+⚠️ **These steps are not necessary** ⚠️
 
 This section was written when I didn't yet have [Flux]({{< ref "flux-gitops" >}}) installed.
-Now that Flux is available, we should use it to deploy.
+Now that Flux is available, this is handled automatically
+[in the crust]({{< ref "traefik-config" >}}).
+We keep this section around for historical reasons,
+and because it's helpful for a from-scratch understanding of things like Ingresses.
+
+When deploying a cluster, you can skip this.
 {{< /hint >}}
 
 Now that we have [ingress and certificates]({{< ref "ingress-and-certificates" >}}) configured,

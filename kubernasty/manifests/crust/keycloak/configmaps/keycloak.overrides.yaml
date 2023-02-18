@@ -33,6 +33,7 @@ data:
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
         kubernetes.io/ingress.class: traefik
+        traefik.ingress.kubernetes.io/router.middlewares: kube-system-keycloak-auth-redirect-mw@kubernetescrd
       rules:
         - host: keycloak.kubernasty.micahrl.com
           paths:

@@ -1,0 +1,10 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: clusteradmin-auth-mw
+  namespace: kube-system
+spec:
+  basicAuth:
+    removeHeader: true
+    secret: clusteradmin-httpba
