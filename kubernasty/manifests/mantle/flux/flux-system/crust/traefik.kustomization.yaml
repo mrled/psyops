@@ -18,3 +18,7 @@ spec:
     secretRef:
       name: sops-age
   validation: server
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: kubernasty-globals
