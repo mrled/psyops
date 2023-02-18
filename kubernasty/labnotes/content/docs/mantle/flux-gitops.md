@@ -154,3 +154,14 @@ kubectl annotate --field-manager=flux-client-side-apply --overwrite gitrepositor
 ```
 
 See also <https://fluxcd.io/flux/components/source/gitrepositories/#triggering-a-reconcile>
+
+## Flux vs Helm
+
+* **Flux** will happily adopt resources you've deployed by by `kubectl create ...`,
+  `kubectl apply -f ...`, etc.
+* **Helm** does not like to adopt resources that it did not deploy the first time.
+
+This can be confusing, as we use Flux to install Helm things.
+You can try to force this, but it might not fully work.
+See also "Helm fails to update manifests that have been installed by hand"
+on the [Troubleshooting]({{< ref "troubleshooting" >}}) page.

@@ -117,6 +117,7 @@ to having it managed by Flux.
 {{< hint danger >}}
 If you set the `--enable-certificate-owner-ref` flag to `true` at any point in the past,
 certificates could be deleted and require being re-issued when cert-manager is reinstalled.
+See also [the docs](https://cert-manager.io/docs/installation/upgrading/#reinstalling-cert-manager).
 
 Especially if you are using the TLD for other purposes aside from this Kubernetes cluster,
 this could impact you.
