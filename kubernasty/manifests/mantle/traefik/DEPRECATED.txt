@@ -1,2 +1,0 @@
-This folder is deprecated.
-It isn't used by Flux, but we keep it around for historical reasons, and because it's a good way to understand low level Kubernetes concepts like Ingress etc.
