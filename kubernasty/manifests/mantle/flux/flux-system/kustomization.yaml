@@ -24,5 +24,4 @@ resources:
   - crust/traefik.kustomization.yaml
 
   # My deploymnets: Atmosphere
-  - atmosphere/uptime-kuma.yaml
   - atmosphere/gitea.yaml
