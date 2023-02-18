@@ -11,7 +11,7 @@ metadata:
 
 spec:
   rules:
-  - host: longhorn.kubernasty.micahrl.com
+  - host: longhorn.${clusterTld}
     http:
       paths:
       - path: /

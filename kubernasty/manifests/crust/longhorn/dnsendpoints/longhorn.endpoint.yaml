@@ -1,12 +1,12 @@
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
-  name: longhorn.kubernasty.micahrl.com
+  name: longhorn.${clusterTld}
   namespace: external-dns
 spec:
   endpoints:
-  - dnsName: longhorn.kubernasty.micahrl.com
+  - dnsName: longhorn.${clusterTld}
     recordTTL: 60
     recordType: CNAME
     targets:
-    - kubernasty.micahrl.com
+    - ${clusterPrimaryDns}

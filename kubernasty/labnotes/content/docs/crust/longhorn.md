@@ -38,7 +38,7 @@ kubectl get pods -n longhorn-system
 kubectl get certs -n longhorn-system
 ```
 
-Once that's done, browse to the admin UI at <https://longhorn.kubernasty.micahrl.com/>,
+Once that's done, browse to the admin UI at <https://longhorn.micahrl.me/>,
 and log in with the `clusteradmin` user.
 
 ## Storage Classes

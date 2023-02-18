@@ -11,7 +11,7 @@ metadata:
 
 spec:
   rules:
-  - host: longhorn.kubernasty.micahrl.com
+  - host: longhorn.${clusterTld}
     http:
       paths:
       - path: /
@@ -24,4 +24,4 @@ spec:
   tls:
     - secretName: longhorn-cert-backing-secret
       hosts:
-        - longhorn.kubernasty.micahrl.com
+        - longhorn.${clusterTld}
