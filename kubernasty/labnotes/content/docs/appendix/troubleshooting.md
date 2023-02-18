@@ -245,3 +245,54 @@ if eg the network equipment is booting slower than the cluster nodes.)
   * It creats a new volume for me
   * Then I have to go reconfigure Keycloak manually -- wait what, it's already configured?
     I'm very confused. What was in the database??
+
+## Helm fails to update manifests that have been installed by hand
+
+Example error message: `Helm install failed: rendered manifests contain a resource that already exists. Unable to continue with install: ServiceAccount "cert-manager-cainjector" in namespace "cert-manager" exists and cannot be imported into the current release: invalid ownership metadata; label validation error: missing key "app.kubernetes.io/managed-by": must be set to "Helm"; annotation validation error: missing key "meta.helm.sh/release-name": must be set to "cert-manager"; annotation validation error: missing key "meta.helm.sh/release-namespace": must be set to "cert-manager"`
+
+This happens if you deploy something via `kubectl apply -f ...` or similar,
+and then tell Helm to manage those same resources.
+
+The easiest thing to do is delete the entire HelmRelease and/or the whole Namespace and redeploy.
+However, in some cases this is inconvenient --
+you might have persistent data,
+such as with cert-manager,
+that is hard to regenerate.
+(Let's Encrypt might block us if we re-request too many ceretificates.)
+
+Instead you can just add the annotations and labels as the error suggests.
+A crappy script I wrote to partially automate this:
+
+```sh
+#!/bin/sh
+# Usage: ./fixhelm.sh <RESOURCE TYPE> <RESOURCE NAME> [NAMESPACE]
+# If the object is not namespaced, don't pass anything for the third option.
+# E.g. with namespace: ./fixhelm.sh ServiceAccount cert-manager-cainjector cert-manager
+# E.g. without namespace: ./fixhelm.sh MutatingWebhookConfiguration cert-manager-webhook
+set -x
+type="$1"
+resource="$2"
+namespace="$3"
+kubectl annotate --overwrite "$type/$resource" -n "$namespace" "meta.helm.sh/release-name=cert-manager"
+kubectl annotate --overwrite "$type/$resource" -n "$namespace" "meta.helm.sh/release-namespace=cert-manager"
+kubectl label "$type" "$resource" -n "$namespace" app.kubernetes.io/managed-by="Helm"
+```
+
+After that you should tell Flux to tell Helm to try again,
+with `flux suspend ... && flux resume ...` as mentioned previously.
+
+For a nontrivial HelmRelease, you'll have to do this for a dozen different types, or more.
+
+* Pay careful attention:
+  the error message might change from
+  `Unable to continue with install: ClusterRole "cert-manager-cainjector" in namespace "cert-manager"`
+  referencing a **ClusterRole** to referencing a **ClusterRoleBinding** with the same name.
+  Re-read the error message if you think it is repeating itself!
+* You might want to `kubectl get TYPE | grep cert-manager` or similar,
+  so that you can run `fixhelm.sh` on multiple resources of the same type without having to
+  `flux suspend ... && flux resume ...` over and over again.
+  You can even do this in a loop, like
+  `for crb in $(k get ClusterRoleBinding -A | grep cert-manager | sed 's/ .*//g'); do ./fixhelm.sh ClusterRoleBinding "$crb"; done`,
+  just be very careful to test this first nondestructively each time.
+* Note that `meta.helm.sh/release-name` and `meta.helm.sh/release-namespace` are ANNOTATIONS,
+  while `app.kubernetes.io/managed-by` is a LABEL.
