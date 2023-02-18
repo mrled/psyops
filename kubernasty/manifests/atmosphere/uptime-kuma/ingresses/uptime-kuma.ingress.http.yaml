@@ -11,7 +11,7 @@ metadata:
 
 spec:
   rules:
-  - host: uptime.kubernasty.micahrl.com
+  - host: uptime.${clusterTld}
     http:
       paths:
       - path: /

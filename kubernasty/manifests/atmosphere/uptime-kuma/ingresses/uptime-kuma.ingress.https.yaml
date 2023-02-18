@@ -10,7 +10,7 @@ metadata:
 
 spec:
   rules:
-  - host: uptime.kubernasty.micahrl.com
+  - host: uptime.${clusterTld}
     http:
       paths:
       - path: /
@@ -23,4 +23,4 @@ spec:
   tls:
     - secretName: uptime-kuma-cert-backing-secret
       hosts:
-        - uptime.kubernasty.micahrl.com
+        - uptime.${clusterTld}

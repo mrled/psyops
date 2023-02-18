@@ -1,12 +1,12 @@
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
-  name: uptime.kubernasty.micahrl.com
+  name: uptime.${clusterTld}
   namespace: external-dns
 spec:
   endpoints:
-  - dnsName: uptime.kubernasty.micahrl.com
+  - dnsName: uptime.${clusterTld}
     recordTTL: 60
     recordType: CNAME
     targets:
-    - kubernasty.micahrl.com
+    - ${clusterTld}

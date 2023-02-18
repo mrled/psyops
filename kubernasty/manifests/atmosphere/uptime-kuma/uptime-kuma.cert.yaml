@@ -9,5 +9,5 @@ spec:
     name: letsencrypt-issuer-prod
     kind: ClusterIssuer
   dnsNames:
-    - uptime.kubernasty.micahrl.com
+    - uptime.${clusterTld}
   secretName: uptime-kuma-backing-secret

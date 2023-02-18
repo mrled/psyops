@@ -13,6 +13,9 @@ resources:
   - gotk-components.yaml
   - gotk-sync.yaml
 
+  # Configuration
+  - crust/kubernasty-globals.yaml
+
   # My deployments: Crust
   - crust/cert-manager.yaml
   - crust/cert-manager-issuers.yaml
@@ -24,4 +27,5 @@ resources:
   - crust/traefik.kustomization.yaml
 
   # My deploymnets: Atmosphere
+  - atmosphere/uptime-kuma.yaml
   - atmosphere/gitea.yaml
