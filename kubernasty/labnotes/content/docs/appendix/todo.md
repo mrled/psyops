@@ -67,3 +67,5 @@ title: Todo
     * Now, more of those are handled by Flux, but the docs and manifests are still there
     * Need to rewrite these so that the useful examples of how to deploy things by hand remain, without needing the old notes in place that no longer reflect reality
 * Something should be telling me when containers and/or helm charts are out of date
+* Make a git pre-commit hook in the local repo that rejects secrets that aren't SOPS-encrypted
+  <https://twitter.com/mrled/status/1627056487335067648?s=20>
