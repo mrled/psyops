@@ -13,8 +13,8 @@ resources:
   - gotk-components.yaml
   - gotk-sync.yaml
 
-  # Configuration
-  - crust/kubernasty-globals.yaml
+  # Static configuration and resources that don't depend on anything else
+  - crust/kubernasty-system.yaml
 
   # My deployments: Crust
   - crust/cert-manager.yaml
