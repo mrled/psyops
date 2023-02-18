@@ -1,13 +1,13 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
 kind: Kustomization
 metadata:
-  name: cert-manager-issuers
+  name: cert-manager-config
   namespace: flux-system
 spec:
   dependsOn:
     - name: cert-manager
   interval: 15m
-  path: /kubernasty/manifests/crust/cert-manager-issuers
+  path: /kubernasty/manifests/crust/cert-manager-config
   prune: true
   timeout: 2m
   sourceRef:

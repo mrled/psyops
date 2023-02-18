@@ -125,7 +125,7 @@ Flux can represent dependency relationship for kustomizations in
 {{< repolink "kubernasty/manifests/mantle/flux/flux-system" >}}.
 This is necessary for cert-manager,
 so we end up with
-{{< repolink "kubernasty/manifests/mantle/flux/flux-system/crust/cert-manager-issuers.yaml" >}} which depends on
+{{< repolink "kubernasty/manifests/mantle/flux/flux-system/crust/cert-manager-config.yaml" >}} which depends on
 {{< repolink "kubernasty/manifests/mantle/flux/flux-system/crust/cert-manager.yaml" >}}.
 If we don't do this, we get weird errors like
 `error: the server could not find the requested resource (patch clusterissuers.cert-manager.io letsencrypt-staging`.
@@ -133,7 +133,7 @@ If we don't do this, we get weird errors like
 
 We take this opportunity to add a `dependsOn` relationship to other kustomizations as well,
 like all of the deployments that deploy a certificate should have a `dependsOn`
-for the `cert-manager-issuers` kustomization,
+for the `cert-manager-config` kustomization,
 all the deployments that need persistent storage should depend on Longhorn, etc.
 
 ## Reinstalling cert-manager

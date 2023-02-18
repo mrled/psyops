@@ -21,7 +21,7 @@ resources:
   # My deployments: Crust
   - crust/reflector.yaml
   - crust/cert-manager.yaml
-  - crust/cert-manager-issuers.yaml
+  - crust/cert-manager-config.yaml
   - crust/external-dns.yaml
   - crust/external-dns-endpoints.yaml
   - crust/longhorn.yaml
