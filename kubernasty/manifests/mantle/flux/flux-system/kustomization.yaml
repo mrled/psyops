@@ -18,6 +18,7 @@ resources:
   - crust/kubernasty-configuration.yaml
 
   # My deployments: Crust
+  - crust/reflector.yaml
   - crust/cert-manager.yaml
   - crust/cert-manager-issuers.yaml
   - crust/external-dns.yaml
