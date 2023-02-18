@@ -3,5 +3,5 @@ kind: ConfigMap
 metadata:
   name: kubernasty-globals
   namespace: flux-system
-stringData:
+data:
   clusterTld: kubernasty.micahrl.com
