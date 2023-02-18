@@ -30,6 +30,8 @@ They can deploy Gitlab for you in AWS as part of the install process.
 * Deploy Flux
     * Basically the same as how we do now,
       but pointing it at the internal repo and giving it the generated key
+    * Consider deploying with Helm, a la
+      <https://managedkube.com/gitops/flux/weaveworks/guide/tutorial/2020/05/01/a-complete-step-by-step-guide-to-implementing-a-gitops-workflow-with-flux.html>
 * Everything else remains the same as we currently have it
 
 However, the biggest question here is the Git server.
