@@ -50,12 +50,12 @@ so that cert-manager can use it to make Route53 changes for DNS challenges.
 keyid=xxxx
 keysecret=yyyy
 
-cat >manifests/crust/cert-manager/secrets/aws-route53-credential-micahrl-me.yaml <<EOF
+cat >manifests/crust/cert-manager/secrets/aws-route53-credential.yaml <<EOF
 kind: Secret
 apiVersion: v1
 type: Opaque
 metadata:
-    name: aws-route53-credential-micahrl-me
+    name: aws-route53-credential
     # Must be in same namespace as Cert Manager deployment
     namespace: cert-manager
 stringData:
@@ -63,7 +63,7 @@ stringData:
     secret-access-key: $keysecret
 EOF
 
-sops --encrypt --in-place manifests/crust/cert-manager/secrets/aws-route53-credential-micahrl-me.yaml
+sops --encrypt --in-place manifests/crust/cert-manager/secrets/aws-route53-credential.yaml
 ```
 
 Then apply the issuer.
