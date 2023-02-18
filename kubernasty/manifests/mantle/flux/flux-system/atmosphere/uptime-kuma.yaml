@@ -22,4 +22,3 @@ spec:
     substituteFrom:
       - kind: ConfigMap
         name: kubernasty-globals
-        optional: false
