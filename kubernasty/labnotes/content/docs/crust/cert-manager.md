@@ -91,3 +91,54 @@ kubectl rollout restart deployment -n cert-manager cert-manager
 ```
 
 ffs
+
+## A note on dependencies
+
+Flux can represent dependency relationship for kustomizations in
+{{< repolink "kubernasty/manifests/mantle/flux/flux-system" >}}.
+This is necessary for cert-manager,
+so we end up with
+{{< repolink "kubernasty/manifests/mantle/flux/flux-system/crust/cert-manager-issuers.yaml" >}} which depends on
+{{< repolink "kubernasty/manifests/mantle/flux/flux-system/crust/cert-manager.yaml" >}}.
+If we don't do this, we get weird errors like
+`error: the server could not find the requested resource (patch clusterissuers.cert-manager.io letsencrypt-staging`.
+[See also](https://github.com/fluxcd/flux2/discussions/1944).
+
+We take this opportunity to add a `dependsOn` relationship to other kustomizations as well,
+like all of the deployments that deploy a certificate should have a `dependsOn`
+for the `cert-manager-issuers` kustomization,
+all the deployments that need persistent storage should depend on Longhorn, etc.
+
+## Reinstalling cert-manager
+
+I needed to do this when I moved from running `kubectl apply -f ...` to install cert-manager
+to having it managed by Flux.
+
+{{< hint danger >}}
+If you set the `--enable-certificate-owner-ref` flag to `true` at any point in the past,
+certificates could be deleted and require being re-issued when cert-manager is reinstalled.
+
+Especially if you are using the TLD for other purposes aside from this Kubernetes cluster,
+this could impact you.
+Let's Encrypt has a relatively low limit of the number of certificate requests per week,
+and this limit applies to the TLD -- not just the specific hostname or subdomain.
+
+TODO: Have an early section on domain name considerations for the cluster.
+{{< /hint >}}
+
+As long as there are no issues with `--enable-certificate-owner-ref`:
+
+```sh
+kubectl delete helmrelease -n cert-manager cert-manager
+flux delete kustomization -n flux-system cert-manager
+```
+
+Here you can verify that the secret containing the certificate is still in the cluster,
+at least if you follow my convention of naming these secrets `CERTNAME-cert-backing-secret`, with:
+
+```sh
+kubectl get secret -A | grep cert-backing-secret
+```
+
+Then make a no-op commit to the cert-manager kustomization in flux-system.
+You might need to hit it with `flux reconcile`.
