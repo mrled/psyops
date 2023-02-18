@@ -7,6 +7,6 @@ spec:
   endpoints:
   - dnsName: gitea.kubernasty.micahrl.com
     recordTTL: 60
-    recordType: CNAME
+    recordType: A
     targets:
-    - kubernasty.micahrl.com
+    - 192.168.1.201

@@ -6,8 +6,9 @@ metadata:
 spec:
   valuesContent: |-
     ports:
-      ssh:
-        port: 44822
+      gitea-ssh:
+        hostIP: 192.168.1.201
+        port: 22
         expose: true
-        exposedPort: 44822
+        exposedPort: 22
         protocol: TCP

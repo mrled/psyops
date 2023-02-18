@@ -11,7 +11,7 @@ metadata:
   namespace: gitea
 spec:
   entryPoints:
-    - ssh
+    - gitea-ssh
   routes:
    -  match: HostSNI(`*`)
       services:
