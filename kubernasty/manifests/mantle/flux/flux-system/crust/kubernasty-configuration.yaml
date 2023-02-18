@@ -1,11 +1,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
 kind: Kustomization
 metadata:
-  name: kubernasty-system
+  name: kubernasty-configuration
   namespace: flux-system
 spec:
   interval: 15m
-  path: /kubernasty/manifests/crust/kubernasty-system
+  path: /kubernasty/manifests/crust/kubernasty-configuration
   prune: true
   timeout: 2m
   sourceRef:
