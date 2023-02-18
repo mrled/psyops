@@ -296,3 +296,16 @@ For a nontrivial HelmRelease, you'll have to do this for a dozen different types
   just be very careful to test this first nondestructively each time.
 * Note that `meta.helm.sh/release-name` and `meta.helm.sh/release-namespace` are ANNOTATIONS,
   while `app.kubernetes.io/managed-by` is a LABEL.
+
+## Flux-applied kustomizations
+
+We have {{< repolink "kubernasty/manifests/mantle/flux/flux-system/kustomization.yaml" >}}
+which references other kustomizations in
+{{< repolink "kubernasty/manifests/mantle/flux/flux-system/" >}}.
+We can simulate the way Flux applies them with a command like
+
+```sh
+kubectl apply --server-side --field-manager=kustomize-controller -f kubernasty/manifests/mantle/flux/flux-system/WHATEVER.yaml
+```
+
+[Via](https://github.com/fluxcd/kustomize-controller/issues/741#issuecomment-1271635186).
