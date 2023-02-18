@@ -118,6 +118,39 @@ to pass SSH traffic to the gitea-ssh service, in
 We are restricted from using port 22 for reasons I haven't looked into yet,
 so we have to use port 44822 instead.
 
+## Create a second kube-vip interface
+
+From your first cluster node, create another DaemonSet manifest.
+
+```yaml
+# Make sure this matches the version used to deploy
+export KVVERSION=v0.5.8
+
+alias kube-vip="ctr image pull ghcr.io/kube-vip/kube-vip:$KVVERSION; ctr run --rm --net-host ghcr.io/kube-vip/kube-vip:$KVVERSION vip /kube-vip"
+
+kube-vip manifest daemonset \
+    --interface psy0 \
+    --address 192.168.1.201 \
+    --inCluster \
+    --taint \
+    --controlplane \
+    --services \
+    --arp \
+    --leaderElection
+```
+
+You must make changes before saving this to the manifests folder below.
+
+* The name of the DaemonSet (I used `kube-vip-2`)
+* The Prometheus port (I used `2212` rather than the default `2112`)
+
+Then place in `/var/lib/rancher/k3s/server/manifest`.
+
+TODO: Finish configuring this.
+Right now it is just an extra IP address;
+need to dedicate it to the `gitea.` subdomain
+and use it for SSH and set SSH to port 22.
+
 ## TODO
 
 * Enable Git LFS.
