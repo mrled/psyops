@@ -21,3 +21,5 @@ spec:
       kind: Deployment
       name: cert-manager
       namespace: cert-manager
+
+# no-op
