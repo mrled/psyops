@@ -203,6 +203,16 @@ ldapsearch -x -H ldaps://lldap:636 -D "$admindn" -w "$adminpw" -b ou=people,dc=k
 # ... should list the admin user again
 ```
 
+## Configure cluster users
+
+We need a few users that we can reference elsewhere.
+
+* `authenticator` user.
+  `gopass generate kubernasty/lldap/authenticator-user 64`.
+  Create in the UI, and add to `lldap_strict_readonly`.
+  This account will be used to bind to LDAP and authenticate end users.
+  TODO: replace the dedicated `gitea` LLDAP user with this one.
+
 ## Troubleshooting
 
 * Older LDAP commands like `ldapsearch` will give a generic error like
