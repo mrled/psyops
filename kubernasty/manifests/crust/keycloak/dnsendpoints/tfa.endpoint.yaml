@@ -1,12 +1,12 @@
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
-  name: traefik-forward-auth.kubernasty.micahrl.com
+  name: traefik-forward-auth.${clusterTld}
   namespace: external-dns
 spec:
   endpoints:
-  - dnsName: traefik-forward-auth.kubernasty.micahrl.com
+  - dnsName: traefik-forward-auth.${clusterTld}
     recordTTL: 60
     recordType: CNAME
     targets:
-    - kubernasty.micahrl.com
+    - ${clusterPrimaryDns}

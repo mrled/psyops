@@ -3,6 +3,13 @@ title: Keycloak
 weight: 50
 ---
 
+{{< hint warning >}}
+When I originally created this, I was using `kubernasty.micahrl.com` for the cluster;
+I've moved to using `micahrl.me` instead.
+This should be almost completely cleaned up now,
+but remnants of the old DNS name may lurk in the corners.
+{{< /hint >}}
+
 ## Deploying Keycloak
 
 * The Helm chart is pretty magical (pejorative),
@@ -122,8 +129,8 @@ List the email addresses if the users you want there.
     * Save (moves to second page of create action)
     * Client Authentication: `On`
     * Save (creates the client and shows the full settings page)
-    * Valid redirect URIs: `https://*.kubernasty.micahrl.com/*`
-    * Valid post logout redirect URIs: `https://*.kubernasty.micahrl.com/*`
+    * Valid redirect URIs: `https://*.micahrl.me/*`
+    * Valid post logout redirect URIs: `https://*.micahrl.me/*`
     * Save
     * Credentials -> Client secret -> copy
 

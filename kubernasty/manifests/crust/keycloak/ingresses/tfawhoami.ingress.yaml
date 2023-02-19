@@ -7,11 +7,10 @@ metadata:
     kubernetes.io/ingress.class: traefik
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
-    cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
     traefik.ingress.kubernetes.io/router.middlewares: kube-system-traefik-forward-auth-mw@kubernetescrd
 spec:
   rules:
-    - host: tfawhoami.keycloak.kubernasty.micahrl.com
+    - host: tfawhoami.${clusterTld}
       http:
         paths:
           - path: /
@@ -22,6 +21,6 @@ spec:
                 port:
                   number: 5678
   tls:
-    - secretName: tfawhoami-cert-backing-secret
+    - secretName: micahrl-dot-me-wildcard-backing-secret
       hosts:
-        - tfawhoami.keycloak.kubernasty.micahrl.com
+        - tfawhoami.${clusterTld}

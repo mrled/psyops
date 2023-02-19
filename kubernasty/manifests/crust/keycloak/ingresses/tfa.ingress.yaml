@@ -7,7 +7,6 @@ metadata:
     kubernetes.io/ingress.class: traefik
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
-    cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
     # This should not be required since
     # <https://github.com/thomseddon/traefik-forward-auth/pull/217>
     # However, as of SUPERBOWL SUNDAY 20230212 this requires using the `:latest` tag of the container...
@@ -15,7 +14,7 @@ metadata:
     # traefik.ingress.kubernetes.io/router.middlewares: kube-system-traefik-forward-auth-mw@kubernetescrd
 spec:
   rules:
-    - host: traefik-forward-auth.kubernasty.micahrl.com
+    - host: traefik-forward-auth.${clusterTld}
       http:
         paths:
           - path: /
@@ -26,6 +25,6 @@ spec:
                 port:
                   number: 4181
   tls:
-    - secretName: traefik-forward-auth-cert-backing-secret
+    - secretName: micahrl-dot-me-wildcard-backing-secret
       hosts:
-        - traefik-forward-auth.kubernasty.micahrl.com
+        - traefik-forward-auth.${clusterTld}

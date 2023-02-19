@@ -6,5 +6,5 @@ metadata:
 spec:
   redirectRegex:
     # Keycloak doesn't serve anything at the / path, so we just redirect it to the landing page
-    regex: ^https://keycloak.kubernasty.micahrl.com/$
-    replacement: https://keycloak.kubernasty.micahrl.com/auth/
+    regex: ^https://keycloak.${clusterTld}/$
+    replacement: https://keycloak.${clusterTld}/auth/
