@@ -26,8 +26,8 @@ spec:
       #         name: aws-route53-credential
       #         key: secret-access-key
       - selector:
-          dnsZones:
-            - micahrl.me
+          dnsNames:
+            - "*.micahrl.me"
         dns01:
           route53:
             region: us-east-2

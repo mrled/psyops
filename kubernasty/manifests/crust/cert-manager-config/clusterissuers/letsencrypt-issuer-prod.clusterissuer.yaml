@@ -23,8 +23,12 @@ spec:
       #         name: aws-route53-credential
       #         key: secret-access-key
       - selector:
-          dnsZones:
-            - micahrl.me
+          # This would match a request for a cert of any subdomain of micahrl.me:
+          # dnsZones:
+          #   - micahrl.me
+          # This will match only the literal string '*.micahrl.me' -- a wildcard cert
+          dnsNames:
+            - "*.micahrl.me"
         dns01:
           route53:
             region: us-east-2
