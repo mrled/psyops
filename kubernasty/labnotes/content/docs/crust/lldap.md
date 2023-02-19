@@ -214,3 +214,13 @@ ldapsearch -x -H ldaps://lldap:636 -D "$admindn" -w "$adminpw" -b ou=people,dc=k
   If it shows your certificate, the host has network access.
   (We use this method because ping is blocked(?)
   and you can't talk to the TLS service directly over netcat.)
+
+## Todo
+
+* TODO: Change LLDAP structure to match DNS.
+  When I did this originally, I was using DNS of `kubernasty.micahrl.com`,
+  and so I made the equivalent LDAP structure of `dc=kubernasty,dc=micahrl,dc=com`.
+  I have now moved to `micahrl.me`, but kept the LDAP structure the same.
+* TODO: Create self-signed LLDAP cert with cert-manager.
+  I created a self-signed cert automatically,
+  but cert-manager can do this for me.

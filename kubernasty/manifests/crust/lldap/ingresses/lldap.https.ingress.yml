@@ -6,12 +6,11 @@ metadata:
   namespace: lldap
   annotations:
     kubernetes.io/ingress.class: traefik
-    cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
     traefik.ingress.kubernetes.io/router.middlewares: kube-system-clusteradmin-auth-mw@kubernetescrd
 
 spec:
   rules:
-  - host: lldap.kubernasty.micahrl.com
+  - host: lldap.${clusterTld}
     http:
       paths:
       - path: /
@@ -22,6 +21,6 @@ spec:
             port:
               number: 80
   tls:
-    - secretName: lldap-cert-backing-secret
+    - secretName: micahrl-dot-me-wildcard-backing-secret
       hosts:
-        - lldap.kubernasty.micahrl.com
+        - lldap.${clusterTld}

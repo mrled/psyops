@@ -26,7 +26,7 @@ spec:
             - name: LLDAP_VERBOSE
               value: "true"
             - name: LLDAP_HTTP_URL
-              value: "https://lldap.kubernasty.micahrl.com"
+              value: "https://lldap.${clusterTld}"
             - name: LLDAP_JWT_SECRET
               valueFrom:
                 secretKeyRef:
