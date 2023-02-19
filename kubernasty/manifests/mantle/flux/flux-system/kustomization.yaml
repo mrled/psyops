@@ -8,6 +8,7 @@ resources:
   - helm/emberstack.helmrepo.yaml
   - helm/gitea.helmrepo.yaml
   - helm/jetstack.helmrepo.yaml
+  - helm/kubernetes-dashboard.helmrepo.yaml
   - helm/longhorn.helmrepo.yaml
   - helm/oauth2-proxy.helmrepo.yaml
 
@@ -28,6 +29,7 @@ resources:
   - crust/lldap.yaml
   - crust/keycloak.yaml
   - crust/traefik.kustomization.yaml
+  - crust/kubernetes-dashboard.yaml
 
   # My deploymnets: Atmosphere
   - atmosphere/uptime-kuma.yaml
