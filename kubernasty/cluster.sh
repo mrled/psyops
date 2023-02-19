@@ -32,3 +32,10 @@ flux_dryrun() {
     kubectl kustomize --load-restrictor=LoadRestrictionsNone --reorder=legacy "$dir" |
         kubectl apply --server-side --dry-run=server -f-
 }
+
+# Tell Flux to reconcile the Git repo immediately
+# This keeps you from having to wait 1-5 minutes for it to check the repo on its own
+# after pushing a change
+flux_gitreconcile() {
+    kubectl annotate --field-manager=flux-client-side-apply --overwrite gitrepository/flux-system -n flux-system reconcile.fluxcd.io/requestedAt="$(date +%s)"
+}
