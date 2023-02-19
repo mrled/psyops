@@ -5,7 +5,6 @@ metadata:
   namespace: uptime-kuma
   annotations:
     kubernetes.io/ingress.class: traefik
-    cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
     traefik.ingress.kubernetes.io/router.middlewares: kube-system-clusteradmin-auth-mw@kubernetescrd
 
 spec:
