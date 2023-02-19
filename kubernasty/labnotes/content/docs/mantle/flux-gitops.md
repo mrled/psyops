@@ -174,3 +174,5 @@ it's a useful way to:
 
 * Deploy all of a service's manifests in a single command
 * Apply (sigh) "kustomizations" to a given deployment so that the manifests are reusable in multiple environments
+
+See also the [Flux Kustomize questions](https://fluxcd.io/flux/faq/#kustomize-questions).

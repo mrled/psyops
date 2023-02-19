@@ -21,3 +21,14 @@ certinfo() {
 certissuer() {
     certinfo "$1" | grep 'Issuer: '
 }
+
+# From <https://fluxcd.io/flux/faq/#what-is-the-behavior-of-kustomize-used-by-flux>
+flux_dryrun() {
+    dir="$1"
+    if ! test "$dir"; then
+        echo "Missing directory argument"
+        return 1
+    fi
+    kubectl kustomize --load-restrictor=LoadRestrictionsNone --reorder=legacy "$dir" |
+        kubectl apply --server-side --dry-run=server -f-
+}
