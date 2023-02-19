@@ -10,7 +10,7 @@ spec:
       version: v6.0.0
       sourceRef:
         kind: HelmRepository
-        name: kubernetes-dashboard
+        name: kubernetes-dashboard-charts
         namespace: flux-system
   interval: 15m
   timeout: 5m
