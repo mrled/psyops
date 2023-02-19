@@ -40,7 +40,7 @@ data:
           # If you set this to https, you also need CERT_FILE/KEY_FILE or ENABLE_ACME.
           PROTOCOL: http
 
-          DOMAIN: gitea.kubernasty.micahrl.com
+          DOMAIN: gitea.${clusterTld}
 
           # Used for displayed SSH clone URLs
           SSH_PORT: 22
@@ -83,7 +83,7 @@ data:
 
       admin:
         existingSecret: gitea-admin-credentials
-        email: teamaster@kubernasty.micahrl.com
+        email: teamaster@${clusterTld}
 
       # See <https://github.com/go-gitea/gitea/tree/main/contrib/environment-to-ini>
       additionalConfigFromEnvs:
@@ -100,17 +100,16 @@ data:
     ingress:
       enabled: true
       annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
         kubernetes.io/ingress.class: traefik
       hosts:
-        - host: gitea.kubernasty.micahrl.com
+        - host: gitea.${clusterTld}
           paths:
             - path: /
               pathType: Prefix
       tls:
-        - secretName: gitea-cert-backing-secret
+        - secretName: micahrl-dot-me-wildcard-backing-secret
           hosts:
-            - gitea.kubernasty.micahrl.com
+            - gitea.${clusterTld}
 
     service:
       http:

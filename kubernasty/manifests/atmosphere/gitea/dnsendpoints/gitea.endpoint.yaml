@@ -1,11 +1,11 @@
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
-  name: gitea.kubernasty.micahrl.com
+  name: gitea.${clusterTld}
   namespace: external-dns
 spec:
   endpoints:
-  - dnsName: gitea.kubernasty.micahrl.com
+  - dnsName: gitea.${clusterTld}
     recordTTL: 60
     recordType: A
     targets:

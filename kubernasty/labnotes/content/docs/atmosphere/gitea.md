@@ -5,6 +5,13 @@ weight: 20
 
 A git server.
 
+{{< hint warning >}}
+When I originally created this, I was using `kubernasty.micahrl.com` for the cluster;
+I've moved to using `micahrl.me` instead.
+This should be almost completely cleaned up now,
+but remnants of the old DNS name may lurk in the corners.
+{{< /hint >}}
+
 ## Deploying gitea
 
 Unfortunately, the Gitea Helm chart
