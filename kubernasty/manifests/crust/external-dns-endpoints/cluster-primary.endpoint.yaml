@@ -1,7 +1,7 @@
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
-  name: test.kubernasty.micahrl.com
+  name: test.${clusterTld}
   namespace: external-dns
 spec:
   endpoints:
