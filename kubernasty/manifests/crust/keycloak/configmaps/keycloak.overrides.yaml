@@ -41,7 +41,7 @@ data:
               pathType: Prefix
       tls:
         - hosts: [keycloak.${clusterTld}]
-          secretName: keycloak-cert-backing-secret
+          secretName: micahrl-dot-me-wildcard-backing-secret
 
     extraEnv: |
       - name: KEYCLOAK_ADMIN
