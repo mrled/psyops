@@ -16,8 +16,14 @@ Make an uninstall script like this and run it:
 # Note: This does unmount /var/lib/rancher/k3s; we have to remount it below
 k3s-killall.sh
 
+rc-service containerd stop
+rc-service iscsid stop
+
 # This is also necessary for some reason?
-killall containerd-shim-runc-v2 traefik
+killall containerd-shim-runc-v2 traefik longhorn longhorn-manager kube-vip runsvdir pause sleep tini livenessprobe
+
+# Make sure all relevant longhorn processes are killed too - might be some you have to clean up manually
+ps aux | grep longhorn
 
 # Unmount a bunch of bullshit that Docker mounts
 umount /run/netns/* /var/lib/kubelet/pods/*/volumes/*/*

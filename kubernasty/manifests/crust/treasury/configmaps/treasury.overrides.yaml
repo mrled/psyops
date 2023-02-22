@@ -78,6 +78,9 @@ data:
               replicated:
                 size: 3
               name: datapool0
+          metadataServer:
+            activeCount: 1
+            activeStandby: true
         storageClass:
           enabled: true
           isDefault: false
