@@ -58,10 +58,10 @@ data:
           cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
           traefik.ingress.kubernetes.io/router.middlewares: kube-system-keycloak-auth-redirect-mw@kubernetescrd
         host:
-          name: ceph.${clusterTld}
+          name: treasury.${clusterTld}
           paths: /(.*)
         tls:
-          - hosts: [ceph.${clusterTld}]
+          - hosts: [treasury.${clusterTld}]
             secretName: micahrl-dot-me-wildcard-backing-secret
 
     cephBlockPools:
