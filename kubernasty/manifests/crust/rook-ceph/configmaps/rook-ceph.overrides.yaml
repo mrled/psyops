@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rook-ceph-overrides
+  namespace: rook-ceph
+data:
+  values.yaml: |+
+    # rook-ceph values.yaml overrides file

@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: treasury-overrides
+  namespace: treasury
+data:
+  values.yaml: |-
+    operatorNamespace: rook-ceph
+
+    toolbox:
+      enabled: true
+
+    cephClusterSpec:
+      dataDirHostPath: /psyopsos-data/roles/k3s/rook-ceph/data
+
+      dashboard:
+        enabled: true
+        urlPrefix: /
+        ssl: false
+        port: 8080
+
+      network:
+        connections:
+          # TODO: do I need encryption once I have an encrypted network fabric for the whole cluster?
+          encryption: true
+
+      # See:
+      # <https://github.com/rook/rook/blob/master/Documentation/CRDs/Cluster/ceph-cluster-crd.md#node-settings>
+      # <https://github.com/rook/rook/blob/master/Documentation/CRDs/Cluster/ceph-cluster-crd.md#storage-selection-settings>
+      storage:
+        useAllNodes: false
+        useAllDevices: false
+        nodes:
+          - name: jesseta
+            devices:
+              - name: /dev/psyopsos_datadiskvg/treasurylv
+          - name: kenasus
+            devices:
+              - name: /dev/psyopsos_datadiskvg/treasurylv
+          - name: zalas
+            devices:
+              - name: /dev/psyopsos_datadiskvg/treasurylv
+
+    ingress:
+      dashboard:
+        annotations:
+          kubernetes.io/ingress.class: traefik
+          cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
+          traefik.ingress.kubernetes.io/router.middlewares: kube-system-keycloak-auth-redirect-mw@kubernetescrd
+        host:
+          name: ceph.${clusterTld}
+          paths: /(.*)
+        tls:
+          - hosts: [ceph.${clusterTld}]
+            secretName: micahrl-dot-me-wildcard-backing-secret
+
+    cephBlockPools:
+      name: treasury-nvme-3rep-block
+      failureDomain: host
+      replicated:
+        size: 3
+      deviceClass: nvme
+
+    cephFileSystems:
+      - name: treasury-nvme-3rep-fs
+        spec:
+          metadataPool:
+            replicated:
+              size: 3
+          dataPools:
+            - failureDomain: host
+              replicated:
+                size: 3
+              name: datapool0
+        storageClass:
+          enabled: true
+          isDefault: false
+          name: treasury-nvme-3rep-fs
+          pool: datapool0
+          reclaimPolicy: Delete
+          allowVolumeExpansion: true
+          mountOptions: []
+
+
+    cephFileSystemVolumeSnapshotClass:
+      enabled: false
+      name: treasury-nvme-3rep-fs
+      isDefault: true
+      deletionPolicy: Delete
+
+    cephBlockPoolsVolumeSnapshotClass:
+      enabled: false
+      name: treasury-nvme-3rep-block
+      isDefault: false
+      deletionPolicy: Delete
+
+    cephObjectStores:
+      - name: treasury-nvme-3rep-object
+        spec:
+          metadataPool:
+            failureDomain: host
+            replicated:
+              size: 3
+          dataPool:
+            failureDomain: host
+            erasureCoded:
+              dataChunks: 2
+              codingChunks: 1
+          preservePoolsOnDelete: true
+          gateway:
+            port: 80
+            # securePort: 443
+            # sslCertificateRef:
+            instances: 1
+          healthCheck:
+            bucket:
+              interval: 60s
+        storageClass:
+          enabled: true
+          name: treasury-nvme-3rep-object
+          reclaimPolicy: Delete
+          parameters:
+            region: us-office-closet-1
