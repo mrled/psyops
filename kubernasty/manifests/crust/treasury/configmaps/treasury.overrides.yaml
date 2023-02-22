@@ -41,6 +41,16 @@ data:
             devices:
               - name: /dev/psyopsos_datadiskvg/treasurylv
 
+      # "!!! caution Changing networking configuration after a Ceph cluster has been deployed is NOT supported and will result in a non-functioning cluster."
+      # lol
+      network:
+        provider: host
+        connections:
+          encryption:
+            enabled: false
+          compression:
+            enabled: false
+
     ingress:
       dashboard:
         annotations:
