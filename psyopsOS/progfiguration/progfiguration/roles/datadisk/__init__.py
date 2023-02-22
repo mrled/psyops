@@ -1,9 +1,10 @@
 """Set up a data disk"""
 
+from dataclasses import dataclass
 import os
 import shutil
 import subprocess
-from typing import List
+from typing import List, NamedTuple, Optional
 
 from progfiguration import logger
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
@@ -14,6 +15,7 @@ defaults = {
     "mountpoint": "/psyopsos-data",
     "vgname": "psyopsos_datadiskvg",
     "lvname": "datadisklv",
+    "lvsize": r"100%FREE",
     # fslabel is max 16 chars
     "fslabel": "psyopsos_data",
     "wipefs_if_no_vg": False,
@@ -94,6 +96,38 @@ def setup_ramoffload(
     logger.info("Finished configuring ramoffload")
 
 
+@dataclass
+class Mount:
+    device: str
+    mountpoint: str
+    filesystem: str
+    options: List[str]
+    dump: int
+    fsck: int
+
+    @classmethod
+    def from_line(cls, line: str) -> "Mount":
+        """Return a Mount from a line in /etc/fstab or /proc/mounts"""
+        return cls(*line.split())
+
+
+def is_mounted_device(devpath: str) -> Optional[Mount]:
+    """If the device is mounted, return a Mount object representing it, otherwise None.
+
+    We check to see if the devpath is the start of any string in /proc/mounts -- meaning that if
+    you pass /dev/sda and /dev/sda1 is mounted, we will return True.
+
+    Return only the first mountpoint we find, regardless of whether the device is also mounted
+    elsewhere.
+    """
+    with open("/proc/mounts") as fp:
+        mounts = fp.read()
+    for line in mounts.split("\n"):
+        if line.startswith(devpath):
+            return Mount.from_line(line)
+    return None
+
+
 def is_mountpoint(path: str) -> bool:
     """Return true if a path is a mountpoint for a currently mounted filesystem"""
     mtpt = subprocess.run(["mountpoint", path], check=False, capture_output=True)
@@ -106,6 +140,7 @@ def apply(
     mountpoint: str,
     vgname: str,
     lvname: str,
+    lvsize: str,
     fslabel: str,
     wipefs_if_no_vg: bool,
     wipe_after_mounting: None,
@@ -123,6 +158,11 @@ def apply(
             msg = f"Refusing to wipe filesystem on {underlying_device}, because wipefs_if_no_vg is False"
             logger.error(msg)
             raise Exception(msg)
+        mounted = is_mounted_device(underlying_device)
+        if mounted:
+            msg = f"Refusing to wipe filesystem on {underlying_device}, because it is mounted to {mounted.mountpoint}"
+            logger.error(msg)
+            raise Exception(msg)
         logger.info(f"Wiping filesystems on {underlying_device}...")
         subprocess.run(f"wipefs --all {underlying_device}", shell=True, check=True)
         logger.info(f"Creating {vgname} volume group on {underlying_device}...")
@@ -131,7 +171,13 @@ def apply(
     lvs = subprocess.run(f"lvs {vgname}", shell=True, check=False, capture_output=True)
     if lvname not in lvs.stdout.decode():
         logger.info(f"Creating volume {lvname} on vg {vgname}...")
-        subprocess.run(f"lvcreate -l 100%FREE -n {lvname} {vgname}", shell=True, check=True)
+        # lvcreate is very annoying as it uses --extents for percentages and --size for absolute values
+        szflag = ""
+        if "%" in lvsize:
+            szflag = "-l"
+        else:
+            szflag = "-L"
+        subprocess.run(f"lvcreate {szflag} {lvsize} -n {lvname} {vgname}", shell=True, check=True)
 
     mapper_device = f"/dev/mapper/{vgname}-{lvname}"
 

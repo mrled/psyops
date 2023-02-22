@@ -20,9 +20,28 @@ defaults = {
     "data_k3s_subpath": "overlays/var-lib-rancher-k3s",
     "data_containerd_subpath": "overlays/var-lib-containerd",
     "data_etcrancher_subpath": "overlays/etc-rancher",
+    # If this matches what's in the datadisk role, use the same VG
+    # If you have your own VG to create, do that separately
+    "treasury_vgname": "psyopsos_datadiskvg",
+    "treasury_lvname": "treasurylv",
+    "treasury_lvsize": r"100%FREE",
     "start_k3s": True,
     "kube_vip_interface": "eth0",
 }
+
+
+def make_treasury_volume(
+    vgname: str,
+    lvname: str,
+    lvsize: str = r"100%FREE",
+):
+    if subprocess.run(f"vgs {vgname}", shell=True, check=False).returncode != 0:
+        raise Exception(f"No volume group {vgname} exists -- has this host run the datadisk role?")
+
+    lvs = subprocess.run(f"lvs {vgname}", shell=True, check=False, capture_output=True)
+    if lvname not in lvs.stdout.decode():
+        logger.info(f"Creating volume {lvname} on vg {vgname}...")
+        subprocess.run(f"lvcreate -l {lvsize} -n {lvname} {vgname}", shell=True, check=True)
 
 
 def mount_k3s_binds(
@@ -54,6 +73,9 @@ def apply(
     data_k3s_subpath: str,
     data_containerd_subpath: str,
     data_etcrancher_subpath: str,
+    treasury_vgname: str,
+    treasury_lvname: str,
+    treasury_lvsize: str,
     start_k3s: bool,
     kube_vip_interface: str,
     kube_vip_address: str,
@@ -71,6 +93,8 @@ def apply(
     packages = " ".join(package_list)
 
     subprocess.run(f"apk add {packages}", shell=True, check=True)
+
+    make_treasury_volume(treasury_vgname, treasury_lvname, treasury_lvsize)
 
     localhost.cp(
         module_files.joinpath("k3s-killall.sh"),
@@ -92,12 +116,6 @@ def apply(
     subprocess.run("rc-service containerd start", shell=True, check=True)
     subprocess.run("rc-service iscsid start", shell=True, check=True)
 
-    if not start_k3s:
-        logger.info(
-            "start_k3s was False, not starting k3s or cgroups. If you are setting up a new cluster, refer to the psyopsOS/docs/kubernasty.md documentation"
-        )
-        return
-
     # Required for Longhorn
     subprocess.run("mount --make-rshared /", shell=True, check=True)
 
@@ -108,6 +126,13 @@ def apply(
 
     # Create role storage
     localhost.makedirs(os.path.join(data_mountpoint, "roles/k3s/longhorn/data"), "root", "root", 0o0700)
+    localhost.makedirs(os.path.join(data_mountpoint, "roles/k3s/rook-ceph/data"), "root", "root", 0o0700)
+
+    if not start_k3s:
+        logger.info(
+            "start_k3s was False, not starting k3s. If you are setting up a new cluster, refer to the psyopsOS/docs/kubernasty.md documentation"
+        )
+        return
 
     logger.info("Starting k3s...")
     subprocess.run("rc-service k3s start", shell=True, check=True)

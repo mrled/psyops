@@ -11,6 +11,9 @@ node = InventoryNode(
     psy0mac="d8:9e:f3:90:cd:98",
     serial="J4S0WP2",
     roles=Bunch(
+        datadisk={
+            "underlying_device": "/dev/nvme0n1",
+        },
         k3s={
             "start_k3s": True,
         },
