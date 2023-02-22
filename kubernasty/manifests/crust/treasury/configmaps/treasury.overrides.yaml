@@ -55,11 +55,17 @@ data:
             secretName: micahrl-dot-me-wildcard-backing-secret
 
     cephBlockPools:
-      name: treasury-nvme-3rep-block
-      failureDomain: host
-      replicated:
-        size: 3
-      deviceClass: nvme
+      - name: treasury-nvme-3rep-block
+        spec:
+          failureDomain: host
+          replicated:
+            size: 3
+          storageClass:
+            enabled: true
+            name: treasury-nvme-3rep-block
+            isDefault: true
+            reclaimPolicy: Delete
+            allowVolumeExpansion: true
 
     cephFileSystems:
       - name: treasury-nvme-3rep-fs
