@@ -60,12 +60,12 @@ data:
           failureDomain: host
           replicated:
             size: 3
-          storageClass:
-            enabled: true
-            name: treasury-nvme-3rep-block
-            isDefault: true
-            reclaimPolicy: Delete
-            allowVolumeExpansion: true
+        storageClass:
+          enabled: true
+          name: treasury-nvme-3rep-block
+          isDefault: true
+          reclaimPolicy: Delete
+          allowVolumeExpansion: true
 
     cephFileSystems:
       - name: treasury-nvme-3rep-fs
