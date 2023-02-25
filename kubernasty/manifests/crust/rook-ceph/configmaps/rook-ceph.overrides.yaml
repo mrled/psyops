@@ -5,4 +5,7 @@ metadata:
   namespace: rook-ceph
 data:
   values.yaml: |+
-    # rook-ceph values.yaml overrides file
+    resources:
+      requests:
+        cpu: 20m
+

@@ -8,7 +8,7 @@ data:
     operatorNamespace: rook-ceph
 
     toolbox:
-      enabled: true
+      enabled: false
 
     cephClusterSpec:
       dataDirHostPath: /psyopsos-data/roles/k3s/rook-ceph/data
@@ -23,6 +23,30 @@ data:
         connections:
           # TODO: do I need encryption once I have an encrypted network fabric for the whole cluster?
           encryption: true
+
+      # This is pretty anemic, but the CPU requirements are so high by default I couldn't run much else
+      resources:
+        mgr:
+          requests:
+            cpu: 50m
+        mon:
+          requests:
+            cpu: 100m
+        osd:
+          requests:
+            cpu: 100m
+        mgr-sidecar:
+          requests:
+            cpu: 20m
+        crashcollector:
+          requests:
+            cpu: 20m
+        logcollector:
+          requests:
+            cpu: 20m
+        cleanup:
+          requests:
+            cpu: 50m
 
       # See:
       # <https://github.com/rook/rook/blob/master/Documentation/CRDs/Cluster/ceph-cluster-crd.md#node-settings>
@@ -91,6 +115,9 @@ data:
           metadataServer:
             activeCount: 1
             activeStandby: true
+            resources:
+              requests:
+                cpu: 200m
         storageClass:
           enabled: true
           isDefault: false
@@ -131,6 +158,9 @@ data:
             # securePort: 443
             # sslCertificateRef:
             instances: 1
+            resouorces:
+              requests:
+                cpu: 200m
           healthCheck:
             bucket:
               interval: 60s
