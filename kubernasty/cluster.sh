@@ -1,6 +1,11 @@
 # Kubernasty cluster environment variables and functions for dot-sourcing.
 
-export KUBECONFIG=/secrets/psyops-secrets/kubernasty/kubeconfig.yml
+# This is the path in the container
+# If this path doesn't exist, maybe we're outside the container, don't set $KUBECONFIG
+PSYOPS_KCONF=/secrets/psyops-secrets/kubernasty/kubeconfig.yml
+if test -e "$PSYOPS_KCONF"; then
+    export KUBECONFIG="$PSYOPS_KCONF"
+fi
 
 export SOPS_AGE_RECIPIENTS=age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9
 export SOPS_AGE_KEY_FILE=/secrets/psyops-secrets/kubernasty/kubernasty-sops.age
