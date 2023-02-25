@@ -8,7 +8,11 @@ data:
     operatorNamespace: rook-ceph
 
     toolbox:
-      enabled: false
+      enabled: true
+      resources:
+        requests:
+          cpu: 20m
+          memory: 128Mi
 
     cephClusterSpec:
       dataDirHostPath: /psyopsos-data/roles/k3s/rook-ceph/data
