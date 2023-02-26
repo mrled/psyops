@@ -9,7 +9,7 @@ from importlib.resources import files as importlib_resources_files
 
 from progfiguration import logger
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
-from progfiguration.roles.datadisk import is_mountpoint
+from progfiguration.localhost.disks import is_mountpoint
 
 
 module_files = importlib_resources_files("progfiguration.roles.k3s")
@@ -20,28 +20,9 @@ defaults = {
     "data_k3s_subpath": "overlays/var-lib-rancher-k3s",
     "data_containerd_subpath": "overlays/var-lib-containerd",
     "data_etcrancher_subpath": "overlays/etc-rancher",
-    # If this matches what's in the datadisk role, use the same VG
-    # If you have your own VG to create, do that separately
-    "treasury_vgname": "psyopsos_datadiskvg",
-    "treasury_lvname": "treasurylv",
-    "treasury_lvsize": r"100%FREE",
     "start_k3s": True,
     "kube_vip_interface": "eth0",
 }
-
-
-def make_treasury_volume(
-    vgname: str,
-    lvname: str,
-    lvsize: str = r"100%FREE",
-):
-    if subprocess.run(f"vgs {vgname}", shell=True, check=False).returncode != 0:
-        raise Exception(f"No volume group {vgname} exists -- has this host run the datadisk role?")
-
-    lvs = subprocess.run(f"lvs {vgname}", shell=True, check=False, capture_output=True)
-    if lvname not in lvs.stdout.decode():
-        logger.info(f"Creating volume {lvname} on vg {vgname}...")
-        subprocess.run(f"lvcreate -l {lvsize} -n {lvname} {vgname}", shell=True, check=True)
 
 
 def mount_k3s_binds(
@@ -73,12 +54,7 @@ def apply(
     data_k3s_subpath: str,
     data_containerd_subpath: str,
     data_etcrancher_subpath: str,
-    treasury_vgname: str,
-    treasury_lvname: str,
-    treasury_lvsize: str,
     start_k3s: bool,
-    kube_vip_interface: str,
-    kube_vip_address: str,
 ):
 
     # Some packages are not yet in the stable repos, so we have to use edgetesting
@@ -93,8 +69,6 @@ def apply(
     packages = " ".join(package_list)
 
     subprocess.run(f"apk add {packages}", shell=True, check=True)
-
-    make_treasury_volume(treasury_vgname, treasury_lvname, treasury_lvsize)
 
     localhost.cp(
         module_files.joinpath("k3s-killall.sh"),

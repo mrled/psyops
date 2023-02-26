@@ -27,6 +27,10 @@ class InventoryNode:
     roles: Bunch
     network_interfaces: Optional[str] = None
 
+    # If this is True, 'progfiguration apply' will refuse to run.
+    # Useful for inspecting early state after a reboot during development.
+    TESTING_DO_NOT_APPLY: bool = False
+
     @property
     def known_hosts_entry(self) -> str:
         return f"{self.address} {self.ssh_host_fingerprint}"

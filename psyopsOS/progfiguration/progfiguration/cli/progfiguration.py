@@ -43,6 +43,11 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
 
     node = inventory.node(nodename).node
 
+    if node.TESTING_DO_NOT_APPLY:
+        raise Exception(
+            f"Was going to apply progfiguration to node {nodename} but TESTING_DO_NOT_APPLY is True for that node."
+        )
+
     localhost = LocalhostLinuxPsyopsOs(nodename)
 
     groupmods = {}

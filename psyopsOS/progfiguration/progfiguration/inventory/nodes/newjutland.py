@@ -7,7 +7,6 @@ from progfiguration.age import AgeSecretReference
 from progfiguration.inventory.invhelpers import Bunch
 from progfiguration.inventory.nodes import InventoryNode
 
-
 # The public key, not encrypted
 # From .synergy/SSL/Synergy.pem
 synergy_public_key = """\
@@ -49,7 +48,7 @@ node = InventoryNode(
     psy0mac="00:07:32:4c:eb:9a",
     serial="",
     roles=Bunch(
-        datadisk={
+        datadisk_v1={
             "underlying_device": "/dev/sda",
             "wipe_after_mounting": ["overlays/var-lib-flatpak/"],
             "ramoffload": True,

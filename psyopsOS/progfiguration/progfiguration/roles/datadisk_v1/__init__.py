@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import os
 import shutil
 import subprocess
-from typing import List, NamedTuple, Optional
+from typing import List, Optional
 
 from progfiguration import logger
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
