@@ -129,6 +129,7 @@ def cryptsetup_open_idempotently(device: str, keyfile: str, lukslabel: str, encr
         logger.info(f"cryptsetup_open_idempotently(): Encrypted device {encdev_full} already exists, nothing to do")
         return encdev_full
 
+    needs_luks_format = False
     try:
         subprocess.run(
             f"cryptsetup open --type luks2 --batch-mode --key-file {keyfile} {device} {encdev}", shell=True, check=True
@@ -138,6 +139,9 @@ def cryptsetup_open_idempotently(device: str, keyfile: str, lukslabel: str, encr
         logger.info(
             f"cryptsetup_open_idempotently(): Could not open encrypted device {encdev_full}, running luksFormat first..."
         )
+        needs_luks_format = True
+
+    if needs_luks_format:
         subprocess.run(
             f"cryptsetup luksFormat --type luks2 --batch-mode --label '{lukslabel}' {device} {keyfile}",
             shell=True,

@@ -46,6 +46,7 @@ def apply(
 
     subprocess.run(f"apk add cryptsetup device-mapper e2fsprogs e2fsprogs-extra lvm2 parted", shell=True, check=True)
     subprocess.run("rc-service lvm start", shell=True, check=True)
+    subprocess.run("rc-service dmcrypt start", shell=True, check=True)
 
     #### Pre-processing
     # Code in this section should not write anything to disk.
@@ -199,6 +200,8 @@ def apply(
 
         if subprocess.run(f"vgs {vg}", shell=True, check=False).returncode != 0:
             subprocess.run(f"vgcreate {vg} {' '.join(devices)}", shell=True, check=True)
+
+        subprocess.run(f"vgchange --activate y {vg}", shell=True, check=True)
 
         # Process LVM volumes
         lvs_result = subprocess.run(f"lvs {vg}", shell=True, check=False, capture_output=True)
