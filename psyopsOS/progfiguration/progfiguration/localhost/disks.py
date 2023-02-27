@@ -3,7 +3,7 @@
 
 import os
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from progfiguration import logger
@@ -22,7 +22,7 @@ class FilesystemSpec:
     # ext4 uses -L so it's the default.
     label_flag: str = "-L"
     # Options to pass to mkfs
-    options: List[str] = []
+    options: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -122,7 +122,7 @@ def cryptsetup_open_idempotently(device: str, keyfile: str, lukslabel: str, encr
     """Use cryptsetup to open a device idempotently"""
 
     # If the 'device' argument is '/dev/sda', 'encdev' will be 'sda_crypt', and 'encdev_full' will be '/dev/mapper/sda_crypt'
-    encdev = f"{os.path.basename(encdev_full)}{encrypted_suffix}"
+    encdev = f"{os.path.basename(device)}{encrypted_suffix}"
     encdev_full = os.path.join("/dev/mapper", encdev)
 
     if os.path.exists(encdev_full):

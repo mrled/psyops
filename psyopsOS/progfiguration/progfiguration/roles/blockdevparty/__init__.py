@@ -13,6 +13,7 @@ from progfiguration.localhost.disks import (
     DuplicatePartitionLabelError,
     EncryptionKeyfileNotFoundError,
     EncryptionKeyfileNotSetError,
+    FilesystemSpec,
     LvmLvSpec,
     MissingVolumeGroupError,
     PartitionSpec,
@@ -20,13 +21,12 @@ from progfiguration.localhost.disks import (
     cryptsetup_open_idempotently,
     gptlabel2device,
 )
-from psyopsOS.progfiguration.progfiguration.localhost.disks import FilesystemSpec
 
 
 defaults = {
     "wholedisks": [],
     "partitions": [],
-    "lvs": [],
+    "volumes": [],
     "encryption_keyfile": "/mnt/psyops-secret/mount/age.key",
 }
 
@@ -35,7 +35,7 @@ def apply(
     localhost: LocalhostLinuxPsyopsOs,
     wholedisks: List[WholeDiskSpec],
     partitions: List[PartitionSpec],
-    lvs: List[LvmLvSpec],
+    volumes: List[LvmLvSpec],
     encryption_keyfile: str,
 ):
     """Partition disks, format filesystems, and create logical volumes
@@ -43,6 +43,9 @@ def apply(
     WARNING:    It probably will not work to take a disk from an old host and add it to a new host without wiping it.
                 We look up partitions by their label, and duplicate labels will confuse this logic.
     """
+
+    subprocess.run(f"apk add cryptsetup device-mapper e2fsprogs e2fsprogs-extra lvm2", shell=True, check=True)
+    subprocess.run("rc-service lvm start", shell=True, check=True)
 
     #### Pre-processing
     # Code in this section should not write anything to disk.
@@ -92,7 +95,7 @@ def apply(
 
     # If any VG isn't going to exist when we finish processing all the partitions,
     # throw an error here before writing anything to disk.
-    for lv in lvs:
+    for lv in volumes:
         if lv.volgroup not in volgroups:
             raise MissingVolumeGroupError(f"Volume group '{lv.volgroup}' does not exist")
         vglvmap[lv.volgroup] += [lv]

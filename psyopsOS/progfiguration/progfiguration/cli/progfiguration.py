@@ -38,12 +38,12 @@ def CommaSeparatedStrList(cssl: str) -> List[str]:
     return cssl.split(",")
 
 
-def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bool = False):
+def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bool = False, force: bool = False):
     """Apply configuration for the node 'nodename' to localhost"""
 
     node = inventory.node(nodename).node
 
-    if node.TESTING_DO_NOT_APPLY:
+    if node.TESTING_DO_NOT_APPLY and not force:
         raise Exception(
             f"Was going to apply progfiguration to node {nodename} but TESTING_DO_NOT_APPLY is True for that node."
         )
@@ -312,6 +312,9 @@ def parseargs(arguments: List[str]):
         action="store_true",
         help="Do not actually apply the role. Instead, launch a debugger. Intended for development.",
     )
+    sub_apply.add_argument(
+        "--force-apply", action="store_true", help="Force apply, even if the node has TESTING_DO_NOT_APPLY set."
+    )
 
     # list subcommand
     sub_list = subparsers.add_parser("list", description="List inventory items")
@@ -395,7 +398,9 @@ def main_implementation(*arguments):
     if parsed.action == "version":
         print(version.getversion())
     elif parsed.action == "apply":
-        action_apply(inventory, parsed.nodename, strace_before_applying=parsed.strace_before_applying)
+        action_apply(
+            inventory, parsed.nodename, strace_before_applying=parsed.strace_before_applying, force=parsed.force_apply
+        )
     elif parsed.action == "list":
         action_list(inventory, parsed.collection)
     elif parsed.action == "info":
