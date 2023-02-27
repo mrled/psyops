@@ -61,7 +61,7 @@ data:
         nodes:
           - name: jesseta
             devices:
-              - name: /dev/psyopsos_datadiskvg/treasurylv
+              - name: /dev/mapper/nvme0n1p2_crypt
           - name: kenasus
             devices:
               - name: /dev/psyopsos_datadiskvg/treasurylv
