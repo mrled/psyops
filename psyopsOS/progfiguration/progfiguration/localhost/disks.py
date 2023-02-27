@@ -139,7 +139,7 @@ def cryptsetup_open_idempotently(device: str, keyfile: str, lukslabel: str, encr
             f"cryptsetup_open_idempotently(): Could not open encrypted device {encdev_full}, running luksFormat first..."
         )
         subprocess.run(
-            f"cryptsetup luksFormat --type luks2 --batch-mode --key-file {keyfile} --label '{lukslabel}' {device} {encdev}",
+            f"cryptsetup luksFormat --type luks2 --batch-mode --label '{lukslabel}' {device} {keyfile}",
             shell=True,
             check=True,
         )
@@ -163,7 +163,7 @@ def gptlabel2device(label: str) -> str:
     """
     result = subprocess.run(f"blkid", check=True, capture_output=True)
     foundline = None
-    for line in result.stdout.split():
+    for line in result.stdout.decode().split("\n"):
         if f' PARTLABEL="{label}" ' in line:
             foundline = line
             break

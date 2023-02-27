@@ -21,7 +21,6 @@ defaults = {
     "data_containerd_subpath": "overlays/var-lib-containerd",
     "data_etcrancher_subpath": "overlays/etc-rancher",
     "start_k3s": True,
-    "kube_vip_interface": "eth0",
 }
 
 

@@ -44,7 +44,7 @@ def apply(
                 We look up partitions by their label, and duplicate labels will confuse this logic.
     """
 
-    subprocess.run(f"apk add cryptsetup device-mapper e2fsprogs e2fsprogs-extra lvm2", shell=True, check=True)
+    subprocess.run(f"apk add cryptsetup device-mapper e2fsprogs e2fsprogs-extra lvm2 parted", shell=True, check=True)
     subprocess.run("rc-service lvm start", shell=True, check=True)
 
     #### Pre-processing
@@ -121,7 +121,8 @@ def apply(
 
         # 'unit s' means our units will be in sectors
         # 'print free' means print all partitions and chunks of free space
-        result = subprocess.run(parted_prefix + "unit s print free", shell=True, check=True, capture_output=True)
+        # parted will return nonzero if this doesn't have a partition label, so we cannot check=True
+        result = subprocess.run(parted_prefix + "unit s print free", shell=True, capture_output=True)
         diskinfo = json.loads(result.stdout)
 
         # Ensure that the disk has a GPT partition table
@@ -132,14 +133,11 @@ def apply(
             logger.info(f"Created partition table on device {disk}")
 
         else:
-            logger.info(f"The device {partspec.device} already has a partition table")
+            logger.info(f"The device {disk} already has a partition table")
 
     # Process partitions
     for partspec in partitions:
         parted_prefix = universal_parted_prefix + f" {partspec.device} -- "
-
-        if partspec.volgroup:
-            volgroups[partspec.volgroup] += [gptlabel2device(partspec.label)]
 
         result = subprocess.run(parted_prefix + "unit s print free", shell=True, check=True, capture_output=True)
         diskinfo = json.loads(result.stdout)
@@ -183,13 +181,16 @@ def apply(
 
         # Encrypt the partition if specified
         devpath = gptlabel2device(partspec.label)
-        fsdevpath = devpath
         if partspec.encrypt:
-            fsdevpath = cryptsetup_open_idempotently(devpath, encryption_keyfile, partspec.label)
+            devpath = cryptsetup_open_idempotently(devpath, encryption_keyfile, partspec.label)
+
+        # Mark (optionally encrypted) partition as a member of a volume group
+        if partspec.volgroup:
+            volgroups[partspec.volgroup] += [devpath]
 
         # Mark (optionally encrypted) partition for filesystem creation
         if partspec.filesystem:
-            filesystems[fsdevpath] = partspec.filesystem
+            filesystems[devpath] = partspec.filesystem
 
     # Process LVM groups
     for vg, devices in volgroups.items():
@@ -197,7 +198,7 @@ def apply(
         # Currently this will require manual intervention.
 
         if subprocess.run(f"vgs {vg}", shell=True, check=False).returncode != 0:
-            subprocess.run(f"vg create {vg} {' '.join(devices)}")
+            subprocess.run(f"vgcreate {vg} {' '.join(devices)}", shell=True, check=True)
 
         # Process LVM volumes
         lvs_result = subprocess.run(f"lvs {vg}", shell=True, check=False, capture_output=True)
@@ -207,7 +208,7 @@ def apply(
                 logger.info(f"Creating volume {lv.name} on vg {vg}...")
                 # lvcreate is very annoying as it uses --extents for percentages and --size for absolute values
                 szflag = ""
-                if "%" in lv.name:
+                if "%" in lv.size:
                     szflag = "-l"
                 else:
                     szflag = "-L"

@@ -72,6 +72,7 @@ def build_alpine(apk_index_path: str, abuild_repodest: str = "psyopsOS"):
             raise Exception(
                 f"When trying to remove version file and/or ABKBUILD, got an exception. Manually remove these two files, if they exist: {PKG_VERSION_FILE}, {APKBUILD_FILE}"
             )
+    return version
 
 
 def build_zipapp(outfile: str):

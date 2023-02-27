@@ -22,11 +22,8 @@ group = Bunch(
                 LvmLvSpec("datadisklv", "psyopsos_datadiskvg", r"100%FREE", FilesystemSpec("ext4", "psyopsos_data")),
             ],
         },
-        datadisk_v2={
-            "block_device": "/dev/mapper/psyopsos_datadiskvg-datadisklv",
-        },
         k3s={
-            "kube_vip_address": "192.168.1.200",
+            # "kube_vip_address": "192.168.1.200",
         },
     ),
 )

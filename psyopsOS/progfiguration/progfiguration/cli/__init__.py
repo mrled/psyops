@@ -27,15 +27,25 @@ progfiguration_log_levels = [
 ]
 
 
-def broken_pipe_handler(func: Callable[[List[str]], int], *arguments: List[str]) -> int:
-    """Handler for broken pipes
+class ProgfigurationTerminalError(Exception):
+    """A terminal error that can be used to print a nice message"""
 
-    Wrap the main() function in this to properly handle broken pipes
-    without a giant nastsy backtrace.
-    The EPIPE signal is sent if you run e.g. `script.py | head`.
-    Wrapping the main function with this one exits cleanly if that happens.
+    def __init__(self, message, returncode):
+        super().__init__(message)
+        self.returncode = returncode
 
-    See <https://docs.python.org/3/library/signal.html#note-on-sigpipe>
+
+def progfiguration_error_handler(func: Callable[[List[str]], int], *arguments: List[str]) -> int:
+    """Special error handler
+
+    Wrap the main() function in this to properly handle the following cases:
+
+    * Broken pipes.
+      The EPIPE signal is sent if you run e.g. `script.py | head`.
+      Wrapping the main function with this one exits cleanly if that happens.
+      See <https://docs.python.org/3/library/signal.html#note-on-sigpipe>
+    * Errors with ProgfigurationTerminalError
+      These errors are intended to display nice messages to the user.
     """
     try:
         returncode = func(*arguments)
@@ -46,6 +56,10 @@ def broken_pipe_handler(func: Callable[[List[str]], int], *arguments: List[str])
         # Convention is 128 + whatever the return code would otherwise be
         returncode = 128 + 1
         sys.exit(returncode)
+    except ProgfigurationTerminalError as pte:
+        print(pte.message)
+        sys.exit(pte.returncode)
+
     return returncode
 
 

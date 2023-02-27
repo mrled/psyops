@@ -10,7 +10,7 @@ from typing import List, Union
 
 from progfiguration import age, progfiguration_build_path, version
 from progfiguration.cli import (
-    broken_pipe_handler,
+    progfiguration_error_handler,
     configure_logging,
     idb_excepthook,
     progfiguration_log_levels,
@@ -71,6 +71,19 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
             for append in appendvars:
                 if append not in rolevars:
                     rolevars[append] = []
+
+        # Apply role arguments from the universal group
+        universal_gmod = inventory.group("universal")
+        universal_rolevars = getattr(universal_gmod.group.roles, rolename, {})
+        for key, value in universal_rolevars.items():
+            unencrypted_value = value
+            if isinstance(value, age.AgeSecretReference):
+                secret = inventory.get_group_secrets("universal")[value.name]
+                unencrypted_value = secret.decrypt()
+            if key in appendvars:
+                rolevars[key].append(unencrypted_value)
+            else:
+                rolevars[key] = unencrypted_value
 
         # Check each group that the node is in for role arguments
         for groupname, gmod in groupmods.items():
@@ -448,4 +461,4 @@ def main_implementation(*arguments):
 
 
 def main():
-    broken_pipe_handler(main_implementation, *sys.argv)
+    progfiguration_error_handler(main_implementation, *sys.argv)

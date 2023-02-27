@@ -125,7 +125,11 @@ def progfiguration_abuild(ctx):
     spec.loader.exec_module(progfiguration_build)
 
     # Run the build
-    progfiguration_build.build_alpine(incontainer_apks_path)
+    version = progfiguration_build.build_alpine(incontainer_apks_path)
+
+    print(
+        f"Created new artifact at public/apk/psyopsOS/x86_64/progfiguration-{version}-r0.apk"
+    )
 
 
 @invoke.task

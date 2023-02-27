@@ -39,9 +39,6 @@ class Inventory:
         self.node_function = self.inventory_parsed["nodeFunctionMap"]
         self.function_roles = self.inventory_parsed["functionRoleMap"]
 
-        # All nodes are members of the 'universal' group
-        self.group_members["universal"] = self.node_function.keys()
-
         self._node_groups = None
         self._function_nodes = None
         self._role_functions = None
