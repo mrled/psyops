@@ -2,6 +2,7 @@ from progfiguration.inventory.invhelpers import Bunch
 from progfiguration.inventory.nodes import InventoryNode
 
 node = InventoryNode(
+    TESTING_DO_NOT_APPLY=True,
     address="jesseta.home.micahrl.com",
     user="root",
     notes="",
