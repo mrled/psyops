@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import os
 import importlib
 from importlib.resources import files as importlib_resources_files
-from typing import Dict, List, Optional
+from types import ModuleType
+from typing import Any, Dict, List, Optional
 
 import yaml
 
@@ -19,9 +20,17 @@ class Controller:
 
 class Inventory:
 
+    # The controller age key that can be used to decrypt anything.
+    # When running progfiguration from a node, this is not available.
     age: Optional[age.AgeKey]
 
     def __init__(self, invfile: str, age_privkey: Optional[str]):
+        """Initializer
+
+        invfile:        A YAML inventory file.
+        age_privkey:    Use this path to an age private key.
+                        If not passed, try to find the appropriate node/controller age key.
+        """
         self.invfile = invfile
         with open(invfile) as ifp:
             self.inventory_parsed = yaml.load(ifp, Loader=yaml.Loader)
@@ -44,52 +53,28 @@ class Inventory:
         self._node_secrets = {}
         self._group_secrets = {}
 
-        ctrlrdata = self.inventory_parsed["controller"]
-        if os.path.exists(ctrlrdata["age"]):
-            ctrlrage = age.AgeKey.from_file(ctrlrdata["age"])
-        else:
-            ctrlrage = None
-        self.controller = Controller(ctrlrage, ctrlrdata["agepub"])
+        self._controller: Optional[Controller] = None
 
-        node_settings = self.inventory_parsed["nodeSettings"]
-        nodeage = None
-        nodeage_path = None
-        for agekey in node_settings["age"]:
-            if os.path.exists(agekey):
-                nodeage = age.AgeKey.from_file(agekey)
-                nodeage_path = agekey
-                break
-
-        # TODO: clean this up, I think I can just keep track of the path and that's it
-        self.age = None
-        self.age_path = None
-        if age_privkey:
-            self.age = age.AgeKey.from_file(age_privkey)
-            self.age_path = age_privkey
-        elif ctrlrage:
-            self.age = ctrlrage
-            self.age_path = ctrlrdata["age"]
-        elif nodeage:
-            self.age = nodeage
-            self.age_Path = nodeage_path
-        else:
-            # No age key found
-            pass
+        self._age_path = age_privkey
 
     @property
-    def groups(self):
+    def groups(self) -> List[str]:
+        """All groups, in undetermined order"""
         return self.group_members.keys()
 
     @property
-    def nodes(self):
+    def nodes(self) -> List[str]:
+        """All nodes, in undetermined order"""
         return self.node_function.keys()
 
     @property
-    def functions(self):
+    def functions(self) -> List[str]:
+        """All functions, in undetermined order"""
         return self.function_roles.keys()
 
     @property
-    def node_groups(self):
+    def node_groups(self) -> Dict[str, List[str]]:
+        """A dict, containing node:grouplist mappings"""
         if not self._node_groups:
             self._node_groups = {}
 
@@ -106,7 +91,8 @@ class Inventory:
         return self._node_groups
 
     @property
-    def function_nodes(self):
+    def function_nodes(self) -> Dict[str, List[str]]:
+        """A dict, containing function:nodelist mappings"""
         if not self._function_nodes:
             self._function_nodes = {}
             for node, function in self.node_function.items():
@@ -116,7 +102,8 @@ class Inventory:
         return self._function_nodes
 
     @property
-    def role_functions(self):
+    def role_functions(self) -> Dict[str, str]:
+        """A dict, containing role:function mappings"""
         if not self._role_functions:
             self._role_functions = {}
             for function, nodes in self.function_nodes.items():
@@ -126,40 +113,70 @@ class Inventory:
                     self._role_functions[node].append(function)
         return self._role_functions
 
-    def node_roles(self, nodename: str):
+    @property
+    def controller(self) -> Controller:
+        """A Controller object
+
+        If this program is running on the controller, it includes the private key;
+        otherwise, it just includes the public key.
+        """
+        if not self._controller:
+            ctrlrdata = self.inventory_parsed["controller"]
+            if os.path.exists(ctrlrdata["age"]):
+                ctrlrage = age.AgeKey.from_file(ctrlrdata["age"])
+            else:
+                ctrlrage = None
+            self._controller = Controller(ctrlrage, ctrlrdata["agepub"])
+        return self._controller
+
+    @property
+    def age_path(self) -> str:
+        """The path to an age private key
+
+        Return the path to an age private key.
+        May return None if no private key is available
+        (some progfiguration functions can be performed without one).
+        Lookup order, highest priority first:
+
+        * A key passed to the class initializer directly, if present
+        * The controller key, if available
+        * The key for the current node, if running from a node with an available key
+        * None
+        """
+        if not self._age_path:
+            if self.controller.age:
+                self._age_path = self.controller.age
+            else:
+                for agekey in self.inventory_parsed["nodeSettings"]["age"]:
+                    if os.path.exists(agekey):
+                        self._age_path = agekey
+                        break
+        return self._age_path
+
+    def node_roles(self, nodename: str) -> List[str]:
+        """A list of all roles for a given node"""
         return self.function_roles[self.node_function[nodename]]
 
-    def node(self, name: str):
+    def node(self, name: str) -> ModuleType:
+        """The Python module for a given node"""
         if name not in self._node_modules:
             module = importlib.import_module(f"progfiguration.inventory.nodes.{name}")
             self._node_modules[name] = module
         return self._node_modules[name]
 
-    def group(self, name: str):
+    def group(self, name: str) -> ModuleType:
+        """The Python module for a given group"""
         if name not in self._group_modules:
             module = importlib.import_module(f"progfiguration.inventory.groups.{name}")
             self._group_modules[name] = module
         return self._group_modules[name]
 
-    def role(self, name: str):
+    def role(self, name: str) -> ModuleType:
+        """The Python module for a given role"""
         if name not in self._role_modules:
             module = importlib.import_module(f"progfiguration.roles.{name}")
             self._role_modules[name] = module
         return self._role_modules[name]
-
-    def node_secrets_file(self, nodename: str) -> str:
-        """Get the secrets file for a node"""
-        sfile = importlib_resources_files("progfiguration.inventory.nodes").joinpath(f"{nodename}.secrets.yml")
-        return sfile
-
-    def group_secrets_file(self, groupname: str) -> str:
-        """Get the secrets file for a group"""
-        sfile = importlib_resources_files("progfiguration.inventory.groups").joinpath(f"{groupname}.secrets.yml")
-        return sfile
-
-    def controller_secrets_file(self) -> str:
-        """Get the secrets file for the controller"""
-        sfile = importlib_resources_files("progfiguration.inventory").joinpath(f"controller.secrets.yml")
 
     def get_secrets(self, filename: str) -> Dict[str, age.AgeSecret]:
         """Retrieve secrets from a file.
@@ -174,45 +191,58 @@ class Inventory:
         except FileNotFoundError:
             return {}
 
-    def get_node_secrets(self, nodename: str) -> Dict:
+    def get_node_secrets(self, nodename: str) -> Dict[str, Any]:
+        """A Dict of secrets for a given node"""
         if nodename not in self._node_secrets:
-            self._node_secrets[nodename] = self.get_secrets(self.node_secrets_file(nodename))
+            sfile = importlib_resources_files("progfiguration.inventory.nodes").joinpath(f"{nodename}.secrets.yml")
+            self._node_secrets[nodename] = self.get_secrets(sfile)
         return self._node_secrets[nodename]
 
-    def get_group_secrets(self, groupname: str) -> Dict:
+    def get_group_secrets(self, groupname: str) -> Dict[str, Any]:
+        """A Dict of secrets for a given group"""
         if groupname not in self._group_secrets:
-            self._group_secrets[groupname] = self.get_secrets(self.group_secrets_file(groupname))
+            sfile = importlib_resources_files("progfiguration.inventory.groups").joinpath(f"{groupname}.secrets.yml")
+            self._group_secrets[groupname] = self.get_secrets(sfile)
         return self._group_secrets[groupname]
 
-    def get_controller_secrets(self) -> Dict:
+    def get_controller_secrets(self) -> Dict[str, Any]:
+        """A Dict of secrets for the controller"""
         if not self._controller_secrets:
-            self._controller_secrets = self.get_secrets(self.controller_secrets_file())
+            sfile = importlib_resources_files("progfiguration.inventory").joinpath(f"controller.secrets.yml")
+            self._controller_secrets = self.get_secrets(sfile)
         return self._controller_secrets
 
-    def set_secrets(self, filename: str, secrets: Dict[str, age.AgeSecret]):
+    def _set_secrets(self, filename: str, secrets: Dict[str, age.AgeSecret]):
         """Set the contents of a secrets file"""
         file_contents = {k: v.secret for k, v in secrets.items()}
         with open(filename, "w") as fp:
             yaml.dump(file_contents, fp, default_style="|")
 
     def set_node_secret(self, nodename: str, secretname: str, encrypted_value: str):
+        """Set a secret for a node"""
         self.get_node_secrets(nodename)  # Ensure it's cached
         self._node_secrets[nodename][secretname] = age.AgeSecret(encrypted_value)
-        self.set_secrets(self.node_secrets_file(nodename), self._node_secrets[nodename])
+        self._set_secrets(self.node_secrets_file(nodename), self._node_secrets[nodename])
 
     def set_group_secret(self, groupname: str, secretname: str, encrypted_value: str):
+        """Set a secret for a group"""
         self.get_group_secrets(groupname)  # Ensure it's cached
         self._group_secrets[groupname][secretname] = age.AgeSecret(encrypted_value)
-        self.set_secrets(self.group_secrets_file(groupname), self._group_secrets[groupname])
+        self._set_secrets(self.group_secrets_file(groupname), self._group_secrets[groupname])
 
     def set_controller_secret(self, secretname: str, encrypted_value: str):
+        """Set a secret for the controller"""
         self.get_controller_secrets()  # Ensure it's cached
         self._controller_secrets[secretname] = age.AgeSecret(encrypted_value)
-        self.set_secrets(self.controller_secrets_file(), self._controller_secrets)
+        self._set_secrets(self.controller_secrets_file(), self._controller_secrets)
 
     def encrypt_secret(
         self, name: str, value: str, nodes: List[str], groups: List[str], controller_key: bool, store: bool = False
     ):
+        """Encrypt a secret for some list of nodes and groups.
+
+        Always encrypt for the controller so that it can decrypt too.
+        """
 
         recipients = nodes.copy()
 
