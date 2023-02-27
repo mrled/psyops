@@ -64,10 +64,10 @@ data:
               - name: /dev/mapper/nvme0n1p2_crypt
           - name: kenasus
             devices:
-              - name: /dev/psyopsos_datadiskvg/treasurylv
+              - name: /dev/mapper/nvme0n1p2_crypt
           - name: zalas
             devices:
-              - name: /dev/psyopsos_datadiskvg/treasurylv
+              - name: /dev/mapper/nvme0n1p2_crypt
 
       # "!!! caution Changing networking configuration after a Ceph cluster has been deployed is NOT supported and will result in a non-functioning cluster."
       # lol
