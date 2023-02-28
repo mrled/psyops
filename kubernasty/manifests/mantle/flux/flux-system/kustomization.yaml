@@ -32,7 +32,7 @@ resources:
   - crust/keycloak.yaml
   - crust/traefik.kustomization.yaml
   - crust/kubernetes-dashboard.yaml
-  - crust/treasury.yaml
+  # - crust/treasury.yaml
 
   # My deploymnets: Atmosphere
   - atmosphere/uptime-kuma.yaml
