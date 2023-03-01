@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: treasury-overrides
-  namespace: treasury
+  name: cephalopod-overrides
+  namespace: cephalopod
 data:
   values.yaml: |-
     operatorNamespace: rook-ceph
@@ -86,27 +86,27 @@ data:
           cert-manager.io/cluster-issuer: letsencrypt-issuer-prod
           traefik.ingress.kubernetes.io/router.middlewares: kube-system-keycloak-auth-redirect-mw@kubernetescrd
         host:
-          name: treasury.${clusterTld}
+          name: cephalopod.${clusterTld}
           paths: /(.*)
         tls:
-          - hosts: [treasury.${clusterTld}]
+          - hosts: [cephalopod.${clusterTld}]
             secretName: micahrl-dot-me-wildcard-backing-secret
 
     cephBlockPools:
-      - name: treasury-nvme-3rep-block
+      - name: cephalopod-nvme-3rep-block
         spec:
           failureDomain: host
           replicated:
             size: 3
         storageClass:
           enabled: true
-          name: treasury-nvme-3rep-block
+          name: cephalopod-nvme-3rep-block
           isDefault: true
           reclaimPolicy: Delete
           allowVolumeExpansion: true
 
     cephFileSystems:
-      - name: treasury-nvme-3rep-fs
+      - name: cephalopod-nvme-3rep-fs
         spec:
           metadataPool:
             replicated:
@@ -125,7 +125,7 @@ data:
         storageClass:
           enabled: true
           isDefault: false
-          name: treasury-nvme-3rep-fs
+          name: cephalopod-nvme-3rep-fs
           pool: datapool0
           reclaimPolicy: Delete
           allowVolumeExpansion: true
@@ -134,18 +134,18 @@ data:
 
     cephFileSystemVolumeSnapshotClass:
       enabled: false
-      name: treasury-nvme-3rep-fs
+      name: cephalopod-nvme-3rep-fs
       isDefault: true
       deletionPolicy: Delete
 
     cephBlockPoolsVolumeSnapshotClass:
       enabled: false
-      name: treasury-nvme-3rep-block
+      name: cephalopod-nvme-3rep-block
       isDefault: false
       deletionPolicy: Delete
 
     cephObjectStores:
-      - name: treasury-nvme-3rep-object
+      - name: cephalopod-nvme-3rep-object
         spec:
           metadataPool:
             failureDomain: host
@@ -170,7 +170,7 @@ data:
               interval: 60s
         storageClass:
           enabled: true
-          name: treasury-nvme-3rep-object
+          name: cephalopod-nvme-3rep-object
           reclaimPolicy: Delete
           parameters:
             region: us-office-closet-1

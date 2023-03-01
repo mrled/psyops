@@ -1,11 +1,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
 kind: Kustomization
 metadata:
-  name: treasury
+  name: cephalopod
   namespace: flux-system
 spec:
   interval: 15m
-  path: /kubernasty/manifests/crust/treasury
+  path: /kubernasty/manifests/crust/cephalopod
   prune: true
   timeout: 2m
   sourceRef:

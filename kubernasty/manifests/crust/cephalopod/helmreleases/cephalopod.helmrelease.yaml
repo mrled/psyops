@@ -1,8 +1,8 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: treasury
-  namespace: treasury
+  name: cephalopod
+  namespace: cephalopod
 spec:
   chart:
     spec:
@@ -15,4 +15,4 @@ spec:
   timeout: 5m
   valuesFrom:
   - kind: ConfigMap
-    name: treasury-overrides
+    name: cephalopod-overrides

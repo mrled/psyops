@@ -1,11 +1,11 @@
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
-  name: treasury.${clusterTld}
+  name: cephalopod.${clusterTld}
   namespace: external-dns
 spec:
   endpoints:
-  - dnsName: treasury.${clusterTld}
+  - dnsName: cephalopod.${clusterTld}
     recordTTL: 60
     recordType: CNAME
     targets:
