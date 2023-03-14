@@ -255,7 +255,7 @@ Resources:
           TTL: 300
           ResourceRecords: ["df9oxkpvyda4s.cloudfront.net"]
 
-        - Name: bullshit.micahrl.com
+        - Name: whispers.micahrl.com
           Type: CNAME
           TTL: 300
           ResourceRecords: ["micahrl.micro.blog"]
