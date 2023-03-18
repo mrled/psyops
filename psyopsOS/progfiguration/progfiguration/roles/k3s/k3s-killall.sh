@@ -22,7 +22,7 @@ killtree() {
     [ $# -ne 0 ] && kill $(set +x; pstree $@; set -x)
 }
 
-killtree $(lsof | sed -e 's/^[^0-9]*//g; s/  */\t/g' | grep -w 'k3s/data/[^/]*/bin/containerd-shim' | cut -f1 | sort -n -u)
+killtree $(lsof -w | sed -e 's/^[^0-9]*//g; s/  */\t/g' | grep -w 'k3s/data/[^/]*/bin/containerd-shim' | cut -f1 | sort -n -u)
 
 do_unmount() {
     MOUNTS=`cat /proc/self/mounts | awk '{print $2}' | grep "^$1" | sort -r`
