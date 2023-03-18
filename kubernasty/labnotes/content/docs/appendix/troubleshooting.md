@@ -309,3 +309,11 @@ kubectl apply --server-side --field-manager=kustomize-controller -f kubernasty/m
 ```
 
 [Via](https://github.com/fluxcd/kustomize-controller/issues/741#issuecomment-1271635186).
+
+## CPU and memory limits
+
+* `kubectl describe node <nodename>` shows resource consumption on the node,
+  including CPU and memory,
+  and shows which pods are consuming them.
+* CPU is specified like `123m`, where the `m` is for `millicpu`
+* <https://stackoverflow.com/questions/38869673/pod-in-pending-state-due-to-insufficient-cpu>
