@@ -11,7 +11,7 @@ data:
       enabled: true
       resources:
         requests:
-          cpu: 20m
+          cpu: 50m
           memory: 128Mi
 
     cephClusterSpec:
@@ -32,25 +32,25 @@ data:
       resources:
         mgr:
           requests:
-            cpu: 50m
+            cpu: 200m
         mon:
           requests:
-            cpu: 100m
+            cpu: 500m
         osd:
           requests:
-            cpu: 100m
+            cpu: 200m
         mgr-sidecar:
           requests:
-            cpu: 20m
+            cpu: 50m
         crashcollector:
           requests:
-            cpu: 20m
+            cpu: 50m
         logcollector:
           requests:
-            cpu: 20m
+            cpu: 50m
         cleanup:
           requests:
-            cpu: 50m
+            cpu: 200m
 
       # See:
       # <https://github.com/rook/rook/blob/master/Documentation/CRDs/Cluster/ceph-cluster-crd.md#node-settings>
