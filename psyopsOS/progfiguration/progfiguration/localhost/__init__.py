@@ -7,6 +7,8 @@ import string
 import subprocess
 from typing import Any, Dict, List, Optional
 
+from progfiguration import temple
+
 
 class LocalhostLinux:
     """An interface to localhost running Linux.
@@ -125,8 +127,9 @@ class LocalhostLinux:
         if mode:
             os.chmod(dest, mode)
 
-    def template(
+    def _template_backend(
         self,
+        template: type,
         src: str,
         dest: str,
         template_args: Dict[str, Any],
@@ -135,11 +138,18 @@ class LocalhostLinux:
         mode: Optional[int] = None,
         dirmode: Optional[int] = None,
     ):
+        """Template a file using the appropriate backend"""
         self.makedirs(os.path.dirname(dest), owner, group, dirmode)
         with open(src) as fp:
-            template_contents = string.Template(fp.read())
+            template_contents = template(fp.read())
         inflated = template_contents.substitute(**template_args)
         self.set_file_contents(dest, inflated, owner, group, mode)
+
+    def template(self, *args, **kwargs):
+        return self._template_backend(string.Template, *args, **kwargs)
+
+    def temple(self, *args, **kwargs):
+        return self._template_backend(temple.Temple, *args, **kwargs)
 
     def linesinfile(self, file: str, lines: List[str]):
         """Ensure all lines in the input list exist in a file.

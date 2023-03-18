@@ -20,10 +20,11 @@ rc-service containerd stop
 rc-service iscsid stop
 
 # This is also necessary for some reason?
-killall containerd-shim-runc-v2 traefik longhorn longhorn-manager kube-vip runsvdir pause sleep tini livenessprobe
+killall containerd-shim-runc-v2 traefik longhorn longhorn-manager kube-vip runsvdir pause sleep tini livenessprobe csi-node-driver-registrar cephcsi entry
 
-# Make sure all relevant longhorn processes are killed too - might be some you have to clean up manually
+# Make sure all relevant longhorn/ceph processes are killed too - might be some you have to clean up manually
 ps aux | grep longhorn
+ps aux | grep ceph
 
 # Unmount a bunch of bullshit that Docker mounts
 umount /run/netns/* /var/lib/kubelet/pods/*/volumes/*/*

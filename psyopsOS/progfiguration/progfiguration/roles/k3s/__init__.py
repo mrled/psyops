@@ -54,6 +54,8 @@ def apply(
     data_containerd_subpath: str,
     data_etcrancher_subpath: str,
     start_k3s: bool,
+    k3s_interface: str,
+    k3s_vipaddress: str,
 ):
 
     # Some packages are not yet in the stable repos, so we have to use edgetesting
@@ -64,6 +66,7 @@ def apply(
         "k3s",
         "nfs-utils",
         "open-iscsi",
+        "sgdisk",  # Useful for zapping block devices previously used for Ceph
     ]
     packages = " ".join(package_list)
 
@@ -75,6 +78,17 @@ def apply(
         owner="root",
         group="root",
         mode=0o0755,
+    )
+    localhost.temple(
+        module_files.joinpath("progfiguration-k3s.sh.temple"),
+        "/usr/local/sbin/progfiguration-k3s.sh",
+        {
+            "k3s_interface": k3s_interface,
+            "k3s_vipaddress": k3s_vipaddress,
+        },
+        owner="root",
+        mode=0o0755,
+        dirmode=0o0755,
     )
 
     # ... wtf
@@ -101,11 +115,10 @@ def apply(
     localhost.makedirs(os.path.join(data_mountpoint, "roles/k3s/longhorn/data"), "root", "root", 0o0700)
     localhost.makedirs(os.path.join(data_mountpoint, "roles/k3s/rook-ceph/data"), "root", "root", 0o0700)
 
-    if not start_k3s:
-        logger.info(
-            "start_k3s was False, not starting k3s. If you are setting up a new cluster, refer to the psyopsOS/docs/kubernasty.md documentation"
-        )
-        return
+    k3s_initialized = os.path.exists("/etc/rancher/k3s/k3s.yaml")
 
-    logger.info("Starting k3s...")
-    subprocess.run("rc-service k3s start", shell=True, check=True)
+    if start_k3s and k3s_initialized:
+        logger.info("Starting k3s...")
+        subprocess.run("rc-service k3s start", shell=True, check=True)
+    else:
+        logger.info(f"Not starting k3s. k3s.yaml exists: {k3s_initialized}; start_k3s: {start_k3s}.")

@@ -23,7 +23,8 @@ group = Bunch(
             ],
         },
         k3s={
-            # "kube_vip_address": "192.168.1.200",
+            "k3s_interface": "psy0",
+            "k3s_vipaddress": "192.168.1.200",
         },
     ),
 )
