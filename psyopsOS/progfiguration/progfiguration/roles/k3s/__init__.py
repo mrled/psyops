@@ -56,6 +56,8 @@ def apply(
     start_k3s: bool,
     k3s_interface: str,
     k3s_vipaddress: str,
+    k3s_interface2: str,
+    k3s_vipaddress2: str,
 ):
 
     # Some packages are not yet in the stable repos, so we have to use edgetesting

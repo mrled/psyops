@@ -25,6 +25,8 @@ group = Bunch(
         k3s={
             "k3s_interface": "psy0",
             "k3s_vipaddress": "192.168.1.200",
+            "k3s_interface2": "psy0",
+            "k3s_vipaddressr2": "192.168.1.201",
         },
     ),
 )

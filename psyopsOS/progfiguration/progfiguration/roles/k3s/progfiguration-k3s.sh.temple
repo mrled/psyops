@@ -8,6 +8,14 @@ set -eu
 interface={$}k3s_interface
 # The address to use for the floating VIP
 vipaddress={$}k3s_vipaddress
+# The interface for the secondary floating VIP, used for gitea
+interface2={$}k3s_interface2
+# The address to use for the secondary floating VIP
+vipaddress2={$}k3s_vipaddress2
+
+#### Constants
+kubevip2_name=kube-vip2
+kubevip2_prometheus_port=2212
 
 
 usage() {
@@ -70,6 +78,7 @@ action_kubevip_init() {
     # This can be combined with the RBAC manifest by separating them with `\n---\n`,
     # the standard YAML document separator.
 
+    # Add the daemonset for the main VIP to the file
     printf "\n---\n" >> "$tmpinit/kube-vip.yaml"
     $kubevip manifest daemonset \
         --interface $interface \
@@ -79,7 +88,25 @@ action_kubevip_init() {
         --controlplane \
         --services \
         --arp \
-        --leaderElection >> "$tmpinit/kube-vip.yaml"
+        --leaderElection \
+    >> "$tmpinit/kube-vip.yaml"
+
+    # Add the daemonset for the secondary VIP to the file
+    # We have to modify the output to use a different DaemonSet name and Prometheus port
+    printf "\n---\n" >> "$tmpinit/kube-vip.yaml"
+    $kubevip manifest daemonset \
+        --interface psy0 \
+        --address 192.168.1.201 \
+        --inCluster \
+        --taint \
+        --controlplane \
+        --services \
+        --arp \
+        --leaderElection |
+            sed "s/value: :2112/value: :$kubevip2_prometheus_port/g" |
+            sed "s/name: kube-vip-ds\$/name: $kubevip2_name/g" \
+    >> "$tmpinit/kube-vip.yaml"
+
 
     # Copy it to the manifests folder (only needs to happen on the first cluster member)
     mkdir -p /var/lib/rancher/k3s/server/manifests

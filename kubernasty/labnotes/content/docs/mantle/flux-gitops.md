@@ -68,7 +68,8 @@ See also the [official Flux documentation](https://fluxcd.io/flux/installation).
   * Give access to just this `mrled/psyops` repo
     * Read and Write: `Administration`
     * Read and Write: `Contents`
-    * Read: _everything else_
+    * Read and Write: `Commit Statuses`
+    * Everything else is set to the default value
   * If you modify the repository permissions after generating the token,
     make sure to _regenerate the token_.
 
