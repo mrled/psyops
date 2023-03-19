@@ -87,6 +87,8 @@ def apply(
         {
             "k3s_interface": k3s_interface,
             "k3s_vipaddress": k3s_vipaddress,
+            "k3s_interface2": k3s_interface2,
+            "k3s_vipaddress2": k3s_vipaddress2,
         },
         owner="root",
         mode=0o0755,
