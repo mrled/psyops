@@ -223,12 +223,11 @@ action_leave() {
     killall containerd-shim-runc-v2 traefik longhorn longhorn-manager kube-vip runsvdir pause sleep tini livenessprobe csi-node-driver-registrar cephcsi entry
 
     # Make sure all relevant longhorn/ceph processes are killed too - might be some you have to clean up manually
+    manuals=""
     if ps aux | grep -v grep | grep -i longhorn; then
-        echo "Longhorn processes still running, please kill them manually"
-        exit 1
+        manuals="$manuals longhorn"
     elif ps aux | grep -v grep | grep -i ceph; then
-        echo "Ceph processes still running, please kill them manually"
-        exit 1
+        manuals="$manuals ceph"
     fi
 
     # Unmount a bunch of bullshit that Docker mounts
@@ -249,6 +248,13 @@ action_leave() {
     rm -f /etc/rancher/k3s/k3s.yaml
 
     set -e
+
+    if test -n "$manuals"; then
+        echo "WARNING: The following systems still have processes running:"
+        echo "$manuals"
+        echo "You must kill them manually."
+        exit 1
+    fi
 }
 
 
