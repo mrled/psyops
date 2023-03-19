@@ -62,12 +62,21 @@ data:
           - name: jesseta
             devices:
               - name: /dev/mapper/nvme0n1p2_crypt
+                config:
+                  encryptedDevice: true
+                  osdsPerDevice: "2"
           - name: kenasus
             devices:
               - name: /dev/mapper/nvme0n1p2_crypt
+                config:
+                  encryptedDevice: true
+                  osdsPerDevice: "2"
           - name: zalas
             devices:
               - name: /dev/mapper/nvme0n1p2_crypt
+                config:
+                  encryptedDevice: true
+                  osdsPerDevice: "2"
 
       # "!!! caution Changing networking configuration after a Ceph cluster has been deployed is NOT supported and will result in a non-functioning cluster."
       # lol

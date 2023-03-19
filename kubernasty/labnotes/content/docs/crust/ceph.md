@@ -1,5 +1,5 @@
 ---
-title: Ceph clustger
+title: Ceph cluster
 weight: 35
 ---
 
@@ -20,9 +20,9 @@ We will use Ceph for block storage
   It contains the cluster definition/configuration,
   and requires that `rook-ceph` already be present.
 
-## Treasury
+## cephalopod
 
-My Rook Ceph cluster is called `treasury`.
+My Rook Ceph cluster is called `cephalopod`.
 In case we later need other clusters in the future,
 this one will be the main/system cluster.
 
@@ -31,7 +31,7 @@ this one will be the main/system cluster.
 Currently, I have 3 nodes, each with a fresh 1TB nvme drive,
 which has 256GB dedicated to the /psyopsos-data volume (including Longhorn storage)
 and the rest intended for Ceph.
-Ceph will use the LVM volume at `/dev/psyopsos_datadiskvg/treasurylv`.
+Ceph will use the LVM volume at `/dev/psyopsos_datadiskvg/cephalopodlv`.
 
 ```text
 jesseta:~# lsblk
@@ -46,10 +46,10 @@ nvme0n1                          259:0    0 931.5G  0 disk
 │                                                          /var/lib/containerd
 │                                                          /var/lib/rancher/k3s
 │                                                          /psyopsos-data
-└─psyopsos_datadiskvg-treasurylv 253:1    0 675.5G  0 lvm
+└─psyopsos_datadiskvg-cephalopodlv 253:1    0 675.5G  0 lvm
 ```
 
-It's worth using the software (Ceph) or the cluster name (treasury) or both
+It's worth using the software (Ceph) or the cluster name (cephalopod) or both
 in the name of the storage class,
 as we are already using [Longhorn]({{< ref "longhorn" >}}) too.
 
@@ -57,17 +57,26 @@ I also think the disk class should be in the name.
 These hosts can all take a second internal SATA 2.5" disk,
 and it is possible we will use it in the future for more storage.
 
-* `treasury-nvme-3rep`: a class with 3 replicas
+* `cephalopod-nvme-3rep`: a class with 3 replicas
 
 ## Logging in
 
 When the cluster is deployed, the operator generates dashboard credentials.
 
 ```sh
-kubectl -n treasury get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo
+kubectl -n cephalopod get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo
 ```
 
 The username is `admin`.
+
+
+You can also use the [toolbox container](https://rook.io/docs/rook/v1.10/Troubleshooting/ceph-toolbox/#interactive-toolbox)
+to run Ceph commands against the cluster.
+Enter the toolbox with
+
+```sh
+kubectl -n cephalopod exec -it deploy/rook-ceph-tools -- bash
+```
 
 ## Deleting and reinstalling a cluster
 
@@ -79,12 +88,12 @@ note that it expects you to use the same `rook-ceph` namespace for both
 the Ceph operator and the Ceph cluster.
 We don't do that;
 we use `rook-ceph` for the operator only,
-and `treasury` for this Ceph cluster.
+and `cephalopod` for this Ceph cluster.
 
 ```sh
 rookceph_orchestrator_ns=rook-ceph
-rookceph_cluster_ns=treasury
-rookceph_cluster_name=treasury
+rookceph_cluster_ns=cephalopod
+rookceph_cluster_name=cephalopod
 
 # Delete the CephCluster CRD
 kubectl -n $rookceph_cluster_ns patch cephcluster $rookceph_cluster_name --type merge -p '{"spec":{"cleanupPolicy":{"confirmation":"yes-really-destroy-data"}}}'
