@@ -11,16 +11,12 @@ from progfiguration.localhost.disks import (
 group = Bunch(
     roles=Bunch(
         blockdevparty={
-            "wholedisks": [WholeDiskSpec()],
+            "wholedisks": [],
             "partitions": [
                 PartitionSpec(
-                    "/sys/devices/pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0/block/sda",
-                    "psyopsosdata",
-                    "0%",
-                    "100%",
-                    volgroup="psyopsos_datadiskvg",
-                    encrypt=True,
+                    "/dev/nvme0n1", "psyopsosdata", "0%", "256GiB", volgroup="psyopsos_datadiskvg", encrypt=True
                 ),
+                PartitionSpec("/dev/nvme0n1", "treasure", "256GiB", "100%", encrypt=False),
             ],
             "volumes": [
                 LvmLvSpec("datadisklv", "psyopsos_datadiskvg", r"100%FREE", FilesystemSpec("ext4", "psyopsos_data")),
