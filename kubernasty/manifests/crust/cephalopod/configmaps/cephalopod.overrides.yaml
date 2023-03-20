@@ -58,24 +58,26 @@ data:
       storage:
         useAllNodes: false
         useAllDevices: false
+        # WARNING: ONCE THE CLUSTER IS DEPLOYED, CHANGES TO THIS SECTION ARE NOT AUTOMATICALLY APPLIED
+        # See /kubernasty/labnotes/content/docs/crust/ceph.md in this repo for details.
         nodes:
           - name: jesseta
             devices:
               - name: /dev/nvme0n1p2
                 config:
-                  encryptedDevice: true
+                  encryptedDevice: "true"
                   osdsPerDevice: "2"
           - name: kenasus
             devices:
               - name: /dev/nvme0n1p2
                 config:
-                  encryptedDevice: true
+                  encryptedDevice: "true"
                   osdsPerDevice: "2"
           - name: zalas
             devices:
               - name: /dev/nvme0n1p2
                 config:
-                  encryptedDevice: true
+                  encryptedDevice: "true"
                   osdsPerDevice: "2"
 
       # "!!! caution Changing networking configuration after a Ceph cluster has been deployed is NOT supported and will result in a non-functioning cluster."
