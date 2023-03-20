@@ -29,11 +29,32 @@ class FilesystemSpec:
 class WholeDiskSpec:
     """A specification for a whole disk, to give an unpartitioned disk either a filesystem or a volume group"""
 
-    device: str
+    # Either a device under /dev, or a device path under /sys
+    #
+    # If it's a device under /dev, it will be used as-is.
+    # However, I'm not sure how well we can trust that device names will be stable between reboots.
+    #
+    # If it's a device path under /sys, it will be converted to a device under /dev.
+    # **THIS ONLY WORKS ON THE TARGET SYSTEM**.
+    # But the sys path should never change, even if the device name changes.
+    #
+    # The best way to find the syspath is to run `readlink -f /sys/class/block/{device}`
+    # For instance:
+    #   readlink -f /sys/class/block/sda
+    #   /sys/devices/pci0000:00/0000:00:1f.2/ata1/host0/target0:0:0/0:0:0:0/block/sda
+    #
+    # (Don't worry that it ends in '../sda'; if the 'sda' part changes, we will still be able to find the device.)
+    _device: str
+    # Format the disk with this filesystem; mutually exclusive with volgroup
     filesystem: Optional[FilesystemSpec] = None
+    # Add the disk to this volume group; mutually exclusive with filesystem
     volgroup: Optional[str] = None
+    # Encrypt it first
     encrypt: bool = False
+    # The label to use for the encrypted device; required if encrypt is True
     encrypt_label: Optional[str] = None
+    # A cache of the calculated device name, internal use only
+    _device_cache: Optional[str] = None
 
     def __post_init__(self):
         if self.filesystem and self.volgroup:
@@ -45,13 +66,23 @@ class WholeDiskSpec:
                 f"Error processing WholeDiskSpec for device {self.device}: When 'encrypt' is True, must pass 'encrypt_label'"
             )
 
+    @property
+    def device(self) -> str:
+        if not self._device_cache:
+            if self._device.startswith("/dev/"):
+                self._device_cache = self._device
+            elif self._device.startswith("/sys/"):
+                self._device_cache = syspath_to_device(self._device)
+        return self._device_cache
+
 
 @dataclass
 class PartitionSpec:
     """A specification for a single partition"""
 
-    # The device to partition, like '/dev/sda'
-    device: str
+    # Either a device under /dev, or a device path under /sys
+    # (See WholeDiskSpec for details)
+    _device: str
     # The GPT partition label, different from filesystem label
     # This is required and must be unique.
     # If encrypt is set to True, this label will apply to the encrypted device.
@@ -60,15 +91,29 @@ class PartitionSpec:
     start: str
     # The end of the partition, passed directly to parted
     end: str
+    # Format the partition with this filesystem; mutually exclusive with volgroup
     filesystem: Optional[FilesystemSpec] = None
+    # Add the partition to this volume group; mutually exclusive with filesystem
     volgroup: Optional[str] = None
+    # Encrypt it first
     encrypt: bool = False
+    # A cache of the calculated device name, internal use only
+    _device_cache: Optional[str] = None
 
     def __post_init__(self):
         if self.filesystem and self.volgroup:
             raise InvalidBlockDeviceSpecError(
-                f"Error processing PartitionSpec for device {self.device} with label {self.label}: cannot pass both filesystem and volgroup to PartitionSpec"
+                f"Error processing PartitionSpec for device {self._device} with label {self.label}: cannot pass both filesystem and volgroup to PartitionSpec"
             )
+
+    @property
+    def device(self) -> str:
+        if not self._device_cache:
+            if self._device.startswith("/dev/"):
+                self._device_cache = self._device
+            elif self._device.startswith("/sys/"):
+                self._device_cache = syspath_to_device(self._device)
+        return self._device_cache
 
 
 # @dataclass
@@ -115,6 +160,14 @@ class EncryptionKeyfileNotFoundError(Exception):
 
 
 class EncryptionKeyfileNotSetError(Exception):
+    pass
+
+
+class CouldNotFindSysPathError(Exception):
+    pass
+
+
+class CouldNotFindDevPathError(Exception):
     pass
 
 
@@ -181,3 +234,84 @@ def is_mountpoint(path: str) -> bool:
     """Return true if a path is a mountpoint for a currently mounted filesystem"""
     mtpt = subprocess.run(["mountpoint", path], check=False, capture_output=True)
     return mtpt.returncode == 0
+
+
+def syspath_to_device(syspath: str) -> str:
+    """Given a path for a device in /sys, return the device path under /dev
+
+    E.g., for a syspath like '/sys/devices/pci0000:00/0000:00:1f.2/ata1/host0/target0:0:0/0:0:0:0/block/sda/sda1',
+    return the device path like '/dev/sda1'.
+
+    I don't know how good of an idea this is!
+    But we're gonna fucking move our cigar to the other side of our mouth and do it anyway.
+
+    **This will only work on the final system**!
+    It cannot be used when running progfiguration on another node like the psyops container.
+    """
+
+    #### General implementation notes
+    #
+
+    # There are at least two ways to do this:
+    #
+    # 1. By looking in {syspath}/dev, which contains the major and minor numbers,
+    #    and then looking in /sys/dev/block/{major}:{minor} to find the device name.
+    # 2. By looking in {syspath}/uevent, which contains (among other things)
+    #    a DEVNAME value that we can prepend with /dev/ to get the path.
+    #
+    # The second method with DEVNAME is cleaner and faster (just one file read).
+    # It works on psyopsOS systems with mdev.
+    #
+    # It may be worth mentioning that the first way is how lsblk works,
+    # according to its man page:
+    #
+    #   > The lsblk needs to be able to lookup sysfs path by major:minor,
+    #   > which is done done by using /sys/dev/block.
+    #   > The block sysfs appeared in kernel 2.6.27 (October 2008).
+    #   > In case of problem with new enough kernel check that
+    #   > CONFIG_SYSFS was enabled at the time of kernel build.
+    #
+    # On systems with udev, we can get this in a more straightforward manner with udevadm,
+    # but psyopsOS uses mdev which doesn't appear to have a similar tool.
+    #
+    # See also:
+    # - <https://unix.stackexchange.com/questions/151812/get-device-node-by-major-minor-numbers-pair>
+    # - lsblk man page
+
+    #### Logic
+    #
+
+    # The device name may have changed; if so, we need to handle that.
+    #
+    # The user would have passed in something like
+    #   /sys/devices/pci0000:00/0000:00:1f.2/ata1/host0/target0:0:0/0:0:0:0/block/sda
+    # which they might get by running `readlink -f /sys/class/block/{device}`
+    #
+    # If we can find the uevent file inside that path, they passed in a complete path
+    uevent = os.path.join(syspath, "uevent")
+    # If they didn't, maybe they just passed in the part without the {device} at the end,
+    # like '/sys/devices/.../block'
+    # In this case, there should be exactly one child directory, and that's the {device}.
+    if not os.path.exists(uevent):
+        children = os.listdir(syspath)
+        if len(children) == 1:
+            uevent = os.path.join(syspath, children[0], "uevent")
+    # If that didn't work, maybe the device name changed,
+    # and they passed in eg '/sys/devices/.../block/sda' but now it's '.../block/sdb'.
+    # In this case, there should be exactly one child directory inside our parent, and that's the {device}.
+    if not os.path.exists(uevent):
+        syspathpar = os.path.dirname(syspath)
+        children = os.listdir(syspathpar)
+        if len(children) == 1:
+            uevent = os.path.join(syspathpar, children[0], "uevent")
+    # If that doens't work, give up
+    if not os.path.exists(uevent):
+        raise CouldNotFindSysPathError(f"Could not find uevent file for syspath {syspath}")
+
+    with open(uevent, "r") as f:
+        for line in f:
+            if line.startswith("DEVNAME="):
+                devname = line.split("=")[1].strip()
+                return os.path.join("/dev", devname)
+
+    raise CouldNotFindDevPathError(f"Could not find device path for syspath {syspath}")
