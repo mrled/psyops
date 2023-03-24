@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import textwrap
+from importlib.resources import files as importlib_resources_files
 from typing import List
 
 from progfiguration import logger
@@ -28,6 +29,9 @@ defaults = {
 }
 
 appends = ["wipe_after_mounting"]
+
+
+module_files = importlib_resources_files("progfiguration.roles.datadisk_v2")
 
 
 def setup_ramoffload(
@@ -104,13 +108,13 @@ def apply(
     localhost.set_file_contents(
         "/etc/psyopsOS/roles/datadisk/env.sh",
         textwrap.dedent(
-            """\
+            f"""\
             PSYOPSOS_DATADISK_MOUNTPOINT="{mountpoint}"
             PSYOPSOS_DATADISK_DEVICE="{block_device}"
             """
-        ).format(mountpoint=mountpoint),
+        ),
     )
-    localhost.cp("progfiguration-umount-datadisk", "/usr/local/sbin/", mode=0o755)
+    localhost.cp(module_files.joinpath("progfiguration-umount-datadisk.sh"), "/usr/local/sbin/", mode=0o755)
 
     if not is_mountpoint(mountpoint):
         logger.info(f"Mounting {block_device} on {mountpoint}...")

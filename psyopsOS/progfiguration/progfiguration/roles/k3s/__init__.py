@@ -6,6 +6,7 @@
 import os
 import subprocess
 from importlib.resources import files as importlib_resources_files
+import textwrap
 
 from progfiguration import logger
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
@@ -112,7 +113,17 @@ def apply(
 
     # Required for Helm to work
     localhost.set_file_contents(
-        "/etc/profile.d/kubeconfig.sh", "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml", "root", "root", 0o0644
+        "/etc/profile.d/progfiguration-k3s.sh",
+        textwrap.dedent(
+            """\
+                export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+                alias k=kubectl
+                alias k3s_etcdctl="etcdctl --cacert=/var/lib/rancher/k3s/server/tls/etcd/server-ca.crt --cert=/var/lib/rancher/k3s/server/tls/etcd/client.crt --key=/var/lib/rancher/k3s/server/tls/etcd/client.key"
+            """
+        ),
+        "root",
+        "root",
+        0o0644,
     )
 
     # Create role storage
