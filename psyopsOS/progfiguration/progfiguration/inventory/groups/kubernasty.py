@@ -11,12 +11,12 @@ from progfiguration.localhost.disks import (
 group = Bunch(
     roles=Bunch(
         blockdevparty={
-            "wholedisks": [],
+            "wholedisks": [
+                # This is a no-op, but we use this disk for Rook Ceph so we list it here
+                WholeDiskSpec("/dev/nvme0n1", None, None, False),
+            ],
             "partitions": [
-                PartitionSpec(
-                    "/dev/nvme0n1", "psyopsosdata", "0%", "256GiB", volgroup="psyopsos_datadiskvg", encrypt=True
-                ),
-                PartitionSpec("/dev/nvme0n1", "treasure", "256GiB", "100%", encrypt=False),
+                PartitionSpec("/dev/sda", "psyopsosdata", "0%", "100%", volgroup="psyopsos_datadiskvg", encrypt=True),
             ],
             "volumes": [
                 LvmLvSpec("datadisklv", "psyopsos_datadiskvg", r"100%FREE", FilesystemSpec("ext4", "psyopsos_data")),

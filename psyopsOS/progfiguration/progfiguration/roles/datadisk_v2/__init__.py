@@ -3,6 +3,7 @@
 import os
 import shutil
 import subprocess
+import textwrap
 from typing import List
 
 from progfiguration import logger
@@ -99,6 +100,18 @@ def apply(
     ramoffload_size_gb: int,
     ramoffload_directories: List[str],
 ):
+
+    localhost.set_file_contents(
+        "/etc/psyopsOS/roles/datadisk/env.sh",
+        textwrap.dedent(
+            """\
+            PSYOPSOS_DATADISK_MOUNTPOINT="{mountpoint}"
+            PSYOPSOS_DATADISK_DEVICE="{block_device}"
+            """
+        ).format(mountpoint=mountpoint),
+    )
+    localhost.cp("progfiguration-umount-datadisk", "/usr/local/sbin/", mode=0o755)
+
     if not is_mountpoint(mountpoint):
         logger.info(f"Mounting {block_device} on {mountpoint}...")
         os.makedirs(mountpoint, mode=0o755, exist_ok=True)
