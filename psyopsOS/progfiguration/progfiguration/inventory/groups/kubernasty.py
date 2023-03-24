@@ -10,18 +10,8 @@ from progfiguration.localhost.disks import (
 
 group = Bunch(
     roles=Bunch(
-        alpine_postboot_config={
-            "devd": "mdev",
-        },
         blockdevparty={
-            "wholedisks": [
-                WholeDiskSpec(
-                    "/dev/disk/by-path/",
-                    FilesystemSpec("ext4", "psyopsos_root"),
-                    encrypt=True,
-                    encrypt_label="psyopsos_root",
-                ),
-            ],
+            "wholedisks": [],
             "partitions": [
                 PartitionSpec(
                     "/dev/nvme0n1", "psyopsosdata", "0%", "256GiB", volgroup="psyopsos_datadiskvg", encrypt=True

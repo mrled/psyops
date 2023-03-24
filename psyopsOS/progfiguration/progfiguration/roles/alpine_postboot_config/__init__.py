@@ -10,10 +10,7 @@ from typing import List
 from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
 
 
-defaults = {
-    "devd": "",
-    "mdev_enable_psyopsos_by_sysfs_rules": True,
-}
+defaults = {}
 
 
 _users = [
@@ -94,25 +91,6 @@ def install_base_packages():
     subprocess.run(["apk", "add"] + packages, check=True)
 
 
-def enable_mdev_by_sysfs_path_psyopsos_rules(localhost: LocalhostLinuxPsyopsOs):
-    """Enable psyopsOS by-sysfs-path-psyopsos rules
-
-    Configure mdev to use our custom rules for creating symlinks under /dev/disk/by-sysfs-path-psyopsos
-
-    See psyopsOS/docs/persistent-device-names.md for full context
-    """
-
-    mdev_conf = localhost.get_file_contents("/etc/mdev.conf")
-
-    for block_link in os.listdir("/sys/block"):
-        # block_link will be something like "nvme0n1";
-        # devices_path will be something like
-        # '/sys/devices/pci0000:00/0000:00:1b.0/0000:01:00.0/nvme/nvme0/nvme0n1'
-        devices_path = os.path.realpath(os.path.join(os.path.dirname(block_link), os.readlink(block_link)))
-
-    with
-
-
 _psyopsOS_path_sh = r"""\
 # Append "$1" to $PATH when not already in.
 # Copied from Alpine /etc/profile, which copied from Arch.
@@ -130,16 +108,11 @@ __psyopsOS_append_path "$HOME/.local/bin"
 """
 
 
-def apply(localhost: LocalhostLinuxPsyopsOs, timezone: str, devd: str, mdev_enable_psyopsos_by_sysfs_path_rules: bool):
+def apply(localhost: LocalhostLinuxPsyopsOs, timezone: str):
 
     set_timezone(timezone)
 
     set_apk_repositories(localhost)
-
-    if devd:
-        subprocess.run(["setup-devd", "-C", devd], shell=True, check=True)
-
-    if mdev_enable_psyopsos_by_sysfs_path_rules:
 
     install_base_packages()
 
