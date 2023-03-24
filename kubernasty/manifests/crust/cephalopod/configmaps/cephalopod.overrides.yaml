@@ -63,19 +63,19 @@ data:
         nodes:
           - name: jesseta
             devices:
-              - name: /dev/nvme0n1p2
+              - name: /dev/nvme0n1
                 config:
                   encryptedDevice: "true"
                   osdsPerDevice: "2"
           - name: kenasus
             devices:
-              - name: /dev/nvme0n1p2
+              - name: /dev/nvme0n1
                 config:
                   encryptedDevice: "true"
                   osdsPerDevice: "2"
           - name: zalas
             devices:
-              - name: /dev/nvme0n1p2
+              - name: /dev/nvme0n1
                 config:
                   encryptedDevice: "true"
                   osdsPerDevice: "2"
