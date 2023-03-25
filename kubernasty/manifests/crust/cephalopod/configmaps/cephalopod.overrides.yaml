@@ -32,13 +32,13 @@ data:
       resources:
         mgr:
           requests:
-            cpu: 200m
+            cpu: 100m
         mon:
           requests:
-            cpu: 500m
+            cpu: 300m
         osd:
           requests:
-            cpu: 200m
+            cpu: 100m
         mgr-sidecar:
           requests:
             cpu: 50m
@@ -50,7 +50,7 @@ data:
             cpu: 50m
         cleanup:
           requests:
-            cpu: 200m
+            cpu: 100m
 
       # See:
       # <https://github.com/rook/rook/blob/master/Documentation/CRDs/Cluster/ceph-cluster-crd.md#node-settings>
@@ -132,7 +132,7 @@ data:
             activeStandby: true
             resources:
               requests:
-                cpu: 200m
+                cpu: 100m
         storageClass:
           enabled: true
           isDefault: false
@@ -175,7 +175,7 @@ data:
             instances: 1
             resouorces:
               requests:
-                cpu: 200m
+                1pu: 200m
           healthCheck:
             bucket:
               interval: 60s
