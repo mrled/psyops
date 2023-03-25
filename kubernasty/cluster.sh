@@ -44,3 +44,28 @@ flux_dryrun() {
 flux_gitreconcile() {
     kubectl annotate --field-manager=flux-client-side-apply --overwrite gitrepository/flux-system -n flux-system reconcile.fluxcd.io/requestedAt="$(date +%s)"
 }
+
+kube_resources() {
+    if test "$1"; then
+        namespace="--namespace $1"
+        pod_ns_note="(in namespace $1)"
+    else
+        namespace="--all-namespaces"
+        pod_ns_note="(all namespaces)"
+    fi
+    columns="Name:metadata.name"
+    columns="$columns,CPU-request:spec.containers[*].resources.requests.cpu"
+    columns="$columns,CPU-limit:spec.containers[*].resources.limits.cpu"
+    columns="$columns,RAM-request:spec.containers[*].resources.requests.memory"
+    columns="$columns,RAM-limit:spec.containers[*].resources.limits.memory"
+
+    echo "Pod resource requests and limits $pod_ns_note:"
+    kubectl get pods $namespace -o custom-columns="$columns"
+
+    echo
+    echo
+    # This is always for all namespaces bc its node-wide
+    echo "Node resource requests and limits (all namespaces):"
+    kubectl describe nodes | grep -A 3 "Resource .*Requests .*Limits"
+    echo
+}
