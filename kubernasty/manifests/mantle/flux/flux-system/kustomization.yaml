@@ -9,7 +9,6 @@ resources:
   - helm/gitea.helmrepo.yaml
   - helm/jetstack.helmrepo.yaml
   - helm/kubernetes-dashboard.helmrepo.yaml
-  - helm/longhorn.helmrepo.yaml
   - helm/oauth2-proxy.helmrepo.yaml
   - helm/rook.helmrepo.yaml
 
@@ -26,7 +25,6 @@ resources:
   - crust/cert-manager-config.yaml
   - crust/external-dns.yaml
   - crust/external-dns-endpoints.yaml
-  - crust/longhorn.yaml
   - crust/rook.yaml
   - crust/lldap.yaml
   - crust/keycloak.yaml
