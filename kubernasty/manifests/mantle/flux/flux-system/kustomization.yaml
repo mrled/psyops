@@ -26,12 +26,12 @@ resources:
   - crust/external-dns.yaml
   - crust/external-dns-endpoints.yaml
   - crust/rook.yaml
-  - crust/lldap.yaml
-  - crust/keycloak.yaml
+  # - crust/lldap.yaml
+  # - crust/keycloak.yaml
   - crust/traefik.kustomization.yaml
   - crust/kubernetes-dashboard.yaml
   - crust/cephalopod.yaml
 
   # My deploymnets: Atmosphere
-  - atmosphere/uptime-kuma.yaml
-  - atmosphere/gitea.yaml
+  # - atmosphere/uptime-kuma.yaml
+  # - atmosphere/gitea.yaml
