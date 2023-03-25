@@ -6,7 +6,6 @@ metadata:
 spec:
   dependsOn:
     - name: cert-manager-config
-    - name: longhorn
   interval: 15m
   path: /kubernasty/manifests/crust/lldap
   prune: true
