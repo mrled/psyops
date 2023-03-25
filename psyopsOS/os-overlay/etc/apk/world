@@ -6,6 +6,7 @@ busybox
 ca-certificates
 coreutils
 curl
+eudev
 file
 git
 gzip
@@ -26,6 +27,8 @@ sqlite
 strace
 sudo
 tar
+udev-init-scripts
+udev-init-scripts-openrc
 usbutils
 util-linux
 vim
