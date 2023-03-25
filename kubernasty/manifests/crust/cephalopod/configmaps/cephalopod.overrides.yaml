@@ -11,6 +11,7 @@ data:
       enabled: true
       resources:
         requests:
+          cpu: 100m
           memory: 128Mi
 
     cephClusterSpec:
@@ -27,6 +28,31 @@ data:
           # TODO: do I need encryption once I have an encrypted network fabric for the whole cluster?
           encryption: true
 
+      # This is pretty anemic, but the CPU requirements are so high by default I couldn't run much else
+      resources:
+        mgr:
+          requests:
+            cpu: 100m
+        mon:
+          requests:
+            cpu: 100m
+        osd:
+          requests:
+            cpu: 100m
+        mgr-sidecar:
+          requests:
+            cpu: 100m
+        crashcollector:
+          requests:
+            cpu: 100m
+        logcollector:
+          requests:
+            cpu: 100m
+        cleanup:
+          requests:
+            cpu: 100m
+
+
       # See:
       # <https://github.com/rook/rook/blob/master/Documentation/CRDs/Cluster/ceph-cluster-crd.md#node-settings>
       # <https://github.com/rook/rook/blob/master/Documentation/CRDs/Cluster/ceph-cluster-crd.md#storage-selection-settings>
@@ -35,25 +61,26 @@ data:
         useAllDevices: false
         # WARNING: ONCE THE CLUSTER IS DEPLOYED, CHANGES TO THIS SECTION ARE NOT AUTOMATICALLY APPLIED
         # See /kubernasty/labnotes/content/docs/crust/ceph.md in this repo for details.
+        # It would be more performant to have multiple OSDs per device, but they require a lot of CPU
         nodes:
           - name: jesseta
             devices:
               - name: /dev/nvme0n1
                 config:
                   encryptedDevice: "true"
-                  osdsPerDevice: "2"
+                  osdsPerDevice: "1"
           - name: kenasus
             devices:
               - name: /dev/nvme0n1
                 config:
                   encryptedDevice: "true"
-                  osdsPerDevice: "2"
+                  osdsPerDevice: "1"
           - name: zalas
             devices:
               - name: /dev/nvme0n1
                 config:
                   encryptedDevice: "true"
-                  osdsPerDevice: "2"
+                  osdsPerDevice: "1"
 
       # "!!! caution Changing networking configuration after a Ceph cluster has been deployed is NOT supported and will result in a non-functioning cluster."
       # lol
@@ -105,6 +132,9 @@ data:
           metadataServer:
             activeCount: 1
             activeStandby: true
+            resources:
+              requests:
+                cpu: 100m
         storageClass:
           enabled: true
           isDefault: false
