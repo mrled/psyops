@@ -13,6 +13,9 @@ source="
 	psyopsOS.list
 	psyopsOS-base-setup.sh
 	psyopsOS-write-bootmedia
+	telepathy.conf
+	telepathy.init
+	telepathy.py
 "
 builddir="$$srcdir/build"
 
@@ -22,11 +25,27 @@ depends="python3 coreutils"
 package() {
 	mkdir -p "$$pkgdir"
 	cd "$$pkgdir"
+
+	install -m0755 -d etc/conf.d
+	install -m0755 -d etc/init.d
+	install -m0755 -d etc/psyopsOS/telepathy.d
 	install -m0755 -d usr/sbin
+
 	install -m0700 \
 		"$$srcdir"/psyopsOS-base-setup.sh \
 		"$$srcdir"/psyopsOS-write-bootmedia \
 		"$$pkgdir"/usr/sbin
+
+	install -m0755 \
+		"$$srcdir"/telepathy.py \
+		"$$pkgdir"/usr/sbin/telepathy
+	install -m0755 \
+		"$$srcdir"/telepathy.init \
+		"$$pkgdir"/etc/init.d/telepathy
+	install -m0644 \
+		"$$srcdir"/telepathy.conf \
+		"$$pkgdir"/etc/conf.d/telepathy
+
 	install -m0755 -d etc/apk/repositories.d etc/apk/keys
 	install -m0644 "$$srcdir"/psyops@micahrl.com-62ca1973.rsa.pub "$$pkgdir"/etc/apk/keys
 	install -m0644 "$$srcdir"/psyopsOS.list "$$pkgdir"/etc/apk/repositories.d
