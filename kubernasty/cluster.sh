@@ -54,6 +54,10 @@ kube_resources() {
         pod_ns_note="(all namespaces)"
     fi
     columns="Name:metadata.name"
+    columns="$columns,READY:.status.containerStatuses[*].ready"
+    columns="$columns,NAMESPACE:.metadata.namespace"
+    columns="$columns,STATUS:.status.phase"
+    columns="$columns,NODE:.spec.nodeName"
     columns="$columns,CPU-request:spec.containers[*].resources.requests.cpu"
     columns="$columns,CPU-limit:spec.containers[*].resources.limits.cpu"
     columns="$columns,RAM-request:spec.containers[*].resources.requests.memory"

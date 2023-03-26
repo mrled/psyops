@@ -81,6 +81,7 @@ Node resource requests and limits:
 * The biggest thing to notice is if the CPU/RAM _requests_ are near or above 100%.
 * Flux may have kustomizations stuck in "Reconciliation in progress" indefinitely
   (see this with `kubectl get kustomizations -n flux-system`)
+* Pods wait to start indefinitely
 
 ## How to manage resource limits
 
@@ -90,3 +91,8 @@ Node resource requests and limits:
   This allows pods to burst CPU usage if they need to.
 * Set RAM requests (min) and limits (max), because you cannot reclaim RAM without killing a pod,
   so coming down from a RAM burst is more disruptive.
+
+## What to do if the cluster is over-provisioned
+
+* Make liberal use of `flux suspend kustomization ...`
+* Delete any resources that are not in production yet, or that

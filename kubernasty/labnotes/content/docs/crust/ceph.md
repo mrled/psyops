@@ -59,6 +59,31 @@ and it is possible we will use it in the future for more storage.
 
 * `cephalopod-nvme-3rep`: a class with 3 replicas
 
+## Deployment
+
+Once Flux notices the manifests are in the repo, it will take a long fucking time to install Ceph.
+From a recent install:
+
+* Flux sees the kustomization in the repo and applies it
+* The tools pod and the first `mon` pod start quickly
+* 21 minutes later, the second `mon` pod starts
+* 22 minute slater, the third `mon` pod starts
+* (Maybe these are doing some kind of filesystem format? That takes 21 minutes? For some reason?)
+* 75 minutes later nothing has happened and I'm going to bed
+* 4 hours after the 3rd `mon` pod started, all the other pods started.
+  When I woke up the next day I could log in to the web UI.
+
+
+If you recently deployed, note that a complete deployment (across 3 nodes with just one osd per disk)
+looks something like this:
+
+```text
+```
+
+If you're just looking at a small number of pods with `kubectl get pods -n cephalopod`,
+the deployment is not finished.
+Read logs and/or just wait.
+
 ## Logging in
 
 When the cluster is deployed, the operator generates dashboard credentials.
@@ -194,6 +219,10 @@ kubectl -n $rookceph_cluster_ns patch cephcluster $rookceph_cluster_name --type 
 kubectl -n $rookceph_cluster_ns delete cephcluster $rookceph_cluster_name
 # **WARNING**: Don't proceed until the cluster has been actually deleted! Verify with:
 kubectl -n $rookceph_cluster_ns get cephcluster
+# If it doesn't delete itself for a while, you may need to manually remove some dependent resources.
+# I found this in my cluster when I did `kubectl describe cephcluster` and saw a message like
+# `CephCluster "cephalopod/cephalopod" will not be deleted until all dependents are removed: CephBlockPool: [cephalopod-nvme-3rep-block], CephFilesystem: [cephalopod-nvme-3rep-fs], CephObjectStore: [cephalopod-nvme-3rep-object]`.
+# I had to remove those manually (`kubectl delete cephfilesystem ...`, etc) and then the cluster was removed right away.
 
 # Remove the finalizers
 # Should not be necessary under normal conditions
@@ -211,6 +240,36 @@ done
 # Should not be necessary under normal conditions
 kubectl api-resources --verbs=list --namespaced -o name |
   xargs -n 1 kubectl get --show-kind --ignore-not-found -n $rookceph_cluster_ns
+```
+
+**It's important to delete Ceph data before reinstalling.**
+
+The first thing we have to do is stop the LVM stuff.
+
+```sh
+vgs
+
+vgremove ...
+
+# etc
+```
+
+Suggestions from the Ceph docs include:
+
+```sh
+DISK="/dev/sdX"
+
+# Zap the disk to a fresh, usable state (zap-all is important, b/c MBR has to be clean)
+sgdisk --zap-all $DISK
+
+# Wipe a large portion of the beginning of the disk to remove more LVM metadata that may be present
+dd if=/dev/zero of="$DISK" bs=1M count=100 oflag=direct,dsync
+
+# SSDs may be better cleaned with blkdiscard instead of dd
+blkdiscard $DISK
+
+# Inform the OS of partition table changes
+partprobe $DISK
 ```
 
 ## Appendix: Why not minio?
