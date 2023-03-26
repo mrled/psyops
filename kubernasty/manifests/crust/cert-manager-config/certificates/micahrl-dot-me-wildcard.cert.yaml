@@ -14,6 +14,7 @@ spec:
     annotations:
       reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
       reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: >-
+        cephalopod,
         gitea,
         keycloak,
         kube-system,
@@ -23,6 +24,7 @@ spec:
         uptime-kuma
       reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
       reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: >-
+        cephalopod,
         gitea,
         keycloak,
         kube-system,
