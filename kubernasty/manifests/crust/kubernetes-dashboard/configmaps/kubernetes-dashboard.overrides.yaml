@@ -5,6 +5,7 @@ metadata:
   namespace: kubernetes-dashboard
 data:
   values.yaml: |-
+    protocolHttp: true
     ingress:
       enabled: true
       annotations:
@@ -20,3 +21,6 @@ data:
         - secretName: micahrl-dot-me-wildcard-backing-secret
           hosts:
             - dashboard.${clusterTld}
+    settings:
+      clusterName: kubernasty
+      itemsPerPage: 100
