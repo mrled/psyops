@@ -15,7 +15,7 @@ data:
             adminPasswordKey: pgsql-admin-password
             userPasswordKey: pgsql-gitea-password
           database: gitea
-      storageClass: knty-rep3
+      storageClass: cephalopod-nvme-3rep-fs
     primary:
       extraEnvVars:
         - name: PGDATA

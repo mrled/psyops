@@ -40,4 +40,4 @@ spec:
         resources:
           requests:
             storage: 2Gi
-        storageClassName: knty-rep3
+        storageClassName: cephalopod-nvme-3rep-fs

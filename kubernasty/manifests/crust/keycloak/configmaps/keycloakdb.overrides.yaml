@@ -12,7 +12,7 @@ data:
           # Reads from the .password key on this secret
           existingSecret: keycloakdb-pass
           database: keycloak
-      storageClass: knty-rep3
+      storageClass: cephalopod-nvme-3rep-fs
     primary:
       extraEnvVars:
         - name: PGDATA
