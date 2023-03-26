@@ -1,7 +1,13 @@
 ---
-title: Longhorn storage
+title: ⚠️ Longhorn storage
 weight: 30
 ---
+
+{{< hint "danger" >}}
+⚠️ **This is deprecated** ⚠️
+
+We are now using [Ceph]({{< ref "ceph" >}}) instead.
+{{< /hint >}}
 
 Longhorn is a distributed storage system.
 
