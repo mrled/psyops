@@ -1,6 +1,6 @@
 ---
 title: Ceph cluster
-weight: 30
+weight: 35
 ---
 
 {{< hint warning >}}
