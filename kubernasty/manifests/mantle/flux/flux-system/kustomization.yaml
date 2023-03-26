@@ -26,7 +26,7 @@ resources:
   - crust/external-dns.yaml
   - crust/external-dns-endpoints.yaml
   - crust/rook.yaml
-  # - crust/lldap.yaml
+  - crust/lldap.yaml
   # - crust/keycloak.yaml
   - crust/traefik.kustomization.yaml
   - crust/kubernetes-dashboard.yaml
