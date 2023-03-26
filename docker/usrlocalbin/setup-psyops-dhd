@@ -3,7 +3,7 @@ set -eu
 
 cd "$HOME"
 
-for dotfile in bashrc emacs inputrc profile screenrc tmux.conf vimrc; do
+for dotfile in bashrc emacs inputrc profile screenrc tmux.conf vimrc zshrc; do
     ln -sf "$HOME/.dhd/hbase/.$dotfile" "$HOME"
 done
 

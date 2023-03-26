@@ -87,13 +87,13 @@ RUN true \
         ca-certificates ca-certificates-doc \
         # I got tired of fucking with busybox's wget
         curl curl-doc \
-        docker docker-doc docker-bash-completion \
+        docker docker-doc docker-bash-completion docker-zsh-completion \
         emacs-nox emacs-doc \
         file file-doc \
         # Used for kubenrasty
-        flux@edgetesting flux-bash-completion@edgetesting \
+        flux@edgetesting flux-bash-completion@edgetesting flux-zsh-completion@edgetesting \
         git git-doc \
-        gopass gopass-doc gopass-bash-completion \
+        gopass gopass-doc gopass-bash-completion gopass-zsh-completion \
         # Installs GPG 2.x, not 1.x (gnupg1 gnupg1-doc)
         # Sadly, Alpine doesn't offer a way to install them side by side
         gnupg gnupg-doc \
@@ -103,7 +103,7 @@ RUN true \
         # which is problematic on Windows/macOS which both use a Linux VM that is difficult to directly configure.
         iputils \
         jq jq-doc \
-        kubectl@edgetesting kubectl-bash-completion@edgetesting \
+        kubectl@edgetesting kubectl-bash-completion@edgetesting kubectl-zsh-completion@edgetesting \
         # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
         less less-doc \
         man-db man-db-doc man-pages \
@@ -128,7 +128,7 @@ RUN true \
         py3-tz \
         py3-wheel \
         py3-yaml \
-        ripgrep ripgrep-bash-completion ripgrep-doc \
+        ripgrep ripgrep-doc ripgrep-bash-completion ripgrep-zsh-completion \
         rsync rsync-doc \
         shadow shadow-doc \
         sops@edgetesting \
@@ -141,6 +141,7 @@ RUN true \
         tzdata tzdata-doc \
         wireguard-tools wireguard-tools-doc wireguard-tools-wg \
         zip zip-doc \
+        zsh zsh-doc zsh-completions \
     #
     && update-ca-certificates --fresh \
     #
@@ -171,7 +172,7 @@ RUN true \
     && apk add \
         ansible ansible-core ansible-core-doc \
         aws-cli \
-        docker-compose docker-compose-bash-completion \
+        docker-compose docker-compose-bash-completion docker-compose-zsh-completion \
         py3-bcrypt \
         # py3-boto \
         py3-boto3 \
@@ -249,7 +250,7 @@ RUN true \
     # Forcibly install a group with the correct GID, even if there is already a group with that GID
     # && addgroup -g "$PSYOPS_GID" "$groupname" \
     && echo "${groupname}:x:${PSYOPS_GID}:" >> /etc/group \
-    && adduser -D -G "$groupname" -u "$PSYOPS_UID" -s /bin/bash "$username" \
+    && adduser -D -G "$groupname" -u "$PSYOPS_UID" -s /bin/zsh "$username" \
     && usermod --password "$PSYOPS_USER_PASSWORD" "$username" \
     && echo "$username ALL=(ALL) ALL" > "/etc/sudoers.d/$username" \
     && chmod 0440 "/etc/sudoers.d/$username" \
@@ -321,7 +322,7 @@ RUN true \
     && chmod 700 $HOME/.gnupg $HOME/.ssh \
     && true
 
-CMD /bin/bash -i
+CMD /bin/zsh -i
 ENTRYPOINT $HOME/.entrypoint.sh
 # NOTE: run with 'docker run -it <imagename>'
 # You must run with -it so that it runs interactively and with a terminal assigned
