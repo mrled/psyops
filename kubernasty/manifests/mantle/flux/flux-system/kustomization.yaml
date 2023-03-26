@@ -30,7 +30,7 @@ resources:
   # - crust/keycloak.yaml
   - crust/traefik.kustomization.yaml
   - crust/kubernetes-dashboard.yaml
-  # - crust/cephalopod.yaml
+  - crust/cephalopod.yaml
 
   # My deploymnets: Atmosphere
   # - atmosphere/uptime-kuma.yaml
