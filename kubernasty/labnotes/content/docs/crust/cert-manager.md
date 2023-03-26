@@ -117,7 +117,7 @@ ffs
 * We use [reflector](https://github.com/emberstack/kubernetes-reflector) to copy it where it is needed.
 * See {{< repolink "manifests/crust/reflector" >}},
   and note that we provide reflector annotations in
-  {{< repolink "manifests/crust/cert-manager/certificates/micahrl.me.cert.yaml" >}}.
+  {{< repolink "kubernasty/manifests/crust/cert-manager-config/certificates/micahrl-dot-me-wildcard.cert.yaml" >}}.
 
 ## A note on dependencies
 
