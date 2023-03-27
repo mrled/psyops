@@ -26,3 +26,7 @@ data:
     settings:
       clusterName: kubernasty
       itemsPerPage: 100
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
