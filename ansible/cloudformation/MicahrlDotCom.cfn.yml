@@ -110,6 +110,10 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["matrix.micahrl.com."]
+        - Name: etherpad.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["matrix.micahrl.com."]
         - Name: stats.micahrl.com.
           Type: CNAME
           TTL: 300
