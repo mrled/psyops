@@ -23,14 +23,20 @@ First, create the psynet nebula key and certificate.
 This must be done from within the psyops container after running `psecrets unlock`.
 
 ```sh
-# Make sure the IP address is unique
-# Add the IP address to `ansible/cloudformation/PsynetZone.cfn.yml
+# The name you want to use for this node
+nodename=millenium-falcon
+# The IP address to use for this node on psynet
+# Add this address to `ansible/cloudformation/PsynetZone.cfn.yml` and deploy it
+# Make sure this is unique!
+psynetip=10.10.10.x/22
+
 # This command has to be run from the nebula CA directory, see ./psynet.md for more information.
 cd /secrets/psyops-secrets/psynet
-nebula-cert sign \
-    -name millenium-falcon \
-    -ip 10.10.10.x/22 \
-    -groups psyopsOS
+nebula-cert sign -name $nodename -ip "$psynetip" -groups psyopsOS
+
+# Add the new cert to gopass
+gopass insert -m "psynet/$nodename.key" < "$nodename.key"
+gopass insert -m "psynet/$nodename.crt" < "$nodename.crt"
 
 # Now copy it to the host
 # For it to be configured correctly on boot,
