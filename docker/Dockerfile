@@ -103,6 +103,8 @@ RUN true \
         # which is problematic on Windows/macOS which both use a Linux VM that is difficult to directly configure.
         iputils \
         jq jq-doc \
+        # For matrix-docker-ansible-deploy
+        just just-doc@edgecommunity just-zsh-completion \
         kubectl@edgetesting kubectl-bash-completion@edgetesting kubectl-zsh-completion@edgetesting \
         # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
         less less-doc \
