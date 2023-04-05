@@ -16,6 +16,7 @@ nodeFunctionMap:
   zalas: kubernasty
   psyopsos-test-1: kubernasty
   newjutland: synergycontroller
+  agassiz: default
 
 functionRoleMap:
   kubernasty:
@@ -29,6 +30,10 @@ functionRoleMap:
     # Using the old version that doesn't have partitioning/encryption support
     - datadisk_v1
     - synergycontroller
+  # TODO: fall back to this role so that we don't have to place new nodes in roleFunctionMap
+  # and they will still come up.
+  default:
+    - alpine_postboot_config
 
 nodeSettings:
   # The location for the age key on each node

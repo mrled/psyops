@@ -69,6 +69,10 @@ Resources:
           Type: A
           TTL: "60"
           ResourceRecords: ["10.10.10.4"]
+        - Name: agassiz.psynet.micahrl.com.
+          Type: A
+          TTL: "60"
+          ResourceRecords: ["10.10.10.5"]
 
   # # A new group with permission to modify records in the HomeZone
   # # For use with Let's Encrypt / ACME
