@@ -21,7 +21,7 @@ resources:
   - crust/kubernasty-configuration.yaml
 
   # My deployments: Crust
-  - crust/snapshot-controller.yml
+  - crust/snapshot-controller.yaml
   - crust/reflector.yaml
   - crust/cert-manager.yaml
   - crust/cert-manager-config.yaml
