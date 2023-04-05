@@ -10,6 +10,7 @@ resources:
   - helm/jetstack.helmrepo.yaml
   - helm/kubernetes-dashboard.helmrepo.yaml
   - helm/oauth2-proxy.helmrepo.yaml
+  - helm/piraeus.helmrepo.yaml
   - helm/rook.helmrepo.yaml
 
   # Default stuff installed by Flux itselfj
@@ -20,6 +21,7 @@ resources:
   - crust/kubernasty-configuration.yaml
 
   # My deployments: Crust
+  - crust/snapshot-controller.yml
   - crust/reflector.yaml
   - crust/cert-manager.yaml
   - crust/cert-manager-config.yaml

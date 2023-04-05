@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: snapshot-controller-overrides
+  namespace: kube-system
+data:
+  values.yaml: |+
