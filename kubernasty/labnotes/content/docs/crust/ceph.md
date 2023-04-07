@@ -20,6 +20,20 @@ We will use Ceph for block storage
   It contains the cluster definition/configuration,
   and requires that `rook-ceph` already be present.
 
+## Prerequisite: CSI snapshotter bullshit
+
+* wtf: https://github.com/k3s-io/k3s/issues/2865
+* So we have to install the stuff ourselves
+* see snapshot-controller directory in manifests/crust
+* This is mentioned in <https://rook.io/docs/rook/latest/Troubleshooting/ceph-csi-common-issues/>, along with some troubleshooting steps
+
+I found this after I tried to deploy, and installing it didn't fix the deployment.
+
+* Found the problem with `kubectl -n rook-ceph logs deploy/csi-rbdplugin-provisioner -c csi-snapshotter -f`
+* That showed many log lines like this `E0405 22:52:52.850626       1 reflector.go:140] github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/factory.go:117: Failed to watch *v1.VolumeSnapshotClass: failed to list *v1.VolumeSnapshotClass: the server could not find the requested resource (get volumesnapshotclasses.snapshot.storage.k8s.io)`
+* Note that `k get crd -A | grep -i snapshot` should show nothing if the snapshot-controller stuff isn't installed, and should show 3 CRDs if it is installed: `volumesnapshotclasses.snapshot.storage.k8s.io`, `volumesnapshotcontents.snapshot.storage.k8s.io`, `volumesnapshots.snapshot.storage.k8s.io`. After installing snapshot-controller, check to make sure these are present.
+* Killed the rbdplugin-provisioner pods in rook-ceph namespace `k delete pod -n rook-ceph csi-rbdplugin-provisioner-68c4484d66-2rvzs csi-rbdplugin-provisioner-68c4484d66-p6h2r`
+
 ## cephalopod
 
 My Rook Ceph cluster is called `cephalopod`.
