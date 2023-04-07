@@ -31,7 +31,7 @@ defaults = {
 appends = ["wipe_after_mounting"]
 
 
-module_files = importlib_resources_files("progfiguration.roles.datadisk_v2")
+module_files = importlib_resources_files("progfiguration.site.roles.datadisk_v2")
 
 
 def setup_ramoffload(

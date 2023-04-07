@@ -85,7 +85,7 @@ def s3_upload_directory(directory, bucketname):
 
 @invoke.task
 def clean(ctx):
-    """Clean the build"""
+    """Clean the build. Note does not clear the abuild cache; pass --clean to an -abuild task to clean it before building."""
     try:
         shutil.rmtree(sitedir)
     except FileNotFoundError:
@@ -109,7 +109,7 @@ def deploy(ctx):
 
 
 @invoke.task
-def progfiguration_abuild(ctx):
+def progfiguration_abuild(ctx, clean=False):
     """Build the progfiguration Python package as an Alpine package. Must be run from the psyops container.
 
     Sign with the psyopsOS key.
@@ -125,7 +125,7 @@ def progfiguration_abuild(ctx):
     spec.loader.exec_module(progfiguration_build)
 
     # Run the build
-    version = progfiguration_build.build_alpine(incontainer_apks_path)
+    version = progfiguration_build.build_alpine(incontainer_apks_path, clean=clean)
 
     print(
         f"Created new artifact at public/apk/psyopsOS/x86_64/progfiguration-{version}-r0.apk"
@@ -133,7 +133,7 @@ def progfiguration_abuild(ctx):
 
 
 @invoke.task
-def psyopsOS_base_abuild(ctx):
+def psyopsOS_base_abuild(ctx, clean=False):
     """Build the psyopsOS-base Python package as an Alpine package. Must be run from the psyops container.
 
     Sign with the psyopsOS key.
@@ -155,6 +155,10 @@ def psyopsOS_base_abuild(ctx):
             afd.write(apkbuild_contents)
         print("Running build in progfiguration directory...")
         with ctx.cd(psyopsOS_base_dir):
+            if clean:
+                print("Running abuild clean...")
+                with ctx.cd(psyopsOS_base_dir):
+                    ctx.run("abuild clean")
             ctx.run("abuild checksum")
             ctx.run(build_cmd)
     finally:

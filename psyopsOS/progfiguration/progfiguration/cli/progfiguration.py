@@ -8,17 +8,17 @@ import pdb
 import sys
 from typing import List, Union
 
-from progfiguration import age, progfiguration_build_path, version
+from progfiguration import age, progfiguration_build_path, site, version
 from progfiguration.cli import (
     progfiguration_error_handler,
     configure_logging,
     idb_excepthook,
     progfiguration_log_levels,
     syslog_excepthook,
+    yaml_dump_str,
 )
-from progfiguration.inventory import Inventory, package_inventory_file
+from progfiguration.inventory import Inventory
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
-from progfiguration.roles.util import yaml_dump_str
 
 try:
     from progfiguration import remoting
@@ -279,7 +279,7 @@ def parseargs(arguments: List[str]):
     parser.add_argument(
         "--inventory-file",
         "-f",
-        default=package_inventory_file,
+        default=site.package_inventory_file,
         help="The path to an inventory yaml file. By default, use the one in the package",
     )
     parser.add_argument(

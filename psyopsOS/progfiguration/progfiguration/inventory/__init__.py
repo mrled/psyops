@@ -157,21 +157,21 @@ class Inventory:
     def node(self, name: str) -> ModuleType:
         """The Python module for a given node"""
         if name not in self._node_modules:
-            module = importlib.import_module(f"progfiguration.inventory.nodes.{name}")
+            module = importlib.import_module(f"progfiguration.site.nodes.{name}")
             self._node_modules[name] = module
         return self._node_modules[name]
 
     def group(self, name: str) -> ModuleType:
         """The Python module for a given group"""
         if name not in self._group_modules:
-            module = importlib.import_module(f"progfiguration.inventory.groups.{name}")
+            module = importlib.import_module(f"progfiguration.site.groups.{name}")
             self._group_modules[name] = module
         return self._group_modules[name]
 
     def role(self, name: str) -> ModuleType:
         """The Python module for a given role"""
         if name not in self._role_modules:
-            module = importlib.import_module(f"progfiguration.roles.{name}")
+            module = importlib.import_module(f"progfiguration.site.roles.{name}")
             self._role_modules[name] = module
         return self._role_modules[name]
 
@@ -191,21 +191,21 @@ class Inventory:
     def get_node_secrets(self, nodename: str) -> Dict[str, Any]:
         """A Dict of secrets for a given node"""
         if nodename not in self._node_secrets:
-            sfile = importlib_resources_files("progfiguration.inventory.nodes").joinpath(f"{nodename}.secrets.yml")
+            sfile = importlib_resources_files("progfiguration.site.nodes").joinpath(f"{nodename}.secrets.yml")
             self._node_secrets[nodename] = self.get_secrets(sfile)
         return self._node_secrets[nodename]
 
     def get_group_secrets(self, groupname: str) -> Dict[str, Any]:
         """A Dict of secrets for a given group"""
         if groupname not in self._group_secrets:
-            sfile = importlib_resources_files("progfiguration.inventory.groups").joinpath(f"{groupname}.secrets.yml")
+            sfile = importlib_resources_files("progfiguration.site.groups").joinpath(f"{groupname}.secrets.yml")
             self._group_secrets[groupname] = self.get_secrets(sfile)
         return self._group_secrets[groupname]
 
     def get_controller_secrets(self) -> Dict[str, Any]:
         """A Dict of secrets for the controller"""
         if not self._controller_secrets:
-            sfile = importlib_resources_files("progfiguration.inventory").joinpath(f"controller.secrets.yml")
+            sfile = importlib_resources_files("progfiguration.site").joinpath(f"controller.secrets.yml")
             self._controller_secrets = self.get_secrets(sfile)
         return self._controller_secrets
 
@@ -265,6 +265,3 @@ class Inventory:
                 self.set_controller_secret(name, encrypted_value)
 
         return (encrypted_value, pubkeys)
-
-
-package_inventory_file = importlib_resources_files("progfiguration.inventory").joinpath("inventory.yml")

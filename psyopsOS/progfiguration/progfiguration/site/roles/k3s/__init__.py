@@ -13,7 +13,7 @@ from progfiguration.localhost import LocalhostLinuxPsyopsOs
 from progfiguration.localhost.disks import is_mountpoint
 
 
-module_files = importlib_resources_files("progfiguration.roles.k3s")
+module_files = importlib_resources_files("progfiguration.site.roles.k3s")
 
 
 defaults = {

@@ -13,12 +13,12 @@ from importlib.resources import files as importlib_resources_files
 from typing import List
 
 from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
-from progfiguration.roles.datadisk import is_mountpoint
+from progfiguration.localhost.disks import is_mountpoint
 
 import requests
 
 
-module_files = importlib_resources_files("progfiguration.roles.synergycontroller")
+module_files = importlib_resources_files("progfiguration.site.roles.synergycontroller")
 
 
 defaults = {

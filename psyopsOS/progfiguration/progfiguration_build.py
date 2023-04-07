@@ -44,7 +44,7 @@ def set_build_version(version: str):
         fp.write(apkbuild_contents)
 
 
-def build_alpine(apk_index_path: str, abuild_repodest: str = "psyopsOS"):
+def build_alpine(apk_index_path: str, abuild_repodest: str = "psyopsOS", clean: bool = False):
     """Build progfiguration as an Alpine package
 
     apk_index_path:     A local APK index where the package will be created
@@ -55,6 +55,11 @@ def build_alpine(apk_index_path: str, abuild_repodest: str = "psyopsOS"):
 
     try:
         set_build_version(version)
+
+        if clean:
+            print(f"Cleaning build in progfiguration directory...")
+            subprocess.run(["abuild", "clean"], cwd=PKG_ROOT)
+
         abuild = ["abuild", "-P", apk_index_path, "-D", abuild_repodest]
         print(f"Running build in progfiguration directory with command: {abuild}")
         subprocess.run(abuild, cwd=PKG_ROOT)
