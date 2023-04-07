@@ -1,16 +1,12 @@
 """Configure Alpine after its boot scripts"""
 
-import os.path
-import pwd
 import re
 import shutil
 import subprocess
 from typing import List
 
+from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
-
-
-defaults = {}
 
 
 _users = [
@@ -108,15 +104,18 @@ __psyopsOS_append_path "$HOME/.local/bin"
 """
 
 
-def apply(localhost: LocalhostLinuxPsyopsOs, timezone: str):
+class Role(ProgfigurationRole):
+    def apply(self, timezone: str):
 
-    set_timezone(timezone)
+        set_timezone(timezone)
 
-    set_apk_repositories(localhost)
+        set_apk_repositories(self.localhost)
 
-    install_base_packages()
+        install_base_packages()
 
-    localhost.set_file_contents("/etc/profile.d/psyopsOS_path.sh", _psyopsOS_path_sh, "root", "root", 0o0644, 0o0755)
+        self.localhost.set_file_contents(
+            "/etc/profile.d/psyopsOS_path.sh", _psyopsOS_path_sh, "root", "root", 0o0644, 0o0755
+        )
 
-    for user in _users:
-        configure_user(localhost, **user)
+        for user in _users:
+            configure_user(self.localhost, **user)

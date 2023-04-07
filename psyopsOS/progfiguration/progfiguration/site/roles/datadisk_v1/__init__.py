@@ -7,32 +7,8 @@ import subprocess
 from typing import List, Optional
 
 from progfiguration import logger
+from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
-
-
-defaults = {
-    "underlying_device": "/dev/sda",
-    "mountpoint": "/psyopsos-data",
-    "vgname": "psyopsos_datadiskvg",
-    "lvname": "datadisklv",
-    "lvsize": r"100%FREE",
-    # fslabel is max 16 chars
-    "fslabel": "psyopsos_data",
-    "wipefs_if_no_vg": False,
-    # Anything path relative to the mountpoint in this list is wiped after mounting.
-    # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
-    # If the filesystem is already mounted, nothing is removed.
-    "wipe_after_mounting": ["scratch"],
-    # Add a ramoffload disk image
-    # This disk image is NOT persisted from boot to boot
-    "ramoffload": False,
-    "ramoffload_size_gb": 32,
-    "ramoffload_directories": [
-        "/usr",
-    ],
-}
-
-appends = ["wipe_after_mounting"]
 
 
 def setup_ramoffload(
@@ -134,78 +110,106 @@ def is_mountpoint(path: str) -> bool:
     return mtpt.returncode == 0
 
 
-def apply(
-    localhost: LocalhostLinuxPsyopsOs,
-    underlying_device: str,
-    mountpoint: str,
-    vgname: str,
-    lvname: str,
-    lvsize: str,
-    fslabel: str,
-    wipefs_if_no_vg: bool,
-    wipe_after_mounting: None,
-    ramoffload: bool,
-    ramoffload_size_gb: int,
-    ramoffload_directories: List[str],
-):
+class Role(ProgfigurationRole):
 
-    subprocess.run(f"apk add e2fsprogs e2fsprogs-extra lvm2", shell=True, check=True)
-    subprocess.run("rc-service lvm start", shell=True, check=True)
+    defaults = {
+        "underlying_device": "/dev/sda",
+        "mountpoint": "/psyopsos-data",
+        "vgname": "psyopsos_datadiskvg",
+        "lvname": "datadisklv",
+        "lvsize": r"100%FREE",
+        # fslabel is max 16 chars
+        "fslabel": "psyopsos_data",
+        "wipefs_if_no_vg": False,
+        # Anything path relative to the mountpoint in this list is wiped after mounting.
+        # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
+        # If the filesystem is already mounted, nothing is removed.
+        "wipe_after_mounting": ["scratch"],
+        # Add a ramoffload disk image
+        # This disk image is NOT persisted from boot to boot
+        "ramoffload": False,
+        "ramoffload_size_gb": 32,
+        "ramoffload_directories": [
+            "/usr",
+        ],
+    }
 
-    if subprocess.run(f"vgs {vgname}", shell=True, check=False).returncode != 0:
-        logger.info(f"Volume group {vgname} does not exist")
-        if not wipefs_if_no_vg:
-            msg = f"Refusing to wipe filesystem on {underlying_device}, because wipefs_if_no_vg is False"
-            logger.error(msg)
-            raise Exception(msg)
-        mounted = is_mounted_device(underlying_device)
-        if mounted:
-            msg = f"Refusing to wipe filesystem on {underlying_device}, because it is mounted to {mounted.mountpoint}"
-            logger.error(msg)
-            raise Exception(msg)
-        logger.info(f"Wiping filesystems on {underlying_device}...")
-        subprocess.run(f"wipefs --all {underlying_device}", shell=True, check=True)
-        logger.info(f"Creating {vgname} volume group on {underlying_device}...")
-        subprocess.run(f"vgcreate {vgname} {underlying_device}", shell=True, check=True)
+    appends = ["wipe_after_mounting"]
 
-    lvs = subprocess.run(f"lvs {vgname}", shell=True, check=False, capture_output=True)
-    if lvname not in lvs.stdout.decode():
-        logger.info(f"Creating volume {lvname} on vg {vgname}...")
-        # lvcreate is very annoying as it uses --extents for percentages and --size for absolute values
-        szflag = ""
-        if "%" in lvsize:
-            szflag = "-l"
+    def apply(
+        self,
+        underlying_device: str,
+        mountpoint: str,
+        vgname: str,
+        lvname: str,
+        lvsize: str,
+        fslabel: str,
+        wipefs_if_no_vg: bool,
+        wipe_after_mounting: None,
+        ramoffload: bool,
+        ramoffload_size_gb: int,
+        ramoffload_directories: List[str],
+    ):
+
+        subprocess.run(f"apk add e2fsprogs e2fsprogs-extra lvm2", shell=True, check=True)
+        subprocess.run("rc-service lvm start", shell=True, check=True)
+
+        if subprocess.run(f"vgs {vgname}", shell=True, check=False).returncode != 0:
+            logger.info(f"Volume group {vgname} does not exist")
+            if not wipefs_if_no_vg:
+                msg = f"Refusing to wipe filesystem on {underlying_device}, because wipefs_if_no_vg is False"
+                logger.error(msg)
+                raise Exception(msg)
+            mounted = is_mounted_device(underlying_device)
+            if mounted:
+                msg = (
+                    f"Refusing to wipe filesystem on {underlying_device}, because it is mounted to {mounted.mountpoint}"
+                )
+                logger.error(msg)
+                raise Exception(msg)
+            logger.info(f"Wiping filesystems on {underlying_device}...")
+            subprocess.run(f"wipefs --all {underlying_device}", shell=True, check=True)
+            logger.info(f"Creating {vgname} volume group on {underlying_device}...")
+            subprocess.run(f"vgcreate {vgname} {underlying_device}", shell=True, check=True)
+
+        lvs = subprocess.run(f"lvs {vgname}", shell=True, check=False, capture_output=True)
+        if lvname not in lvs.stdout.decode():
+            logger.info(f"Creating volume {lvname} on vg {vgname}...")
+            # lvcreate is very annoying as it uses --extents for percentages and --size for absolute values
+            szflag = ""
+            if "%" in lvsize:
+                szflag = "-l"
+            else:
+                szflag = "-L"
+            subprocess.run(f"lvcreate {szflag} {lvsize} -n {lvname} {vgname}", shell=True, check=True)
+
+        mapper_device = f"/dev/mapper/{vgname}-{lvname}"
+
+        e2l = subprocess.run(f"e2label {mapper_device}", shell=True, capture_output=True)
+        if e2l.returncode != 0 or fslabel not in e2l.stdout.decode():
+            logger.info(f"Creating filesystem on {mapper_device}...")
+            subprocess.run(f"mkfs.ext4 -F -L {fslabel} {mapper_device}", shell=True, check=True)
+
+        if not is_mountpoint(mountpoint):
+            logger.info(f"Mounting {mapper_device} on {mountpoint}...")
+            os.makedirs(mountpoint, mode=0o755, exist_ok=True)
+            subprocess.run(f"mount {mapper_device} {mountpoint}", shell=True, check=True)
+
+            # TODO: Don't require list flattening.
+            # We are flattening the list here because it is a list of lists
+            # Instead fix the caller to not make it pass a list of lists
+            wipe_after_mounting = wipe_after_mounting or []
+            wipes = [item for sublist in wipe_after_mounting for item in sublist]
+            for subpath in wipes:
+                path = os.path.join(mountpoint, subpath)
+                if os.path.exists(path):
+                    logger.info(f"Removing path {path} after mounting {mountpoint}...")
+                    shutil.rmtree(path)
+
+        self.localhost.makedirs(f"{mountpoint}/scratch", "root", "root", 0o1777)
+
+        if ramoffload:
+            logger.info(f"Enabling ramoffload to {mountpoint}...")
+            setup_ramoffload(self.localhost, mountpoint, ramoffload_size_gb, ramoffload_directories)
         else:
-            szflag = "-L"
-        subprocess.run(f"lvcreate {szflag} {lvsize} -n {lvname} {vgname}", shell=True, check=True)
-
-    mapper_device = f"/dev/mapper/{vgname}-{lvname}"
-
-    e2l = subprocess.run(f"e2label {mapper_device}", shell=True, capture_output=True)
-    if e2l.returncode != 0 or fslabel not in e2l.stdout.decode():
-        logger.info(f"Creating filesystem on {mapper_device}...")
-        subprocess.run(f"mkfs.ext4 -F -L {fslabel} {mapper_device}", shell=True, check=True)
-
-    if not is_mountpoint(mountpoint):
-        logger.info(f"Mounting {mapper_device} on {mountpoint}...")
-        os.makedirs(mountpoint, mode=0o755, exist_ok=True)
-        subprocess.run(f"mount {mapper_device} {mountpoint}", shell=True, check=True)
-
-        # TODO: Don't require list flattening.
-        # We are flattening the list here because it is a list of lists
-        # Instead fix the caller to not make it pass a list of lists
-        wipe_after_mounting = wipe_after_mounting or []
-        wipes = [item for sublist in wipe_after_mounting for item in sublist]
-        for subpath in wipes:
-            path = os.path.join(mountpoint, subpath)
-            if os.path.exists(path):
-                logger.info(f"Removing path {path} after mounting {mountpoint}...")
-                shutil.rmtree(path)
-
-    localhost.makedirs(f"{mountpoint}/scratch", "root", "root", 0o1777)
-
-    if ramoffload:
-        logger.info(f"Enabling ramoffload to {mountpoint}...")
-        setup_ramoffload(localhost, mountpoint, ramoffload_size_gb, ramoffload_directories)
-    else:
-        logger.info("Will not enable ramoffload")
+            logger.info("Will not enable ramoffload")

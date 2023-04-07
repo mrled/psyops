@@ -55,10 +55,10 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
     if strace_before_applying:
         pdb.set_trace()
     else:
-        for rolename, role in applyroles.items():
-            rolemodule, rolevars = role
+        for rolename, role_implementation in applyroles.items():
+            role, rolevars = role_implementation
             logging.debug(f"Running role {rolename}...")
-            rolemodule.apply(localhost, **rolevars)
+            role.apply(**rolevars)
             logging.info(f"Finished running role {rolename}.")
 
     logging.info(f"Finished running all roles")

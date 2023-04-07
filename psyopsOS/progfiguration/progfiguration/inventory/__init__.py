@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from progfiguration import age
+from progfiguration.localhost import LocalhostLinuxPsyopsOs
 
 
 @dataclass
@@ -35,6 +36,8 @@ class Inventory:
         with open(invfile) as ifp:
             self.inventory_parsed = yaml.load(ifp, Loader=yaml.Loader)
 
+        self.localhost = LocalhostLinuxPsyopsOs()
+
         self.group_members = self.inventory_parsed["groupNodeMap"]
         self.node_function = self.inventory_parsed["nodeFunctionMap"]
         self.function_roles = self.inventory_parsed["functionRoleMap"]
@@ -46,6 +49,7 @@ class Inventory:
         self._node_modules = {}
         self._group_modules = {}
         self._role_modules = {}
+        self._role_objects = {}
 
         self._node_secrets = {}
         self._group_secrets = {}
@@ -168,12 +172,19 @@ class Inventory:
             self._group_modules[name] = module
         return self._group_modules[name]
 
-    def role(self, name: str) -> ModuleType:
+    def role_module(self, name: str) -> ModuleType:
         """The Python module for a given role"""
         if name not in self._role_modules:
             module = importlib.import_module(f"progfiguration.site.roles.{name}")
             self._role_modules[name] = module
         return self._role_modules[name]
+
+    def role(self, name: str) -> "ProgfigurationRole":
+        """The ProgfigurationRole object for a given role name"""
+        if name not in self._role_objects:
+            role_cls = self.role_module(name).Role
+            self._role_objects[name] = role_cls(name, self.localhost, self)
+        return self._role_objects[name]
 
     def get_secrets(self, filename: str) -> Dict[str, age.AgeSecret]:
         """Retrieve secrets from a file.

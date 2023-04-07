@@ -1,14 +1,13 @@
 """Set up a data disk"""
 
 from ast import Dict
-from dataclasses import dataclass
 import json
 import os
 import subprocess
 from typing import List
 
 from progfiguration import logger
-from progfiguration.localhost import LocalhostLinuxPsyopsOs
+from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost.disks import (
     DuplicatePartitionLabelError,
     EncryptionKeyfileNotFoundError,
@@ -21,14 +20,6 @@ from progfiguration.localhost.disks import (
     cryptsetup_open_idempotently,
     gptlabel2device,
 )
-
-
-defaults = {
-    "wholedisks": [],
-    "partitions": [],
-    "volumes": [],
-    "encryption_keyfile": "/mnt/psyops-secret/mount/age.key",
-}
 
 
 # TODO: write a umount script for blockdevparty
@@ -249,21 +240,32 @@ def process_disks(
         logger.info(f"Created {fsspec.fstype} filesystem on {device}")
 
 
-def apply(
-    localhost: LocalhostLinuxPsyopsOs,
-    wholedisks: List[WholeDiskSpec],
-    partitions: List[PartitionSpec],
-    volumes: List[LvmLvSpec],
-    encryption_keyfile: str,
-):
-    """Partition disks, format filesystems, and create logical volumes
+class Role(ProgfigurationRole):
 
-    WARNING:    It probably will not work to take a disk from an old host and add it to a new host without wiping it.
-                We look up partitions by their label, and duplicate labels will confuse this logic.
-    """
+    defaults = {
+        "wholedisks": [],
+        "partitions": [],
+        "volumes": [],
+        "encryption_keyfile": "/mnt/psyops-secret/mount/age.key",
+    }
 
-    subprocess.run(f"apk add cryptsetup device-mapper e2fsprogs e2fsprogs-extra lvm2 parted", shell=True, check=True)
-    subprocess.run("rc-service lvm start", shell=True, check=True)
-    subprocess.run("rc-service dmcrypt start", shell=True, check=True)
+    def apply(
+        self,
+        wholedisks: List[WholeDiskSpec],
+        partitions: List[PartitionSpec],
+        volumes: List[LvmLvSpec],
+        encryption_keyfile: str,
+    ):
+        """Partition disks, format filesystems, and create logical volumes
 
-    process_disks(wholedisks, partitions, volumes, encryption_keyfile)
+        WARNING:    It probably will not work to take a disk from an old host and add it to a new host without wiping it.
+                    We look up partitions by their label, and duplicate labels will confuse this logic.
+        """
+
+        subprocess.run(
+            f"apk add cryptsetup device-mapper e2fsprogs e2fsprogs-extra lvm2 parted", shell=True, check=True
+        )
+        subprocess.run("rc-service lvm start", shell=True, check=True)
+        subprocess.run("rc-service dmcrypt start", shell=True, check=True)
+
+        process_disks(wholedisks, partitions, volumes, encryption_keyfile)

@@ -4,34 +4,12 @@ import os
 import shutil
 import subprocess
 import textwrap
-from importlib.resources import files as importlib_resources_files
 from typing import List
 
 from progfiguration import logger
+from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
 from progfiguration.localhost.disks import is_mountpoint
-
-
-defaults = {
-    "block_device": "/dev/sda",
-    "mountpoint": "/psyopsos-data",
-    # Anything path relative to the mountpoint in this list is wiped after mounting.
-    # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
-    # If the filesystem is already mounted, nothing is removed.
-    "wipe_after_mounting": ["scratch"],
-    # Add a ramoffload disk image
-    # This disk image is NOT persisted from boot to boot
-    "ramoffload": False,
-    "ramoffload_size_gb": 32,
-    "ramoffload_directories": [
-        "/usr",
-    ],
-}
-
-appends = ["wipe_after_mounting"]
-
-
-module_files = importlib_resources_files("progfiguration.site.roles.datadisk_v2")
 
 
 def setup_ramoffload(
@@ -95,47 +73,69 @@ def setup_ramoffload(
     logger.info("Finished configuring ramoffload")
 
 
-def apply(
-    localhost: LocalhostLinuxPsyopsOs,
-    block_device: str,
-    mountpoint: str,
-    wipe_after_mounting: None,
-    ramoffload: bool,
-    ramoffload_size_gb: int,
-    ramoffload_directories: List[str],
-):
+class Role(ProgfigurationRole):
 
-    localhost.set_file_contents(
-        "/etc/psyopsOS/roles/datadisk/env.sh",
-        textwrap.dedent(
-            f"""\
-            PSYOPSOS_DATADISK_MOUNTPOINT="{mountpoint}"
-            PSYOPSOS_DATADISK_DEVICE="{block_device}"
-            """
-        ),
-    )
-    localhost.cp(module_files.joinpath("progfiguration-umount-datadisk.sh"), "/usr/local/sbin/", mode=0o755)
+    defaults = {
+        "block_device": "/dev/sda",
+        "mountpoint": "/psyopsos-data",
+        # Anything path relative to the mountpoint in this list is wiped after mounting.
+        # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
+        # If the filesystem is already mounted, nothing is removed.
+        "wipe_after_mounting": ["scratch"],
+        # Add a ramoffload disk image
+        # This disk image is NOT persisted from boot to boot
+        "ramoffload": False,
+        "ramoffload_size_gb": 32,
+        "ramoffload_directories": [
+            "/usr",
+        ],
+    }
 
-    if not is_mountpoint(mountpoint):
-        logger.info(f"Mounting {block_device} on {mountpoint}...")
-        os.makedirs(mountpoint, mode=0o755, exist_ok=True)
-        subprocess.run(f"mount {block_device} {mountpoint}", shell=True, check=True)
+    appends = ["wipe_after_mounting"]
 
-        # TODO: Don't require list flattening.
-        # We are flattening the list here because it is a list of lists
-        # Instead fix the caller to not make it pass a list of lists
-        wipe_after_mounting = wipe_after_mounting or []
-        wipes = [item for sublist in wipe_after_mounting for item in sublist]
-        for subpath in wipes:
-            path = os.path.join(mountpoint, subpath)
-            if os.path.exists(path):
-                logger.info(f"Removing path {path} after mounting {mountpoint}...")
-                shutil.rmtree(path)
+    rolepkg = __package__
 
-    localhost.makedirs(f"{mountpoint}/scratch", "root", "root", 0o1777)
+    def apply(
+        self,
+        block_device: str,
+        mountpoint: str,
+        wipe_after_mounting: None,
+        ramoffload: bool,
+        ramoffload_size_gb: int,
+        ramoffload_directories: List[str],
+    ):
 
-    if ramoffload:
-        logger.info(f"Enabling ramoffload to {mountpoint}...")
-        setup_ramoffload(localhost, mountpoint, ramoffload_size_gb, ramoffload_directories)
-    else:
-        logger.info("Will not enable ramoffload")
+        self.localhost.set_file_contents(
+            "/etc/psyopsOS/roles/datadisk/env.sh",
+            textwrap.dedent(
+                f"""\
+                PSYOPSOS_DATADISK_MOUNTPOINT="{mountpoint}"
+                PSYOPSOS_DATADISK_DEVICE="{block_device}"
+                """
+            ),
+        )
+        self.localhost.cp(self.role_file("progfiguration-umount-datadisk.sh"), "/usr/local/sbin/", mode=0o755)
+
+        if not is_mountpoint(mountpoint):
+            logger.info(f"Mounting {block_device} on {mountpoint}...")
+            os.makedirs(mountpoint, mode=0o755, exist_ok=True)
+            subprocess.run(f"mount {block_device} {mountpoint}", shell=True, check=True)
+
+            # TODO: Don't require list flattening.
+            # We are flattening the list here because it is a list of lists
+            # Instead fix the caller to not make it pass a list of lists
+            wipe_after_mounting = wipe_after_mounting or []
+            wipes = [item for sublist in wipe_after_mounting for item in sublist]
+            for subpath in wipes:
+                path = os.path.join(mountpoint, subpath)
+                if os.path.exists(path):
+                    logger.info(f"Removing path {path} after mounting {mountpoint}...")
+                    shutil.rmtree(path)
+
+        self.localhost.makedirs(f"{mountpoint}/scratch", "root", "root", 0o1777)
+
+        if ramoffload:
+            logger.info(f"Enabling ramoffload to {mountpoint}...")
+            setup_ramoffload(self.localhost, mountpoint, ramoffload_size_gb, ramoffload_directories)
+        else:
+            logger.info("Will not enable ramoffload")

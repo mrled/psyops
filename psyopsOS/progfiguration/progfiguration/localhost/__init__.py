@@ -18,7 +18,7 @@ class LocalhostLinux:
     Maintains a cache of files it has read before.
     """
 
-    def __init__(self, nodename):
+    def __init__(self, nodename="localhost"):
         self.nodename = nodename
         self.users = LocalhostUsers(self)
         self._cache_files = {}
