@@ -18,8 +18,8 @@ from progfiguration.cli import (
     yaml_dump_str,
 )
 from progfiguration.inventory import Inventory
+from progfiguration.inventory.roles import coalesce_node_roles_arguments
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
-from progfiguration.roles import coalesce_node_roles_arguments
 
 try:
     from progfiguration import remoting

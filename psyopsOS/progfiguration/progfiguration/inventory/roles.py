@@ -2,9 +2,13 @@
 
 from progfiguration import age
 from progfiguration.inventory import Inventory
+from progfiguration.localhost import LocalhostLinuxPsyopsOs
 
 
-def coalesce_node_roles_arguments(inventory: Inventory, nodename: str):
+_coalescence_cache = {}
+
+
+def _coalesce_node_roles_arguments(inventory: Inventory, nodename: str):
     """Coalesce a node's role arguments from groups and nodes into a single dict
 
     We find role arguments in the following order:
@@ -82,3 +86,40 @@ def coalesce_node_roles_arguments(inventory: Inventory, nodename: str):
         applyroles[rolename] = (rolemodule, rolevars)
 
     return applyroles
+
+
+def coalesce_node_roles_arguments(inventory: Inventory, nodename: str):
+    """Coalesce a node's role arguments from groups and nodes into a single dict
+
+    We find role arguments in the following order:
+
+    * Defaults for the role
+    * The universal group
+    * The node's groups (in unspecified order - do not rely on conflicting group arguments)
+    * The node itself
+
+    Returns a dict of {rolename: (rolemodule, roleargs)}
+    """
+
+    # We cache the results of this function so that roles can call it many times
+    if nodename not in _coalescence_cache:
+        _coalescence_cache[nodename] = _coalesce_node_roles_arguments(inventory, nodename)
+
+    return _coalescence_cache[nodename]
+
+
+def get_role_results(localhost: LocalhostLinuxPsyopsOs, inventory: Inventory, nodename: str, rolename: str):
+    """Get the results of applying roles to a node
+
+    Results are static or simple-to-calculate values that may be used by other roles.
+    """
+    raise NotImplementedError("TODO: Implement this")
+    # To implement this:
+    # * Add a "results" function to each role module
+    # * Have the .apply() and .results() function accept an inventory argument for all role modules
+    # * This will allow one module's .apply() to call another module's .results()
+    # * For instance, a role that creates a user could have a .results() that includes the user's homedir.
+    #   We only want to calculate that in the role that creates the user,
+    #   but other roles can use the value to eg place files in the homedir.
+    rolemod, roleargs = coalesce_node_roles_arguments(inventory, nodename)[rolename]
+    return rolemod.results(localhost, **roleargs)
