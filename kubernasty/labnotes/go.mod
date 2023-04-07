@@ -1,4 +1,4 @@
-module github.com/mrled/psyops/kubernasty/docs
+module github.com/mrled/psyops/kubernasty/labnotes
 
 go 1.17
 

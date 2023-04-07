@@ -13,7 +13,7 @@ clean: ## Remove venv, builds, etc
 
 .PHONY: modget
 modget:
-	hugo mod get
+	hugo mod get -u ./...
 
 .PHONY: dev
 dev: modget ## Run a dev server for the lab notes
