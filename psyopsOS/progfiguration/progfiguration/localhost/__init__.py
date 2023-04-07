@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional
 
 from progfiguration import temple
 
+from progfiguration.localhost.localusers import LocalhostUsers
+
 
 class LocalhostLinux:
     """An interface to localhost running Linux.
@@ -18,6 +20,7 @@ class LocalhostLinux:
 
     def __init__(self, nodename):
         self.nodename = nodename
+        self.users = LocalhostUsers(self)
         self._cache_files = {}
 
     @property
