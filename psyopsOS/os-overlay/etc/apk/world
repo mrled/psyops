@@ -15,7 +15,7 @@ lsblk
 lsof
 minisign
 nebula
-nvme
+nvme-cli
 openssh
 pciutils
 progfiguration
