@@ -349,7 +349,7 @@ def main_implementation(*arguments):
     inventory = Inventory(parsed.inventory_file, parsed.age_private_key)
 
     if parsed.action == "version":
-        print(version.getversion())
+        print(version.VersionInfo.from_build_version_or_default().verbose())
     elif parsed.action == "apply":
         action_apply(
             inventory, parsed.nodename, strace_before_applying=parsed.strace_before_applying, force=parsed.force_apply
