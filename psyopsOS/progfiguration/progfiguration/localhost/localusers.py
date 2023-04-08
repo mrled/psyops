@@ -50,7 +50,7 @@ class LocalhostUsers:
         """Add a group"""
         if self.group_exists(groupname):
             return
-        cmd = ["groupadd"]
+        cmd = ["addgroup"]
         if gid:
             cmd += ["-g", gid]
         if system:
