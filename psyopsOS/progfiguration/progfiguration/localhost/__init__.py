@@ -148,11 +148,29 @@ class LocalhostLinux:
         inflated = template_contents.substitute(**template_args)
         self.set_file_contents(dest, inflated, owner, group, mode)
 
-    def template(self, *args, **kwargs):
-        return self._template_backend(string.Template, *args, **kwargs)
+    def template(
+        self,
+        src: str,
+        dest: str,
+        template_args: Dict[str, Any],
+        owner: Optional[str] = None,
+        group: Optional[str] = None,
+        mode: Optional[int] = None,
+        dirmode: Optional[int] = None,
+    ):
+        return self._template_backend(string.Template, src, dest, template_args, owner, group, mode, dirmode)
 
-    def temple(self, *args, **kwargs):
-        return self._template_backend(temple.Temple, *args, **kwargs)
+    def temple(
+        self,
+        src: str,
+        dest: str,
+        template_args: Dict[str, Any],
+        owner: Optional[str] = None,
+        group: Optional[str] = None,
+        mode: Optional[int] = None,
+        dirmode: Optional[int] = None,
+    ):
+        return self._template_backend(temple.Temple, src, dest, template_args, owner, group, mode, dirmode)
 
     def linesinfile(self, file: str, lines: List[str]):
         """Ensure all lines in the input list exist in a file.
