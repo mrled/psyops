@@ -16,7 +16,7 @@ nodeFunctionMap:
   zalas: kubernasty
   psyopsos-test-1: kubernasty
   newjutland: synergycontroller
-  agassiz: default
+  agassiz: privnet
 
 functionRoleMap:
   kubernasty:
@@ -34,6 +34,9 @@ functionRoleMap:
   # and they will still come up.
   default:
     - alpine_postboot_config
+  privnet:
+    - alpine_postboot_config
+    - capthook
 
 nodeSettings:
   # The location for the age key on each node
