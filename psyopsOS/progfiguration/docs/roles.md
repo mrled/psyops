@@ -28,41 +28,32 @@ perhaps it creates this user as part of deploying a service.
 We just use this tiny role as an example.)
 
 ```python
-"""Set up a data disk"""
+class Role(ProgfigurationRole):
 
-import os
-import subprocess
-from typing import Any, Dict, List
-
-from progfiguration import logger
-from progfiguration.localhost import LocalhostLinuxPsyopsOs
-
-defaults = {
-    "username": "svcuser",
-    "groupname": "svcgroup",
-}
-
-def apply(
-    localhost: LocalhostLinuxPsyopsOs,
-    username: str,
-    groupname: str,
-):
-    localhost.users.add_service_account(username, groupname, home=True, shell="/bin/sh")
-    homedir = localhost.users.getent_user(username).homedir
-
-def results(
-    localhost: LocalhostLinuxPsyopsOs,
-    username: str,
-    groupname: str,
-) -> Dict[str, Any]:
-
-    homedir = localhost.users.getent_user(username).homedir
-    return {
-        "username": username,
-        "groupname": groupname,
-        "homedir": homedir,
+    defaults = {
+        "username": "svcuser",
+        "groupname": "svcgroup",
     }
 
+    def apply(
+        self,
+        username: str,
+        groupname: str,
+    ):
+        localhost.users.add_service_account(username, groupname, home=True, shell="/bin/sh")
+        homedir = localhost.users.getent_user(username).homedir
+
+    def results(
+        self,
+        username: str,
+        groupname: str,
+    ):
+        homedir = self.localhost.users.getent_user(username).homedir
+        return {
+            "username": username,
+            "groupname": groupname,
+            "homedir": homedir,
+        }
 ```
 
 ## Some notes on the `results()` function
