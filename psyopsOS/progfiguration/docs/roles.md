@@ -28,33 +28,65 @@ perhaps it creates this user as part of deploying a service.
 We just use this tiny role as an example.)
 
 ```python
+from progfiguration import logger
+
+
 class Role(ProgfigurationRole):
 
+    # These are default values for the apply() and results() functions
     defaults = {
         "username": "svcuser",
         "groupname": "svcgroup",
+        "secondary_groups": "docker",
+    }
+
+    # Any argument listed here cannot be overridden, but can be appended to by node- or group- level arguments.
+    appends = [
+        "secondary_groups",
+    ]
+
+    # This is a handy pattern to use, but the 'constants' property is not part of the API.
+    constants = {
+        "favorite_shell": "/bin/sh"
     }
 
     def apply(
         self,
         username: str,
         groupname: str,
+        secondary_groups: List[str],
     ):
-        localhost.users.add_service_account(username, groupname, home=True, shell="/bin/sh")
-        homedir = localhost.users.getent_user(username).homedir
+        self.localhost.users.add_service_account(username, groupname, home=True, shell=self.constants['favorite_shell'])
+        for g in secondary_groups:
+            self.localhost.users.add_user_to_group(username, g)
+        homedir = self.localhost.users.getent_user(username).homedir
 
     def results(
         self,
         username: str,
         groupname: str,
+        secondary_groups: List[str,]
     ):
         homedir = self.localhost.users.getent_user(username).homedir
         return {
             "username": username,
             "groupname": groupname,
+            "groups": [groupname] + secondary_groups,
             "homedir": homedir,
+            "shell": self.constants['favorite_shell'],
         }
 ```
+
+Note that both `apply()` and `results()` have the exact same arguments.
+This is mandatory.
+
+Nodes or groups may override default values, or they may choose to accept them.
+If a default is not provided by the role,
+it must be applied by any node that applies the role,
+or (at least) one of the groups that that node is a member of.
+
+Group order is not guaranteed.
+Make sure you do not allow multiple groups for the same node to define the same argument.
 
 ## Some notes on the `results()` function
 

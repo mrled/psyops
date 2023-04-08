@@ -10,6 +10,11 @@ from progfiguration.inventory import Inventory
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
 
 
+# Note that you cannot override properties in a subclass of a dataclass
+# This means we can't have a default value for attributes like `defaults` and `appends`,
+# and that we have to use .default_arguments and .argument_appends when we want to access them instead.
+
+
 @dataclass
 class ProgfigurationRole(ABC):
     """A role that can be applied to a node
@@ -42,10 +47,7 @@ class ProgfigurationRole(ABC):
     localhost: LocalhostLinuxPsyopsOs
     inventory: Inventory
 
-    defaults: Dict[str, Any] = field(default_factory=dict)
-    appends: List[str] = field(default_factory=list)
-    constants: Dict[str, Any] = field(default_factory=dict)
-    rolepkg: Optional[str] = None
+    # This is just a cache
     _rolefiles: Optional[Any] = None
 
     @abstractmethod
@@ -60,11 +62,25 @@ class ProgfigurationRole(ABC):
 
         TODO: convert to using importlib.resources.as_file, which I think works inside a zip file or anywhere
         """
-        if not self.rolepkg:
+        if not hasattr(self, "rolepkg"):
             raise NotImplementedError("rolepkg must be set to use package_file()")
         if not self._rolefiles:
             self._rolefiles = importlib_resources_files(self.rolepkg)
         return self._rolefiles.joinpath(filename)
+
+    @property
+    def default_arguments(self):
+        """Return the default arguments for the role's apply() method"""
+        if hasattr(self, "defaults"):
+            return self.defaults
+        return {}
+
+    @property
+    def argument_appends(self):
+        """Return the arguments that should be appended to, rather than replaced, by arguments defined on the group/node"""
+        if hasattr(self, "appends"):
+            return self.appends
+        return []
 
 
 _coalescence_cache = {}
@@ -95,11 +111,11 @@ def _coalesce_node_roles_arguments(inventory: Inventory, nodename: str) -> Dict[
 
         # If the role module itself has defaults, set them
         rolevars = {}
-        rolevars.update(role.defaults)
+        rolevars.update(role.default_arguments)
 
         # The role module may define some values as "appends",
         # which means that they cannot be overridden by groups/nodes, only appended to.
-        appendvars = role.appends
+        appendvars = role.argument_appends
         for append in appendvars:
             if append not in rolevars:
                 rolevars[append] = []
