@@ -95,3 +95,9 @@ seedbox_elastic_config_dir: "{{ seedbox_config_dir }}/elastic"
 seedbox_logstash_config_dir: "{{ seedbox_config_dir }}/logstash"
 seedbox_filebeat_config_dir: "{{ seedbox_config_dir }}/filebeat"
 seedbox_kibana_config_dir: "{{ seedbox_config_dir }}/kibana"
+
+# List of directories to set selinux to allow seedbox samba user
+# (seedbox_media_root is always allowed).
+# If seedbox_media_root is a symlink, this must include the link target!
+seedbox_media_selinux_enable: []
+seedbox_media_selinux_enable_all: "{{ seedbox_media_selinux_enable + [seedbox_media_root] }}"

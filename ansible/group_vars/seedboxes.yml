@@ -32,6 +32,8 @@ seedbox_media:
   books: "{{ seedbox_media_root }}/Books"
   itunes: "{{ seedbox_media_root }}/iTunes"
   trix: "{{ seedbox_media_root }}/Trix"
+seedbox_media_selinux_enable:
+- /mnt/8tbmirror
 
 seedbox_root_domain: "{{ global_seedbox_domain }}"
 seedbox_misc_domain: "seedbox.{{ seedbox_root_domain }}"
