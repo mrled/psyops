@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import textwrap
+from pathlib import Path
 from typing import List
 
 from progfiguration import logger
@@ -77,7 +78,7 @@ class Role(ProgfigurationRole):
 
     defaults = {
         "block_device": "/dev/sda",
-        "mountpoint": "/psyopsos-data",
+        "mountpoint": Path("/psyopsos-data"),
         # Anything path relative to the mountpoint in this list is wiped after mounting.
         # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
         # If the filesystem is already mounted, nothing is removed.
@@ -98,7 +99,7 @@ class Role(ProgfigurationRole):
     def apply(
         self,
         block_device: str,
-        mountpoint: str,
+        mountpoint: Path,
         wipe_after_mounting: None,
         ramoffload: bool,
         ramoffload_size_gb: int,
@@ -116,9 +117,9 @@ class Role(ProgfigurationRole):
         )
         self.localhost.cp(self.role_file("progfiguration-umount-datadisk.sh"), "/usr/local/sbin/", mode=0o755)
 
-        if not is_mountpoint(mountpoint):
+        if not is_mountpoint(str(mountpoint)):
             logger.info(f"Mounting {block_device} on {mountpoint}...")
-            os.makedirs(mountpoint, mode=0o755, exist_ok=True)
+            os.makedirs(str(mountpoint), mode=0o755, exist_ok=True)
             subprocess.run(f"mount {block_device} {mountpoint}", shell=True, check=True)
 
             # TODO: Don't require list flattening.
@@ -127,7 +128,7 @@ class Role(ProgfigurationRole):
             wipe_after_mounting = wipe_after_mounting or []
             wipes = [item for sublist in wipe_after_mounting for item in sublist]
             for subpath in wipes:
-                path = os.path.join(mountpoint, subpath)
+                path = mountpoint.joinpath(subpath)
                 if os.path.exists(path):
                     logger.info(f"Removing path {path} after mounting {mountpoint}...")
                     shutil.rmtree(path)
@@ -136,6 +137,20 @@ class Role(ProgfigurationRole):
 
         if ramoffload:
             logger.info(f"Enabling ramoffload to {mountpoint}...")
-            setup_ramoffload(self.localhost, mountpoint, ramoffload_size_gb, ramoffload_directories)
+            setup_ramoffload(self.localhost, str(mountpoint), ramoffload_size_gb, ramoffload_directories)
         else:
             logger.info("Will not enable ramoffload")
+
+    def results(
+        self,
+        block_device: str,
+        mountpoint: Path,
+        wipe_after_mounting: None,
+        ramoffload: bool,
+        ramoffload_size_gb: int,
+        ramoffload_directories: List[str],
+    ):
+        return {
+            "block_device": block_device,
+            "mountpoint": mountpoint,
+        }
