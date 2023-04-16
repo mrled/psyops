@@ -1,7 +1,9 @@
 """What the nodes have to say about themselves"""
 
 
+from importlib.abc import Traversable
 import os
+from pathlib import Path
 import shutil
 import string
 import subprocess
@@ -70,13 +72,15 @@ class LocalhostLinux:
 
     def set_file_contents(
         self,
-        path: str,
+        path: str | Path | Traversable,
         contents: str,
         owner: Optional[str] = None,
         group: Optional[str] = None,
         mode: Optional[int] = None,
         dirmode: Optional[int] = None,
     ):
+        if not isinstance(path, str):
+            path = str(path)
         self.makedirs(os.path.dirname(path), owner, group, dirmode)
         if path in self._cache_files:
             del self._cache_files[path]
@@ -89,52 +93,64 @@ class LocalhostLinux:
 
     def makedirs(
         self,
-        path: str,
+        path: str | Path | Traversable,
         owner: Optional[str] = None,
         group: Optional[str] = None,
         mode: Optional[int] = None,
     ):
-        path = os.path.abspath(path)
+        if isinstance(path, str):
+            path = Path(os.path.abspath(path))
+        if path.exists():
+            return
         if not mode:
             mode = 0o0777 - self.get_umask()
-        if os.path.exists(path):
-            return
-        head, tail = os.path.split(path)
+        head = path.parent
         if not os.path.exists(head):
             self.makedirs(head, owner, group, mode)
         # while os.path.islink(head):
         #     head = os.readlink(head)
-        if not os.path.isdir(head):
+        if not head.is_dir():
             raise Exception(f"Path component {head} exists but it is not a directory")
-        if not os.path.exists(path):
-            # We have to set the mode separately, as os.mkdir()'s mode argument is umasked
-            # <https://stackoverflow.com/questions/37118558/python3-os-mkdir-does-not-enforce-correct-mode>
-            os.mkdir(path)
-            os.chmod(path, mode)
-            if owner or group:
-                shutil.chown(path, user=owner, group=group)
+        # We have to set the mode separately, as os.mkdir()'s mode argument is umasked
+        # <https://stackoverflow.com/questions/37118558/python3-os-mkdir-does-not-enforce-correct-mode>
+        os.mkdir(path.filename)
+        path.chmod(mode)
+        if owner or group:
+            shutil.chown(path.filename, user=owner, group=group)
 
     def cp(
         self,
-        src: str,
-        dest: str,
+        src: str | Path | Traversable,
+        dest: str | Path | Traversable,
         owner: Optional[str] = None,
         group: Optional[str] = None,
         mode: Optional[int] = None,
         dirmode: Optional[int] = None,
     ):
+        if isinstance(dest, str):
+            dest = Path(dest)
         self.makedirs(os.path.dirname(dest), owner, group, dirmode)
-        shutil.copy(src, dest)
+        if os.path.exists(str(src)):
+            shutil.copy(src, dest)
+        elif hasattr(src, "open"):
+            if dest.is_dir():
+                self.makedirs(os.path.dirname(dest), owner, group, dirmode)
+                dest = dest.joinpath(src.parent.name)
+            with src.open("r") as srcfp:
+                with dest.open("w") as destfp:
+                    shutil.copyfileobj(srcfp, destfp)
+        else:
+            raise Exception(f"Not sure how to copy src (type: {type(src)}) at {src} (does it exist?)")
         if owner or group:
             shutil.chown(dest, user=owner, group=group)
         if mode:
-            os.chmod(dest, mode)
+            dest.chmod(mode)
 
     def _template_backend(
         self,
         template: type,
-        src: str,
-        dest: str,
+        src: str | Path | Traversable,
+        dest: str | Path | Traversable,
         template_args: Dict[str, Any],
         owner: Optional[str] = None,
         group: Optional[str] = None,
@@ -142,8 +158,12 @@ class LocalhostLinux:
         dirmode: Optional[int] = None,
     ):
         """Template a file using the appropriate backend"""
-        self.makedirs(os.path.dirname(dest), owner, group, dirmode)
-        with open(src) as fp:
+        if isinstance(dest, str):
+            dest = Path(dest)
+        if isinstance(src, str):
+            src = Path(src)
+        self.makedirs(dest.parent, owner, group, dirmode)
+        with src.open() as fp:
             template_contents = template(fp.read())
         inflated = template_contents.substitute(**template_args)
         self.set_file_contents(dest, inflated, owner, group, mode)

@@ -191,7 +191,12 @@ def action_rcmd(inventory: Inventory, nodes: List[str], groups: List[str], cmd: 
 
 
 def action_rapply(
-    inventory: Inventory, nodenames: List[str], groupnames: List[str], force_apply: bool, keep_remote_file: bool
+    inventory: Inventory,
+    nodenames: List[str],
+    groupnames: List[str],
+    remote_debug: bool,
+    force_apply: bool,
+    keep_remote_file: bool,
 ):
     progfiguration_build = import_progfiguration_build()
 
@@ -202,7 +207,10 @@ def action_rapply(
         pyzfile = os.path.join(tmpdir, "progfiguration.pyz")
         progfiguration_build.build_zipapp(pyzfile)
         for nname, node in nodes.items():
-            args = ["apply", nname]
+            args = []
+            if remote_debug:
+                args.append("--debug")
+            args += ["apply", nname]
             if force_apply:
                 args.append("--force-apply")
             remotebrute.cpexec(
@@ -308,6 +316,12 @@ def parseargs(arguments: List[str]):
         "rapply",
         parents=[node_opts],
         description="Apply configuration to remote system in inventory; requires passwordless SSH configured",
+    )
+    sub_rapply.add_argument(
+        "--remote-debug",
+        "-r",
+        action="store_true",
+        help="Open the debugger on the remote system if an unhandled exception is encountered",
     )
     sub_rapply.add_argument(
         "--force-apply", action="store_true", help="Force apply, even if the node has TESTING_DO_NOT_APPLY set."
@@ -416,6 +430,7 @@ def main_implementation(*arguments):
             inventory,
             parsed.nodes,
             parsed.groups,
+            remote_debug=parsed.remote_debug,
             force_apply=parsed.force_apply,
             keep_remote_file=parsed.keep_remote_file,
         )

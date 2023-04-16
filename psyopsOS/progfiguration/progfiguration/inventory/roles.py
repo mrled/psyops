@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from importlib.abc import Traversable
 from importlib.resources import files as importlib_resources_files
 from typing import Any, Dict, List, Optional
 
@@ -57,7 +58,7 @@ class ProgfigurationRole(ABC):
     def results(self, **kwargs):
         return {}
 
-    def role_file(self, filename: str) -> str:
+    def role_file(self, filename: str) -> Traversable:
         """Get the path to a file in the role's package
 
         TODO: convert to using importlib.resources.as_file, which I think works inside a zip file or anywhere

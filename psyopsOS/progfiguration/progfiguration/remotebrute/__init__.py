@@ -44,13 +44,15 @@ def ssh(host: str, command: str):
     (This means this function doesn't have to deal with nested quoting.)
     """
 
+    # sshcmd = ["ssh", "-tt", host, command]
     sshcmd = ["ssh", host, command]
     result = subprocess.run(sshcmd, capture_output=True)
     if result.returncode != 0:
         print("Failed to run command:", sshcmd)
-        print("stdout:", result.stdout.decode())
-        print("stderr:", result.stderr.decode())
         raise subprocess.CalledProcessError(result.returncode, sshcmd, output=result.stdout, stderr=result.stderr)
+    print("Ran command:", sshcmd")
+    print("stdout:", result.stdout.decode())
+    print("stderr:", result.stderr.decode())
     return result
 
 

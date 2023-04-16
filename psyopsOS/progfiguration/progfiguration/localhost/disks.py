@@ -118,12 +118,10 @@ class EncryptionKeyfileNotSetError(Exception):
     pass
 
 
-def cryptsetup_open_idempotently(device: str, keyfile: str, lukslabel: str, encrypted_suffix: str = "_crypt"):
+def cryptsetup_open_idempotently(device: str, keyfile: str, lukslabel: str):
     """Use cryptsetup to open a device idempotently"""
 
-    # If the 'device' argument is '/dev/sda', 'encdev' will be 'sda_crypt', and 'encdev_full' will be '/dev/mapper/sda_crypt'
-    encdev = f"{os.path.basename(device)}{encrypted_suffix}"
-    encdev_full = os.path.join("/dev/mapper", encdev)
+    encdev_full = os.path.join("/dev/mapper", lukslabel)
 
     if os.path.exists(encdev_full):
         logger.info(f"cryptsetup_open_idempotently(): Encrypted device {encdev_full} already exists, nothing to do")
@@ -132,7 +130,9 @@ def cryptsetup_open_idempotently(device: str, keyfile: str, lukslabel: str, encr
     needs_luks_format = False
     try:
         subprocess.run(
-            f"cryptsetup open --type luks2 --batch-mode --key-file {keyfile} {device} {encdev}", shell=True, check=True
+            f"cryptsetup open --type luks2 --batch-mode --key-file {keyfile} {device} {lukslabel}",
+            shell=True,
+            check=True,
         )
         logger.info(f"cryptsetup_open_idempotently(): Opened encrypted device {encdev_full} without running luksFormat")
     except subprocess.CalledProcessError:
@@ -149,7 +149,9 @@ def cryptsetup_open_idempotently(device: str, keyfile: str, lukslabel: str, encr
         )
         logger.info(f"cryptsetup_open_idempotently(): Finished running luksFormat for {encdev_full}")
         subprocess.run(
-            f"cryptsetup open --type luks2 --batch-mode --key-file {keyfile} {device} {encdev}", shell=True, check=True
+            f"cryptsetup open --type luks2 --batch-mode --key-file {keyfile} {device} {lukslabel}",
+            shell=True,
+            check=True,
         )
         logger.info(f"cryptsetup_open_idempotently(): Opened encrypted device {encdev_full} after running luksFormat")
 
