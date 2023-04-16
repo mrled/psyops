@@ -50,7 +50,7 @@ def ssh(host: str, command: str):
     if result.returncode != 0:
         print("Failed to run command:", sshcmd)
         raise subprocess.CalledProcessError(result.returncode, sshcmd, output=result.stdout, stderr=result.stderr)
-    print("Ran command:", sshcmd")
+    print("Ran command:", sshcmd)
     print("stdout:", result.stdout.decode())
     print("stderr:", result.stderr.decode())
     return result
