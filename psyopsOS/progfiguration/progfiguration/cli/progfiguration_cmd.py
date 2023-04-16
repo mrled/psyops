@@ -72,10 +72,14 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
         pdb.set_trace()
     else:
         for rolename, role_implementation in applyroles.items():
-            role, rolevars = role_implementation
-            logging.debug(f"Running role {rolename}...")
-            role.apply(**rolevars)
-            logging.info(f"Finished running role {rolename}.")
+            try:
+                role, rolevars = role_implementation
+                logging.debug(f"Running role {rolename}...")
+                role.apply(**rolevars)
+                logging.info(f"Finished running role {rolename}.")
+            except Exception as exc:
+                logging.error(f"Error running role {rolename}: {exc}")
+                raise
 
     logging.info(f"Finished running all roles")
 
