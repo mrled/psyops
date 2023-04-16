@@ -3,7 +3,9 @@
 from dataclasses import dataclass
 import os
 import importlib
+from importlib.abc import Traversable
 from importlib.resources import files as importlib_resources_files
+from pathlib import Path
 from types import ModuleType
 from typing import Any, Dict, List, Optional
 
@@ -25,7 +27,7 @@ class Inventory:
     # When running progfiguration from a node, this is not available.
     age: Optional[age.AgeKey]
 
-    def __init__(self, invfile: str, age_privkey: Optional[str]):
+    def __init__(self, invfile: Traversable | Path, age_privkey: Optional[str]):
         """Initializer
 
         invfile:        A YAML inventory file.
@@ -33,7 +35,7 @@ class Inventory:
                         If not passed, try to find the appropriate node/controller age key.
         """
         self.invfile = invfile
-        with open(invfile) as ifp:
+        with self.invfile.open() as ifp:
             self.inventory_parsed = yaml.load(ifp, Loader=yaml.Loader)
 
         self.localhost = LocalhostLinuxPsyopsOs()

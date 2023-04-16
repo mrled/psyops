@@ -4,11 +4,15 @@ import argparse
 import importlib
 import logging
 import os
+import pathlib
 import pdb
 import sys
+import tempfile
 from typing import List, Union
 
-from progfiguration import progfiguration_build_path, site, version
+print(f"Importing {__file__}. sys.path is {sys.path}")
+
+from progfiguration import progfiguration_build_path, remotebrute, site, version
 from progfiguration.cli import (
     progfiguration_error_handler,
     configure_logging,
@@ -37,6 +41,18 @@ def ResolvedPath(p: str) -> str:
 def CommaSeparatedStrList(cssl: str) -> List[str]:
     """Convert a string with commas into a list of strings"""
     return cssl.split(",")
+
+
+def import_progfiguration_build():
+    """Import the progfiguration_build module
+
+    This module is also used outside of the progfiguration CLI, which is why we do this.
+    """
+    spec = importlib.util.spec_from_file_location("progfiguration_build", progfiguration_build_path)
+    progfiguration_build = importlib.util.module_from_spec(spec)
+    sys.modules["progfiguration_build"] = progfiguration_build
+    spec.loader.exec_module(progfiguration_build)
+    return progfiguration_build
 
 
 def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bool = False, force: bool = False):
@@ -142,38 +158,52 @@ def action_decrypt(inventory: Inventory, nodes: List[str], groups: List[str], co
         print("---")
 
 
-def action_build_action_apk(apkdir: str):
+def action_build(parsed: argparse.Namespace):
+    """Build the progfiguration package
 
-    # Get the module by path
-    spec = importlib.util.spec_from_file_location("progfiguration_build", progfiguration_build_path)
-    progfiguration_build = importlib.util.module_from_spec(spec)
-    sys.modules["progfiguration_build"] = progfiguration_build
-    spec.loader.exec_module(progfiguration_build)
+    Must pass in the parsed arguments from the main command.
+    """
 
-    # Run the build
-    progfiguration_build.build_alpine(apkdir)
+    progfiguration_build = import_progfiguration_build()
 
-
-def action_build_action_save_version(version: Union[str, None]):
-
-    # Get the module by path
-    spec = importlib.util.spec_from_file_location("progfiguration_build", progfiguration_build_path)
-    progfiguration_build = importlib.util.module_from_spec(spec)
-    sys.modules["progfiguration_build"] = progfiguration_build
-    spec.loader.exec_module(progfiguration_build)
-
-    # Save the version
-    if not version:
-        version = progfiguration_build.get_epoch_build_version()
-    progfiguration_build.set_build_version(version)
-    print("Saved APKBUILD and package version files:")
-    print(progfiguration_build.APKBUILD_FILE)
-    print(progfiguration_build.PKG_VERSION_FILE)
-    print("Take care not to commit these files to git")
+    if parsed.buildaction == "apk":
+        progfiguration_build.build_alpine(parsed.apkdir)
+    elif parsed.buildaction == "pyz":
+        progfiguration_build.build_zipapp(parsed.pyzfile)
+    elif parsed.buildaction == "save-version":
+        if not version:
+            version = progfiguration_build.get_epoch_build_version()
+        progfiguration_build.set_build_version(version)
+        print("Saved APKBUILD and package version files:")
+        print(progfiguration_build.APKBUILD_FILE)
+        print(progfiguration_build.PKG_VERSION_FILE)
+        print("Take care not to commit these files to git")
+    else:
+        raise Exception(f"Unknown buildaction {parsed.buildaction}")
 
 
 def action_rcmd(inventory: Inventory, nodes: List[str], groups: List[str], cmd: str):
     remoting.command(inventory, nodes, groups, cmd)
+
+
+def action_rapply(
+    inventory: Inventory, nodenames: List[str], groupnames: List[str], force_apply: bool, keep_remote_file: bool
+):
+    progfiguration_build = import_progfiguration_build()
+
+    nodenames = set(nodenames + [inventory.group_members(g) for g in groupnames])
+    nodes = {n: inventory.node(n).node for n in nodenames}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pyzfile = os.path.join(tmpdir, "progfiguration.pyz")
+        progfiguration_build.build_zipapp(pyzfile)
+        for nname, node in nodes.items():
+            args = ["apply", nname]
+            if force_apply:
+                args.append("--force-apply")
+            remotebrute.cpexec(
+                f"{node.user}@{node.address}", pyzfile, args, interpreter="python3", keep_remote_file=keep_remote_file
+            )
 
 
 def parseargs(arguments: List[str]):
@@ -269,6 +299,19 @@ def parseargs(arguments: List[str]):
         "--force-apply", action="store_true", help="Force apply, even if the node has TESTING_DO_NOT_APPLY set."
     )
 
+    # rapply subcommand
+    sub_rapply = subparsers.add_parser(
+        "rapply",
+        parents=[node_opts],
+        description="Apply configuration to remote system in inventory; requires passwordless SSH configured",
+    )
+    sub_rapply.add_argument(
+        "--force-apply", action="store_true", help="Force apply, even if the node has TESTING_DO_NOT_APPLY set."
+    )
+    sub_rapply.add_argument(
+        "--keep-remote-file", action="store_true", help="Don't delete the remote file after execution"
+    )
+
     # list subcommand
     sub_list = subparsers.add_parser("list", description="List inventory items")
     list_choices = ["nodes", "groups", "functions", "svcpreps"]
@@ -309,6 +352,11 @@ def parseargs(arguments: List[str]):
         description="Build an Alpine APK package. Must be run from an editable install on an Alpine linux system with the appropriate signing keys.",
     )
     sub_build_sub_apk.add_argument("apkdir", type=ResolvedPath, help="Save the resulting package to this directory")
+    sub_build_sub_pyz = sub_build_subparsers.add_parser(
+        "pyz",
+        description="Build a zipapp .pyz file containing the Python module. Must be run from an editable install.",
+    )
+    sub_build_sub_pyz.add_argument("pyzfile", type=ResolvedPath, help="Save the resulting pyz file to this path")
     sub_build_sub_version = sub_build_subparsers.add_parser(
         "save-version", description="Save the Python module and APKBUILD file with a version number"
     )
@@ -346,6 +394,9 @@ def main_implementation(*arguments):
         mitogen_io_level = logging._nameToLevel[parsed.mitogen_io_log_stderr]
         remoting.configure_mitogen_logging(mitogen_core_level, mitogen_io_level)
 
+    inventory_file = parsed.inventory_file
+    if not hasattr(inventory_file, "open"):
+        inventory_file = pathlib.Path(inventory_file)
     inventory = Inventory(parsed.inventory_file, parsed.age_private_key)
 
     if parsed.action == "version":
@@ -353,6 +404,16 @@ def main_implementation(*arguments):
     elif parsed.action == "apply":
         action_apply(
             inventory, parsed.nodename, strace_before_applying=parsed.strace_before_applying, force=parsed.force_apply
+        )
+    elif parsed.action == "rapply":
+        if not parsed.nodes and not parsed.groups:
+            parser.error("You must pass at least one of --nodes or --groups")
+        action_rapply(
+            inventory,
+            parsed.nodes,
+            parsed.groups,
+            force_apply=parsed.force_apply,
+            keep_remote_file=parsed.keep_remote_file,
         )
     elif parsed.action == "list":
         action_list(inventory, parsed.collection)
@@ -387,15 +448,10 @@ def main_implementation(*arguments):
             raise Exception("Could not import remoting module - make sure mitogen is installed")
         if not parsed.nodes and not parsed.groups:
             parser.error("You must pass at least one of --nodes or --groups")
-        # action_rcmd(inventory, parsed.nodes, parsed.groups, parsed.command)
-        remoting.mitogen_example()
+        action_rcmd(inventory, parsed.nodes, parsed.groups, parsed.command)
+        # remoting.mitogen_example()
     elif parsed.action == "build":
-        if parsed.buildaction == "apk":
-            action_build_action_apk(parsed.apkdir)
-        elif parsed.buildaction == "save-version":
-            action_build_action_save_version(parsed.version)
-        else:
-            raise Exception(f"Unknown build action {parsed.buildaction}")
+        action_build(parsed)
     else:
         raise Exception(f"Unknown action {parsed.action}")
 

@@ -9,10 +9,12 @@ We support building for the following circumstances:
 
 import datetime
 import os
+import pathlib
 import string
+import stat
 import subprocess
 import textwrap
-import zipapp
+import zipfile
 
 
 PKG_ROOT = os.path.dirname(__file__)
@@ -95,5 +97,58 @@ def build_alpine(apk_index_path: str, abuild_repodest: str = "psyopsOS", clean: 
 
 
 def build_zipapp(outfile: str):
-    """Build a .pyz file with the zipapp module"""
-    zipapp.create_archive(source=PROGFIGURATION_ROOT, target=outfile, main="cli.progfiguration:main")
+    """Build a .pyz file
+
+    Zip up the contents of PROGFIGURATION_ROOT.
+    Place them inside a subdirectory called 'progfigruation'.
+    Add a __main__.py file to the root of the zip file.
+
+    We have to do this because the zipapp module does not allow us to specify
+    the subdirectory name.
+    When our program does "from progfiguration import ...",
+    it will look for a directory called 'progfiguration' in the zip file.
+
+    Inspired by the zipapp module code
+    <https://github.com/python/cpython/blob/3.11/Lib/zipapp.py>
+
+    TODO: go into more detail in documentation as to why this is required, with examples.
+    """
+
+    outfile = pathlib.Path(outfile)
+    modulebase = pathlib.Path(PROGFIGURATION_ROOT)
+
+    # Set this to zipfile.ZIP_DEFLATED to compress the output
+    compression = zipfile.ZIP_STORED
+
+    # This is the __main__.py that will be in the root of the zip file
+    # By default, zipapp will create something like this:
+    #
+    # r"""
+    # # -*- coding: utf-8 -*-
+    # import cli.progfiguration
+    # cli.progfiguration.main()
+    # """
+    #
+    # We want to be able to import progfiguration from the root of the zip file
+    # so we have to do this:
+    main_py = textwrap.dedent(
+        r"""
+        from progfiguration.cli import progfiguration_cmd
+        progfiguration_cmd.main()
+        """
+    )
+
+    with open(outfile, "wb") as fp:
+        # Writing a shebang like this is optional in zipapp,
+        # but there's no reason not to since it's a valid zip file either way.
+        fp.write(b"#!/usr/bin/env python3\n")
+
+        with zipfile.ZipFile(fp, "w", compression=compression) as z:
+            for child in modulebase.rglob("*"):
+                if child.name == "__pycache__":
+                    continue
+                arcname = child.relative_to(modulebase)
+                z.write(child, "progfiguration/" + arcname.as_posix())
+            z.writestr("__main__.py", main_py.encode("utf-8"))
+
+    outfile.chmod(outfile.stat().st_mode | stat.S_IEXEC)
