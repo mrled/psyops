@@ -126,7 +126,16 @@ def process_disks(
         # 'unit s' means our units will be in sectors
         # 'print free' means print all partitions and chunks of free space
         # parted will return nonzero if this doesn't have a partition label, so we cannot check=True
-        result = subprocess.run(parted_prefix + "unit s print free", shell=True, capture_output=True)
+        parted_cmd = parted_prefix + "unit s print free"
+        result = subprocess.run(parted_cmd, shell=True, capture_output=True)
+        # There must be a disk here because it was passed in explicitly
+        # An empty disk will still show information;
+        # no output at all should mean an error.
+        if not result.stdout:
+            logger.error(
+                f"No result for parted command '{parted_cmd}'. stdout: '{result.stdout}'; stderr: '{result.stderr}'"
+            )
+            raise Exception(f"parted could not read disk {disk}")
         diskinfo = json.loads(result.stdout)
 
         # Ensure that the disk has a GPT partition table
