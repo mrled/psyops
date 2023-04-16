@@ -36,6 +36,8 @@ functionRoleMap:
     - alpine_postboot_config
   privnet:
     - alpine_postboot_config
+    - blockdevparty
+    - datadisk_v2
     - capthook
 
 nodeSettings:
