@@ -185,8 +185,9 @@ class Inventory:
     def role(self, name: str) -> "ProgfigurationRole":
         """The ProgfigurationRole object for a given role name"""
         if name not in self._role_objects:
+            rolepkg = self.role_module(name).__package__
             role_cls = self.role_module(name).Role
-            self._role_objects[name] = role_cls(name, self.localhost, self)
+            self._role_objects[name] = role_cls(name, self.localhost, self, rolepkg)
         return self._role_objects[name]
 
     def get_secrets(self, filename: AnyPathOrStr) -> Dict[str, age.AgeSecret]:

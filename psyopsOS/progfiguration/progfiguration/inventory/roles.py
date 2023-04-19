@@ -32,12 +32,11 @@ class ProgfigurationRole(ABC):
     * name: The name of the role
     * localhost: A localhost object
     * inventory: An inventory object
+    * rolepkg: The package that the role is defined in,
+        used to determine the path to the role's templates.
 
     Optional attributes:
 
-    * rolepkg: The package that the role is defined in,
-        used to determine the path to the role's templates,
-        which you can set from the role's __init__.py by setting 'rolepkg = __package__'
     * defaults: A dict of default arguments for the role
     * appends: A list of arguments that should be appended to, rather than replaced
     * constants: A dict of constants that should be available to the role
@@ -58,6 +57,7 @@ class ProgfigurationRole(ABC):
     name: str
     localhost: LocalhostLinuxPsyopsOs
     inventory: Inventory
+    rolepkg: str
 
     # This is just a cache
     _rolefiles: Optional[Any] = None
@@ -74,8 +74,6 @@ class ProgfigurationRole(ABC):
 
         TODO: convert to using importlib.resources.as_file, which I think works inside a zip file or anywhere
         """
-        if not hasattr(self, "rolepkg"):
-            raise NotImplementedError("rolepkg must be set to use package_file()")
         if not self._rolefiles:
             self._rolefiles = importlib_resources_files(self.rolepkg)
         return self._rolefiles.joinpath(filename)

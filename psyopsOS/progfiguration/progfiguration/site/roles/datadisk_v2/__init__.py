@@ -94,8 +94,6 @@ class Role(ProgfigurationRole):
 
     appends = ["wipe_after_mounting"]
 
-    rolepkg = __package__
-
     def apply(
         self,
         block_device: str,

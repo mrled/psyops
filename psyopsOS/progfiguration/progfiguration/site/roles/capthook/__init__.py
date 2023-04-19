@@ -22,8 +22,6 @@ class Role(ProgfigurationRole):
         "hooks_subpath": "webhooks",
     }
 
-    rolepkg = __package__
-
     @property
     def hooksdir(self):
         return self.homedir / "hooks"
