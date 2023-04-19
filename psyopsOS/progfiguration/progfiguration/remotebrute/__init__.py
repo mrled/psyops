@@ -17,7 +17,7 @@ import secrets
 import shlex
 import string
 import subprocess
-from typing import List
+from typing import List, Union
 
 
 def generate_random_string(length):
@@ -26,8 +26,11 @@ def generate_random_string(length):
     return "".join(secrets.choice(alphabet) for i in range(length))
 
 
-def scp(sources: List[str], host: str, dest: str):
+def scp(host: str, sources: Union[str, List[str]], dest: str):
     """Use scp to copy a file, directory, or list"""
+
+    if isinstance(sources, str):
+        sources = [sources]
 
     cmd = ["scp", "-r"]
     cmd += sources
