@@ -1,6 +1,8 @@
 """Set up a data disk"""
 
 import os
+from pathlib import Path
+import shutil
 import subprocess
 
 from progfiguration import logger
@@ -22,28 +24,34 @@ class Role(ProgfigurationRole):
 
     rolepkg = __package__
 
+    @property
+    def hooksdir(self):
+        return self.homedir / "hooks"
+
+    @property
+    def homedir(self):
+        return Path("/home/capthook")
+
     def apply(
         self,
         username: str,
         groupname: str,
         port: int,
     ):
-        self.localhost.users.add_service_account(username, groupname, home=True, shell="/bin/sh")
+        self.localhost.users.add_service_account(username, groupname, home=str(self.homedir), shell="/bin/sh")
         subprocess.run(["apk", "add", "webhook"], check=True)
-        homedir = self.localhost.users.getent_user(username).homedir
-        hooksdir = os.path.join(homedir, self.constants["hooks_subpath"])
-        self.localhost.cp(self.role_file("hookbuilder.py"), os.path.join(hooksdir, "hookbuilder.py"))
+        self.localhost.cp(self.role_file("hookbuilder.py"), self.hooksdir / "hookbuilder.py")
         self.localhost.temple(
             self.role_file("whoami.hook.json.temple"),
-            os.path.join(hooksdir, "whoami.hook.json"),
+            self.hooksdir / "whoami.hook.json",
             owner=username,
             template_args={},
             group=groupname,
         )
         self.localhost.temple(
             self.role_file("showmeurhooks.hook.json.temple"),
-            os.path.join(hooksdir, "showmeurhooks.hook.json"),
-            template_args={"hooksdir": hooksdir},
+            self.hooksdir / "showmeurhooks.hook.json",
+            template_args={"hooksdir": str(self.hooksdir)},
             owner=username,
             group=groupname,
         )
@@ -61,9 +69,9 @@ class Role(ProgfigurationRole):
                 "username": username,
                 "groupname": groupname,
                 "port": port,
-                "hooksdir": hooksdir,
-                "hooks_json": os.path.join(hooksdir, "hooks.json"),
-                "hookbuilder": os.path.join(hooksdir, "hookbuilder.py"),
+                "hooksdir": str(self.hooksdir),
+                "hooks_json": str(self.hooksdir / "hooks.json"),
+                "hookbuilder": str(self.hooksdir / "hookbuilder.py"),
             },
             owner="root",
             group="root",
@@ -76,11 +84,10 @@ class Role(ProgfigurationRole):
         groupname: str,
         port: int,
     ):
-        homedir = self.localhost.users.getent_user(username).homedir
         return {
             "username": username,
             "groupname": groupname,
-            "homedir": homedir,
-            "hooksdir": os.path.join(homedir, self.constants["hooks_subpath"]),
+            "homedir": self.homedir,
+            "hooksdir": self.hooksdir,
             "port": port,
         }
