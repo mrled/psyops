@@ -6,13 +6,13 @@ and role arguments and secrets from the universal group always apply first,
 while other groups have no guarantee of order.
 """
 
-from progfiguration.inventory.invhelpers import Bunch
 from progfiguration.localhost.disks import (
     FilesystemSpec,
     LvmLvSpec,
     PartitionSpec,
     WholeDiskSpec,
 )
+from progfiguration.progfigtypes import Bunch
 
 group = Bunch(
     testattribute="test value",

@@ -1,5 +1,5 @@
 from pathlib import Path
-from progfiguration.inventory.invhelpers import Bunch
+
 from progfiguration.inventory.roles import RoleResultReference
 from progfiguration.localhost.disks import (
     FilesystemSpec,
@@ -7,6 +7,8 @@ from progfiguration.localhost.disks import (
     PartitionSpec,
     WholeDiskSpec,
 )
+from progfiguration.progfigtypes import Bunch
+
 
 group = Bunch(
     roles=Bunch(

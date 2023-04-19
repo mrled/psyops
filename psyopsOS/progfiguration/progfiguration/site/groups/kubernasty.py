@@ -1,6 +1,6 @@
 """My home k3s cluster"""
 
-from progfiguration.inventory.invhelpers import Bunch
+from progfiguration.progfigtypes import Bunch
 from progfiguration.localhost.disks import (
     FilesystemSpec,
     LvmLvSpec,

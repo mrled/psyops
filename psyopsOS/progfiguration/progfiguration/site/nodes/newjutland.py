@@ -4,8 +4,8 @@ Untested so far
 """
 
 from progfiguration.age import AgeSecretReference
-from progfiguration.inventory.invhelpers import Bunch
 from progfiguration.inventory.nodes import InventoryNode
+from progfiguration.progfigtypes import Bunch
 
 # The public key, not encrypted
 # From .synergy/SSL/Synergy.pem

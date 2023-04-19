@@ -1,5 +1,5 @@
-from progfiguration.inventory.invhelpers import Bunch
 from progfiguration.inventory.nodes import InventoryNode
+from progfiguration.progfigtypes import Bunch
 
 node = InventoryNode(
     address="jesseta.home.micahrl.com",

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from progfiguration.inventory.invhelpers import Bunch
+from progfiguration.progfigtypes import Bunch
 
 
 @dataclass
