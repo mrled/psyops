@@ -8,6 +8,7 @@ import pathlib
 import pdb
 import sys
 import tempfile
+import time
 from typing import List, Union
 
 print(f"Importing {__file__}. sys.path is {sys.path}")
@@ -190,7 +191,7 @@ def action_rcmd(inventory: Inventory, nodes: List[str], groups: List[str], cmd: 
     remoting.command(inventory, nodes, groups, cmd)
 
 
-def action_rapply(
+def action_deploy_apply(
     inventory: Inventory,
     nodenames: List[str],
     groupnames: List[str],
@@ -216,6 +217,24 @@ def action_rapply(
             remotebrute.cpexec(
                 f"{node.user}@{node.address}", pyzfile, args, interpreter="python3", keep_remote_file=keep_remote_file
             )
+
+
+def action_deploy_copy(
+    inventory: Inventory,
+    nodenames: List[str],
+    groupnames: List[str],
+    remotepath: str,
+):
+    progfiguration_build = import_progfiguration_build()
+
+    nodenames = set(nodenames + [inventory.group_members(g) for g in groupnames])
+    nodes = {n: inventory.node(n).node for n in nodenames}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pyzfile = os.path.join(tmpdir, "progfiguration.pyz")
+        progfiguration_build.build_zipapp(pyzfile)
+        for nname, node in nodes.items():
+            remotebrute.scp(f"{node.user}@{node.address}", pyzfile, remotepath)
 
 
 def parseargs(arguments: List[str]):
@@ -311,23 +330,35 @@ def parseargs(arguments: List[str]):
         "--force-apply", action="store_true", help="Force apply, even if the node has TESTING_DO_NOT_APPLY set."
     )
 
-    # rapply subcommand
-    sub_rapply = subparsers.add_parser(
-        "rapply",
+    # deploy subcommand
+    sub_deploy = subparsers.add_parser(
+        "deploy",
         parents=[node_opts],
-        description="Apply configuration to remote system in inventory; requires passwordless SSH configured",
+        description="Deploy progfiguration to remote system in inventory as a pyz package (NOT a pip or apk package!); requires passwordless SSH configured",
     )
-    sub_rapply.add_argument(
+    sub_deploy_subparsers = sub_deploy.add_subparsers(dest="deploy_action", required=True)
+    sub_deploy_sub_apply = sub_deploy_subparsers.add_parser("apply", description="Deploy and apply configuration")
+    sub_deploy_sub_apply.add_argument(
         "--remote-debug",
         "-r",
         action="store_true",
         help="Open the debugger on the remote system if an unhandled exception is encountered",
     )
-    sub_rapply.add_argument(
+    sub_deploy_sub_apply.add_argument(
         "--force-apply", action="store_true", help="Force apply, even if the node has TESTING_DO_NOT_APPLY set."
     )
-    sub_rapply.add_argument(
+    sub_deploy_sub_apply.add_argument(
         "--keep-remote-file", action="store_true", help="Don't delete the remote file after execution"
+    )
+    sub_deploy_sub_copy = sub_deploy_subparsers.add_parser(
+        "copy", description="Copy the configuration to the remote system"
+    )
+    default_dest = f"/tmp/progfiguration-{str(time.time()).replace('.', '')}.pyz"
+    sub_deploy_sub_copy.add_argument(
+        "--destination",
+        "-d",
+        default=default_dest,
+        help=f"The destination path on the remote system, default is based on the time this program was started, like {default_dest}",
     )
 
     # list subcommand
@@ -423,17 +454,23 @@ def main_implementation(*arguments):
         action_apply(
             inventory, parsed.nodename, strace_before_applying=parsed.strace_before_applying, force=parsed.force_apply
         )
-    elif parsed.action == "rapply":
+    elif parsed.action == "deploy":
         if not parsed.nodes and not parsed.groups:
             parser.error("You must pass at least one of --nodes or --groups")
-        action_rapply(
-            inventory,
-            parsed.nodes,
-            parsed.groups,
-            remote_debug=parsed.remote_debug,
-            force_apply=parsed.force_apply,
-            keep_remote_file=parsed.keep_remote_file,
-        )
+        if parsed.deploy_action == "apply":
+            action_deploy_apply(
+                inventory,
+                parsed.nodes,
+                parsed.groups,
+                remote_debug=parsed.remote_debug,
+                force_apply=parsed.force_apply,
+                keep_remote_file=parsed.keep_remote_file,
+            )
+        elif parsed.deploy_action == "copy":
+            action_deploy_copy(inventory, parsed.nodes, parsed.groups, parsed.destination)
+            print(f"Copied to remote host(s) at {parsed.destination}")
+        else:
+            raise ValueError(f"Unknown deploy action {parsed.deploy_action}")
     elif parsed.action == "list":
         action_list(inventory, parsed.collection)
     elif parsed.action == "info":
