@@ -8,6 +8,8 @@ groupNodeMap:
     - kenasus
     - zalas
     - psyopsos-test-1
+  privnet:
+    - agassiz
 
 # WARNING: Any host not listed in the nodeFunctionMap is not visible and will not be in the 'universal' group.
 nodeFunctionMap:
