@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 cat "/usr/share/zoneinfo/${PSYOPS_TIMEZONE}" > /etc/localtime
 
