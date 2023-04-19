@@ -13,6 +13,7 @@ import yaml
 
 from progfiguration import age
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
+from progfiguration.progfigtypes import AnyPathOrStr
 
 
 @dataclass
@@ -188,13 +189,15 @@ class Inventory:
             self._role_objects[name] = role_cls(name, self.localhost, self)
         return self._role_objects[name]
 
-    def get_secrets(self, filename: str) -> Dict[str, age.AgeSecret]:
+    def get_secrets(self, filename: AnyPathOrStr) -> Dict[str, age.AgeSecret]:
         """Retrieve secrets from a file.
 
         If the file is not found, just return an empty dict.
         """
+        if isinstance(filename, str):
+            filename = Path(filename)
         try:
-            with open(filename) as fp:
+            with filename.open() as fp:
                 contents = yaml.load(fp, Loader=yaml.Loader)
                 encrypted_secrets = {k: age.AgeSecret(v) for k, v in contents.items()}
                 return encrypted_secrets
