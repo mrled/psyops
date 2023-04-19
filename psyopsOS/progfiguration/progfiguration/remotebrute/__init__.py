@@ -52,6 +52,8 @@ def ssh(host: str, command: str):
     result = subprocess.run(sshcmd, capture_output=True)
     if result.returncode != 0:
         print("Failed to run command:", sshcmd)
+        print("stdout:", result.stdout.decode())
+        print("stderr:", result.stderr.decode())
         raise subprocess.CalledProcessError(result.returncode, sshcmd, output=result.stdout, stderr=result.stderr)
     print("Ran command:", sshcmd)
     print("stdout:", result.stdout.decode())
@@ -77,7 +79,7 @@ def cpexec(
         dstname = f"{generate_random_string(16)}-{bname}"
         dest = f"/tmp/{dstname}"
 
-    scp([source], host, dest)
+    scp(host, [source], dest)
 
     try:
         command_list = []
