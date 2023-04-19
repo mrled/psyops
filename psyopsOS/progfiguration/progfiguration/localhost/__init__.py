@@ -113,10 +113,10 @@ class LocalhostLinux:
             raise Exception(f"Path component {head} exists but it is not a directory")
         # We have to set the mode separately, as os.mkdir()'s mode argument is umasked
         # <https://stackoverflow.com/questions/37118558/python3-os-mkdir-does-not-enforce-correct-mode>
-        os.mkdir(path.filename)
+        os.mkdir(str(path))
         path.chmod(mode)
         if owner or group:
-            shutil.chown(path.filename, user=owner, group=group)
+            shutil.chown(str(path), user=owner, group=group)
 
     def cp(
         self,
@@ -129,12 +129,11 @@ class LocalhostLinux:
     ):
         if isinstance(dest, str):
             dest = Path(dest)
-        self.makedirs(os.path.dirname(dest), owner, group, dirmode)
+        self.makedirs(dest.parent, owner, group, dirmode)
         if os.path.exists(str(src)):
             shutil.copy(src, dest)
         elif hasattr(src, "open"):
             if dest.is_dir():
-                self.makedirs(os.path.dirname(dest), owner, group, dirmode)
                 dest = dest.joinpath(src.parent.name)
             with src.open("r") as srcfp:
                 with dest.open("w") as destfp:
