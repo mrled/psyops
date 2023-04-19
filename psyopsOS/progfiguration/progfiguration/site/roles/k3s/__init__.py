@@ -3,6 +3,7 @@
 (k3s at home.)
 """
 
+from dataclasses import dataclass
 import os
 import subprocess
 import textwrap
@@ -35,28 +36,20 @@ def mount_k3s_binds(
             logger.debug(f"Not mounting {overlay} on {mountpoint}, because something is already mounted there")
 
 
+@dataclass(kw_only=True)
 class Role(ProgfigurationRole):
 
-    defaults = {
-        "data_mountpoint": "/psyopsos-data",
-        "data_k3s_subpath": "overlays/var-lib-rancher-k3s",
-        "data_containerd_subpath": "overlays/var-lib-containerd",
-        "data_etcrancher_subpath": "overlays/etc-rancher",
-        "start_k3s": True,
-    }
+    data_mountpoint: str = "/psyopsos-data"
+    data_k3s_subpath: str = "overlays/var-lib-rancher-k3s"
+    data_containerd_subpath: str = "overlays/var-lib-containerd"
+    data_etcrancher_subpath: str = "overlays/etc-rancher"
+    start_k3s: bool = True
+    k3s_interface: str
+    k3s_vipaddress: str
+    k3s_interface2: str
+    k3s_vipaddress2: str
 
-    def apply(
-        self,
-        data_mountpoint: str,
-        data_k3s_subpath: str,
-        data_containerd_subpath: str,
-        data_etcrancher_subpath: str,
-        start_k3s: bool,
-        k3s_interface: str,
-        k3s_vipaddress: str,
-        k3s_interface2: str,
-        k3s_vipaddress2: str,
-    ):
+    def apply(self):
 
         # Some packages are not yet in the stable repos, so we have to use edgetesting
         package_list = [
@@ -83,10 +76,10 @@ class Role(ProgfigurationRole):
             self.role_file("progfiguration-k3s.sh.temple"),
             "/usr/local/sbin/progfiguration-k3s.sh",
             {
-                "k3s_interface": k3s_interface,
-                "k3s_vipaddress": k3s_vipaddress,
-                "k3s_interface2": k3s_interface2,
-                "k3s_vipaddress2": k3s_vipaddress2,
+                "k3s_interface": self.k3s_interface,
+                "k3s_vipaddress": self.k3s_vipaddress,
+                "k3s_interface2": self.k3s_interface2,
+                "k3s_vipaddress2": self.k3s_vipaddress2,
             },
             owner="root",
             mode=0o0755,
@@ -99,7 +92,9 @@ class Role(ProgfigurationRole):
         if not os.path.exists("/usr/libexec/cni/flannel"):
             os.symlink("/usr/libexec/cni/flannel-amd64", "/usr/libexec/cni/flannel")
 
-        mount_k3s_binds(data_mountpoint, data_k3s_subpath, data_containerd_subpath, data_etcrancher_subpath)
+        mount_k3s_binds(
+            self.data_mountpoint, self.data_k3s_subpath, self.data_containerd_subpath, self.data_etcrancher_subpath
+        )
 
         subprocess.run("rc-service cgroups start", shell=True, check=True)
         subprocess.run("rc-service containerd start", shell=True, check=True)
@@ -124,13 +119,13 @@ class Role(ProgfigurationRole):
         )
 
         # Create role storage
-        self.localhost.makedirs(os.path.join(data_mountpoint, "roles/k3s/longhorn/data"), "root", "root", 0o0700)
-        self.localhost.makedirs(os.path.join(data_mountpoint, "roles/k3s/rook-ceph/data"), "root", "root", 0o0700)
+        self.localhost.makedirs(os.path.join(self.data_mountpoint, "roles/k3s/longhorn/data"), "root", "root", 0o0700)
+        self.localhost.makedirs(os.path.join(self.data_mountpoint, "roles/k3s/rook-ceph/data"), "root", "root", 0o0700)
 
         k3s_initialized = os.path.exists("/etc/rancher/k3s/k3s.yaml")
 
-        if start_k3s and k3s_initialized:
+        if self.start_k3s and k3s_initialized:
             logger.info("Starting k3s...")
             subprocess.run("rc-service k3s start", shell=True, check=True)
         else:
-            logger.info(f"Not starting k3s. k3s.yaml exists: {k3s_initialized}; start_k3s: {start_k3s}.")
+            logger.info(f"Not starting k3s. k3s.yaml exists: {k3s_initialized}; start_k3s: {self.start_k3s}.")

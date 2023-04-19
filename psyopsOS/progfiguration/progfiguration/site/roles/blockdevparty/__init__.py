@@ -1,6 +1,7 @@
 """Set up a data disk"""
 
 from ast import Dict
+from dataclasses import dataclass, field
 import json
 import os
 import subprocess
@@ -249,22 +250,15 @@ def process_disks(
         logger.info(f"Created {fsspec.fstype} filesystem on {device}")
 
 
+@dataclass(kw_only=True)
 class Role(ProgfigurationRole):
 
-    defaults = {
-        "wholedisks": [],
-        "partitions": [],
-        "volumes": [],
-        "encryption_keyfile": "/mnt/psyops-secret/mount/age.key",
-    }
+    wholedisks: List[WholeDiskSpec] = field(default_factory=list)
+    partitions: List[PartitionSpec] = field(default_factory=list)
+    volumes: List[LvmLvSpec] = field(default_factory=list)
+    encryption_keyfile: str = "/mnt/psyops-secret/mount/age.key"
 
-    def apply(
-        self,
-        wholedisks: List[WholeDiskSpec],
-        partitions: List[PartitionSpec],
-        volumes: List[LvmLvSpec],
-        encryption_keyfile: str,
-    ):
+    def apply(self):
         """Partition disks, format filesystems, and create logical volumes
 
         WARNING:    It probably will not work to take a disk from an old host and add it to a new host without wiping it.
@@ -277,4 +271,4 @@ class Role(ProgfigurationRole):
         subprocess.run("rc-service lvm start", shell=True, check=True)
         subprocess.run("rc-service dmcrypt start", shell=True, check=True)
 
-        process_disks(wholedisks, partitions, volumes, encryption_keyfile)
+        process_disks(self.wholedisks, self.partitions, self.volumes, self.encryption_keyfile)

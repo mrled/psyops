@@ -1,5 +1,6 @@
 """Configure Alpine after its boot scripts"""
 
+from dataclasses import dataclass
 import re
 import shutil
 import subprocess
@@ -104,10 +105,14 @@ __psyopsOS_append_path "$HOME/.local/bin"
 """
 
 
+@dataclass(kw_only=True)
 class Role(ProgfigurationRole):
-    def apply(self, timezone: str):
 
-        set_timezone(timezone)
+    timezone: str
+
+    def apply(self):
+
+        set_timezone(self.timezone)
 
         set_apk_repositories(self.localhost)
 

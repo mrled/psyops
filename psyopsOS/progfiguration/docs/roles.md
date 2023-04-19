@@ -1,21 +1,15 @@
 # Writing progfiguration roles
 
-* Every role needs an `apply()` function which performs the work.
-  The `apply()` function should accept a `LocalhostLinuxPsyopsOs` argument (usually called `localhost`),
-  and an `Inventory` argument (usually called `inventory`),
-  and can define any other arguments after that.
-* Roles may have a `defaults` dict that contains defaults for any arguments aside from `localhost` and `inventory`.
-* Roles may have a `results()` function that takes the same arguments as `apply()`.
-  Its purpose is to allow calculating role-specific values without re-running the role,
+* Rules must be a subclass of `ProgfigurationRole`, annotated with `@dataclass(kw_only=True)`
+* They may provide extra fields
+* They should have an `apply()` method that does the work of the function.
+* Roles may have a `results()` function that returns role-specific values without re-running the role,
   and allowing other roles to use those values.
   While you can put any code you want in `results()`,
   the intention is that code is very fast to run.
   See below for more information.
+  Code in `results()` should NOT expect that `apply()` has already run.
 * Roles then must be applied to functions in `inventory.yml`.
-
-TODO: Create a ProgfigurationRole class to handle both `apply()` and `results()` arguments.
-I could avoid repetition by defining the class in one place.
-This would also mean we don't have to `hasattr(rolemodule, 'defaults')` etc.
 
 ## Example role module
 
@@ -28,57 +22,45 @@ perhaps it creates this user as part of deploying a service.
 We just use this tiny role as an example.)
 
 ```python
+from dataclasses import dataclass
+
 from progfiguration import logger
 
 
+# This annotation is mandatory - without it you will get errors about class arguments
+@dataclass(kw_only=True)
 class Role(ProgfigurationRole):
 
-    # These are default values for the apply() and results() functions
-    defaults = {
-        "username": "svcuser",
-        "groupname": "svcgroup",
-        "secondary_groups": "docker",
-    }
+    # These are arguments that you can pass to your role
+    # Arguments that have no default value are required
+    username: str
+    groupname: str
+    # Arguments with a default value are not required, but can be overridden
+    shell: str = "/bin/sh"
+    # Note that lists/dicts require default_factory
+    secondary_groups: field(default_factory=list)
+    # You can also use a lambda to pass an arbitrary default_factory value
+    touch_files: field(default_factory=lambda: ["/tmp/one", "/etc/two", "/home/three"])
 
-    # Any argument listed here cannot be overridden, but can be appended to by node- or group- level arguments.
-    appends = [
-        "secondary_groups",
-    ]
+    # It can be nice to calculate values in one place
+    @property
+    def homedir(self):
+        return self.localhost.users.getent_user(self.username).homedir
 
-    # This is a handy pattern to use, but the 'constants' property is not part of the API.
-    constants = {
-        "favorite_shell": "/bin/sh"
-    }
+    def apply(self):
+        self.localhost.users.add_service_account(self.username, self.groupname, home=True, shell=self.shell)
+        for g in self.secondary_groups:
+            self.localhost.users.add_user_to_group(self.username, g)
 
-    def apply(
-        self,
-        username: str,
-        groupname: str,
-        secondary_groups: List[str],
-    ):
-        self.localhost.users.add_service_account(username, groupname, home=True, shell=self.constants['favorite_shell'])
-        for g in secondary_groups:
-            self.localhost.users.add_user_to_group(username, g)
-        homedir = self.localhost.users.getent_user(username).homedir
-
-    def results(
-        self,
-        username: str,
-        groupname: str,
-        secondary_groups: List[str,]
-    ):
-        homedir = self.localhost.users.getent_user(username).homedir
+    def results(self):
         return {
-            "username": username,
-            "groupname": groupname,
-            "groups": [groupname] + secondary_groups,
-            "homedir": homedir,
-            "shell": self.constants['favorite_shell'],
+            "username": self.username,
+            "groupname": self.groupname,
+            "groups": [self.groupname] + self.secondary_groups,
+            "homedir": self.homedir,
+            "shell": self.shell,
         }
 ```
-
-Note that both `apply()` and `results()` have the exact same arguments.
-This is mandatory.
 
 Nodes or groups may override default values, or they may choose to accept them.
 If a default is not provided by the role,
@@ -104,3 +86,12 @@ However, in exchange, the implementation is simpler.
 TODO: is there a better name for this function than `results()`?
 The `results()` name implies that `apply()` calculates values and caches them,
 but that's not what we're doing.
+
+## Deprecated: `appends` arguments
+
+We used to have the concept of `appends` arguments, which could be appended to but not overridden.
+They used a `.appends` property on the role.
+They added complexity for little value, however.
+
+I realized that I only ever used them for things defined as default role argument values anyway.
+I could handle this more cleanly by just appending those inside the role itself and documenting it.

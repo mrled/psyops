@@ -3,6 +3,7 @@
 The synergy controller for my keyboard and mouse multiplexing setup.
 """
 
+from dataclasses import dataclass, field
 import os
 import re
 import shutil
@@ -128,45 +129,41 @@ def install_qmk_prereqs():
     subprocess.run(["apk", "add"] + packages, check=True)
 
 
+@dataclass(kw_only=True)
 class Role(ProgfigurationRole):
 
-    defaults = {
-        "user": "synergist",
-        "user_gecos": "Synergist",
-        "user_authorized_keys": [
+    user: str = "synergist"
+    user_authorized_keys: List[str] = field(
+        default_factory=lambda: [
             r"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS",
             r"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMN/4Rdkz4vlGaQRvhmhLhkaH0CfhNnoggGBBknz17+u mrled@haluth.local",
-        ],
-    }
+        ]
+    )
+    user_gecos: str = "Synergist"
+    synergy_priv_key: str
+    synergy_pub_key: str
+    synergy_fingerprints_local: str
+    synergy_serial_key: str
+    synergy_server_screenname: str
 
-    def apply(
-        self,
-        user: str,
-        user_authorized_keys: List[str],
-        user_gecos: str,
-        synergy_priv_key: str,
-        synergy_pub_key: str,
-        synergy_fingerprints_local: str,
-        synergy_serial_key: str,
-        synergy_server_screenname: str,
-    ):
+    def apply(self):
 
         install_synergy()
 
         try:
-            subprocess.run(["id", user], check=True, capture_output=True)
+            subprocess.run(["id", self.user], check=True, capture_output=True)
         except subprocess.CalledProcessError:
             # Bash is required to be the user's shell for vscode remote
             subprocess.run(["apk", "add", "bash"])
             # Create the user
-            subprocess.run(["adduser", "-g", user_gecos, "-D", "-s", "/bin/bash", user])
+            subprocess.run(["adduser", "-g", self.user_gecos, "-D", "-s", "/bin/bash", self.user])
             # Unlock the account without setting a password (only SSH keys can be used to connect)
-            subprocess.run(["usermod", "-p", "*", user])
+            subprocess.run(["usermod", "-p", "*", self.user])
             # Add the user to required groups
-            subprocess.run(["adduser", user, "flatpak"])
-            subprocess.run(["adduser", user, "input"])
-            subprocess.run(["adduser", user, "video"])
-        authorized_keys.add_idempotently(self.localhost, user, user_authorized_keys)
+            subprocess.run(["adduser", self.user, "flatpak"])
+            subprocess.run(["adduser", self.user, "input"])
+            subprocess.run(["adduser", self.user, "video"])
+        authorized_keys.add_idempotently(self.localhost, self.user, self.user_authorized_keys)
         self.localhost.set_file_contents(
             "/etc/sudoers.d/synergist-teensy",
             "synergist ALL = NOPASSWD: /usr/local/bin/teensy_loader_cli",
@@ -223,29 +220,29 @@ class Role(ProgfigurationRole):
 
         # Don't let the screensaver lock the screen
         # This user has no password, so it cannot unlock the screen without restarting lightdm
-        xpx = f"/home/{user}/.config/xfce4/xfconf/xfce-perchannel-xml"
-        self.localhost.makedirs(xpx, owner=user, mode=0o0700)
+        xpx = f"/home/{self.user}/.config/xfce4/xfconf/xfce-perchannel-xml"
+        self.localhost.makedirs(xpx, owner=self.user, mode=0o0700)
         for xfile in ["xfce4-screensaver.xml", "xfce4-power-manager.xml"]:
             shutil.copy(self.role_file(f"xfce_perchannel_xml/{xfile}"), f"{xpx}/{xfile}")
-            shutil.chown(f"{xpx}/{xfile}", user)
+            shutil.chown(f"{xpx}/{xfile}", self.user)
 
-        synergyhome = os.path.expanduser(f"~{user}")
+        synergyhome = os.path.expanduser(f"~{self.user}")
         if not synergyhome or not os.path.exists(synergyhome):
-            raise Exception(f"Synergy user {user} does not have a homedir?")
+            raise Exception(f"Synergy user {self.user} does not have a homedir?")
 
         autostart_dir = os.path.join(synergyhome, ".config", "autostart")
         self.localhost.cp(
             self.role_file("autostart/Terminal.desktop"),
             f"{autostart_dir}/Terminal.desktop",
-            owner=user,
+            owner=self.user,
             mode=0o0600,
             dirmode=0o0700,
         )
         self.localhost.template(
             self.role_file("autostart/Synergy.desktop.template"),
             f"{autostart_dir}/Synergy.desktop",
-            {"user": user},
-            owner=user,
+            {"user": self.user},
+            owner=self.user,
             mode=0o0600,
             dirmode=0o0700,
         )
@@ -254,26 +251,26 @@ class Role(ProgfigurationRole):
         dotsynergy = os.path.join(synergyhome, ".synergy")
         self.localhost.set_file_contents(
             os.path.join(dotsynergy, "SSL", "Synergy.pem"),
-            "\n".join([synergy_priv_key, synergy_pub_key]),
-            owner=user,
+            "\n".join([self.synergy_priv_key, self.synergy_pub_key]),
+            owner=self.user,
             mode=0o0600,
             dirmode=0o0700,
         )
         self.localhost.set_file_contents(
             os.path.join(dotsynergy, "SSL", "Fingerprints", "Local.txt"),
-            synergy_fingerprints_local,
-            owner=user,
+            self.synergy_fingerprints_local,
+            owner=self.user,
             mode=0o0600,
             dirmode=0o0700,
         )
         self.localhost.cp(
-            self.role_file("synergy.conf"), os.path.join(synergyhome, "synergy.conf"), owner=user, mode=0o0644
+            self.role_file("synergy.conf"), os.path.join(synergyhome, "synergy.conf"), owner=self.user, mode=0o0644
         )
         self.localhost.template(
             self.role_file("internal.Synergy.conf.template"),
             f"{synergyhome}/.var/app/com.symless.Synergy/config/Synergy/Synergy.conf",
-            {"user": user, "serial": synergy_serial_key, "screenname": synergy_server_screenname},
-            owner=user,
+            {"user": self.user, "serial": self.synergy_serial_key, "screenname": self.synergy_server_screenname},
+            owner=self.user,
             mode=0o0600,
         )
 
@@ -281,7 +278,7 @@ class Role(ProgfigurationRole):
         self.localhost.template(
             self.role_file("lightdm.conf.template"),
             "/etc/lightdm/lightdm.conf",
-            {"user": user},
+            {"user": self.user},
             owner="root",
             group="root",
             mode=0o0644,
@@ -323,8 +320,8 @@ class Role(ProgfigurationRole):
         self.localhost.template(
             self.role_file("lightdm.conf.template"),
             "/etc/lightdm/lightdm.conf",
-            {"user": user},
-            owner=user,
+            {"user": self.user},
+            owner=self.user,
             mode=0o0644,
         )
         subprocess.run(["rc-service", "dbus", "start"], check=True)
@@ -340,10 +337,10 @@ class Role(ProgfigurationRole):
         # TODO: !!! autologin STILL isn't working correctly !!! FIXME !!!
 
         synergist_data = "/psyopsos-data/roles/synergycontroller/synergist"
-        self.localhost.makedirs(synergist_data, user, mode=0o0755)
+        self.localhost.makedirs(synergist_data, self.user, mode=0o0755)
 
         install_qmk_prereqs()
-        install_teensy_loader_cli(self.localhost, user, synergist_data)
+        install_teensy_loader_cli(self.localhost, self.user, synergist_data)
 
         qmk_home = "/psyopsos-data/roles/synergycontroller/qmk_firmware"
         subprocess.run(["python3", "-m", "pip", "install", "--user", "qmk"])

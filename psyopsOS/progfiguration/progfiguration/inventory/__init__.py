@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from progfiguration import age
+from progfiguration.inventory.roles import ProgfigurationRole, collect_role_arguments
 from progfiguration.localhost import LocalhostLinuxPsyopsOs
 from progfiguration.progfigtypes import AnyPathOrStr
 
@@ -52,7 +53,7 @@ class Inventory:
         self._node_modules = {}
         self._group_modules = {}
         self._role_modules = {}
-        self._role_objects = {}
+        self._node_roles = {}
 
         self._node_secrets = {}
         self._group_secrets = {}
@@ -157,8 +158,8 @@ class Inventory:
                         break
         return self._age_path
 
-    def node_roles(self, nodename: str) -> List[str]:
-        """A list of all roles for a given node"""
+    def node_rolename_list(self, nodename: str) -> List[str]:
+        """A list of all rolenames for a given node"""
         return self.function_roles[self.node_function[nodename]]
 
     def node(self, name: str) -> ModuleType:
@@ -182,13 +183,52 @@ class Inventory:
             self._role_modules[name] = module
         return self._role_modules[name]
 
-    def role(self, name: str) -> "ProgfigurationRole":
-        """The ProgfigurationRole object for a given role name"""
-        if name not in self._role_objects:
-            rolepkg = self.role_module(name).__package__
-            role_cls = self.role_module(name).Role
-            self._role_objects[name] = role_cls(name, self.localhost, self, rolepkg)
-        return self._role_objects[name]
+    def node_role(self, nodename: str, rolename: str) -> ProgfigurationRole:
+        """A dict of {nodename: {rolename: ProgfigurationRole}}
+
+        Get an instantiated ProgfigurationRole object for a given node and role.
+
+        We collect all arguments required to instantiate the role,
+        including the superclass arguments like rolepkg and localhost,
+        as well as role-specific arguments accepted by the given ProgfigurationRole subclass
+        and defined as a default argument or in the group or node argument dicts.
+        The result is ready to .apply() or .results().
+
+        Results are cached for subsequent calls.
+        """
+        if nodename not in self._node_roles:
+            self._node_roles[nodename] = {}
+        if rolename not in self._node_roles[nodename]:
+
+            # rolepkg is a string containing the package name of the role, like progfiguration.site.roles.role_name
+            rolepkg = self.role_module(rolename).__package__
+
+            # The class it the subclass of ProgfigurationRole that implements the role
+            role_cls = self.role_module(rolename).Role
+
+            # Get a list of all the groups this node is a member of so that we can get any role arg definitions they may have
+            groupmods = {}
+            for groupname in self.node_groups[nodename]:
+                groupmods[groupname] = self.group(groupname)
+
+            # Get the node module so we can get any role arg definitions it may have
+            node = self.node(nodename).node
+
+            # Collect all the arguments we need to instantiate the role class
+            # This function finds the most specific definition of each argument
+            roleargs = collect_role_arguments(self, nodename, node, groupmods, rolename, role_cls)
+
+            # Instantiate the role class, now that we have all the arguments we need
+            role = role_cls(name=rolename, localhost=self.localhost, inventory=self, rolepkg=rolepkg, **roleargs)
+
+            # And set the role in the cache
+            self._node_roles[nodename][rolename] = role
+
+        return self._node_roles[nodename][rolename]
+
+    def node_role_list(self, nodename: str) -> list[ProgfigurationRole]:
+        """A list of all instantiated roles for a given node"""
+        return [self.node_role(nodename, rolename) for rolename in self.node_rolename_list(nodename)]
 
     def get_secrets(self, filename: AnyPathOrStr) -> Dict[str, age.AgeSecret]:
         """Retrieve secrets from a file.

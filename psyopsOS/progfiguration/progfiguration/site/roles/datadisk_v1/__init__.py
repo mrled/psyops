@@ -1,6 +1,6 @@
 """Set up a data disk"""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 import shutil
 import subprocess
@@ -110,46 +110,39 @@ def is_mountpoint(path: str) -> bool:
     return mtpt.returncode == 0
 
 
+@dataclass(kw_only=True)
 class Role(ProgfigurationRole):
 
-    defaults = {
-        "underlying_device": "/dev/sda",
-        "mountpoint": "/psyopsos-data",
-        "vgname": "psyopsos_datadiskvg",
-        "lvname": "datadisklv",
-        "lvsize": r"100%FREE",
-        # fslabel is max 16 chars
-        "fslabel": "psyopsos_data",
-        "wipefs_if_no_vg": False,
-        # Anything path relative to the mountpoint in this list is wiped after mounting.
-        # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
-        # If the filesystem is already mounted, nothing is removed.
-        "wipe_after_mounting": ["scratch"],
-        # Add a ramoffload disk image
-        # This disk image is NOT persisted from boot to boot
-        "ramoffload": False,
-        "ramoffload_size_gb": 32,
-        "ramoffload_directories": [
-            "/usr",
-        ],
-    }
+    underlying_device: str = "/dev/sda"
+    mountpoint: str = "/psyopsos-data"
+    vgname: str = "psyopsos_datadiskvg"
+    lvname: str = "datadisklv"
+    lvsize: str = r"100%FREE"
+    fslabel: str = "psyopsos_data"
+    wipefs_if_no_vg: bool = False
+    wipe_after_mounting: list[str] = field(default_factory=list)
+    ramoffload: bool = False
+    ramoffload_size_gb: int = 32
+    ramoffload_directories: List[str] = field(default_factory=lambda: ["/usr"])
 
-    appends = ["wipe_after_mounting"]
+    def apply(self):
 
-    def apply(
-        self,
-        underlying_device: str,
-        mountpoint: str,
-        vgname: str,
-        lvname: str,
-        lvsize: str,
-        fslabel: str,
-        wipefs_if_no_vg: bool,
-        wipe_after_mounting: None,
-        ramoffload: bool,
-        ramoffload_size_gb: int,
-        ramoffload_directories: List[str],
-    ):
+        # Just cheating a bit not have to change this messy function too much
+        # We are going to deprecate it soon anyway
+        underlying_device = self.underlying_device
+        mountpoint = self.mountpoint
+        vgname = self.vgname
+        lvname = self.lvname
+        lvsize = self.lvsize
+        fslabel = self.fslabel
+        wipefs_if_no_vg = self.wipefs_if_no_vg
+        wipe_after_mounting = self.wipe_after_mounting
+        ramoffload = self.ramoffload
+        ramoffload_size_gb = self.ramoffload_size_gb
+        ramoffload_directories = self.ramoffload_directories
+
+        # We always wipe the scratch directory, even if it's been overridden
+        wipe_after_mounting.append("scratch")
 
         subprocess.run(f"apk add e2fsprogs e2fsprogs-extra lvm2", shell=True, check=True)
         subprocess.run("rc-service lvm start", shell=True, check=True)
@@ -198,7 +191,6 @@ class Role(ProgfigurationRole):
             # TODO: Don't require list flattening.
             # We are flattening the list here because it is a list of lists
             # Instead fix the caller to not make it pass a list of lists
-            wipe_after_mounting = wipe_after_mounting or []
             wipes = [item for sublist in wipe_after_mounting for item in sublist]
             for subpath in wipes:
                 path = os.path.join(mountpoint, subpath)

@@ -1,5 +1,6 @@
 """Set up a data disk"""
 
+from dataclasses import dataclass, field
 import os
 import shutil
 import subprocess
@@ -74,81 +75,60 @@ def setup_ramoffload(
     logger.info("Finished configuring ramoffload")
 
 
+@dataclass(kw_only=True)
 class Role(ProgfigurationRole):
 
-    defaults = {
-        "block_device": "/dev/sda",
-        "mountpoint": Path("/psyopsos-data"),
-        # Anything path relative to the mountpoint in this list is wiped after mounting.
-        # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
-        # If the filesystem is already mounted, nothing is removed.
-        "wipe_after_mounting": ["scratch"],
-        # Add a ramoffload disk image
-        # This disk image is NOT persisted from boot to boot
-        "ramoffload": False,
-        "ramoffload_size_gb": 32,
-        "ramoffload_directories": [
-            "/usr",
-        ],
-    }
+    block_device: str = "/dev/sda"
+    mountpoint: Path = Path("/psyopsos-data")
+    # Anything path relative to the mountpoint in this list is wiped after mounting.
+    # E.g. ['asdf/one/two', 'zxcv/three/four'] to remove /psyopsos-data/asdf/one/two and /psyopsos-data/zxczv/three/four.
+    # If the filesystem is already mounted, nothing is removed.
+    # Note that we ALWAYS wipe the "scratch" directory, even if its been overridden.
+    wipe_after_mounting: list[str] = field(default_factory=list)
+    ramoffload: bool = False
+    ramoffload_size_gb: int = 32
+    ramoffload_directories: List[str] = field(default_factory=lambda: ["/usr"])
 
-    appends = ["wipe_after_mounting"]
+    def apply(self):
 
-    def apply(
-        self,
-        block_device: str,
-        mountpoint: Path,
-        wipe_after_mounting: None,
-        ramoffload: bool,
-        ramoffload_size_gb: int,
-        ramoffload_directories: List[str],
-    ):
+        self.wipe_after_mounting.append("scratch")
 
         self.localhost.set_file_contents(
             "/etc/psyopsOS/roles/datadisk/env.sh",
             textwrap.dedent(
                 f"""\
-                PSYOPSOS_DATADISK_MOUNTPOINT="{mountpoint}"
-                PSYOPSOS_DATADISK_DEVICE="{block_device}"
+                PSYOPSOS_DATADISK_MOUNTPOINT="{self.mountpoint}"
+                PSYOPSOS_DATADISK_DEVICE="{self.block_device}"
                 """
             ),
         )
         self.localhost.cp(self.role_file("progfiguration-umount-datadisk.sh"), "/usr/local/sbin/", mode=0o755)
 
-        if not is_mountpoint(str(mountpoint)):
-            logger.info(f"Mounting {block_device} on {mountpoint}...")
-            os.makedirs(str(mountpoint), mode=0o755, exist_ok=True)
-            subprocess.run(f"mount {block_device} {mountpoint}", shell=True, check=True)
+        if not is_mountpoint(str(self.mountpoint)):
+            logger.info(f"Mounting {self.block_device} on {self.mountpoint}...")
+            os.makedirs(str(self.mountpoint), mode=0o755, exist_ok=True)
+            subprocess.run(f"mount {self.block_device} {self.mountpoint}", shell=True, check=True)
 
             # TODO: Don't require list flattening.
             # We are flattening the list here because it is a list of lists
             # Instead fix the caller to not make it pass a list of lists
-            wipe_after_mounting = wipe_after_mounting or []
-            wipes = [item for sublist in wipe_after_mounting for item in sublist]
+            wipes = [item for sublist in self.wipe_after_mounting for item in sublist]
             for subpath in wipes:
-                path = mountpoint.joinpath(subpath)
+                path = self.mountpoint.joinpath(subpath)
                 if os.path.exists(path):
-                    logger.info(f"Removing path {path} after mounting {mountpoint}...")
+                    logger.info(f"Removing path {path} after mounting {self.mountpoint}...")
                     shutil.rmtree(path)
 
-        self.localhost.makedirs(f"{mountpoint}/scratch", "root", "root", 0o1777)
+        self.localhost.makedirs(f"{self.mountpoint}/scratch", "root", "root", 0o1777)
 
-        if ramoffload:
-            logger.info(f"Enabling ramoffload to {mountpoint}...")
-            setup_ramoffload(self.localhost, str(mountpoint), ramoffload_size_gb, ramoffload_directories)
+        if self.ramoffload:
+            logger.info(f"Enabling ramoffload to {self.mountpoint}...")
+            setup_ramoffload(self.localhost, str(self.mountpoint), self.ramoffload_size_gb, self.ramoffload_directories)
         else:
             logger.info("Will not enable ramoffload")
 
-    def results(
-        self,
-        block_device: str,
-        mountpoint: Path,
-        wipe_after_mounting: None,
-        ramoffload: bool,
-        ramoffload_size_gb: int,
-        ramoffload_directories: List[str],
-    ):
+    def results(self):
         return {
-            "block_device": block_device,
-            "mountpoint": mountpoint,
+            "block_device": self.block_device,
+            "mountpoint": self.mountpoint,
         }

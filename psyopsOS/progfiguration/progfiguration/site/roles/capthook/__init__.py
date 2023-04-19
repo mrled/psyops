@@ -1,5 +1,6 @@
 """Set up a data disk"""
 
+from dataclasses import dataclass
 import os
 from pathlib import Path
 import shutil
@@ -9,49 +10,37 @@ from progfiguration import logger
 from progfiguration.inventory.roles import ProgfigurationRole
 
 
+@dataclass(kw_only=True)
 class Role(ProgfigurationRole):
     """Install the capthook platform for arbitrary web hooks"""
 
-    defaults = {
-        "username": "capthook",
-        "groupname": "capthook",
-        "port": 8098,
-    }
-
-    constants = {
-        "hooks_subpath": "webhooks",
-    }
+    username: str = "capthook"
+    groupname: str = "capthook"
+    port: int = 8098
+    homedir: Path = Path("/home/capthook")
+    hooks_subpath: str = "webhooks"
 
     @property
     def hooksdir(self):
         return self.homedir / "hooks"
 
-    @property
-    def homedir(self):
-        return Path("/home/capthook")
-
-    def apply(
-        self,
-        username: str,
-        groupname: str,
-        port: int,
-    ):
-        self.localhost.users.add_service_account(username, groupname, home=str(self.homedir), shell="/bin/sh")
+    def apply(self):
+        self.localhost.users.add_service_account(self.username, self.groupname, home=str(self.homedir), shell="/bin/sh")
         subprocess.run(["apk", "add", "webhook"], check=True)
         self.localhost.cp(self.role_file("hookbuilder.py"), self.hooksdir / "hookbuilder.py")
         self.localhost.temple(
             self.role_file("whoami.hook.json.temple"),
             self.hooksdir / "whoami.hook.json",
-            owner=username,
+            owner=self.username,
             template_args={},
-            group=groupname,
+            group=self.groupname,
         )
         self.localhost.temple(
             self.role_file("showmeurhooks.hook.json.temple"),
             self.hooksdir / "showmeurhooks.hook.json",
             template_args={"hooksdir": str(self.hooksdir)},
-            owner=username,
-            group=groupname,
+            owner=self.username,
+            group=self.groupname,
         )
         self.localhost.cp(
             self.role_file("capthook.openrc.init"),
@@ -64,9 +53,9 @@ class Role(ProgfigurationRole):
             self.role_file("capthook.openrc.conf.temple"),
             "/etc/conf.d/capthook",
             template_args={
-                "username": username,
-                "groupname": groupname,
-                "port": port,
+                "username": self.username,
+                "groupname": self.groupname,
+                "port": self.port,
                 "hooksdir": str(self.hooksdir),
                 "hooks_json": str(self.hooksdir / "hooks.json"),
                 "hookbuilder": str(self.hooksdir / "hookbuilder.py"),
@@ -76,16 +65,11 @@ class Role(ProgfigurationRole):
             mode=0o0644,
         )
 
-    def results(
-        self,
-        username: str,
-        groupname: str,
-        port: int,
-    ):
+    def results(self):
         return {
-            "username": username,
-            "groupname": groupname,
+            "username": self.username,
+            "groupname": self.groupname,
             "homedir": self.homedir,
             "hooksdir": self.hooksdir,
-            "port": port,
+            "port": self.port,
         }

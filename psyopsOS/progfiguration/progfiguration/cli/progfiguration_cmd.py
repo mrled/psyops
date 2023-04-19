@@ -23,8 +23,6 @@ from progfiguration.cli import (
     yaml_dump_str,
 )
 from progfiguration.inventory import Inventory
-from progfiguration.inventory.roles import coalesce_node_roles_arguments
-from progfiguration.localhost import LocalhostLinuxPsyopsOs
 
 try:
     from progfiguration import remoting
@@ -60,27 +58,23 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
     """Apply configuration for the node 'nodename' to localhost"""
 
     node = inventory.node(nodename).node
-    localhost = LocalhostLinuxPsyopsOs(nodename)
 
     if node.TESTING_DO_NOT_APPLY and not force:
         raise Exception(
             f"Was going to apply progfiguration to node {nodename} but TESTING_DO_NOT_APPLY is True for that node."
         )
 
-    applyroles = coalesce_node_roles_arguments(inventory, nodename)
-
     if strace_before_applying:
         pdb.set_trace()
-    else:
-        for rolename, role_implementation in applyroles.items():
-            try:
-                role, rolevars = role_implementation
-                logging.debug(f"Running role {rolename}...")
-                role.apply(**rolevars)
-                logging.info(f"Finished running role {rolename}.")
-            except Exception as exc:
-                logging.error(f"Error running role {rolename}: {exc}")
-                raise
+
+    for role in inventory.node_role_list(nodename):
+        try:
+            logging.debug(f"Running role {role.name}...")
+            role.apply()
+            logging.info(f"Finished running role {role}.")
+        except Exception as exc:
+            logging.error(f"Error running role {role}: {exc}")
+            raise
 
     logging.info(f"Finished running all roles")
 
