@@ -66,7 +66,7 @@ class ProgfigurationRole(ABC):
     def role_file(self, filename: str) -> Traversable:
         """Get the path to a file in the role's package
 
-        TODO: convert to using importlib.resources.as_file, which I think works inside a zip file or anywhere
+        This works whether we're installed from pip, checked out from git, or running from a pyz file.
         """
         if not self._rolefiles:
             self._rolefiles = importlib_resources_files(self.rolepkg)
