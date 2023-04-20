@@ -178,13 +178,12 @@ services:
     #image: linuxserver/jackett
     # For now, I have to build this image on the remote server out of band
     # docker build . -t local/tailored-jackett:manual
-    image: local/tailored-jackett:manual
+    image: ghcr.io/linuxserver/jackett
     environment:
       PUID: "{{ seedbox_uid }}"
       PGID: "{{ seedbox_gid }}"
       TZ: "{{ seedbox_timezone }}"
-      #AUTO_UPDATE: "true" # recommended by jackett
-      AUTO_UPDATE: "false" # breaks customizations
+      AUTO_UPDATE: "true" # recommended by jackett
       #RUN_OPTS: <run options here> #optional
     volumes:
       - "{{ seedbox_jackett_config_dir }}:/config"
