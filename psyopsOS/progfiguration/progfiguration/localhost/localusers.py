@@ -1,6 +1,7 @@
 """Local user and group management"""
 
 
+from pathlib import Path
 import subprocess
 from dataclasses import dataclass
 
@@ -12,7 +13,7 @@ class GetentUserResult:
     uid: int
     gid: int
     gecos: str
-    homedir: str
+    homedir: Path
     shell: str
 
 
@@ -84,4 +85,5 @@ class LocalhostUsers:
     def getent_user(self, user):
         """Get the home directory of a user"""
         result = subprocess.run(["getent", "passwd", user], check=True, capture_output=True)
-        return GetentUserResult(*result.stdout.decode().split(":"))
+        name, passwd, uid, gid, gecos, homedir, shell = result.stdout.decode().split(":")
+        return GetentUserResult(name, passwd, int(uid), int(gid), gecos, Path(homedir), shell)
