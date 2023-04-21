@@ -134,7 +134,7 @@ class LocalhostLinux:
             shutil.copy(src, dest)
         elif hasattr(src, "open"):
             if dest.is_dir():
-                dest = dest.joinpath(src.parent.name)
+                dest = dest.joinpath(src.name)
             with src.open("r") as srcfp:
                 with dest.open("w") as destfp:
                     shutil.copyfileobj(srcfp, destfp)
