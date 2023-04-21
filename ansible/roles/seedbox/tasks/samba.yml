@@ -32,6 +32,8 @@
   command: restorecon -irv "{{ item }}"
   with_items: "{{ seedbox_media_selinux_enable_all }}"
   #when: seedbox_samba_sefcontext_result.changed
+  # This should only be necessary uhh. sometimes? I'm not sure when. SELinux is dumb. This operation is very slow.
+  when: seedbox_samba_skip_media_relabel | default(False)
 
 - name: Start samba
   systemd:

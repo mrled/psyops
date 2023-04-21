@@ -200,8 +200,7 @@ services:
       - "traefik.http.routers.seedbox-jackett.middlewares=seedbox-auth-bridgetroll-mw"
 
   prowlarr:
-    # This is very new / no docs on linuxserver.io for this yet, using :latest
-    image: ghcr.io/linuxserver/prowlarr:nightly
+    image: ghcr.io/linuxserver/prowlarr:latest
     environment:
       PUID: "{{ seedbox_uid }}"
       PGID: "{{ seedbox_gid }}"

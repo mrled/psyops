@@ -9,24 +9,24 @@
 # rpmfusion is required for ffmpeg at least
 # ffmpeg is useful for, among other things, youtube-dl --
 # if it is installed, it'll auto fix audio codec issues.
-- name: Install rpmfusion
-  block:
-    - set_fact:
-        rpmfusion_free: rpmfusion-free-release-{{ ansible_distribution_version }}.noarch.rpm
-        rpmfusion_nonfree: rpmfusion-nonfree-release-{{ ansible_distribution_version }}.noarch.rpm
+# - name: Install rpmfusion
+#   block:
+#     - set_fact:
+#         rpmfusion_free: rpmfusion-free-release-{{ ansible_distribution_version }}.noarch.rpm
+#         rpmfusion_nonfree: rpmfusion-nonfree-release-{{ ansible_distribution_version }}.noarch.rpm
 
-    - name: Get rpmfusion
-      get_url: url={{ item }} dest=/usr/local/src
-      with_items:
-        - https://download1.rpmfusion.org/free/fedora/{{ rpmfusion_free }}
-        - https://download1.rpmfusion.org/nonfree/fedora/{{ rpmfusion_nonfree }}
+#     - name: Get rpmfusion
+#       get_url: url={{ item }} dest=/usr/local/src
+#       with_items:
+#         - https://download1.rpmfusion.org/free/fedora/{{ rpmfusion_free }}
+#         - https://download1.rpmfusion.org/nonfree/fedora/{{ rpmfusion_nonfree }}
 
-    - name: Install rpmfusion
-      dnf:
-        name:
-          - /usr/local/src/{{ rpmfusion_free }}
-          - /usr/local/src/{{ rpmfusion_nonfree }}
-        state: present
+#     - name: Install rpmfusion
+#       dnf:
+#         name:
+#           - /usr/local/src/{{ rpmfusion_free }}
+#           - /usr/local/src/{{ rpmfusion_nonfree }}
+#         state: present
 
 - name: Install RPMs
   dnf:
@@ -411,3 +411,6 @@
     regexp: "^host_whitelist ="
     line: "host_whitelist = sabnzbd, {{ ansible_fqdn }}, {{ seedbox_sabnzbd_domain }}, "
   notify: seedbox stack redeploy
+
+# TODO: fix fucking *arr apps most fuckyou ever mandatory authentication requirment
+# <https://wiki.servarr.com/prowlarr/faq#can-i-disable-forced-authentication>
