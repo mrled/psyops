@@ -272,6 +272,10 @@ class Inventory:
         with open(filename, "w") as fp:
             yaml.dump(file_contents, fp, default_style="|")
 
+    def group_secrets_file(self, group: str) -> Path:
+        """The path to the secrets file for a given group"""
+        return importlib_resources_files("progfiguration.site.groups").joinpath(f"{group}.secrets.yml")
+
     def set_node_secret(self, nodename: str, secretname: str, encrypted_value: str):
         """Set a secret for a node"""
         self.get_node_secrets(nodename)  # Ensure it's cached
@@ -305,7 +309,7 @@ class Inventory:
         recipients = set(recipients)
 
         nmods = [self.node(n) for n in recipients]
-        pubkeys = [nm.node.pubkey for nm in nmods]
+        pubkeys = [nm.node.age_pubkey for nm in nmods]
 
         # We always encrypt for the controller when storing, so that the controller can decrypt too
         if controller_key or store:
