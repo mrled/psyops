@@ -1,5 +1,5 @@
 command_user="{$}username:{$}groupname"
 CAPTHOOK_PORT="{$}port"
-CAPTHOOK_HOOKBUILDER="{$}hookbuilder
+CAPTHOOK_HOOKBUILDER="{$}hookbuilder"
 CATPHOOK_HOOKS_JSON="{$}hooks_json"
 CAPTHOOK_HOOKS_DIR="{$}hooksdir"
