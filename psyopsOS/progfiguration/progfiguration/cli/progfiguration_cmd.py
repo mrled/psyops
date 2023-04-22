@@ -52,7 +52,7 @@ def import_progfiguration_build():
     return progfiguration_build
 
 
-def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bool = False, force: bool = False):
+def action_apply(inventory: Inventory, nodename: str, force: bool = False):
     """Apply configuration for the node 'nodename' to localhost"""
 
     node = inventory.node(nodename).node
@@ -61,9 +61,6 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
         raise Exception(
             f"Was going to apply progfiguration to node {nodename} but TESTING_DO_NOT_APPLY is True for that node."
         )
-
-    if strace_before_applying:
-        pdb.set_trace()
 
     for role in inventory.node_role_list(nodename):
         try:
@@ -320,11 +317,6 @@ def parseargs(arguments: List[str]):
     sub_apply = subparsers.add_parser("apply", description="Apply configuration")
     sub_apply.add_argument("nodename", help="The name of a node in the progfiguration inventory")
     sub_apply.add_argument(
-        "--strace-before-applying",
-        action="store_true",
-        help="Do not actually apply the role. Instead, launch a debugger. Intended for development.",
-    )
-    sub_apply.add_argument(
         "--force-apply", action="store_true", help="Force apply, even if the node has TESTING_DO_NOT_APPLY set."
     )
 
@@ -422,6 +414,12 @@ def parseargs(arguments: List[str]):
     )
     sub_rcmd.add_argument("command", help="A command to run remotely")
 
+    # debugger subcommand
+    sub_debugger = subparsers.add_parser(
+        "debugger",
+        description="Open a debugger on localhost.",
+    )
+
     # Parse and return
     parsed = parser.parse_args(arguments)
     return parser, parsed
@@ -449,9 +447,7 @@ def main_implementation(*arguments):
     if parsed.action == "version":
         print(version.VersionInfo.from_build_version_or_default().verbose())
     elif parsed.action == "apply":
-        action_apply(
-            inventory, parsed.nodename, strace_before_applying=parsed.strace_before_applying, force=parsed.force_apply
-        )
+        action_apply(inventory, parsed.nodename, force=parsed.force_apply)
     elif parsed.action == "deploy":
         if not parsed.nodes and not parsed.groups:
             parser.error("You must pass at least one of --nodes or --groups")
@@ -506,6 +502,8 @@ def main_implementation(*arguments):
         # remoting.mitogen_example()
     elif parsed.action == "build":
         action_build(parsed)
+    elif parsed.action == "debugger":
+        pdb.set_trace()
     else:
         raise Exception(f"Unknown action {parsed.action}")
 
