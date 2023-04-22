@@ -1,14 +1,11 @@
 """Command execution"""
 
-import subprocess
-
-from progfiguration import logger
-
-
 import io
 import select
 import subprocess
 import sys
+
+from progfiguration import logger
 
 
 def run(cmd: str | list, print_output=True, log_output=False, check=True, *args, **kwargs) -> subprocess.Popen:
