@@ -219,7 +219,10 @@ class Inventory:
             roleargs = collect_role_arguments(self, nodename, node, groupmods, rolename, role_cls)
 
             # Instantiate the role class, now that we have all the arguments we need
-            role = role_cls(name=rolename, localhost=self.localhost, inventory=self, rolepkg=rolepkg, **roleargs)
+            try:
+                role = role_cls(name=rolename, localhost=self.localhost, inventory=self, rolepkg=rolepkg, **roleargs)
+            except Exception as exc:
+                raise Exception(f"Error instantiating role {rolename} for node {nodename}") from exc
 
             # And set the role in the cache
             self._node_roles[nodename][rolename] = role
