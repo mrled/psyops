@@ -53,8 +53,11 @@ def import_progfiguration_build():
     return progfiguration_build
 
 
-def action_apply(inventory: Inventory, nodename: str, force: bool = False):
+def action_apply(inventory: Inventory, nodename: str, roles: list[str] = None, force: bool = False):
     """Apply configuration for the node 'nodename' to localhost"""
+
+    if roles is None:
+        roles = []
 
     node = inventory.node(nodename).node
 
@@ -64,13 +67,16 @@ def action_apply(inventory: Inventory, nodename: str, force: bool = False):
         )
 
     for role in inventory.node_role_list(nodename):
-        try:
-            logging.debug(f"Running role {role.name}...")
-            role.apply()
-            logging.info(f"Finished running role {role.name}.")
-        except Exception as exc:
-            logging.error(f"Error running role {role.name}: {exc}")
-            raise
+        if roles and role.name in roles:
+            try:
+                logging.debug(f"Running role {role.name}...")
+                role.apply()
+                logging.info(f"Finished running role {role.name}.")
+            except Exception as exc:
+                logging.error(f"Error running role {role.name}: {exc}")
+                raise
+        else:
+            logging.info(f"Skipping role {role.name}.")
 
     logging.info(f"Finished running all roles")
 
@@ -185,10 +191,15 @@ def action_deploy_apply(
     inventory: Inventory,
     nodenames: List[str],
     groupnames: List[str],
+    roles: List[str],
     remote_debug: bool,
     force_apply: bool,
     keep_remote_file: bool,
 ):
+
+    if roles is None:
+        roles = []
+
     progfiguration_build = import_progfiguration_build()
 
     nodenames = set(nodenames + [inventory.group_members(g) for g in groupnames])
@@ -204,6 +215,8 @@ def action_deploy_apply(
             args += ["apply", nname]
             if force_apply:
                 args.append("--force-apply")
+            if roles:
+                args += ["--roles", ",".join(roles)]
 
             # To run progfiguration remotely over ssh, we need:
             # * To run Python unbuffered with -u
@@ -322,13 +335,23 @@ def parseargs(arguments: List[str]):
         "--controller", "-c", action="store_true", help="En/decrypt to/from the controller secret store"
     )
 
+    # --roles option
+    roles_opts = argparse.ArgumentParser(add_help=False)
+    roles_opts.add_argument(
+        "--roles",
+        "-r",
+        default=[],
+        type=CommaSeparatedStrList,
+        help="A role, or list of roles separated by commas. The role(s) must be defined in the inventory for the node(s).",
+    )
+
     subparsers = parser.add_subparsers(dest="action", required=True)
 
     # version subcommand
     svn = subparsers.add_parser("version", description="Show progfiguration version")
 
     # apply subcommand
-    sub_apply = subparsers.add_parser("apply", description="Apply configuration")
+    sub_apply = subparsers.add_parser("apply", parents=[roles_opts], description="Apply configuration")
     sub_apply.add_argument("nodename", help="The name of a node in the progfiguration inventory")
     sub_apply.add_argument(
         "--force-apply", action="store_true", help="Force apply, even if the node has TESTING_DO_NOT_APPLY set."
@@ -341,10 +364,11 @@ def parseargs(arguments: List[str]):
         description="Deploy progfiguration to remote system in inventory as a pyz package (NOT a pip or apk package!); requires passwordless SSH configured",
     )
     sub_deploy_subparsers = sub_deploy.add_subparsers(dest="deploy_action", required=True)
-    sub_deploy_sub_apply = sub_deploy_subparsers.add_parser("apply", description="Deploy and apply configuration")
+    sub_deploy_sub_apply = sub_deploy_subparsers.add_parser(
+        "apply", parents=[roles_opts], description="Deploy and apply configuration"
+    )
     sub_deploy_sub_apply.add_argument(
         "--remote-debug",
-        "-r",
         action="store_true",
         help="Open the debugger on the remote system if an unhandled exception is encountered",
     )
@@ -461,7 +485,7 @@ def main_implementation(*arguments):
     if parsed.action == "version":
         print(version.VersionInfo.from_build_version_or_default().verbose())
     elif parsed.action == "apply":
-        action_apply(inventory, parsed.nodename, force=parsed.force_apply)
+        action_apply(inventory, parsed.nodename, roles=parsed.roles, force=parsed.force_apply)
     elif parsed.action == "deploy":
         if not parsed.nodes and not parsed.groups:
             parser.error("You must pass at least one of --nodes or --groups")
@@ -470,6 +494,7 @@ def main_implementation(*arguments):
                 inventory,
                 parsed.nodes,
                 parsed.groups,
+                roles=parsed.roles,
                 remote_debug=parsed.remote_debug,
                 force_apply=parsed.force_apply,
                 keep_remote_file=parsed.keep_remote_file,
