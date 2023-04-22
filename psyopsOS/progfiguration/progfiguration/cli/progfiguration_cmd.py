@@ -71,9 +71,9 @@ def action_apply(inventory: Inventory, nodename: str, strace_before_applying: bo
         try:
             logging.debug(f"Running role {role.name}...")
             role.apply()
-            logging.info(f"Finished running role {role}.")
+            logging.info(f"Finished running role {role.name}.")
         except Exception as exc:
-            logging.error(f"Error running role {role}: {exc}")
+            logging.error(f"Error running role {role.name}: {exc}")
             raise
 
     logging.info(f"Finished running all roles")
