@@ -6,13 +6,13 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from progfiguration.cmd import sh
+from progfiguration.cmd import run
 from progfiguration.progfigtypes import AnyPathOrStr
 
 
 def _generate_pubkey_from_path(path: Path) -> str:
     """Generate a public key from a private key"""
-    return sh(["ssh-keygen", "-y", "-f", str(path)]).stdout.decode()
+    return run(["ssh-keygen", "-y", "-f", str(path)], print_output=False).stdout.read()
 
 
 def _generate_pubkey_from_string(key: str) -> str:

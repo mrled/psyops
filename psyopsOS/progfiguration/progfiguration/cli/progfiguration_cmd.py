@@ -6,6 +6,7 @@ import logging
 import os
 import pathlib
 import pdb
+import subprocess
 import sys
 import tempfile
 import time
@@ -203,8 +204,21 @@ def action_deploy_apply(
             args += ["apply", nname]
             if force_apply:
                 args.append("--force-apply")
+
+            # To run progfiguration remotely over ssh, we need:
+            # * To run Python unbuffered with -u
+            # * To ask sshd to create a tty with -tt
+            # * To redirect stdin to /dev/null,
+            #   which fixes some weird issues with bad newlines in the output for reasons I don't understand.
+            # The result isn't perfect, as some lines are not printed exactly as they were in the output, but it's ok.
             remotebrute.cpexec(
-                f"{node.user}@{node.address}", pyzfile, args, interpreter="python3", keep_remote_file=keep_remote_file
+                f"{node.user}@{node.address}",
+                pyzfile,
+                args,
+                interpreter=["python3", "-u"],
+                ssh_tty=True,
+                ssh_stdin=subprocess.DEVNULL,
+                keep_remote_file=keep_remote_file,
             )
 
 

@@ -133,6 +133,19 @@ def progfiguration_abuild(ctx, clean=False):
 
 
 @invoke.task
+def progfiguration_test(ctx):
+    """Run progfiguration unit tests"""
+
+    # with ctx.cd(progfiguration_dir):
+    #     ctx.run("python -m unittest discover")
+
+    import unittest
+
+    suite = unittest.TestLoader().discover(progfiguration_dir)
+    unittest.TextTestRunner(verbosity=2).run(suite)
+
+
+@invoke.task
 def psyopsOS_base_abuild(ctx, clean=False):
     """Build the psyopsOS-base Python package as an Alpine package. Must be run from the psyops container.
 
