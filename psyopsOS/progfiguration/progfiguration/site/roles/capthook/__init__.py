@@ -1,4 +1,8 @@
-"""Set up a data disk"""
+"""Run a webhooks service
+
+Hooks are ddefined as JSON files which can be provided by other roles.
+After a role adds a hook, it must restart the capthook service.
+"""
 
 from dataclasses import dataclass
 import os
@@ -27,7 +31,13 @@ class Role(ProgfigurationRole):
     def apply(self):
         self.localhost.users.add_service_account(self.username, self.groupname, home=str(self.homedir), shell="/bin/sh")
         subprocess.run(["apk", "add", "webhook"], check=True)
-        self.localhost.cp(self.role_file("hookbuilder.py"), self.hooksdir / "hookbuilder.py")
+        self.localhost.cp(
+            self.role_file("hookbuilder.py"),
+            self.hooksdir / "hookbuilder.py",
+            owner=self.username,
+            group=self.groupname,
+            mode=0o0755,
+        )
         self.localhost.temple(
             self.role_file("whoami.hook.json.temple"),
             self.hooksdir / "whoami.hook.json",
@@ -64,6 +74,7 @@ class Role(ProgfigurationRole):
             group="root",
             mode=0o0644,
         )
+        subprocess.run("rc-service capthook restart", shell=True, check=True)
 
     def results(self):
         return {

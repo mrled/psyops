@@ -1,6 +1,6 @@
 {
     "id": "showmeurhooks",
-    "execute-command": "/usr/bin/ls",
+    "execute-command": "ls",
     "command-working-directory": "{$}hooksdir",
     "include-command-output-in-response": true
 }

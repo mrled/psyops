@@ -6,9 +6,6 @@ import os
 import sys
 
 
-scriptdir = os.path.dirname(os.path.realpath(__file__))
-
-
 def buildhooks(hooksdir):
     hooks = []
     for hook in glob.glob(f"{hooksdir}/*.hook.json"):
@@ -18,7 +15,9 @@ def buildhooks(hooksdir):
 
 
 def main(*args, **kwargs):
-    parser = argparse.ArgumentParser(help="Build a capthook hooks.json file from a directory of .hook.json files")
+    parser = argparse.ArgumentParser(
+        description="Build a capthook hooks.json file from a directory of .hook.json files"
+    )
     parser.add_argument("hooksdir")
     parser.add_argument("outfile")
     parsed = parser.parse_args()

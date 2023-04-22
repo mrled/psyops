@@ -3,3 +3,7 @@ CAPTHOOK_PORT="{$}port"
 CAPTHOOK_HOOKBUILDER="{$}hookbuilder"
 CATPHOOK_HOOKS_JSON="{$}hooks_json"
 CAPTHOOK_HOOKS_DIR="{$}hooksdir"
+
+# Send stdout and stderr to syslog
+output_logger="logger -p daemon.info -t ${RC_SVCNAME}.stdout --"
+error_logger="logger -p daemon.err -t ${RC_SVCNAME}.error --"
