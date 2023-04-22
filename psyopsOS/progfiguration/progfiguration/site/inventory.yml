@@ -41,6 +41,8 @@ functionRoleMap:
     - blockdevparty
     - datadisk_v2
     - capthook
+    - acmeupdater_base
+    - acmeupdater_synology
 
 nodeSettings:
   # The location for the age key on each node

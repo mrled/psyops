@@ -1,0 +1,51 @@
+#!/bin/sh
+set -eu
+
+date="$(date +%Y%m%d)"
+
+export AWS_REGION="{$}aws_region"
+export AWS_ACCESS_KEY_ID="{$}aws_access_key_id"
+export AWS_SECRET_ACCESS_KEY="{$}aws_secret_access_key"
+export AWS_HOSTED_ZONE_ID="{$}aws_zone"
+
+updaterscript="{$}syno_tls_update_script"
+legodir="{$}legodir"
+email="{$}acmedns_email"
+domain="{$}domain"
+synouser="{$}synology_user"
+synohost="{$}synology_host"
+
+sshhost="$synouser@$synohost"
+tmppath="/tmp/${date}-acme-update"
+tmppathcrt="$tmppath/$domain.crt"
+tmppathkey="$tmppath/$domain.key"
+
+echoexec() { echo "Running: $*"; $*; }
+
+echoexec /usr/local/bin/acmeupdater_wraplego.py \
+    --verbose \
+    --legodir "$legodir" \
+    --email "$email" \
+    --domain "$domain" \
+    --authenticator "route53"
+
+scp -r "$legodir/certificates/$domain.*" "$sshhost:$tmppath"
+scp -r "$updaterscript" $sshhost:$tmppath/syno-tls-update.py
+
+echo "$(cat <<ENDSSH
+
+echo "$(cat <<ENDSUDO
+
+mkdir -p "$tmppath"
+echo python "$tmppath/syno-tls-update.py" synoweb,webdav "$tmppathcrt" "$tmppathkey"
+python "$tmppath/syno-tls-update.py" synoweb,webdav "$tmppathcrt" "$tmppathkey"
+echo 'Removing temp dir...'
+rm -rf $tmppath
+
+echo 'Done'
+
+ENDSUDO
+)" | sudo su -
+
+ENDSSH
+)" | ssh $sshhost
