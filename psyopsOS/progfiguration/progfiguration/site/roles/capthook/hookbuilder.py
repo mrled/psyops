@@ -2,7 +2,7 @@
 
 import argparse
 import glob
-import os
+import json
 import sys
 
 
@@ -10,7 +10,13 @@ def buildhooks(hooksdir):
     hooks = []
     for hook in glob.glob(f"{hooksdir}/*.hook.json"):
         with open(hook) as hf:
-            hooks.append(hf.read().strip())
+            hookstr = hf.read()
+            try:
+                json.loads(hookstr)
+            except json.decoder.JSONDecodeError as e:
+                print(f"HOOKS COULD NOT BE UPDATED: Error parsing {hook}: {e}")
+                sys.exit(1)
+            hooks.append(hookstr.strip())
     return "[" + ",\n".join(hooks) + "]\n"
 
 

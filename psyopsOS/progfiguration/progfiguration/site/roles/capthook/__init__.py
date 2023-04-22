@@ -46,9 +46,16 @@ class Role(ProgfigurationRole):
             group=self.groupname,
         )
         self.localhost.temple(
-            self.role_file("showmeurhooks.hook.json.temple"),
+            self.role_file("list.hook.json.temple"),
             self.hooksdir / "showmeurhooks.hook.json",
-            template_args={"hooksdir": str(self.hooksdir)},
+            template_args={"hookid": "showmeurhooks", "hooksdir": str(self.hooksdir)},
+            owner=self.username,
+            group=self.groupname,
+        )
+        self.localhost.temple(
+            self.role_file("list.hook.json.temple"),
+            self.hooksdir / "list.hook.json",
+            template_args={"hookid": "list", "hooksdir": str(self.hooksdir)},
             owner=self.username,
             group=self.groupname,
         )
