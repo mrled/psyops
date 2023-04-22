@@ -10,7 +10,6 @@ import subprocess
 from typing import Any, Dict, List, Optional
 
 from progfiguration import temple
-
 from progfiguration.localhost.localusers import LocalhostUsers
 
 
@@ -141,7 +140,7 @@ class LocalhostLinux:
         else:
             raise Exception(f"Not sure how to copy src (type: {type(src)}) at {src} (does it exist?)")
         if owner or group:
-            shutil.chown(dest, user=owner, group=group)
+            shutil.chown(str(dest), user=owner, group=group)
         if mode:
             dest.chmod(mode)
 
