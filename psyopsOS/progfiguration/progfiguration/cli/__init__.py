@@ -97,6 +97,8 @@ def configure_logging(log_stderr, log_syslog):
         handler_stderr.setLevel(log_stderr)
         logger.addHandler(handler_stderr)
     if log_syslog != "NONE":
+        if not os.path.exists("/dev/log"):
+            raise FileNotFoundError("There is no /dev/log on this system, cannot configure syslog logger")
         handler_syslog = logging.handlers.SysLogHandler(address="/dev/log")
         handler_syslog.setLevel(log_syslog)
         logger.addHandler(handler_syslog)

@@ -11,8 +11,6 @@ import tempfile
 import time
 from typing import List, Union
 
-print(f"Importing {__file__}. sys.path is {sys.path}")
-
 from progfiguration import progfiguration_build_path, remotebrute, site, version
 from progfiguration.cli import (
     progfiguration_error_handler,
@@ -253,11 +251,17 @@ def parseargs(arguments: List[str]):
         choices=progfiguration_log_levels,
         help="Log level to send to stderr. Defaults to NOTSET (all messages, including debug). NONE to disable.",
     )
+
+    def syslog_default():
+        if os.path.exists("/dev/log"):
+            return "INFO"
+        return "NONE"
+
     parser.add_argument(
         "--log-syslog",
-        default="INFO",
+        default=syslog_default(),
         choices=progfiguration_log_levels,
-        help="Log level to send to syslog. Defaults to INFO. NONE to disable.",
+        help="Log level to send to syslog. Defaults to INFO if /dev/log exists, otherwise NONE. NONE to disable. If a value other than NONE is passed explicitly and /dev/log does not exist, an exception will be raised.",
     )
     parser.add_argument(
         "--mitogen-log-stderr",
