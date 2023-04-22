@@ -80,9 +80,7 @@ def cpexec(
         remote_cmd = " ".join(shlex.quote(arg) for arg in command_list)
         logger.debug(f"Will connect to {host} and execute command: {remote_cmd}")
 
-        ssh_cmd_run_args = {
-            "log_output": True,
-        }
+        ssh_cmd_run_args = {}
         if ssh_stdin is not None:
             ssh_cmd_run_args["stdin"] = ssh_stdin
 
