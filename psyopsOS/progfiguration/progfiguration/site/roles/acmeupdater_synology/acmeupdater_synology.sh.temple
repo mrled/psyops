@@ -15,10 +15,12 @@ domain="{$}domain"
 synouser="{$}synology_user"
 synohost="{$}synology_host"
 
-sshhost="$synouser@$synohost"
+sshhost="$synouser"@"$synohost"
 tmppath="/tmp/${date}-acme-update"
-tmppathcrt="$tmppath/$domain.crt"
-tmppathkey="$tmppath/$domain.key"
+tmpcrt="$tmppath/$domain.crt"
+tmpkey="$tmppath/$domain.key"
+tmpupdater="$tmppath/syno-tls-update.py"
+sshid="$HOME/.ssh/id_acmeupdater"
 
 echoexec() { echo "Running: $*"; $*; }
 
@@ -29,16 +31,37 @@ echoexec /usr/local/bin/acmeupdater_wraplego.py \
     --domain "$domain" \
     --authenticator "route53"
 
-scp -r "$legodir/certificates/$domain.*" "$sshhost:$tmppath"
-scp -r "$updaterscript" $sshhost:$tmppath/syno-tls-update.py
+crt="$(cat "$legodir"/certificates/"$domain".crt | base64)"
+key="$(cat "$legodir"/certificates/"$domain".key | base64)"
+updater="$(cat "$updaterscript" | base64)"
+
+# ssh -i "$sshid" "$sshhost" "mkdir -p $tmppath"
+# scp -i "$sshid" -r "$legodir"/certificates/"$domain".* "$sshhost":"$tmppath/"
+# scp -i "$sshid" -r "$updaterscript" $sshhost:$tmpupdater
 
 echo "$(cat <<ENDSSH
 
 echo "$(cat <<ENDSUDO
 
 mkdir -p "$tmppath"
-echo python "$tmppath/syno-tls-update.py" synoweb,webdav "$tmppathcrt" "$tmppathkey"
-python "$tmppath/syno-tls-update.py" synoweb,webdav "$tmppathcrt" "$tmppathkey"
+chown root:root "$tmppath"
+chmod 700 "$tmppath"
+
+cat > "$tmpcrt.b64" <<ENDCRT
+$crt
+ENDCRT
+cat > "$tmpkey.b64" <<ENDKEY
+$key
+ENDKEY
+cat > "$tmpupdater.b64" <<ENDUPDATERSCRIPT
+$updater
+ENDUPDATERSCRIPT
+
+base64 -d "$tmpcrt.b64" > "$tmpcrt"
+base64 -d "$tmpkey.b64" > "$tmpkey"
+base64 -d "$tmpupdater.b64" > "$tmpupdater"
+
+python3 "$tmpupdater" "$tmpkey" "$tmpcrt"
 echo 'Removing temp dir...'
 rm -rf $tmppath
 
@@ -48,4 +71,4 @@ ENDSUDO
 )" | sudo su -
 
 ENDSSH
-)" | ssh $sshhost
+)" | ssh -i "$sshid" $sshhost

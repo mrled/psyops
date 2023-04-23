@@ -1,17 +1,23 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Update Synology TLS certificates
 
-This must work under Python 2, as Synology does not ship Python 3.
+Written for DSM 7.
+
+References:
+
+* <https://gist.github.com/catchdave/69854624a21ac75194706ec20ca61327>
 """
 
 import argparse
+import glob
 import logging
 import os
 import pdb
 import shutil
 import subprocess
 import sys
+import tempfile
 import traceback
 
 
@@ -40,70 +46,89 @@ def install(src, dst, owner, group, mode):
     os.chmod(dst, mode)
 
 
-def install_tls_synoweb(crt, key, baksfx="syno-tls-update-backup"):
-    """Install certificates to the main webserver
+def install_tls(key_tmp, cert_tmp):
+    """Install the TLS certificates
 
-    This webserver runs the Synology admin UI, and also Syncthing if it is
-    installed, among other things.
+    The arguments are paths to temporary files containing the key and the cert.
+    They will be moved from these locations!
 
-    crt     Path to the certificate with full chain
-    key     Path to the private key
-    baksfx  The backup suffix for the certificate dir
-            If there is not already a certificate directory with this suffix,
-            copy the actual certificate directory to it.
+    Note that we rely on the lego behavior of the certificate actually being
+    the fullchain.pem, and the issuer being in a separate file (which we ignore).
+    So we just copy use the cert as both cert and fullchain.
     """
-    certdir = "/usr/syno/etc/certificate"
-    backupdir = "{}.{}".format(certdir, baksfx)
 
-    if not os.path.exists(backupdir):
-        logger.info("Backing up certdir from {} to {}".format(certdir, backupdir))
-        shutil.copytree(certdir, backupdir)
-    else:
-        logger.info("No need to back up, dir already exists at {}".format(backupdir))
+    certs_src_dir = "/usr/syno/etc/certificate/system/default"
+    key = os.path.join(certs_src_dir, "privkey.pem")
+    crt = os.path.join(certs_src_dir, "cert.pem")
+    chain = os.path.join(certs_src_dir, "fullchain.pem")
 
-    logger.info("Installing certificate...")
-    install(crt, "{}/system/default/fullchain.pem".format(certdir), 0, 0, 0o600)
-    logger.info("Installing key...")
-    install(key, "{}/system/default/privkey.pem".format(certdir), 0, 0, 0o600)
+    shutil.move(key_tmp, key)
+    shutil.move(cert_tmp, crt)
+    shutil.copyfile(crt, chain)
 
-    logger.info("Reloading webserver...")
-    subprocess.call(["/usr/syno/sbin/synoservice", "--reload", "nginx"])
+    services_to_restart = ["nmbd", "avahi", "ldap-server"]
+    packages_to_restart = ["ScsiTarget", "SynologyDrive", "WebDAVServer", "ActiveBackup"]
+
+    # All the target directories I know about
+    # Sometimes these don't exist, maybe because the app is not installed
+    target_cert_dirs = [
+        "/usr/syno/etc/certificate/system/FQDN",
+        "/usr/local/etc/certificate/ScsiTarget/pkg-scsi-plugin-server/",
+        "/usr/local/etc/certificate/SynologyDrive/SynologyDrive/",
+        "/usr/local/etc/certificate/WebDAVServer/webdav/",
+        "/usr/local/etc/certificate/ActiveBackup/ActiveBackup/",
+        "/usr/syno/etc/certificate/smbftpd/ftpd/",
+    ]
+
+    # The DEFAULT directory
+    # This is some weird Synology thing
+    # <https://www.reddit.com/r/synology/comments/8oqdxv/where_are_stored_ssl_certificates_lets_encrypt_on/>
+    default_dir_file = "/usr/syno/etc/certificate/_archive/DEFAULT"
+    with open(default_dir_file, "r") as file:
+        default_dir_name = file.readline().strip()
+        if not default_dir_name:
+            raise Exception(f"Default directory name not found in {default_dir_file}")
+        target_cert_dirs.append(f"/usr/syno/etc/certificate/_archive/{default_dir_name}")
+
+    # Add reverse proxy app directories
+    proxy_dirs = glob.glob("/usr/syno/etc/certificate/ReverseProxy/*/")
+    target_cert_dirs.extend(proxy_dirs)
+
+    # Check target directories
+    for target_dir in target_cert_dirs:
+        if not os.path.isdir(target_dir):
+            logging.warning(f"Target cert directory '{target_dir}' not found, skipping...")
+            continue
+        logging.info(f"Installing TLS certificates in {target_dir}")
+        install(key, os.path.join(target_dir, "privkey.pem"), 0, 0, 0o600)
+        install(crt, os.path.join(target_dir, "cert.pem"), 0, 0, 0o644)
+        install(chain, os.path.join(target_dir, "fullchain.pem"), 0, 0, 0o644)
+
+    # Reload nginx
+    subprocess.run(["/usr/syno/bin/synosystemctl", "restart", "nginx"], check=True)
+
+    # Restart services and packages
+    for service in services_to_restart:
+        is_active = subprocess.run(["/usr/syno/bin/synosystemctl", "get-active-status", service], capture_output=True)
+        if is_active.stdout.decode().strip() == "active":
+            logger.info(f"Restarting service {service}")
+            subprocess.run(["/usr/syno/bin/synosystemctl", "restart", service], check=True)
+        else:
+            logger.info(f"Service {service} is not active, skipping...")
+
+    for package in packages_to_restart:
+        is_onoff = subprocess.run(
+            ["/usr/syno/bin/synopkg", "is_onoff", package], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        previously_on = is_onoff.returncode == 0
+        if previously_on:
+            logger.info(f"Restarting package {package}")
+            subprocess.run(["/usr/syno/bin/synopkg", "restart", package], check=True)
+        else:
+            logger.info(f"Package {package} is not on, skipping...")
 
 
-def install_tls_webdav(crt, key, baksfx="syno-tls-update-backup"):
-    """Install certificates to the WebDAV webserver
-
-    The WebDAV Synology package must be installed for this to work.
-
-    crt     Path to the certificate with full chain
-    key     Path to the private key
-    baksfx  The backup suffix for the certificate dir
-            If there is not already a certificate directory with this suffix,
-            copy the actual certificate directory to it.
-    """
-    certdir = "/usr/local/etc/certificate/WebDAVServer/webdav"
-    backupdir = "{}.{}".format(certdir, baksfx)
-
-    if not os.path.exists(backupdir):
-        logger.info("Backing up certdir from {} to {}".format(certdir, backupdir))
-        shutil.copytree(certdir, backupdir)
-    else:
-        logger.info("No need to back up, dir already exists at {}".format(backupdir))
-
-    # Installing the same to both cert.pem and fullchain.pem,
-    # or else httpd won't start, lol
-    logger.info("Installing certificate...")
-    install(crt, "{}/fullchain.pem".format(certdir), 0, 0, 0o600)
-    install(crt, "{}/cert.pem".format(certdir), 0, 0, 0o600)
-    logger.info("Installing key...")
-    install(key, "{}/privkey.pem".format(certdir), 0, 0, 0o600)
-
-    logger.info("Reloading WebDAV server...")
-    subprocess.call(["/usr/syno/sbin/synoservice", "--restart", "pkgctl-WebDAVServer"])
-
-
-def parseargs(arguments):
-    """Parse program arguments"""
+def main(*arguments):
 
     parser = argparse.ArgumentParser(description="Install Synology TLS certificates")
 
@@ -113,39 +138,20 @@ def parseargs(arguments):
         action="store_true",
         help="Launch a debugger on unhandled exception",
     )
+    parser.add_argument("key", help="Path to key file")
+    parser.add_argument("cert", help="Path to certificate file")
 
-    valid_modes = ["synoweb", "webdav"]
-    parser.add_argument(
-        "mode",
-        help="One or more modes, comma separated. Valid modes: {}".format(valid_modes),
-    )
-    parser.add_argument("cert", help="Path to the certificate, including full cert chain")
-    parser.add_argument("key", help="Path to the private key")
-    parsed = parser.parse_args(arguments)
+    parsed = parser.parse_args(arguments[1:])
 
-    parsed.mode = parsed.mode.split(",")
-    for mode in parsed.mode:
-        if mode not in valid_modes:
-            raise Exception("Invalid mode {}".format(mode))
-    if not os.path.exists(parsed.cert):
-        raise Exception("No certificate at {}".format(parsed.cert))
     if not os.path.exists(parsed.key):
         raise Exception("No key at {}".format(parsed.key))
-
-    return parsed
-
-
-def main(*arguments):
-    """Main program"""
-    parsed = parseargs(arguments[1:])
+    if not os.path.exists(parsed.cert):
+        raise Exception("No certificate at {}".format(parsed.cert))
 
     if parsed.debug:
         sys.excepthook = idb_excepthook
 
-    if "synoweb" in parsed.mode:
-        install_tls_synoweb(parsed.cert, parsed.key)
-    if "webdav" in parsed.mode:
-        install_tls_webdav(parsed.cert, parsed.key)
+    install_tls(parsed.key, parsed.cert)
 
 
 if __name__ == "__main__":
