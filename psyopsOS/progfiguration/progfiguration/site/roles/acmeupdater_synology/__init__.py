@@ -43,7 +43,7 @@ class Role(ProgfigurationRole):
         syno_tls_update_script_path = homedir / "syno-tls-update.py"
 
         # A script that calls lego, copies the certs to the synology, and runs the syno_tls_update_script
-        acmedns_updater_script_path = Path("/usr/local/bin/acmedns_updater.sh")
+        acmedns_updater_script_path = Path("/usr/local/bin/acmeupdater_synology.sh")
 
         self.localhost.cp(
             self.role_file("syno-tls-update.py"),
