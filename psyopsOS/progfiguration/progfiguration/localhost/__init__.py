@@ -1,16 +1,18 @@
 """What the nodes have to say about themselves"""
 
 
-from importlib.abc import Traversable
 import os
 from pathlib import Path
 import shutil
 import string
 import subprocess
+import tempfile
 from typing import Any, Dict, List, Optional
 
 from progfiguration import temple
+from progfiguration.cmd import run
 from progfiguration.localhost.localusers import LocalhostUsers
+from progfiguration.progfigtypes import AnyPathOrStr
 
 
 class LocalhostLinux:
@@ -52,13 +54,15 @@ class LocalhostLinux:
 
         return mask
 
-    def get_file_contents(self, path: str, chomp=True, refresh=False):
+    def get_file_contents(self, path: AnyPathOrStr, chomp=True, refresh=False):
         """Retrieve file contents
 
         path:       The path to retrieve
         chomp:      Remove leading/trailing whitespace
         refresh:    Ignore cache if any
         """
+        if not isinstance(path, str):
+            path = str(path)
         if refresh or path not in self._cache_files:
             with open(path) as fp:
                 contents = fp.read()
@@ -71,7 +75,7 @@ class LocalhostLinux:
 
     def set_file_contents(
         self,
-        path: str | Path | Traversable,
+        path: AnyPathOrStr,
         contents: str,
         owner: Optional[str] = None,
         group: Optional[str] = None,
@@ -92,7 +96,7 @@ class LocalhostLinux:
 
     def makedirs(
         self,
-        path: str | Path | Traversable,
+        path: AnyPathOrStr,
         owner: Optional[str] = None,
         group: Optional[str] = None,
         mode: Optional[int] = None,
@@ -119,8 +123,8 @@ class LocalhostLinux:
 
     def cp(
         self,
-        src: str | Path | Traversable,
-        dest: str | Path | Traversable,
+        src: AnyPathOrStr,
+        dest: AnyPathOrStr,
         owner: Optional[str] = None,
         group: Optional[str] = None,
         mode: Optional[int] = None,
@@ -147,8 +151,8 @@ class LocalhostLinux:
     def _template_backend(
         self,
         template: type,
-        src: str | Path | Traversable,
-        dest: str | Path | Traversable,
+        src: AnyPathOrStr,
+        dest: AnyPathOrStr,
         template_args: Dict[str, Any],
         owner: Optional[str] = None,
         group: Optional[str] = None,
@@ -190,11 +194,38 @@ class LocalhostLinux:
     ):
         return self._template_backend(temple.Temple, src, dest, template_args, owner, group, mode, dirmode)
 
-    def linesinfile(self, file: str, lines: List[str]):
+    def linesinfile(
+        self,
+        file: AnyPathOrStr,
+        lines: List[str],
+        create_owner: Optional[str] = None,
+        create_group: Optional[str] = None,
+        create_mode: Optional[int] = None,
+        create_dirmode: Optional[int] = None,
+    ):
         """Ensure all lines in the input list exist in a file.
 
         Inspired by Ansible's lineinfile module, but simpler and less featureful
+
+        Args:
+            file: The file to modify
+            lines: The lines to ensure are in the file
+            create_owner: If the file does not exist, create it with this owner
+            create_group: If the file does not exist, create it with this group
+            create_mode: If the file does not exist, create it with this mode
+            create_dirmode: If the file does not exist, create its parent directory with this mode
+
+        If the file does not exist and at least one of `create_owner` or `create_group` is specified,
+        the file will be created with the specified owner and group, and the specified mode.
         """
+        if isinstance(file, str):
+            file = Path(file)
+        if not file.exists():
+            if create_owner or create_group:
+                self.set_file_contents(file, "\n".join(lines), create_owner, create_group, create_mode, create_dirmode)
+                return
+            else:
+                raise FileNotFoundError(f"File {file} does not exist and no owner/group specified to create it")
         oldlines = self.get_file_contents(file, refresh=True).split("\n")
         newlines = oldlines.copy()
         for line in lines:
@@ -210,6 +241,26 @@ class LocalhostLinux:
         """
         result = subprocess.run(["id", "-g", "-n", user], capture_output=True, check=True)
         return result.stdout.decode().strip()
+
+    def write_sudoers(self, path: AnyPathOrStr, contents: str):
+        """Write a sudoers file.
+
+        The file is written to a temporary file and then moved into place.
+
+        You can write to /etc/sudoers this way, but it is recommended to write to /etc/sudoers.d/SOMEFILE instead.
+        """
+        if isinstance(path, str):
+            path = Path(path)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpfile = Path(tmpdir) / "sudoers"
+            self.set_file_contents(tmpfile, contents, owner="root", group="root", mode=0o640)
+            validation = run(["visudo", "-cf", str(tmpfile)], check=False, print_output=False)
+            if validation.returncode == 0:
+                self.cp(tmpfile, path, owner="root", group="root", mode=0o440)
+            else:
+                raise Exception(
+                    f"Failed to write sudoers file {path}: validation failed with code {validation.returncode}"
+                )
 
 
 class LocalhostLinuxPsyopsOs(LocalhostLinux):

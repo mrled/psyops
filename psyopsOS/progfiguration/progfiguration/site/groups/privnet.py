@@ -42,6 +42,8 @@ group = Bunch(
             "synology_host": "chenoska.home.micahrl.com",
             "acmeupdater_user": "acmeupdater",
             "capthook_hooksdir": RoleResultReference("capthook", "hooksdir"),
+            "capthook_user": RoleResultReference("capthook", "username"),
+            "synology_ssh_keyscan": "chenoska.home.micahrl.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJLuNmro3TGPnbqZfiAxWf5oVeCFHp/waQVZ/yod5rU8",
         },
     ),
 )

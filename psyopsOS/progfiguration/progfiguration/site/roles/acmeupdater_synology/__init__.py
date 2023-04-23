@@ -21,10 +21,30 @@ class Role(ProgfigurationRole):
     synology_host: str
     acmeupdater_user: str
     capthook_hooksdir: Path
+    capthook_user: str
+
+    # A line for known_hosts that authenticates the synology
+    synology_ssh_keyscan: str
 
     def apply(self):
-        homedir = self.localhost.users.getent_user(self.acmeupdater_user).homedir
+        gotent = self.localhost.users.getent_user(self.acmeupdater_user)
+        homedir = gotent.homedir
+
+        self.localhost.linesinfile(
+            homedir / ".ssh" / "known_hosts",
+            [self.synology_ssh_keyscan],
+            create_owner=self.acmeupdater_user,
+            create_group=gotent.gid,
+            create_mode=0o0600,
+            create_dirmode=0o0700,
+        )
+
+        # A script that we will copy to the synology to apply certificate updates
         syno_tls_update_script_path = homedir / "syno-tls-update.py"
+
+        # A script that calls lego, copies the certs to the synology, and runs the syno_tls_update_script
+        acmedns_updater_script_path = Path("/usr/local/bin/acmedns_updater.sh")
+
         self.localhost.cp(
             self.role_file("syno-tls-update.py"),
             str(syno_tls_update_script_path),
@@ -33,7 +53,7 @@ class Role(ProgfigurationRole):
         )
         self.localhost.temple(
             self.role_file("acmeupdater_synology.sh.temple"),
-            "/usr/local/bin/acmeupdater_synology.sh",
+            str(acmedns_updater_script_path),
             {
                 "legodir": str(self.legodir),
                 "aws_region": self.aws_region,
@@ -49,15 +69,19 @@ class Role(ProgfigurationRole):
             owner="root",
             mode=0o755,
         )
+        self.localhost.write_sudoers(
+            "/etc/sudoers.d/acmeupdater_synology",
+            f"ALL ALL=({self.acmeupdater_user}) NOPASSWD: {str(acmedns_updater_script_path)}\n",
+        )
         self.localhost.temple(
             self.role_file("hook.json.temple"),
             str(self.capthook_hooksdir / "acmeupdater_synology.hook.json"),
             {
                 "job_name": "acmeupdater_synology",
                 "job_user": self.acmeupdater_user,
-                "updater_script": "/usr/local/bin/acmeupdater_synology.sh",
+                "updater_script": str(acmedns_updater_script_path),
             },
-            owner=self.acmeupdater_user,
+            owner=self.capthook_user,
             mode=0o600,
         )
         subprocess.run("rc-service capthook restart", shell=True, check=True)

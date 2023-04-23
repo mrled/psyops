@@ -40,14 +40,12 @@ class Role(ProgfigurationRole):
     def apply(self):
         self.localhost.users.add_service_account(self.username, self.groupname, home=True, shell="/bin/sh")
         self.localhost.makedirs(self.role_dir, self.username, self.groupname, 0o700)
-        sshdir = self.homedir / ".ssh"
-        self.localhost.makedirs(sshdir, self.username, self.groupname, 0o700)
-        sshkey_path = sshdir / "id_acmeupdater"
+        sshkey_path = self.homedir / ".ssh" / "id_acmeupdater"
         sshkey_pub_path = sshkey_path.with_suffix(".pub")
-        with sshkey_path.open("w") as f:
-            f.write(self.sshkey)
-        with sshkey_pub_path.open("w") as f:
-            f.write(generate_pubkey(self.sshkey))
+        self.localhost.set_file_contents(sshkey_path, self.sshkey, self.username, self.groupname, 0o600, 0o700)
+        self.localhost.set_file_contents(
+            sshkey_pub_path, generate_pubkey(self.sshkey), self.username, self.groupname, 0o600
+        )
         self.localhost.cp(
             self.role_file("wraplego.py.txt"), "/usr/local/bin/acmeupdater_wraplego.py", "root", "root", 0o0755, 0o0755
         )
