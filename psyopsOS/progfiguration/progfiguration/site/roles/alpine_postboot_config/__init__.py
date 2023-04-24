@@ -6,6 +6,7 @@ import shutil
 import subprocess
 from typing import List
 
+from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
 
@@ -121,6 +122,8 @@ class Role(ProgfigurationRole):
         self.localhost.set_file_contents(
             "/etc/profile.d/psyopsOS_path.sh", _psyopsOS_path_sh, "root", "root", 0o0644, 0o0755
         )
+
+        run("rc-service crond start")
 
         for user in _users:
             configure_user(self.localhost, **user)

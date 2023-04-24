@@ -3,8 +3,10 @@
 from dataclasses import dataclass
 from pathlib import Path
 import subprocess
+import textwrap
 
 from progfiguration.inventory.roles import ProgfigurationRole
+from progfiguration.site.sitelib import line_in_crontab
 
 
 @dataclass(kw_only=True)
@@ -22,6 +24,13 @@ class Role(ProgfigurationRole):
     acmeupdater_user: str
     capthook_hooksdir: Path
     capthook_user: str
+
+    # A suffix to identify this job (in case we have multiple Synology boxes)
+    job_suffix: str
+
+    # We run the cron job once a week.
+    # Offset it by this many seconds to be nice to Let's Encrypt.
+    cron_delay_seconds: int = 60 * 19
 
     # A line for known_hosts that authenticates the synology
     synology_ssh_keyscan: str
@@ -43,7 +52,7 @@ class Role(ProgfigurationRole):
         syno_tls_update_script_path = homedir / "syno-tls-update.py"
 
         # A script that calls lego, copies the certs to the synology, and runs the syno_tls_update_script
-        acmedns_updater_script_path = Path("/usr/local/bin/acmeupdater_synology.sh")
+        acmedns_updater_script_path = Path(f"/usr/local/bin/acmeupdater_synology_{self.job_suffix}.sh")
 
         self.localhost.cp(
             self.role_file("syno-tls-update.py"),
@@ -70,14 +79,14 @@ class Role(ProgfigurationRole):
             mode=0o755,
         )
         self.localhost.write_sudoers(
-            "/etc/sudoers.d/acmeupdater_synology",
+            f"/etc/sudoers.d/acmeupdater_synology_{self.job_suffix}",
             f"ALL ALL=({self.acmeupdater_user}) NOPASSWD: {str(acmedns_updater_script_path)}\n",
         )
         self.localhost.temple(
             self.role_file("hook.json.temple"),
-            str(self.capthook_hooksdir / "acmeupdater_synology.hook.json"),
+            str(self.capthook_hooksdir / f"acmeupdater_synology_{self.job_suffix}.hook.json"),
             {
-                "job_name": "acmeupdater_synology",
+                "job_name": f"acmeupdater_synology_{self.job_suffix}",
                 "job_user": self.acmeupdater_user,
                 "updater_script": str(acmedns_updater_script_path),
             },
@@ -85,6 +94,10 @@ class Role(ProgfigurationRole):
             mode=0o600,
         )
         subprocess.run("rc-service capthook restart", shell=True, check=True)
+
+        # Run the script at 04:19 on Tuesdays -- a random time to be nice to Let's Encrypt
+        crontabline = f"19 4 * * 2 {str(acmedns_updater_script_path)}"
+        line_in_crontab(self.acmeupdater_user, crontabline)
 
     def results(self):
         return {}
