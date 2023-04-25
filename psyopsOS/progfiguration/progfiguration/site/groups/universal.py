@@ -6,6 +6,7 @@ and role arguments and secrets from the universal group always apply first,
 while other groups have no guarantee of order.
 """
 
+from progfiguration.age import AgeSecretReference
 from progfiguration.localhost.disks import (
     FilesystemSpec,
     LvmLvSpec,
@@ -44,6 +45,19 @@ group = Bunch(
         },
         datadisk_v2={
             "block_device": "/dev/mapper/psyopsos_datadiskvg-datadisklv",
+        },
+        emailfwd={
+            "smtp_host": "smtps-proxy.messagingengine.com",
+            "smtp_port": 443,
+            "smtp_user": "mrled@fastmail.com",
+            "smtp_pass": AgeSecretReference("emailfwd_smtp_pass"),
+            "from_addr": "psyops@micahrl.com",
+            "aliases": {
+                # My own inbox, for top priority stuff
+                "micahrl": "me@micahrl.com",
+                # The psyops inbox, for everything else
+                "default": "psyops@micahrl.com",
+            },
         },
     ),
 )

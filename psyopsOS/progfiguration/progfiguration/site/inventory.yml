@@ -23,11 +23,13 @@ nodeFunctionMap:
 functionRoleMap:
   kubernasty:
     - alpine_postboot_config
+    - emailfwd
     - blockdevparty
     - datadisk_v2
     - k3s
   synergycontroller:
     - alpine_postboot_config
+    - emailfwd
     # We need datadisk bc we need Flatpak for Synergy, and Flatpak is too disk hungry for RAM
     # Using the old version that doesn't have partitioning/encryption support
     - datadisk_v1
@@ -38,6 +40,7 @@ functionRoleMap:
     - alpine_postboot_config
   privnet:
     - alpine_postboot_config
+    - emailfwd
     - blockdevparty
     - datadisk_v2
     - capthook
