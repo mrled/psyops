@@ -18,6 +18,7 @@ from pathlib import Path
 import shutil
 
 from progfiguration.inventory.roles import ProgfigurationRole
+from progfiguration.site.sitelib import line_in_crontab
 from progfiguration.ssh import generate_pubkey
 
 
@@ -49,6 +50,7 @@ class Role(ProgfigurationRole):
         self.localhost.cp(
             self.role_file("wraplego.py.txt"), "/usr/local/bin/acmeupdater_wraplego.py", "root", "root", 0o0755, 0o0755
         )
+        line_in_crontab(self.username, f"MAILTO=acmeupdater", prepend=True)
 
     def results(self):
         return {

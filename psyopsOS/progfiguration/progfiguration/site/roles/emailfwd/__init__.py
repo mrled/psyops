@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
+from progfiguration.site.sitelib import line_in_crontab
 
 
 @dataclass(kw_only=True)
@@ -43,5 +44,10 @@ class Role(ProgfigurationRole):
             mode=0o0640,
         )
 
-        aliases = "\n".join(f"{k}: {v}" for k, v in self.aliases.items())
+        aliases = "\n".join(f"{k}: {v}" for k, v in self.aliases.items()) + "\n"
         self.localhost.set_file_contents("/etc/aliases", aliases, mode=0o0644)
+
+        # Set root's crontab's MAILTO value.
+        # If this is not set at all, it will not send mail,
+        # but we can just send it to the local account and let the aliases handle it.
+        line_in_crontab("root", f"MAILTO=root", prepend=True)
