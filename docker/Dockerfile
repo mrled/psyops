@@ -84,6 +84,7 @@ RUN true \
         black \
         # For dig
         bind-tools \
+        busybox-doc \
         ca-certificates ca-certificates-doc \
         # I got tired of fucking with busybox's wget
         curl curl-doc \
