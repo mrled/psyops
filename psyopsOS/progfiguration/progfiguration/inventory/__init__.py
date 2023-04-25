@@ -42,9 +42,11 @@ class Inventory:
 
         self.localhost = LocalhostLinuxPsyopsOs()
 
-        self.group_members = self.inventory_parsed["groupNodeMap"]
         self.node_function = self.inventory_parsed["nodeFunctionMap"]
         self.function_roles = self.inventory_parsed["functionRoleMap"]
+
+        # Prepend the universal group to the list of groups
+        self.group_members = {"universal": self.node_function.keys(), **self.inventory_parsed["groupNodeMap"]}
 
         self._node_groups = None
         self._function_nodes = None

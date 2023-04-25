@@ -126,10 +126,7 @@ def collect_role_arguments(
 
     roleargs = {}
 
-    # Prepend the universal group to the group list,
-    # and find the role arguments from each group
-    all_groups = {"universal": inventory.group("universal"), **nodegroups}
-    for groupname, gmod in all_groups.items():
+    for groupname, gmod in nodegroups.items():
         group_rolevars = getattr(gmod.group.roles, rolename, {})
         for key, value in group_rolevars.items():
             roleargs[key] = dereference_rolearg(nodename, value, inventory, inventory.get_group_secrets(groupname))
