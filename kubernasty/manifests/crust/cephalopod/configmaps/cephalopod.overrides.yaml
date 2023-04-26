@@ -146,13 +146,13 @@ data:
 
 
     cephFileSystemVolumeSnapshotClass:
-      enabled: false
+      enabled: true
       name: cephalopod-nvme-3rep-fs
       isDefault: true
       deletionPolicy: Delete
 
     cephBlockPoolsVolumeSnapshotClass:
-      enabled: false
+      enabled: true
       name: cephalopod-nvme-3rep-block
       isDefault: false
       deletionPolicy: Delete
