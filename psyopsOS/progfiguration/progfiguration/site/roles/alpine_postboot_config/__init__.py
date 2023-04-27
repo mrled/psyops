@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 import re
 import shutil
-import subprocess
 from typing import List
 
 from progfiguration.cmd import run
@@ -36,23 +35,23 @@ def configure_user(localhost: LocalhostLinuxPsyopsOs, name: str, password: str, 
         if shell:
             cmd += ["--shell", shell]
         cmd += [name]
-        subprocess.run(cmd, check=True)
+        run(cmd)
     if pubkeys:
         authorized_keys.add_idempotently(localhost, name, pubkeys)
 
 
 def set_timezone(timezone: str):
-    subprocess.run(f"apk add tzdata", shell=True, check=True)
+    run(f"apk add tzdata")
 
     shutil.copyfile(f"/usr/share/zoneinfo/{timezone}", "/etc/localtime")
     with open(f"/etc/timezone", "w") as tzfp:
         tzfp.write(timezone)
 
-    subprocess.run("rc-service ntpd restart", shell=True, check=True)
+    run("rc-service ntpd restart")
 
     # We can remove tzdata if we want to
     # <https://wiki.alpinelinux.org/wiki/Setting_the_timezone>
-    # subprocess.run(f"apk del tzdata", shell=True, check=True)
+    # run(f"apk del tzdata")
 
 
 def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
@@ -78,7 +77,7 @@ def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
     if apk_repositories_new[-1] != "\n":
         apk_repositories_new += "\n"
     localhost.set_file_contents("/etc/apk/repositories", apk_repositories_new, "root", "root", 0o0644)
-    subprocess.run("apk update", shell=True, check=True)
+    run("apk update")
 
 
 def install_base_packages():
@@ -86,7 +85,7 @@ def install_base_packages():
     packages = [
         "py3-pip",
     ]
-    subprocess.run(["apk", "add"] + packages, check=True)
+    run(["apk", "add"] + packages)
 
 
 _psyopsOS_path_sh = r"""\
