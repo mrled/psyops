@@ -12,7 +12,7 @@ import tempfile
 import time
 from typing import List, Union
 
-from progfiguration import progfiguration_build_path, remotebrute, site, version
+from progfiguration import logger, progfiguration_build_path, remotebrute, site, version
 from progfiguration.cli import (
     progfiguration_error_handler,
     configure_logging,
@@ -67,7 +67,7 @@ def action_apply(inventory: Inventory, nodename: str, roles: list[str] = None, f
         )
 
     for role in inventory.node_role_list(nodename):
-        if roles and role.name in roles:
+        if not roles or role.name in roles:
             try:
                 logging.debug(f"Running role {role.name}...")
                 role.apply()
@@ -205,6 +205,8 @@ def action_deploy_apply(
     nodenames = set(nodenames + [inventory.group_members(g) for g in groupnames])
     nodes = {n: inventory.node(n).node for n in nodenames}
 
+    errors: list[dict[str, str]] = []
+
     with tempfile.TemporaryDirectory() as tmpdir:
         pyzfile = os.path.join(tmpdir, "progfiguration.pyz")
         progfiguration_build.build_zipapp(pyzfile)
@@ -224,15 +226,27 @@ def action_deploy_apply(
             # * To redirect stdin to /dev/null,
             #   which fixes some weird issues with bad newlines in the output for reasons I don't understand.
             # The result isn't perfect, as some lines are not printed exactly as they were in the output, but it's ok.
-            remotebrute.cpexec(
-                f"{node.user}@{node.address}",
-                pyzfile,
-                args,
-                interpreter=["python3", "-u"],
-                ssh_tty=True,
-                ssh_stdin=subprocess.DEVNULL,
-                keep_remote_file=keep_remote_file,
-            )
+            try:
+                remotebrute.cpexec(
+                    f"{node.user}@{node.address}",
+                    pyzfile,
+                    args,
+                    interpreter=["python3", "-u"],
+                    ssh_tty=True,
+                    ssh_stdin=subprocess.DEVNULL,
+                    keep_remote_file=keep_remote_file,
+                )
+            # except subprocess.CalledProcessError as exc:
+            except Exception as exc:
+                print(f"Error running progfiguration on node {nname}:")
+                logger.debug(exc)
+                errors.append({"node": nname, "error": str(exc)})
+
+    if errors:
+        print("====================")
+        print("Errors running progfiguration on {len(errors)} node(s):")
+        for error in errors:
+            print(f"  {error['node']}: {error['error']}")
 
 
 def action_deploy_copy(
