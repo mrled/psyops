@@ -1,9 +1,9 @@
 [LightDM]
 [Seat:*]
 allow-guest=false
-autologin-user=$user
-autologin-user-timeout=1
 display-setup-script=/var/psyopsOS/lightdm-display-setup.sh
+greeter-setup-script=/var/psyopsOS/lightdm-display-setup.sh
+session-setup-script=/var/psyopsOS/lightdm-display-setup.sh
 [XDMCPServer]
 enabled=false
 [VNCServer]

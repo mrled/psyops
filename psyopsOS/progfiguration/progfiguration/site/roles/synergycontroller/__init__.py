@@ -148,6 +148,8 @@ class Role(ProgfigurationRole):
 
     def apply(self):
 
+        groupname = self.user
+
         install_synergy()
 
         try:
@@ -180,12 +182,14 @@ class Role(ProgfigurationRole):
         # which I think is a limitation of the HDMI version on the hardware but I'm not sure.
         displaysetup_path = "/var/psyopsOS/lightdm-display-setup.sh"
         displaysetup_contents = textwrap.dedent(
-            """\
+            f"""\
             #!/bin/sh
-            xrandr --output HDMI-1 --primary --mode 1920x1080 || true
+            # Allow the user to connect to the X server, which synergys must do
+            xhost +si:localuser:{self.user}
             """
         )
         self.localhost.set_file_contents(displaysetup_path, displaysetup_contents, "root", "root", 0o0755)
+        subprocess.run(["apk", "add", "xhost"], check=True)
 
         # Modify PAM configuration
         # - Get rid of elogind from PAM
@@ -223,28 +227,37 @@ class Role(ProgfigurationRole):
         xpx = f"/home/{self.user}/.config/xfce4/xfconf/xfce-perchannel-xml"
         self.localhost.makedirs(xpx, owner=self.user, mode=0o0700)
         for xfile in ["xfce4-screensaver.xml", "xfce4-power-manager.xml"]:
-            shutil.copy(self.role_file(f"xfce_perchannel_xml/{xfile}"), f"{xpx}/{xfile}")
-            shutil.chown(f"{xpx}/{xfile}", self.user)
+            self.localhost.cp(self.role_file(f"xfce_perchannel_xml/{xfile}"), f"{xpx}/{xfile}", owner=self.user)
 
         synergyhome = os.path.expanduser(f"~{self.user}")
         if not synergyhome or not os.path.exists(synergyhome):
             raise Exception(f"Synergy user {self.user} does not have a homedir?")
 
-        autostart_dir = os.path.join(synergyhome, ".config", "autostart")
+        # Install services etc
         self.localhost.cp(
-            self.role_file("autostart/Terminal.desktop"),
-            f"{autostart_dir}/Terminal.desktop",
+            self.role_file("synergys.openrc.init"),
+            f"/etc/init.d/synergys",
+            owner="root",
+            mode=0o0755,
+        )
+        self.localhost.temple(
+            self.role_file("synergys.openrc.conf.temple"),
+            f"/etc/conf.d/synergys",
+            {
+                "user": self.user,
+                "group": groupname,
+                "homedir": synergyhome,
+            },
             owner=self.user,
             mode=0o0600,
             dirmode=0o0700,
         )
-        self.localhost.template(
-            self.role_file("autostart/Synergy.desktop.template"),
-            f"{autostart_dir}/Synergy.desktop",
+        self.localhost.temple(
+            self.role_file("synergys-wrapper.sh.temple"),
+            "/usr/lcoal/bin/synergys-wrapper.sh",
             {"user": self.user},
-            owner=self.user,
-            mode=0o0600,
-            dirmode=0o0700,
+            owner="root",
+            mode=0o0755,
         )
 
         # Configure Synergy itself
@@ -272,16 +285,6 @@ class Role(ProgfigurationRole):
             {"user": self.user, "serial": self.synergy_serial_key, "screenname": self.synergy_server_screenname},
             owner=self.user,
             mode=0o0600,
-        )
-
-        # Configure lightdm
-        self.localhost.template(
-            self.role_file("lightdm.conf.template"),
-            "/etc/lightdm/lightdm.conf",
-            {"user": self.user},
-            owner="root",
-            group="root",
-            mode=0o0644,
         )
 
         flatpak_overlay = "/psyopsos-data/overlays/var-lib-flatpak"
@@ -330,9 +333,10 @@ class Role(ProgfigurationRole):
         subprocess.run(["setup-xorg-base"], check=True)
         subprocess.run(["rc-service", "lightdm", "start"], check=True)
         time.sleep(2)
-        # The first start it doesn't seem to autologin correctly?
-        # So here's a fucked up hack.
-        subprocess.run(["rc-service", "lightdm", "restart"], check=True)
+        # # The first start it doesn't seem to autologin correctly?
+        # # So here's a fucked up hack.
+        # subprocess.run(["rc-service", "lightdm", "restart"], check=True)
+        subprocess.run(["rc-service", "synergys", "start"], check=True)
 
         # TODO: !!! autologin STILL isn't working correctly !!! FIXME !!!
 
