@@ -59,6 +59,7 @@ node = InventoryNode(
             "synergy_pub_key": synergy_public_key,
             "synergy_fingerprints_local": synergy_fingerprints_local,
             "synergy_server_screenname": "newjutland",
+            "github_deploy_key": AgeSecretReference("synergist_github_deploy_key"),
         },
     ),
 )

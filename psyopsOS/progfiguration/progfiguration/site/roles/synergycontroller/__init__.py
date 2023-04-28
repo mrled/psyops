@@ -11,7 +11,9 @@ import subprocess
 import textwrap
 import time
 from typing import List
+from progfiguration import ssh
 
+from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
 from progfiguration.localhost.disks import is_mountpoint
@@ -146,6 +148,9 @@ class Role(ProgfigurationRole):
     synergy_serial_key: str
     synergy_server_screenname: str
 
+    # A deploy keyh created for my qmk_firmware fork
+    github_deploy_key: str
+
     def apply(self):
 
         groupname = self.user
@@ -174,6 +179,11 @@ class Role(ProgfigurationRole):
             0o600,
         )
 
+        deploykey_path = "/home/synergist/.ssh/id_qmk_firmware"
+
+        self.localhost.set_file_contents(deploykey_path, self.github_deploy_key, self.user, self.user, 0o0600, 0o0700)
+        # TODO: Now use this pubkey with qmk
+
         # Tell lightdm to use 1920x1080
         # Via <https://askubuntu.com/questions/73804/wrong-login-screen-resolution>
         # The output name of HDMI-1 you can get from running `xrandr -q` in an xterm.
@@ -200,7 +210,7 @@ class Role(ProgfigurationRole):
         #   Also disable kwallet while we're at it I guess, idk
         for pamd_file in os.listdir("/etc/pam.d"):
             pamd_path = os.path.join("/etc/pam.d", pamd_file)
-            print(pamd_path)
+            # print(pamd_path)
             if not os.path.isfile(pamd_path):
                 continue
             if os.stat(pamd_path).st_size == 0:
@@ -347,12 +357,18 @@ class Role(ProgfigurationRole):
         install_teensy_loader_cli(self.localhost, self.user, synergist_data)
 
         qmk_home = "/psyopsos-data/roles/synergycontroller/qmk_firmware"
-        subprocess.run(["python3", "-m", "pip", "install", "--user", "qmk"])
+        run(f"sudo -u {self.user} python3 -m pip install --user qmk")
 
         install_vscode_remote_prereqs()
 
         # Can now configure QMK:
         # qmk setup -H /psyopsos-data/roles/synergycontroller/synergist/qmk_firmware mrled/qmk_firmware
+        #
+        # git config --local core.sshCommand "/usr/bin/ssh -i $HOME/.ssh/id_qmk_firmware"
+        # git remote set-url origin git@github.com:mrled/qmk_firmware.git
+        #
+        # sudo cp /psyopsos-data/roles/synergycontroller/synergist/qmk_firmware/util/udev/50-qmk.rules /etc/udev/rules.d/
+        # ... not sure if that will actually work
         #
         # And build firmware:
         # qmk compile -kb ergodox_ez/shine -km mrled
@@ -363,3 +379,5 @@ class Role(ProgfigurationRole):
         # However, because something something udev something Alpine something something,
         # it's easier to just do
         # sudo teensy_loader_cli -w -v -mmcu=atmega32u4 /psyopsos-data/roles/synergycontroller/synergist/qmk_firmware/.build/ergodox_ez_shine_mrled.hex
+        #
+        # Ploopy trackball: rev 1.004
