@@ -103,8 +103,8 @@ def run(cmd: str | list, print_output=True, log_output=False, check=True, *args,
     # .getvalue() doesn't change the seek position.
     logger.info(f"Command completed with return code {process.returncode}: {cmd}")
     if log_output:
-        print(f"stdout: {process.stdout.getvalue()}")
-        print(f"stderr: {process.stderr.getvalue()}")
+        logger.info(f"stdout: {process.stdout.getvalue()}")
+        logger.info(f"stderr: {process.stderr.getvalue()}")
 
     if check and process.returncode != 0:
         raise Exception(f"Command failed with exit code {process.returncode}: {cmd}")
