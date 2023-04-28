@@ -42,13 +42,13 @@ class Role(ProgfigurationRole):
     # You can also use a lambda to pass an arbitrary default_factory value
     touch_files: field(default_factory=lambda: ["/tmp/one", "/etc/two", "/home/three"])
 
-    # It can be nice to calculate values in one place
+    # It can be nice to set a proeprty as a way to define values in one place
     @property
     def homedir(self):
-        return self.localhost.users.getent_user(self.username).homedir
+        return return Path(f"/home/{self.username}")
 
     def apply(self):
-        self.localhost.users.add_service_account(self.username, self.groupname, home=True, shell=self.shell)
+        self.localhost.users.add_service_account(self.username, self.groupname, home=self.homedir, shell=self.shell)
         for g in self.secondary_groups:
             self.localhost.users.add_user_to_group(self.username, g)
 
@@ -95,3 +95,62 @@ They added complexity for little value, however.
 
 I realized that I only ever used them for things defined as default role argument values anyway.
 I could handle this more cleanly by just appending those inside the role itself and documenting it.
+
+## Notes on role references
+
+Role references, and therefore `results()` values, must be
+_completely computable before the role has run_.
+
+This means that you should **avoid** doing something like this:
+
+```python
+@dataclass(kw_only=True)
+class Role(ProgfigurationRole):
+
+    username: str
+
+    # Homedir is calculated based on state of the system --
+    # this will fail before the user is created.
+    @property
+    def homedir(self):
+        return self.localhost.users.getent_user(self.username).homedir
+
+    def apply(self):
+        self.localhost.users.add_service_account(self.username, self.username, home=True)
+
+    def results(self):
+        return {
+            # Homedir is returned in results():
+            "homedir": self.homedir,
+        }
+```
+
+To fix this, you can either:
+
+1. Define the homedir as a static path and pass it as an argument to `add_service_account()`
+2. Decide not to return the homedir in `results()`
+
+Here's an example of the first option:
+
+```python
+@dataclass(kw_only=True)
+class Role(ProgfigurationRole):
+
+    username: str
+
+    # It is safe to refer to self.username, which is passed in when the Role class is instantiated
+    @property
+    def homedir(self):
+        return Path(f"/home/{self.username}")
+
+    def apply(self):
+        # Rather than `home=True`, which creates the homedir in the default location,
+        # we pass the homedir location directly.
+        self.localhost.users.add_service_account(self.username, self.username, home=self.homedir)
+
+    def results(self):
+        return {
+            # The homedir is defined statically so it can be returned in results()
+            "homedir": self.homedir,
+        }
+```
