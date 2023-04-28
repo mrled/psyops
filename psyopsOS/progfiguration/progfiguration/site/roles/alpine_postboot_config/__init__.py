@@ -3,8 +3,10 @@
 from dataclasses import dataclass
 import re
 import shutil
+import time
 from typing import List
 
+from progfiguration import logger
 from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
@@ -77,7 +79,15 @@ def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
     if apk_repositories_new[-1] != "\n":
         apk_repositories_new += "\n"
     localhost.set_file_contents("/etc/apk/repositories", apk_repositories_new, "root", "root", 0o0644)
-    run("apk update")
+    result = run("apk update", check=False, log_output=True)
+    if result.returncode != 0:
+        logger.info(f"apk update failed with code {result.returncode}")
+        logger.info(f"apk update stdout: {result.stdout}")
+        logger.info(f"apk update stderr: {result.stderr}")
+        secs = 15
+        logger.info(f"Sleeping {secs} seconds before trying again")
+        time.sleep(secs)
+        run("apk update", log_output=True)
 
 
 def install_base_packages():
