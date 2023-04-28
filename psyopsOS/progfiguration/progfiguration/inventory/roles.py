@@ -96,8 +96,7 @@ def dereference_rolearg(nodename: str, argument: Any, inventory: "Inventory", se
     value = argument
     if isinstance(argument, age.AgeSecretReference):
         secret = secrets[argument.name]
-        # TODO: don't use a hardcoded path for the key here
-        value = secret.decrypt("/mnt/psyops-secret/mount/age.key")
+        value = secret.decrypt(inventory.age_path)
     elif isinstance(argument, RoleResultReference):
         value = inventory.node_role(nodename, argument.role).results()[argument.result]
     return value

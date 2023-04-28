@@ -21,6 +21,7 @@ from progfiguration.progfigtypes import AnyPathOrStr
 class Controller:
     age: Optional[age.AgeKey]
     agepub: str
+    agepath: str
 
 
 class Inventory:
@@ -133,7 +134,7 @@ class Inventory:
                 ctrlrage = age.AgeKey.from_file(ctrlrdata["age"])
             else:
                 ctrlrage = None
-            self._controller = Controller(ctrlrage, ctrlrdata["agepub"])
+            self._controller = Controller(ctrlrage, ctrlrdata["agepub"], ctrlrdata["age"])
         return self._controller
 
     @property
@@ -151,8 +152,8 @@ class Inventory:
         * None
         """
         if not self._age_path:
-            if self.controller.age:
-                self._age_path = self.controller.age
+            if self.controller.agepath:
+                self._age_path = self.controller.agepath
             else:
                 for agekey in self.inventory_parsed["nodeSettings"]["age"]:
                     if os.path.exists(agekey):

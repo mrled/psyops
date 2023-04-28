@@ -134,7 +134,12 @@ def progfiguration_abuild(ctx, clean=False):
 
 @invoke.task
 def progfiguration_test(ctx):
-    """Run progfiguration unit tests"""
+    """Run progfiguration unit tests.
+
+    Must be run from the psyops container.
+
+    Run with PROGFIGURATION_TEST_DEBUG=1 to drop into pdb on test failure.
+    """
 
     # with ctx.cd(progfiguration_dir):
     #     ctx.run("python -m unittest discover")
