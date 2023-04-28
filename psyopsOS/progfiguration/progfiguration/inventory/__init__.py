@@ -224,7 +224,10 @@ class Inventory:
             try:
                 role = role_cls(name=rolename, localhost=self.localhost, inventory=self, rolepkg=rolepkg, **roleargs)
             except Exception as exc:
-                raise Exception(f"Error instantiating role {rolename} for node {nodename}") from exc
+                msg = f"Error instantiating role {rolename} for node {nodename}."
+                if isinstance(exc, AttributeError) and exc.args[0].startswith("can't set attribute"):
+                    msg += " This might happen if you have two properties with the same name (perhaps one as a function with a @property decorator)."
+                raise Exception(msg) from exc
 
             # And set the role in the cache
             self._node_roles[nodename][rolename] = role
@@ -280,6 +283,10 @@ class Inventory:
     def group_secrets_file(self, group: str) -> Path:
         """The path to the secrets file for a given group"""
         return importlib_resources_files("progfiguration.site.groups").joinpath(f"{group}.secrets.yml")
+
+    def node_secrets_file(self, node: str) -> Path:
+        """The path to the secrets file for a given node"""
+        return importlib_resources_files("progfiguration.site.nodes").joinpath(f"{node}.secrets.yml")
 
     def set_node_secret(self, nodename: str, secretname: str, encrypted_value: str):
         """Set a secret for a node"""
