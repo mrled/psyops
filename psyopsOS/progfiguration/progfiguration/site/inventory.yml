@@ -46,6 +46,8 @@ functionRoleMap:
     - capthook
     - acmeupdater_base
     - acmeupdater_synology
+    - pullbackup
+    - pullbackup_email
 
 nodeSettings:
   # The location for the age key on each node

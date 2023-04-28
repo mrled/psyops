@@ -1,0 +1,20 @@
+# -*- mode: ini -*-
+
+[general]
+accounts = mrled@fastmail.com
+
+[Account mrled@fastmail.com]
+localrepository = mrled@fastmail.com-local
+remoterepository = mrled@fastmail.com-remote
+
+[Repository mrled@fastmail.com-remote]
+type = IMAP
+remotehost = mail.messagingengine.com
+remoteuser = mrled@fastmail.com
+remotepass = {$}me_micahrl_com_password
+ssl = yes
+sslcacertfile = /etc/ssl/certs/ca-certificates.crt
+
+[Repository mrled@fastmail.com-local]
+type = Maildir
+localfolders = {$}backuproot/offlineimap/mrled@fastmail.com

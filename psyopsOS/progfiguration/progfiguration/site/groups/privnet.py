@@ -46,5 +46,17 @@ group = Bunch(
             "synology_ssh_keyscan": "chenoska.home.micahrl.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJLuNmro3TGPnbqZfiAxWf5oVeCFHp/waQVZ/yod5rU8",
             "job_suffix": "chenoska",
         },
+        pullbackup={
+            "sshkey": AgeSecretReference("pullbackup_sshkey"),
+        },
+        pullbackup_email={
+            "me_micahrl_com_password": AgeSecretReference("mrled_fastmail_password"),
+            "role_dir": Path("/psyopsos-data/roles/pullbackup_email"),
+            "sshkey_path": RoleResultReference("pullbackup", "sshkey_path"),
+            "capthook_hooksdir": RoleResultReference("capthook", "hooksdir"),
+            "capthook_user": RoleResultReference("capthook", "username"),
+            "job_suffix": "mrled_fastmail",
+            "pullbackup_user": RoleResultReference("pullbackup", "username"),
+        },
     ),
 )

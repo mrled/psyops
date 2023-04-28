@@ -1,0 +1,49 @@
+#!/bin/sh
+# Ensure we run only one instance of offlineimap (from the pullbackup user) at a time
+set -eu
+
+# Template variables
+username="{$}username"
+
+# Script variables
+script="$(basename "$0")"
+
+# Default values
+mode="offlineimap vsyncdir"
+
+usage() {
+    cat <<ENDUSAGE
+Usage: $script [options]
+Sync email, contacts, and calendars.
+
+Options:
+    -h, --help      Show this help message and exit
+    -d, --debug     Enable debug output
+    -m, --mode      Specify which modes to run. Default: $mode
+
+This script checks if there is already a copy running by the current user,
+and if so, it exits with an error.
+This prevents multiple copies of offlineimap/vsyncdir from running at the same time.
+ENDUSAGE
+}
+
+already_running() {
+    process="$1"
+    pgrep -u "$username" "$process" >/dev/null
+}
+
+while test $# -gt 0; do
+    case "$1" in
+        -h | --help ) usage; exit;;
+        -d | --debug ) set -x; shift;;
+        -m | --mode) mode="$2"; shift 2;;
+    esac
+done
+
+if already_running "$script"; then
+    echo "Tried to run '$script' but it was already running under user '$username'"
+    return 1
+fi
+
+case "$mode" in; *offlineimap*) offlineimap; esac
+case "$mode" in; *vsyncdir*) vsyncdir; esac
