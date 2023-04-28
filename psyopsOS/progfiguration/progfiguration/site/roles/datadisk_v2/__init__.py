@@ -109,11 +109,18 @@ class Role(ProgfigurationRole):
             os.makedirs(str(self.mountpoint), mode=0o755, exist_ok=True)
             subprocess.run(f"mount {self.block_device} {self.mountpoint}", shell=True, check=True)
 
-            # TODO: Don't require list flattening.
-            # We are flattening the list here because it is a list of lists
-            # Instead fix the caller to not make it pass a list of lists
-            wipes = [item for sublist in self.wipe_after_mounting for item in sublist]
-            for subpath in wipes:
+            # Take care that we are operating on lists of strings
+            if isinstance(self.wipe_after_mounting, str):
+                raise Exception("wipe_after_mounting must be a list of strings but it is a string")
+            for subpath in self.wipe_after_mounting:
+                if subpath.startswith("/"):
+                    raise Exception(
+                        f"wipe_after_mounting subpath {subpath} must not start with / - it is relative to {self.mountpoint}"
+                    )
+                if not isinstance(subpath, str):
+                    raise Exception(f"wipe_after_mounting subpath {subpath} must be a string but is a {type(subpath)}")
+
+            for subpath in self.wipe_after_mounting:
                 path = self.mountpoint.joinpath(subpath)
                 if os.path.exists(path):
                     logger.info(f"Removing path {path} after mounting {self.mountpoint}...")
