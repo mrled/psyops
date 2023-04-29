@@ -1,0 +1,33 @@
+# -*- mode: ini -*-
+
+IMAPAccount personal-account
+Host mail.messagingengine.com
+User mrled@fastmail.com
+Pass {$}me_micahrl_com_password
+SSLType IMAPS
+
+IMAPStore personal-imap
+Account personal-account
+
+MaildirStore personal-local
+Path {$}backuproot/mbsync/Personal
+Inbox {$}backuproot/mbsync/Personal/Inbox
+SubFolders Verbatim
+# We do not use mbsync's Trash at all, because we just want to pull
+# Trash Trash
+
+Channel personal
+Far :personal-imap:
+Near :personal-local:
+# Store the sync state in the local maildir
+SyncState *
+# Don't mess up message timestamps when moving them between folders.
+# ... when I set this option, I get errors like "IMAP error: unable to parse INTERNALDATE format"
+# CopyArrivalDate yes
+# Sync all folders (without this it just syncs the Inbox)
+Patterns *
+# Download changes only, don't sync local changes up to the server.
+Sync Pull
+Create Near
+Remove Near
+Expunge Near

@@ -3,12 +3,12 @@
 from dataclasses import dataclass
 import os
 from pathlib import Path
-from progfiguration.cmd import run
 import venv
 
+from progfiguration import logger
+from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.site.sitelib import line_in_crontab
-from progfiguration.ssh import generate_pubkey
 
 
 def install_vdirsyncer_venv():
@@ -16,8 +16,8 @@ def install_vdirsyncer_venv():
     venvdir = "/usr/local/venv/vdirsyncer"
     if os.path.exists(venvdir):
         return
-    os.mkdir("/usr/local/venv", 0o755)
-    venv.create(venvdir, with_pip=True, symlink=True, upgrade_deps=True)
+    os.makedirs("/usr/local/venv", 0o755, exist_ok=True)
+    venv.create(venvdir, with_pip=True, symlinks=True, upgrade_deps=True)
     run([f"{venvdir}/bin/pip", "install", "vdirsyncer"])
     os.symlink(f"{venvdir}/bin/vdirsyncer", "/usr/local/bin/vdirsyncer")
 
@@ -39,19 +39,26 @@ class Role(ProgfigurationRole):
 
     @property
     def homedir(self) -> Path:
-        return self.localhost.users.getent_user(self.username).homedir
+        return self.localhost.users.getent_user(self.pullbackup_user).homedir
 
     def apply(self):
-        run("apk add offlineimap")
+        run("apk add isync")
 
         # There is an apk package for vdirsyncer, but it's in @edgecommunity and it requires Python 3.11 for some reason.
         # We have to install its prereqs first though.
         run("apk add libxml2 libxslt zlib")
         install_vdirsyncer_venv()
 
+        self.localhost.makedirs(self.role_dir, owner="root", mode=0o755)
+
+        # Create required mbsync directories
+        self.localhost.makedirs(
+            self.backuproot / "mbsync" / "Personal" / "Inbox", owner=self.pullbackup_user, mode=0o700
+        )
+
         self.localhost.temple(
-            self.role_file("offlineimaprc.temple"),
-            self.homedir / ".offlineimaprc",
+            self.role_file("mbsyncrc.temple"),
+            self.homedir / ".mbsyncrc",
             {
                 "backuproot": str(self.backuproot),
                 "me_micahrl_com_password": self.me_micahrl_com_password,
@@ -81,8 +88,11 @@ class Role(ProgfigurationRole):
             owner=self.pullbackup_user,
             mode=0o700,
         )
+
         line_in_crontab(self.pullbackup_user, f"MAILTO={self.pullbackup_user}", prepend=True)
-        line_in_crontab(self.pullbackup_user, f"0 */6 * * * {pullbackup_email_script}")
+
+        # Run every 6 hours, at 38 minutes past the hour to spread load on the server(s)
+        line_in_crontab(self.pullbackup_user, f"38 */6 * * * {pullbackup_email_script}")
 
         self.localhost.write_sudoers(
             "/etc/sudoers.d/pullbackup_email",
@@ -101,20 +111,8 @@ class Role(ProgfigurationRole):
             mode=0o700,
         )
 
+        logger.info("Discovering vdirsyncer collections...")
+        run("pullbackup_email.sh -m vdirsyncer-discover")
+
     def results(self):
         return {}
-
-
-"""
----
-
-- name: Install hook
-  template:
-    src: hook.json.j2
-    dest: "{{ capthook_webhooks_dir }}/{{ mailbackup_hook_name }}.hook.json"
-    owner: "{{ capthook_user }}"
-    group: "{{ capthook_user }}"
-    mode: "0644"
-  notify: restart capthook
-
-"""

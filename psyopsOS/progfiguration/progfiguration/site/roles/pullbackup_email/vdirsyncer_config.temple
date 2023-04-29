@@ -5,36 +5,36 @@
 status_path = "{$}backuproot/vdirsyncer/status"
 
 # CARDDAV
-[pair mrled@fastmail.com-contacts]
+[pair personal_contacts]
 # A `[pair <name>]` block defines two storages `a` and `b` that should be
 # synchronized. The definition of these storages follows in `[storage <name>]`
 # blocks. This is similar to accounts in OfflineIMAP.
-a = "mrled@fastmail.com-contacts-local"
-b = "mrled@fastmail.com-contacts-remote"
+a = "personal_contacts_local"
+b = "personal_contacts_remote"
 
 # Synchronize all collections that can be found.
 # You need to run `vdirsyncer discover` if new calendars/addressbooks are added
 # on the server.
 
-collections = ["from a", "from b"]
+collections = ["from b", "from a"]
 
 # Synchronize the "display name" property into a local file (~/.contacts/displayname).
-metadata = ["displayname"]
+# metadata = ["displayname"]
 
 # To resolve a conflict the following values are possible:
 #   `null` - abort when collisions occur (default)
 #   `"a wins"` - assume a's items to be more up-to-date
 #   `"b wins"` - assume b's items to be more up-to-date
-conflict_resolution = "mrled@fastmail.com-contacts-remote wins"
+conflict_resolution = "b wins"
 
-[storage mrled@fastmail.com-contacts-local]
+[storage personal_contacts_local]
 # A storage references actual data on a remote server or on the local disk.
 # Similar to repositories in OfflineIMAP.
 type = "filesystem"
-path = "{$}backuproot/vsyncdir/mrled@fastmail.com-contacts-local/"
+path = "{$}backuproot/vsyncdir/personal_contacts_local/"
 fileext = ".vcf"
 
-[storage mrled@fastmail.com-contacts-remote]
+[storage personal_contacts_remote]
 type = "carddav"
 url = "https://carddav.fastmail.com/"
 username = "mrled@fastmail.com"
@@ -43,20 +43,22 @@ username = "mrled@fastmail.com"
 password = "{$}mrled_fastmail_com_password"
 
 # CALDAV
-[pair mrled@fastmail.com-calendar]
-a = "mrled@fastmail.com-calendar-local"
-b = "mrled@fastmail.com-calendar-remote"
-collections = ["from a", "from b"]
+[pair personal_calendar]
+a = "personal_calendar_local"
+b = "personal_calendar_remote"
+collections = ["from b", "from a"]
 
 # Calendars also have a color property
-metadata = ["displayname", "color"]
+# metadata = ["displayname", "color"]
 
-[storage mrled@fastmail.com-calendar-local]
+conflict_resolution = "b wins"
+
+[storage personal_calendar_local]
 type = "filesystem"
-path = "{$}backuproot/vsyncdir/mrled@fastmail.com-calendar-local/"
+path = "{$}backuproot/vsyncdir/personal_calendar_local/"
 fileext = ".ics"
 
-[storage mrled@fastmail.com-calendar-remote]
+[storage personal_calendar_remote]
 type = "caldav"
 url = "https://caldav.fastmail.com/"
 username = "mrled@fastmail.com"

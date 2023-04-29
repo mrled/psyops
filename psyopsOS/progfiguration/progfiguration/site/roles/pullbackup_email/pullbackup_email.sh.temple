@@ -1,15 +1,21 @@
 #!/bin/sh
-# Ensure we run only one instance of offlineimap (from the pullbackup user) at a time
+# Ensure we run only one instance of mbsync/vdirsyncer (from the pullbackup user) at a time
 set -eu
 
 # Template variables
 username="{$}username"
 
+# Force running as the user defined at the top
+if ! test "$(id -u)" = "$(id -u $username)"; then
+    sudo -u "$username" "$0" "$@"
+    exit 0
+fi
+
 # Script variables
 script="$(basename "$0")"
 
 # Default values
-mode="offlineimap vsyncdir"
+mode="mbsync vdirsyncer-sync vdirsyncer-discover"
 
 usage() {
     cat <<ENDUSAGE
@@ -20,16 +26,33 @@ Options:
     -h, --help      Show this help message and exit
     -d, --debug     Enable debug output
     -m, --mode      Specify which modes to run. Default: $mode
+                    Can specify multiple modes by separating them with spaces or commas.
 
-This script checks if there is already a copy running by the current user,
+Modes:
+    mbsync                Sync email
+    vdirsyncer-discover   Discover new contacts and calendars
+                          (Must be run once when new contacts/calendars accounts are added)
+    vdirsyncer-sync       Sync contacts and calendars
+
+The script forces running as the user '$username'.
+
+This script checks if there is already a copy running under user '$username',
 and if so, it exits with an error.
-This prevents multiple copies of offlineimap/vsyncdir from running at the same time.
+This prevents multiple copies of mbsync/vdirsyncer from running at the same time.
 ENDUSAGE
 }
 
+# Check if a process is already running under our user
 already_running() {
     process="$1"
     pgrep -u "$username" "$process" >/dev/null
+}
+
+# Check if the mode variable contains a substring
+mode_contains() {
+    substr="$1"
+    test "${mode#*$substr}" != "$mode"
+    return $?
 }
 
 while test $# -gt 0; do
@@ -45,5 +68,17 @@ if already_running "$script"; then
     return 1
 fi
 
-case "$mode" in; *offlineimap*) offlineimap; esac
-case "$mode" in; *vsyncdir*) vsyncdir; esac
+echo "Running '$script' as user '$username' with mode '$mode'"
+
+if mode_contains "mbsync"; then
+    echo "Running mbsync"
+    mbsync -a
+fi
+if mode_contains "vdirsyncer-discover"; then
+    echo "Running vdirsyncer discover"
+    yes | /usr/local/venv/vdirsyncer/bin/vdirsyncer discover
+fi
+if mode_contains "vdirsyncer-sync"; then
+    echo "Running vdirsyncer sync"
+    /usr/local/venv/vdirsyncer/bin/vdirsyncer sync
+fi
