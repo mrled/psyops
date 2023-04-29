@@ -152,7 +152,7 @@ class Inventory:
         * None
         """
         if not self._age_path:
-            if self.controller.agepath:
+            if os.path.exists(self.controller.agepath):
                 self._age_path = self.controller.agepath
             else:
                 for agekey in self.inventory_parsed["nodeSettings"]["age"]:
