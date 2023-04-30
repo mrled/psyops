@@ -3,9 +3,10 @@
     "execute-command": "sudo",
     "pass-arguments-to-command": [
       {"source": "string", "name": "-u"},
-      {"source": "string", "name": "{$}username"},
-      {"source": "string", "name": "{$}scriptpath"}
+      {"source": "string", "name": "{$}user"},
+      {"source": "string", "name": "{$}script"}
     ],
     "include-command-output-in-response": true,
     "include-command-output-in-response-on-error": true
 }
+

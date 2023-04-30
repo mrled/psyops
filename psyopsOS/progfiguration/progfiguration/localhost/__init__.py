@@ -202,6 +202,7 @@ class LocalhostLinux:
         create_group: Optional[str] = None,
         create_mode: Optional[int] = None,
         create_dirmode: Optional[int] = None,
+        trailing_newline: bool = True,
     ):
         """Ensure all lines in the input list exist in a file.
 
@@ -218,6 +219,8 @@ class LocalhostLinux:
         If the file does not exist and at least one of `create_owner` or `create_group` is specified,
         the file will be created with the specified owner and group, and the specified mode.
         """
+        if isinstance(lines, str):
+            lines = [lines]
         if isinstance(file, str):
             file = Path(file)
         if not file.exists():
@@ -231,7 +234,34 @@ class LocalhostLinux:
         for line in lines:
             if line not in oldlines:
                 newlines += [line]
-        self.set_file_contents(file, "\n".join(newlines))
+        contents_str = "\n".join(newlines)
+        if trailing_newline:
+            contents_str += "\n"
+        self.set_file_contents(file, contents_str)
+
+    def touch(
+        self,
+        file: AnyPathOrStr,
+        owner: Optional[str] = None,
+        group: Optional[str] = None,
+        mode: Optional[int] = None,
+        dirmode: Optional[int] = None,
+    ):
+        """Create an empty file.
+
+        If the file already exists, update its mtime.
+
+        Set the owner/group/mode, if specified, regardless of whether the file already exists.
+
+        If any parent dirs do not exist, create them as owned by owner/group with specified dirmode.
+        (If parent dirs do exist, do not change their owners.)
+        """
+        if not isinstance(file, Path):
+            file = Path(file)
+        if not file.parent.exists():
+            self.makedirs(file.parent, owner, group, dirmode)
+        file.touch(mode=mode, exist_ok=True)
+        shutil.chown(str(file), user=owner, group=group)
 
     def get_user_primary_group(self, user: str):
         """Get the primary group for a user.

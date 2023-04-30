@@ -27,7 +27,6 @@ class Role(ProgfigurationRole):
 
     me_micahrl_com_password: str
     role_dir: Path
-    sshkey_path: Path
     capthook_hooksdir: Path
     capthook_user: str
     job_suffix: str

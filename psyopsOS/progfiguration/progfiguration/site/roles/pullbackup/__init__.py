@@ -31,6 +31,7 @@ class Role(ProgfigurationRole):
         self.localhost.set_file_contents(
             sshkey_pub_path, generate_pubkey(self.sshkey), self.username, self.groupname, 0o600
         )
+        self.localhost.touch(self.homedir / ".ssh" / "known_hosts", self.username, self.groupname, 0o600)
         line_in_crontab(self.username, f"MAILTO={self.username}", prepend=True)
 
     def results(self):

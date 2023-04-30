@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+
+cloudkey_user="{$}cloudkey_user"
+cloudkey_host="{$}cloudkey_host"
+sshid="{$}sshid"
+backup_dest="{$}backup_dest"
+
+remote="$cloudkey_user@$cloudkey_host"
+
+scp -i "$sshid" -r "${remote}:/srv/unifi/data/backup/autobackup" "${backup_dest}/unifi-controller"
+scp -i "$sshid" -r "${remote}:/etc/unifi-protect/backups" "${backup_dest}/unifi-protect"

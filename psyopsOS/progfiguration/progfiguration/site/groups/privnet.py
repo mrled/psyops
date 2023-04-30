@@ -52,11 +52,20 @@ group = Bunch(
         pullbackup_email={
             "me_micahrl_com_password": AgeSecretReference("mrled_fastmail_password"),
             "role_dir": Path("/psyopsos-data/roles/pullbackup_email"),
-            "sshkey_path": RoleResultReference("pullbackup", "sshkey_path"),
             "capthook_hooksdir": RoleResultReference("capthook", "hooksdir"),
             "capthook_user": RoleResultReference("capthook", "username"),
             "job_suffix": "mrled_fastmail",
             "pullbackup_user": RoleResultReference("pullbackup", "username"),
+        },
+        pullbackup_unifi={
+            "role_dir": Path("/psyopsos-data/roles/pullbackup_email"),
+            "capthook_hooksdir": RoleResultReference("capthook", "hooksdir"),
+            "capthook_user": RoleResultReference("capthook", "username"),
+            "job_suffix": "cloudkey",
+            "pullbackup_user": RoleResultReference("pullbackup", "username"),
+            "cloudkey_hostname": "unifi.home.micahrl.com",
+            "cloudkey_pubkey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM2LuwS1ESwK8pK+hG8nx0nXGgClD3WrZzls2oxH8W6H",
+            "cloudkey_user": "mrladmin",
         },
     ),
 )

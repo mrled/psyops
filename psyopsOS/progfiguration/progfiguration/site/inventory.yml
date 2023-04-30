@@ -48,6 +48,7 @@ functionRoleMap:
     - acmeupdater_synology
     - pullbackup
     - pullbackup_email
+    - pullbackup_unifi
 
 nodeSettings:
   # The location for the age key on each node

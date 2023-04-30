@@ -31,7 +31,7 @@ conflict_resolution = "b wins"
 # A storage references actual data on a remote server or on the local disk.
 # Similar to repositories in OfflineIMAP.
 type = "filesystem"
-path = "{$}backuproot/vsyncdir/personal_contacts_local/"
+path = "{$}backuproot/vdirsyncer/personal_contacts_local/"
 fileext = ".vcf"
 
 [storage personal_contacts_remote]
@@ -55,7 +55,7 @@ conflict_resolution = "b wins"
 
 [storage personal_calendar_local]
 type = "filesystem"
-path = "{$}backuproot/vsyncdir/personal_calendar_local/"
+path = "{$}backuproot/vdirsyncer/personal_calendar_local/"
 fileext = ".ics"
 
 [storage personal_calendar_remote]
