@@ -19,3 +19,4 @@
     * Maybe with an argument like `with pause_syslog_logging(logfile="/var/log/syslog.paused"): ...`
       so that it can write log lines there for troubleshooting.
     * Alternative: don't log to syslog by default, just log to a file in /var/log directly and avoid this
+* Research using Mozilla SOPS instead of my own custom thing
