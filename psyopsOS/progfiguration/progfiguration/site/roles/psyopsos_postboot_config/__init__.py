@@ -1,6 +1,7 @@
 """Configure Alpine after its boot scripts"""
 
 from dataclasses import dataclass
+from pathlib import Path
 import re
 import shutil
 import time
@@ -119,6 +120,39 @@ __psyopsOS_append_path "$HOME/.local/bin"
 class Role(ProgfigurationRole):
 
     timezone: str
+
+    # TODO: Keep these in the secret store instead of saving them to psyops-secret mount
+    psynet_host_crt: Path = Path("/mnt/psyops-secret/mount/psynet.host.crt")
+    psynet_host_key: Path = Path("/mnt/psyops-secret/mount/psynet.host.key")
+
+    def configure_psynet(self):
+        """Configure the psynet overlay network"""
+
+        if not self.psynet_host_crt.exists() or not self.psynet_host_key.exists():
+            logger.error(f"psynet host key and/or cert does not exist, skipping psynet configuration")
+            return
+
+        # Take advantage of built-in rc script functionality
+        # Copying the rc script to nebula.psynet will caust it to look for /etc/nebula/psynet.yml automatically
+        # It's ok to do this even if the psynet config file doesn't exist, it just won't start.
+        self.localhost.cp("/etc/init.d/nebula", "/etc/init.d/nebula.psynet", "root", "root", 0o0755)
+
+        self.localhost.makedirs("/etc/nebula", "nebula", "nebula", 0o0700)
+        self.localhost.cp(self.psynet_host_crt, "/etc/nebula/psynet.host.crt", "nebula", "nebula", 0o0600)
+        self.localhost.cp(self.psynet_host_key, "/etc/nebula/psynet.host.key", "nebula", "nebula", 0o0600)
+        self.localhost.cp(self.role_file("psynet.yaml"), "/etc/nebula/psynet.yaml", "nebula", "nebula", 0o0600)
+        self.localhost.cp(
+            self.role_file("psynet.ca.crt"),
+            "/etc/nebula/psynet.ca.crt",
+            "nebula",
+            "nebula",
+            0o0600,
+        )
+
+        run("modprobe tun")
+        run("rc-service nebula.psynet start")
+        # We do this even though the OS is stateless so that rc-status knows it should be running
+        run("rc-update add nebula.psynet default")
 
     def apply(self):
 

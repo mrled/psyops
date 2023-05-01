@@ -66,10 +66,6 @@ psyops_overlay_install root root 0644 etc/conf.d/sshd
 psyops_overlay_install root root 0644 etc/issue
 psyops_overlay_install root root 0644 etc/motd
 
-install -o root -g root -m 0700 -d "$tmp"/etc/nebula
-psyops_overlay_install root root 0600 etc/nebula/psynet.yml
-psyops_overlay_install root root 0600 etc/nebula/psynet.ca.crt
-
 install -o root -g root -m 0755 -d "$tmp"/etc/psyopsOS "$tmp"/etc/psyopsOS/status
 
 # Could generate the date here: "$(date +%Y-%m-%dT%H:%M:%S%z)"

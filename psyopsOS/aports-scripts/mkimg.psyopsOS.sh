@@ -4,7 +4,10 @@ if test -z "$PSYOPSOS_OVERLAY"; then
 fi
 
 apkworld="$PSYOPSOS_OVERLAY"/etc/apk/world
-apklist="$(cat "$apkworld")"
+apkavail="$PSYOPSOS_OVERLAY"/etc/apk/available
+apklist=
+apklist="$apklist $(cat "$apkworld")"
+apklist="$apklist $(cat "$apkavail")"
 
 profile_psyopsOS() {
 	profile_standard

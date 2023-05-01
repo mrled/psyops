@@ -54,19 +54,6 @@ if test -e "$PSYOPSOS_INTERFACES"; then
 	setup-interfaces -i < "$PSYOPSOS_INTERFACES"
 fi
 
-# TODO: move this into progfiguration
-do_start_nebula=
-if test -e "$PSYOPSOS_PSYNET_HOST_KEY"; then
-	install -o root -g root -m 0600 "$PSYOPSOS_PSYNET_HOST_CRT" /etc/nebula/psynet.host.crt
-	install -o root -g root -m 0600 "$PSYOPSOS_PSYNET_HOST_KEY" /etc/nebula/psynet.host.key
-	chown -R nebula:nebula /etc/nebula
-	do_start_nebula="yes"
-fi
-
-# Take advantage of built-in rc script functionality
-# Copying the rc script to nebula.psynet will caust it to look for /etc/nebula/psynet.yml automatically
-# It's ok to do this even if the psynet config file doesn't exist, it just won't start.
-cp /etc/init.d/nebula /etc/init.d/nebula.psynet
 
 # We want to 'rc-service hostname restart',
 # but that (sometimes?) causes syslog to restart,
@@ -86,17 +73,6 @@ rc-service networking start
 rc-service ntpd start
 rc-service sshd restart
 echo "Finished configuring network, mactab, ssh, etc"
-
-modprobe tun
-if test "$do_start_nebula"; then
-	rc-service nebula.psynet start
-	echo "Started nebula.psynet service"
-	# We do this even though the OS is stateless so that rc-status knows it should be running
-	rc-update add nebula.psynet default
-	echo "Added nebula.psynet to default runlevel"
-else
-	echo "psynet not configured on secrets volume, will not start nebula.psynet service"
-fi
 
 
 # TODO: add psyopsOS repo to apk first
