@@ -59,5 +59,11 @@ group = Bunch(
                 "default": "psyops@micahrl.com",
             },
         },
+        syslog_client={
+            "client_syslogd": "busybox",
+            # TODO: do this over Nebula
+            "syslog_server": "agassiz.home.micahrl.com",
+            "syslog_port": 514,
+        },
     ),
 )
