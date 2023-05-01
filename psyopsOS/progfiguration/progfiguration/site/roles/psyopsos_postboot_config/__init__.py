@@ -121,7 +121,7 @@ class Role(ProgfigurationRole):
     psynet_host_crt: Path = Path("/mnt/psyops-secret/mount/psynet.host.crt")
     psynet_host_key: Path = Path("/mnt/psyops-secret/mount/psynet.host.key")
 
-    remote_syslog_server: str
+    remote_syslog_host: str
     remote_syslog_port: int
     syslogd: str
 
@@ -159,7 +159,7 @@ class Role(ProgfigurationRole):
             "/etc/conf.d/syslog",
             textwrap.dedent(
                 f"""\
-                SYSLOGD_OPTS="-t -L -R {self.remote_syslog_server}:{self.remote_syslog_port}"
+                SYSLOGD_OPTS="-t -L -R {self.remote_syslog_host}:{self.remote_syslog_port}"
                 """
             ),
             owner="root",
