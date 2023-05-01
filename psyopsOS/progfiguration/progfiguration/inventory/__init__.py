@@ -225,7 +225,7 @@ class Inventory:
             try:
                 role = role_cls(name=rolename, localhost=self.localhost, inventory=self, rolepkg=rolepkg, **roleargs)
             except Exception as exc:
-                msg = f"Error instantiating role {rolename} for node {nodename}."
+                msg = f"Error instantiating role {rolename} for node {nodename}: {exc}"
                 if isinstance(exc, AttributeError) and exc.args[0].startswith("can't set attribute"):
                     msg += " This might happen if you have two properties with the same name (perhaps one as a function with a @property decorator)."
                 raise Exception(msg) from exc
