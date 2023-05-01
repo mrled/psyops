@@ -1,6 +1,6 @@
-# -*- mode: syslog-n -*-
+# -*- mode: syslog-ng -*-
 
-@version:3.30
+@version:3.36
 @include "scl.conf"
 
 # syslog-ng configuration file.
@@ -22,6 +22,7 @@ options {
     # syslog-ng blocks on DNS queries, so we just turn them off
     use_dns (no);
     use_fqdn (no);
+    dns_cache (no);
 
     # Create destination directories if missing
     create_dirs (yes);
@@ -44,7 +45,8 @@ options {
 #
 
 # Local system logs
-source s_sys { system(); internal(); };
+# We are using syslog-ng only for network logging, and the default busybox syslogd for local logging
+# source s_sys { system(); internal(); };
 
 # Remote system logs, standard syslog ports on TCP/UDP
 source s_netsys  { udp(port({$}syslog_port)); tcp(port({$}syslog_port)); };
@@ -59,7 +61,7 @@ source s_nettemp { udp(port({$}nettemp_port)); tcp(port({$}nettemp_port)); };
 #
 # Destinations
 #
-destination d_local_messages { file("/var/log/messages"); };
+# destination d_local_messages { file("/var/log/messages"); };
 destination d_logdir_syslog { file("{$}logdir/$HOST.syslog.log.$R_YEAR$R_MONTH$R_DAY"); };
 destination d_logdir_netcons { file("{$}logdir/$HOST.netconsole.log.$R_YEAR$R_MONTH$R_DAY"); };
 destination d_logdir_nettemp { file("{$}logdir/$HOST.temporal.log.$R_YEAR$R_MONTH$R_DAY"); };
@@ -73,7 +75,7 @@ destination d_logdir_nettemp { file("{$}logdir/$HOST.temporal.log.$R_YEAR$R_MONT
 #
 # Logs
 #
-log { source(s_sys); destination(d_local_messages); destination(d_logdir_syslog); };
+# log { source(s_sys); destination(d_local_messages); destination(d_logdir_syslog); };
 log { source(s_netsys); destination(d_logdir_syslog); };
 log { source(s_netcons); destination(d_logdir_netcons); };
 log { source(s_nettemp); destination(d_logdir_nettemp); };

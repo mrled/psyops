@@ -21,7 +21,7 @@ group = Bunch(
         psyopsos_postboot_config={
             "timezone": "US/Central",
             "syslogd": "busybox",
-            "remote_syslog_host": "agassiz.psynet.micahrl.com",
+            "remote_syslog_host": "syslog.psynet.micahrl.com",
             "remote_syslog_port": 514,
         },
         blockdevparty={

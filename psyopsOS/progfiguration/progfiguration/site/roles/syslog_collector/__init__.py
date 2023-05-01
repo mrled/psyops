@@ -53,12 +53,9 @@ class Role(ProgfigurationRole):
             dirmode=0o755,
         )
 
-        # TODO: this generates a lot of junk when progfiguration tries to log to syslog it's been stopped
-        run("rc-service syslog stop")
         run("rc-service syslog-ng start")
         run("rc-update add syslog-ng default")
-        run("rc-update del syslog boot", check=False)  # exits with 1 if it's not in boot runlevel
-        run("rc-service syslog reload")  # Ensures config is loaded if we changed it
+        run("rc-service syslog-ng reload")  # Ensures config is loaded if we changed it
 
     def results(self):
         return {

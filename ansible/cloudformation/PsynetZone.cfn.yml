@@ -73,6 +73,16 @@ Resources:
           Type: A
           TTL: "60"
           ResourceRecords: ["10.10.10.5"]
+        - Name: newjutland.psynet.micahrl.com.
+          Type: A
+          TTL: "60"
+          ResourceRecords: ["10.10.10.6"]
+
+        # Services
+        - Name: syslog.psynet.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["agassiz.psynet.micahrl.com."]
 
   # # A new group with permission to modify records in the HomeZone
   # # For use with Let's Encrypt / ACME
