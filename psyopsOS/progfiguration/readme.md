@@ -23,7 +23,7 @@ There is a separate package, `psyopsOS-base`, for stuff that should be psyopsOS-
 
 progfiguration installs these commands:
 
-- `psyopsOS-progfiguration`: Run progfiguration against localhost, and perform some ancillary tasks like per-host encryption
+- `progfiguration`: Run progfiguration against localhost, and perform some ancillary tasks like per-host encryption
 
 ## Adding the psyopsOS repo and installing progfiguration on a host that isn't configured properly
 

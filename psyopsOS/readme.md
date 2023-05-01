@@ -50,7 +50,7 @@ You may wish to re-run the progfiguration if that has changed since boot:
 
 ```sh
 . /etc/psyopsOS/psyops-secret.env
-psyopsOS-progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME"
+progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME"
 ```
 
 ### Upgrading everything at once
@@ -157,23 +157,3 @@ This may be helpful for errors that you can't otherwise resolve.
 Run the command `invoke mkimage --whatif` and read the output at the end.
 It will show a command to launch the Docker container interactively,
 and a command to run once inside the Docker container.
-
-## To do
-
-- Make an update mechanism
-    - Service that checks for OS updates once/day or something, maybe via similar method like `psyops.micahrl.com/os-update.json`
-    - If there's an update, download it to a temp dir, and overwrite the USB drive that contains the OS with it. I hope u tested it!
-    - In a real environment, you'd want an atomic update, but I'm not going to make that here.
-    - In a real environment, you'd want the ability to roll back too.
-- Private networking
-    - Wireguard? This would be really nice. Would require a maintained server :/
-    - Tor for management from anywhere. Punch thru NATs or whatever, no worry about a wireguard server. Need to keep a list of all public keys for all nodes, same way I do now for age keys.
-    - A Tor for all networking mode. Could implement as a role in progfiguration, but better to do as a different flavor of ISO, so that it is up before anything uses the network at all.
-    - Add a module to progfiguration that can change Nebula firewall rules. Nodes come up locked down to only allow ICMP from anywhere and psynet clients full access, but if we wanted to bring up some kind of cluster that talks to each other, we could add firewall rules in progfiguration that permit this.
-- Surface system health quickly
-    - Bash prompt shows whether initial boot completed successfully?
-    - Bash prompt shows whether latest run of psyopsOS-progfiguration completed successfully?
-    - An HTTP endpoint shows system health?
-- Misc
-    - Use `AuthorizedKeysCommand` as described [in this GH issue](https://github.com/coreos/afterburn/issues/157) to support an `authorized_keys.d` directory (maybe named so as not to conflict with a possible future support of this, like `psyopsos_authorized_keys.d`.) This would make psyopsOS-base's installation of root SSH keys easier and less error prone.
-    - Run a daemon to share non-secret info like ISO generation time, installed version of important packages, postboot log.

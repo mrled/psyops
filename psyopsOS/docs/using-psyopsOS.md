@@ -5,4 +5,4 @@
     - `apk update`
     - `apk upgrade progfiguration`
     - `. /etc/psyopsOS/psyops-secret.env`
-    - `psyopsOS-progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME"`
+    - `progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME"`
