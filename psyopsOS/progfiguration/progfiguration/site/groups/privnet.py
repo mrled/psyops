@@ -58,7 +58,7 @@ group = Bunch(
             "pullbackup_user": RoleResultReference("pullbackup", "username"),
         },
         pullbackup_unifi={
-            "role_dir": Path("/psyopsos-data/roles/pullbackup_email"),
+            "role_dir": Path("/psyopsos-data/roles/pullbackup_unifi"),
             "capthook_hooksdir": RoleResultReference("capthook", "hooksdir"),
             "capthook_user": RoleResultReference("capthook", "username"),
             "job_suffix": "cloudkey",
