@@ -1,0 +1,86 @@
+# -*- mode: syslog-n -*-
+
+@version:3.30
+@include "scl.conf"
+
+# syslog-ng configuration file.
+# See syslog-ng(8) and syslog-ng.conf(5) for more information.
+# Note: it also sources additional configuration files (*.conf)
+#       located in /etc/syslog-ng/conf.d/
+
+
+#
+# Options
+#
+options {
+    flush_lines (0);
+    time_reopen (10);
+    log_fifo_size (1000);
+    chain_hostnames (off);
+    keep_hostname (yes);
+
+    # syslog-ng blocks on DNS queries, so we just turn them off
+    use_dns (no);
+    use_fqdn (no);
+
+    # Create destination directories if missing
+    create_dirs (yes);
+
+    # Don't log MARK Lines
+    mark_freq(0);
+    # Log stats lines once per day
+    stats_freq(86400);
+};
+
+#
+# Templates
+#
+# template t_file {
+#         template("${YEAR}-${MONTH}-${DAY} ${HOUR}:${MIN}:${SEC} ${LEVEL} ${MSGHDR}${MSG}\n");
+# };
+
+#
+# Sources
+#
+
+# Local system logs
+source s_sys { system(); internal(); };
+
+# Remote system logs, standard syslog ports on TCP/UDP
+source s_netsys  { udp(port({$}syslog_port)); tcp(port({$}syslog_port)); };
+
+# Remote netconsole logs, Linux kernel messages over the network
+source s_netcons { udp(port({$}netcons_port)); tcp(port({$}netcons_port)); };
+
+# Remote temporal logs, stuff that might log often and be archived for only a short time
+source s_nettemp { udp(port({$}nettemp_port)); tcp(port({$}nettemp_port)); };
+
+
+#
+# Destinations
+#
+destination d_local_messages { file("/var/log/messages"); };
+destination d_logdir_syslog { file("{$}logdir/$HOST.syslog.log.$R_YEAR$R_MONTH$R_DAY"); };
+destination d_logdir_netcons { file("{$}logdir/$HOST.netconsole.log.$R_YEAR$R_MONTH$R_DAY"); };
+destination d_logdir_nettemp { file("{$}logdir/$HOST.temporal.log.$R_YEAR$R_MONTH$R_DAY"); };
+
+
+#
+# Filters
+#
+# ...
+
+#
+# Logs
+#
+log { source(s_sys); destination(d_local_messages); destination(d_logdir_syslog); };
+log { source(s_netsys); destination(d_logdir_syslog); };
+log { source(s_netcons); destination(d_logdir_netcons); };
+log { source(s_nettemp); destination(d_logdir_nettemp); };
+
+
+#
+# Other
+#
+# Source additional configuration files (.conf extension only)
+@include "/etc/syslog-ng/conf.d/*.conf"

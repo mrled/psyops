@@ -67,5 +67,8 @@ group = Bunch(
             "cloudkey_pubkey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM2LuwS1ESwK8pK+hG8nx0nXGgClD3WrZzls2oxH8W6H",
             "cloudkey_user": "mrladmin",
         },
+        syslog_collector={
+            "logdir": Path("/psyopsos-data/roles/syslog_collector/syslog"),
+        },
     ),
 )

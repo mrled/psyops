@@ -43,6 +43,7 @@ functionRoleMap:
     - emailfwd
     - blockdevparty
     - datadisk_v2
+    - syslog_collector
     - capthook
     - acmeupdater_base
     - acmeupdater_synology
