@@ -54,6 +54,7 @@ if test -e "$PSYOPSOS_INTERFACES"; then
 	setup-interfaces -i < "$PSYOPSOS_INTERFACES"
 fi
 
+# TODO: move this into progfiguration
 do_start_nebula=
 if test -e "$PSYOPSOS_PSYNET_HOST_KEY"; then
 	install -o root -g root -m 0600 "$PSYOPSOS_PSYNET_HOST_CRT" /etc/nebula/psynet.host.crt
@@ -90,11 +91,15 @@ modprobe tun
 if test "$do_start_nebula"; then
 	rc-service nebula.psynet start
 	echo "Started nebula.psynet service"
+	# We do this even though the OS is stateless so that rc-status knows it should be running
+	rc-update add nebula.psynet default
+	echo "Added nebula.psynet to default runlevel"
 else
 	echo "psynet not configured on secrets volume, will not start nebula.psynet service"
 fi
 
 
+# TODO: add psyopsOS repo to apk first
 progfig_old="$(apk list -I progfiguration)"
 echo "Preinstalled version of progfiguration: $progfig_old"
 echo "Upgrading progfiguration..."
