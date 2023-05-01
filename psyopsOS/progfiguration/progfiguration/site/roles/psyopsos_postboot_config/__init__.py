@@ -60,10 +60,12 @@ def set_timezone(timezone: str):
 def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
     """Set /etc/apk/repositories
 
-    Note that by default ONLY the cdrom repo exists, so we have to add even the regular main repo.
+    Note that by default ONLY the cdrom repo exists,
+    so we have to add even the regular main repo.
+
+    The psyopsOS repo is also added by 000-psyopsOS-postboot.start.
+    Updating it here requires updating it there too.
     """
-    apk_repositories_old = localhost.get_file_contents("/etc/apk/repositories")
-    apk_repositories_new = apk_repositories_old
     add_repos = [
         f"https://dl-cdn.alpinelinux.org/alpine/{localhost.alpine_release_v}/main",
         f"https://dl-cdn.alpinelinux.org/alpine/{localhost.alpine_release_v}/community",
@@ -72,14 +74,7 @@ def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
         "@edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing",
         "https://psyops.micahrl.com/apk/psyopsOS",
     ]
-    for repo in add_repos:
-        if repo not in apk_repositories_old:
-            if apk_repositories_new[-1] != "\n":
-                apk_repositories_new += "\n"
-            apk_repositories_new += f"{repo}"
-    if apk_repositories_new[-1] != "\n":
-        apk_repositories_new += "\n"
-    localhost.set_file_contents("/etc/apk/repositories", apk_repositories_new, "root", "root", 0o0644)
+    localhost.linesinfile("/etc/apk/repositories", add_repos)
     result = run("apk update", check=False, log_output=True)
     if result.returncode != 0:
         logger.info(f"apk update failed with code {result.returncode}")

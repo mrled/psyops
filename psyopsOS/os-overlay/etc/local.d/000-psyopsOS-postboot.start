@@ -75,9 +75,15 @@ rc-service sshd restart
 echo "Finished configuring network, mactab, ssh, etc"
 
 
-# TODO: add psyopsOS repo to apk first
 progfig_old="$(apk list -I progfiguration)"
 echo "Preinstalled version of progfiguration: $progfig_old"
+psyopsos_repo="https://psyops.micahrl.com/apk/psyopsOS"
+if ! grep -q "$psyopsos_repo" /etc/apk/repositories; then
+	echo "Adding psyopsOS repo to apk"
+	echo "$psyopsos_repo" >> /etc/apk/repositories
+else
+	echo "psyopsOS repo already in apk"
+fi
 echo "Upgrading progfiguration..."
 apk upgrade progfiguration
 progfig_new="$(apk list -I progfiguration)"
@@ -85,7 +91,7 @@ echo "Version of progfiguration after running 'apk upgrade': $progfig_new"
 
 
 echo "Starting progfiguration asynchronously, will continue in background..."
-psyopsOS-progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME" &
+progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME" &
 
 date +'%Y%m%d-%H%M%S %z' > /etc/psyopsOS/status/000-postboot.finished
 echo "Finished postboot"
