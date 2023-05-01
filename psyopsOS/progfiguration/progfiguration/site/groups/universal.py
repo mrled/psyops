@@ -20,6 +20,9 @@ group = Bunch(
     roles=Bunch(
         psyopsos_postboot_config={
             "timezone": "US/Central",
+            "syslogd": "busybox",
+            "remote_syslog_host": "agassiz.psynet.micahrl.com",
+            "remote_syslog_port": 514,
         },
         blockdevparty={
             # For the simple case of a single disk that is wholly dedicated to psyopsos_datadiskvg-datadisklv,
@@ -58,12 +61,6 @@ group = Bunch(
                 # The psyops inbox, for everything else
                 "default": "psyops@micahrl.com",
             },
-        },
-        syslog_client={
-            "client_syslogd": "busybox",
-            # TODO: do this over Nebula
-            "syslog_server": "agassiz.home.micahrl.com",
-            "syslog_port": 514,
         },
     ),
 )

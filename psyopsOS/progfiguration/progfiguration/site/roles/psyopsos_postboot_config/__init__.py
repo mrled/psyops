@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 import shutil
+import textwrap
 import time
 from typing import List
 
@@ -120,6 +121,10 @@ class Role(ProgfigurationRole):
     psynet_host_crt: Path = Path("/mnt/psyops-secret/mount/psynet.host.crt")
     psynet_host_key: Path = Path("/mnt/psyops-secret/mount/psynet.host.key")
 
+    remote_syslog_server: str
+    remote_syslog_port: int
+    syslogd: str
+
     def configure_psynet(self):
         """Configure the psynet overlay network"""
 
@@ -149,9 +154,32 @@ class Role(ProgfigurationRole):
         # We do this even though the OS is stateless so that rc-status knows it should be running
         run("rc-update add nebula.psynet default")
 
+    def configure_busybox_syslogd(self):
+        self.localhost.set_file_contents(
+            "/etc/conf.d/syslog",
+            textwrap.dedent(
+                f"""\
+                SYSLOGD_OPTS="-t -L -R {self.remote_syslog_server}:{self.remote_syslog_port}"
+                """
+            ),
+            owner="root",
+            group="root",
+            mode=0o644,
+        )
+
+        # TODO: this generates a lot of junk when progfiguration tries to log to syslog it's been stopped
+        run("rc-service syslog restart")
+
     def apply(self):
 
+        self.configure_psynet()
+
         set_timezone(self.timezone)
+
+        if self.syslogd == "busybox":
+            self.configure_busybox_syslogd()
+        else:
+            raise NotImplementedError(f"Unknown syslog client type {self.client_syslogd}")
 
         set_apk_repositories(self.localhost)
 
