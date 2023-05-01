@@ -140,7 +140,7 @@ class Role(ProgfigurationRole):
         self.localhost.makedirs("/etc/nebula", "nebula", "nebula", 0o0700)
         self.localhost.cp(self.psynet_host_crt, "/etc/nebula/psynet.host.crt", "nebula", "nebula", 0o0600)
         self.localhost.cp(self.psynet_host_key, "/etc/nebula/psynet.host.key", "nebula", "nebula", 0o0600)
-        self.localhost.cp(self.role_file("psynet.yaml"), "/etc/nebula/psynet.yaml", "nebula", "nebula", 0o0600)
+        self.localhost.cp(self.role_file("psynet.yml"), "/etc/nebula/psynet.yml", "nebula", "nebula", 0o0600)
         self.localhost.cp(
             self.role_file("psynet.ca.crt"),
             "/etc/nebula/psynet.ca.crt",
