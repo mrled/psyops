@@ -22,13 +22,13 @@ nodeFunctionMap:
 
 functionRoleMap:
   kubernasty:
-    - alpine_postboot_config
+    - psyopsos_postboot_config
     - emailfwd
     - blockdevparty
     - datadisk_v2
     - k3s
   synergycontroller:
-    - alpine_postboot_config
+    - psyopsos_postboot_config
     - emailfwd
     # We need datadisk bc we need Flatpak for Synergy, and Flatpak is too disk hungry for RAM
     # Using the old version that doesn't have partitioning/encryption support
@@ -37,9 +37,9 @@ functionRoleMap:
   # TODO: fall back to this role so that we don't have to place new nodes in roleFunctionMap
   # and they will still come up.
   default:
-    - alpine_postboot_config
+    - psyopsos_postboot_config
   privnet:
-    - alpine_postboot_config
+    - psyopsos_postboot_config
     - emailfwd
     - blockdevparty
     - datadisk_v2

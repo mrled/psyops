@@ -18,7 +18,7 @@ from progfiguration.progfigtypes import Bunch
 group = Bunch(
     testattribute="test value",
     roles=Bunch(
-        alpine_postboot_config={
+        psyopsos_postboot_config={
             "timezone": "US/Central",
         },
         blockdevparty={
