@@ -106,7 +106,7 @@ class Role(ProgfigurationRole):
                 "username": self.pullbackup_user,
                 "scriptpath": pullbackup_email_script,
             },
-            owner=self.pullbackup_user,
+            owner=self.capthook_user,
             mode=0o700,
         )
 

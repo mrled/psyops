@@ -86,7 +86,7 @@ class Role(ProgfigurationRole):
                 "user": self.pullbackup_user,
                 "script": pullbackup_unifi_script,
             },
-            owner=self.pullbackup_user,
+            owner=self.capthook_user,
             mode=0o700,
         )
 
