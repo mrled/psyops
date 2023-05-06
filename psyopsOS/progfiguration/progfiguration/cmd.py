@@ -98,15 +98,22 @@ def run(cmd: str | list, print_output=True, log_output=False, check=True, *args,
     stderrbuf.seek(0)
     process.stderr = stderrbuf
 
-    # Note that .getvalue() is not (alaways?) available on normal Popen stdout/stderr,
-    # but it is available on our StringIO objects.
-    # .getvalue() doesn't change the seek position.
-    logger.info(f"Command completed with return code {process.returncode}: {cmd}")
-    if log_output:
+    if check and process.returncode != 0:
+        msg = f"Command failed with exit code {process.returncode}: {cmd}"
+        logger.error(msg)
         logger.info(f"stdout: {process.stdout.getvalue()}")
         logger.info(f"stderr: {process.stderr.getvalue()}")
+        raise Exception(msg)
 
-    if check and process.returncode != 0:
-        raise Exception(f"Command failed with exit code {process.returncode}: {cmd}")
+    logger.info(f"Command completed with return code {process.returncode}: {cmd}")
+
+    # The user may have already seen the output in std out/err,
+    # but logging it here also logs it to syslog (if configured).
+    if log_output:
+        # Note that .getvalue() is not (always?) available on normal Popen stdout/stderr,
+        # but it is available on our StringIO objects.
+        # .getvalue() doesn't change the seek position.
+        logger.info(f"stdout: {process.stdout.getvalue()}")
+        logger.info(f"stderr: {process.stderr.getvalue()}")
 
     return process
