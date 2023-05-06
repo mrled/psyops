@@ -157,6 +157,17 @@ class Role(ProgfigurationRole):
 
         install_synergy()
 
+        run("apk add bluez")
+        run("rc-servie bluetooth start")
+        run("rc-update add bluetooth")
+        # Pairing:
+        # <https://wiki.archlinux.org/title/Bluetooth#Pairing>
+        # bluetoothctl
+        # scan on
+        # pair <MAC>
+        # trust <MAC>
+        # connect <MAC>
+
         try:
             subprocess.run(["id", self.user], check=True, capture_output=True)
         except subprocess.CalledProcessError:

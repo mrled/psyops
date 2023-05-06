@@ -4,6 +4,7 @@ command_user="{$}user:{$}group"
 
 HOMEDIR="{$}homedir"
 SYNERGY_DEBUG="DEBUG"
+logfile="/var/log/synergys.log"
 
 export DISPLAY=:0.0
 

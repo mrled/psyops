@@ -12,10 +12,16 @@ command="/usr/bin/flatpak"
 # otherwise it'll just run the Synergy desktop application.
 # Then after the package name of com.symless.Synergy,
 # you can pass arguments to the --command.
+#
+# Also note that we have to map host paths to in-flatpak paths,
+# and Synergy only sees the ones in flatpak.
+# If $logfile isn't set, we mount /dev/null to /var/log/synergys.log,
+# and synergy always logs there.
 command_args="
         run
         --filesystem=$HOMEDIR/.synergy
         --filesystem=$HOMEDIR/synergy.conf
+        --filesystem="${logfile:-/dev/null}:/var/log/synergys.log"
         --command=synergys
         com.symless.Synergy
         --enable-crypto
@@ -23,6 +29,7 @@ command_args="
         --no-daemon
         --debug $SYNERGY_DEBUG
         --config $HOMEDIR/synergy.conf
+        --log "/var/log/synergys.log"
 "
 
 command_background=true
