@@ -459,56 +459,44 @@ Resources:
           Type: A
           TTL: 60
           ResourceRecords: ["192.168.1.158"]
+        - Name: agassiz.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.115"]
 
         # Services
         - Name: syslog.home.micahrl.com.
           Type: CNAME
           TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: cicd.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: cicd-lb.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: cicd-whoami.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: git.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: drone.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
+          ResourceRecords: ["agassiz.home.micahrl.com."]
         - Name: archivebox.home.micahrl.com.
           Type: CNAME
           TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: jenkins.home.micahrl.com.
+          ResourceRecords: ["agassiz.home.micahrl.com."]
+        - Name: homeswarm-whoami.home.micahrl.com.
           Type: CNAME
           TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: status.home.micahrl.com.
+          ResourceRecords: ["agassiz.home.micahrl.com."]
+        - Name: homeswarm-traefik.home.micahrl.com.
           Type: CNAME
           TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: files.home.micahrl.com.
+          ResourceRecords: ["agassiz.home.micahrl.com."]
+        - Name: homeswarm-pihole.home.micahrl.com.
           Type: CNAME
           TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: registry.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
-        - Name: registryauth.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kalix.home.micahrl.com."]
+          ResourceRecords: ["agassiz.home.micahrl.com."]
+        # - Name: files.home.micahrl.com.
+        #   Type: CNAME
+        #   TTL: 60
+        #   ResourceRecords: ["kalix.home.micahrl.com."]
+        # - Name: registry.home.micahrl.com.
+        #   Type: CNAME
+        #   TTL: 60
+        #   ResourceRecords: ["kalix.home.micahrl.com."]
+        # - Name: registryauth.home.micahrl.com.
+        #   Type: CNAME
+        #   TTL: 60
+        #   ResourceRecords: ["kalix.home.micahrl.com."]
 
   # A new group with permission to modify records in the OriginZone
   # For use with Let's Encrypt / ACME
