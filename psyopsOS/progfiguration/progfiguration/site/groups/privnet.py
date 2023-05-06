@@ -2,27 +2,26 @@ from pathlib import Path
 
 from progfiguration.age import AgeSecretReference
 from progfiguration.inventory.roles import RoleResultReference
-from progfiguration.localhost.disks import (
-    FilesystemSpec,
-    LvmLvSpec,
-    PartitionSpec,
-    WholeDiskSpec,
-)
+from progfiguration.localhost.disks import FilesystemSpec, LvmLvSpec, PartitionSpec
 from progfiguration.progfigtypes import Bunch
+from progfiguration.site.sitelib import siteglobals
 
 
 group = Bunch(
     roles=Bunch(
         blockdevparty={
-            "wholedisks": [
-                # Currently unused
-                WholeDiskSpec("/dev/nvme0n1", None, None, False),
-            ],
+            # WARNING: this uses the older style of encrypting the partition,
+            # rather than the newer style of encrypting the whole disk first.
+            # The newer style is better because we can't wipe disks without it,
+            # but switching is disruptive.
+            "wholedisks": [],
             "partitions": [
                 PartitionSpec("/dev/sda", "psyopsosdata", "0%", "100%", volgroup="psyopsos_datadiskvg", encrypt=True),
+                PartitionSpec("/dev/nvme0n1", "archivebox", "0%", "100%", volgroup="archiveboxvg", encrypt=True),
             ],
             "volumes": [
                 LvmLvSpec("datadisklv", "psyopsos_datadiskvg", r"100%FREE", FilesystemSpec("ext4", "psyopsos_data")),
+                LvmLvSpec("archiveboxlv", "archiveboxvg", r"100%FREE", FilesystemSpec("ext4", "archivebox")),
             ],
         },
         acmeupdater_base={
@@ -69,6 +68,22 @@ group = Bunch(
         },
         syslog_collector={
             "logdir": Path("/psyopsos-data/roles/syslog_collector/syslog"),
+        },
+        homeswarm={
+            "roledir": Path("/mnt/homeswarm"),
+            "balancer_domain": "homeswarm-traefik.home.micahrl.com",
+            "acme_email": "psyops@micahrl.com",
+            "acme_aws_region": "us-east-2",
+            "acme_aws_zone": siteglobals.home_domain.zone,
+            "acme_aws_access_key_id": AgeSecretReference("acmeupdater_aws_access_key_id"),
+            "acme_aws_secret_access_key": AgeSecretReference("acmeupdater_aws_secret_access_key"),
+            "whoami_domain": "homeswarm-whoami.home.micahrl.com",
+            "archivebox_domain": "archivebox.home.micahrl.com",
+            "zerossl_kid": AgeSecretReference("zerossl_kid"),
+            "zerossl_hmac": AgeSecretReference("zerossl_hmac"),
+            "homeswarm_blockdevice": "/dev/mapper/archiveboxvg-archiveboxlv",
+            "pihole_webpassword": AgeSecretReference("homeswarm_pihole_webpassword"),
+            "pihole_domain": "homeswarm-pihole.home.micahrl.com",
         },
     ),
 )

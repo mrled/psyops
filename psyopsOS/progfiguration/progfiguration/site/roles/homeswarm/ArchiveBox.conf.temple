@@ -1,0 +1,60 @@
+# -*- mode: ini -*-
+
+# WARNING: these apply to the command, but are overridden by environment variables set in the entrypoint.
+# Some settings must be duplicated in the compose file.
+
+[SHELL_CONFIG]
+USE_COLOR = True
+
+[SERVER_CONFIG]
+SECRET_KEY = {$}django_secret_key
+
+[GENERAL_CONFIG]
+URL_BLACKLIST = "{$}url_blacklist"
+
+[ARCHIVE_METHOD_TOGGLES]
+
+# Chrome changed stuff and now this isn't working reliably.
+# Tracked here: <https://github.com/ArchiveBox/ArchiveBox/issues/1125>
+SAVE_PDF = False
+SAVE_SCREENSHOT = False
+SAVE_DOM = False
+
+# I don't think I need both of these
+SAVE_READABILITY = True
+SAVE_MERCURY = False
+
+# This is slow, and I want to be local-only anyway
+SAVE_ARCHIVE_DOT_ORG = False
+
+[ARCHIVE_METHOD_OPTIONS]
+
+# Don't use sandboxing in Docker, it's not well supported and seems to cause problems
+# pirate says it's unnecessary in Docker anyway
+# <https://github.com/ArchiveBox/ArchiveBox/commit/8cb530230c13559e3cbb667ec0e4058cf74355d8>
+CHROME_SANDBOX = False
+
+# youtube-dl can hit this, might want to increase?
+MEDIA_MAX_SIZE = 750m
+
+# Need to just update this every so often, fucking people blocking wget, smh
+CURL_USER_AGENT = Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36
+WGET_USER_AGENT = Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36
+# We even need to set this one; headless Chrome calls itself "HeadlessChrome" and some sites even block that.
+CHROME_USER_AGENT = Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36
+
+[SEARCH_BACKEND_CONFIG]
+
+# sonic allows full text search
+SEARCH_BACKEND_ENGINE: sonic
+# This is the valid hostname in the Swarm network
+SEARCH_BACKEND_HOST_NAME: sonic
+SEARCH_BACKEND_PASSWORD: {$}archivebox_sonic_backend_password
+
+[DEPENDENCY_CONFIG]
+# This stuff is all set in the entrypoint, but it's nice to set here so that we can exec into the container.
+# If the Dockerfile ever changes the location of these things, we'll have to change this too.
+CHROME_BINARY = /usr/bin/chromium-browser
+SINGLEFILE_BINARY = /node/node_modules/.bin/single-file
+READABILITY_BINARY = /node/node_modules/.bin/readability-extractor
+MERCURY_BINARY = /node/node_modules/.bin/mercury-parser

@@ -54,6 +54,7 @@ functionRoleMap:
     - pullbackup
     - pullbackup_email
     - pullbackup_unifi
+    - homeswarm
 
 nodeSettings:
   # The location for the age key on each node

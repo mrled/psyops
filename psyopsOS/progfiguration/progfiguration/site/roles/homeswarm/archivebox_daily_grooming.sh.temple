@@ -1,0 +1,55 @@
+#!/bin/sh
+set -eu
+
+# Template variables
+user={$}user
+stackname={$}stackname
+incoming_dir={$}incoming_dir
+
+# Find the container ID
+servicename="${stackname}_archivebox"
+containerid="$(docker ps -q -f name="$servicename")"
+if ! test "$containerid"; then
+    echo "Could not find container ID!"
+    exit 1
+fi
+echo "Found archivebox container: $containerid"
+
+# If there are more than 40 chrome processes, kill the container
+if test "$(ps aux | grep chrom | wc -l)" -gt 40; then
+    echo "Killing container because there are too many chrome processes"
+    docker kill "$containerid"
+    # Wait for the container to be restarted
+    sleep 30
+fi
+
+
+# Kill any previous invocation of this script.
+# archivebox doesn't support multiple instances,
+# it should resume just fine with ONLY_NEW=False below,
+# and it has a tendency to get stuck sometimes.
+script="$(basename "$0")"
+while pgrep -u "$user" "$script" >/dev/null; do
+    echo "ERROR: Another copy of $script is already running under user '$user'. We're going to kill it first."
+    pkill -u "$user" "$script"
+    sleep 10
+done
+
+# Loop over all the files in the incoming directly and add them to the archive.
+# ONLY_NEW=False will retry any extractors that don't have outputs,
+# even if the index already contains the URL,
+# but it won't retry successful extractors.
+# This means if you're missing e.g. SingleFile but have WARC for a given URL,
+# it will retry SingleFile but will not replace WARC for that URL.
+if test -e "$incoming_dir"; then
+    for file in "$incoming_dir"/*; do
+        echo "Processing file: $file"
+        docker exec \
+            --interactive \
+            --env ONLY_NEW=False \
+            --user "$user" \
+            "$containerid" \
+            archivebox add < "$file"
+        echo "Finished processing file: $file"
+    done
+fi

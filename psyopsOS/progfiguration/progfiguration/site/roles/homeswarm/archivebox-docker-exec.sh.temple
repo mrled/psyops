@@ -1,0 +1,64 @@
+#!/bin/sh
+set -eu
+
+user={$}user
+stackname={$}stackname
+
+usage() {
+    cat <<ENDUSAGE
+Usage: $0 [archivebox options]
+Execute a command inside the archivebox container.
+* Run as the user '$user' inside the container.
+* Look for the 'archivebox' service in the stack '$stackname'.
+
+The script can be run as any user that can run docker on the host.
+
+EXAMPLES
+
+    # Non-interactively create a superuser
+    $0 archivebox manage createsuperuser --username archivist --email psyops@micahrl.com --noinput
+
+    # Interatively change the password for the superuser
+    $0 archivebox manage changepassword archivist
+
+    # Add a list of URLs from a file
+    $0 archivebox add < urls.txt
+ENDUSAGE
+}
+
+if test $# -eq 0; then
+    usage
+    exit
+else
+    case "$1" in
+        -h|--help)
+            usage
+            exit
+            ;;
+    esac
+fi
+
+# If stdin is redirected (not a terminal), then don't pass --tty to docker.
+# If we pass --tty to docker but std is redirected like 'docker exec --tty ... < file',
+# it will exit with an error 'the input device is not a TTY'.
+termarg="--tty"
+if ! test -t 0; then
+    termarg=""
+fi
+
+servicename="${stackname}_archivebox"
+containerid="$(docker ps -q -f name="$servicename")"
+
+if test -z "$containerid"; then
+    echo "ERROR: Could not find a container for the service '$servicename'"
+    exit 1
+fi
+
+# Note that this should match what we set in the compose file
+docker exec \
+    --interactive \
+    $termarg \
+    --user "$user" \
+    --env USE_COLOR=True \
+    "$containerid" \
+    "$@"

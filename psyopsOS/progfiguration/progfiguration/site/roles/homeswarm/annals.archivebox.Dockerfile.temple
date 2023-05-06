@@ -1,0 +1,22 @@
+# -*- mode: dockerfile -*-
+# Annals: an Archivebox image
+
+# Build from the dev branch
+FROM {$}archivebox_tag
+
+# Useful stuff for debugging
+RUN apt-get update -qq \
+    && apt-get install -qq -y --no-install-recommends \
+    dnsutils \
+    iproute2 \
+    iputils-ping \
+    less \
+    procps \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# More convenient when we have to exec in
+RUN chsh -s /bin/bash archivebox
+
+# Silence an error message if you don't mount a Chrome profile
+RUN mkdir -p "/.config/chromium/Crash Reports/pending"

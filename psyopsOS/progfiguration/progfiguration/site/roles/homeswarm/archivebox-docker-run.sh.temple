@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+user={$}user
+container={$}container
+volume={$}volume
+
+uid=$(id -u "$user")
+gid=$(id -g "$user")
+
+# Note that this should match what we set in the compose file
+docker run -it --rm \
+    --env PUID=$uid \
+    --env PGID=$gid \
+    --env TZ=US/Central \
+    --env USE_COLOR=True \
+    --volume "$volume:/data" \
+    "$container" -- "$@"

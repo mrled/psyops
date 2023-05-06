@@ -1,0 +1,70 @@
+# -*- mode: yaml -*-
+---
+
+# defaultEntryPoints must be at the top
+defaultEntryPoints:
+  - http
+  - https
+
+log:
+  level: DEBUG
+  format: common
+accessLog:
+  format: common
+#tracing:
+#  serviceName: traefik
+
+api:
+  dashboard: true
+
+entryPoints:
+  http:
+    address: ":80"
+  https:
+    address: ":443"
+
+http:
+  middlewares:
+    privnet-https-redir:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+certificatesResolvers:
+  letsencrypt-production:
+    acme:
+      storage: /acme/letsencrypt-production.json
+      email: "{$}acme_email"
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      dnsChallenge:
+        provider: route53
+  letsencrypt-staging:
+    acme:
+      storage: /acme/letsencrypt-staging.json
+      email: "{$}acme_email"
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      dnsChallenge:
+        provider: route53
+  zerossl-production:
+    acme:
+      caServer: https://acme.zerossl.com/v2/DV90
+      email: "{$}acme_email"
+      storage: /acme/zerossl-production.json
+      dnsChallenge:
+        provider: route53
+      eab:
+        kid: {$}zerossl_kid
+        hmacEncoded: {$}zerossl_hmac
+
+providers:
+  docker: {}
+
+docker:
+  endpoint: unix:///var/run/docker.sock
+  domain: "{$}acme_domain"
+  watch: true
+  exposedbydefault: false
+
+# smh https://github.com/traefik/traefik/issues/7360
+pilot:
+  dashboard: false

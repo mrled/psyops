@@ -1,5 +1,8 @@
 """Site-specific functions"""
 
+from pathlib import Path
+import secrets
+import string
 import subprocess
 
 from progfiguration.localhost import LocalhostLinux
@@ -47,3 +50,36 @@ def line_in_crontab(user: str, line: str, prepend: bool = False) -> bool:
         set_crontab(user, crontab)
         return True
     return False
+
+
+def get_persistent_secret(secretfile: Path, length=24) -> str:
+    """Get a persistent secret
+
+    If the file exists, return its contents.
+    Otherwise, generate a new secret, write it to the file, and return it.
+
+    When creating a new secret file, it will be owned and only readable by root.
+
+    This is intended as an internal way for progfiguration to get secrets
+    that the user doesn't need to know,
+    but which shouldn't change after deployment unnecessarily,
+    like database passwords where progfiguration is deploying both the application and its database.
+    """
+    # TODO: This shouldn't require class instantiation
+    localhost = LocalhostLinux()
+
+    # Generate Sonic backend password
+    if secretfile.exists():
+        secret = secretfile.read_text().strip()
+    else:
+        alphabet = string.ascii_letters + string.digits
+        secret = "".join(secrets.choice(alphabet) for i in range(length))
+        localhost.set_file_contents(
+            secretfile,
+            secret,
+            owner="root",
+            group="root",
+            mode=0o0600,
+        )
+
+    return secret
