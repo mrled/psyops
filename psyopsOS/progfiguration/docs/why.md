@@ -84,3 +84,84 @@ That said... if you _do_ already know a real programming language,
 how fucking frustrating is it to be forced to interact with it through YAML?
 Progfiguration is, if not a bet against,
 an exploration in the other direction of the YAML interface.
+
+## Lesser differences
+
+### Variables are scoped
+
+Ansible's global variables are a blessing and a curse.
+
+For my personal projets, I always prefix the role name for each variable,
+so a role `nginx` with a variable containing the hostname contains `nginx_hostname`.
+This can get really unwieldy!
+Also my coworkers don't follow it consistently no matter how much I beg.
+
+On the other hand, in **any** file inside **any** role you can reference a variable defined in **any** location.
+This is powerful, but if you don't name your variables carefully,
+you end up having to grep for `hostname` in a repo with dozens of roles and thousands of files.
+(You cannot restrict your grep to just YAML files,
+because it could be referenced in a template;
+you cannot restrict your grep to just `\{\{ ?hostname`,
+because it could be used in an expression like `when` that doesn't require it, or used in a filter, etc etc.)
+
+(This is one area where Ansible's easy ramp for new contributors can also be a downside.
+Left unchecked, poorly named variables can cause persistent problems,
+and new contributors have no experience to guide them in how to name variables thoughtfully.)
+
+On the other hand, in progfiguration, variables are scoped.
+Role variables must be passed in directly from groups or nodes;
+template variables must be passed in explicitly to `localhost.temple(...)`.
+This adds some verbosity, but that's negligible compared to my preferred method of
+prefixing each variable name with the role it is referenced in.
+
+Since the whole thing is just Python anyway,
+you can define site global variables for things that are really inconvenient to pass around.
+Also since this is Python,
+there are convenient editor functions for finding and/or renaming symbols _globally_,
+across your entire project.
+VS Code is what I'm familar with,
+and with it at least you can rename a variable referenced in other files automatically.
+
+#### Aside: How could Ansible improve this?
+
+* Much better editor support for global find/replace of variables.
+  Ansible itself ultimately knows where all the variables go;
+  your editor should too.
+* Much better editor support for understanding a role's inputs.
+  The user has to read and understand the entire role, including all templates,
+  in order to know all of its inputs.
+  The editor should do this automatically and somehow present this to the user.
+  (It probably also ought to fail to partially run the role if all mandatory inputs are not set.)
+
+### Simplified directory structure
+
+If I may quote [myself](https://twitter.com/mrled/status/1537172285655764999):
+
+> Building Ansible extensions in Python is awesome because it means your editor has 12 tabs open named `main.yml` and 6 more open named `__init__.py`
+
+Progfiguration solves half of this.
+You are still stuck with a bunch of files open named `__init__.py`,
+but the YAML stuff is gone.
+
+Also, though this is neither the time nor place,
+as someone who will likely have to write Ansible in the future,
+a plea: can Ansible simplify its directory structure a bit?
+Do we really need support for multiple vars/defaults/meta files by default?
+Do we have to differentiate between files we're copying directly and files that we might template?
+Must we create a directory for each type of thing?
+I propose:
+
+```text
+roles/
+  rolename/
+    tasks.yml
+    tasks/
+      ... an optional folder with extra tasks files if you need
+      some_other_stuff_to_do.yml
+    vars.yml
+    defaults.yml
+    meta.yml
+    files/
+      untemplated_script.sh
+      templated_config_file.conf.j2
+```
