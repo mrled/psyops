@@ -23,7 +23,7 @@ class LocalhostUsers:
 
     def add_service_account(
         self, username, primary_group, uid=None, primary_gid=None, groups=None, home=True, shell="/sbin/nologin"
-    ):
+    ) -> GetentUserResult:
         """Create a system user without a password and a primary group for it
 
         home:   If True, create a homedir at the default location
@@ -46,6 +46,7 @@ class LocalhostUsers:
             subprocess.run(cmd, check=True)
         for group in groups or []:
             self.add_user_to_group(username, group)
+        return self.getent_user(username)
 
     def add_group(self, groupname, gid=None, system=False):
         """Add a group"""
@@ -86,4 +87,5 @@ class LocalhostUsers:
         """Get the home directory of a user"""
         result = subprocess.run(["getent", "passwd", user], check=True, capture_output=True)
         name, passwd, uid, gid, gecos, homedir, shell = result.stdout.decode().split(":")
-        return GetentUserResult(name, passwd, int(uid), int(gid), gecos, Path(homedir), shell)
+        uresult = GetentUserResult(name, passwd, int(uid), int(gid), gecos, Path(homedir), shell)
+        return uresult
