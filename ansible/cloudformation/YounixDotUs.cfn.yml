@@ -39,11 +39,27 @@ Resources:
           ResourceRecords:
             - 10 in1-smtp.messagingengine.com.
             - 20 in2-smtp.messagingengine.com.
-        - Name: mesmtp._domainkey.younix.us.
+        - Name: fm1._domainkey.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["fm1.younix.us.dkim.fmhosted.com"]
+        - Name: fm2._domainkey.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["fm2.younix.us.dkim.fmhosted.com"]
+        - Name: fm3._domainkey.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["fm3.younix.us.dkim.fmhosted.com"]
+
+        # TXT records for various services
+        - Name: younix.us.
           Type: TXT
           TTL: 300
           ResourceRecords:
-            - '"v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCu7NyeQZZvQve/dAxVIaopz7PqwFYw/uoQQXCZgma5G83PRBuDYNsNbh5EMxk7Kaj28i9lj9c6kxUGcswfA8496vVTCcgNolgUInoXDqjw7S34rueUkxCODTyPovIW8Utvp8y+JHQr6ZhebDSiENPvUgrRhDKxXd/5ME7q//GhdQIDAQAB"'
+            # Keybase verification
+            - '"v=spf1 include:spf.messagingengine.com ?all"'
+
 Outputs:
   OriginZoneId:
     Description: The ID of the younix.us. root zone
