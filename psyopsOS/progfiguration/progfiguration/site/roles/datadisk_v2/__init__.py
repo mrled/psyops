@@ -20,6 +20,7 @@ def setup_ramoffload(
     size_gb: int,
     directories: List[str],
     ramoffload_mount_path="/media/ramoffload",
+    ramoffload_overlaid_path="/media/overlaid",
 ):
     """Set up ramoffload
 
@@ -30,6 +31,17 @@ def setup_ramoffload(
     <https://wiki.alpinelinux.org/wiki/Raspberry_Pi>
 
     It allows us to install large packages to /usr without running out of RAM.
+
+    It uses overlayfs and a ramdisk.
+    We don't commit to the ramdisk, so it's just temp space that isn't persistent,
+    but it's backed by the disk, so it doesn't consume RAM.
+
+    We take the additional step of mounting the overlayfs under ramoffload_overlaid_path,
+    and bind-mounting the paty under ramoffload_overlaid_path to the directory.
+    This doesn't seem to be necessary for most cases,
+    but is required when one of the directories is /var/lib/docker:
+    <https://superuser.com/questions/1526682/docker-in-overlayroot-environment-invalid-cross-device-link>.
+    I'm not sure why this is... maybe because we use overlayfs, and so does Docker?
     """
 
     if is_mountpoint(ramoffload_mount_path):
@@ -64,12 +76,17 @@ def setup_ramoffload(
         # will replace inner / characters with underscores, resulting in a key like var_cache_whatever
         dir_key = subdir.replace("/", "_")
         upperdir = os.path.join(ramoffload_mount_path, dir_key)
+        lowerdir = os.path.join(ramoffload_overlaid_path, dir_key)
         workdir = os.path.join(ramoffload_mount_path, f".work_{dir_key}")
         localhost.makedirs(upperdir, owner="root", mode=0o0755)
+        localhost.makedirs(lowerdir, owner="root", mode=0o0755)
         localhost.makedirs(workdir, owner="root", mode=0o0755)
-        fstab_entry = f"overlay {directory} overlay lowerdir={directory},upperdir={upperdir},workdir={workdir} 0 0"
-        logger.info(f"Adding ramoffload for {directory} via fstab line: {fstab_entry}")
-        localhost.linesinfile("/etc/fstab", [fstab_entry])
+        fstab_entries = [
+            f"overlay {lowerdir} overlay lowerdir={lowerdir},upperdir={upperdir},workdir={workdir} 0 0",
+            f"{lowerdir} {directory} none bind 0 0",
+        ]
+        logger.info(f"Adding ramoffload for {directory} via fstab lines: {fstab_entries}")
+        localhost.linesinfile("/etc/fstab", fstab_entries)
         subprocess.run(["mount", "-a"])
 
     logger.info("Finished configuring ramoffload")

@@ -24,6 +24,11 @@ group = Bunch(
                 LvmLvSpec("archiveboxlv", "archiveboxvg", r"100%FREE", FilesystemSpec("ext4", "archivebox")),
             ],
         },
+        datadisk_v2={
+            "ramoffload": True,
+            "ramoffload_size_gb": 64,
+            "ramoffload_directories": ["/var/lib/docker"],
+        },
         acmeupdater_base={
             "role_dir": Path("/psyopsos-data/roles/acmeupdater"),
             "sshkey": AgeSecretReference("acmeupdater_sshkey"),
