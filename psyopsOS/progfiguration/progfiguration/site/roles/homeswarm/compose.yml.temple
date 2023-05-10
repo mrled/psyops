@@ -32,6 +32,7 @@ services:
         tmpfs:
           # Size must be in bytes, 512MiB = 536870912 bytes
           size: 536870912
+      - "{$}{archivebox_srcdir}/archivebox:/app/archivebox"
     networks:
       - traefnet
     # dns:

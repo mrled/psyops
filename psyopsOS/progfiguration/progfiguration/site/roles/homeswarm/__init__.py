@@ -43,10 +43,9 @@ class Role(ProgfigurationRole):
     # - Default value: URL_BLACKLIST = "(://(.*\.)?facebook\.com)|(://(.*\.)?ebay\.com)|(.*\.exe$)"
     # - Yelp wastes our time for 1+ minute before failing
     # - Facebook is mostly useless behind a login wall
-    # - Don't just download Youtube homepage lol
-    url_blacklist = (
-        r"^(javascript:)|(https?://[A-Za-z0-9\.-]*((facebook\.com)|(yelp\.com)|(youtube\.com/?$)|youtu\.be/?$)"
-    )
+    # - Don't just download Youtube homepage lol. (And handle /?feature=asldkfj type bullshit too)
+    # - ... actually come to think of it, fuck downloading every Youtube video I ever watch, that's a bad idea
+    url_blacklist = r"^(javascript:)|(https?://[A-Za-z0-9\.-]*((facebook\.com)|(yelp\.com)|(youtube\.com)|(youtu\.be)))"
 
     def apply(self):
 
@@ -194,6 +193,24 @@ class Role(ProgfigurationRole):
         self.localhost.makedirs(pihole_datadir / "pihole", owner="root", group="root", mode=0o0755)
         self.localhost.makedirs(pihole_datadir / "dnsmasq", owner="root", group="root", mode=0o0755)
 
+        # Archivebox clone
+        archivebox_srcdir = self.roledir / "absrc"
+        if archivebox_srcdir.exists():
+            run(["sudo", "-u", self.archivebox_user, "git", "pull"], cwd=str(archivebox_srcdir))
+        else:
+            run(
+                [
+                    "sudo",
+                    "-u",
+                    self.archivebox_user,
+                    "git",
+                    "clone",
+                    "https://github.com/mrled/ArchiveBox",
+                    archivebox_srcdir.name,
+                ],
+                cwd=str(archivebox_srcdir.parent),
+            )
+
         # Archivebox config file
         # ArchiveBox will generate the Django SECRET_KEY on the first run,
         # but we want to persist it across config rewrites.
@@ -219,7 +236,7 @@ class Role(ProgfigurationRole):
             {
                 "user": self.archivebox_user,
                 "stackname": self.stackname,
-                "incoming_dir": archivebox_incoming_dir,
+                "archive_dir": archivebox_datadir / "archive",
             },
             owner=self.archivebox_user,
             group=self.archivebox_group,
@@ -241,6 +258,7 @@ class Role(ProgfigurationRole):
                 "archivebox_uid": archivebox_getent.uid,
                 "archivebox_gid": archivebox_getent.gid,
                 "archivebox_datadir": str(archivebox_datadir),
+                "archivebox_srcdir": str(archivebox_srcdir),
                 # "stackname": self.stackname,
                 "archivebox_domain": self.archivebox_domain,
                 "archivebox_sonic_confdir": str(archivebox_sonic_confdir),

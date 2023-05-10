@@ -10,6 +10,11 @@ USE_COLOR = True
 SECRET_KEY = {$}django_secret_key
 
 [GENERAL_CONFIG]
+
+# Timeout for each archive method
+# 60 seconds is the default but my archive is big enough that this is unwieldy
+TIMEOUT = 30
+
 URL_BLACKLIST = "{$}url_blacklist"
 
 [ARCHIVE_METHOD_TOGGLES]
@@ -26,6 +31,12 @@ SAVE_MERCURY = False
 
 # This is slow, and I want to be local-only anyway
 SAVE_ARCHIVE_DOT_ORG = False
+
+# youtube-dl stuff just takes up too much space and is too slow to enable by default
+SAVE_MEDIA = False
+
+# I don't need a full git clone of every repo I might visit in github
+SAVE_GIT = False
 
 [ARCHIVE_METHOD_OPTIONS]
 
@@ -46,10 +57,10 @@ CHROME_USER_AGENT = Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/
 [SEARCH_BACKEND_CONFIG]
 
 # sonic allows full text search
-SEARCH_BACKEND_ENGINE: sonic
+SEARCH_BACKEND_ENGINE = sonic
 # This is the valid hostname in the Swarm network
-SEARCH_BACKEND_HOST_NAME: sonic
-SEARCH_BACKEND_PASSWORD: {$}archivebox_sonic_backend_password
+SEARCH_BACKEND_HOST_NAME = sonic
+SEARCH_BACKEND_PASSWORD = {$}archivebox_sonic_backend_password
 
 [DEPENDENCY_CONFIG]
 # This stuff is all set in the entrypoint, but it's nice to set here so that we can exec into the container.
