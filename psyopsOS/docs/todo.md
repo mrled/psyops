@@ -28,8 +28,11 @@
 * Private networking
     * Wireguard? This would be really nice. Would require a maintained server :/
     * Tor for management from anywhere. Punch thru NATs or whatever, no worry about a wireguard server. Need to keep a list of all public keys for all nodes, same way I do now for age keys.
-    * A Tor for all networking mode. Could implement as a role in progfiguration, but better to do as a different flavor of ISO, so that it is up before anything uses the network at all.
     * Add a module to progfiguration that can change Nebula firewall rules. Nodes come up locked down to only allow ICMP from anywhere and psynet clients full access, but if we wanted to bring up some kind of cluster that talks to each other, we could add firewall rules in progfiguration that permit this.
+* Tor roles
+    * A Tor for all networking mode. Could implement as a role in progfiguration, but better to do as a different flavor of ISO, so that it is up before anything uses the network at all.
+    * Offline identity keys <https://support.torproject.org/relay-operators/offline-ed25519/>
+      w/ master key on controller which deploys signed keys periodically to nodes.
 * Surface system health quickly
     * Bash prompt shows whether initial boot completed successfully?
     * Bash prompt shows whether latest run of progfiguration completed successfully?

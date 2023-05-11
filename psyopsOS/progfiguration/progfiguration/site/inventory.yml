@@ -42,6 +42,7 @@ functionRoleMap:
     - psynet
     - psyopsos_postboot_config
   privnet:
+    - onion_admin
     - psynet
     - psyopsos_postboot_config
     - emailfwd
