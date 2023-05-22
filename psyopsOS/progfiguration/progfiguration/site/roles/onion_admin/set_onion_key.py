@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""onionhelper.py
+"""Save ed25519 keys in the format required by tor.
 
 Thanks to genuineDeveloperBrain, <https://tor.stackexchange.com/a/23674>
 """
@@ -128,8 +128,13 @@ def create_hidden_service_files(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create a hidden service from existing key")
     parser.add_argument("--debug", "-d", action="store_true", help="debug")
-    parser.add_argument("--private-key", help="32 bytes private key in hex. If not passed, one is generated (requires pynacl).")
-    parser.add_argument("--public-key", help="32 bytes public key in hex. If not passed, it's generated from the private key (requires pynacl).")
+    parser.add_argument(
+        "--private-key", help="32 bytes private key in hex. If not passed, one is generated (requires pynacl)."
+    )
+    parser.add_argument(
+        "--public-key",
+        help="32 bytes public key in hex. If not passed, it's generated from the private key (requires pynacl).",
+    )
     parser.add_argument("--tor-user", default="tor", help="Name of tor user")
     parser.add_argument("--force", "-f", action="store_true", help="Force overwrite of existing files")
     parser.add_argument("hidden_service_dir", help="tor hidden service directory")

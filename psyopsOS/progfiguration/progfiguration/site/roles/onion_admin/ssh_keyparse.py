@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""ssh-keyparse.py
+"""Parse ed25519 SSH keys.
 
 From the fgtk
 * <https://github.com/mk-fg/fgtk/blob/master/ssh-keyparse>
