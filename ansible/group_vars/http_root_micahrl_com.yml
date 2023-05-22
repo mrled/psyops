@@ -47,3 +47,5 @@ http_root_micahrl_com_interpersonal_uri: https://interpersonal.micahrl.com/
 
 http_root_micahrl_com_interpersonal_app_private_key: "{{ vault_http_root_micahrl_com_interpersonal_app_private_key }}"
 http_root_micahrl_com_interpersonal_app_id: 153329
+
+http_root_micahrl_com_nostr_hex_pub_key: 322d0b38fab7056406cdf1a2303178a15cbf619a42ce73daf947122bb304cb64

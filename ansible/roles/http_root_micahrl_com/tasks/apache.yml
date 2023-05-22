@@ -84,6 +84,27 @@
     group: root
     mode: "0755"
 
+- name: Create .well-known dir
+  file:
+    path: /var/www/html/.well-known
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install nostr NIP-05 verification file
+  copy:
+    content: |+
+      {
+        "names": {
+          "_": "{{ http_root_micahrl_com_nostr_hex_pub_key }}"
+        }
+      }
+    dest: /var/www/html/.well-known/nostr.json
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Create acme-challenge dir
   file:
     path: /var/www/letsencrypt/.well-known/acme-challenge
