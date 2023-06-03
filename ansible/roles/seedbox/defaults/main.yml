@@ -24,6 +24,7 @@ seedbox_rtorrent_dht_port: 10396
 seedbox_tentacles_config_dir: "{{ seedbox_config_dir }}/tentacles"
 seedbox_cops_config_dir: "{{ seedbox_config_dir }}/cops"
 seedbox_stash_config_dir: "{{ seedbox_config_dir }}/stash"
+seedbox_ersatztv_config_dir: "{{ seedbox_config_dir }}/ersatztv"
 seedbox_stack_name: seedbox
 
 # Set this to true to remove the docker stack before deploying

@@ -120,6 +120,8 @@
     - "{{ seedbox_media.trix }}/generated"
     - "{{ seedbox_media.trix }}/metadata"
     - "{{ seedbox_media.trix }}/cache"
+    - "{{ seedbox_ersatztv_config_dir }}/roothome"
+    - "{{ seedbox_ersatztv_config_dir }}/xdg_data_home/ersatztv"
 
 - name: Create seedbox config dirs (0755 root)
   file:

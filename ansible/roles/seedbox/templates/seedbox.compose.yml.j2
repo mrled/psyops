@@ -263,6 +263,39 @@ services:
       - "traefik.http.services.seedbox-stash.loadbalancer.server.port=9999"
       - "traefik.http.routers.seedbox-stash.middlewares=seedbox-auth-bridgetroll-mw"
 
+  ersatztv:
+    image: jasongdove/ersatztv:develop
+    environment:
+      TZ: "{{ seedbox_timezone }}"
+      # We don't have in-container support for non-root users,
+      # but with "user:..." below and setting XDG_DATA_HOME here,
+      # we can force it.
+      # <https://github.com/jasongdove/ErsatzTV/issues/327>
+      # ...
+      # except that doesn't work well, because then the container can't persist its cache,
+      # giving warnings like "Neither user profile nor HKLM registry available" when it starts.
+      XDG_DATA_HOME: /config
+      #HOME: /root/customhome
+    volumes:
+      - "{{ seedbox_ersatztv_config_dir }}/xdg_data_home:/config"
+      #- "{{ seedbox_ersatztv_config_dir }}/roothome:/root/customhome"
+      - "{{ seedbox_media_root }}:/media:ro"
+    networks:
+      - dernetverk
+    #user: "{{ seedbox_uid }}"
+    ports:
+      # This is required for clients to be able to connect to it
+      # Note that Plex also requires an HTTP connection to this port for the guide
+      - "8409:8409"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-ersatztv.rule=Host(`{{ seedbox_ersatztv_domain }}`)"
+      - "traefik.http.routers.seedbox-ersatztv.tls=true"
+      - "traefik.http.routers.seedbox-ersatztv.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-ersatztv.service=seedbox-ersatztv"
+      - "traefik.http.services.seedbox-ersatztv.loadbalancer.server.port=8409"
+      - "traefik.http.routers.seedbox-ersatztv.middlewares=seedbox-auth-bridgetroll-mw"
+
   tautulli:
     image: tautulli/tautulli
     volumes:
