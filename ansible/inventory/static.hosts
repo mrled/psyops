@@ -4,14 +4,10 @@
 chenoska.home.micahrl.com
 cloudkey.home.micahrl.com
 
-[acmednsupdaters]
-kalix.home.micahrl.com
-
-[afaarit]
-kalix.home.micahrl.com
+#[afaarit]
+#kalix.home.micahrl.com
 
 [capthook]
-kalix.home.micahrl.com
 tagasaw.home.micahrl.com
 
 [cloudkey]
@@ -19,37 +15,26 @@ cloudkey.home.micahrl.com
 
 [emailfwd]
 abraxas.micahrl.com
-kalix.home.micahrl.com
 tagasaw.home.micahrl.com
 
 [http_root_micahrl_com]
 abraxas.micahrl.com
 
-[privnet]
-kalix.home.micahrl.com
+#[privnet]
+#kalix.home.micahrl.com
 
 [psynet_lighthouses]
 psynet-lighthouse1
 psynet-lighthouse2
 
-[pullbackup]
-kalix.home.micahrl.com
-
 [seedboxes]
 tagasaw.home.micahrl.com
-
-[syncthing_personal]
-kalix.home.micahrl.com
 
 [synologynas]
 chenoska.home.micahrl.com
 
-[syslogserver]
-kalix.home.micahrl.com
-
 [tailscale]
 tagasaw.home.micahrl.com
-kalix.home.micahrl.com
 
 [unifiusg]
 gateway.home.micahrl.com
