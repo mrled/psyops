@@ -76,15 +76,20 @@ def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
         "https://psyops.micahrl.com/apk/psyopsOS",
     ]
     localhost.linesinfile("/etc/apk/repositories", add_repos)
-    result = run("apk update", check=False, log_output=True)
-    if result.returncode != 0:
-        logger.info(f"apk update failed with code {result.returncode}")
-        logger.info(f"apk update stdout: {result.stdout}")
-        logger.info(f"apk update stderr: {result.stderr}")
-        secs = 15
-        logger.info(f"Sleeping {secs} seconds before trying again")
-        time.sleep(secs)
-        run("apk update", log_output=True)
+
+    # If we update here, apk often fails with an exit code of 6.
+    # I think this happens because 000-psyopsOS-postboot.start has just updated it before running progfiguration.
+    # apk update says you should not need to do this normally anyway.
+    #
+    # result = run("apk update", check=False, log_output=True)
+    # if result.returncode != 0:
+    #     logger.info(f"apk update failed with code {result.returncode}")
+    #     logger.info(f"apk update stdout: {result.stdout}")
+    #     logger.info(f"apk update stderr: {result.stderr}")
+    #     secs = 15
+    #     logger.info(f"Sleeping {secs} seconds before trying again")
+    #     time.sleep(secs)
+    #     run("apk update", log_output=True)
 
 
 def install_base_packages():
