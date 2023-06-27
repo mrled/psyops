@@ -1,4 +1,4 @@
-FROM alpine:3.16
+FROM alpine:3.18
 LABEL maintainer "me@micahrl.com"
 
 #### Development notes
@@ -54,7 +54,6 @@ ENV PSYOPS_SECRETS_POST_DECRYPT_SCRIPT_PATH="/usr/local/bin/psecrets-postunlock"
 # Allow setting the timezone at runtime
 ENV PSYOPS_TIMEZONE="US/Central"
 
-
 # Pre-copy root OS configuration phase
 RUN true \
     #
@@ -66,6 +65,9 @@ RUN true \
     #
     # It's nice to have access to the various edge repos
     # Nothing will install from them implicitly, you have to do 'apk add whatever@edgemain'
+    # First install the edge keys
+    && apk add -X https://dl-cdn.alpinelinux.org/alpine/edge/main --allow-untrusted --upgrade alpine-keys \
+    ## Then add the edge repos
     && echo '@edgemain       http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories \
     && echo '@edgecommunity  http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories \
     && echo '@edgetesting    http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
@@ -106,7 +108,7 @@ RUN true \
         jq jq-doc \
         # For matrix-docker-ansible-deploy
         just just-doc@edgecommunity just-zsh-completion \
-        kubectl@edgetesting kubectl-bash-completion@edgetesting kubectl-zsh-completion@edgetesting \
+        kubectl@edgecommunity kubectl-bash-completion@edgecommunity kubectl-zsh-completion@edgecommunity \
         # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
         less less-doc \
         man-db man-db-doc man-pages \
@@ -133,6 +135,7 @@ RUN true \
         py3-yaml \
         ripgrep ripgrep-doc ripgrep-bash-completion ripgrep-zsh-completion \
         rsync rsync-doc \
+        s3cmd \
         shadow shadow-doc \
         sops@edgetesting \
         sqlite sqlite-doc \
@@ -175,7 +178,7 @@ RUN true \
     && apk add \
         ansible ansible-core ansible-core-doc \
         aws-cli \
-        docker-compose docker-compose-bash-completion docker-compose-zsh-completion \
+        docker-compose \
         py3-bcrypt \
         # py3-boto \
         py3-boto3 \
