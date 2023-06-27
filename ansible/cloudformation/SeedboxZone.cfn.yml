@@ -25,7 +25,7 @@ Resources:
         - Name: !Ref DomainName
           Type: A
           TTL: "300"
-          ResourceRecords: ["192.168.1.25"]
+          ResourceRecords: ["100.86.119.112"]
         - Name: !Join [".", ["www", !Ref DomainName]]
           Type: CNAME
           TTL: "300"
