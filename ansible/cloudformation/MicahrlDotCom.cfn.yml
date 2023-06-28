@@ -284,11 +284,15 @@ Resources:
         - Name: haluth.backchannel.micahrl.com.
           Type: A
           TTL: 60
-          ResourceRecords: ["10.147.18.204"]
-        - Name: glitch.backchannel.micahrl.com.
+          ResourceRecords: ["100.108.197.65"]
+        - Name: copland.backchannel.micahrl.com.
           Type: A
           TTL: 60
-          ResourceRecords: ["10.147.18.176"]
+          ResourceRecords: ["100.116.66.78"]
+        - Name: tagasaw.backchannel.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.86.119.112"]
 
   # Kubernasty Zone
   # For my home k3s cluster
