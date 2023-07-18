@@ -6,7 +6,6 @@ license = {text = "WTFPL"}
 readme = "readme.md"
 requires-python = ">=3.10"
 dependencies = [
-    "PyYAML",
     "requests",
 ]
 
