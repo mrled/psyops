@@ -1,0 +1,49 @@
+[project]
+name = "progfigsite"
+dynamic = ["version"]
+description = "PROGramatic conFIGURATION for your infrastructure"
+license = {text = "WTFPL"}
+readme = "readme.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PyYAML",
+    "requests",
+]
+
+[[project.authors]]
+name = "Micah R Ledbetter"
+email = "me@micahrl.com"
+
+[project.scripts]
+progfiguration = "progfiguration.cli.progfiguration_cmd:main"
+
+[project.optional-dependencies]
+ssh = [
+    "mitogen",
+]
+development = [
+    "black",
+    "build",
+    "invoke",
+    "mitogen",
+    "mypy",
+    "twine",
+]
+
+[project.urls]
+Homepage = "https://github.com/mrled/progfiguration"
+
+[build-system]
+requires = [
+    "setuptools",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+progfigsite = ["*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "progfigsite.version.getversion"}
+
+[tool.black]
+line-length = 120
