@@ -4,7 +4,8 @@ from progfiguration.age import AgeSecretReference
 from progfiguration.inventory.roles import RoleResultReference
 from progfiguration.localhost.disks import FilesystemSpec, LvmLvSpec, PartitionSpec
 from progfiguration.progfigtypes import Bunch
-from progfiguration.site.sitelib import siteglobals
+
+from progfigsite.sitelib import siteglobals
 
 
 group = Bunch(

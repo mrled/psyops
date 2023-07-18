@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from progfiguration.inventory.roles import ProgfigurationRole
-from progfiguration.site.sitelib import line_in_crontab
 from progfiguration.ssh import generate_pubkey
 
+from progfigsite.sitelib import line_in_crontab
 
 @dataclass(kw_only=True)
 class Role(ProgfigurationRole):

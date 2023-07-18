@@ -7,4 +7,4 @@ but is specific to my hosts/roles/groups/functions/etc.
 from importlib.resources import files as importlib_resources_files
 
 
-package_inventory_file = importlib_resources_files("progfiguration.site").joinpath("inventory.yml")
+package_inventory_file = importlib_resources_files("progfigsite").joinpath("inventory.yml")

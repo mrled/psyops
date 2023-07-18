@@ -8,7 +8,8 @@ import venv
 from progfiguration import logger
 from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
-from progfiguration.site.sitelib import line_in_crontab
+
+from progfigsite.sitelib import line_in_crontab
 
 
 def install_vdirsyncer_venv():

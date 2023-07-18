@@ -13,8 +13,9 @@ from progfiguration import logger
 from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.progfigtypes import AnyPathOrStr
-from progfiguration.site.roles.onion_admin.set_onion_key import create_hidden_service_files
-from progfiguration.site.roles.onion_admin.ssh_keyparse import _ssh_key_parse
+
+from progfigsite.roles.onion_admin.set_onion_key import create_hidden_service_files
+from progfigsite.roles.onion_admin.ssh_keyparse import _ssh_key_parse
 
 
 def convert_ssh_ed25519_key_to_onion_hidden_service(

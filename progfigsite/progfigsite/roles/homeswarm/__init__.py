@@ -9,7 +9,8 @@ import textwrap
 from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost.disks import is_mountpoint
-from progfiguration.site.sitelib import get_persistent_secret, line_in_crontab
+
+from progfigsite.sitelib import get_persistent_secret, line_in_crontab
 
 
 @dataclass(kw_only=True)

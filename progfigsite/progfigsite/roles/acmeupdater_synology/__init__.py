@@ -6,7 +6,8 @@ import subprocess
 import textwrap
 
 from progfiguration.inventory.roles import ProgfigurationRole
-from progfiguration.site.sitelib import line_in_crontab
+
+from progfigsite.sitelib import line_in_crontab
 
 
 @dataclass(kw_only=True)
