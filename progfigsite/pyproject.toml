@@ -14,13 +14,15 @@ name = "Micah R Ledbetter"
 email = "me@micahrl.com"
 
 [project.scripts]
-progfiguration = "progfiguration.cli.progfiguration_cmd:main"
+progfigsite = "progfigsite.cli.progfigsite_cmd:main"
 
 [project.optional-dependencies]
 ssh = [
     "mitogen",
 ]
 development = [
+    "progfiguration",
+
     "black",
     "build",
     "invoke",
@@ -30,7 +32,7 @@ development = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mrled/progfiguration"
+Homepage = "https://github.com/mrled/psyops/tree/master/progfigsite"
 
 [build-system]
 requires = [
@@ -42,7 +44,7 @@ build-backend = "setuptools.build_meta"
 progfigsite = ["*"]
 
 [tool.setuptools.dynamic]
-version = {attr = "progfigsite.version.getversion"}
+version = {attr = "progfigsite.get_version"}
 
 [tool.black]
 line-length = 120
