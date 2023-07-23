@@ -19,7 +19,6 @@ def mint_version() -> str:
 
     This function is called by progfiguration core to generate a version number.
     It should return a string that is a valid pip version number.
-    (If you are also )
     """
 
     dt = datetime.datetime.utcnow()

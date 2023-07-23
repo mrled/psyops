@@ -6,7 +6,6 @@ license = {text = "WTFPL"}
 readme = "readme.md"
 requires-python = ">=3.10"
 dependencies = [
-    "requests",
 ]
 
 [[project.authors]]
@@ -14,19 +13,21 @@ name = "Micah R Ledbetter"
 email = "me@micahrl.com"
 
 [project.scripts]
-progfigsite = "progfigsite.cli.progfigsite_cmd:main"
+progfigsite = "progfigsite.cli.progfigsite_shim:main"
 
 [project.optional-dependencies]
-ssh = [
-    "mitogen",
-]
 development = [
+    # Progfiguration itself
     "progfiguration",
 
+    # Installed by roles, which then requires them
+    # In development we just install them here so that we get nice type hints etc
+    "requests",
+
+    # Development tools
     "black",
     "build",
-    "invoke",
-    "mitogen",
+    #"mitogen",
     "mypy",
     "twine",
 ]

@@ -1,8 +1,6 @@
 """The progfigsite command.
 
 This is required.
-
-TODO: Allow sites to use whatever argument parsing library they want
 """
 
 
@@ -26,6 +24,12 @@ def main():
     # If it's installed as a system package, then it will find it there as well.
     # This means the following will work if you `pip install -e '.[development]'`.
 
-    from progfiguration.cli import progfiguration_cmd
+    from progfiguration.cli import progfiguration_site_cmd
 
-    progfiguration_cmd.main()
+    root_package = __package__.split(".")[0] if __package__ else None
+    if root_package is None:
+        raise RuntimeError(
+            "Cannot find name of the running package. Are you calling this as a script from a package installed from pip?"
+        )
+
+    progfiguration_site_cmd.main(root_package)
