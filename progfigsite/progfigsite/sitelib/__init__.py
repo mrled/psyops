@@ -4,6 +4,7 @@ from pathlib import Path
 import secrets
 import string
 import subprocess
+from typing import List
 
 from progfiguration.localhost import LocalhostLinux
 
@@ -83,3 +84,17 @@ def get_persistent_secret(secretfile: Path, length=24) -> str:
         )
 
     return secret
+
+
+def alpine_release_str(self) -> str:
+    return LocalhostLinux().get_file_contents("/etc/alpine-release")
+
+
+def alpine_release(self) -> List[int]:
+    return [int(n) for n in alpine_release_str().split(".")]
+
+
+def alpine_release_v(self) -> str:
+    """If /etc/alpine-release is '3.16.0', this returns 'v3.16'."""
+    maj, min, _ = alpine_release()
+    return f"v{maj}.{min}"

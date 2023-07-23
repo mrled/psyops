@@ -10,12 +10,12 @@ from typing import List
 
 from progfiguration import logger
 from progfiguration.inventory.roles import ProgfigurationRole
-from progfiguration.localhost import LocalhostLinuxPsyopsOs
+from progfiguration.localhost import LocalhostLinux
 from progfiguration.localhost.disks import is_mountpoint
 
 
 def setup_ramoffload(
-    localhost: LocalhostLinuxPsyopsOs,
+    localhost: LocalhostLinux,
     data_mountpoint: str,
     size_gb: int,
     directories: List[str],

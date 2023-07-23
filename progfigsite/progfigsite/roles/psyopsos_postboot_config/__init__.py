@@ -1,7 +1,6 @@
 """Configure Alpine after its boot scripts"""
 
 from dataclasses import dataclass
-from pathlib import Path
 import re
 import shutil
 import textwrap
@@ -11,7 +10,9 @@ from typing import List
 from progfiguration import logger
 from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
-from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
+from progfiguration.localhost import LocalhostLinux, authorized_keys
+
+from progfigsite.sitelib import alpine_release_v
 
 
 _users = [
@@ -27,7 +28,7 @@ _users = [
 ]
 
 
-def configure_user(localhost: LocalhostLinuxPsyopsOs, name: str, password: str, pubkeys: List[str], shell=None):
+def configure_user(localhost: LocalhostLinux, name: str, password: str, pubkeys: List[str], shell=None):
     exists = False
     with open("/etc/passwd") as fp:
         for line in fp.readlines():
@@ -58,7 +59,7 @@ def set_timezone(timezone: str):
     # run(f"apk del tzdata")
 
 
-def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
+def set_apk_repositories(localhost: LocalhostLinux):
     """Set /etc/apk/repositories
 
     Note that by default ONLY the cdrom repo exists,
@@ -68,8 +69,8 @@ def set_apk_repositories(localhost: LocalhostLinuxPsyopsOs):
     Updating it here requires updating it there too.
     """
     add_repos = [
-        f"https://dl-cdn.alpinelinux.org/alpine/{localhost.alpine_release_v}/main",
-        f"https://dl-cdn.alpinelinux.org/alpine/{localhost.alpine_release_v}/community",
+        f"https://dl-cdn.alpinelinux.org/alpine/{alpine_release_v()}/main",
+        f"https://dl-cdn.alpinelinux.org/alpine/{alpine_release_v()}/community",
         "@edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main",
         "@edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community",
         "@edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing",

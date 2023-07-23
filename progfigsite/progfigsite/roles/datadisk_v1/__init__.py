@@ -8,11 +8,11 @@ from typing import List, Optional
 
 from progfiguration import logger
 from progfiguration.inventory.roles import ProgfigurationRole
-from progfiguration.localhost import LocalhostLinuxPsyopsOs
+from progfiguration.localhost import LocalhostLinux
 
 
 def setup_ramoffload(
-    localhost: LocalhostLinuxPsyopsOs,
+    localhost: LocalhostLinux,
     data_mountpoint: str,
     size_gb: int,
     directories: List[str],

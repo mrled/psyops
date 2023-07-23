@@ -15,7 +15,7 @@ from progfiguration import ssh
 
 from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
-from progfiguration.localhost import LocalhostLinuxPsyopsOs, authorized_keys
+from progfiguration.localhost import LocalhostLinux, authorized_keys
 from progfiguration.localhost.disks import is_mountpoint
 
 import requests
@@ -55,7 +55,7 @@ def install_vscode_remote_prereqs():
 
 
 def install_teensy_loader_cli(
-    localhost: LocalhostLinuxPsyopsOs,
+    localhost: LocalhostLinux,
     clone_user: str,
     clone_parent: str,
     repo_uri="https://github.com/PaulStoffregen/teensy_loader_cli",
