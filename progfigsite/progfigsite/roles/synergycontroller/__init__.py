@@ -11,8 +11,8 @@ import subprocess
 import textwrap
 import time
 from typing import List
-from progfiguration import ssh
 
+from progfiguration import ssh
 from progfiguration.cmd import run
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinux, authorized_keys

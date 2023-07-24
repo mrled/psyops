@@ -35,7 +35,7 @@ def get_version() -> str:
     """
 
     try:
-        from progfigsite.builddata import version
+        from progfigsite.builddata import version  # type: ignore
 
         return version.version
     except ImportError:
