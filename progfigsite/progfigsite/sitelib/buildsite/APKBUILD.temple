@@ -1,0 +1,26 @@
+# -*- mode: sh -*-
+#
+# This is a template for the progfiguration Temple class.
+# Template variables are surrounded by curly braces, like this: {$}version.
+# Strings that begin with a dollar sign are left alone.
+
+pkgname="progfigsite"
+_pyname="progfigsite"
+maintainer="Micah R Ledbetter <psyops@micahrl.com>"
+pkgver="{$}version"
+pkgrel=0
+pkgdesc="Programmatic configuration of hosts"
+options="!check" # No tests, yolo
+url="https://github.com/mrled/psyops"
+arch="noarch"
+license="WTFPL"
+depends="python3 py3-requests py3-tz py3-yaml"
+makedepends="py3-build py3-setuptools py3-wheel py3-installer"
+
+build() {
+    python3 -m build --no-isolation --wheel
+}
+
+package() {
+    python3 -m installer -d "$pkgdir" dist/$_pyname-$pkgver-py3-none-any.whl
+}

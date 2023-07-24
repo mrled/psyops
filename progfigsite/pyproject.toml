@@ -1,0 +1,53 @@
+[project]
+name = "progfigsite"
+dynamic = ["version"]
+description = "PROGramatic conFIGURATION for your infrastructure"
+license = {text = "WTFPL"}
+readme = "readme.md"
+requires-python = ">=3.10"
+dependencies = [
+]
+
+[[project.authors]]
+name = "Micah R Ledbetter"
+email = "me@micahrl.com"
+
+[project.scripts]
+progfigsite = "progfigsite.cli.progfigsite_shim:main"
+progfigsite-buildapk = "progfigsite.cli.progfigsite_buildapk_cmd:main"
+
+[project.optional-dependencies]
+development = [
+    # Progfiguration itself
+    "progfiguration >= 0.0.2a3",
+
+    # Installed by roles, which then requires them
+    # In development we just install them here so that we get nice type hints etc
+    "requests",
+
+    # Development tools
+    "black",
+    "build",
+    "mypy",
+
+    # Used by the APK build process
+    "installer",
+]
+
+[project.urls]
+Homepage = "https://github.com/mrled/psyops/tree/master/progfigsite"
+
+[build-system]
+requires = [
+    "setuptools",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+progfigsite = ["*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "progfigsite.get_version"}
+
+[tool.black]
+line-length = 120
