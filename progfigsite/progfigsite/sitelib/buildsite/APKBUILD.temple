@@ -1,11 +1,13 @@
-# This is a Python string.Template for the APKBUILD file
-# Single dollar sign is replaced with a version, like this: $version
-# Shell variables should be double-dollar signed, like $$pkgdir
+# -*- mode: sh -*-
+#
+# This is a template for the progfiguration Temple class.
+# Template variables are surrounded by curly braces, like this: {$}version.
+# Strings that begin with a dollar sign are left alone.
 
 pkgname="progfigsite"
 _pyname="progfigsite"
 maintainer="Micah R Ledbetter <psyops@micahrl.com>"
-pkgver="$version"
+pkgver="{$}version"
 pkgrel=0
 pkgdesc="Programmatic configuration of hosts"
 options="!check" # No tests, yolo
@@ -20,5 +22,5 @@ build() {
 }
 
 package() {
-    python3 -m installer -d "$$pkgdir" dist/$$_pyname-$$pkgver-py3-none-any.whl
+    python3 -m installer -d "$pkgdir" dist/$_pyname-$pkgver-py3-none-any.whl
 }
