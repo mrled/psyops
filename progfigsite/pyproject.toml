@@ -2,11 +2,10 @@
 name = "progfigsite"
 dynamic = ["version"]
 description = "PROGramatic conFIGURATION for your infrastructure"
-license = {text = "WTFPL"}
+license = { text = "WTFPL" }
 readme = "readme.md"
 requires-python = ">=3.10"
-dependencies = [
-]
+dependencies = []
 
 [[project.authors]]
 name = "Micah R Ledbetter"
@@ -19,7 +18,7 @@ progfigsite-buildapk = "progfigsite.cli.progfigsite_buildapk_cmd:main"
 [project.optional-dependencies]
 development = [
     # Progfiguration itself
-    "progfiguration >= 0.0.2a3",
+    "progfiguration >= 0.0.2a7",
 
     # Installed by roles, which then requires them
     # In development we just install them here so that we get nice type hints etc
@@ -38,16 +37,20 @@ development = [
 Homepage = "https://github.com/mrled/psyops/tree/master/progfigsite"
 
 [build-system]
-requires = [
-    "setuptools",
-]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# If we don't specify this here,
+# getting the version dynamically fails with ModuleNotFoundError
+# when it tries to build.
+packages = ["progfigsite"]
 
 [tool.setuptools.package-data]
 progfigsite = ["*"]
 
 [tool.setuptools.dynamic]
-version = {attr = "progfigsite.get_version"}
+version = { attr = "progfigsite.get_version" }
 
 [tool.black]
 line-length = 120

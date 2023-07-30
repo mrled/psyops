@@ -17,10 +17,35 @@ license="WTFPL"
 depends="python3 py3-requests py3-tz py3-yaml"
 makedepends="py3-build py3-setuptools py3-wheel py3-installer"
 
+# Show some info useful for debugging the progfigsite build process,
+# set PROGFIGSITE_APKBUILD_DEBUG to print it.
+___progfigsite_debug_info() {
+    if test "$PROGFIGSITE_APKBUILD_DEBUG"; then
+        cat 1>&2 <<EOF
+************************************************************************
+** Building...
+**   pkgname:   $pkgname
+**   _pyname:   $_pyname
+**   pkgver:    $pkgver
+**   pkgdir:    $pkgdir
+**   pwd:       $(pwd)
+**   ls:
+$(ls | sed 's/^/**        /')
+**   ls progfigisite/builddata/:
+$(ls progfigsite/builddata/ | sed 's/^/**        /')
+**   sys.modules | grep progfig:
+$(python3 -c "import sys; [print(k,v) for k,v in sys.modules.items()]" | grep progfig | sed 's/^/**        /')
+************************************************************************
+EOF
+    fi
+}
+
 build() {
+    ___progfigsite_debug_info
     python3 -m build --no-isolation --wheel
 }
 
 package() {
+    ___progfigsite_debug_info
     python3 -m installer -d "$pkgdir" dist/$_pyname-$pkgver-py3-none-any.whl
 }
