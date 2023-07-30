@@ -4,6 +4,7 @@ import datetime
 import glob
 import importlib.util
 import os
+from pathlib import Path
 import pdb
 import shlex
 import shutil
@@ -34,32 +35,26 @@ def idb_excepthook(type, value, tb):
 sys.excepthook = idb_excepthook
 
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-psyopsos_minisign_encrypted_passwd_file = os.path.join(basedir, ".minisign-pass-secret")
+_basedir = os.path.abspath(os.path.dirname(__file__))
 
-docker_builder_volname_workdir = "psyopsos-build-workdir"
+_docker_builder_volname_workdir = "psyopsos-build-workdir"
 
 # Input configuration
-psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-psyopsosdir = os.path.join(psyopsdir, "psyopsOS")
-aportsscriptsdir = os.path.join(psyopsosdir, "aports-scripts")
-staticdir = os.path.join(basedir, "static")
-psyopsos_key = os.path.join(basedir, "minisign.seckey")
-progfiguration_dir = os.path.join(basedir, "progfiguration")
-psyopsOS_base_dir = os.path.join(basedir, "psyopsOS-base")
-docker_builder_tag = "psyopsos-builder"
-docker_builder_dir = os.path.join(psyopsosdir, "build")
+_psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+_psyopsosdir = os.path.join(_psyopsdir, "psyopsOS")
+_aportsscriptsdir = os.path.join(_psyopsosdir, "aports-scripts")
+_staticdir = os.path.join(_basedir, "static")
+_progfigsite_dir = os.path.join(_psyopsdir, "progfigsite")
+_psyopsOS_base_dir = os.path.join(_basedir, "psyopsOS-base")
+_docker_builder_tag = "psyopsos-builder"
+_docker_builder_dir = os.path.join(_psyopsosdir, "build")
 
 # Output configuration
-sitedir = os.path.join(basedir, "public")
-site_psyopsos_dir = os.path.join(sitedir, "psyopsOS")
-site_psyopsos_dir_nodes = os.path.join(site_psyopsos_dir, "nodes")
-site_psyopsos_dir_tags = os.path.join(site_psyopsos_dir, "tags")
-site_psyopsos_dir_global = os.path.join(site_psyopsos_dir, "global.json")
-site_bucket = "com-micahrl-psyops-http-bucket"
+_site_public_dir = os.path.join(_basedir, "public")
+_site_bucket = "com-micahrl-psyops-http-bucket"
 
 # When inside the psyops container, the path to the public/ directory's apk repository
-incontainer_apks_path = "/psyops/psyopsOS/public/apk"
+_incontainer_apks_path = "/psyops/psyopsOS/public/apk"
 
 
 def s3_upload_directory(directory, bucketname):
@@ -87,7 +82,7 @@ def s3_upload_directory(directory, bucketname):
 def clean(ctx):
     """Clean the build. Note does not clear the abuild cache; pass --clean to an -abuild task to clean it before building."""
     try:
-        shutil.rmtree(sitedir)
+        shutil.rmtree(_site_public_dir)
     except FileNotFoundError:
         pass
 
@@ -95,7 +90,7 @@ def clean(ctx):
 @invoke.task
 def cleandockervol(
     ctx,
-    volname_workdir=docker_builder_volname_workdir,
+    volname_workdir=_docker_builder_volname_workdir,
 ):
     """Remove the Docker volume used for the mkimage.sh working directory"""
     ctx.run(f"docker volume rm {volname_workdir}")
@@ -103,51 +98,31 @@ def cleandockervol(
 
 @invoke.task
 def deploy(ctx):
-    """Deploy the site dir to S3. First copies files from the static dirr to the deploy dir."""
-    shutil.copytree(staticdir, sitedir, dirs_exist_ok=True)
-    s3_upload_directory(sitedir, site_bucket)
+    """Deploy the site dir to S3. First copies files from the static dir to the deploy dir."""
+    shutil.copytree(_staticdir, _site_public_dir, dirs_exist_ok=True)
+    s3_upload_directory(_site_public_dir, _site_bucket)
 
 
 @invoke.task
-def progfiguration_abuild(ctx, clean=False):
+def progfigsite_abuild(ctx, clean=False, skipinstall=False):
     """Build the progfiguration Python package as an Alpine package. Must be run from the psyops container.
+
+    Args:
+        clean: If True, run 'abuild clean' before building.
+        skipinstall: If True, skip installing the package before building.
+            Installing the package is required because we build with the `progfigsite-buildapk` command.
+            Once it's been installed, though, there's no reason to waste time running pip install again.
 
     Sign with the psyopsOS key.
     """
 
-    # Get the module by path
-    spec = importlib.util.spec_from_file_location(
-        "progfiguration_build",
-        os.path.join(progfiguration_dir, "progfiguration_build.py"),
-    )
-    progfiguration_build = importlib.util.module_from_spec(spec)
-    sys.modules["progfiguration_build"] = progfiguration_build
-    spec.loader.exec_module(progfiguration_build)
-
-    # Run the build
-    version = progfiguration_build.build_alpine(incontainer_apks_path, clean=clean)
-
-    print(
-        f"Created new artifact at public/apk/psyopsOS/x86_64/progfiguration-{version}-r0.apk"
-    )
-
-
-@invoke.task
-def progfiguration_test(ctx):
-    """Run progfiguration unit tests.
-
-    Must be run from the psyops container.
-
-    Run with PROGFIGURATION_TEST_DEBUG=1 to drop into pdb on test failure.
-    """
-
-    # with ctx.cd(progfiguration_dir):
-    #     ctx.run("python -m unittest discover")
-
-    import unittest
-
-    suite = unittest.TestLoader().discover(progfiguration_dir)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    with ctx.cd(_progfigsite_dir):
+        if not skipinstall:
+            ctx.run("pip install -e .")
+        cmd = "progfigsite-buildapk"
+        if clean:
+            cmd += " --clean"
+        ctx.run(cmd)
 
 
 @invoke.task
@@ -159,23 +134,23 @@ def psyopsOS_base_abuild(ctx, clean=False):
     epochsecs = int(time.time())
     version = f"1.0.{epochsecs}"
 
-    with open(f"{psyopsOS_base_dir}/APKBUILD.template") as fp:
+    with open(f"{_psyopsOS_base_dir}/APKBUILD.template") as fp:
         apkbuild_template = string.Template(fp.read())
     apkbuild_contents = apkbuild_template.substitute(version=version)
-    apkbuild_path = os.path.join(psyopsOS_base_dir, "APKBUILD")
+    apkbuild_path = os.path.join(_psyopsOS_base_dir, "APKBUILD")
 
     # Place the apk repo inside the public dir
     # This means that 'invoke deploy' will copy it
-    build_cmd = f"abuild -r -P {incontainer_apks_path} -D psyopsOS"
+    build_cmd = f"abuild -r -P {_incontainer_apks_path} -D psyopsOS"
 
     try:
         with open(apkbuild_path, "w") as afd:
             afd.write(apkbuild_contents)
         print("Running build in progfiguration directory...")
-        with ctx.cd(psyopsOS_base_dir):
+        with ctx.cd(_psyopsOS_base_dir):
             if clean:
                 print("Running abuild clean...")
-                with ctx.cd(psyopsOS_base_dir):
+                with ctx.cd(_psyopsOS_base_dir):
                     ctx.run("abuild clean")
             ctx.run("abuild checksum")
             ctx.run(build_cmd)
@@ -279,7 +254,7 @@ def build_docker_container(ctx, rebuild=False):
     cmd = ["docker", "build"]
     if rebuild:
         cmd += ["--no-cache"]
-    cmd += ["--tag", shlex.quote(docker_builder_tag), shlex.quote(docker_builder_dir)]
+    cmd += ["--tag", shlex.quote(_docker_builder_tag), shlex.quote(_docker_builder_dir)]
     ctx.run(" ".join(cmd))
 
 
@@ -311,13 +286,13 @@ def get_docker_cmd_for_mkimage(
         f"{aportsdir}:/home/build/aports",
         # genapkovl-psyopsOS.sh partially sets up the filesystem of the iso live OS
         "--volume",
-        f"{aportsscriptsdir}/genapkovl-psyopsOS.sh:/home/build/aports/scripts/genapkovl-psyopsOS.sh",
+        f"{_aportsscriptsdir}/genapkovl-psyopsOS.sh:/home/build/aports/scripts/genapkovl-psyopsOS.sh",
         # mkimage.psyopsOS.sh defines the profile that we pass to mkimage.sh
         "--volume",
-        f"{aportsscriptsdir}/mkimg.psyopsOS.sh:/home/build/aports/scripts/mkimg.psyopsOS.sh",
+        f"{_aportsscriptsdir}/mkimg.psyopsOS.sh:/home/build/aports/scripts/mkimg.psyopsOS.sh",
         # mkimage.zzz-overrides.sh will let us customize any mkimage function by overriding it
         "--volume",
-        f"{aportsscriptsdir}/mkimg.zzz-overrides.sh:/home/build/aports/scripts/mkimg.zzz-overrides.sh",
+        f"{_aportsscriptsdir}/mkimg.zzz-overrides.sh:/home/build/aports/scripts/mkimg.zzz-overrides.sh",
         # Use the previously defined docker volume for temporary files etc when building the image.
         # Saving this between runs makes rebuilds much faster.
         "--volume",
@@ -327,7 +302,7 @@ def get_docker_cmd_for_mkimage(
         f"{isodir}:/home/build/iso",
         # Mounting this allows the build to access the psyopsOS/os-overlay/ and the public APK packages directory.
         "--volume",
-        f"{psyopsdir}:/home/build/psyops",
+        f"{_psyopsdir}:/home/build/psyops",
         # Environment variables that mkimage.sh (or one of the scripts it calls) uses
         "--env",
         f"PSYOPSOS_BUILD_DATE_ISO8601={buildinfo.date.strftime('%Y-%m-%dT%H:%M:%S%z')}",
@@ -335,7 +310,7 @@ def get_docker_cmd_for_mkimage(
         f"PSYOPSOS_BUILD_GIT_REVISION={buildinfo.revision}",
         "--env",
         f"PSYOPSOS_BUILD_GIT_DIRTY={str(buildinfo.dirty)}",
-        docker_builder_tag,
+        _docker_builder_tag,
     ]
     if shell:
         docker_cmd += ["/bin/bash"]
@@ -384,7 +359,7 @@ def mkimage(
     aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
     workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
     isodir=os.path.expanduser("~/Downloads/"),
-    volname_workdir=docker_builder_volname_workdir,
+    volname_workdir=_docker_builder_volname_workdir,
     whatif=False,
 ):
     """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO. Works from any host with Docker (doesn't require an Alpine host OS), but does require an x86_64 host."""
