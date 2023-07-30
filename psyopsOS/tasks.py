@@ -44,7 +44,7 @@ _psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 _psyopsosdir = os.path.join(_psyopsdir, "psyopsOS")
 _aportsscriptsdir = os.path.join(_psyopsosdir, "aports-scripts")
 _staticdir = os.path.join(_basedir, "static")
-_progfigsite_dir = os.path.join(_psyopsdir, "progfigsite")
+_progfigsite_dir = os.path.join(_psyopsdir, "progfiguration_blacksite")
 _psyopsOS_base_dir = os.path.join(_basedir, "psyopsOS-base")
 _docker_builder_tag = "psyopsos-builder"
 _docker_builder_dir = os.path.join(_psyopsosdir, "build")
@@ -110,7 +110,7 @@ def progfigsite_abuild(ctx, clean=False, skipinstall=False):
     Args:
         clean: If True, run 'abuild clean' before building.
         skipinstall: If True, skip installing the package before building.
-            Installing the package is required because we build with the `progfigsite-buildapk` command.
+            Installing the package is required because we build with the `progfiguration-blacksite-buildapk` command.
             Once it's been installed, though, there's no reason to waste time running pip install again.
 
     Sign with the psyopsOS key.
@@ -119,7 +119,7 @@ def progfigsite_abuild(ctx, clean=False, skipinstall=False):
     with ctx.cd(_progfigsite_dir):
         if not skipinstall:
             ctx.run("pip install -e .")
-        cmd = "progfigsite-buildapk"
+        cmd = "progfiguration-blacksite-buildapk"
         if clean:
             cmd += " --clean"
         ctx.run(cmd)

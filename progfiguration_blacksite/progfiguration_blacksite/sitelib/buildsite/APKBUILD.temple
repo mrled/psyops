@@ -1,0 +1,55 @@
+# -*- mode: sh -*-
+#
+# This is a template for the progfiguration Temple class.
+# Template variables are surrounded by curly braces, like this: {$}version.
+# Strings that begin with a dollar sign are left alone.
+
+pkgname="progfiguration_blacksite"
+_pyname="progfiguration_blacksite"
+maintainer="Micah R Ledbetter <psyops@micahrl.com>"
+pkgver="{$}version"
+pkgrel=0
+pkgdesc="Programmatic configuration of hosts"
+options="!check" # No tests, yolo
+url="https://github.com/mrled/psyops"
+arch="noarch"
+license="WTFPL"
+depends="python3 py3-requests py3-tz py3-yaml"
+makedepends="py3-build py3-setuptools py3-wheel py3-installer"
+
+# Show some info useful for debugging the progfigsite build process,
+# set PROGFIGSITE_APKBUILD_DEBUG to print it.
+___progfigsite_debug_info() {
+    if test "$PROGFIGSITE_APKBUILD_DEBUG"; then
+        cat 1>&2 <<EOF
+************************************************************************
+** Building...
+**   pkgname:   $pkgname
+**   _pyname:   $_pyname
+**   pkgver:    $pkgver
+**   pkgdir:    $pkgdir
+**   pwd:       $(pwd)
+**   ls:
+$(ls | sed 's/^/**        /')
+**   ls blacksite/builddata/:
+$(ls blacksite/builddata/ | sed 's/^/**        /')
+**   sys.modules | grep progfig:
+$(python3 -c "import sys; [print(k,v) for k,v in sys.modules.items()]" | grep -i progfig | sed 's/^/**        /')
+**   sys.modules | grep psyops:
+$(python3 -c "import sys; [print(k,v) for k,v in sys.modules.items()]" | grep -i psyops | sed 's/^/**        /')
+**   sys.modules | grep blacksite:
+$(python3 -c "import sys; [print(k,v) for k,v in sys.modules.items()]" | grep -i blacksite | sed 's/^/**        /')
+************************************************************************
+EOF
+    fi
+}
+
+build() {
+    ___progfigsite_debug_info
+    python3 -m build --no-isolation --wheel
+}
+
+package() {
+    ___progfigsite_debug_info
+    python3 -m installer -d "$pkgdir" dist/$_pyname-$pkgver-py3-none-any.whl
+}

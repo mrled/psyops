@@ -1,0 +1,56 @@
+[project]
+name = "progfiguration_blacksite"
+dynamic = ["version"]
+description = "PROGramatic conFIGURATION for your infrastructure: The PSYOPS BLACK SITE"
+license = { text = "WTFPL" }
+readme = "readme.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[[project.authors]]
+name = "Micah R Ledbetter"
+email = "me@micahrl.com"
+
+[project.scripts]
+progfiguration-blacksite = "progfiguration_blacksite.cli.progfigsite_shim:main"
+progfiguration-blacksite-buildapk = "progfiguration_blacksite.cli.progfigsite_buildapk_cmd:main"
+
+[project.optional-dependencies]
+development = [
+    # Progfiguration itself
+    "progfiguration >= 0.0.2a7",
+
+    # Installed by roles, which then requires them
+    # In development we just install them here so that we get nice type hints etc
+    "requests",
+
+    # Development tools
+    "black",
+    "build",
+    "mypy",
+
+    # Used by the APK build process
+    "installer",
+]
+
+[project.urls]
+Homepage = "https://github.com/mrled/psyops/tree/master/blacksite"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# If we don't specify this here,
+# getting the version dynamically fails with ModuleNotFoundError
+# when it tries to build.
+packages = ["progfiguration_blacksite"]
+
+[tool.setuptools.package-data]
+progfiguration_blacksite = ["*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "progfiguration_blacksite.get_version" }
+
+[tool.black]
+line-length = 120
