@@ -14,7 +14,6 @@ import time
 import traceback
 from typing import Any, Dict, NamedTuple
 
-import boto3
 import invoke
 
 
@@ -62,6 +61,8 @@ def s3_upload_directory(directory, bucketname):
 
     TODO: keep track of all uploaded files, then at the end list all files in the bucket and delete any we didn't upload
     """
+    import boto3
+
     s3client = boto3.client("s3")
     for root, _, files in os.walk(directory):
         for filename in files:
