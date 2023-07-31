@@ -6,7 +6,7 @@ from pathlib import Path
 import venv
 
 from progfiguration import logger
-from progfiguration.cmd import run
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
 from progfiguration_blacksite.sitelib import line_in_crontab
@@ -19,7 +19,7 @@ def install_vdirsyncer_venv():
         return
     os.makedirs("/usr/local/venv", 0o755, exist_ok=True)
     venv.create(venvdir, with_pip=True, symlinks=True, upgrade_deps=True)
-    run([f"{venvdir}/bin/pip", "install", "vdirsyncer"])
+    magicrun([f"{venvdir}/bin/pip", "install", "vdirsyncer"])
     os.symlink(f"{venvdir}/bin/vdirsyncer", "/usr/local/bin/vdirsyncer")
 
 
@@ -42,11 +42,11 @@ class Role(ProgfigurationRole):
         return self.localhost.users.getent_user(self.pullbackup_user).homedir
 
     def apply(self):
-        run("apk add isync")
+        magicrun("apk add isync")
 
         # There is an apk package for vdirsyncer, but it's in @edgecommunity and it requires Python 3.11 for some reason.
         # We have to install its prereqs first though.
-        run("apk add libxml2 libxslt zlib")
+        magicrun("apk add libxml2 libxslt zlib")
         install_vdirsyncer_venv()
 
         self.localhost.makedirs(self.role_dir, owner="root", mode=0o755)
@@ -112,7 +112,7 @@ class Role(ProgfigurationRole):
         )
 
         logger.info("Discovering vdirsyncer collections...")
-        run("pullbackup_email.sh -m vdirsyncer-discover")
+        magicrun("pullbackup_email.sh -m vdirsyncer-discover")
 
     def results(self):
         return {}

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from progfiguration.cmd import run
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
 
@@ -36,7 +36,7 @@ class Role(ProgfigurationRole):
             "syslog-ng",
             "syslog-ng-openrc",
         ]
-        run(["apk", "add", *packages])
+        magicrun(["apk", "add", *packages])
         self.localhost.makedirs(self.logdir, owner="root", group="root", mode=0o700)
         self.localhost.temple(
             self.role_file("syslog-ng.conf.temple"),
@@ -53,9 +53,9 @@ class Role(ProgfigurationRole):
             dirmode=0o755,
         )
 
-        run("rc-service syslog-ng start")
-        run("rc-update add syslog-ng default")
-        run("rc-service syslog-ng reload")  # Ensures config is loaded if we changed it
+        magicrun("rc-service syslog-ng start")
+        magicrun("rc-update add syslog-ng default")
+        magicrun("rc-service syslog-ng reload")  # Ensures config is loaded if we changed it
 
     def results(self):
         return {

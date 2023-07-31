@@ -6,7 +6,7 @@ from pathlib import Path
 import socket
 import textwrap
 
-from progfiguration.cmd import run
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost.disks import is_mountpoint
 
@@ -55,9 +55,9 @@ class Role(ProgfigurationRole):
             "docker-compose",
             "docker-openrc",
         ]
-        run(["apk", "add", *packages])
-        run("rc-update add docker default", check=False)
-        run("rc-service docker start")
+        magicrun(["apk", "add", *packages])
+        magicrun("rc-update add docker default", check=False)
+        magicrun("rc-service docker start")
 
         # Create required users
         archivebox_getent = self.localhost.users.add_service_account(
@@ -69,7 +69,7 @@ class Role(ProgfigurationRole):
 
         # If the homeswarm_blockdevice is specified, mount it to the role directory
         if self.homeswarm_blockdevice and not is_mountpoint(str(self.roledir)):
-            run(["mount", self.homeswarm_blockdevice, self.roledir])
+            magicrun(["mount", self.homeswarm_blockdevice, self.roledir])
 
         # Create required directories
         traefik_confdir = self.roledir / "traefik"
@@ -131,7 +131,7 @@ class Role(ProgfigurationRole):
         # the archivebox/archivebox:dev image looks like it's up to date with the latest in dev branch.
         # archivebox_branch = "dev"
         # archivebox_tag = "local-archivebox-dev"
-        # run(f"docker build -t {archivebox_tag} https://github.com/ArchiveBox/ArchiveBox.git#{archivebox_branch}")
+        # magicrun(f"docker build -t {archivebox_tag} https://github.com/ArchiveBox/ArchiveBox.git#{archivebox_branch}")
 
         # Customize the Archivebox image for local use
         # It's best to build a Docker image in an empty directory, according to its docs
@@ -149,7 +149,7 @@ class Role(ProgfigurationRole):
             mode=0o0644,
         )
         annals_archivebox_tag = "annals-archivebox-local"
-        run(
+        magicrun(
             [
                 "docker",
                 "build",
@@ -197,9 +197,9 @@ class Role(ProgfigurationRole):
         # Archivebox clone
         archivebox_srcdir = self.roledir / "absrc"
         if archivebox_srcdir.exists():
-            run(["sudo", "-u", self.archivebox_user, "git", "pull"], cwd=str(archivebox_srcdir))
+            magicrun(["sudo", "-u", self.archivebox_user, "git", "pull"], cwd=str(archivebox_srcdir))
         else:
-            run(
+            magicrun(
                 [
                     "sudo",
                     "-u",
@@ -281,16 +281,16 @@ class Role(ProgfigurationRole):
             mode=0o0640,
         )
 
-        swarmstate = run(["docker", "info", "--format", "{{ .Swarm.LocalNodeState }}"]).stdout.getvalue().strip()
+        swarmstate = magicrun(["docker", "info", "--format", "{{ .Swarm.LocalNodeState }}"]).stdout.getvalue().strip()
         if swarmstate == "inactive":
             # Initialize Docker Swarm
-            run(["docker", "swarm", "init"])
-            swarmstate = run(["docker", "info", "--format", "{{ .Swarm.LocalNodeState }}"]).stdout.getvalue().strip()
+            magicrun(["docker", "swarm", "init"])
+            swarmstate = magicrun(["docker", "info", "--format", "{{ .Swarm.LocalNodeState }}"]).stdout.getvalue().strip()
         if swarmstate != "active":
             raise RuntimeError(f"Swarm state is {swarmstate}")
 
         # Deploy the stack to Docker Swarm
-        run(["docker", "stack", "deploy", "-c", str(homeswarm_compose_file), self.stackname])
+        magicrun(["docker", "stack", "deploy", "-c", str(homeswarm_compose_file), self.stackname])
 
         # Install the archivebox docker wrapper scripts
         self.localhost.temple(

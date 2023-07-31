@@ -5,7 +5,7 @@ from pathlib import Path
 import shutil
 
 from progfiguration import logger
-from progfiguration.cmd import run
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
 
@@ -55,7 +55,7 @@ class Role(ProgfigurationRole):
             "nebula",
             0o0640,
         )
-        result = run(f"nebula -test -config {tmp_psynet_yml}", check=False)
+        result = magicrun(f"nebula -test -config {tmp_psynet_yml}", check=False)
         if result.returncode != 0:
             raise Exception(f"nebula -test failed with code {result.returncode}, bad config file at {tmp_psynet_yml}")
         shutil.move(tmp_psynet_yml, "/etc/nebula/psynet.yml")
@@ -67,8 +67,8 @@ class Role(ProgfigurationRole):
             0o0600,
         )
 
-        run("modprobe tun")
+        magicrun("modprobe tun")
         # Read the config file in case we changed it.
-        run("rc-service nebula.psynet restart")
+        magicrun("rc-service nebula.psynet restart")
         # We do this even though the OS is stateless so that rc-status knows it should be running
-        run("rc-update add nebula.psynet default")
+        magicrun("rc-update add nebula.psynet default")

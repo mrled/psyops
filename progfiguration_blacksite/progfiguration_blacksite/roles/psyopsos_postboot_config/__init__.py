@@ -7,8 +7,7 @@ import textwrap
 import time
 from typing import List
 
-from progfiguration import logger
-from progfiguration.cmd import run
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinux, authorized_keys
 
@@ -40,23 +39,23 @@ def configure_user(localhost: LocalhostLinux, name: str, password: str, pubkeys:
         if shell:
             cmd += ["--shell", shell]
         cmd += [name]
-        run(cmd)
+        magicrun(cmd)
     if pubkeys:
         authorized_keys.add_idempotently(localhost, name, pubkeys)
 
 
 def set_timezone(timezone: str):
-    run(f"apk add tzdata")
+    magicrun(f"apk add tzdata")
 
     shutil.copyfile(f"/usr/share/zoneinfo/{timezone}", "/etc/localtime")
     with open(f"/etc/timezone", "w") as tzfp:
         tzfp.write(timezone)
 
-    run("rc-service ntpd restart")
+    magicrun("rc-service ntpd restart")
 
     # We can remove tzdata if we want to
     # <https://wiki.alpinelinux.org/wiki/Setting_the_timezone>
-    # run(f"apk del tzdata")
+    # magicrun(f"apk del tzdata")
 
 
 def set_apk_repositories(localhost: LocalhostLinux):
@@ -82,7 +81,7 @@ def set_apk_repositories(localhost: LocalhostLinux):
     # I think this happens because 000-psyopsOS-postboot.start has just updated it before running progfiguration.
     # apk update says you should not need to do this normally anyway.
     #
-    # result = run("apk update", check=False, log_output=True)
+    # result = magicrun("apk update", check=False, log_output=True)
     # if result.returncode != 0:
     #     logger.info(f"apk update failed with code {result.returncode}")
     #     logger.info(f"apk update stdout: {result.stdout}")
@@ -90,7 +89,7 @@ def set_apk_repositories(localhost: LocalhostLinux):
     #     secs = 15
     #     logger.info(f"Sleeping {secs} seconds before trying again")
     #     time.sleep(secs)
-    #     run("apk update", log_output=True)
+    #     magicrun("apk update", log_output=True)
 
 
 def install_base_packages():
@@ -98,7 +97,7 @@ def install_base_packages():
     packages = [
         "py3-pip",
     ]
-    run(["apk", "add"] + packages)
+    magicrun(["apk", "add"] + packages)
 
 
 _psyopsOS_path_sh = r"""\
@@ -141,9 +140,9 @@ class Role(ProgfigurationRole):
         )
 
         # TODO: this generates a lot of junk when progfiguration tries to log to syslog it's been stopped
-        run("rc-service syslog restart")
+        magicrun("rc-service syslog restart")
         # We do this even though the OS is stateless so that rc-status knows it should be running
-        run("rc-update add syslog default")
+        magicrun("rc-update add syslog default")
 
     def apply(self):
 
@@ -162,7 +161,7 @@ class Role(ProgfigurationRole):
             "/etc/profile.d/psyopsOS_path.sh", _psyopsOS_path_sh, "root", "root", 0o0644, 0o0755
         )
 
-        run("rc-service crond start")
+        magicrun("rc-service crond start")
 
         for user in _users:
             configure_user(self.localhost, **user)

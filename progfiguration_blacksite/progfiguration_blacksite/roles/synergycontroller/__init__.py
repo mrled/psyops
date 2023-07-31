@@ -12,8 +12,7 @@ import textwrap
 import time
 from typing import List
 
-from progfiguration import ssh
-from progfiguration.cmd import run
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinux, authorized_keys
 from progfiguration.localhost.disks import is_mountpoint
@@ -157,9 +156,9 @@ class Role(ProgfigurationRole):
 
         install_synergy()
 
-        run("apk add bluez")
-        run("rc-servie bluetooth start")
-        run("rc-update add bluetooth")
+        magicrun("apk add bluez")
+        magicrun("rc-servie bluetooth start")
+        magicrun("rc-update add bluetooth")
         # Pairing:
         # <https://wiki.archlinux.org/title/Bluetooth#Pairing>
         # bluetoothctl
@@ -368,7 +367,7 @@ class Role(ProgfigurationRole):
         install_teensy_loader_cli(self.localhost, self.user, synergist_data)
 
         qmk_home = "/psyopsos-data/roles/synergycontroller/qmk_firmware"
-        run(f"sudo -u {self.user} python3 -m pip install --user qmk")
+        magicrun(f"sudo -u {self.user} python3 -m pip install --user qmk")
 
         install_vscode_remote_prereqs()
 

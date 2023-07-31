@@ -5,8 +5,7 @@ import os
 from pathlib import Path
 import venv
 
-from progfiguration import logger
-from progfiguration.cmd import run
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
 from progfiguration_blacksite.sitelib import line_in_crontab
@@ -19,7 +18,7 @@ def install_vdirsyncer_venv():
         return
     os.makedirs("/usr/local/venv", 0o755, exist_ok=True)
     venv.create(venvdir, with_pip=True, symlinks=True, upgrade_deps=True)
-    run([f"{venvdir}/bin/pip", "install", "vdirsyncer"])
+    magicrun([f"{venvdir}/bin/pip", "install", "vdirsyncer"])
     os.symlink(f"{venvdir}/bin/vdirsyncer", "/usr/local/bin/vdirsyncer")
 
 

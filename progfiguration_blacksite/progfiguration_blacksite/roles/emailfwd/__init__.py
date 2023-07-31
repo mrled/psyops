@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from progfiguration.cmd import run
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
 from progfiguration_blacksite.sitelib import line_in_crontab
@@ -24,10 +24,10 @@ class Role(ProgfigurationRole):
 
     def apply(self):
 
-        run("apk add msmtp mailx")
+        magicrun("apk add msmtp mailx")
 
         # By default, this is a symlink to busybox
-        run("ln -sf /usr/bin/msmtp /usr/sbin/sendmail")
+        magicrun("ln -sf /usr/bin/msmtp /usr/sbin/sendmail")
 
         # This file contains the SMTP password, keep it secure
         self.localhost.temple(

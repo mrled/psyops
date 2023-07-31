@@ -10,7 +10,7 @@ from pathlib import Path
 import textwrap
 
 from progfiguration import logger
-from progfiguration.cmd import run
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.progfigtypes import AnyPathOrStr
 
@@ -26,8 +26,8 @@ def convert_ssh_ed25519_key_to_onion_hidden_service(
     This is probably not a good idea! idk anything, I'm crypto stupid.
 
     Equivalent to:
-    ssh_key_ed25519_seed = run(f"ssh-keyparse.py /mnt/psyops-secret/mount/ssh_host_ed25519_key -x")
-    run(f"onion-key-helper.py --force --private-key {ssh_key_ed25519_seed} {str(hidden_service_dir)}")
+    ssh_key_ed25519_seed = magicrun(f"ssh-keyparse.py /mnt/psyops-secret/mount/ssh_host_ed25519_key -x")
+    magicrun(f"onion-key-helper.py --force --private-key {ssh_key_ed25519_seed} {str(hidden_service_dir)}")
     """
 
     if not isinstance(ssh_ed25519_key_path, Path):
@@ -71,8 +71,8 @@ class Role(ProgfigurationRole):
             "py3-pynacl",
             "tor",
         ]
-        run(["apk", "add", *packages])
-        run("rc-update add tor default", check=False)
+        magicrun(["apk", "add", *packages])
+        magicrun("rc-update add tor default", check=False)
 
         toruser = self.localhost.users.getent_user("tor")
 
@@ -118,4 +118,4 @@ class Role(ProgfigurationRole):
             0o700,
         )
 
-        run("rc-service tor restart")
+        magicrun("rc-service tor restart")
