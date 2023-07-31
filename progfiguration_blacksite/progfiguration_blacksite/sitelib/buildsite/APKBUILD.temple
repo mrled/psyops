@@ -14,7 +14,7 @@ options="!check" # No tests, yolo
 url="https://github.com/mrled/psyops"
 arch="noarch"
 license="WTFPL"
-depends="python3 py3-requests py3-tz py3-yaml"
+depends="python3 py3-requests py3-tz"
 makedepends="py3-build py3-setuptools py3-wheel py3-installer"
 
 # Show some info useful for debugging the progfigsite build process,
@@ -29,16 +29,10 @@ ___progfigsite_debug_info() {
 **   pkgver:    $pkgver
 **   pkgdir:    $pkgdir
 **   pwd:       $(pwd)
-**   ls:
-$(ls | sed 's/^/**        /')
-**   ls blacksite/builddata/:
-$(ls blacksite/builddata/ | sed 's/^/**        /')
-**   sys.modules | grep progfig:
-$(python3 -c "import sys; [print(k,v) for k,v in sys.modules.items()]" | grep -i progfig | sed 's/^/**        /')
-**   sys.modules | grep psyops:
-$(python3 -c "import sys; [print(k,v) for k,v in sys.modules.items()]" | grep -i psyops | sed 's/^/**        /')
-**   sys.modules | grep blacksite:
-$(python3 -c "import sys; [print(k,v) for k,v in sys.modules.items()]" | grep -i blacksite | sed 's/^/**        /')
+**   find .:
+$(find . | sort | sed 's/^/**        /')
+**   sys.modules | grep -i 'progfig\|psyops\|blacksite':
+$(python3 -c "import sys; [print(k,v) for k,v in sys.modules.items()]" | sort | grep -i 'progfig\|psyops\|blacksite' | sed 's/^/**        /')
 ************************************************************************
 EOF
     fi
