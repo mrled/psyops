@@ -1,8 +1,11 @@
 # Dockerfile to build psyopsOS ISOs
 
-FROM alpine:latest
+# This should be the lowest version among all running psyopsOS systems
+FROM alpine:3.16
 LABEL maintainer "me@micahrl.com"
 
+# Include everything necessary for building an Alpine CD image with mkimage,
+# as well as prereqs for building progfiguration_blacksite.
 RUN true \
     && apk update \
     && apk add \
@@ -38,6 +41,14 @@ RUN true \
         ncurses \
         openssh \
         openssl \
+        python3 \
+        py3-build \
+        py3-installer \
+        py3-pip \
+        py3-requests \
+        py3-setuptools \
+        py3-tz \
+        py3-wheel \
         ripgrep \
         rsync \
         shadow \
@@ -56,23 +67,18 @@ RUN true \
     && echo '%abuild ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/abuild \
     && true
 
+# Install the psyopsOS repository signing key
 COPY psyops@micahrl.com-62ca1973.rsa.pub /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub
-RUN chmod 644 /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub
-RUN echo "/home/build/psyops/psyopsOS/public/apk/psyopsOS" >> /etc/apk/repositories && cat /etc/apk/repositories
+RUN true \
+    && chmod 644 /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub \
+    && echo "/home/build/psyops/psyopsOS/public/apk/psyopsOS" >> /etc/apk/repositories && cat /etc/apk/repositories \
+    && true
 
 USER build
 
-# This Docker image builds only the operating system ISO
-# We don't need a real keypair, just generate this so that abuild is happy
-RUN true \
-    && abuild-keygen -i -a -n \
-    && ls -alF /etc/apk/keys \
-    && true
-
 WORKDIR /home/build
 RUN true \
-    && mkdir workdir iso psyops aports \
-    # && git clone --depth=1 https://gitlab.alpinelinux.org/alpine/aports.git \
+    && mkdir .abuild workdir iso psyops aports \
     && true
 
 VOLUME /home/build/workdir

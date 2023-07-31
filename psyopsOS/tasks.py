@@ -2,7 +2,6 @@
 
 import datetime
 import glob
-import importlib.util
 import os
 from pathlib import Path
 import pdb
@@ -10,9 +9,10 @@ import shlex
 import shutil
 import string
 import sys
+import tempfile
 import time
 import traceback
-from typing import Any, Dict, NamedTuple
+from typing import NamedTuple
 
 import invoke
 
@@ -105,8 +105,8 @@ def deploy(ctx):
 
 
 @invoke.task
-def progfigsite_abuild(ctx, clean=False, skipinstall=False):
-    """Build the progfiguration Python package as an Alpine package. Must be run from the psyops container.
+def progfigsite_abuild_localhost(ctx, clean=False, skipinstall=False):
+    """Build the progfiguration psyops blacksite Python package as an Alpine package. Must be run from the psyops container.
 
     Args:
         clean: If True, run 'abuild clean' before building.
@@ -127,8 +127,74 @@ def progfigsite_abuild(ctx, clean=False, skipinstall=False):
 
 
 @invoke.task
+def progfigsite_abuild_docker(ctx):
+    """Build the progfiguration psyops blacksite Python package as an Alpine package. Use the mkimage docker container.
+
+    This uses a dedicated Docker container to build the package.
+
+    This decouples the PSYOPS container Alpine version from the psyopsOS Alpine version.
+    Some hosts might be running a pretty old version of Alpine,
+    and we want to be able to build packages that work for all versions.
+
+    This uses the same Docker container as the psyopsOS build.
+
+    It looks for the abuild private SSH key in the 1Password Personal vault,
+    and uses the public key in psyopsOS/build/.
+    """
+
+    ssh_key_file = "psyops@micahrl.com-62ca1973.rsa"
+    in_container_ssh_key_path = f"/home/build/.abuild/{ssh_key_file}"
+
+    in_container_build_cmd = [
+        "export PATH=$PATH:$HOME/.local/bin",
+        "cd /home/build/psyops/progfiguration_blacksite",
+        "pip install -e .[development]",
+        # TODO: remove this once we have a new enough setuptools in the container
+        # Ran into this problem: <https://stackoverflow.com/questions/74941714/importerror-cannot-import-name-legacyversion-from-packaging-version>
+        # I'm using an older Alpine container, 3.16 at the time of this writing, because psyopsOS is still that old.
+        # When we can upgrade, we'll just use the setuptools in apk.
+        "pip install -U setuptools",
+        f"echo 'PACKAGER_PRIVKEY=\"{in_container_ssh_key_path}\"' > /home/build/.abuild/abuild.conf",
+        "ls -alF /home/build/.abuild",
+        f"progfiguration-blacksite-buildapk --apks-index-path /home/build/psyops/psyopsOS/public/apk",
+        "ls -larth /home/build/psyops/psyopsOS/public/apk/psyopsOS/x86_64/",
+    ]
+
+    with tempfile.TemporaryDirectory() as tmpdir_s:
+        tempdir = Path(tmpdir_s)
+
+        # We need the APK SSH key from 1password.
+        # Place it in the temp directory so it'll get cleaned up when we're done.
+        tempdir_sshkey = tempdir / "sshkey"
+        ctx.run(
+            f"op read op://Personal/psyopsOS_abuild_ssh_key/notesPlain --out-file {tempdir_sshkey.as_posix()}"
+        )
+
+        docker_cmd = [
+            "docker",
+            "run",
+            "--rm",
+            "--volume",
+            f"{_psyopsdir}:/home/build/psyops",
+            "--volume",
+            f"{tempdir_sshkey.as_posix()}:{in_container_ssh_key_path}:ro",
+            "--volume",
+            f"{_psyopsdir}/psyopsOS/build/psyops@micahrl.com-62ca1973.rsa.pub:{in_container_ssh_key_path}.pub:ro",
+            _docker_builder_tag,
+            "sh",
+            "-c",
+            shlex.quote(" && ".join(in_container_build_cmd)),
+        ]
+
+        print("Running Docker...")
+        print(" ".join(docker_cmd))
+
+        ctx.run(" ".join(docker_cmd))
+
+
+@invoke.task
 def psyopsOS_base_abuild(ctx, clean=False):
-    """Build the psyopsOS-base Python package as an Alpine package. Must be run from the psyops container.
+    """Build the psyopsOS-base Python package as an Alpine package. Must be run from the psyops container. TODO: Update to work with the build container like progfiguration_blacksite does.
 
     Sign with the psyopsOS key.
     """
@@ -266,6 +332,17 @@ def get_docker_cmd_for_mkimage(
     volname_workdir,
     shell_or_prefix,
 ):
+    """Return the docker command to run mkimage.sh
+
+    This is a helper function for the mkimage task.
+
+    :param buildinfo: The buildinfo object returned by mkimage_buildinfo()
+    :param aportsdir: The path to the aports directory
+    :param isodir: The path to the directory where the ISO will be written
+    :param volname_workdir: The name of the volume that will be mounted to /home/build
+    :param shell_or_prefix: Either "shell" or "prefix"; 'shell' is a string that can be presented to the user to run in their terminal and get an interactive shell in the container, while 'prefix' is a string that can be prepended to some other command to run it in the container.
+    :return: The docker command to run mkimage.sh
+    """
     shell = False
     if shell_or_prefix == "shell":
         shell = True
@@ -298,7 +375,7 @@ def get_docker_cmd_for_mkimage(
         # Saving this between runs makes rebuilds much faster.
         "--volume",
         f"{volname_workdir}:/home/build/workdir",
-        # This is where the iso will be copied after it is build
+        # This is where the iso will be copied after it is built
         "--volume",
         f"{isodir}:/home/build/iso",
         # Mounting this allows the build to access the psyopsOS/os-overlay/ and the public APK packages directory.
@@ -363,7 +440,10 @@ def mkimage(
     volname_workdir=_docker_builder_volname_workdir,
     whatif=False,
 ):
-    """Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO. Works from any host with Docker (doesn't require an Alpine host OS), but does require an x86_64 host."""
+    """TODO: THIS NEEDS TO BE UPDATED SINCE I CHANGED THE DOCKERFILE RECENTLY. SEE BELOW. Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO. Works from any host with Docker (doesn't require an Alpine host OS), but does require an x86_64 host.
+
+    TODO: I recently changed the Dockerfile to work for building progfiguration_blacksite. This means I no longer have to build it in the psyops container, can use this dedicated build container instead. Make sure this mkimgae still works.
+    """
 
     os.umask(0o022)
     buildinfo = mkimage_buildinfo(ctx)
