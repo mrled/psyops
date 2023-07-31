@@ -18,7 +18,7 @@ progfiguration-blacksite-buildapk = "progfiguration_blacksite.cli.progfigsite_bu
 [project.optional-dependencies]
 development = [
     # Progfiguration itself
-    "progfiguration >= 0.0.2a7",
+    "progfiguration >= 0.0.2a8",
 
     # Installed by roles, which then requires them
     # In development we just install them here so that we get nice type hints etc
@@ -29,8 +29,10 @@ development = [
     "build",
     "mypy",
 
-    # Used by the APK build process
+    # Used by the APK build process and/or progfiguration-blacksite-buildapk
     "installer",
+    "setuptools",
+    "wheel",
 ]
 
 [project.urls]
@@ -40,11 +42,8 @@ Homepage = "https://github.com/mrled/psyops/tree/master/blacksite"
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-# If we don't specify this here,
-# getting the version dynamically fails with ModuleNotFoundError
-# when it tries to build.
-packages = ["progfiguration_blacksite"]
+[tool.setuptools.packages.find]
+where = ["."]
 
 [tool.setuptools.package-data]
 progfiguration_blacksite = ["*"]
