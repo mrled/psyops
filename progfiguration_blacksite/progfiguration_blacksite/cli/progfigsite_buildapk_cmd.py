@@ -45,6 +45,11 @@ def main():
         help="Open the debugger if an unhandled exception is encountered.",
     )
     parser.add_argument(
+        "--abuild-verbose",
+        action="store_true",
+        help="Print verbose output from abuild.",
+    )
+    parser.add_argument(
         "--keep-apkbuild",
         "-k",
         action="store_true",
@@ -121,7 +126,15 @@ def main():
             parsed.pyproject_root,
             tmp_pyproj_root,
             ignore=shutil.ignore_patterns(
-                "*venv*", ".git*", "*.egg-info", ".mypy_cache", "build", "dist"
+                "*venv*",
+                ".git*",
+                "*.egg-info",
+                ".mypy_cache",
+                "build",
+                "dist",
+                "__pycache__",
+                "*.pyc",
+                "*.pyo",
             ),
             dirs_exist_ok=True,
         )
@@ -159,13 +172,16 @@ def main():
             if parsed.clean:
                 magicrun("abuild clean", cwd=tmp_pyproj_root.as_posix())
 
-            magicrun(
-                [
-                    "abuild",
-                    "-P",
-                    parsed.apks_index_path.as_posix(),
-                    "-D",
-                    parsed.abuild_repo_description,
-                ],
-                cwd=tmp_pyproj_root.as_posix(),
-            )
+            abuild_cmd = ["abuild"]
+            if parsed.abuild_verbose:
+                abuild_cmd += ["-vv"]
+            abuild_cmd += [
+                "-P",
+                parsed.apks_index_path.as_posix(),
+                "-D",
+                parsed.abuild_repo_description,
+            ]
+
+            print(f"Running {' '.join(abuild_cmd)}")
+
+            magicrun(abuild_cmd, cwd=tmp_pyproj_root.as_posix())
