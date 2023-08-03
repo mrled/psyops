@@ -19,6 +19,12 @@ profile_psyopsOS() {
 	boot_addons="intel-ucode"
 	initrd_ucode="/boot/intel-ucode.img"
 
+	# Enable serial console
+	kernel_cmdline="$kernel_cmdline console=tty0 console=ttyAMA0"
+
+	# 115200 baud is what is used with qemu and lima
+	syslinux_serial="0 115200"
+
 	# These are .apk files that will exist in the resulting iso image
 	# This doesn't install them in the image, just adds the package file to /apks
 	apks="$apks $apklist"
