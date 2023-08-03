@@ -8,6 +8,7 @@ import pdb
 import shlex
 import shutil
 import string
+import subprocess
 import sys
 import tempfile
 import time
@@ -39,13 +40,18 @@ _basedir = os.path.abspath(os.path.dirname(__file__))
 _docker_builder_volname_workdir = "psyopsos-build-workdir"
 
 # Input configuration
+_aportsdir = os.path.expanduser("~/Documents/Repositories/aports")
+_workdir = os.path.expanduser("~/Scratch/psyopsOS-build-tmp")
+_isodir = os.path.expanduser("~/Downloads/")
+_ssh_key_file = "psyops@micahrl.com-62ca1973.rsa"
+_alpine_version = "3.16"
 _psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 _psyopsosdir = os.path.join(_psyopsdir, "psyopsOS")
 _aportsscriptsdir = os.path.join(_psyopsosdir, "aports-scripts")
 _staticdir = os.path.join(_basedir, "static")
 _progfigsite_dir = os.path.join(_psyopsdir, "progfiguration_blacksite")
 _psyopsOS_base_dir = os.path.join(_basedir, "psyopsOS-base")
-_docker_builder_tag = "psyopsos-builder"
+_docker_builder_tag_prefix = "psyopsos-builder-"
 _docker_builder_dir = os.path.join(_psyopsosdir, "build")
 
 # Output configuration
@@ -77,6 +83,41 @@ def s3_upload_directory(directory, bucketname):
             s3client.upload_file(
                 local_filepath, bucketname, relative_filepath, ExtraArgs=extra_args
             )
+
+
+@invoke.task
+def validate_alpine_version(ctx, alpine_version=_alpine_version):
+    """Validate that the alpine version matches what we check out in aports and what is in build/Dockerfile."""
+
+    dockerfile = Path(_docker_builder_dir) / "Dockerfile"
+    with dockerfile.open("r") as f:
+        for line in f.readlines():
+            if line.startswith("FROM alpine:"):
+                dockerfile_alpine_version = line.split(":")[1]
+                break
+
+    cmd = ["git", "name-rev", "--name-only", "HEAD"]
+    gitresult = subprocess.run(cmd, cwd=_aportsdir, check=True, capture_output=True)
+    aports_alpine_version = ""
+    if gitresult.returncode == 0:
+        aports_alpine_version = gitresult.stdout.decode("utf-8").strip()
+
+    errors = []
+
+    if alpine_version not in dockerfile_alpine_version:
+        errors.append(
+            f"Alpine version in Dockerfile ({dockerfile_alpine_version}) does not match alpine_version ({alpine_version})"
+        )
+    if alpine_version not in aports_alpine_version:
+        errors.append(
+            f"Alpine version in aports ({aports_alpine_version}) does not match alpine_version ({alpine_version})"
+        )
+
+    if errors:
+        raise Exception("Alpine version mismatch: " + "\n".join(errors))
+    print(
+        f"Validated that the Dockerfile and the aports checkout are both Alpine v{alpine_version}"
+    )
 
 
 @invoke.task
@@ -127,74 +168,272 @@ def progfigsite_abuild_localhost(ctx, clean=False, skipinstall=False):
 
 
 @invoke.task
-def progfigsite_abuild_docker(ctx):
-    """Build the progfiguration psyops blacksite Python package as an Alpine package. Use the mkimage docker container.
+def build_docker_container(ctx, rebuild=False, alpine_version=_alpine_version):
+    """Build the docker container that builds the ISO image and Alpine packages"""
+    cmd = ["docker", "build", "--progress=plain"]
+    if rebuild:
+        cmd += ["--no-cache"]
+    cmd += ["--tag", _docker_builder_tag_prefix + alpine_version, _docker_builder_dir]
+    subprocess.run(cmd, check=True)
 
-    This uses a dedicated Docker container to build the package.
 
-    This decouples the PSYOPS container Alpine version from the psyopsOS Alpine version.
-    Some hosts might be running a pretty old version of Alpine,
-    and we want to be able to build packages that work for all versions.
+class AlpineDockerBuilder:
+    """A context manager for building Alpine packages and ISO images in a Docker container
 
-    This uses the same Docker container as the psyopsOS build.
-
-    It looks for the abuild private SSH key in the 1Password Personal vault,
-    and uses the public key in psyopsOS/build/.
+    It saves the psyopsOS build key from 1Password to a temp directory so that you can use it to sign packages.
+    It has property `tempdir_sshkey` that you can pass to the Docker container to use the key.
     """
 
-    ssh_key_file = "psyops@micahrl.com-62ca1973.rsa"
-    in_container_ssh_key_path = f"/home/build/.abuild/{ssh_key_file}"
+    # We create a Docker volume for the workdir - it's not a bind mount because Docker volumes are faster.
+    # Use this for its name.
+    workdir_volname = "psyopsos-build-workdir"
 
-    in_container_build_cmd = [
-        "export PATH=$PATH:$HOME/.local/bin",
-        "cd /home/build/psyops/progfiguration_blacksite",
-        "pip install -e .[development]",
-        # TODO: remove this once we have a new enough setuptools in the container
-        # Ran into this problem: <https://stackoverflow.com/questions/74941714/importerror-cannot-import-name-legacyversion-from-packaging-version>
-        # I'm using an older Alpine container, 3.16 at the time of this writing, because psyopsOS is still that old.
-        # When we can upgrade, we'll just use the setuptools in apk.
-        "pip install -U setuptools",
-        f"echo 'PACKAGER_PRIVKEY=\"{in_container_ssh_key_path}\"' > /home/build/.abuild/abuild.conf",
-        "ls -alF /home/build/.abuild",
-        f"progfiguration-blacksite-buildapk --apks-index-path /home/build/psyops/psyopsOS/public/apk",
-        "ls -larth /home/build/psyops/psyopsOS/public/apk/psyopsOS/x86_64/",
-    ]
+    def __init__(
+        self,
+        # The path to the aports checkout directory
+        aports_checkout_dir,
+        # The path to the directory containing the aports scripts overlay files
+        aports_scripts_overlay_dir,
+        # Persistent path Use the previously defined docker volume for temporary files etc when building the image.
+        # Saving this between runs makes rebuilds much faster.
+        workdir,
+        # The place to put the ISO image when its done
+        isodir,
+        # The SSH key to use for signing packages
+        ssh_key_file,
+        # The Alpine version to use
+        alpine_version,
+    ) -> None:
+        self.aports_checkout_dir = aports_checkout_dir
+        self.aports_scripts_overlay_dir = aports_scripts_overlay_dir
+        self.workdir = workdir
+        self.isodir = isodir
+        self.ssh_key_file = ssh_key_file
+        self.in_container_ssh_key_path = f"/home/build/.abuild/{ssh_key_file}"
+        self.alpine_version = alpine_version
 
-    with tempfile.TemporaryDirectory() as tmpdir_s:
-        tempdir = Path(tmpdir_s)
+    def __enter__(self):
 
-        # We need the APK SSH key from 1password.
-        # Place it in the temp directory so it'll get cleaned up when we're done.
-        tempdir_sshkey = tempdir / "sshkey"
-        ctx.run(
-            f"op read op://Personal/psyopsOS_abuild_ssh_key/notesPlain --out-file {tempdir_sshkey.as_posix()}"
+        os.umask(0o022)
+        buildinfo = self.mkimage_buildinfo()
+        build_docker_container(
+            invoke.context.Context(), alpine_version=self.alpine_version
         )
 
-        docker_cmd = [
+        # We use a docker local volume for the workdir
+        # This would not be necessary on Linux, but
+        # on Docker Desktop for Mac (and probably also on Windows),
+        # permissions will get fucked up if you try to use a volume on the host.
+        inspected = subprocess.run(
+            f"docker volume inspect {self.workdir_volname}", shell=True
+        )
+        if inspected.returncode != 0:
+            subprocess.run(f"docker volume create {self.workdir_volname}", shell=True)
+
+        self.mkimage_clean(False, self.workdir)
+
+        self.tempdir = Path(tempfile.mkdtemp())
+        tempdir_sshkey = self.tempdir / "sshkey"
+        subprocess.run(
+            f"op read op://Personal/psyopsOS_abuild_ssh_key/notesPlain --out-file {tempdir_sshkey.as_posix()}",
+            shell=True,
+        )
+
+        self.docker_cmd = [
             "docker",
             "run",
             "--rm",
+            # Give us full access to the psyops dir
+            # Mounting this allows the build to access the psyopsOS/os-overlay/ and the public APK packages directory for mkimage.
+            # Also gives us access to progfiguration stuff.
             "--volume",
             f"{_psyopsdir}:/home/build/psyops",
+            # I have somehow made it so I can't build psyopsOS-base package without this,
+            # but I couldn't tell u why. :(
+            # TODO: fucking fix this
             "--volume",
-            f"{tempdir_sshkey.as_posix()}:{in_container_ssh_key_path}:ro",
+            f"{_psyopsdir}:/psyops",
+            # You must mount the aports scripts
+            # (And don't forget to update them)
             "--volume",
-            f"{_psyopsdir}/psyopsOS/build/psyops@micahrl.com-62ca1973.rsa.pub:{in_container_ssh_key_path}.pub:ro",
-            _docker_builder_tag,
+            f"{self.aports_checkout_dir}:/home/build/aports",
+            # genapkovl-psyopsOS.sh partially sets up the filesystem of the iso live OS
+            "--volume",
+            f"{self.aports_scripts_overlay_dir}/genapkovl-psyopsOS.sh:/home/build/aports/scripts/genapkovl-psyopsOS.sh",
+            # mkimage.psyopsOS.sh defines the profile that we pass to mkimage.sh
+            "--volume",
+            f"{self.aports_scripts_overlay_dir}/mkimg.psyopsOS.sh:/home/build/aports/scripts/mkimg.psyopsOS.sh",
+            # Use the previously defined docker volume for temporary files etc when building the image.
+            # Saving this between runs makes rebuilds much faster.
+            "--volume",
+            f"{self.workdir_volname}:/home/build/workdir",
+            # This is where the iso will be copied after it is built
+            "--volume",
+            f"{self.isodir}:/home/build/iso",
+            # Mount my SSH keys into the container
+            "--volume",
+            f"{tempdir_sshkey.as_posix()}:{self.in_container_ssh_key_path}:ro",
+            "--volume",
+            f"{_psyopsdir}/psyopsOS/build/psyops@micahrl.com-62ca1973.rsa.pub:{self.in_container_ssh_key_path}.pub:ro",
+            "--env",
+            # Environment variables that mkimage.sh (or one of the scripts it calls) uses
+            f"PSYOPSOS_BUILD_DATE_ISO8601={buildinfo.date.strftime('%Y-%m-%dT%H:%M:%S%z')}",
+            "--env",
+            f"PSYOPSOS_BUILD_GIT_REVISION={buildinfo.revision}",
+            "--env",
+            f"PSYOPSOS_BUILD_GIT_DIRTY={str(buildinfo.dirty)}",
+            _docker_builder_tag_prefix + self.alpine_version,
+        ]
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        shutil.rmtree(self.tempdir)
+
+    def mkimage_buildinfo(self):
+        build_date = datetime.datetime.now()
+        revision_result = subprocess.run(
+            "git rev-parse HEAD", shell=True, capture_output=True
+        )
+        build_git_revision = revision_result.stdout.decode("utf-8").strip()
+        build_git_dirty = subprocess.run("git diff --quiet", shell=True).returncode != 0
+        return MkimageBuildInfo(build_date, build_git_revision, build_git_dirty)
+
+    def mkimage_clean(self, indocker, workdir):
+        """Clean directories before build
+
+        This should be done before any runs - it doesn't clean apk cache or other large working datasets.
+        That's why it's not a separate Invoke task.
+        """
+        cleandirs = []
+        if indocker:
+            # If /tmp is persistent, make sure we don't have old stuff lying around
+            # Not necessary in Docker, which has a clean /tmp every time
+            cleandirs += glob.glob("/tmp/mkimage*")
+        cleandirs += glob.glob(f"{workdir}/apkovl*")
+        cleandirs += glob.glob(f"{workdir}/apkroot*")
+        for d in cleandirs:
+            print(f"Removing {d}...")
+            subprocess.run(f"rm -rf '{d}'", shell=True, check=True)
+
+
+@invoke.task
+def progfigsite_abuild_docker(
+    ctx,
+    aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
+    workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
+    isodir=os.path.expanduser("~/Downloads/"),
+    ssh_key_file="psyops@micahrl.com-62ca1973.rsa",
+    alpine_version=_alpine_version,
+):
+    """Build the progfiguration psyops blacksite Python package as an Alpine package. Use the mkimage docker container."""
+
+    with AlpineDockerBuilder(
+        aportsdir, _aportsscriptsdir, workdir, isodir, ssh_key_file, alpine_version
+    ) as builder:
+
+        in_container_build_cmd = [
+            "export PATH=$PATH:$HOME/.local/bin",
+            "cd /home/build/psyops/progfiguration_blacksite",
+            "pip install -e .[development]",
+            # TODO: remove this once we have a new enough setuptools in the container
+            # Ran into this problem: <https://stackoverflow.com/questions/74941714/importerror-cannot-import-name-legacyversion-from-packaging-version>
+            # I'm using an older Alpine container, 3.16 at the time of this writing, because psyopsOS is still that old.
+            # When we can upgrade, we'll just use the setuptools in apk.
+            "pip install -U setuptools",
+            f"echo 'PACKAGER_PRIVKEY=\"{builder.in_container_ssh_key_path}\"' > /home/build/.abuild/abuild.conf",
+            "ls -alF /home/build/.abuild",
+            f"progfiguration-blacksite-buildapk --apks-index-path /home/build/psyops/psyopsOS/public/apk",
+            "ls -larth /home/build/psyops/psyopsOS/public/apk/psyopsOS/x86_64/",
+        ]
+
+        full_cmd = builder.docker_cmd + [
             "sh",
             "-c",
             shlex.quote(" && ".join(in_container_build_cmd)),
         ]
 
         print("Running Docker...")
-        print(" ".join(docker_cmd))
+        print(" ".join(full_cmd))
 
-        ctx.run(" ".join(docker_cmd))
+        ctx.run(" ".join(full_cmd))
 
 
 @invoke.task
-def psyopsOS_base_abuild(ctx, clean=False):
-    """Build the psyopsOS-base Python package as an Alpine package. Must be run from the psyops container. TODO: Update to work with the build container like progfiguration_blacksite does.
+def psyopsOS_base_abuild_docker(ctx, alpine_version=_alpine_version):
+    """Build the psyopsOS-base Python package as an Alpine package. Use the mkimage docker container.
+
+    Sign with the psyopsOS key.
+    """
+    epochsecs = int(time.time())
+    version = f"1.0.{epochsecs}"
+
+    with open(f"{_psyopsOS_base_dir}/APKBUILD.template") as fp:
+        apkbuild_template = string.Template(fp.read())
+    apkbuild_contents = apkbuild_template.substitute(version=version)
+    apkbuild_path = os.path.join(_psyopsOS_base_dir, "APKBUILD")
+
+    # Place the apk repo inside the public dir
+    # This means that 'invoke deploy' will copy it
+    build_cmd = f"abuild -r -P {_incontainer_apks_path} -D psyopsOS"
+
+    try:
+        with open(apkbuild_path, "w") as afd:
+            afd.write(apkbuild_contents)
+        print("Running build in progfiguration directory...")
+        with AlpineDockerBuilder(
+            aports_checkout_dir=_aportsdir,
+            aports_scripts_overlay_dir=_aportsscriptsdir,
+            workdir=_workdir,
+            isodir=_isodir,
+            ssh_key_file=_ssh_key_file,
+            alpine_version=alpine_version,
+        ) as builder:
+
+            in_container_build_cmd = [
+                "set -x",
+                "export PATH=$PATH:$HOME/.local/bin",
+                "cd /home/build/psyops/psyopsOS/psyopsOS-base",
+                # grub-efi package is broken in Docker.
+                # If we don't remove it we get a failure like this trying to run abuild:
+                #     >>> psyopsOS-base: Analyzing dependencies...
+                #     >>> ERROR: psyopsOS-base: builddeps failed
+                #     >>> psyopsOS-base: Uninstalling dependencies...
+                #     ERROR: No such package: .makedepends-psyopsOS-base
+                "sudo apk update",
+                "sudo apk del grub-efi",
+                "sudo apk fix",
+                #
+                f"echo 'PACKAGER_PRIVKEY=\"{builder.in_container_ssh_key_path}\"' > /home/build/.abuild/abuild.conf",
+                "ls -alF /home/build/.abuild",
+                f"abuild checksum",
+                build_cmd,
+                "ls -larth /home/build/psyops/psyopsOS/public/apk/psyopsOS/x86_64/",
+            ]
+
+            full_cmd = builder.docker_cmd + [
+                "sh",
+                "-c",
+                shlex.quote(" && ".join(in_container_build_cmd)),
+            ]
+
+            print("Running Docker...")
+            print(" ".join(full_cmd))
+
+            ctx.run(" ".join(full_cmd))
+
+    finally:
+        try:
+            os.unlink(apkbuild_path)
+        except:
+            raise Exception(
+                f"When trying to remove ABKBUILD, got an exception. Manually remove: {apkbuild_path}"
+            )
+
+
+@invoke.task
+def psyopsOS_base_abuild_localhost(ctx, clean=False):
+    """Build the psyopsOS-base Python package as an Alpine package. Must be run from the psyops container.
 
     Sign with the psyopsOS key.
     """
@@ -215,10 +454,10 @@ def psyopsOS_base_abuild(ctx, clean=False):
             afd.write(apkbuild_contents)
         print("Running build in progfiguration directory...")
         with ctx.cd(_psyopsOS_base_dir):
+            ctx.run("ls -alF")
             if clean:
                 print("Running abuild clean...")
-                with ctx.cd(_psyopsOS_base_dir):
-                    ctx.run("abuild clean")
+                ctx.run("abuild clean")
             ctx.run("abuild checksum")
             ctx.run(build_cmd)
     finally:
@@ -252,244 +491,82 @@ class MkimageBuildInfo(NamedTuple):
     dirty: bool
 
 
-def mkimage_buildinfo(ctx):
-    build_date = datetime.datetime.now()
-    build_git_revision = ctx.run("git rev-parse HEAD").stdout.strip()
-    build_git_dirty = ctx.run("git diff --quiet", warn=True).return_code != 0
-    return MkimageBuildInfo(build_date, build_git_revision, build_git_dirty)
-
-
-def mkimage_clean(ctx, indocker, workdir):
-    """Clean directories before build
-
-    This should be done before any runs - it doesn't clean apk cache or other large working datasets.
-    That's why it's not a separate Invoke task.
-    """
-    cleandirs = []
-    if indocker:
-        # If /tmp is persistent, make sure we don't have old stuff lying around
-        # Not necessary in Docker, which has a clean /tmp every time
-        cleandirs += glob.glob("/tmp/mkimage*")
-    cleandirs += glob.glob(f"{workdir}/apkovl*")
-    cleandirs += glob.glob(f"{workdir}/apkroot*")
-    for d in cleandirs:
-        print(f"Removing {d}...")
-        ctx.run(f"rm -rf '{d}'")
-
-
-# @invoke.task
-# def mkimage_local(
-#     ctx,
-#     osflavor,
-#     alpinetag="0x001",
-#     aportsdir=os.path.expanduser("~/aports"),
-#     workdir=os.path.expanduser("~/psyopsOS-build-tmp"),
-#     isodir=os.path.expanduser("~/isos"),
-# ):
-#     """Run mkimage.sh directly. Must be run from an Alpine system.
-#
-#     This is not used as often as the regular 'mkimage' target (which uses docker), and may be out of date!
-#     """
-#
-#     mkimage_profile, architecture = osflavorinfo(osflavor)
-#     os.umask(0o022)
-#     buildinfo = mkimage_buildinfo(ctx)
-#
-#     mkimage_clean(ctx, indocker=True, workdir=workdir)
-#
-#     for directory in [workdir, isodir]:
-#         os.makedirs(directory, exist_ok=True)
-#     for script in ["genapkovl-psyopsOS.sh", "mkimg.psyopsOS.sh", "mkimg.zzz-overrides.sh"]:
-#         shutil.copy(f"{aportsscriptsdir}/{script}", f"{aportsdir}/scripts/{script}")
-#
-#     os.environ["PSYOPSOS_OVERLAY"] = f"{psyopsosdir}/os-overlay"
-#     os.environ["PSYOPSOS_BUILD_DATE_ISO8601"] = buildinfo.date.strftime('%Y-%m-%dT%H:%M:%S%z')
-#     os.environ["PSYOPSOS_BUILD_GIT_REVISION"] = buildinfo.revision
-#     os.environ["PSYOPSOS_BUILD_GIT_DIRTY"] = str(buildinfo.dirty)
-#
-#     mkimage_cmd = get_mkimage_cmd(osflavor, alpinetag)
-#     full_cmd = " ".join(mkimage_cmd)
-#     print(f"Running {full_cmd}")
-#     with ctx.cd(f"{aportsdir}/scripts"):
-#         ctx.run(full_cmd)
-#     ctx.run(f"ls -alFh {isodir}*.iso")
-
-
-@invoke.task
-def build_docker_container(ctx, rebuild=False):
-    """Build the docker container that builds the ISO image"""
-    cmd = ["docker", "build"]
-    if rebuild:
-        cmd += ["--no-cache"]
-    cmd += ["--tag", shlex.quote(_docker_builder_tag), shlex.quote(_docker_builder_dir)]
-    ctx.run(" ".join(cmd))
-
-
-def get_docker_cmd_for_mkimage(
-    buildinfo: MkimageBuildInfo,
-    aportsdir,
-    isodir,
-    volname_workdir,
-    shell_or_prefix,
-):
-    """Return the docker command to run mkimage.sh
-
-    This is a helper function for the mkimage task.
-
-    :param buildinfo: The buildinfo object returned by mkimage_buildinfo()
-    :param aportsdir: The path to the aports directory
-    :param isodir: The path to the directory where the ISO will be written
-    :param volname_workdir: The name of the volume that will be mounted to /home/build
-    :param shell_or_prefix: Either "shell" or "prefix"; 'shell' is a string that can be presented to the user to run in their terminal and get an interactive shell in the container, while 'prefix' is a string that can be prepended to some other command to run it in the container.
-    :return: The docker command to run mkimage.sh
-    """
-    shell = False
-    if shell_or_prefix == "shell":
-        shell = True
-    elif shell_or_prefix == "prefix":
-        pass
-    else:
-        raise Exception("shell_or_prefix argument must be 'shell' or 'prefix'")
-    docker_cmd = [
-        "docker",
-        "run",
-        "--rm",
-    ]
-    if shell:
-        docker_cmd += ["--interactive", "--tty"]
-    docker_cmd += [
-        # You must mount the aports scripts
-        # (And don't forget to update them)
-        "--volume",
-        f"{aportsdir}:/home/build/aports",
-        # genapkovl-psyopsOS.sh partially sets up the filesystem of the iso live OS
-        "--volume",
-        f"{_aportsscriptsdir}/genapkovl-psyopsOS.sh:/home/build/aports/scripts/genapkovl-psyopsOS.sh",
-        # mkimage.psyopsOS.sh defines the profile that we pass to mkimage.sh
-        "--volume",
-        f"{_aportsscriptsdir}/mkimg.psyopsOS.sh:/home/build/aports/scripts/mkimg.psyopsOS.sh",
-        # mkimage.zzz-overrides.sh will let us customize any mkimage function by overriding it
-        "--volume",
-        f"{_aportsscriptsdir}/mkimg.zzz-overrides.sh:/home/build/aports/scripts/mkimg.zzz-overrides.sh",
-        # Use the previously defined docker volume for temporary files etc when building the image.
-        # Saving this between runs makes rebuilds much faster.
-        "--volume",
-        f"{volname_workdir}:/home/build/workdir",
-        # This is where the iso will be copied after it is built
-        "--volume",
-        f"{isodir}:/home/build/iso",
-        # Mounting this allows the build to access the psyopsOS/os-overlay/ and the public APK packages directory.
-        "--volume",
-        f"{_psyopsdir}:/home/build/psyops",
-        # Environment variables that mkimage.sh (or one of the scripts it calls) uses
-        "--env",
-        f"PSYOPSOS_BUILD_DATE_ISO8601={buildinfo.date.strftime('%Y-%m-%dT%H:%M:%S%z')}",
-        "--env",
-        f"PSYOPSOS_BUILD_GIT_REVISION={buildinfo.revision}",
-        "--env",
-        f"PSYOPSOS_BUILD_GIT_DIRTY={str(buildinfo.dirty)}",
-        _docker_builder_tag,
-    ]
-    if shell:
-        docker_cmd += ["/bin/bash"]
-    return docker_cmd
-
-
-def get_mkimage_cmd(
-    osflavor="pc",
-    alpinetag="0x001",
-):
-    mkimage_profile, architecture = osflavorinfo(osflavor)
-    mkimage_cmd = [
-        "./mkimage.sh",
-        "--tag",
-        alpinetag,
-        "--outdir",
-        "/home/build/iso",
-        "--arch",
-        architecture,
-        "--repository",
-        "http://dl-cdn.alpinelinux.org/alpine/v3.16/main",
-        "--repository",
-        "http://dl-cdn.alpinelinux.org/alpine/v3.16/community",
-        "--repository",
-        "/home/build/psyops/psyopsOS/public/apk/psyopsOS",
-        "--repository",
-        "https://psyops.micahrl.com/apk/psyopsOS",
-        "--workdir",
-        "/home/build/workdir",
-        "--profile",
-        mkimage_profile,
-    ]
-    return mkimage_cmd
-
-
-def prettycmd(cmd):
-    """Given a command for ctx.run(), return a pretty version with arguments on separate lines"""
-    return " \\\n  ".join(cmd)
-
-
 @invoke.task
 def mkimage(
     ctx,
     osflavor="pc",
-    alpinetag="0x001",
-    aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
-    workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
-    isodir=os.path.expanduser("~/Downloads/"),
-    volname_workdir=_docker_builder_volname_workdir,
+    alpinetag="psyopsos-boot",
+    aportsdir=_aportsdir,
+    workdir=_workdir,
+    isodir=_isodir,
+    ssh_key_file=_ssh_key_file,
+    alpine_version=_alpine_version,
     whatif=False,
 ):
-    """TODO: THIS NEEDS TO BE UPDATED SINCE I CHANGED THE DOCKERFILE RECENTLY. SEE BELOW. Build the docker image in build/Dockerfile and use it to run mkimage.sh to build a new Alpine ISO. Works from any host with Docker (doesn't require an Alpine host OS), but does require an x86_64 host.
+    """Run Alpine mkimage.sh inside a Docker container. The alpine_version must match the version of the host's aports checkout and the version in build/Dockerfile. (Note that this is different from the psyops container at ../docker/Dockerfile.)"""
 
-    TODO: I recently changed the Dockerfile to work for building progfiguration_blacksite. This means I no longer have to build it in the psyops container, can use this dedicated build container instead. Make sure this mkimgae still works.
-    """
+    validate_alpine_version(ctx, alpine_version)
 
-    os.umask(0o022)
-    buildinfo = mkimage_buildinfo(ctx)
-    mkimage_clean(ctx, indocker=True, workdir=workdir)
-    build_docker_container(ctx)
+    with AlpineDockerBuilder(
+        aportsdir, _aportsscriptsdir, workdir, isodir, ssh_key_file, alpine_version
+    ) as builder:
+        mkimage_profile, architecture = osflavorinfo(osflavor)
+        in_container_mkimage_cmd = [
+            f"echo 'PACKAGER_PRIVKEY=\"{builder.in_container_ssh_key_path}\"' > /home/build/.abuild/abuild.conf",
+            "ls -alF /home/build/.abuild",
+            "ls -alF /home/build/aports/scripts",
+            # This package doesn't work in Docker and leaves apk in a broken state. (apk fix doesn't fix it.)
+            #     It shows a message like:
+            #     (2/2) Installing grub-efi (2.06-r2)
+            #     Executing busybox-1.35.0-r17.trigger
+            #     Executing grub-2.06-r2.trigger
+            #     /usr/sbin/grub-probe: error: failed to get canonical path of `overlay'.
+            #     ERROR: grub-2.06-r2.trigger: script exited with error 1
+            # However, it is required to build a bootable ISO.
+            "sudo apk add grub-efi",
+            " ".join(
+                [
+                    "./mkimage.sh",
+                    "--tag",
+                    alpinetag,
+                    "--outdir",
+                    "/home/build/iso",
+                    "--arch",
+                    architecture,
+                    "--repository",
+                    f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main",
+                    "--repository",
+                    f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community",
+                    "--repository",
+                    "/home/build/psyops/psyopsOS/public/apk/psyopsOS",
+                    "--repository",
+                    "https://psyops.micahrl.com/apk/psyopsOS",
+                    "--workdir",
+                    "/home/build/workdir",
+                    "--profile",
+                    mkimage_profile,
+                ]
+            ),
+        ]
+        full_cmd = builder.docker_cmd + [
+            "sh",
+            "-c",
+            shlex.quote(" && ".join(in_container_mkimage_cmd)),
+        ]
+        print(f"========")
+        print(
+            f"Run mkimage inside docker. This will happen next if you didn't pass --whatif:"
+        )
+        print(" \\\n  ".join(full_cmd))
+        print(f"========")
 
-    # We use a docker local volume for the workdir
-    # This would not be necessary on Linux, but
-    # on Docker Desktop for Mac (and probably also on Windows),
-    # permissions will get fucked up if you try to use a volume on the host.
-    try:
-        ctx.run(f"docker volume inspect {volname_workdir}")
-    except invoke.Failure:
-        ctx.run(f"docker volume create {volname_workdir}")
+        if not whatif:
+            ctx.run(" ".join(full_cmd))
 
-    docker_cmd_with_shell = get_docker_cmd_for_mkimage(
-        buildinfo,
-        aportsdir,
-        isodir,
-        volname_workdir,
-        "shell",
-    )
-    docker_cmd_prefix = get_docker_cmd_for_mkimage(
-        buildinfo,
-        aportsdir,
-        isodir,
-        volname_workdir,
-        "prefix",
-    )
-    mkimage_cmd = get_mkimage_cmd(osflavor, alpinetag)
-    full_cmd = docker_cmd_prefix + mkimage_cmd
-    print(f"========")
-    print(
-        f"Run mkimage inside docker. This will happen next if you didn't pass --whatif:"
-    )
-    print(prettycmd(full_cmd))
-    print(f"========")
-    print(
-        f"Run the Docker container and get a shell. This can be helpful for debugging"
-    )
-    print(prettycmd(docker_cmd_with_shell))
-    print(f"========")
-    print(f"From a shell in the docker image, you can run a command like this:")
-    print(prettycmd(mkimage_cmd))
-    print(f"========")
-    if whatif:
-        return
-    ctx.run(" ".join(full_cmd))
+            # name is: alpine-psyopsOS-ALPINETAG-ARCH.iso
+            # note sure where the 'payopsOS' comes from, maybe this directory name?
+            ctx.run(
+                f"mv '{isodir}/alpine-psyopsOS-{alpinetag}-{architecture}.iso' '{isodir}/alpine-psyopsOS-{alpinetag}-{architecture}-{alpine_version}.iso'"
+            )
+
     ctx.run(f"ls -alFh {isodir}*.iso")

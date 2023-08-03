@@ -17,7 +17,7 @@ minisign
 nvme-cli
 openssh
 pciutils
-progfiguration
+progfiguration_blacksite
 psyopsOS-base
 python3
 ripgrep

@@ -54,10 +54,11 @@ def main(*arguments):
 
     bootmedia = None
     for device in lsblk["blockdevices"]:
-        # Look for the iso9660 volume ID that starts with psyopsos-boot.
-        # This value is set in our override in mkimage.zzz-overrides.sh.
+        # Look for the iso9660 volume ID that is tagged with our label.
+        # An example: 'partition-name: alpine-std psyopsos-boot x86_64'.
+        # See the `alpinelabel` argument in tasks.py.
         label = device.get("label", "") or ""
-        if not label.startswith("psyopsos-boot"):
+        if not "psyopsos-boot" in label:
             continue
 
         # Make sure we find the main device, not a partition.
