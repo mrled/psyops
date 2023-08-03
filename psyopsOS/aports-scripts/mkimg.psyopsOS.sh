@@ -9,18 +9,21 @@ apklist=
 apklist="$apklist $(cat "$apkworld")"
 apklist="$apklist $(cat "$apkavail")"
 
+
 profile_psyopsOS() {
 	profile_standard
-	title="psyopsOS"
+	# profile_abbrev="psyopsOS" # TODO: test what this does
+	title="psyopsOS Boot Disc"
 	desc="The PSYOPS operating system for powerful management of personal infrastructure"
 	arch="x86_64"
+	# initfs_cmdline=
 	kernel_flavors="lts"
 	# kernel_addons=""
 	boot_addons="intel-ucode"
 	initrd_ucode="/boot/intel-ucode.img"
 
 	# Enable serial console
-	kernel_cmdline="$kernel_cmdline console=tty0 console=ttyAMA0"
+	kernel_cmdline="$kernel_cmdline console=tty0 console=ttyS0,115200"
 
 	# 115200 baud is what is used with qemu and lima
 	syslinux_serial="0 115200"
