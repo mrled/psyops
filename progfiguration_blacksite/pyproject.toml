@@ -47,7 +47,10 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 
 [tool.setuptools.package-data]
-progfiguration_blacksite = ["*"]
+"*" = ["*"]
+
+# [tool.setuptools.exclude-package-data]
+# "*" = ["**/*.pyc", "**/*.pyo", "**/__pycache__"]
 
 [tool.setuptools.dynamic]
 version = { attr = "progfiguration_blacksite.get_version" }
