@@ -157,3 +157,9 @@ This may be helpful for errors that you can't otherwise resolve.
 Run the command `invoke mkimage --whatif` and read the output at the end.
 It will show a command to launch the Docker container interactively,
 and a command to run once inside the Docker container.
+
+## References
+
+Other custom Alpine distributions:
+
+* <https://github.com/lima-vm/alpine-lima>
