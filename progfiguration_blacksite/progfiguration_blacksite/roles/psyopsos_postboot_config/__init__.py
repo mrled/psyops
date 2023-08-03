@@ -27,7 +27,9 @@ _users = [
 ]
 
 
-def configure_user(localhost: LocalhostLinux, name: str, password: str, pubkeys: List[str], shell=None):
+def configure_user(
+    localhost: LocalhostLinux, name: str, password: str, pubkeys: List[str], shell=None
+):
     exists = False
     with open("/etc/passwd") as fp:
         for line in fp.readlines():
@@ -73,7 +75,7 @@ def set_apk_repositories(localhost: LocalhostLinux):
         "@edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main",
         "@edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community",
         "@edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing",
-        "https://psyops.micahrl.com/apk/psyopsOS",
+        f"https://psyops.micahrl.com/apk/{alpine_release_v()}/psyopsOS",
     ]
     localhost.linesinfile("/etc/apk/repositories", add_repos)
 
@@ -151,14 +153,21 @@ class Role(ProgfigurationRole):
         if self.syslogd == "busybox":
             self.configure_busybox_syslogd()
         else:
-            raise NotImplementedError(f"Unknown syslog client type {self.client_syslogd}")
+            raise NotImplementedError(
+                f"Unknown syslog client type {self.client_syslogd}"
+            )
 
         set_apk_repositories(self.localhost)
 
         install_base_packages()
 
         self.localhost.set_file_contents(
-            "/etc/profile.d/psyopsOS_path.sh", _psyopsOS_path_sh, "root", "root", 0o0644, 0o0755
+            "/etc/profile.d/psyopsOS_path.sh",
+            _psyopsOS_path_sh,
+            "root",
+            "root",
+            0o0644,
+            0o0755,
         )
 
         magicrun("rc-service crond start")

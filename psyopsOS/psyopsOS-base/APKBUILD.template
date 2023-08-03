@@ -9,8 +9,6 @@ license="WTFPL"
 options="!check"
 install="$$pkgname.post-install $$pkgname.post-upgrade"
 source="
-	psyops@micahrl.com-62ca1973.rsa.pub
-	psyopsOS.list
 	psyopsOS-base-setup.sh
 	psyopsOS-write-bootmedia
 	telepathy.conf
@@ -45,8 +43,4 @@ package() {
 	install -m0644 \
 		"$$srcdir"/telepathy.conf \
 		"$$pkgdir"/etc/conf.d/telepathy
-
-	install -m0755 -d etc/apk/repositories.d etc/apk/keys
-	install -m0644 "$$srcdir"/psyops@micahrl.com-62ca1973.rsa.pub "$$pkgdir"/etc/apk/keys
-	install -m0644 "$$srcdir"/psyopsOS.list "$$pkgdir"/etc/apk/repositories.d
 }

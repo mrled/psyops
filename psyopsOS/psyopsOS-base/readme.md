@@ -41,9 +41,14 @@ mwIDAQAB
 -----END PUBLIC KEY-----
 EOF
 
-echo 'https://psyops.micahrl.com/apk/psyopsOS' > /etc/apk/repositories.d/psyopsOS.list
+alpine_version="3.16"
+
+if ! grep -q "psyops.micahrl.com" /etc/apk/repositories; then
+    echo "https://psyops.micahrl.com/apk/v$alpine_version/psyopsOS" >> /etc/apk/repositories
+fi
+
 apk update
-apk add psyopsOS-base progfiguration
+apk add psyopsOS-base progfiguration_blacksite
 ```
 
 This is useful so you can upgrade parts of the old system without rebooting,

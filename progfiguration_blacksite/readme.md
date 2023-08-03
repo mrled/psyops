@@ -44,8 +44,10 @@ mwIDAQAB
 -----END PUBLIC KEY-----
 EOF
 
+alpine_version="3.16"
+
 if ! grep -q "psyops.micahrl.com" /etc/apk/repositories; then
-    echo "https://psyops.micahrl.com/apk/psyopsOS" >> /etc/apk/repositories
+    echo "https://psyops.micahrl.com/apk/v$alpine_version/psyopsOS" >> /etc/apk/repositories
 fi
 
 apk update

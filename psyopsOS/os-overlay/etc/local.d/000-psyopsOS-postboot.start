@@ -74,10 +74,12 @@ rc-service ntpd start
 rc-service sshd restart
 echo "Finished configuring network, mactab, ssh, etc"
 
+alpine_release=$(cat /etc/alpine-release)
+alpine_release_majmin=${alpine_release%.*}
 
 progfig_old="$(apk list -I progfiguration)"
 echo "Preinstalled version of progfiguration: $progfig_old"
-psyopsos_repo="https://psyops.micahrl.com/apk/psyopsOS"
+psyopsos_repo="https://psyops.micahrl.com/apk/v$alpine_release_majmin/psyopsOS"
 if ! grep -q "$psyopsos_repo" /etc/apk/repositories; then
 	echo "Adding psyopsOS repo to apk"
 	echo "$psyopsos_repo" >> /etc/apk/repositories

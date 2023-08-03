@@ -98,7 +98,14 @@ def main():
 
     # Abuild names the repo after the parent directory of the package root.
     # Apparently I can't change this.
+    # This is set in the abuild script as "repo=".
+    # It corresponds to "main", "community", "testing" in the Alpine repository.
+    # Even if I didn't want to make my own, I want to set it so that it's not whatever ../../ happens to be.
+    #
+    # See also psyopsOS/tasks/constants.py:ApkPaths
+    #
     # So we're going to have to copy everything to a directory called parsed.abuild_repo_name.
+    #
     # We're going to end up with this directory structure:
     #
     #  Structure:                   |   For instance:

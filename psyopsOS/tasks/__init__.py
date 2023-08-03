@@ -13,6 +13,7 @@ import invoke
 
 from tasks.alpine_docker_builder import AlpineDockerBuilder, build_docker_container_impl
 from tasks.constants import (
+    ApkPaths,
     aportsdir,
     alpine_version,
     docker_builder_dir,
@@ -25,7 +26,6 @@ from tasks.constants import (
     docker_builder_tag_prefix,
     staticdir,
     site_bucket,
-    incontainer_apks_path,
     mkimage_profile,
     architecture,
     psyopsOS_base_dir,
@@ -163,6 +163,8 @@ def progfigsite_abuild_docker(
 ):
     """Build the progfiguration psyops blacksite Python package as an Alpine package. Use the mkimage docker container."""
 
+    apkpaths = ApkPaths(alpine_version)
+
     with AlpineDockerBuilder(
         aportsdir,
         aportsscriptsdir,
@@ -185,8 +187,8 @@ def progfigsite_abuild_docker(
             "pip install -U setuptools",
             f"echo 'PACKAGER_PRIVKEY=\"{builder.in_container_ssh_key_path}\"' > /home/build/.abuild/abuild.conf",
             "ls -alF /home/build/.abuild",
-            f"progfiguration-blacksite-buildapk --apks-index-path /home/build/psyops/psyopsOS/public/apk",
-            "ls -larth /home/build/psyops/psyopsOS/public/apk/psyopsOS/x86_64/",
+            f"progfiguration-blacksite-buildapk --abuild-repo-name {apkpaths.reponame} --apks-index-path {apkpaths.incontainer_repo_parent}",
+            f"ls -larth {apkpaths.incontainer}/x86_64/",
         ]
 
         full_cmd = builder.docker_cmd + [
@@ -215,9 +217,13 @@ def psyopsOS_base_abuild_docker(ctx, alpine_version=alpine_version):
     apkbuild_contents = apkbuild_template.substitute(version=version)
     apkbuild_path = os.path.join(psyopsOS_base_dir, "APKBUILD")
 
+    apkpaths = ApkPaths(alpine_version)
+
     # Place the apk repo inside the public dir
     # This means that 'invoke deploy' will copy it
-    build_cmd = f"abuild -r -P {incontainer_apks_path} -D psyopsOS"
+    build_cmd = (
+        f"abuild -r -P {apkpaths.incontainer_repo_parent} -D {apkpaths.reponame}"
+    )
 
     try:
         with open(apkbuild_path, "w") as afd:
@@ -252,7 +258,7 @@ def psyopsOS_base_abuild_docker(ctx, alpine_version=alpine_version):
                 "ls -alF /home/build/.abuild",
                 f"abuild checksum",
                 build_cmd,
-                "ls -larth /home/build/psyops/psyopsOS/public/apk/psyopsOS/x86_64/",
+                f"ls -larth {apkpaths.incontainer}/x86_64/",
             ]
 
             full_cmd = builder.docker_cmd + [
@@ -276,13 +282,15 @@ def psyopsOS_base_abuild_docker(ctx, alpine_version=alpine_version):
 
 
 @invoke.task
-def psyopsOS_base_abuild_localhost(ctx, clean=False):
+def psyopsOS_base_abuild_localhost(ctx, clean=False, alpine_version=alpine_version):
     """Build the psyopsOS-base Python package as an Alpine package. Must be run from the psyops container.
 
     Sign with the psyopsOS key.
     """
     epochsecs = int(time.time())
     version = f"1.0.{epochsecs}"
+
+    apkpaths = ApkPaths(alpine_version)
 
     with open(f"{psyopsOS_base_dir}/APKBUILD.template") as fp:
         apkbuild_template = string.Template(fp.read())
@@ -291,7 +299,9 @@ def psyopsOS_base_abuild_localhost(ctx, clean=False):
 
     # Place the apk repo inside the public dir
     # This means that 'invoke deploy' will copy it
-    build_cmd = f"abuild -r -P {incontainer_apks_path} -D psyopsOS"
+    build_cmd = (
+        f"abuild -r -P {apkpaths.incontainer_repo_parent} -D {apkpaths.reponame}"
+    )
 
     try:
         with open(apkbuild_path, "w") as afd:
@@ -329,6 +339,8 @@ def mkimage(
     whatif=False,
 ):
     """Run Alpine mkimage.sh inside a Docker container. The alpine_version must match the version of the host's aports checkout and the version in build/Dockerfile. (Note that this is different from the psyops container at ../docker/Dockerfile.)"""
+
+    apkpaths = ApkPaths(alpine_version)
 
     validate_alpine_version(ctx, alpine_version)
 
@@ -375,7 +387,7 @@ def mkimage(
                     "--tag",
                     alpinetag,
                     "--outdir",
-                    "/home/build/iso",
+                    "/home/build/iso",  # TODO: parameterize this
                     "--arch",
                     architecture,
                     "--repository",
@@ -383,11 +395,11 @@ def mkimage(
                     "--repository",
                     f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community",
                     "--repository",
-                    "/home/build/psyops/psyopsOS/public/apk/psyopsOS",
+                    apkpaths.incontainer,
                     "--repository",
-                    "https://psyops.micahrl.com/apk/psyopsOS",
+                    apkpaths.uri,
                     "--workdir",
-                    "/home/build/workdir",
+                    "/home/build/workdir",  # TODO: parameterize this
                     "--profile",
                     mkimage_profile,
                 ]

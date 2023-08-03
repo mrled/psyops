@@ -1,5 +1,6 @@
 """Constants for tasks"""
 
+from dataclasses import dataclass
 import os
 
 
@@ -35,5 +36,33 @@ alpine_version = "3.16"
 
 site_bucket = "com-micahrl-psyops-http-bucket"
 
-# When inside the psyops container, the path to the public/ directory's apk repository
-incontainer_apks_path = "/psyops/psyopsOS/public/apk"
+
+@dataclass
+class ApkPaths:
+    """Paths to the APK repository"""
+
+    alpine_version: str
+
+    # The APK repo name
+    # When building a package with abuild, it finds this name by looking in the grandparent directory of the APKBUILD file (../../).
+    # See also progfiguration_blacksite's buildapk command, which forces this with a tempdir.
+    # This is just called "repo=" in the abuild sh script, and is not configurable.
+    reponame = "psyopsOS"
+
+    # When inside the psyops container, the path to the public/ directory's apk repository.
+    # It will create a subdirectory for the Alpine version and then the reponame,
+    # leading to a full path like /psyops/psyopsOS/public/apk/3.16/psyopsOS.
+    # This should match the path in build/Dockerfile.
+    _incontainer_apks_path_prefix = "/psyops/psyopsOS/public/apk"
+
+    # The URI to the public/ directory's apk repository.
+    _apks_public_uri = "https://psyops.micahrl.com/apk"
+
+    # The path to the repository inside the container
+    incontainer = f"{_incontainer_apks_path_prefix}/v{alpine_version}/{reponame}"
+
+    # The parent to the incontainer path
+    incontainer_repo_parent = f"{_incontainer_apks_path_prefix}/v{alpine_version}"
+
+    # The URI that is accessible on the web
+    uri = f"{_apks_public_uri}/{alpine_version}/v{reponame}"

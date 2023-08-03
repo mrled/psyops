@@ -90,7 +90,7 @@ class AlpineDockerBuilder:
         if inspected.returncode != 0:
             subprocess.run(f"docker volume create {self.workdir_volname}", shell=True)
 
-        self.mkimage_clean(False, self.workdir)
+        self.mkimage_clean(self.workdir)
 
         # Save the SSH private key to the temp dir
         self.tempdir = Path(tempfile.mkdtemp())
@@ -167,17 +167,13 @@ class AlpineDockerBuilder:
         """
         return f"psyopsos-build-workdir-{self.alpine_version}"
 
-    def mkimage_clean(self, indocker, workdir):
+    def mkimage_clean(self, workdir):
         """Clean directories before build
 
         This should be done before any runs - it doesn't clean apk cache or other large working datasets.
         That's why it's not a separate Invoke task.
         """
         cleandirs = []
-        if indocker:
-            # If /tmp is persistent, make sure we don't have old stuff lying around
-            # Not necessary in Docker, which has a clean /tmp every time
-            cleandirs += glob.glob("/tmp/mkimage*")
         cleandirs += glob.glob(f"{workdir}/apkovl*")
         cleandirs += glob.glob(f"{workdir}/apkroot*")
         for d in cleandirs:

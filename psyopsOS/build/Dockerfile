@@ -70,10 +70,13 @@ RUN true \
     && true
 
 # Install the psyopsOS repository signing key
+# Note that the path to add to /etc/apk/repositories should match incontainer_apks_path_prefix in tasks/contstants.py.
 COPY psyops@micahrl.com-62ca1973.rsa.pub /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub
 RUN true \
     && chmod 644 /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub \
-    && echo "/home/build/psyops/psyopsOS/public/apk/psyopsOS" >> /etc/apk/repositories && cat /etc/apk/repositories \
+    && alpine_release=$(cat /etc/alpine-release) \
+    && alpine_release_majmin=${alpine_release%.*} \
+    && echo "/home/build/psyops/psyopsOS/public/apk/v$alpine_release_majmin/psyopsOS" >> /etc/apk/repositories && cat /etc/apk/repositories \
     && true
 
 USER build
