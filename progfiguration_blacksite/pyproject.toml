@@ -23,6 +23,7 @@ development = [
     # Installed by roles, which then requires them
     # In development we just install them here so that we get nice type hints etc
     "requests",
+    "types-requests",
 
     # Development tools
     "black",
