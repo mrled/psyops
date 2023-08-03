@@ -44,7 +44,6 @@ _aportsdir = os.path.expanduser("~/Documents/Repositories/aports")
 _workdir = os.path.expanduser("~/Scratch/psyopsOS-build-tmp")
 _isodir = os.path.expanduser("~/Downloads/")
 _ssh_key_file = "psyops@micahrl.com-62ca1973.rsa"
-_alpine_version = "3.16"
 _psyopsdir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 _psyopsosdir = os.path.join(_psyopsdir, "psyopsOS")
 _aportsscriptsdir = os.path.join(_psyopsosdir, "aports-scripts")
@@ -53,6 +52,13 @@ _progfigsite_dir = os.path.join(_psyopsdir, "progfiguration_blacksite")
 _psyopsOS_base_dir = os.path.join(_basedir, "psyopsOS-base")
 _docker_builder_tag_prefix = "psyopsos-builder-"
 _docker_builder_dir = os.path.join(_psyopsosdir, "build")
+
+# TODO: Accept an exact version here, and update aports checkout to that version, and rebuild the Docker container if necessary.
+# One problem with multiple Alpine base versions is different Python versions,
+# which means the progfiguration_blacksite package is being built with different Python version requirements
+# dependong on what's on the builder container.
+# Might need to split the APK repo by Alpine base version.
+_alpine_version = "3.16"
 
 # Output configuration
 _site_public_dir = os.path.join(_basedir, "public")
@@ -237,6 +243,7 @@ class AlpineDockerBuilder:
         subprocess.run(
             f"op read op://Personal/psyopsOS_abuild_ssh_key/notesPlain --out-file {tempdir_sshkey.as_posix()}",
             shell=True,
+            check=True,
         )
 
         self.docker_cmd = [
@@ -506,6 +513,18 @@ def mkimage(
     """Run Alpine mkimage.sh inside a Docker container. The alpine_version must match the version of the host's aports checkout and the version in build/Dockerfile. (Note that this is different from the psyops container at ../docker/Dockerfile.)"""
 
     validate_alpine_version(ctx, alpine_version)
+
+    # Make sure we have an up-to-date Docker builder
+    build_docker_container(ctx, alpine_version)
+
+    # Build the APKs that are also included in the ISO
+    # Building them here makes sure that they are up-to-date
+    # and especially that they're built on the right Python version
+    # (Different Alpine versions use different Python versions,
+    # and if the latest APK doesn't match what's installed on the new ISO,
+    # it will fail.)
+    progfigsite_abuild_docker(ctx, alpine_version)
+    psyopsOS_base_abuild_docker(ctx, alpine_version)
 
     with AlpineDockerBuilder(
         aportsdir, _aportsscriptsdir, workdir, isodir, ssh_key_file, alpine_version
