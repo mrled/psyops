@@ -18,7 +18,8 @@ source="
 builddir="$$srcdir/build"
 
 # coreutils dd has status=progress
-depends="python3 coreutils"
+# shadow has usermod
+depends="python3 coreutils shadow"
 
 package() {
 	mkdir -p "$$pkgdir"
