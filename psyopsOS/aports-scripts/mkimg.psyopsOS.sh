@@ -12,18 +12,31 @@ apklist="$apklist $(cat "$apkavail")"
 
 profile_psyopsOS() {
 	profile_standard
-	# profile_abbrev="psyopsOS" # TODO: test what this does
+	# This is the first part of the filename of the iso
+	# Default is alpine-$PROFILE
+	image_name="psyopsOS"
+	# You can also set the output filename like this:
+	# output_filename="psyopsOS.iso"
 	title="psyopsOS Boot Disc"
 	desc="The PSYOPS operating system for powerful management of personal infrastructure"
 	arch="x86_64"
-	# initfs_cmdline=
+
+	# Use profile_standard's initfs_cmdline, but remove the 'quiet' option.
+	# This will show messages emitted by the initramfs's /init script.
+	# (Note that that init script comes from /usr/share/mkinitfs/initramfs-init on the ISO builder system.)
+	initfs_cmdline="$(echo "$initfs_cmdline" | sed 's/ quiet / /g')"
+
 	kernel_flavors="lts"
 	# kernel_addons=""
 	boot_addons="intel-ucode"
 	initrd_ucode="/boot/intel-ucode.img"
 
-	# Enable serial console
-	kernel_cmdline="$kernel_cmdline console=tty0 console=ttyS0,115200"
+	# These are kernel command line options
+	# debug=all prints dmesg to the screen during boot, and maybe other things
+	# earlyprintk=dbgp enables early printk, which prints kernel messages to the screen during boot
+	# console=tty0 and console=ttyS0,115200 enable the kernel to print messages to the screen during boot
+	#  tty0 is the screen, ttyS0 is the serial port
+	kernel_cmdline="$kernel_cmdline earlyprintk=dbgp console=tty0 console=ttyS0,115200"
 
 	# 115200 baud is what is used with qemu and lima
 	syslinux_serial="0 115200"
@@ -38,12 +51,11 @@ profile_psyopsOS() {
 			apks="$apks $_a-$_k"
 		done
 	done
-	apks="$apks linux-firmware"
+
+	apks=$(echo "$apks" | tr '\t' ' ' | tr ' ' '\n' | sort | uniq | tr '\n' ' ')
 
 	echo "================================ psyopsOS apks:"
-	for apk in $apks; do
-		echo "	$apk"
-	done
+	echo "$apks" | tr ' ' '\n\t'
 	echo "================================ end psyopsOS apks"
 
 	apkovl="genapkovl-psyopsOS.sh"
