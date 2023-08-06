@@ -20,7 +20,6 @@ from tasks.constants import (
     isodir,
     psyopsdir,
     ssh_key_file,
-    workdir,
     site_public_dir,
     docker_builder_volname_workdir,
     docker_builder_tag_prefix,
@@ -107,15 +106,6 @@ def clean(ctx):
 
 
 @invoke.task
-def cleandockervol(
-    ctx,
-    volname_workdir=docker_builder_volname_workdir,
-):
-    """Remove the Docker volume used for the mkimage.sh working directory"""
-    ctx.run(f"docker volume rm {volname_workdir}")
-
-
-@invoke.task
 def deploy(ctx):
     """Deploy the site dir to S3. First copies files from the static dir to the deploy dir."""
     shutil.copytree(staticdir, site_public_dir, dirs_exist_ok=True)
@@ -156,7 +146,6 @@ def build_docker_container(ctx, rebuild=False, alpine_version=alpine_version):
 def progfigsite_abuild_docker(
     ctx,
     aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
-    workdir=os.path.expanduser("~/Scratch/psyopsOS-build-tmp"),
     isodir=os.path.expanduser("~/Downloads/"),
     ssh_key_file="psyops@micahrl.com-62ca1973.rsa",
     alpine_version=alpine_version,
@@ -166,17 +155,17 @@ def progfigsite_abuild_docker(
     apkpaths = ApkPaths(alpine_version)
 
     with AlpineDockerBuilder(
-        aportsdir,
-        aportsscriptsdir,
-        workdir,
-        isodir,
-        ssh_key_file,
-        alpine_version,
-        psyopsdir,
-        docker_builder_tag_prefix,
+        aports_checkout_dir=aportsdir,
+        aports_scripts_overlay_dir=aportsscriptsdir,
+        isodir=isodir,
+        ssh_key_file=ssh_key_file,
+        alpine_version=alpine_version,
+        psyopsdir=psyopsdir,
+        docker_builder_tag_prefix=docker_builder_tag_prefix,
     ) as builder:
 
         in_container_build_cmd = [
+            "set -e",
             "export PATH=$PATH:$HOME/.local/bin",
             "cd /home/build/psyops/progfiguration_blacksite",
             "pip install -e .[development]",
@@ -232,7 +221,6 @@ def psyopsOS_base_abuild_docker(ctx, alpine_version=alpine_version):
         with AlpineDockerBuilder(
             aports_checkout_dir=aportsdir,
             aports_scripts_overlay_dir=aportsscriptsdir,
-            workdir=workdir,
             isodir=isodir,
             ssh_key_file=ssh_key_file,
             alpine_version=alpine_version,
@@ -241,7 +229,7 @@ def psyopsOS_base_abuild_docker(ctx, alpine_version=alpine_version):
         ) as builder:
 
             in_container_build_cmd = [
-                "set -x",
+                "set -e",
                 "export PATH=$PATH:$HOME/.local/bin",
                 "cd /home/build/psyops/psyopsOS/psyopsOS-base",
                 # grub-efi package is broken in Docker.
@@ -328,7 +316,6 @@ def mkimage(
     ctx,
     alpinetag="psyopsos-boot",
     aportsdir=aportsdir,
-    workdir=workdir,
     isodir=isodir,
     ssh_key_file=ssh_key_file,
     docker_builder_tag_prefix=docker_builder_tag_prefix,
@@ -336,7 +323,9 @@ def mkimage(
     docker_builder_dir=docker_builder_dir,
     mkimage_profile=mkimage_profile,
     architecture=architecture,
-    whatif=False,
+    skip_build_apks=False,
+    cleandockervol=False,
+    interactive=False,
 ):
     """Run Alpine mkimage.sh inside a Docker container. The alpine_version must match the version of the host's aports checkout and the version in build/Dockerfile. (Note that this is different from the psyops container at ../docker/Dockerfile.)"""
 
@@ -355,32 +344,23 @@ def mkimage(
     # (Different Alpine versions use different Python versions,
     # and if the latest APK doesn't match what's installed on the new ISO,
     # it will fail.)
-    progfigsite_abuild_docker(ctx, alpine_version)
-    psyopsOS_base_abuild_docker(ctx, alpine_version)
+    if not skip_build_apks:
+        progfigsite_abuild_docker(ctx, alpine_version)
+        psyopsOS_base_abuild_docker(ctx, alpine_version)
 
     with AlpineDockerBuilder(
         aportsdir,
         aportsscriptsdir,
-        workdir,
         isodir,
         ssh_key_file,
         alpine_version,
         psyopsdir,
         docker_builder_tag_prefix,
+        cleandockervol=cleandockervol,
     ) as builder:
         in_container_mkimage_cmd = [
+            "set -e",
             f"echo 'PACKAGER_PRIVKEY=\"{builder.in_container_ssh_key_path}\"' > /home/build/.abuild/abuild.conf",
-            "ls -alF /home/build/.abuild",
-            "ls -alF /home/build/aports/scripts",
-            # This package doesn't work in Docker and leaves apk in a broken state. (apk fix doesn't fix it.)
-            #     It shows a message like:
-            #     (2/2) Installing grub-efi (2.06-r2)
-            #     Executing busybox-1.35.0-r17.trigger
-            #     Executing grub-2.06-r2.trigger
-            #     /usr/sbin/grub-probe: error: failed to get canonical path of `overlay'.
-            #     ERROR: grub-2.06-r2.trigger: script exited with error 1
-            # However, it is required to build a bootable ISO.
-            "sudo apk add grub-efi",
             " ".join(
                 [
                     "./mkimage.sh",
@@ -399,7 +379,7 @@ def mkimage(
                     "--repository",
                     apkpaths.uri,
                     "--workdir",
-                    "/home/build/workdir",  # TODO: parameterize this
+                    builder.in_container_workdir,
                     "--profile",
                     mkimage_profile,
                 ]
@@ -417,13 +397,27 @@ def mkimage(
         print(" \\\n  ".join(full_cmd))
         print(f"========")
 
-        if not whatif:
-            ctx.run(" ".join(full_cmd))
-
-            # We move from the name generated by mkimage to a name that includes the Alpine version,
-            # e.g. alpine-psyopsOS-psyopsos-boot-x86_64.iso => alpine-psyopsOS-psyopsos-boot-x86_64-3.16.iso
-            ctx.run(
-                f"mv '{isodir}/alpine-{mkimage_profile}-{alpinetag}-{architecture}.iso' '{isodir}/alpine-{mkimage_profile}-{alpinetag}-{architecture}-{alpine_version}.iso'"
+        if interactive:
+            print(f"In interactive mode. Running docker with:")
+            print(" \\\n  ".join(builder.docker_cmd))
+            print(f"Would have run the following inside the container")
+            print("\n\t" + "\n\t".join(in_container_mkimage_cmd))
+            print(
+                f"Instead, running a bash shell inside the container. Type 'exit' to exit."
             )
-
-    ctx.run(f"ls -alFh {isodir}*.iso")
+            subprocess.run(
+                builder.docker_cmd + ["/bin/bash"],
+                stdin=sys.stdin,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+        else:
+            full_cmd = builder.docker_cmd + [
+                "sh",
+                "-c",
+                shlex.quote(" && ".join(in_container_mkimage_cmd)),
+            ]
+            print("Running Docker with:")
+            print(" \\\n  ".join(full_cmd))
+            ctx.run(" ".join(full_cmd))
+            ctx.run(f"ls -alFh {isodir}*.iso")

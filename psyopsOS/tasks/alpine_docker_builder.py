@@ -33,9 +33,6 @@ class AlpineDockerBuilder:
         aports_checkout_dir,
         # The path to the directory containing the aports scripts overlay files
         aports_scripts_overlay_dir,
-        # Persistent path Use the previously defined docker volume for temporary files etc when building the image.
-        # Saving this between runs makes rebuilds much faster.
-        workdir,
         # The place to put the ISO image when its done
         isodir,
         # The filename for the SSH key to use for signing packages
@@ -47,21 +44,31 @@ class AlpineDockerBuilder:
         psyopsdir,
         # The Docker image tag prefix (will be suffixed with the Alpine version)
         docker_builder_tag_prefix,
+        # If true, add "--interactive --tty" to the docker run command
+        interactive=False,
+        # Clean the docker volume before running
+        cleandockervol=False,
     ) -> None:
         self.aports_checkout_dir = aports_checkout_dir
         self.aports_scripts_overlay_dir = aports_scripts_overlay_dir
-        self.workdir = workdir
         self.isodir = isodir
         self.ssh_key_file = ssh_key_file
         self.in_container_ssh_key_path = f"/home/build/.abuild/{ssh_key_file}"
         self.alpine_version = alpine_version
         self.psyopsdir = psyopsdir
         self.docker_builder_tag_prefix = docker_builder_tag_prefix
+        self.interactive = interactive
+        self.cleandockervol = cleandockervol
 
         # Path to the psyopsOS project within the root psyops repo
         self.psyopsosdir = os.path.join(self.psyopsdir, "psyopsOS")
         # Path to the directory containing the Dockerfile for the Alpine builder
         self.docker_builder_dir = os.path.join(self.psyopsosdir, "build")
+
+        # An in-container path for handling the mkimage working directory.
+        # A docker volume will be mounted here.
+        # Clean with `invoke dockervolclean`.
+        self.in_container_workdir = "/home/build/workdir"
 
     def __enter__(self):
 
@@ -84,13 +91,19 @@ class AlpineDockerBuilder:
         # This would not be necessary on Linux, but
         # on Docker Desktop for Mac (and probably also on Windows),
         # permissions will get fucked up if you try to use a volume on the host.
-        inspected = subprocess.run(
-            f"docker volume inspect {self.workdir_volname}", shell=True
-        )
-        if inspected.returncode != 0:
+        needscreate = False
+        if self.cleandockervol:
+            subprocess.run(["docker", "volume", "rm", self.workdir_volname])
+            needscreate = True
+        else:
+            inspected = subprocess.run(
+                f"docker volume inspect {self.workdir_volname}", shell=True
+            )
+            needscreate = inspected.returncode != 0
+        if needscreate:
             subprocess.run(f"docker volume create {self.workdir_volname}", shell=True)
 
-        self.mkimage_clean(self.workdir)
+        self.mkimage_clean(self.in_container_workdir)
 
         # Save the SSH private key to the temp dir
         self.tempdir = Path(tempfile.mkdtemp())
@@ -112,6 +125,10 @@ class AlpineDockerBuilder:
         self.docker_cmd = [
             "docker",
             "run",
+        ]
+        if self.interactive:
+            self.docker_cmd += ["--interactive", "--tty"]
+        self.docker_cmd += [
             "--rm",
             # Give us full access to the psyops dir
             # Mounting this allows the build to access the psyopsOS/os-overlay/ and the public APK packages directory for mkimage.
@@ -136,7 +153,7 @@ class AlpineDockerBuilder:
             # Use the previously defined docker volume for temporary files etc when building the image.
             # Saving this between runs makes rebuilds much faster.
             "--volume",
-            f"{self.workdir_volname}:/home/build/workdir",
+            f"{self.workdir_volname}:{self.in_container_workdir}",
             # This is where the iso will be copied after it is built
             "--volume",
             f"{self.isodir}:/home/build/iso",
@@ -173,8 +190,8 @@ class AlpineDockerBuilder:
     def mkimage_clean(self, workdir):
         """Clean directories before build
 
-        This should be done before any runs - it doesn't clean apk cache or other large working datasets.
-        That's why it's not a separate Invoke task.
+        This should be done before any runs - it doesn't clean apk cache or other large working datasets,
+        but it removes some easy to regenerate stuff that sometimes causes problems.
         """
         cleandirs = []
         cleandirs += glob.glob(f"{workdir}/apkovl*")

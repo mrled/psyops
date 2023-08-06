@@ -1,7 +1,7 @@
 # Dockerfile to build psyopsOS ISOs
 
 # This should be the lowest version among all running psyopsOS systems
-FROM alpine:3.16
+FROM alpine:3.18
 LABEL maintainer "me@micahrl.com"
 
 # Include everything necessary for building an Alpine CD image with mkimage,
@@ -62,6 +62,16 @@ RUN true \
         vim \
         wget \
         xorriso \
+    # Install grub without running its package scripts.
+    # Grub tries to run grub-probe, which fails in Docker with an error like this:
+    #     (2/2) Installing grub-efi (2.06-r2)
+    #     Executing busybox-1.35.0-r17.trigger
+    #     Executing grub-2.06-r2.trigger
+    #     /usr/sbin/grub-probe: error: failed to get canonical path of `overlay'.
+    #     ERROR: grub-2.06-r2.trigger: script exited with error 1
+    # We need the grub binaries installed to build a bootable ISO,
+    # but we don't need it to actually work on the Docker system, so we skip these.
+    && apk add grub-efi --no-scripts \
     && true
 
 RUN true \

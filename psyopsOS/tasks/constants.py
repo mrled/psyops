@@ -16,7 +16,6 @@ site_public_dir = os.path.join(psyopsosdir, "public")
 docker_builder_volname_workdir = "psyopsos-build-workdir"
 
 aportsdir = os.path.expanduser("~/Documents/Repositories/aports")
-workdir = os.path.expanduser("~/Scratch/psyopsOS-build-tmp")
 isodir = os.path.expanduser("~/Downloads/")
 docker_builder_tag_prefix = "psyopsos-builder-"
 mkimage_profile = "psyopsOS"
@@ -32,7 +31,7 @@ ssh_key_file = "psyops@micahrl.com-62ca1973.rsa"
 # which means the progfiguration_blacksite package is being built with different Python version requirements
 # dependong on what's on the builder container.
 # Might need to split the APK repo by Alpine base version.
-alpine_version = "3.16"
+alpine_version = "3.18"
 
 site_bucket = "com-micahrl-psyops-http-bucket"
 
@@ -65,4 +64,4 @@ class ApkPaths:
     incontainer_repo_parent = f"{_incontainer_apks_path_prefix}/v{alpine_version}"
 
     # The URI that is accessible on the web
-    uri = f"{_apks_public_uri}/{alpine_version}/v{reponame}"
+    uri = f"{_apks_public_uri}/v{alpine_version}/{reponame}"
