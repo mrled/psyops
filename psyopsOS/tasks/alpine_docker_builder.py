@@ -98,13 +98,16 @@ class AlpineDockerBuilder:
         tempdir_sshpubkey = self.tempdir / "sshpubkey"
         save_apk_signing_key(tempdir_sshkey)
         # Generate a public key from the private key
-        pubkey_result = subprocess.run(
-            ["ssh-keygen", "-f", tempdir_sshkey.as_posix(), "-y"],
-            check=True,
-            capture_output=True,
-        )
-        with tempdir_sshpubkey.open("w") as f:
-            f.write(pubkey_result.stdout.decode())
+        cmd = [
+            "openssl",
+            "rsa",
+            "-in",
+            tempdir_sshkey.as_posix(),
+            "-pubout",
+            "-out",
+            tempdir_sshpubkey.as_posix(),
+        ]
+        subprocess.run(cmd, check=True)
 
         self.docker_cmd = [
             "docker",
