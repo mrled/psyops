@@ -1,11 +1,10 @@
 """Set up a data disk"""
 
-from ast import Dict
 from dataclasses import dataclass, field
 import json
 import os
 import subprocess
-from typing import List
+from typing import Dict, List
 
 from progfiguration import logger
 from progfiguration.inventory.roles import ProgfigurationRole
@@ -57,7 +56,9 @@ def process_disks(
 
     if encryption_keyfile:
         if not os.path.exists(encryption_keyfile):
-            raise EncryptionKeyfileNotFoundError(f"Encryption keyfile was not found at {encryption_keyfile}")
+            raise EncryptionKeyfileNotFoundError(
+                f"Encryption keyfile was not found at {encryption_keyfile}"
+            )
 
     # A dict where keys are volume group names and values are paths to group member block devices
     volgroups: Dict[str, List[str]] = {}
@@ -73,7 +74,7 @@ def process_disks(
                 f"Encryption is configured for disk {disk.device}, but encryption_keyfile was not passed"
             )
 
-    partlabels = []
+    partlabels: List[str] = []
 
     # Enumerate volgroups from partition specifications
     # At this point we don't know the partition device yet,
@@ -86,7 +87,9 @@ def process_disks(
         if partition.volgroup and partition.volgroup not in volgroups:
             volgroups[partition.volgroup] = []
         if partition.label in partlabels:
-            raise DuplicatePartitionLabelError(f"The partition label {partition.label} is not unique!")
+            raise DuplicatePartitionLabelError(
+                f"The partition label {partition.label} is not unique!"
+            )
         if partition.encrypt and not encryption_keyfile:
             raise EncryptionKeyfileNotSetError(
                 f"Encryption is configured for partition with label {partition.label} on device {partition.device}, but encryption_keyfile was not passed"
@@ -96,13 +99,15 @@ def process_disks(
     vglvmap: Dict[str, List[LvmLvSpec]] = {vg: [] for vg in volgroups.keys()}
 
     # A dict where keys are block device paths and values are FilesystemSpec objects
-    filesystems: Dict[str, List[FilesystemSpec]] = {}
+    filesystems: Dict[str, FilesystemSpec] = {}
 
     # If any VG isn't going to exist when we finish processing all the partitions,
     # throw an error here before writing anything to disk.
     for lv in volumes:
         if lv.volgroup not in volgroups:
-            raise MissingVolumeGroupError(f"Volume group '{lv.volgroup}' does not exist")
+            raise MissingVolumeGroupError(
+                f"Volume group '{lv.volgroup}' does not exist"
+            )
         vglvmap[lv.volgroup] += [lv]
 
     #### Finished with pre-processing
@@ -112,7 +117,9 @@ def process_disks(
     for disk in wholedisks:
         fsdevice = disk.device
         if disk.encrypt:
-            fsdevice = cryptsetup_open_idempotently(disk.device, encryption_keyfile, disk.encrypt_label)
+            fsdevice = cryptsetup_open_idempotently(
+                disk.device, encryption_keyfile, disk.encrypt_label
+            )
         if disk.filesystem:
             filesystems[fsdevice] = disk.filesystem
 
@@ -134,10 +141,10 @@ def process_disks(
         # no output at all should mean an error.
         if not result.stdout:
             logger.error(
-                f"No result for parted command '{parted_cmd}'. stdout: '{result.stdout}'; stderr: '{result.stderr}'"
+                f"No result for parted command '{parted_cmd}'. stdout: '{result.stdout.decode('utf-8')}'; stderr: '{result.stderr.decode('utf-8')}'"
             )
             raise Exception(f"parted could not read disk {disk}")
-        diskinfo = json.loads(result.stdout)
+        diskinfo = json.loads(result.stdout.decode("utf-8"))
 
         # Ensure that the disk has a GPT partition table
         if diskinfo["disk"]["label"] == "unknown":
@@ -153,7 +160,12 @@ def process_disks(
     for partspec in partitions:
         parted_prefix = universal_parted_prefix + f" {partspec.device} -- "
 
-        result = subprocess.run(parted_prefix + "unit s print free", shell=True, check=True, capture_output=True)
+        result = subprocess.run(
+            parted_prefix + "unit s print free",
+            shell=True,
+            check=True,
+            capture_output=True,
+        )
         diskinfo = json.loads(result.stdout)
 
         # Find the partition if it already exists
@@ -169,7 +181,9 @@ def process_disks(
 
         # Create the partition if it doesn't already exist
         if not existing_partition:
-            logger.info(f"No existing partition on device {partspec.device} with label {partspec.label}, will create")
+            logger.info(
+                f"No existing partition on device {partspec.device} with label {partspec.label}, will create"
+            )
 
             # # We look here for the last free chunk on the disk, which we will use to create the new partition.
             # # If this actually turns out to be a partition (and not a chunk of free space), fail.
@@ -187,16 +201,23 @@ def process_disks(
             # We make the user pass in explicit start/end of the partition.
             # Note that there is no protection against overlapping partitions, which will lose data!
             subprocess.run(
-                parted_prefix + f"mkpart {partspec.label} {partspec.start} {partspec.end}", shell=True, check=True
+                parted_prefix
+                + f"mkpart {partspec.label} {partspec.start} {partspec.end}",
+                shell=True,
+                check=True,
             )
 
         else:
-            logger.info(f"The partition {partspec.label} already exists on device {partspec.device}, nothing to do")
+            logger.info(
+                f"The partition {partspec.label} already exists on device {partspec.device}, nothing to do"
+            )
 
         # Encrypt the partition if specified
         devpath = gptlabel2device(partspec.label)
         if partspec.encrypt:
-            devpath = cryptsetup_open_idempotently(devpath, encryption_keyfile, partspec.label)
+            devpath = cryptsetup_open_idempotently(
+                devpath, encryption_keyfile, partspec.label
+            )
 
         # Mark (optionally encrypted) partition as a member of a volume group
         if partspec.volgroup:
@@ -217,9 +238,10 @@ def process_disks(
         subprocess.run(f"vgchange --activate y {vg}", shell=True, check=True)
 
         # Process LVM volumes
-        lvs_result = subprocess.run(f"lvs {vg}", shell=True, check=False, capture_output=True)
+        lvs_result = subprocess.run(
+            f"lvs {vg}", shell=True, check=False, capture_output=True
+        )
         for lv in vglvmap[vg]:
-            lv: LvmLvSpec
             if lv.name not in lvs_result.stdout.decode():
                 logger.info(f"Creating volume {lv.name} on vg {vg}...")
                 # lvcreate is very annoying as it uses --extents for percentages and --size for absolute values
@@ -228,18 +250,23 @@ def process_disks(
                     szflag = "-l"
                 else:
                     szflag = "-L"
-                subprocess.run(f"lvcreate {szflag} {lv.size} -n {lv.name} {vg}", shell=True, check=True)
+                subprocess.run(
+                    f"lvcreate {szflag} {lv.size} -n {lv.name} {vg}",
+                    shell=True,
+                    check=True,
+                )
             if lv.filesystem:
                 filesystems[lv.device] = lv.filesystem
 
     # Format filesystems
     for device, fsspec in filesystems.items():
-        fsspec: FilesystemSpec
 
-        blkid_result = subprocess.run(["blkid", device], check=False, capture_output=True)
+        blkid_result = subprocess.run(
+            ["blkid", device], check=False, capture_output=True
+        )
         if blkid_result.returncode == 0:
             logger.info(
-                f"Found an existing filesystem on block device {device}, nothing to do. blkid output: {blkid_result.stdout}"
+                f"Found an existing filesystem on block device {device}, nothing to do. blkid output: {blkid_result.stdout.decode('utf-8')}"
             )
             continue
 
@@ -265,10 +292,22 @@ class Role(ProgfigurationRole):
                     We look up partitions by their label, and duplicate labels will confuse this logic.
         """
 
+        self.localhost.cp(
+            self.role_file("wipedisk_cmd.py"),
+            "/usr/local/bin/blacksite-wipedisk",
+            owner="root",
+            group="root",
+            mode=0o0755,
+        )
+
         subprocess.run(
-            f"apk add cryptsetup device-mapper e2fsprogs e2fsprogs-extra lvm2 parted", shell=True, check=True
+            f"apk add cryptsetup device-mapper e2fsprogs e2fsprogs-extra lvm2 parted",
+            shell=True,
+            check=True,
         )
         subprocess.run("rc-service lvm start", shell=True, check=True)
         subprocess.run("rc-service dmcrypt start", shell=True, check=True)
 
-        process_disks(self.wholedisks, self.partitions, self.volumes, self.encryption_keyfile)
+        process_disks(
+            self.wholedisks, self.partitions, self.volumes, self.encryption_keyfile
+        )
