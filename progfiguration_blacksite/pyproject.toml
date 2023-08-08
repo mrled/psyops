@@ -14,6 +14,7 @@ email = "me@micahrl.com"
 [project.scripts]
 progfiguration-blacksite = "progfiguration_blacksite.cli.progfigsite_shim:main"
 progfiguration-blacksite-buildapk = "progfiguration_blacksite.cli.progfigsite_buildapk_cmd:main"
+progfiguration-blacksite-newnode = "progfiguration_blacksite.cli.progfigsite_newnode_cmd:main"
 
 [project.optional-dependencies]
 development = [
