@@ -1,24 +1,41 @@
 import argparse
 import json
+import logging
 import os
+import pdb
 import subprocess
 import sys
-from typing import Dict, List
+import traceback
+from typing import Callable, Dict, List
 
-from progfiguration.cli import (
-    ProgfigurationTerminalError,
-    progfiguration_error_handler,
-    configure_logging,
-    idb_excepthook,
-    progfiguration_log_levels,
-)
-from progfiguration.localhost import disks as localhost_disks
-from progfiguration import logger
+
+logger = logging.getLogger(__name__)
+
+
+def idb_excepthook(type, value, tb):
+    """Call an interactive debugger in post-mortem mode
+    If you do `sys.excepthook = idb_excepthook`, then an interactive debugger
+    will be spawned at an unhandled exception
+    """
+    if hasattr(sys, "ps1") or not sys.stderr.isatty():
+        sys.__excepthook__(type, value, tb)
+    else:
+        traceback.print_exception(type, value, tb)
+        print
+        pdb.pm()
+
+
+def is_mountpoint(path: str) -> bool:
+    """Return true if a path is a mountpoint for a currently mounted filesystem"""
+    mtpt = subprocess.run(["mountpoint", path], check=False, capture_output=True)
+    return mtpt.returncode == 0
 
 
 def lsblk(device: str) -> Dict:
     """Run lsblk on a device"""
-    result = subprocess.run(["lsblk", "--json", device], check=True, capture_output=True)
+    result = subprocess.run(
+        ["lsblk", "--json", device], check=True, capture_output=True
+    )
     output = json.loads(result.stdout)
     return output
 
@@ -39,16 +56,20 @@ def resolve_disk(s: str) -> str:
     raise FileNotFoundError(f"Could not find device with name {s}")
 
 
-def get_vgs() -> Dict[str, str]:
+def get_vgs() -> List[str]:
     """Get LVM volume groups"""
-    p = subprocess.run(["vgs", "--reportformat", "json"], check=True, capture_output=True)
+    p = subprocess.run(
+        ["vgs", "--reportformat", "json"], check=True, capture_output=True
+    )
     output = json.loads(p.stdout)
     return [vg["vg_name"] for vg in output["report"][0]["vg"]]
 
 
-def get_lvs() -> Dict[str, str]:
+def get_lvs() -> List[Dict[str, str]]:
     """Get LVM logical volumes"""
-    p = subprocess.run(["lvs", "--reportformat", "json"], check=True, capture_output=True)
+    p = subprocess.run(
+        ["lvs", "--reportformat", "json"], check=True, capture_output=True
+    )
     output = json.loads(p.stdout)
     result = []
     for lv in output["report"][0]["lv"]:
@@ -73,9 +94,11 @@ def wipe(disks: List[str], _lvs=None, _vgs=None):
     if _vgs is None:
         _vgs = get_vgs()
 
+    # TODO: we don't handle vgs properly, fix this
+
     # This list may contain vgs that still have active lvs on them after we finish,
     # so we can't assume that everything in this list can actually be removed.
-    vgs_to_remove = []
+    vgs_to_remove: List[str] = []
 
     for disk in disks:
         disk_path = resolve_disk(disk)
@@ -95,16 +118,15 @@ def wipe(disks: List[str], _lvs=None, _vgs=None):
                 for mp in failed_umounts:
                     try:
                         subprocess.run(["umount", "-l", mp], check=True)
-                    except subprocess.CalledProcessError:
-                        raise ProgfigurationTerminalError(
-                            f"Got an error trying to lazily unmount {found_device['name']} from mountpoint {mp}; you may also want to check other mountpoints in this list: {failed_umounts}",
-                            1,
+                    except subprocess.CalledProcessError as cpe:
+                        logger.error(
+                            f"Got an error trying to lazily unmount {found_device['name']} from mountpoint {mp}; you may also want to check other mountpoints in this list: {failed_umounts}"
                         )
+                        raise cpe
                 for mp in failed_umounts:
-                    if localhost_disks.is_mountpoint(mp):
-                        raise ProgfigurationTerminalError(
+                    if is_mountpoint(mp):
+                        raise Exception(
                             f"Tried to lazily unmount {found_device['name']} from mountpoint {mp}, but it's still mounted; you probably need to `lsof -w +D {mp}` and kill those processes; you may also want to check other mountpoints in this list: {failed_umounts}",
-                            1,
                         )
 
             # Unfortunately lsblk's "name" field for a device doesn't include the full path, smh
@@ -115,14 +137,18 @@ def wipe(disks: List[str], _lvs=None, _vgs=None):
             elif found_device["type"] == "part":
                 subprocess.run(["wipefs", "--all", found_device_path], check=True)
             elif found_device["type"] == "crypt":
-                subprocess.run(["cryptsetup", "close", found_device["name"]], check=True)
+                subprocess.run(
+                    ["cryptsetup", "close", found_device["name"]], check=True
+                )
             elif found_device["type"] == "lvm":
                 for lv in _lvs:
                     if lv["devname"] == found_device["name"]:
                         subprocess.run(["lvchange", "-an", lv["devpath"]], check=True)
                         subprocess.run(["lvremove", lv["devpath"]], check=True)
             else:
-                raise Exception(f"Unknown type {found_device['type']} for device {found_device['name']}.")
+                raise Exception(
+                    f"Unknown type {found_device['type']} for device {found_device['name']}."
+                )
 
     # If all the lvs in a vg are gone, this should succeed.
     # If there are still lvs in a vg, this will fail.
@@ -140,22 +166,22 @@ def wipe(disks: List[str], _lvs=None, _vgs=None):
 
 
 def parseargs(arguments: List[str]):
-    parser = argparse.ArgumentParser("psyopsOS progfiguration disk wipe. VERY EXPERIMENTAL.")
-    parser.add_argument(
-        "--debug", "-d", action="store_true", help="Open the debugger if an unhandled exception is encountered"
+    parser = argparse.ArgumentParser(
+        "psyopsOS progfiguration disk wipe. VERY EXPERIMENTAL."
     )
-    parser.add_argument("--force", "-f", action="store_true", help="Skip verification prompts")
+    parser.add_argument(
+        "--debug",
+        "-d",
+        action="store_true",
+        help="Open the debugger if an unhandled exception is encountered",
+    )
+    parser.add_argument(
+        "--force", "-f", action="store_true", help="Skip verification prompts"
+    )
     parser.add_argument(
         "--log-stderr",
-        default="NOTSET",
-        choices=progfiguration_log_levels,
-        help="Log level to send to stderr. Defaults to NOTSET (all messages, including debug). NONE to disable.",
-    )
-    parser.add_argument(
-        "--log-syslog",
         default="INFO",
-        choices=progfiguration_log_levels,
-        help="Log level to send to syslog. Defaults to INFO. NONE to disable.",
+        help="Log level to send to stderr. Defaults to NOTSET (all messages, including debug). NONE to disable.",
     )
 
     parser.add_argument(
@@ -168,15 +194,42 @@ def parseargs(arguments: List[str]):
     return parser, parsed
 
 
-def main_implementation(*arguments):
+def main_implementation(arguments: List[str]):
     parser, parsed = parseargs(arguments[1:])
 
     if parsed.debug:
         sys.excepthook = idb_excepthook
-    configure_logging(parsed.log_stderr, parsed.log_syslog)
+    handler_stderr = logging.StreamHandler()
+    handler_stderr.setFormatter(
+        logging.Formatter("[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s")
+    )
+    handler_stderr.setLevel(parsed.log_stderr)
+    logger.addHandler(handler_stderr)
 
     wipe(parsed.disk)
 
 
-def main():
-    progfiguration_error_handler(main_implementation, *sys.argv)
+def broken_pipe_handler(func: Callable[[List[str]], int], arguments: List[str]) -> int:
+    """Handler for broken pipes
+
+    Wrap the main() function in this to properly handle broken pipes
+    without a giant nastsy backtrace.
+    The EPIPE signal is sent if you run e.g. `script.py | head`.
+    Wrapping the main function with this one exits cleanly if that happens.
+
+    See <https://docs.python.org/3/library/signal.html#note-on-sigpipe>
+    """
+    try:
+        returncode = func(arguments)
+        sys.stdout.flush()
+    except BrokenPipeError:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        # Convention is 128 + whatever the return code would otherwise be
+        returncode = 128 + 1
+    return returncode
+
+
+if __name__ == "__main__":
+    exitcode = broken_pipe_handler(main_implementation, sys.argv)
+    sys.exit(exitcode)
