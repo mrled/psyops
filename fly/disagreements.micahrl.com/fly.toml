@@ -1,0 +1,32 @@
+# fly.toml app configuration file generated for com-micahrl-disagreements on 2023-08-10T16:57:05-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "com-micahrl-disagreements"
+primary_region = "dfw"
+
+[build]
+
+[env]
+DB_FILEPATH = "/db/isso.db"
+DB_TYPE = "sqlite"
+ISSO_SETTINGS = "/etc/isso.cfg"
+LITESTREAM_S3_BUCKET = "com-micahrl-disagreements-litestream"
+LITESTREAM_S3_ENDPOINT = "s3.us-central-1.wasabisys.com"
+LITESTREAM_S3_PATH = "isso.db"
+LITESTREAM_S3_REGION = "us-central-1"
+# url = "https://com-micahrl-disagreements.fly.dev"
+url = "https://disagreements.micahrl.com"
+
+[[mounts]]
+source = "data"
+destination = "/db"
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 0
+processes = ["app"]
