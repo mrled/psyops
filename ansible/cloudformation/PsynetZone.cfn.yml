@@ -77,6 +77,10 @@ Resources:
           Type: A
           TTL: "60"
           ResourceRecords: ["10.10.10.6"]
+        - Name: qreamscueen.psynet.micahrl.com.
+          Type: A
+          TTL: "60"
+          ResourceRecords: ["10.10.10.7"]
 
         # Services
         - Name: syslog.psynet.micahrl.com.
