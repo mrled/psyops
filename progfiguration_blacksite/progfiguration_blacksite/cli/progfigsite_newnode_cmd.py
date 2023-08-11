@@ -8,6 +8,7 @@ This script isn't available when running from a zipapp.
 
 
 import argparse
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -21,6 +22,7 @@ from progfiguration.cmd import magicrun
 from progfiguration.temple import Temple
 
 import progfiguration_blacksite
+import progfiguration_blacksite.nodes
 import progfiguration_blacksite.sitelib.buildsite
 
 
@@ -75,15 +77,26 @@ node = InventoryNode(
 )
 
 
-node_installer_script_temple = Temple(
-    r"""#!/usr/bin/env python3
+def get_node_installer_script_temple(
+    nodename: str,
+    age_key: str,
+    mactab: str,
+    network_interfaces: str,
+    nebula_key: str,
+    nebula_crt: str,
+    ssh_host_key: str,
+) -> Temple:
+    """Get the template for the node installer script"""
+
+    node_installer_script_temple = Temple(
+        r"""#!/usr/bin/env python3
 '''Install the {$}nodename node's configuration'''
 from argparse import ArgumentParser
 from subprocess import run
 from os import makedirs
 
 files = {}
-files"nodename" = '''{$}nodename
+files["nodename"] = '''{$}nodename
 '''
 files["age.key"] = '''{$}age_key
 '''
@@ -114,7 +127,16 @@ for filename, contents in files.items():
     with open(parsed.mount_path + "/" + filename, "w") as f:
         f.write(contents)
 """
-)
+    )
+    return node_installer_script_temple.substitute(
+        nodename=nodename,
+        age_key=age_key,
+        mactab=mactab,
+        network_interfaces=network_interfaces,
+        nebula_key=nebula_key,
+        nebula_crt=nebula_crt,
+        ssh_host_key=ssh_host_key,
+    )
 
 
 def main():
@@ -136,6 +158,12 @@ def main():
         "-d",
         action="store_true",
         help="Open the debugger if an unhandled exception is encountered.",
+    )
+    parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Overwrite existing files. This is dangerous, as it will overwrite any changes you have made to the files.",
     )
     parser.add_argument(
         "--pyproject-root",
@@ -210,21 +238,20 @@ def main():
     if parsed.debug:
         sys.excepthook = idb_excepthook
 
+    hostname = parsed.hostname.format(nodename=parsed.nodename)
+
     if not (parsed.pyproject_root / "pyproject.toml").exists():
         raise RuntimeError(
             f"pyproject.toml not found at {parsed.pyproject_root}, please specify the path to the root of the pyproject.toml file with the --pyproject-root option. Note that you should generally be running this script from an editable install of a git checkout, where this will not be necessary."
         )
 
-    # outdir = parsed.outdir
-    # if not outdir:
-    #     outdir = Path(outdir_default.format(nodename=parsed.nodename))
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-
+    with tempfile.TemporaryDirectory() as tmpdir_s:
+        tmpdir = Path(tmpdir_s)
         (tmpdir / "nodename").open("w").write(parsed.nodename)
 
         age_keygen_result = magicrun(["age-keygen", "-o", tmpdir / "age.key"])
-        age_pubkey = age_keygen_result.stdout.decode("utf-8").strip().split(" ")[2]
+        age_keygen_err = age_keygen_result.stderr.read().strip()
+        age_pubkey = age_keygen_err.split(" ")[2]
         # gopass_insert(f"psyopsOS/{parsed.nodename}.age.key", outdir / "age.key")
 
         magicrun(
@@ -242,7 +269,7 @@ def main():
         with (tmpdir / "ssh_host_ed25519_key.pub").open("r") as f:
             ssh_host_fingerprint = f.read()
         # No need to keep this around, we regenerate it on boot
-        (tmpdir / "ssh_host_ed25519_key").unlink()
+        (tmpdir / "ssh_host_ed25519_key.pub").unlink()
 
         magicrun(
             [
@@ -265,7 +292,7 @@ def main():
         gopass_insert(f"psynet/{parsed.nodename}.key", nebula_key)
         gopass_insert(f"psynet/{parsed.nodename}.crt", nebula_crt)
 
-        (tmpdir / "mactab").open("r").write(f"psy0 {parsed.mac_address}\n")
+        (tmpdir / "mactab").open("w").write(f"psy0 {parsed.mac_address}\n")
 
         with (tmpdir / "network.interfaces").open("w") as f:
             f.write(
@@ -280,16 +307,47 @@ def main():
                 )
             )
 
-    node_py_file = (
+        magicrun("ls -alF /tmp")
+        magicrun(f"ls -alF {tmpdir}")
+
+        if parsed.outscript:
+            if parsed.outscript.exists() and not parsed.force:
+                raise RuntimeError(
+                    f"{parsed.outscript} already exists, refusing to overwrite it."
+                )
+            parsed.outscript.open("w").write(
+                get_node_installer_script_temple(
+                    nodename=parsed.nodename,
+                    age_key=(tmpdir / "age.key").read_text(),
+                    mactab=(tmpdir / "mactab").read_text(),
+                    network_interfaces=(tmpdir / "network.interfaces").read_text(),
+                    nebula_key=nebula_key,
+                    nebula_crt=nebula_crt,
+                    ssh_host_key=(tmpdir / "ssh_host_ed25519_key").read_text(),
+                )
+            )
+        else:
+            outdir = parsed.outdir
+            if not outdir:
+                outdir = Path(outdir_default.format(nodename=parsed.nodename))
+            if outdir.exists() and not parsed.force:
+                raise RuntimeError(
+                    f"{outdir} already exists, refusing to overwrite it."
+                )
+            outdir.mkdir(parents=True, exist_ok=True)
+            for item in os.listdir(tmpdir):
+                shutil.move(tmpdir / item, outdir / item)
+
+    inventory_node_py_file = (
         Path(progfiguration_blacksite.nodes.__file__).parent / f"{parsed.nodename}.py"
     )
-    if node_py_file.exists():
+    if inventory_node_py_file.exists() and not parsed.force:
         raise RuntimeError(
-            f"Node file {node_py_file} already exists, please delete it first"
+            f"Node file {inventory_node_py_file} already exists, please delete it first"
         )
-    node_py_file.open("w").write(
+    inventory_node_py_file.open("w").write(
         node_py_temple.substitute(
-            hostname=parsed.hostname,
+            hostname=hostname,
             flavor_text=parsed.flavor_text,
             age_pubkey=age_pubkey,
             ssh_host_fingerprint=ssh_host_fingerprint,
