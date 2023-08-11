@@ -260,6 +260,11 @@ Resources:
           TTL: 300
           ResourceRecords: ["com-micahrl-wiki.fly.dev"]
 
+        - Name: disagreements.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["com-micahrl-disagreements.fly.dev"]
+
         - Name: psyops.micahrl.com.
           Type: CNAME
           TTL: 300
