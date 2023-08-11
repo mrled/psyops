@@ -1,9 +1,12 @@
 #!/bin/sh
 set -eu
 
-# On first run, comment this line out so it will create the database.
-# Then uncomment it and restart the container.
-#/usr/local/bin/litestream restore -if-db-not-exists "$DB_FILEPATH"
-#/usr/local/bin/litestream replicate -exec "/srv/remark42 server"
+# Save required  environment variables for the backup script to a file.
 
-/srv/remark42 server
+cat > /etc/backup.sh.d/backup.env <<EOF
+BACKUP_DIR=$BACKUP_DIR
+BACKUP_S3_BUCKET_NAME=$BACKUP_S3_BUCKET_NAME
+BACKUP_S3_ENDPOINT_URL=$BACKUP_S3_ENDPOINT_URL
+EOF
+
+/usr/bin/supervisord -c /etc/supervisord.conf

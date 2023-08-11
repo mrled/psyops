@@ -1,8 +1,0 @@
-dbs:
-  - path: ${DB_FILEPATH}
-    replicas:
-      - type: s3
-        bucket: ${LITESTREAM_S3_BUCKET}
-        path: ${LITESTREAM_S3_PATH}
-        endpoint: ${LITESTREAM_S3_ENDPOINT}
-        region: ${LITESTREAM_S3_REGION}

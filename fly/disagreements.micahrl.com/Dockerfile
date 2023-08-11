@@ -1,25 +1,21 @@
-# Dockerfile for running Litestream + Isso on Fly.io
+# Dockerfile for running Remark42 on Fly.io with auto backups to S3
 
-FROM litestream/litestream AS litestream
 FROM umputun/remark42:latest
 
-# Now we can copy the litestream binary from the official litestream container
-# So easy it feels like cheating
-COPY --from=litestream /usr/local/bin/litestream /usr/local/bin/litestream
-
-COPY litestream.yml /etc/litestream.yml
 COPY start.sh /usr/local/bin/start.sh
+COPY supervisord.conf /etc/supervisord.conf
+COPY backup.sh /usr/local/bin/backup.sh
 
 USER root
 RUN true \
-    && chmod 755 /usr/local/bin/litestream \
-    && chmod 755 /usr/local/bin/start.sh \
-    && chown app /etc/litestream.yml \
-    && touch /etc/isso.cfg \
-    && chown app /etc/isso.cfg \
+    && apk add --no-cache aws-cli supervisor \
+    && mkdir -p /etc/backup.sh.d \
+    && touch /etc/backup.sh.d/backup.env \
+    && chown root:root /etc/backup.sh.d /etc/backup.sh.d/backup.env \
+    && chmod 0700 /etc/backup.sh.d /etc/backup.sh.d/backup.env \
+    && chmod 755 /usr/local/bin/start.sh /usr/local/bin/backup.sh \
+    && echo "0 0 * * * /usr/local/bin/backup.sh" | crontab - \
     && true
-
-USER app
 
 ENTRYPOINT []
 CMD ["/usr/local/bin/start.sh"]

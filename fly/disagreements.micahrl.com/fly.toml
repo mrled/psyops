@@ -25,12 +25,9 @@ NOTIFY_EMAIL_FROM = "me@micahrl.com"
 ADMIN_SHARED_EMAIL = "me@micahrl.com"
 # You have to get this value by first logging in as the user you want to be admin, and then finding the value in the UI and pasting here.
 ADMIN_SHARED_ID = "github_4622c3baa1e2d1bd137187c27103b0e6d1d48931"
-DB_FILEPATH = "/srv/var/remark.db"
-DB_TYPE = "sqlite"
-LITESTREAM_S3_BUCKET = "com-micahrl-disagreements-litestream"
-LITESTREAM_S3_ENDPOINT = "s3.us-central-1.wasabisys.com"
-LITESTREAM_S3_PATH = "remark.db"
-LITESTREAM_S3_REGION = "us-central-1"
+BACKUP_DIR = "/srv/var/backups"
+BACKUP_S3_BUCKET_NAME = "com-micahrl-disagreements-litestream"
+BACKUP_S3_ENDPOINT_URL = "https://s3.us-central-1.wasabisys.com"
 # url = "https://com-micahrl-disagreements.fly.dev"
 url = "https://disagreements.micahrl.com"
 
@@ -41,7 +38,7 @@ destination = "/srv/var"
 [http_service]
 internal_port = 8080
 force_https = true
-auto_stop_machines = true
-auto_start_machines = true
+auto_stop_machines = false
+auto_start_machines = false
 min_machines_running = 0
 processes = ["app"]
