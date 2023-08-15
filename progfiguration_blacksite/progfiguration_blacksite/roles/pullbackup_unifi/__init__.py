@@ -89,6 +89,3 @@ class Role(ProgfigurationRole):
             owner=self.capthook_user,
             mode=0o700,
         )
-
-    def results(self):
-        return {}

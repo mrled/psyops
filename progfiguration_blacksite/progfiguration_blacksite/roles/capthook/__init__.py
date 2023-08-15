@@ -83,7 +83,7 @@ class Role(ProgfigurationRole):
         )
         subprocess.run("rc-service capthook restart", shell=True, check=True)
 
-    def results(self):
+    def calculations(self):
         return {
             "username": self.username,
             "groupname": self.groupname,

@@ -151,7 +151,7 @@ class Role(ProgfigurationRole):
         else:
             logger.info("Will not enable ramoffload")
 
-    def results(self):
+    def calculations(self):
         return {
             "block_device": self.block_device,
             "mountpoint": self.mountpoint,

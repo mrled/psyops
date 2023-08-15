@@ -53,7 +53,7 @@ class Role(ProgfigurationRole):
         )
         line_in_crontab(self.username, f"MAILTO=acmeupdater", prepend=True)
 
-    def results(self):
+    def calculations(self):
         return {
             "legodir": self.legodir,
             "sshkey_pub": generate_pubkey(self.sshkey),

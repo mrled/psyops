@@ -113,6 +113,3 @@ class Role(ProgfigurationRole):
 
         logger.info("Discovering vdirsyncer collections...")
         magicrun("pullbackup_email.sh -m vdirsyncer-discover")
-
-    def results(self):
-        return {}

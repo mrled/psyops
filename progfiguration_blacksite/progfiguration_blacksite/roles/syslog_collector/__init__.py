@@ -57,7 +57,7 @@ class Role(ProgfigurationRole):
         magicrun("rc-update add syslog-ng default")
         magicrun("rc-service syslog-ng reload")  # Ensures config is loaded if we changed it
 
-    def results(self):
+    def calculations(self):
         return {
             "syslog_port": self.syslog_port,
             "netcons_port": self.netcons_port,

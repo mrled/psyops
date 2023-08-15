@@ -99,6 +99,3 @@ class Role(ProgfigurationRole):
         # Run the script at 04:19 on Tuesdays -- a random time to be nice to Let's Encrypt
         crontabline = f"19 4 * * 2 {str(acmedns_updater_script_path)}"
         line_in_crontab(self.acmeupdater_user, crontabline)
-
-    def results(self):
-        return {}
