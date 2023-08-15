@@ -1,6 +1,5 @@
 """My home k3s cluster"""
 
-from progfiguration.progfigtypes import Bunch
 from progfiguration.localhost.disks import (
     FilesystemSpec,
     LvmLvSpec,
@@ -8,18 +7,30 @@ from progfiguration.localhost.disks import (
     WholeDiskSpec,
 )
 
-group = Bunch(
-    roles=Bunch(
+group = dict(
+    roles=dict(
         blockdevparty={
             "wholedisks": [
                 # This is a no-op, but we use this disk for Rook Ceph so we list it here
                 WholeDiskSpec("/dev/nvme0n1", None, None, False),
             ],
             "partitions": [
-                PartitionSpec("/dev/sda", "psyopsosdata", "0%", "100%", volgroup="psyopsos_datadiskvg", encrypt=True),
+                PartitionSpec(
+                    "/dev/sda",
+                    "psyopsosdata",
+                    "0%",
+                    "100%",
+                    volgroup="psyopsos_datadiskvg",
+                    encrypt=True,
+                ),
             ],
             "volumes": [
-                LvmLvSpec("datadisklv", "psyopsos_datadiskvg", r"100%FREE", FilesystemSpec("ext4", "psyopsos_data")),
+                LvmLvSpec(
+                    "datadisklv",
+                    "psyopsos_datadiskvg",
+                    r"100%FREE",
+                    FilesystemSpec("ext4", "psyopsos_data"),
+                ),
             ],
         },
         k3s={

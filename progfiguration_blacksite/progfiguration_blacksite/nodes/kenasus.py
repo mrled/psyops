@@ -1,5 +1,4 @@
 from progfiguration.inventory.nodes import InventoryNode
-from progfiguration.progfigtypes import Bunch
 
 
 node = InventoryNode(
@@ -11,7 +10,7 @@ node = InventoryNode(
     ssh_host_fingerprint="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/QG0TrDipsZb+CFMMp+7VpFkKkUikf2eqECWi4TKRp",
     psy0mac="00:e0:4c:00:00:52",
     serial="1023GQ2",
-    roles=Bunch(
+    roles=dict(
         k3s={
             "start_k3s": True,
         },

@@ -60,7 +60,6 @@ def gopass_insert(name: str, path: Path) -> None:
 node_py_temple = Temple(
     """\
 from progfiguration.inventory.nodes import InventoryNode
-from progfiguration.progfigtypes import Bunch
 
 node = InventoryNode(
     address="{$}hostname",
@@ -71,7 +70,7 @@ node = InventoryNode(
     ssh_host_fingerprint="{$}ssh_host_fingerprint",
     psy0mac="{$}psy0mac",
     serial="{$}serial",
-    roles=Bunch(),
+    roles=dict,
 )
 """
 )

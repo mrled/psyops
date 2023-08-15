@@ -1,5 +1,4 @@
 from progfiguration.inventory.nodes import InventoryNode
-from progfiguration.progfigtypes import Bunch
 
 
 node = InventoryNode(
@@ -11,7 +10,7 @@ node = InventoryNode(
     ssh_host_fingerprint="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILbFK8hAMDda5556Nn2Nq/SLK6opdZRrJhGI8sJqJYC1",
     psy0mac="00:0c:29:02:dd:01",
     serial="",
-    roles=Bunch(
+    roles=dict(
         datadisk={
             "ramoffload": True,
         },

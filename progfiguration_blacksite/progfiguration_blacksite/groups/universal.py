@@ -13,11 +13,10 @@ from progfiguration.localhost.disks import (
     PartitionSpec,
     WholeDiskSpec,
 )
-from progfiguration.progfigtypes import Bunch
 
-group = Bunch(
+group = dict(
     testattribute="test value",
-    roles=Bunch(
+    roles=dict(
         psyopsos_postboot_config={
             "timezone": "US/Central",
             "syslogd": "busybox",
@@ -29,7 +28,9 @@ group = Bunch(
             # individual nodes can override just this `wholedisks` argument with a path to their block device.
             # As long as it has the label `data_crypt`, the `partitions` and `volumes` here will work.
             # In more complex scenarios, nodes can override all 3.
-            "wholedisks": [WholeDiskSpec("/dev/sda", encrypt=True, encrypt_label="data_crypt")],
+            "wholedisks": [
+                WholeDiskSpec("/dev/sda", encrypt=True, encrypt_label="data_crypt")
+            ],
             # WARNING:  progfiguration cannot find partitions created on cryptsetup devices,
             #           even though those are valid as far as I can tell.
             #           Instead of encrypting a whole disk and then partitioning the encrypted wrapper,
@@ -40,10 +41,21 @@ group = Bunch(
             # If you pass absolute units, it may not do so - it may try to follow the absolute too strictly.
             # Alignment only matters for the start - if the end is not aligned, this has ~0 performance impact.
             "partitions": [
-                PartitionSpec("/dev/mapper/data_crypt", "psyopsosdata", "0%", "100%", volgroup="psyopsos_datadiskvg"),
+                PartitionSpec(
+                    "/dev/mapper/data_crypt",
+                    "psyopsosdata",
+                    "0%",
+                    "100%",
+                    volgroup="psyopsos_datadiskvg",
+                ),
             ],
             "volumes": [
-                LvmLvSpec("datadisklv", "psyopsos_datadiskvg", r"100%FREE", FilesystemSpec("ext4", "psyopsos_data")),
+                LvmLvSpec(
+                    "datadisklv",
+                    "psyopsos_datadiskvg",
+                    r"100%FREE",
+                    FilesystemSpec("ext4", "psyopsos_data"),
+                ),
             ],
         },
         datadisk_v2={

@@ -5,7 +5,6 @@ Untested so far
 
 from progfiguration.age import AgeSecretReference
 from progfiguration.inventory.nodes import InventoryNode
-from progfiguration.progfigtypes import Bunch
 
 # The public key, not encrypted
 # From .synergy/SSL/Synergy.pem
@@ -47,7 +46,7 @@ node = InventoryNode(
     ssh_host_fingerprint="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMV71LKt9qu15k32QcuQFZWWO/bmEEbZD5W3a43i5mZH",
     psy0mac="00:07:32:4c:eb:9a",
     serial="",
-    roles=Bunch(
+    roles=dict(
         datadisk_v1={
             "underlying_device": "/dev/sda",
             "wipe_after_mounting": ["overlays/var-lib-flatpak/"],
