@@ -40,12 +40,13 @@ synergy_fingerprints_local = """\
 node = InventoryNode(
     address="newjutland.home.micahrl.com",
     user="root",
-    notes="",
-    flavortext="NEW JUTLAND: The final destination of all train graffiti. The glyphs slither down from their cars and become three-dimensional aberrations.",
     age_pubkey="age12sdqyt4pj3luus62qklyusj4ykk5sr6wr44jhtv0q84suzg5n9vqgkhru0",
     ssh_host_fingerprint="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMV71LKt9qu15k32QcuQFZWWO/bmEEbZD5W3a43i5mZH",
-    psy0mac="00:07:32:4c:eb:9a",
-    serial="",
+    sitedata=dict(
+        flavortext="NEW JUTLAND: The final destination of all train graffiti. The glyphs slither down from their cars and become three-dimensional aberrations.",
+        psy0mac="00:07:32:4c:eb:9a",
+        serial="",
+    ),
     roles=dict(
         datadisk_v1={
             "underlying_device": "/dev/sda",

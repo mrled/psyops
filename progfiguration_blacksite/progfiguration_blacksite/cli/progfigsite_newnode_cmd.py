@@ -14,7 +14,7 @@ import shutil
 import sys
 import tempfile
 import textwrap
-from typing import List, Tuple
+from typing import List
 
 from progfiguration import logger
 from progfiguration.cli.util import idb_excepthook
@@ -64,12 +64,14 @@ from progfiguration.inventory.nodes import InventoryNode
 node = InventoryNode(
     address="{$}hostname",
     user="root",
-    notes="",
-    flavortext="{$}flavor_text",
     age_pubkey="{$}age_pubkey",
     ssh_host_fingerprint="{$}ssh_host_fingerprint",
-    psy0mac="{$}psy0mac",
-    serial="{$}serial",
+    sitedata=dict(
+        notes="",
+        flavortext="{$}flavor_text",
+        psy0mac="{$}psy0mac",
+        serial="{$}serial",
+    ),
     roles=dict,
 )
 """
@@ -80,7 +82,6 @@ def get_node_installer_script_temple(
     nodename: str,
     age_key: str,
     mactab: str,
-    network_interfaces: str,
     nebula_key: str,
     nebula_crt: str,
     ssh_host_key: str,
@@ -100,8 +101,6 @@ files["nodename"] = '''{$}nodename
 files["age.key"] = '''{$}age_key
 '''
 files["mactab"] = '''{$}mactab
-'''
-files["network.interfaces"] = '''{$}network_interfaces
 '''
 files["psynet.host.key"] = '''{$}nebula_key
 '''
@@ -131,7 +130,6 @@ for filename, contents in files.items():
         nodename=nodename,
         age_key=age_key,
         mactab=mactab,
-        network_interfaces=network_interfaces,
         nebula_key=nebula_key,
         nebula_crt=nebula_crt,
         ssh_host_key=ssh_host_key,
@@ -319,7 +317,6 @@ def main():
                     nodename=parsed.nodename,
                     age_key=(tmpdir / "age.key").read_text(),
                     mactab=(tmpdir / "mactab").read_text(),
-                    network_interfaces=(tmpdir / "network.interfaces").read_text(),
                     nebula_key=nebula_key,
                     nebula_crt=nebula_crt,
                     ssh_host_key=(tmpdir / "ssh_host_ed25519_key").read_text(),
