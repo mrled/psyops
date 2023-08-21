@@ -4,20 +4,20 @@ This is required.
 """
 
 
-def ensure_autovendor():
-    """Ensure that the vendor directory is in the Python path."""
+def ensure_staticinclude():
+    """Ensure that the static include directory is in the Python path."""
 
     from pathlib import Path
     import sys
 
-    vendor_dir = Path(__file__).parent.parent / "autovendor"
-    if vendor_dir.as_posix() not in sys.path:
-        sys.path.insert(0, vendor_dir.as_posix())
+    staticinclude_dir = Path(__file__).parent.parent / "builddata" / "static_include"
+    if staticinclude_dir.as_posix() not in sys.path:
+        sys.path.insert(0, staticinclude_dir.as_posix())
 
 
 def main():
 
-    ensure_autovendor()
+    ensure_staticinclude()
 
     # If progfiguration is installed as a vendor pacakge, then it will find it there first.
     # This means the following will work from inside a progfiguration+progfigsite pip package.

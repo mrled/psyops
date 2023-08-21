@@ -7,12 +7,21 @@ but is specific to my hosts/roles/groups/functions/etc.
 import datetime
 import os
 
+from progfiguration import sitewrapper
+from progfiguration.inventory.storeimpl.invconf import inventory_conf
 
-site_name = "PSYOPS BLACKSITE"
+
+site_name = "progfiguration_blacksite"
 
 # A slogan from a USACAPOC psychological operations challenge coin I found online,
 # whose provenance I did not investigate
 site_description = "BECAUSE PHYSICAL WOUNDS HEAL"
+
+sitewrapper.set_progfigsite_by_module_name(site_name)
+
+hoststore, secretstore = inventory_conf(
+    sitewrapper.site_submodule_resource("", "inventory.conf")
+)
 
 
 def mint_version() -> str:
