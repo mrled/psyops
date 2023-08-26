@@ -130,6 +130,10 @@ class AlpineDockerBuilder:
             self.docker_cmd += ["--interactive", "--tty"]
         self.docker_cmd += [
             "--rm",
+        ]
+
+        # Docker volumes
+        self.docker_cmd += [
             # Give us full access to the psyops dir
             # Mounting this allows the build to access the psyopsOS/os-overlay/ and the public APK packages directory for mkimage.
             # Also gives us access to progfiguration stuff.
@@ -162,8 +166,23 @@ class AlpineDockerBuilder:
             f"{tempdir_sshkey.as_posix()}:{self.in_container_ssh_key_path}:ro",
             "--volume",
             f"{tempdir_sshpubkey.as_posix()}:{self.in_container_ssh_key_path}.pub:ro",
-            "--env",
+        ]
+
+        # Pass any relevant environment variables to the container
+        for envvar in os.environ.keys():
+            if (
+                envvar.startswith("PSYOPS")
+                or envvar.startswith("PROGFIGURATION")
+                or envvar.startswith("PROGFIGSITE")
+            ):
+                self.docker_cmd += [
+                    "--env",
+                    f"{envvar}={os.environ[envvar]}",
+                ]
+
+        self.docker_cmd += [
             # Environment variables that mkimage.sh (or one of the scripts it calls) uses
+            "--env",
             f"PSYOPSOS_BUILD_DATE_ISO8601={build_date.strftime('%Y-%m-%dT%H:%M:%S%z')}",
             "--env",
             f"PSYOPSOS_BUILD_GIT_REVISION={build_git_revision}",
