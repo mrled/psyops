@@ -157,7 +157,9 @@ def main():
         with apkbuild_temple_path.open() as f:
             apkbuild_temple = Temple(f.read())
 
-        with ProgfigsitePythonPackagePreparer(tmp_package_root) as preparer:
+        with ProgfigsitePythonPackagePreparer(
+            tmp_package_root, progfiguration_blacksite.site_name
+        ) as preparer:
 
             # The preparer has dropped a version file at progfigsite/builddate/version.py
             # containing a version generated from progfigsite.mint_version().

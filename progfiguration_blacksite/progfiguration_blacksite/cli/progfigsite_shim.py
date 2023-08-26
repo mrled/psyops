@@ -5,7 +5,15 @@ This is required.
 
 
 def ensure_staticinclude():
-    """Ensure that the static include directory is in the Python path."""
+    """Ensure that the static include directory is in the Python path.
+
+    If progfiguration is installed as a statically included package,
+    then it will find it there first.
+    This means it will work from inside a progfiguration+progfigsite pip package.
+
+    If it's installed as a system package, then it will find it there as well.
+    This means it will work if you `pip install -e '.[development]'`.
+    """
 
     from pathlib import Path
     import sys
@@ -19,17 +27,6 @@ def main():
 
     ensure_staticinclude()
 
-    # If progfiguration is installed as a vendor pacakge, then it will find it there first.
-    # This means the following will work from inside a progfiguration+progfigsite pip package.
-    # If it's installed as a system package, then it will find it there as well.
-    # This means the following will work if you `pip install -e '.[development]'`.
-
     from progfiguration.cli import progfiguration_site_cmd
 
-    root_package = __package__.split(".")[0] if __package__ else None
-    if root_package is None:
-        raise RuntimeError(
-            "Cannot find name of the running package. Are you calling this as a script from a package installed from pip?"
-        )
-
-    progfiguration_site_cmd.main(root_package)
+    progfiguration_site_cmd.main()

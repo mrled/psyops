@@ -19,7 +19,7 @@ progfiguration-blacksite-newnode = "progfiguration_blacksite.cli.progfigsite_new
 [project.optional-dependencies]
 development = [
     # Progfiguration itself
-    "progfiguration >= 0.0.2a8",
+    "progfiguration >= 0.0.9",
 
     # Installed by roles, which then requires them
     # In development we just install them here so that we get nice type hints etc
@@ -54,7 +54,7 @@ where = ["."]
 # "*" = ["**/*.pyc", "**/*.pyo", "**/__pycache__"]
 
 [tool.setuptools.dynamic]
-version = { attr = "progfiguration_blacksite.get_version" }
+version = { attr = "progfiguration_blacksite.version.get_version" }
 
 [tool.black]
 line-length = 120
