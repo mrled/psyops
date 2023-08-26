@@ -168,7 +168,7 @@ def progfigsite_abuild_docker(
             "set -e",
             "export PATH=$PATH:$HOME/.local/bin",
             "cd /home/build/psyops/progfiguration_blacksite",
-            "pip install -e .[development]",
+            "pip install -e '.[development]'",
             # TODO: remove this once we have a new enough setuptools in the container
             # Ran into this problem: <https://stackoverflow.com/questions/74941714/importerror-cannot-import-name-legacyversion-from-packaging-version>
             # I'm using an older Alpine container, 3.16 at the time of this writing, because psyopsOS is still that old.
