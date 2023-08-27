@@ -52,6 +52,7 @@ class AlpineDockerBuilder:
         self.aports_checkout_dir = aports_checkout_dir
         self.aports_scripts_overlay_dir = aports_scripts_overlay_dir
         self.isodir = isodir
+        os.makedirs(self.isodir, exist_ok=True)
         self.ssh_key_file = ssh_key_file
         self.in_container_ssh_key_path = f"/home/build/.abuild/{ssh_key_file}"
         self.alpine_version = alpine_version

@@ -12,11 +12,11 @@ progfigsite_dir = os.path.join(psyopsdir, "progfiguration_blacksite")
 psyopsOS_base_dir = os.path.join(psyopsosdir, "psyopsOS-base")
 docker_builder_dir = os.path.join(psyopsosdir, "build")
 site_public_dir = os.path.join(psyopsosdir, "public")
+isodir = os.path.join(psyopsosdir, "iso")
 
 docker_builder_volname_workdir = "psyopsos-build-workdir"
 
 aportsdir = os.path.expanduser("~/Documents/Repositories/aports")
-isodir = os.path.expanduser("~/Downloads/")
 docker_builder_tag_prefix = "psyopsos-builder-"
 mkimage_profile = "psyopsOS"
 architecture = "x86_64"

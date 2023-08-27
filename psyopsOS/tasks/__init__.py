@@ -146,7 +146,7 @@ def build_docker_container(ctx, rebuild=False, alpine_version=alpine_version):
 def progfigsite_abuild_docker(
     ctx,
     aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
-    isodir=os.path.expanduser("~/Downloads/"),
+    isodir=isodir,
     ssh_key_file="psyops@micahrl.com-62ca1973.rsa",
     alpine_version=alpine_version,
 ):
