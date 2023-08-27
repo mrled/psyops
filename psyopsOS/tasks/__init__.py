@@ -314,7 +314,7 @@ def psyopsOS_base_abuild_localhost(ctx, clean=False, alpine_version=alpine_versi
 @invoke.task
 def mkimage(
     ctx,
-    alpinetag="psyopsos-boot",
+    alpinetag="psyboot",
     aportsdir=aportsdir,
     isodir=isodir,
     ssh_key_file=ssh_key_file,

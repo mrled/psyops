@@ -52,13 +52,26 @@ def main(*arguments):
     )
     lsblk = json.loads(lsblk_proc.stdout)
 
+    def label_is_psyopsos_boot(label: str) -> bool:
+        """Return True if the label is a psyopsOS boot media label.
+
+        Check for old and current labels.
+        """
+        boot_media_label_fragments = [
+            "psyopsos-boot",  # Old 2023
+            "psyboot",  # New 2023
+        ]
+        for fragment in boot_media_label_fragments:
+            if fragment in label:
+                return True
+        return False
+
     bootmedia = None
     for device in lsblk["blockdevices"]:
         # Look for the iso9660 volume ID that is tagged with our label.
         # An example: 'partition-name: alpine-std psyopsos-boot x86_64'.
         # See the `alpinelabel` argument in tasks.py.
-        label = device.get("label", "") or ""
-        if not "psyopsos-boot" in label:
+        if not label_is_psyopsos_boot(device.get("label", "")):
             continue
 
         # Make sure we find the main device, not a partition.
