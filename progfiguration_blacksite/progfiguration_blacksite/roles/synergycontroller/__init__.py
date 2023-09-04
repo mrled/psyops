@@ -157,7 +157,7 @@ class Role(ProgfigurationRole):
         install_synergy()
 
         magicrun("apk add bluez")
-        magicrun("rc-servie bluetooth start")
+        magicrun("rc-service bluetooth start")
         magicrun("rc-update add bluetooth")
         # Pairing:
         # <https://wiki.archlinux.org/title/Bluetooth#Pairing>
