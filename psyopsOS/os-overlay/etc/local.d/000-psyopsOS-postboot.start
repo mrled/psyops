@@ -77,8 +77,8 @@ echo "Finished configuring network, mactab, ssh, etc"
 alpine_release=$(cat /etc/alpine-release)
 alpine_release_majmin=${alpine_release%.*}
 
-progfig_old="$(apk list -I progfiguration)"
-echo "Preinstalled version of progfiguration: $progfig_old"
+progfig_old="$(apk list -I progfiguration_blacksite)"
+echo "Preinstalled version of progfigsite: $progfig_old"
 psyopsos_repo="https://psyops.micahrl.com/apk/v$alpine_release_majmin/psyopsOS"
 if ! grep -q "$psyopsos_repo" /etc/apk/repositories; then
 	echo "Adding psyopsOS repo to apk"
@@ -86,14 +86,14 @@ if ! grep -q "$psyopsos_repo" /etc/apk/repositories; then
 else
 	echo "psyopsOS repo already in apk"
 fi
-echo "Upgrading progfiguration..."
-apk upgrade progfiguration
-progfig_new="$(apk list -I progfiguration)"
-echo "Version of progfiguration after running 'apk upgrade': $progfig_new"
+echo "Upgrading progfigsite..."
+apk upgrade progfiguration_blacksite
+progfig_new="$(apk list -I progfiguration_blacksite)"
+echo "Version of progfigsite after running 'apk upgrade': $progfig_new"
 
 
-echo "Starting progfiguration asynchronously, will continue in background..."
-progfiguration --syslog-exception apply "$PSYOPSOS_NODENAME" &
+echo "Starting progfiguration-blacksite asynchronously, will continue in background..."
+progfiguration-blacksite --syslog-exception apply "$PSYOPSOS_NODENAME" &
 
 date +'%Y%m%d-%H%M%S %z' > /etc/psyopsOS/status/000-postboot.finished
 echo "Finished postboot"
