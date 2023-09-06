@@ -9,22 +9,18 @@ This script isn't available when running from a zipapp.
 
 import argparse
 import importlib.resources
+import os
 from pathlib import Path
 import shutil
 import sys
 import tempfile
 
-from progfiguration import logger
-from progfiguration.cli.util import idb_excepthook
-from progfiguration.cmd import magicrun
-from progfiguration.progfigbuild import ProgfigsitePythonPackagePreparer
-from progfiguration.temple import Temple
-
 import progfiguration_blacksite
 import progfiguration_blacksite.sitelib.buildsite
+from progfiguration_blacksite.cli.progfigsite_shim import ensure_staticinclude
 
 
-def main():
+def parseargs():
     """Build progfigsite"""
 
     parser = argparse.ArgumentParser(
@@ -74,7 +70,9 @@ def main():
         default="psyopsOS",
         help=f"Name of the Alpine repository where the package will be created. Defaults to '{default_abuild_repo_name}'.",
     )
-    default_pyproject_root = Path(progfiguration_blacksite.__file__).parent.parent
+    default_pyproject_root = Path(
+        progfiguration_blacksite.__file__
+    ).parent.parent.parent
     parser.add_argument(
         "--pyproject-root",
         type=Path,
@@ -83,69 +81,54 @@ def main():
     )
     parser.add_argument("--clean", action="store_true", help="Clean before building.")
     parsed = parser.parse_args()
+    return parsed, parser
 
-    logger.setLevel("DEBUG")
 
-    if parsed.debug:
-        sys.excepthook = idb_excepthook
+def main():
+    parsed, parser = parseargs()
 
     if not (parsed.pyproject_root / "pyproject.toml").exists():
         raise RuntimeError(
             f"pyproject.toml not found at {parsed.pyproject_root}, please specify the path to the root of the pyproject.toml file with the --pyproject-root option. Note that you should generally be running this script from an editable install of a git checkout."
         )
 
+    ensure_staticinclude()
+
+    from progfiguration import logger, sitewrapper
+    from progfiguration.cli.util import idb_excepthook
+    from progfiguration.cmd import magicrun
+    from progfiguration.progfigbuild import ProgfigsitePythonPackagePreparer
+    from progfiguration.temple import Temple
+
+    logger.setLevel("DEBUG")
+
+    if parsed.debug:
+        sys.excepthook = idb_excepthook
+
     progfigsite_package_root = Path(progfiguration_blacksite.__file__).parent
+
+    sitewrapper.set_progfigsite_by_module_name("progfiguration_blacksite")
 
     # Abuild names the repo after the parent directory of the package root.
     # Apparently I can't change this.
     # This is set in the abuild script as "repo=".
+    # <https://gitlab.alpinelinux.org/alpine/abuild/-/blob/f150027100d2488b318af935979c9b32ff420c71/abuild.in#L1022>
     # It corresponds to "main", "community", "testing" in the Alpine repository.
     # Even if I didn't want to make my own, I want to set it so that it's not whatever ../../ happens to be.
     #
     # See also psyopsOS/tasks/constants.py:ApkPaths
     #
-    # So we're going to have to copy everything to a directory called parsed.abuild_repo_name.
-    #
-    # We're going to end up with this directory structure:
-    #
-    #  Structure:                   |   For instance:
-    #  -----------------------------|-----------------------------
-    #  /path/to/some/tmpdir/        |   /tmp/tmpmiphengv/
-    #    abuild_repo_name/          |    psyopsOS/
-    #      pyproject_root.name/     |     progfigsite/
-    #        APKBUILD               |       APKBUILD
-    #        pyproject.toml         |       pyproject.toml
-    #        ...                    |       ...
-    #        package_root.name/     |       progfigsite/
-    #          __init__.py          |         __init__.py
-    #          ...                  |         ...
-    #
-    # We try to skip everything that doesn't need to be copied,
-    # especially slow stuff like venv/.git/build
+    # So we're going to inflate the APKBUILD template in a temporary directory
+    # whose parent is named abuild_repo_name.
+    # The APKBUILD template will find the Python project from a path stored in
+    # the environment variable $PROGFIGURATION_BLACKSITE_PROJECT_DIR.
 
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
-        tmp_pyproj_root: Path = (
-            tmpdir / parsed.abuild_repo_name / parsed.pyproject_root.name
+        tmp_pyproj_root = (
+            tmpdir / str(parsed.abuild_repo_name) / str(parsed.pyproject_root.name)
         )
         tmp_pyproj_root.mkdir(parents=True)
-        shutil.copytree(
-            parsed.pyproject_root,
-            tmp_pyproj_root,
-            ignore=shutil.ignore_patterns(
-                "*venv*",
-                ".git*",
-                "*.egg-info",
-                ".mypy_cache",
-                "build",
-                "dist",
-                "__pycache__",
-                "*.pyc",
-                "*.pyo",
-            ),
-            dirs_exist_ok=True,
-        )
-        tmp_package_root = tmp_pyproj_root / progfigsite_package_root.name
 
         # Note: We don't use the injection mechanism here,
         # because we have to define injections before entering the context manager,
@@ -158,7 +141,7 @@ def main():
             apkbuild_temple = Temple(f.read())
 
         with ProgfigsitePythonPackagePreparer(
-            tmp_package_root, progfiguration_blacksite.site_name
+            progfigsite_package_root, progfiguration_blacksite.site_name
         ) as preparer:
 
             # The preparer has dropped a version file at progfigsite/builddate/version.py
@@ -170,6 +153,12 @@ def main():
             # and falls back to a low default version if the version file is missing.
             #
             # This means that things like 'python -m build' will find our minted version implicitly.
+            # Inflate the APKBUILD template in the temporary directory
+            apkbuild_hydrated = apkbuild_temple.substitute(
+                version=preparer.minted_version
+            )
+            with tmp_apkbuild_path.open("w") as f:
+                f.write(apkbuild_hydrated)
 
             # Add the APK build file to the package
             apkbuild_hydrated = apkbuild_temple.substitute(
@@ -193,4 +182,14 @@ def main():
 
             print(f"Running {' '.join(abuild_cmd)}")
 
-            magicrun(abuild_cmd, cwd=tmp_pyproj_root.as_posix())
+            abuild_env = os.environ.copy()
+            progfigsite_project_root = progfigsite_package_root.parent.parent
+            abuild_env["PROGFIGURATION_BLACKSITE_PROJECT_DIR"] = str(
+                progfigsite_project_root
+            )
+
+            magicrun(
+                abuild_cmd,
+                cwd=tmp_pyproj_root.as_posix(),
+                env=abuild_env,
+            )
