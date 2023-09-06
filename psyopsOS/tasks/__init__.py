@@ -168,6 +168,11 @@ def progfigsite_abuild_docker(
             "set -e",
             "export PATH=$PATH:$HOME/.local/bin",
             "cd /home/build/psyops/progfiguration_blacksite",
+            # This installs progfiguration as editable from our local checkout.
+            # It means we don't have to install it over the network,
+            # and it also lets us test local changes to progfiguration.
+            "pip install -e /home/build/psyops/submod/progfiguration",
+            # This will skip progfiguration as it is already installed.
             "pip install -e '.[development]'",
             # TODO: remove this once we have a new enough setuptools in the container
             # Ran into this problem: <https://stackoverflow.com/questions/74941714/importerror-cannot-import-name-legacyversion-from-packaging-version>
@@ -177,6 +182,7 @@ def progfigsite_abuild_docker(
             f"echo 'PACKAGER_PRIVKEY=\"{builder.in_container_ssh_key_path}\"' > /home/build/.abuild/abuild.conf",
             "ls -alF /home/build/.abuild",
             f"progfiguration-blacksite-buildapk --abuild-repo-name {apkpaths.reponame} --apks-index-path {apkpaths.incontainer_repo_parent}",
+            f"echo 'Build packages are found in {apkpaths.incontainer}/x86_64/:'",
             f"ls -larth {apkpaths.incontainer}/x86_64/",
         ]
 
