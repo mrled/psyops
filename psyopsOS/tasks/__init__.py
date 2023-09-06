@@ -427,3 +427,12 @@ def mkimage(
             print(" \\\n  ".join(full_cmd))
             ctx.run(" ".join(full_cmd))
             ctx.run(f"ls -alFh {isodir}*.iso")
+
+
+@invoke.task
+def deployiso(ctx, host, isodir=isodir):
+    """Copy the ISO to a host and write it to the boot media"""
+    iso_filename = "psyopsOS-psyopsos-boot-x86_64.iso"
+    iso_path = Path(isodir) / iso_filename
+    ctx.run(f"scp {iso_path.as_posix()} root@{host}:/tmp/{iso_filename}")
+    ctx.run(f"ssh root@{host} /usr/sbin/psyopsOS-write-bootmedia /tmp/{iso_filename}")
