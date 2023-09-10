@@ -4,7 +4,9 @@
 from dataclasses import dataclass
 from pathlib import Path
 import textwrap
+import time
 
+from progfiguration import logger
 from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost.disks import is_mountpoint
@@ -60,7 +62,9 @@ class Role(ProgfigurationRole):
         magicrun("rc-service docker start")
 
         # Create required users
-        add_managed_service_account(self.archivebox_user, self.archivebox_group, groups=["docker"], shell="/bin/sh")
+        archivebox_getent = add_managed_service_account(
+            self.archivebox_user, self.archivebox_group, groups=["docker"], shell="/bin/sh"
+        )
 
         # Create the role directory
         self.localhost.makedirs(self.roledir, owner="root", group="root", mode=0o0755)
@@ -147,6 +151,20 @@ class Role(ProgfigurationRole):
             mode=0o0644,
         )
         annals_archivebox_tag = "annals-archivebox-local"
+
+        # sometimes Docker isn't running yet when we get here, so we have to wait for it
+        attempts = 0
+        maxattempts = 4
+        while attempts < maxattempts:
+            if magicrun(["docker", "ps"], check=False).returncode == 0:
+                break
+            dockerstatus = magicrun(["rc-service", "docker", "status"])
+            logger.debug(
+                f"Waiting for Docker to start ({attempts}/{maxattempts}). Status: {dockerstatus.stdout.getvalue()}"
+            )
+            time.sleep(15)
+            attempts += 1
+
         magicrun(
             [
                 "docker",
