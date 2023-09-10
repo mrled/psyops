@@ -426,7 +426,7 @@ def mkimage(
             print("Running Docker with:")
             print(" \\\n  ".join(full_cmd))
             ctx.run(" ".join(full_cmd))
-            ctx.run(f"ls -alFh {isodir}*.iso")
+            ctx.run(f"ls -alFhr {isodir}/*.iso")
 
 
 @invoke.task
