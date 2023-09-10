@@ -14,6 +14,7 @@ from progfiguration.localhost import LocalhostLinux, authorized_keys
 from progfiguration_blacksite.sitelib import alpine_release_v
 
 
+# These users must be present in userdb
 _users = [
     {
         "name": "mrled",
@@ -27,9 +28,7 @@ _users = [
 ]
 
 
-def configure_user(
-    localhost: LocalhostLinux, name: str, password: str, pubkeys: List[str], shell=None
-):
+def configure_user(localhost: LocalhostLinux, name: str, password: str, pubkeys: List[str], shell=None):
     exists = False
     with open("/etc/passwd") as fp:
         for line in fp.readlines():
@@ -153,9 +152,7 @@ class Role(ProgfigurationRole):
         if self.syslogd == "busybox":
             self.configure_busybox_syslogd()
         else:
-            raise NotImplementedError(
-                f"Unknown syslog client type {self.client_syslogd}"
-            )
+            raise NotImplementedError(f"Unknown syslog client type {self.client_syslogd}")
 
         set_apk_repositories(self.localhost)
 

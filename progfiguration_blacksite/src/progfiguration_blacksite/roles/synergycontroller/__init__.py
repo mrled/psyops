@@ -12,12 +12,14 @@ import textwrap
 import time
 from typing import List
 
+import requests
+
 from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost import LocalhostLinux, authorized_keys
 from progfiguration.localhost.disks import is_mountpoint
 
-import requests
+from progfiguration_blacksite.sitelib.users import add_managed_service_account
 
 
 def install_vscode_remote_prereqs():
@@ -140,7 +142,7 @@ class Role(ProgfigurationRole):
             r"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMN/4Rdkz4vlGaQRvhmhLhkaH0CfhNnoggGBBknz17+u mrled@haluth.local",
         ]
     )
-    user_gecos: str = "Synergist"
+    user_group: str = "synergist"
     synergy_priv_key: str
     synergy_pub_key: str
     synergy_fingerprints_local: str
@@ -149,6 +151,10 @@ class Role(ProgfigurationRole):
 
     # A deploy keyh created for my qmk_firmware fork
     github_deploy_key: str
+
+    @property
+    def homedir(self) -> str:
+        return f"/home/{self.user}"
 
     def apply(self):
 
@@ -167,19 +173,16 @@ class Role(ProgfigurationRole):
         # trust <MAC>
         # connect <MAC>
 
-        try:
-            subprocess.run(["id", self.user], check=True, capture_output=True)
-        except subprocess.CalledProcessError:
-            # Bash is required to be the user's shell for vscode remote
-            subprocess.run(["apk", "add", "bash"])
-            # Create the user
-            subprocess.run(["adduser", "-g", self.user_gecos, "-D", "-s", "/bin/bash", self.user])
-            # Unlock the account without setting a password (only SSH keys can be used to connect)
-            subprocess.run(["usermod", "-p", "*", self.user])
-            # Add the user to required groups
-            subprocess.run(["adduser", self.user, "flatpak"])
-            subprocess.run(["adduser", self.user, "input"])
-            subprocess.run(["adduser", self.user, "video"])
+        # Bash is required to be the user's shell for vscode remote
+        subprocess.run(["apk", "add", "bash"])
+
+        # Create the user
+        add_managed_service_account(
+            self.user, self.user_group, groups=["flatpak", "input", "video"], home=str(self.homedir), shell="/bin/bash"
+        )
+        # Unlock the account without setting a password (only SSH keys can be used to connect)
+        subprocess.run(["usermod", "-p", "*", self.user])
+
         authorized_keys.add_idempotently(self.localhost, self.user, self.user_authorized_keys)
         self.localhost.set_file_contents(
             "/etc/sudoers.d/synergist-teensy",

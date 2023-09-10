@@ -15,12 +15,12 @@ Actually running lego for a specific purpose is handled by other roles.
 from dataclasses import dataclass
 import os
 from pathlib import Path
-import shutil
 
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.ssh import generate_pubkey
 
 from progfiguration_blacksite.sitelib import line_in_crontab
+from progfiguration_blacksite.sitelib.users import add_managed_service_account
 
 
 @dataclass(kw_only=True)
@@ -40,7 +40,7 @@ class Role(ProgfigurationRole):
         return self.localhost.users.getent_user(self.username).homedir
 
     def apply(self):
-        self.localhost.users.add_service_account(self.username, self.groupname, home=True, shell="/bin/sh")
+        add_managed_service_account(self.username, self.groupname, shell="/bin/sh")
         self.localhost.makedirs(self.role_dir, self.username, self.groupname, 0o700)
         sshkey_path = self.homedir / ".ssh" / "id_acmeupdater"
         sshkey_pub_path = sshkey_path.with_suffix(".pub")

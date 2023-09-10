@@ -3,7 +3,6 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-import socket
 import textwrap
 
 from progfiguration.cmd import magicrun
@@ -11,6 +10,7 @@ from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost.disks import is_mountpoint
 
 from progfiguration_blacksite.sitelib import get_persistent_secret, line_in_crontab
+from progfiguration_blacksite.sitelib.users import add_managed_service_account
 
 
 @dataclass(kw_only=True)
@@ -60,9 +60,7 @@ class Role(ProgfigurationRole):
         magicrun("rc-service docker start")
 
         # Create required users
-        archivebox_getent = self.localhost.users.add_service_account(
-            self.archivebox_user, self.archivebox_group, groups=["docker"], shell="/bin/sh"
-        )
+        add_managed_service_account(self.archivebox_user, self.archivebox_group, groups=["docker"], shell="/bin/sh")
 
         # Create the role directory
         self.localhost.makedirs(self.roledir, owner="root", group="root", mode=0o0755)
@@ -196,6 +194,19 @@ class Role(ProgfigurationRole):
 
         # Archivebox clone
         archivebox_srcdir = self.roledir / "absrc"
+        # magicrun(
+        #     [
+        #         "sudo",
+        #         "-u",
+        #         self.archivebox_user,
+        #         "git",
+        #         "config",
+        #         "--global",
+        #         "--add",
+        #         "safe.directory",
+        #         str(archivebox_srcdir),
+        #     ]
+        # )
         if archivebox_srcdir.exists():
             magicrun(["sudo", "-u", self.archivebox_user, "git", "pull"], cwd=str(archivebox_srcdir))
         else:
@@ -285,7 +296,9 @@ class Role(ProgfigurationRole):
         if swarmstate == "inactive":
             # Initialize Docker Swarm
             magicrun(["docker", "swarm", "init"])
-            swarmstate = magicrun(["docker", "info", "--format", "{{ .Swarm.LocalNodeState }}"]).stdout.getvalue().strip()
+            swarmstate = (
+                magicrun(["docker", "info", "--format", "{{ .Swarm.LocalNodeState }}"]).stdout.getvalue().strip()
+            )
         if swarmstate != "active":
             raise RuntimeError(f"Swarm state is {swarmstate}")
 

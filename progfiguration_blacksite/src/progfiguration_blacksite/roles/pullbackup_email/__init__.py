@@ -42,14 +42,15 @@ class Role(ProgfigurationRole):
         return self.localhost.users.getent_user(self.pullbackup_user).homedir
 
     def apply(self):
+
+        self.localhost.makedirs(self.role_dir, owner="root", mode=0o755)
+
         magicrun("apk add isync")
 
         # There is an apk package for vdirsyncer, but it's in @edgecommunity and it requires Python 3.11 for some reason.
         # We have to install its prereqs first though.
         magicrun("apk add libxml2 libxslt zlib")
         install_vdirsyncer_venv()
-
-        self.localhost.makedirs(self.role_dir, owner="root", mode=0o755)
 
         # Create required mbsync directories
         self.localhost.makedirs(

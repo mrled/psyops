@@ -7,6 +7,7 @@ from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.ssh import generate_pubkey
 
 from progfiguration_blacksite.sitelib import line_in_crontab
+from progfiguration_blacksite.sitelib.users import add_managed_service_account
 
 
 @dataclass(kw_only=True)
@@ -26,7 +27,9 @@ class Role(ProgfigurationRole):
         return self.homedir / ".ssh" / "id_pullbackup"
 
     def apply(self):
-        self.localhost.users.add_service_account(self.username, self.groupname, home=self.homedir, shell="/bin/sh")
+
+        add_managed_service_account(self.username, self.groupname, home=self.homedir, shell="/bin/sh")
+
         sshkey_pub_path = self.sshkey_path.with_suffix(".pub")
         self.localhost.set_file_contents(self.sshkey_path, self.sshkey, self.username, self.groupname, 0o600, 0o700)
         self.localhost.set_file_contents(

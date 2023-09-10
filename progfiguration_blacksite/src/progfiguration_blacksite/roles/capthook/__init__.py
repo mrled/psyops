@@ -5,13 +5,13 @@ After a role adds a hook, it must restart the capthook service.
 """
 
 from dataclasses import dataclass
-import os
 from pathlib import Path
-import shutil
 import subprocess
 
 from progfiguration import logger
 from progfiguration.inventory.roles import ProgfigurationRole
+
+from progfiguration_blacksite.sitelib.users import add_managed_service_account
 
 
 @dataclass(kw_only=True)
@@ -29,7 +29,9 @@ class Role(ProgfigurationRole):
         return self.homedir / "hooks"
 
     def apply(self):
-        self.localhost.users.add_service_account(self.username, self.groupname, home=str(self.homedir), shell="/bin/sh")
+
+        add_managed_service_account(self.username, self.groupname, home=str(self.homedir), shell="/bin/sh")
+
         subprocess.run(["apk", "add", "webhook"], check=True)
         self.localhost.cp(
             self.role_file("hookbuilder.py"),

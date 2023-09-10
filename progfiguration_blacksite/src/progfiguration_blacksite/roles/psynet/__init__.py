@@ -8,6 +8,8 @@ from progfiguration import logger
 from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
+from progfiguration_blacksite.sitelib.users import add_managed_service_account
+
 
 @dataclass(kw_only=True)
 class Role(ProgfigurationRole):
@@ -30,6 +32,11 @@ class Role(ProgfigurationRole):
             logger.error(f"psynet host key and/or cert does not exist, skipping psynet configuration")
             return
 
+        # The package adds a user and group, but we want to control the UID/GID.
+        add_managed_service_account("nebula", "nebula")
+
+        magicrun("apk add nebula nebula-openrc")
+
         # Take advantage of built-in rc script functionality
         # Copying the rc script to nebula.psynet will caust it to look for /etc/nebula/psynet.yml automatically
         # It's ok to do this even if the psynet config file doesn't exist, it just won't start.
@@ -40,8 +47,20 @@ class Role(ProgfigurationRole):
         # )
 
         self.localhost.makedirs("/etc/nebula", "nebula", "nebula", 0o0700)
-        self.localhost.cp(self.psynet_host_crt, "/etc/nebula/psynet.host.crt", "nebula", "nebula", 0o0600)
-        self.localhost.cp(self.psynet_host_key, "/etc/nebula/psynet.host.key", "nebula", "nebula", 0o0600)
+        self.localhost.cp(
+            self.psynet_host_crt,
+            "/etc/nebula/psynet.host.crt",
+            "nebula",
+            "nebula",
+            0o0600,
+        )
+        self.localhost.cp(
+            self.psynet_host_key,
+            "/etc/nebula/psynet.host.key",
+            "nebula",
+            "nebula",
+            0o0600,
+        )
         tmp_psynet_yml = "/tmp/nebula.psynet.yml"
         self.localhost.temple(
             self.role_file("psynet.yml.temple"),
@@ -55,10 +74,6 @@ class Role(ProgfigurationRole):
             "nebula",
             0o0640,
         )
-        result = magicrun(f"nebula -test -config {tmp_psynet_yml}", check=False)
-        if result.returncode != 0:
-            raise Exception(f"nebula -test failed with code {result.returncode}, bad config file at {tmp_psynet_yml}")
-        shutil.move(tmp_psynet_yml, "/etc/nebula/psynet.yml")
         self.localhost.cp(
             self.role_file("psynet.ca.crt"),
             "/etc/nebula/psynet.ca.crt",
@@ -66,6 +81,10 @@ class Role(ProgfigurationRole):
             "nebula",
             0o0600,
         )
+        result = magicrun(f"nebula -test -config {tmp_psynet_yml}", check=False)
+        if result.returncode != 0:
+            raise Exception(f"nebula -test failed with code {result.returncode}, bad config file at {tmp_psynet_yml}")
+        shutil.move(tmp_psynet_yml, "/etc/nebula/psynet.yml")
 
         magicrun("modprobe tun")
         # Read the config file in case we changed it.
