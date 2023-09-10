@@ -6,13 +6,13 @@ and role arguments and secrets from the universal group always apply first,
 while other groups have no guarantee of order.
 """
 
-from progfiguration.age import AgeSecretReference
 from progfiguration.localhost.disks import (
     FilesystemSpec,
     LvmLvSpec,
     PartitionSpec,
     WholeDiskSpec,
 )
+from progfiguration.sitehelpers.agesecrets import AgeSecretReference
 
 group = dict(
     testattribute="test value",

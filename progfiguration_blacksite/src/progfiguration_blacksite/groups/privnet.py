@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from progfiguration.age import AgeSecretReference
 from progfiguration.inventory.roles import RoleCalculationReference
 from progfiguration.localhost.disks import FilesystemSpec, LvmLvSpec, PartitionSpec
+from progfiguration.sitehelpers.agesecrets import AgeSecretReference
 
 from progfiguration_blacksite.sitelib import siteglobals
 
