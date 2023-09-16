@@ -12,6 +12,7 @@ RUN apt-get update -qq \
     iputils-ping \
     less \
     procps \
+    pyldap \
     vim \
     && rm -rf /var/lib/apt/lists/*
 
