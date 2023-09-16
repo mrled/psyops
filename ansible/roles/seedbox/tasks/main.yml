@@ -206,7 +206,7 @@
     name: local/transmission
     tag: ansibuilt
     force_tag: yes
-    force_source: "{{ seedbox_transmission_docker_copy.changed }}"
+    force_source: "{{ seedbox_transmission_docker_copy.changed or seedbox_transmission_docker_force_build }}"
     source: build
   # notify: seedbox stack redeploy
 
