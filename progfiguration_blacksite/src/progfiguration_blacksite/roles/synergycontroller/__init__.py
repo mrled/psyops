@@ -160,18 +160,9 @@ class Role(ProgfigurationRole):
 
         groupname = self.user
 
-        install_synergy()
+        self.configure_bluetooth()
 
-        magicrun("apk add bluez")
-        magicrun("rc-service bluetooth start")
-        magicrun("rc-update add bluetooth")
-        # Pairing:
-        # <https://wiki.archlinux.org/title/Bluetooth#Pairing>
-        # bluetoothctl
-        # scan on
-        # pair <MAC>
-        # trust <MAC>
-        # connect <MAC>
+        install_synergy()
 
         # Bash is required to be the user's shell for vscode remote
         subprocess.run(["apk", "add", "bash"])
@@ -394,3 +385,22 @@ class Role(ProgfigurationRole):
         # sudo teensy_loader_cli -w -v -mmcu=atmega32u4 /psyopsos-data/roles/synergycontroller/synergist/qmk_firmware/.build/ergodox_ez_shine_mrled.hex
         #
         # Ploopy trackball: rev 1.004
+
+    def configure_bluetooth(self):
+        magicrun("apk add bluez")
+        magicrun("rc-update add bluetooth")
+
+        if not os.path.exists("/etc/bluetooth/main.conf.dist"):
+            # It is nice to see the defaults for reference later
+            self.localhost.cp("/etc/bluetooth/main.conf", "/etc/bluetooth/main.conf.dist")
+        self.localhost.cp(self.role_file("bluetooth.main.conf"), "/etc/bluetooth/main.conf")
+
+        magicrun("rc-service bluetooth start")
+
+        # Pairing:
+        # <https://wiki.archlinux.org/title/Bluetooth#Pairing>
+        # bluetoothctl
+        # scan on
+        # pair <MAC>
+        # trust <MAC>
+        # connect <MAC>
