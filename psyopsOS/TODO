@@ -1,0 +1,17 @@
+* Add a new node for qemu VM
+* Make a way to add a node with a single command. Generate keys it needs, re-encrypt groups its in, create a filesystem for a usb drive, add them to the progfigsite checkout. Avoid Docker?
+* Test progfigsite a bunch
+* Upgrade agassiz to latest ISO
+* IDEA: single command build/copy/update/reboot
+  * Use case: Run a command and walk away during build
+  * No CI; use local machine as CI
+  * Pull all secrets out of password manager at the beginning. That way you can let password manager lock, no worries with long builds etc
+  * Expect a command on remote systems to tell us what the boot disk is
+  * Expect a command on remote system to tell us whether to use tmp space somewhere for boot disk, or dd it directly to the drive (risky)
+  * Run pipe that will dd iso image from local machine to the remote host. If either of the above commands fail, don't write anything.
+* Idea: bit torrent iso distribution
+  * machines can dedicate disk space to seeding, or not
+  * local machine always seeds
+  * build versioned iso files
+  * no CI again, this avoids that requirement if local dev is set up
+  
