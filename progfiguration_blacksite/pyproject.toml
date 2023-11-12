@@ -48,7 +48,7 @@ build-backend = "setuptools.build_meta"
 "progfiguration_blacksite" = ["*", "**/*"]
 
 [tool.setuptools.dynamic]
-version = { attr = "progfiguration_blacksite.version.get_version" }
+version = { attr = "progfiguration_blacksite.get_version" }
 
 [tool.black]
 line-length = 120
