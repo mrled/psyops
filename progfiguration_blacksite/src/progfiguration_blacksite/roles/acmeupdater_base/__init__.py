@@ -16,6 +16,7 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 
+from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.ssh import generate_pubkey
 
@@ -25,7 +26,6 @@ from progfiguration_blacksite.sitelib.users import add_managed_service_account
 
 @dataclass(kw_only=True)
 class Role(ProgfigurationRole):
-
     role_dir: Path
     username: str = "acmeupdater"
     groupname: str = "acmeupdater"
@@ -41,6 +41,7 @@ class Role(ProgfigurationRole):
 
     def apply(self):
         add_managed_service_account(self.username, self.groupname, shell="/bin/sh")
+        magicrun(["apk", "add", "lego"], check=True)
         self.localhost.makedirs(self.role_dir, self.username, self.groupname, 0o700)
         sshkey_path = self.homedir / ".ssh" / "id_acmeupdater"
         sshkey_pub_path = sshkey_path.with_suffix(".pub")

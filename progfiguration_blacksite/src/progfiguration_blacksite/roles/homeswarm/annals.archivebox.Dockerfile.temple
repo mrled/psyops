@@ -12,7 +12,7 @@ RUN apt-get update -qq \
     iputils-ping \
     less \
     procps \
-    py3-pyldap \
+    python3-ldap \
     vim \
     && rm -rf /var/lib/apt/lists/*
 

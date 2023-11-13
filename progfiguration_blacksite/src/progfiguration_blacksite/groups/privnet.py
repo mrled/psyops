@@ -68,7 +68,7 @@ group = dict(
             "aws_zone": "Z32HSYI0AGMFV9",
             "acmedns_email": "psyops@micahrl.com",
             "domain": "chenoska.home.micahrl.com",
-            "synology_user": "admin",
+            "synology_user": "mrladmin",
             "synology_host": "chenoska.home.micahrl.com",
             "acmeupdater_user": "acmeupdater",
             "capthook_hooksdir": RoleCalculationReference("capthook", "hooksdir"),
