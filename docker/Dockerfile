@@ -235,12 +235,12 @@ RUN true \
     # && install -o root -g root -m 755 "$psysetup/terraformer" /usr/local/bin \
     && true
 
-RUN true \
-    && "$psysetup/bin/get-gh-release" --outdir "$psysetup" benbjohnson/litestream '^litestream.*linux-amd64-static.tar.gz$' \
-    && cd "$psysetup" \
-    && tar -zx -f litestream*.tar.gz \
-    && install -o root -g root -m 755 "$psysetup"/litestream /usr/local/bin \
-    && true
+# RUN true \
+#     && "$psysetup/bin/get-gh-release" --outdir "$psysetup" benbjohnson/litestream '^litestream.*linux-amd64-static.tar.gz$' \
+#     && cd "$psysetup" \
+#     && tar -zx -f litestream*.tar.gz \
+#     && install -o root -g root -m 755 "$psysetup"/litestream /usr/local/bin \
+#     && true
 
 RUN true \
     && set -x \
