@@ -290,6 +290,10 @@ Resources:
           Type: A
           TTL: 60
           ResourceRecords: ["100.108.197.65"]
+        - Name: naragua.backchannel.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.74.227.113"]
         - Name: copland.backchannel.micahrl.com.
           Type: A
           TTL: 60
