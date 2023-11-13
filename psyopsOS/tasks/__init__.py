@@ -73,7 +73,11 @@ def validate_alpine_version(ctx, alpine_version=alpine_version):
                 break
 
     cmd = ["git", "name-rev", "--name-only", "HEAD"]
-    gitresult = subprocess.run(cmd, cwd=aportsdir, check=True, capture_output=True)
+    gitresult = subprocess.run(cmd, cwd=aportsdir, capture_output=True)
+    if gitresult.returncode != 0:
+        raise Exception(
+            f"Trying to get version of aports repository at {aportsdir}, with '{" ".join(cmd)}' but got an error: {gitresult.stderr.decode('utf-8')}"
+        )
     aports_alpine_version = ""
     if gitresult.returncode == 0:
         aports_alpine_version = gitresult.stdout.decode("utf-8").strip()
@@ -145,9 +149,9 @@ def build_docker_container(ctx, rebuild=False, alpine_version=alpine_version):
 @invoke.task
 def progfigsite_abuild_docker(
     ctx,
-    aportsdir=os.path.expanduser("~/Documents/Repositories/aports"),
+    aportsdir=aportsdir,
     isodir=isodir,
-    ssh_key_file="psyops@micahrl.com-62ca1973.rsa",
+    ssh_key_file=ssh_key_file,
     alpine_version=alpine_version,
 ):
     """Build the progfiguration psyops blacksite Python package as an Alpine package. Use the mkimage docker container."""
@@ -320,6 +324,7 @@ def psyopsOS_base_abuild_localhost(ctx, clean=False, alpine_version=alpine_versi
 @invoke.task
 def mkimage(
     ctx,
+    dangerous_no_clean_tmp_dir=False,
     alpinetag="psyboot",
     aportsdir=aportsdir,
     isodir=isodir,
@@ -362,13 +367,18 @@ def mkimage(
         alpine_version,
         psyopsdir,
         docker_builder_tag_prefix,
+        interactive=interactive,
         cleandockervol=cleandockervol,
+        dangerous_no_clean_tmp_dir=dangerous_no_clean_tmp_dir,
     ) as builder:
         in_container_mkimage_cmd = [
             "set -e",
             f"echo 'PACKAGER_PRIVKEY=\"{builder.in_container_ssh_key_path}\"' > /home/build/.abuild/abuild.conf",
+            "uname -a",
             " ".join(
                 [
+                    "sh",
+                    "-x",
                     "./mkimage.sh",
                     "--tag",
                     alpinetag,

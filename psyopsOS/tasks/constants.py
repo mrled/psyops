@@ -16,7 +16,10 @@ isodir = os.path.join(psyopsosdir, "iso")
 
 docker_builder_volname_workdir = "psyopsos-build-workdir"
 
-aportsdir = os.path.expanduser("~/Documents/Repositories/aports")
+# This must be a checked out aports directory
+# You should keep it up to date! lol
+aportsdir = os.path.abspath(os.path.join(psyopsdir, "..", "aports"))
+
 docker_builder_tag_prefix = "psyopsos-builder-"
 mkimage_profile = "psyopsOS"
 architecture = "x86_64"

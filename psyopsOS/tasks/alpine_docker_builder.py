@@ -13,7 +13,7 @@ from tasks.secrets import save_apk_signing_key
 
 def build_docker_container_impl(image_tag: str, docker_builder_dir: str, rebuild=False):
     """Build the docker container that builds the ISO image and Alpine packages"""
-    cmd = ["docker", "build", "--progress=plain"]
+    cmd = ["docker", "build", "--platform", "linux/amd64", "--progress=plain"]
     if rebuild:
         cmd += ["--no-cache"]
     cmd += ["--tag", image_tag, docker_builder_dir]
@@ -48,6 +48,8 @@ class AlpineDockerBuilder:
         interactive=False,
         # Clean the docker volume before running
         cleandockervol=False,
+        # If true, don't clean the temporary directory containing the SSH key
+        dangerous_no_clean_tmp_dir=False,
     ) -> None:
         self.aports_checkout_dir = aports_checkout_dir
         self.aports_scripts_overlay_dir = aports_scripts_overlay_dir
@@ -60,6 +62,7 @@ class AlpineDockerBuilder:
         self.docker_builder_tag_prefix = docker_builder_tag_prefix
         self.interactive = interactive
         self.cleandockervol = cleandockervol
+        self.dangerous_no_clean_tmp_dir = dangerous_no_clean_tmp_dir
 
         # Path to the psyopsOS project within the root psyops repo
         self.psyopsosdir = os.path.join(self.psyopsdir, "psyopsOS")
@@ -72,7 +75,6 @@ class AlpineDockerBuilder:
         self.in_container_workdir = "/home/build/workdir"
 
     def __enter__(self):
-
         os.umask(0o022)
         build_docker_container_impl(
             f"{self.docker_builder_tag_prefix}{self.alpine_version}",
@@ -126,6 +128,8 @@ class AlpineDockerBuilder:
         self.docker_cmd = [
             "docker",
             "run",
+            "--platform",
+            "linux/amd64",
         ]
         if self.interactive:
             self.docker_cmd += ["--interactive", "--tty"]
@@ -195,7 +199,12 @@ class AlpineDockerBuilder:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        shutil.rmtree(self.tempdir)
+        if not self.dangerous_no_clean_tmp_dir:
+            shutil.rmtree(self.tempdir)
+        else:
+            print(
+                f"WARNING: not cleaning temporary directory {self.tempdir}. It contains the SSH key without a password, make sure to delete it manually!"
+            )
 
     @property
     def workdir_volname(self):
