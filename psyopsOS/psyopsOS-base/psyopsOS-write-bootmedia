@@ -8,6 +8,7 @@ import pdb
 import re
 import subprocess
 import sys
+import time
 import traceback
 from collections.abc import Callable
 from typing import List
@@ -47,6 +48,22 @@ def broken_pipe_handler(func: Callable[[List[str]], int], *arguments: List[str])
         returncode = 128 + 1
         sys.exit(returncode)
     return returncode
+
+
+class UmountError(Exception):
+    pass
+
+
+def umount_retry(mountpoint: str, attempts: int = 2, sleepbetween: int = 1) -> None:
+    """Unmount a mountpoint, retrying if it fails."""
+    for attempt in range(attempts):
+        if not subprocess.run(["mountpoint", "-q", mountpoint]).returncode == 0:
+            return
+        subprocess.run(["umount", "-l", mountpoint])
+        if not subprocess.run(["mountpoint", "-q", mountpoint]).returncode == 0:
+            return
+        time.sleep(sleepbetween)
+    raise UmountError(f"Could not umount {mountpoint} after {attempts} attempts")
 
 
 def main(*arguments):
@@ -111,19 +128,12 @@ def main(*arguments):
     if not bootmedia:
         raise Exception(f"Could not find boot media, maybe it isn't mounted?")
 
-    mtpt_modloop = subprocess.run(
-        f"mountpoint /.modloop", shell=True, check=False, capture_output=True
-    )
-    if mtpt_modloop.returncode == 0:
-        subprocess.run(f"umount /.modloop", shell=True, check=True)
+    umount_retry("/.modloop")
+    umount_retry(bootmedia["mountpoint"])
 
-    if bootmedia["mountpoint"]:
-        subprocess.run(f"umount {bootmedia['mountpoint']}", shell=True, check=True)
-
-    ddcmd = ["dd"]
+    ddcmd = ["dd", f"if={parsed.isopath}", f"of={bootmedia['path']}"]
     if not parsed.no_progress:
         ddcmd += ["status=progress"]
-    ddcmd += [f"if={parsed.isopath}", f"of={bootmedia['path']}"]
     subprocess.run(ddcmd, check=True)
 
 
