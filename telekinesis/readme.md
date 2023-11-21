@@ -13,6 +13,7 @@ but it handles other psyopOS related administration tasks.
 #
 # This section is generated with cog
 # Run `cog -r readme.md` and it will overwrite the help output below with the latest.
+# Or, run `tk cog` and it will run `cog` on this file and any others it knows about.
 #
 
 import cog
@@ -21,13 +22,14 @@ from telekinesis.cli.tk import makeparser
 cog.outl(get_argparse_help_string("tk", makeparser(prog="tk"), wrap=0))
 ]]]-->
 > tk --help
-usage: tk [-h] [--debug] {showconfig,deaddrop,builder,mkimage,buildpkg,deployiso} ...
+usage: tk [-h] [--debug] {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployiso} ...
 
 Telekinesis: the PSYOPS build and administration tool
 
 positional arguments:
-  {showconfig,deaddrop,builder,mkimage,buildpkg,deployiso}
+  {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployiso}
     showconfig          Show the current configuration
+    cog                 Run cog on all relevant files
     deaddrop            Manage the S3 bucket used for psyopOS, called deaddrop, or its local replica
     builder             Actions related to the psyopsOS Docker container that is used for making Alpine packages and ISO images
     mkimage             Make a psyopsOS image
@@ -42,6 +44,14 @@ ________________________________________________________________________
 
 > tk showconfig --help
 usage: tk showconfig [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+________________________________________________________________________
+
+> tk cog --help
+usage: tk cog [-h]
 
 options:
   -h, --help  show this help message and exit

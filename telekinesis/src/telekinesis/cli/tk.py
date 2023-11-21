@@ -215,6 +215,12 @@ def makeparser(prog=None):
         help="Show the current configuration",
     )
 
+    # The cog subcommand
+    sub_cog = subparsers.add_parser(
+        "cog",
+        help="Run cog on all relevant files",
+    )
+
     # The deaddrop subcommand
     sub_deaddrop = subparsers.add_parser(
         "deaddrop",
@@ -310,6 +316,9 @@ def main():
 
     if parsed.action == "showconfig":
         pprint.pprint(config.tkconfig, indent=2, sort_dicts=False)
+    elif parsed.action == "cog":
+        for path in [config.tkconfig["psyopsroot"] / "telekinesis" / "readme.md"]:
+            subprocess.run(["cog", "-r", path.as_posix()], check=True)
     elif parsed.action == "deaddrop":
         aws_keyid = config.getsecret(config.tkconfig["deaddrop"]["onepassword_item"], "username")
         aws_secret = config.getsecret(config.tkconfig["deaddrop"]["onepassword_item"], "password")
