@@ -7,17 +7,18 @@ import os
 from pathlib import Path
 import pdb
 import pprint
-import shlex
 import string
 import subprocess
 import sys
 import time
 import traceback
+import zipfile
 
-from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis import aports
 from telekinesis import config
 from telekinesis import deaddrop
+from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
+from telekinesis.rget import rget
 
 
 def idb_excepthook(type, value, tb):
@@ -30,15 +31,86 @@ def idb_excepthook(type, value, tb):
         pdb.pm()
 
 
-def mkimage(
+def get_ovmf():
+    """Download the OVMF firmware image for qemu
+
+    This is somewhat annoying as the project only provides outdated RPM files.
+
+    TODO: we probably need to build this ourselves, unless Alpine packages it in some normal way in the future.
+    """
+    rget(config.tkconfig["ovmf"]["url"], config.tkconfig["ovmf"]["artifact"])
+    if not config.tkconfig["ovmf"]["extracted_code"].exists() or not config.tkconfig["ovmf"]["extracted_vars"].exists():
+        in_container_rpm_path = f"/work/{config.tkconfig['ovmf']['artifact'].name}"
+        extract_rpm_script = " && ".join(
+            [
+                "apk add rpm2cpio",
+                "mkdir -p /work/ovmf-extracted",
+                "cd /work/ovmf-extracted",
+                f"rpm2cpio {in_container_rpm_path} | cpio -idmv",
+            ]
+        )
+        docker_run_cmd = [
+            "docker",
+            "run",
+            "--rm",
+            "--volume",
+            f"{config.tkconfig['workdir']}:/work",
+            "alpine:3.18",
+            "sh",
+            "-c",
+            extract_rpm_script,
+        ]
+        subprocess.run(docker_run_cmd, check=True)
+
+
+def get_memtest():
+    """Download and extract memtest binaries"""
+    # code to download memtest from memtest.org with requestslibrary:
+    rget(
+        "https://memtest.org/download/v6.20/mt86plus_6.20.binaries.zip",
+        config.tkconfig["deaddrop"]["isodir"] / "memtest.zip",
+    )
+    memtest64efi = config.tkconfig["deaddrop"]["isodir"] / "memtest64.efi"
+    if not memtest64efi.exists():
+        with zipfile.ZipFile(config.tkconfig["deaddrop"]["isodir"] / "memtest.zip", "r") as zip_ref:
+            zip_ref.extract("memtest64.efi", config.tkconfig["deaddrop"]["isodir"])
+
+
+def vm_grubusb():
+    """Run the grubusb image in qemu"""
+    get_ovmf()
+    subprocess.run(
+        [
+            "qemu-system-x86_64",
+            "-nic",
+            "user",
+            "-serial",
+            "stdio",
+            # "-display",
+            # "none",
+            "-m",
+            "2048",
+            "-drive",
+            f"if=pflash,format=raw,readonly=on,file={config.tkconfig['ovmf']['extracted_code']}",
+            "-drive",
+            f"if=pflash,format=raw,file={config.tkconfig['ovmf']['extracted_vars']}",
+            "-drive",
+            f"format=raw,file={config.tkconfig['deaddrop']['isodir'] / 'psyopsOSgrubusb.img'}",  # FIXME: hardcoded filename
+        ],
+        check=True,
+        stdin=sys.stdin,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
+
+
+def mkimage_prepare(
     skip_build_apks: bool = False,
     rebuild: bool = False,
-    interactive: bool = False,
     cleandockervol: bool = False,
     dangerous_no_clean_tmp_dir: bool = False,
 ):
-    """Make a psyopsOS image"""
-
+    """Do common setup for mkimage commands"""
     alpine_version = config.tkconfig["alpine_version"]
 
     aports.validate_alpine_version(
@@ -63,6 +135,24 @@ def mkimage(
         abuild_blacksite(False, cleandockervol, dangerous_no_clean_tmp_dir)
         abuild_psyopsOS_base(False, cleandockervol, dangerous_no_clean_tmp_dir)
 
+    return (alpine_version, apkreponame, builder_tag)
+
+
+def mkimage_iso(
+    skip_build_apks: bool = False,
+    rebuild: bool = False,
+    interactive: bool = False,
+    cleandockervol: bool = False,
+    dangerous_no_clean_tmp_dir: bool = False,
+):
+    """Make a psyopsOS ISO image"""
+    alpine_version, apkreponame, builder_tag = mkimage_prepare(
+        skip_build_apks,
+        rebuild,
+        cleandockervol,
+        dangerous_no_clean_tmp_dir,
+    )
+
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
         apkindexpath = builder.in_container_apks_repo_root + f"/v{config.tkconfig['alpine_version']}"
         apkrepopath = apkindexpath + "/" + apkreponame
@@ -84,13 +174,13 @@ def mkimage(
                     f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community",
                     "--repository",
                     apkrepopath,
-                    # This would also allow using the remote APK repo, but I don't think that's necessary any more?
+                    # This would also allow using the remote APK repo, but I don't think that's necessary because of our local replica
                     # "--repository",
                     # apkpaths.uri,
                     "--workdir",
                     builder.in_container_workdir,
                     "--profile",
-                    config.tkconfig["buildcontainer"]["mkimage_profile"],
+                    config.tkconfig["buildcontainer"]["mkimage_iso_profile"],
                 ]
             ),
         ]
@@ -98,6 +188,93 @@ def mkimage(
         builder.run_docker([in_container_mkimage_cmd])
         for isofile in builder.isodir.glob("*.iso"):
             print(f"{isofile}")
+
+
+def mkimage_squashfs(
+    skip_build_apks: bool = False,
+    rebuild: bool = False,
+    interactive: bool = False,
+    cleandockervol: bool = False,
+    dangerous_no_clean_tmp_dir: bool = False,
+):
+    """Make a psyopsOS squashfs image"""
+    alpine_version, apkreponame, builder_tag = mkimage_prepare(
+        skip_build_apks,
+        rebuild,
+        cleandockervol,
+        dangerous_no_clean_tmp_dir,
+    )
+
+    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+        apkindexpath = builder.in_container_apks_repo_root + f"/v{config.tkconfig['alpine_version']}"
+        apkrepopath = apkindexpath + "/" + apkreponame
+        in_container_mkimage_cmd_list = [
+            " ".join(
+                [
+                    "sh",
+                    "-x",
+                    "./mkimage.sh",
+                    "--tag",
+                    config.tkconfig["buildcontainer"]["sqtag"],
+                    "--outdir",
+                    builder.in_container_isodir,
+                    "--arch",
+                    config.tkconfig["buildcontainer"]["architecture"],
+                    "--repository",
+                    f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main",
+                    "--repository",
+                    f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community",
+                    "--repository",
+                    apkrepopath,
+                    # This would also allow using the remote APK repo, but I don't think that's necessary because of our local replica
+                    # "--repository",
+                    # apkpaths.uri,
+                    "--workdir",
+                    builder.in_container_workdir,
+                    "--profile",
+                    config.tkconfig["buildcontainer"]["mkimage_squashfs_profile"],
+                ]
+            ),
+        ]
+        in_container_mkimage_cmd = " && ".join(in_container_mkimage_cmd_list)
+        builder.run_docker([in_container_mkimage_cmd])
+        for isofile in builder.isodir.glob("*.iso"):
+            print(f"{isofile}")
+
+
+def mkimage_grubusb(
+    interactive: bool = False,
+    cleandockervol: bool = False,
+    dangerous_no_clean_tmp_dir: bool = False,
+):
+    """Make a disk image containing Grub and a partition for images that Grub can boot"""
+    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+        squashfspath = os.path.join(
+            builder.in_container_isodir, "alpine-psyopsOS_squashfs-psysquash-x86_64.squashfs"
+        )  # TODO: FIXME
+        memtestpath = os.path.join(builder.in_container_isodir, "memtest64.efi")  # FIXME: hardcoded filename
+        imgpath = os.path.join(builder.in_container_isodir, "psyopsOSgrubusb.img")  # FIXME: hardcoded filename
+        make_initramfs_script = os.path.join(
+            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-psyopsOS-initramfs.sh"
+        )  # FIXME: hardcoded filename
+        initramfs_artifact = os.path.join(builder.in_container_isodir, "initramfs")  # FIXME: hardcoded filename
+        psyopsOS_init_dir = os.path.join(
+            builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init"
+        )  # FIXME: hardcoded filename
+        make_grubusb_script = os.path.join(
+            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb.sh"
+        )  # FIXME: hardcoded filename
+        # by default mkinitfs doesn't include squashfs
+        mkinitfsfeats = "ata,base,ide,scsi,usb,virtio,ext4,squashfs"
+        in_container_build_cmd = [
+            "sudo apk add dosfstools e2fsprogs grub-efi linux-lts lsblk parted",
+            # Get the kernel version of the lts kernel from /lib/modules
+            # it should only have one match in it because we're in an ephemeral container
+            "modvers=$(cd /lib/modules && echo *-lts)",
+            f"sudo sh {make_initramfs_script} -o {initramfs_artifact} -I {psyopsOS_init_dir} -F {mkinitfsfeats} -K $modvers",
+            f"sudo sh {make_grubusb_script} -k /boot/vmlinuz-lts -i {initramfs_artifact} -q {squashfspath} -o {imgpath} -m {memtestpath}",
+        ]
+        builder.run_docker(in_container_build_cmd)
 
 
 def abuild_blacksite(interactive: bool, cleandockervol: bool, dangerous_no_clean_tmp_dir: bool):
@@ -284,6 +461,19 @@ def makeparser(prog=None):
         help="Make a psyopsOS image",
     )
     sub_mkimage.add_argument("--skip-build-apks", action="store_true", help="Don't build APKs before building ISO")
+    sub_mkimage_subparsers = sub_mkimage.add_subparsers(dest="mkimage_action", required=True)
+    sub_mkimage_sub_iso = sub_mkimage_subparsers.add_parser(
+        "iso",
+        help="Build the ISO image",
+    )
+    sub_mkimage_sub_squashfs = sub_mkimage_subparsers.add_parser(
+        "squashfs",
+        help="Build the squashfs image",
+    )
+    sub_mkimage_sub_grubusb = sub_mkimage_subparsers.add_parser(
+        "grubusb",
+        help="Build a disk image that contains Grub and a partition for images that Grub can boot",
+    )
 
     # The buildpkg subcommand
     sub_buildpkg = subparsers.add_parser(
@@ -299,6 +489,22 @@ def makeparser(prog=None):
         help="Deploy the ISO image to the S3 bucket",
     )
     sub_deployiso.add_argument("host", help="The remote host to deploy to, assumes root@ accepts the psyops SSH key")
+
+    # The vm subcommand
+    sub_vm = subparsers.add_parser(
+        "vm",
+        help="Run VM(s)",
+    )
+    sub_vm_subparsers = sub_vm.add_subparsers(dest="vm_action", required=True)
+    sub_vm_sub_grubusb = sub_vm_subparsers.add_parser(
+        "grubusb",
+        help="Run the grubusb image in qemu",
+    )
+    sub_vm_sub_grubusb.add_argument(
+        "--grubusb-image",
+        default=config.tkconfig["deaddrop"]["isodir"] / "psyopsOSgrubusb.img",  # FIXME: hardcoded filename
+        help="Path to the grubusb image",
+    )
 
     return parser
 
@@ -346,13 +552,36 @@ def main():
         else:
             parser.error(f"Unknown builder action: {parsed.builder_action}")
     elif parsed.action == "mkimage":
-        mkimage(
-            skip_build_apks=parsed.skip_build_apks,
-            rebuild=parsed.rebuild,
-            interactive=parsed.interactive,
-            cleandockervol=parsed.clean,
-            dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-        )
+        if parsed.mkimage_action == "iso":
+            mkimage_iso(
+                skip_build_apks=parsed.skip_build_apks,
+                rebuild=parsed.rebuild,
+                interactive=parsed.interactive,
+                cleandockervol=parsed.clean,
+                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+            )
+        elif parsed.mkimage_action == "squashfs":
+            mkimage_squashfs(
+                skip_build_apks=parsed.skip_build_apks,
+                rebuild=parsed.rebuild,
+                interactive=parsed.interactive,
+                cleandockervol=parsed.clean,
+                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+            )
+        elif parsed.mkimage_action == "grubusb":
+            mkimage_grubusb(
+                interactive=parsed.interactive,
+                cleandockervol=parsed.clean,
+                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+            )
+        else:
+            parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
+    elif parsed.action == "vm":
+        if parsed.vm_action == "grubusb":
+            get_ovmf()
+            vm_grubusb()
+        else:
+            parser.error(f"Unknown vm action: {parsed.vm_action}")
     elif parsed.action == "buildpkg":
         if "base" in parsed.package:
             abuild_psyopsOS_base(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)

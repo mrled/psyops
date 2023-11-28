@@ -10,14 +10,14 @@ apklist="$apklist $(cat "$apkworld")"
 apklist="$apklist $(cat "$apkavail")"
 
 
-profile_psyopsOS() {
+profile_psyopsOScd() {
 	profile_standard
 	# This is the first part of the filename of the iso
 	# Default is alpine-$PROFILE
 	image_name="psyopsOS"
 	# You can also set the output filename like this:
 	# output_filename="psyopsOS.iso"
-	title="psyopsOS Boot Disc"
+	title="psyopsOS Boot Disc (ISO image)"
 	desc="The PSYOPS operating system for powerful management of personal infrastructure"
 	arch="x86_64"
 
@@ -63,4 +63,27 @@ profile_psyopsOS() {
 	# This hostname gets set at boot
 	# We override it in a local.d script later
 	hostname="psyopsOS-bootstrap"
+}
+
+
+create_image_psyopsOS_squashfs() {
+	local _script=$(readlink -f "$scriptdir/gensquashfs-psyopsOS.sh")
+	local output_file="$(readlink -f ${OUTDIR:-.})/$output_filename"
+
+	(cd "$OUTDIR"; fakeroot "$_script" -k "$APKROOT"/etc/apk/keys \
+		-r "$APKROOT"/etc/apk/repositories \
+		-o "$output_file" \
+		-a $ARCH \
+		$squashfs_apks)
+}
+
+
+profile_psyopsOSsq() {
+	title="psyopsOS SquashFS"
+	desc="The PSYOPS operating system for powerful management of personal infrastructure"
+	image_ext="squashfs"
+	output_format="psyopsOS_squashfs"
+	arch="x86_64 aarch64"
+	# Intentionally install both the world and available packages in development
+	squashfs_apks="$apklist"
 }

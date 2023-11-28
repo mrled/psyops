@@ -53,6 +53,8 @@ class AlpineDockerBuilder:
         cleandockervol=False,
         # If true, don't clean the temporary directory containing the APK key
         dangerous_no_clean_tmp_dir=False,
+        # If true, add '--privileged=true' to the docker run command
+        privileged=False,
     ):
         self.psyopsdir = psyops_checkout_dir
         self.aports_checkout_dir = aports_checkout_dir
@@ -67,6 +69,7 @@ class AlpineDockerBuilder:
         self.cleandockervol = cleandockervol
         self.dangerous_no_clean_tmp_dir = dangerous_no_clean_tmp_dir
         self.docker_builder_dir = docker_builder_dir
+        self.privileged = privileged
 
         # An in-container path for handling the mkimage working directory.
         # A docker volume will be mounted here.
@@ -153,6 +156,9 @@ class AlpineDockerBuilder:
             # genapkovl-psyopsOS.sh partially sets up the filesystem of the iso live OS
             "--volume",
             f"{self.aports_scripts_overlay_dir}/genapkovl-psyopsOS.sh:/home/build/aports/scripts/genapkovl-psyopsOS.sh",
+            # gensquahsfs-psyopsOS.sh sets up the squashfs filesystem for the squashfs image
+            "--volume",
+            f"{self.aports_scripts_overlay_dir}/gensquashfs-psyopsOS.sh:/home/build/aports/scripts/gensquashfs-psyopsOS.sh",
             # mkimage.psyopsOS.sh defines the profile that we pass to mkimage.sh
             "--volume",
             f"{self.aports_scripts_overlay_dir}/mkimg.psyopsOS.sh:/home/build/aports/scripts/mkimg.psyopsOS.sh",
@@ -179,6 +185,8 @@ class AlpineDockerBuilder:
 
         if self.interactive:
             self.docker_cmd += ["--interactive", "--tty"]
+        if self.privileged:
+            self.docker_cmd += ["--privileged=true"]
 
         # Pass any relevant environment variables to the container
         for envvar in os.environ.keys():
@@ -258,7 +266,9 @@ class AlpineDockerBuilder:
 
 
 def get_configured_docker_builder(
-    interactive: bool = False, cleandockervol: bool = False, dangerous_no_clean_tmp_dir: bool = False
+    interactive: bool = False,
+    cleandockervol: bool = False,
+    dangerous_no_clean_tmp_dir: bool = False,
 ):
     """Make an AlpineDockerBuilder from the configuration"""
     return AlpineDockerBuilder(
@@ -274,4 +284,5 @@ def get_configured_docker_builder(
         interactive=interactive,
         cleandockervol=cleandockervol,
         dangerous_no_clean_tmp_dir=dangerous_no_clean_tmp_dir,
+        privileged=True,
     )

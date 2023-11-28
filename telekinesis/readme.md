@@ -7,7 +7,13 @@ This package is used instead of a Makefile or the `invoke` module.
 It doesn't need to cover applying `progfiguration_blacksite` to managed nodes,
 but it handles other psyopOS related administration tasks.
 
-## Help
+## Examples
+
+* Create the build container: `tk builder build`
+* Run a command inside the build container: `tk builder runcmd -- ls -alF /`
+  * Run `mkimage.sh` from the `aports` checkout in the build container: `tk builder runcmd -- ./mkimage.sh -h`
+
+## Full help
 
 <!--[[[cog
 #

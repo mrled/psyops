@@ -18,6 +18,7 @@ logger
 lsblk
 lsof
 minisign
+mkinitfs
 nvme-cli
 openssh
 pciutils
@@ -26,6 +27,7 @@ psyopsOS-base
 python3
 ripgrep
 shadow
+squashfs
 sqlite
 strace
 sudo
