@@ -26,6 +26,23 @@ class TelekinesisConfig:
 
     # Configuration node classes
 
+    class PsyopsRepoPaths:
+        """Configuration for the psyops repository paths"""
+
+        def __init__(self, root: Path):
+            self.root = root
+            """The path to the psyops checkout on the host"""
+            self.artifacts = root / "artifacts"
+            """The path to the artifacts directory on the host, containing build intermediate files and artifacts"""
+            self.aports = root.parent / "aports"
+            """The path to the aports checkout on the host"""
+            self.psyops_aports_scripts = root / "psyopsOS" / "aports-scripts"
+            """The path to the psyopsOS aports scripts overlay directory on the host"""
+            self.psyopsOS_base = root / "psyopsOS" / "psyopsOS-base"
+            """The path to the psyopsOS-base package directory on the host"""
+            self.build = root / "psyopsOS" / "build"
+            """The path to the psyopsOS build directory on the host"""
+
     @dataclass
     class TelekinesisConfigDeaddropNode:
         """Configuration for the deaddrop config node"""
@@ -51,16 +68,10 @@ class TelekinesisConfig:
 
         alpine_version: str
         """The version of Alpine to use"""
-        builddir: Path
-        """The path to the Dockerfile directory for the Alpine builder"""
-        tag_prefix: str
+        dockertag_prefix: str
         """The Docker image tag prefix (will be suffixed with the Alpine version)"""
         onepassword_signing_key: str
         """The 1Password item for the APK signing key"""
-        aportsrepo: Path
-        """Path to the full checkout of the Alpine aports repository"""
-        psyopsscripts: Path
-        """Path to the directory containing the psyopsOS aports scripts overlay files"""
         apk_key_filename: str
         """This is the name to set for the APK signing key in the Alpine builder container.
         It doesn't rely on any file with this name existing on the host."""
@@ -71,8 +82,6 @@ class TelekinesisConfig:
         This is just called "repo=" in the abuild sh script, and is not configurable."""
         uri: str
         """The URI that is accessible on the"""
-        psyopsosbasedir: Path
-        """Path to the psyopsOS-base package directory on the host"""
         isotag: str
         """Alpine ISO image tag for the boot image we build with mkimage.sh"""
         sqtag: str
@@ -89,7 +98,7 @@ class TelekinesisConfig:
         @property
         def dockertag(self):
             """The Docker image tag of the build container"""
-            return f"{self.tag_prefix}{self.alpine_version}"
+            return f"{self.dockertag_prefix}{self.alpine_version}"
 
     @dataclass
     class TelekinesisConfigOVMFNode:
@@ -128,6 +137,8 @@ class TelekinesisConfig:
     # Initializer
 
     def __init__(self):
+        self.repopaths = self.PsyopsRepoPaths(root=self.psyopsroot)
+        artdir = self.repopaths.artifacts
         self.deaddrop = self.TelekinesisConfigDeaddropNode(
             bucketname="com-micahrl-psyops-http-bucket",
             region="us-east-2",
@@ -139,15 +150,11 @@ class TelekinesisConfig:
         )
         self.buildcontainer = self.TelekinesisBuildcontainerNode(
             alpine_version=self.alpine_version,
-            builddir=self.psyopsroot / "psyopsOS" / "build",
-            tag_prefix="psyopsos-builder-",
+            dockertag_prefix="psyopsos-builder-",
             onepassword_signing_key="op://Personal/psyopsOS_abuild_ssh_key",
-            aportsrepo=self.psyopsroot.parent / "aports",
-            psyopsscripts=self.psyopsroot / "psyopsOS" / "aports-scripts",
             apk_key_filename="psyops@micahrl.com-62ca1973.rsa",
             apkreponame="psyopsOS",
             uri=f"https://psyops.micahrl.com/",
-            psyopsosbasedir=self.psyopsroot / "psyopsOS" / "psyopsOS-base",
             isotag="psyboot",
             sqtag="psysquash",
             architecture="x86_64",
@@ -156,23 +163,16 @@ class TelekinesisConfig:
         )
         self.ovmf = self.TelekinesisConfigOVMFNode(
             url="https://www.kraxel.org/repos/jenkins/edk2/edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm",
-            artifact=self.workdir / "edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm",
-            extracted_code=self.workdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd",
-            extracted_vars=self.workdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd",
+            artifact=artdir / "edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm",
+            extracted_code=artdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd",
+            extracted_vars=artdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd",
         )
         self.artifacts = self.TelekinesisConfigArtifactsNode(
-            memtest_zipfile=self.workdir / "memtest.zip",
-            memtest64efi=self.workdir / "memtest64.efi",
-            grubusbimg=self.workdir / "psyopsOSgrubusb.img",
-            initramfs=self.workdir / "initramfs",
+            memtest_zipfile=artdir / "memtest.zip",
+            memtest64efi=artdir / "memtest64.efi",
+            grubusbimg=artdir / "psyopsOSgrubusb.img",
+            initramfs=artdir / "initramfs",
         )
-
-    # Computed properties
-
-    @property
-    def workdir(self):
-        """The psyops workdir on the host, containing build intermediate files and artifacts"""
-        return self.psyopsroot / "work"
 
 
 tkconfig = TelekinesisConfig()

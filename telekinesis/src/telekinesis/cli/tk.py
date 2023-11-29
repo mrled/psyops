@@ -4,7 +4,6 @@
 import argparse
 import logging
 import os
-from pathlib import Path
 import pdb
 import pprint
 import string
@@ -54,7 +53,7 @@ def get_ovmf():
             "run",
             "--rm",
             "--volume",
-            f"{tkconfig.workdir}:/work",
+            f"{tkconfig.repopaths.artifacts}:/work",
             "alpine:3.18",
             "sh",
             "-c",
@@ -70,10 +69,9 @@ def get_memtest():
         "https://memtest.org/download/v6.20/mt86plus_6.20.binaries.zip",
         tkconfig.artifacts.memtest_zipfile,
     )
-    memtest64efi = tkconfig.artifacts.memtest64efi
-    if not memtest64efi.exists():
+    if not tkconfig.artifacts.memtest64efi.exists():
         with zipfile.ZipFile(tkconfig.artifacts.memtest_zipfile, "r") as zip_ref:
-            zip_ref.extract("memtest64.efi", tkconfig.workdir)
+            zip_ref.extract("memtest64.efi", tkconfig.repopaths.artifacts)
 
 
 def vm_grubusb():
@@ -112,14 +110,10 @@ def mkimage_prepare(
 ):
     """Do common setup for mkimage commands"""
 
-    aports.validate_alpine_version(
-        tkconfig.buildcontainer.builddir,
-        tkconfig.buildcontainer.aportsrepo,
-        tkconfig.alpine_version,
-    )
+    aports.validate_alpine_version(tkconfig.repopaths.build, tkconfig.repopaths.aports, tkconfig.alpine_version)
 
     # Make sure we have an up-to-date Docker builder
-    build_container(tkconfig.buildcontainer.dockertag, tkconfig.buildcontainer.builddir, rebuild)
+    build_container(tkconfig.buildcontainer.dockertag, tkconfig.repopaths.build, rebuild)
 
     # Build the APKs that are also included in the ISO
     # Building them here makes sure that they are up-to-date
@@ -161,7 +155,7 @@ def mkimage_iso(
                     "--tag",
                     tkconfig.buildcontainer.isotag,
                     "--outdir",
-                    builder.in_container_isodir,
+                    builder.in_container_artifacts_dir,
                     "--arch",
                     tkconfig.buildcontainer.architecture,
                     "--repository",
@@ -182,7 +176,7 @@ def mkimage_iso(
         ]
         in_container_mkimage_cmd = " && ".join(in_container_mkimage_cmd_list)
         builder.run_docker([in_container_mkimage_cmd])
-        for isofile in builder.isodir.glob("*.iso"):
+        for isofile in tkconfig.repopaths.artifacts.glob("*.iso"):
             print(f"{isofile}")
 
 
@@ -213,7 +207,7 @@ def mkimage_squashfs(
                     "--tag",
                     tkconfig.buildcontainer.sqtag,
                     "--outdir",
-                    builder.in_container_isodir,
+                    builder.in_container_artifacts_dir,
                     "--arch",
                     tkconfig.buildcontainer.architecture,
                     "--repository",
@@ -251,32 +245,74 @@ def mkimage_initramfs(
         dangerous_no_clean_tmp_dir,
     )
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        raise NotImplementedError("TODO: implement mkimage_initramfs")
-
-
-def mkimage_grubusb(
-    interactive: bool = False,
-    cleandockervol: bool = False,
-    dangerous_no_clean_tmp_dir: bool = False,
-):
-    """Make a disk image containing Grub and a partition for images that Grub can boot"""
-    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        squashfspath = os.path.join(
-            builder.in_container_isodir, "alpine-psyopsOS_squashfs-psysquash-x86_64.squashfs"
-        )  # FIXME: hardcoded squashfs output path from the mkimage.sh script
         make_initramfs_script = os.path.join(
             builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-psyopsOS-initramfs.sh"
         )
         psyopsOS_init_dir = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init")
-        make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb.sh")
         # by default mkinitfs doesn't include squashfs
         mkinitfsfeats = "ata,base,ide,scsi,usb,virtio,ext4,squashfs"
         in_container_build_cmd = [
             # Get the kernel version of the lts kernel from /lib/modules
             # it should only have one match in it because we're in an ephemeral container
             "modvers=$(cd /lib/modules && echo *-lts)",
-            f"sudo sh {make_initramfs_script} -o {tkconfig.artifacts.initramfs} -I {psyopsOS_init_dir} -F {mkinitfsfeats} -K $modvers",
+            f"sudo sh {make_initramfs_script} -o {builder.in_container_artifacts_dir}/initramfs -I {psyopsOS_init_dir} -F {mkinitfsfeats} -K $modvers",
+        ]
+        builder.run_docker(in_container_build_cmd)
+        subprocess.run(["ls", "-larth", tkconfig.artifacts.initramfs], check=True)
+
+
+def mkimage_squashfs_grubusb(
+    interactive: bool = False,
+    cleandockervol: bool = False,
+    dangerous_no_clean_tmp_dir: bool = False,
+):
+    """Make a disk image containing GRUB and a partition for squashfs images that Grub can boot"""
+    mkimage_initramfs(
+        skip_build_apks=False,
+        rebuild=False,
+        interactive=interactive,
+        cleandockervol=cleandockervol,
+        dangerous_no_clean_tmp_dir=dangerous_no_clean_tmp_dir,
+    )
+    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+        squashfspath = os.path.join(
+            builder.in_container_artifacts_dir, "alpine-psyopsOS_squashfs-psysquash-x86_64.squashfs"
+        )  # FIXME: hardcoded squashfs output path from the mkimage.sh script
+        make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb.sh")
+        in_container_build_cmd = [
+            # Get the kernel version of the lts kernel from /lib/modules
+            # it should only have one match in it because we're in an ephemeral container
+            "modvers=$(cd /lib/modules && echo *-lts)",
             f"sudo sh {make_grubusb_script} -k /boot/vmlinuz-lts -i {tkconfig.artifacts.initramfs} -q {squashfspath} -o {tkconfig.artifacts.grubusbimg} -m {tkconfig.artifacts.memtest64efi}",
+        ]
+        builder.run_docker(in_container_build_cmd)
+
+
+def mkimage_initramfs_grubusb(
+    interactive: bool = False,
+    cleandockervol: bool = False,
+    dangerous_no_clean_tmp_dir: bool = False,
+):
+    """Make a disk image containing GRUB and a partition for initramfs-only images that Grub can boot"""
+    # TODO: This doesn't work yet, because the grubusb script requires a squashfs image for now
+    # TODO: Make a separate script for this that doesn't require a squashfs image, and keep them in parallel for now; will remove the squashfs one later
+    mkimage_initramfs(
+        skip_build_apks=False,
+        rebuild=False,
+        interactive=interactive,
+        cleandockervol=cleandockervol,
+        dangerous_no_clean_tmp_dir=dangerous_no_clean_tmp_dir,
+    )
+    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+        squashfspath = os.path.join(
+            builder.in_container_artifacts_dir, "alpine-psyopsOS_squashfs-psysquash-x86_64.squashfs"
+        )  # FIXME: hardcoded squashfs output path from the mkimage.sh script
+        make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb.sh")
+        in_container_build_cmd = [
+            # Get the kernel version of the lts kernel from /lib/modules
+            # it should only have one match in it because we're in an ephemeral container
+            "modvers=$(cd /lib/modules && echo *-lts)",
+            f"sudo sh {make_grubusb_script} -k /boot/vmlinuz-lts -i {tkconfig.artifacts.initramfs} -o {tkconfig.artifacts.grubusbimg} -m {tkconfig.artifacts.memtest64efi}",
         ]
         builder.run_docker(in_container_build_cmd)
 
@@ -317,10 +353,10 @@ def abuild_psyopsOS_base(interactive: bool, cleandockervol: bool, dangerous_no_c
     epochsecs = int(time.time())
     version = f"1.0.{epochsecs}"
 
-    with open(f"{tkconfig.buildcontainer.psyopsosbasedir}/APKBUILD.template") as fp:
+    with (tkconfig.repopaths.psyopsOS_base / "APKBUILD.template").open() as fp:
         apkbuild_template = string.Template(fp.read())
     apkbuild_contents = apkbuild_template.substitute(version=version)
-    apkbuild_path = os.path.join(tkconfig.buildcontainer.psyopsosbasedir, "APKBUILD")
+    apkbuild_path = os.path.join(tkconfig.repopaths.psyopsOS_base, "APKBUILD")
 
     try:
         with open(apkbuild_path, "w") as afd:
@@ -477,9 +513,13 @@ def makeparser(prog=None):
         "initramfs",
         help="Build the initramfs image which is used by the grubusb image",
     )
-    sub_mkimage_sub_grubusb = sub_mkimage_subparsers.add_parser(
-        "grubusb",
-        help="Build a disk image that contains Grub and a partition for images that Grub can boot",
+    sub_mkimage_sub_squashfs_grubusb = sub_mkimage_subparsers.add_parser(
+        "squashfs-grubusb",
+        help="Build a disk image that contains GRUB and boots squashfs images",
+    )
+    sub_mkimage_sub_initramfs_grubusb = sub_mkimage_subparsers.add_parser(
+        "initramfs-grubusb",
+        help="Build a disk image that contains GRUB and boots initramfs images without squashfs",
     )
 
     # The buildpkg subcommand
@@ -544,7 +584,7 @@ def main():
             parser.error(f"Unknown deaddrop action: {parsed.deaddrop_action}")
     elif parsed.action == "builder":
         if parsed.builder_action == "build":
-            build_container(tkconfig.buildcontainer.dockertag, tkconfig.buildcontainer.builddir, parsed.rebuild)
+            build_container(tkconfig.buildcontainer.dockertag, tkconfig.repopaths.build, parsed.rebuild)
         elif parsed.builder_action == "runcmd":
             with get_configured_docker_builder(
                 parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir
@@ -577,8 +617,14 @@ def main():
                 cleandockervol=parsed.clean,
                 dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
             )
-        elif parsed.mkimage_action == "grubusb":
-            mkimage_grubusb(
+        elif parsed.mkimage_action == "squashfs-grubusb":
+            mkimage_squashfs_grubusb(
+                interactive=parsed.interactive,
+                cleandockervol=parsed.clean,
+                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+            )
+        elif parsed.mkimage_action == "initramfs-grubusb":
+            mkimage_initramfs_grubusb(
                 interactive=parsed.interactive,
                 cleandockervol=parsed.clean,
                 dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,

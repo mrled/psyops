@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 
-from telekinesis import config
+from telekinesis.config import getsecret, tkconfig
 
 
 def build_container(builder_tag: str, builder_dir: str, rebuild: bool = False):
@@ -35,8 +35,8 @@ class AlpineDockerBuilder:
         aports_checkout_dir,
         # The path to the directory containing the aports scripts overlay files on the host
         aports_scripts_overlay_dir,
-        # The place to put the ISO image when its done on the host
-        isodir,
+        # The path on the host to mount as the artifact directory
+        host_artifacts_dir,
         # The key to use for signing APK packages (as a string)
         apk_key_value,
         # The filename for the APK key - just used in the Docker container, not the path to the key on the host.
@@ -59,7 +59,7 @@ class AlpineDockerBuilder:
         self.psyopsdir = psyops_checkout_dir
         self.aports_checkout_dir = aports_checkout_dir
         self.aports_scripts_overlay_dir = aports_scripts_overlay_dir
-        self.isodir = isodir
+        self.host_artifacts_dir = host_artifacts_dir
         self.apk_key_value = apk_key_value
         self.apk_key_filename = apk_key_filename
         self.in_container_apk_key_path = f"/home/build/.abuild/{apk_key_filename}"
@@ -71,30 +71,27 @@ class AlpineDockerBuilder:
         self.docker_builder_dir = docker_builder_dir
         self.privileged = privileged
 
-        # An in-container path for handling the mkimage working directory.
-        # A docker volume will be mounted here.
-        # Clean with `invoke dockervolclean`.
         self.in_container_workdir = "/home/build/workdir"
+        """An in-container path for handling the mkimage working directory.
+        A docker volume will be mounter here. Clean with `invoke dockervolclean`."""
 
-        # The location the iso will be copied after it is built in the container.
-        # isodir will be mounted here.
-        self.in_container_isodir = "/home/build/iso"
+        self.in_container_artifacts_dir = "/home/build/artifacts"
+        """The location of the artifacts directory in the container."""
 
-        # The location of the psyops repository mount in the container.
-        # psyops_checkout_dir willbe mounted here.
         self.in_container_psyops_checkout = "/home/build/psyops"
+        """The location of the psyops checkout in the container."""
 
-        # The location of APK repositories in the container (inside to the psyops checkout).
         self.in_container_apks_repo_root = f"{self.in_container_psyops_checkout}/psyopsOS/public/apk"
+        """The location of APK repositories in the container (inside to the psyops checkout)."""
 
-        # The tag for the Docker image, including the Alpine version suffix
         self.docker_builder_tag = f"{self.docker_builder_tag_prefix}{self.alpine_version}"
+        """The tag for the Docker image, including the Alpine version suffix"""
 
     def __enter__(self):
         os.umask(0o022)
         build_container(self.docker_builder_tag, self.docker_builder_dir)
 
-        os.makedirs(self.isodir, exist_ok=True)
+        os.makedirs(self.host_artifacts_dir, exist_ok=True)
 
         build_date = datetime.datetime.now()
 
@@ -166,9 +163,9 @@ class AlpineDockerBuilder:
             # Saving this between runs makes rebuilds much faster.
             "--volume",
             f"{self.workdir_volname}:{self.in_container_workdir}",
-            # This is where the iso will be copied after it is built
+            # This is where artifacts will be copied after building
             "--volume",
-            f"{self.isodir}:{self.in_container_isodir}",
+            f"{self.host_artifacts_dir}:{self.in_container_artifacts_dir}",
             # Mount my APK keys into the container
             "--volume",
             f"{tempdir_apkkey.as_posix()}:{self.in_container_apk_key_path}:ro",
@@ -272,15 +269,15 @@ def get_configured_docker_builder(
 ):
     """Make an AlpineDockerBuilder from the configuration"""
     return AlpineDockerBuilder(
-        psyops_checkout_dir=config.tkconfig["psyopsroot"],
-        aports_checkout_dir=config.tkconfig["buildcontainer"]["aportsrepo"],
-        aports_scripts_overlay_dir=config.tkconfig["buildcontainer"]["psyopsscripts"],
-        isodir=config.tkconfig["deaddrop"]["isodir"],
-        apk_key_value=config.getsecret(config.tkconfig["buildcontainer"]["onepassword_signing_key"], "notesPlain"),
-        apk_key_filename=config.tkconfig["buildcontainer"]["apk_key_filename"],
-        alpine_version=config.tkconfig["alpine_version"],
-        docker_builder_dir=config.tkconfig["buildcontainer"]["builddir"],
-        docker_builder_tag_prefix=config.tkconfig["buildcontainer"]["tag_prefix"],
+        psyops_checkout_dir=tkconfig.psyopsroot,
+        aports_checkout_dir=tkconfig.repopaths.aports,
+        aports_scripts_overlay_dir=tkconfig.repopaths.psyops_aports_scripts,
+        host_artifacts_dir=tkconfig.repopaths.artifacts,
+        apk_key_value=getsecret(tkconfig.buildcontainer.onepassword_signing_key, "notesPlain"),
+        apk_key_filename=tkconfig.buildcontainer.apk_key_filename,
+        alpine_version=tkconfig.alpine_version,
+        docker_builder_dir=tkconfig.repopaths.build,
+        docker_builder_tag_prefix=tkconfig.buildcontainer.dockertag_prefix,
         interactive=interactive,
         cleandockervol=cleandockervol,
         dangerous_no_clean_tmp_dir=dangerous_no_clean_tmp_dir,
