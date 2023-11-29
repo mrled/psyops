@@ -238,8 +238,24 @@ def mkimage_squashfs(
         ]
         in_container_mkimage_cmd = " && ".join(in_container_mkimage_cmd_list)
         builder.run_docker([in_container_mkimage_cmd])
-        for isofile in builder.isodir.glob("*.iso"):
-            print(f"{isofile}")
+
+
+def mkimage_initramfs(
+    skip_build_apks: bool = False,
+    rebuild: bool = False,
+    interactive: bool = False,
+    cleandockervol: bool = False,
+    dangerous_no_clean_tmp_dir: bool = False,
+):
+    """Make a psyopsOS initramfs image"""
+    alpine_version, apkreponame, builder_tag = mkimage_prepare(
+        skip_build_apks,
+        rebuild,
+        cleandockervol,
+        dangerous_no_clean_tmp_dir,
+    )
+    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+        raise NotImplementedError("TODO: implement mkimage_initramfs")
 
 
 def mkimage_grubusb(
@@ -267,7 +283,6 @@ def mkimage_grubusb(
         # by default mkinitfs doesn't include squashfs
         mkinitfsfeats = "ata,base,ide,scsi,usb,virtio,ext4,squashfs"
         in_container_build_cmd = [
-            "sudo apk add dosfstools e2fsprogs grub-efi linux-lts lsblk parted",
             # Get the kernel version of the lts kernel from /lib/modules
             # it should only have one match in it because we're in an ephemeral container
             "modvers=$(cd /lib/modules && echo *-lts)",
@@ -470,6 +485,10 @@ def makeparser(prog=None):
         "squashfs",
         help="Build the squashfs image",
     )
+    sub_mkimage_initramfs = sub_mkimage_subparsers.add_parser(
+        "initramfs",
+        help="Build the initramfs image which is used by the grubusb image",
+    )
     sub_mkimage_sub_grubusb = sub_mkimage_subparsers.add_parser(
         "grubusb",
         help="Build a disk image that contains Grub and a partition for images that Grub can boot",
@@ -562,6 +581,14 @@ def main():
             )
         elif parsed.mkimage_action == "squashfs":
             mkimage_squashfs(
+                skip_build_apks=parsed.skip_build_apks,
+                rebuild=parsed.rebuild,
+                interactive=parsed.interactive,
+                cleandockervol=parsed.clean,
+                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+            )
+        elif parsed.mkimage_action == "initramfs":
+            mkimage_initramfs(
                 skip_build_apks=parsed.skip_build_apks,
                 rebuild=parsed.rebuild,
                 interactive=parsed.interactive,
