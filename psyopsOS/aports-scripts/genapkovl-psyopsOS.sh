@@ -1,5 +1,6 @@
 #!/bin/sh -e
 
+# $PSYOPSOS_OVERLAY is the path to the os-overlay directory in this repository.
 if test -z "$PSYOPSOS_OVERLAY"; then
 	echo "Missing environment variable \$PSYOPSOS_OVERLAY"
 	exit 1
@@ -7,7 +8,6 @@ fi
 
 # mkimage.sh will call this with a HOSTNAME of "alpine",
 # and that's what the hostname will be when the image first boots.
-# We later set it in a local.d script.
 HOSTNAME="$1"
 if [ -z "$HOSTNAME" ]; then
 	echo "usage: $0 hostname"

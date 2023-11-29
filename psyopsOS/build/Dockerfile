@@ -40,6 +40,7 @@ RUN true \
         ncurses \
         openssh \
         openssl \
+        parted \
         python3 \
         py3-build \
         py3-installer \
