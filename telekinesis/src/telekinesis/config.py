@@ -114,6 +114,8 @@ class TelekinesisConfig:
         """The path to the memtest86+ EFI binary"""
         grubusbimg: Path
         """The path to the psyopOS grubusb image"""
+        initramfs: Path
+        """The path to the psyopOS initramfs"""
 
     # Class variables
 
@@ -162,6 +164,7 @@ class TelekinesisConfig:
             memtest_zipfile=self.workdir / "memtest.zip",
             memtest64efi=self.workdir / "memtest64.efi",
             grubusbimg=self.workdir / "psyopsOSgrubusb.img",
+            initramfs=self.workdir / "initramfs",
         )
 
     # Computed properties

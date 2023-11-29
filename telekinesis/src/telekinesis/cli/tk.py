@@ -263,27 +263,20 @@ def mkimage_grubusb(
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
         squashfspath = os.path.join(
             builder.in_container_isodir, "alpine-psyopsOS_squashfs-psysquash-x86_64.squashfs"
-        )  # TODO: FIXME
-        memtestpath = os.path.join(builder.in_container_isodir, "memtest64.efi")  # FIXME: hardcoded filename
-        imgpath = os.path.join(builder.in_container_isodir, "psyopsOSgrubusb.img")  # FIXME: hardcoded filename
+        )  # FIXME: hardcoded squashfs output path from the mkimage.sh script
         make_initramfs_script = os.path.join(
             builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-psyopsOS-initramfs.sh"
-        )  # FIXME: hardcoded filename
-        initramfs_artifact = os.path.join(builder.in_container_isodir, "initramfs")  # FIXME: hardcoded filename
-        psyopsOS_init_dir = os.path.join(
-            builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init"
-        )  # FIXME: hardcoded filename
-        make_grubusb_script = os.path.join(
-            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb.sh"
-        )  # FIXME: hardcoded filename
+        )
+        psyopsOS_init_dir = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init")
+        make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb.sh")
         # by default mkinitfs doesn't include squashfs
         mkinitfsfeats = "ata,base,ide,scsi,usb,virtio,ext4,squashfs"
         in_container_build_cmd = [
             # Get the kernel version of the lts kernel from /lib/modules
             # it should only have one match in it because we're in an ephemeral container
             "modvers=$(cd /lib/modules && echo *-lts)",
-            f"sudo sh {make_initramfs_script} -o {initramfs_artifact} -I {psyopsOS_init_dir} -F {mkinitfsfeats} -K $modvers",
-            f"sudo sh {make_grubusb_script} -k /boot/vmlinuz-lts -i {initramfs_artifact} -q {squashfspath} -o {imgpath} -m {memtestpath}",
+            f"sudo sh {make_initramfs_script} -o {tkconfig.artifacts.initramfs} -I {psyopsOS_init_dir} -F {mkinitfsfeats} -K $modvers",
+            f"sudo sh {make_grubusb_script} -k /boot/vmlinuz-lts -i {tkconfig.artifacts.initramfs} -q {squashfspath} -o {tkconfig.artifacts.grubusbimg} -m {tkconfig.artifacts.memtest64efi}",
         ]
         builder.run_docker(in_container_build_cmd)
 
