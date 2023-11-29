@@ -27,9 +27,6 @@ RUN true \
         fakeroot \
         git \
         gpg \
-        # This package is broken in Docker, and leaves apk in a weird state.
-        # Don't install it here, but do install it in the mkimage task.
-        #grub-efi \
         linux-firmware-intel \
         linux-firmware-mediatek \
         linux-firmware-rtl_bt \
