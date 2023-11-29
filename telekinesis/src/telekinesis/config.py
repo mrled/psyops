@@ -21,72 +21,155 @@ def getsecret(item: str, field: str) -> str:
     return proc.stdout.strip()
 
 
-# Static configuration; other config may rely on these
-_psyopsroot = Path(__file__).parent.parent.parent.parent
-_workdir = _psyopsroot / "work"
+class TelekinesisConfig:
+    """Configuration for telekinetic operations"""
+
+    # Configuration node classes
+
+    @dataclass
+    class TelekinesisConfigDeaddropNode:
+        """Configuration for the deaddrop config node"""
+
+        bucketname: str
+        """The S3 bucket used for psyopsOS and progfiguration_blacksite"""
+        region: str
+        """The S3 region"""
+        onepassword_item: str
+        """The 1Password item for the IAM user that has access to the bucket"""
+        localpath: Path
+        """Path to the local directory that is synced with the bucket"""
+        isodir: Path
+        """Path to the directory containing the ISO image"""
+        isofilename: str
+        """The filename that our mkimage creates"""
+        sqfilename: str
+        """The filename that our mkimage creates"""
+
+    @dataclass
+    class TelekinesisBuildcontainerNode:
+        """Configuration for the buildcontainer node"""
+
+        alpine_version: str
+        """The version of Alpine to use"""
+        builddir: Path
+        """The path to the Dockerfile directory for the Alpine builder"""
+        tag_prefix: str
+        """The Docker image tag prefix (will be suffixed with the Alpine version)"""
+        onepassword_signing_key: str
+        """The 1Password item for the APK signing key"""
+        aportsrepo: Path
+        """Path to the full checkout of the Alpine aports repository"""
+        psyopsscripts: Path
+        """Path to the directory containing the psyopsOS aports scripts overlay files"""
+        apk_key_filename: str
+        """This is the name to set for the APK signing key in the Alpine builder container.
+        It doesn't rely on any file with this name existing on the host."""
+        apkreponame: str
+        """The APK repo name
+        When building a package with abuild, it finds this name by looking in the grandparent directory of the APKBUILD file (../../).
+        See also progfiguration_blacksite's buildapk command, which forces this with a tempdir.
+        This is just called "repo=" in the abuild sh script, and is not configurable."""
+        uri: str
+        """The URI that is accessible on the"""
+        psyopsosbasedir: Path
+        """Path to the psyopsOS-base package directory on the host"""
+        isotag: str
+        """Alpine ISO image tag for the boot image we build with mkimage.sh"""
+        sqtag: str
+        """Alpine squashfs image tag for the boot image we build with mkimage.sh"""
+        architecture: str
+        """The architecture for the ISO image"""
+        mkimage_iso_profile: str
+        """The Alpine mkimage.sh ISO profile for psyopOS,
+        which requires a profile_PROFILENAME file in the aports scripts overlay directory"""
+        mkimage_squashfs_profile: str
+        """The Alpine mkimage.sh ISO profile for psyopOS,
+        which requires a profile_PROFILENAME file in the aports scripts overlay directory"""
+
+        @property
+        def dockertag(self):
+            """The Docker image tag of the build container"""
+            return f"{self.tag_prefix}{self.alpine_version}"
+
+    @dataclass
+    class TelekinesisConfigOVMFNode:
+        """Configuration for the OVMF node"""
+
+        url: str
+        """The URL to download the OVMF firmware from"""
+        artifact: Path
+        """The path to the downloaded RPM artifact"""
+        extracted_code: Path
+        """The path to the extracted OVMF_CODE-pure-efi.fd file"""
+        extracted_vars: Path
+        """The path to the extracted OVMF_VARS-pure-efi.fd file"""
+
+    @dataclass
+    class TelekinesisConfigArtifactsNode:
+        """Configuration for the artifacts node"""
+
+        memtest_zipfile: Path
+        """The path to the memtest86+ zipfile"""
+        memtest64efi: Path
+        """The path to the memtest86+ EFI binary"""
+        grubusbimg: Path
+        """The path to the psyopOS grubusb image"""
+
+    # Class variables
+
+    alpine_version = "3.18"
+    """The version of Alpine to use"""
+
+    psyopsroot = Path(__file__).parent.parent.parent.parent
+    """The path to the psyops checkout on the host"""
+
+    # Initializer
+
+    def __init__(self):
+        self.deaddrop = self.TelekinesisConfigDeaddropNode(
+            bucketname="com-micahrl-psyops-http-bucket",
+            region="us-east-2",
+            onepassword_item="op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer",
+            localpath=self.psyopsroot / "psyopsOS" / "deaddrop" / "replica",
+            isodir=self.psyopsroot / "psyopsOS" / "deaddrop" / "replica" / "iso",
+            isofilename="psyopsOScd-psyboot-x86_64.iso",
+            sqfilename="psyopsOSsq-psysquash-x86_64.iso",
+        )
+        self.buildcontainer = self.TelekinesisBuildcontainerNode(
+            alpine_version=self.alpine_version,
+            builddir=self.psyopsroot / "psyopsOS" / "build",
+            tag_prefix="psyopsos-builder-",
+            onepassword_signing_key="op://Personal/psyopsOS_abuild_ssh_key",
+            aportsrepo=self.psyopsroot.parent / "aports",
+            psyopsscripts=self.psyopsroot / "psyopsOS" / "aports-scripts",
+            apk_key_filename="psyops@micahrl.com-62ca1973.rsa",
+            apkreponame="psyopsOS",
+            uri=f"https://psyops.micahrl.com/",
+            psyopsosbasedir=self.psyopsroot / "psyopsOS" / "psyopsOS-base",
+            isotag="psyboot",
+            sqtag="psysquash",
+            architecture="x86_64",
+            mkimage_iso_profile="psyopsOScd",
+            mkimage_squashfs_profile="psyopsOSsq",
+        )
+        self.ovmf = self.TelekinesisConfigOVMFNode(
+            url="https://www.kraxel.org/repos/jenkins/edk2/edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm",
+            artifact=self.workdir / "edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm",
+            extracted_code=self.workdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd",
+            extracted_vars=self.workdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd",
+        )
+        self.artifacts = self.TelekinesisConfigArtifactsNode(
+            memtest_zipfile=self.workdir / "memtest.zip",
+            memtest64efi=self.workdir / "memtest64.efi",
+            grubusbimg=self.workdir / "psyopsOSgrubusb.img",
+        )
+
+    # Computed properties
+
+    @property
+    def workdir(self):
+        """The psyops workdir on the host, containing build intermediate files and artifacts"""
+        return self.psyopsroot / "work"
 
 
-# Configuration for the telekinesis CLI and build process
-tkconfig = dict(
-    # The version of Alpine to use
-    alpine_version="3.18",
-    # The path to the psyops checkout on the host
-    psyopsroot=_psyopsroot,
-    # The psyops workdir on the host, containing build intermediate files and artifacts
-    workdir=_workdir,
-    # The S3 bucket used for psyopsOS and progfiguration_blacksite
-    deaddrop=dict(
-        bucketname="com-micahrl-psyops-http-bucket",
-        region="us-east-2",
-        onepassword_item="op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer",
-        localpath=_psyopsroot / "psyopsOS" / "deaddrop" / "replica",
-        isodir=_psyopsroot / "psyopsOS" / "deaddrop" / "replica" / "iso",
-        # The filename that our mkimage creates
-        isofilename="psyopsOScd-psyboot-x86_64.iso",
-        sqfilename="psyopsOSsq-psysquash-x86_64.iso",
-    ),
-    # The container we use for building APK packages and ISO images
-    buildcontainer=dict(
-        # The path to the Dockerfile directory for the Alpine builder
-        builddir=_psyopsroot / "psyopsOS" / "build",
-        # The Docker image tag prefix (will be suffixed with the Alpine version)
-        tag_prefix="psyopsos-builder-",
-        # The 1Password item for the APK signing key
-        onepassword_signing_key="op://Personal/psyopsOS_abuild_ssh_key",
-        # Path to the full checkout of the Alpine aports repository
-        aportsrepo=_psyopsroot.parent / "aports",
-        # Path to the directory containing the psyopsOS aports scripts overlay files
-        psyopsscripts=_psyopsroot / "psyopsOS" / "aports-scripts",
-        # This is the name to set for the APK signing key in the Alpine builder container.
-        # It doesn't rely on any file with this name existing on the host.
-        apk_key_filename="psyops@micahrl.com-62ca1973.rsa",
-        # The APK repo name
-        # When building a package with abuild, it finds this name by looking in the grandparent directory of the APKBUILD file (../../).
-        # See also progfiguration_blacksite's buildapk command, which forces this with a tempdir.
-        # This is just called "repo=" in the abuild sh script, and is not configurable.
-        apkreponame="psyopsOS",
-        # The URI that is accessible on the
-        uri=f"https://psyops.micahrl.com/",
-        # Path to the psyopsOS-base package directory on the host
-        psyopsosbasedir=_psyopsroot / "psyopsOS" / "psyopsOS-base",
-        # Alpine ISO image tag for the boot image we build with mkimage.sh
-        isotag="psyboot",
-        # Alpine squashfs image tag for the boot image we build with mkimage.sh
-        sqtag="psysquash",
-        # The architecture for the ISO image
-        architecture="x86_64",
-        # The Alpine mkimage.sh ISO profile for psyopOS,
-        # which requires a profile_PROFILENAME file in the aports scripts overlay directory
-        mkimage_iso_profile="psyopsOScd",
-        # The Alpine mkimage.sh ISO profile for psyopOS,
-        # which requires a profile_PROFILENAME file in the aports scripts overlay directory
-        mkimage_squashfs_profile="psyopsOSsq",
-    ),
-    # OVMF firmware for QEMU
-    ovmf=dict(
-        url="https://www.kraxel.org/repos/jenkins/edk2/edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm",
-        artifact=_workdir / "edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm",
-        extracted_code=_workdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd",
-        extracted_vars=_workdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd",
-    ),
-)
+tkconfig = TelekinesisConfig()

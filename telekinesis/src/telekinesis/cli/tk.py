@@ -15,9 +15,9 @@ import traceback
 import zipfile
 
 from telekinesis import aports
-from telekinesis import config
 from telekinesis import deaddrop
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
+from telekinesis.config import getsecret, tkconfig
 from telekinesis.rget import rget
 
 
@@ -38,9 +38,9 @@ def get_ovmf():
 
     TODO: we probably need to build this ourselves, unless Alpine packages it in some normal way in the future.
     """
-    rget(config.tkconfig["ovmf"]["url"], config.tkconfig["ovmf"]["artifact"])
-    if not config.tkconfig["ovmf"]["extracted_code"].exists() or not config.tkconfig["ovmf"]["extracted_vars"].exists():
-        in_container_rpm_path = f"/work/{config.tkconfig['ovmf']['artifact'].name}"
+    rget(tkconfig.ovmf.url, tkconfig.ovmf.artifact)
+    if not tkconfig.ovmf.extracted_code.exists() or not tkconfig.ovmf.extracted_vars.exists():
+        in_container_rpm_path = f"/work/{tkconfig.ovmf.artifact.name}"
         extract_rpm_script = " && ".join(
             [
                 "apk add rpm2cpio",
@@ -54,7 +54,7 @@ def get_ovmf():
             "run",
             "--rm",
             "--volume",
-            f"{config.tkconfig['workdir']}:/work",
+            f"{tkconfig.workdir}:/work",
             "alpine:3.18",
             "sh",
             "-c",
@@ -68,12 +68,12 @@ def get_memtest():
     # code to download memtest from memtest.org with requestslibrary:
     rget(
         "https://memtest.org/download/v6.20/mt86plus_6.20.binaries.zip",
-        config.tkconfig["deaddrop"]["isodir"] / "memtest.zip",
+        tkconfig.artifacts.memtest_zipfile,
     )
-    memtest64efi = config.tkconfig["deaddrop"]["isodir"] / "memtest64.efi"
+    memtest64efi = tkconfig.artifacts.memtest64efi
     if not memtest64efi.exists():
-        with zipfile.ZipFile(config.tkconfig["deaddrop"]["isodir"] / "memtest.zip", "r") as zip_ref:
-            zip_ref.extract("memtest64.efi", config.tkconfig["deaddrop"]["isodir"])
+        with zipfile.ZipFile(tkconfig.artifacts.memtest_zipfile, "r") as zip_ref:
+            zip_ref.extract("memtest64.efi", tkconfig.workdir)
 
 
 def vm_grubusb():
@@ -91,11 +91,11 @@ def vm_grubusb():
             "-m",
             "2048",
             "-drive",
-            f"if=pflash,format=raw,readonly=on,file={config.tkconfig['ovmf']['extracted_code']}",
+            f"if=pflash,format=raw,readonly=on,file={tkconfig.ovmf.extracted_code.as_posix()}",
             "-drive",
-            f"if=pflash,format=raw,file={config.tkconfig['ovmf']['extracted_vars']}",
+            f"if=pflash,format=raw,file={tkconfig.ovmf.extracted_vars.as_posix()}",
             "-drive",
-            f"format=raw,file={config.tkconfig['deaddrop']['isodir'] / 'psyopsOSgrubusb.img'}",  # FIXME: hardcoded filename
+            f"format=raw,file={tkconfig.artifacts.grubusbimg.as_posix()}",
         ],
         check=True,
         stdin=sys.stdin,
@@ -111,19 +111,15 @@ def mkimage_prepare(
     dangerous_no_clean_tmp_dir: bool = False,
 ):
     """Do common setup for mkimage commands"""
-    alpine_version = config.tkconfig["alpine_version"]
 
     aports.validate_alpine_version(
-        config.tkconfig["buildcontainer"]["builddir"],
-        config.tkconfig["buildcontainer"]["aportsrepo"],
-        alpine_version,
+        tkconfig.buildcontainer.builddir,
+        tkconfig.buildcontainer.aportsrepo,
+        tkconfig.alpine_version,
     )
 
-    apkreponame = config.tkconfig["buildcontainer"]["apkreponame"]
-
     # Make sure we have an up-to-date Docker builder
-    builder_tag = config.tkconfig["buildcontainer"]["tag_prefix"] + alpine_version
-    build_container(builder_tag, config.tkconfig["buildcontainer"]["builddir"], rebuild)
+    build_container(tkconfig.buildcontainer.dockertag, tkconfig.buildcontainer.builddir, rebuild)
 
     # Build the APKs that are also included in the ISO
     # Building them here makes sure that they are up-to-date
@@ -135,7 +131,7 @@ def mkimage_prepare(
         abuild_blacksite(False, cleandockervol, dangerous_no_clean_tmp_dir)
         abuild_psyopsOS_base(False, cleandockervol, dangerous_no_clean_tmp_dir)
 
-    return (alpine_version, apkreponame, builder_tag)
+    return (tkconfig.alpine_version, tkconfig.buildcontainer.apkreponame, tkconfig.buildcontainer.dockertag)
 
 
 def mkimage_iso(
@@ -154,7 +150,7 @@ def mkimage_iso(
     )
 
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        apkindexpath = builder.in_container_apks_repo_root + f"/v{config.tkconfig['alpine_version']}"
+        apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
         apkrepopath = apkindexpath + "/" + apkreponame
         in_container_mkimage_cmd_list = [
             " ".join(
@@ -163,15 +159,15 @@ def mkimage_iso(
                     "-x",
                     "./mkimage.sh",
                     "--tag",
-                    config.tkconfig["buildcontainer"]["isotag"],
+                    tkconfig.buildcontainer.isotag,
                     "--outdir",
                     builder.in_container_isodir,
                     "--arch",
-                    config.tkconfig["buildcontainer"]["architecture"],
+                    tkconfig.buildcontainer.architecture,
                     "--repository",
-                    f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main",
+                    f"http://dl-cdn.alpinelinux.org/alpine/v{tkconfig.alpine_version}/main",
                     "--repository",
-                    f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community",
+                    f"http://dl-cdn.alpinelinux.org/alpine/v{tkconfig.alpine_version}/community",
                     "--repository",
                     apkrepopath,
                     # This would also allow using the remote APK repo, but I don't think that's necessary because of our local replica
@@ -180,7 +176,7 @@ def mkimage_iso(
                     "--workdir",
                     builder.in_container_workdir,
                     "--profile",
-                    config.tkconfig["buildcontainer"]["mkimage_iso_profile"],
+                    tkconfig.buildcontainer.mkimage_iso_profile,
                 ]
             ),
         ]
@@ -206,7 +202,7 @@ def mkimage_squashfs(
     )
 
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        apkindexpath = builder.in_container_apks_repo_root + f"/v{config.tkconfig['alpine_version']}"
+        apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
         apkrepopath = apkindexpath + "/" + apkreponame
         in_container_mkimage_cmd_list = [
             " ".join(
@@ -215,15 +211,15 @@ def mkimage_squashfs(
                     "-x",
                     "./mkimage.sh",
                     "--tag",
-                    config.tkconfig["buildcontainer"]["sqtag"],
+                    tkconfig.buildcontainer.sqtag,
                     "--outdir",
                     builder.in_container_isodir,
                     "--arch",
-                    config.tkconfig["buildcontainer"]["architecture"],
+                    tkconfig.buildcontainer.architecture,
                     "--repository",
-                    f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main",
+                    f"http://dl-cdn.alpinelinux.org/alpine/v{tkconfig.alpine_version}/main",
                     "--repository",
-                    f"http://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community",
+                    f"http://dl-cdn.alpinelinux.org/alpine/v{tkconfig.alpine_version}/community",
                     "--repository",
                     apkrepopath,
                     # This would also allow using the remote APK repo, but I don't think that's necessary because of our local replica
@@ -232,7 +228,7 @@ def mkimage_squashfs(
                     "--workdir",
                     builder.in_container_workdir,
                     "--profile",
-                    config.tkconfig["buildcontainer"]["mkimage_squashfs_profile"],
+                    tkconfig.buildcontainer.mkimage_squashfs_profile,
                 ]
             ),
         ]
@@ -296,9 +292,8 @@ def abuild_blacksite(interactive: bool, cleandockervol: bool, dangerous_no_clean
     """Build the progfiguration psyops blacksite Python package as an Alpine package. Use the mkimage docker container."""
 
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        apkreponame = config.tkconfig["buildcontainer"]["apkreponame"]
-        apkindexpath = builder.in_container_apks_repo_root + f"/v{config.tkconfig['alpine_version']}"
-        apkrepopath = apkindexpath + "/" + apkreponame
+        apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
+        apkrepopath = apkindexpath + "/" + tkconfig.buildcontainer.apkreponame
 
         in_container_build_cmd = [
             f"cd {builder.in_container_psyops_checkout}/progfiguration_blacksite",
@@ -313,7 +308,7 @@ def abuild_blacksite(interactive: bool, cleandockervol: bool, dangerous_no_clean
             # I'm using an older Alpine container, 3.16 at the time of this writing, because psyopsOS is still that old.
             # When we can upgrade, we'll just use the setuptools in apk.
             "pip install -U setuptools",
-            f"progfiguration-blacksite-buildapk --abuild-repo-name {apkreponame} --apks-index-path {apkindexpath}",
+            f"progfiguration-blacksite-buildapk --abuild-repo-name {tkconfig.buildcontainer.apkreponame} --apks-index-path {apkindexpath}",
             f"echo 'Build packages are found in {apkrepopath}/x86_64/:'",
             f"ls -larth {apkrepopath}/x86_64/",
         ]
@@ -329,25 +324,22 @@ def abuild_psyopsOS_base(interactive: bool, cleandockervol: bool, dangerous_no_c
     epochsecs = int(time.time())
     version = f"1.0.{epochsecs}"
 
-    apkreponame = config.tkconfig["buildcontainer"]["apkreponame"]
-    psyopsOS_base_dir = config.tkconfig["buildcontainer"]["psyopsosbasedir"]
-
-    with open(f"{psyopsOS_base_dir}/APKBUILD.template") as fp:
+    with open(f"{tkconfig.buildcontainer.psyopsosbasedir}/APKBUILD.template") as fp:
         apkbuild_template = string.Template(fp.read())
     apkbuild_contents = apkbuild_template.substitute(version=version)
-    apkbuild_path = os.path.join(psyopsOS_base_dir, "APKBUILD")
+    apkbuild_path = os.path.join(tkconfig.buildcontainer.psyopsosbasedir, "APKBUILD")
 
     try:
         with open(apkbuild_path, "w") as afd:
             afd.write(apkbuild_contents)
         print("Running build in progfiguration directory...")
         with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-            apkindexpath = builder.in_container_apks_repo_root + f"/v{config.tkconfig['alpine_version']}"
-            apkrepopath = apkindexpath + "/" + apkreponame
+            apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
+            apkrepopath = apkindexpath + "/" + tkconfig.buildcontainer.apkreponame
 
             # Place the apk repo inside the public dir
             # This means that 'invoke deploy' will copy it
-            abuild_cmd = f"abuild -r -P {apkindexpath} -D {apkreponame}"
+            abuild_cmd = f"abuild -r -P {apkindexpath} -D {tkconfig.buildcontainer.apkreponame}"
 
             in_container_build_cmd = builder.docker_shell_commands + [
                 f"cd {builder.in_container_psyops_checkout}/psyopsOS/psyopsOS-base",
@@ -376,10 +368,13 @@ def abuild_psyopsOS_base(interactive: bool, cleandockervol: bool, dangerous_no_c
 
 def deployiso(host):
     """Deploy the ISO image to a remote host"""
-    iso_filename = config.tkconfig["deaddrop"]["isofilename"]
-    iso_path = config.tkconfig["deaddrop"]["isodir"] / iso_filename
-    subprocess.run(["scp", iso_path.as_posix(), f"root@{host}:/tmp/{iso_filename}"], check=True)
-    subprocess.run(["ssh", f"root@{host}", "/usr/sbin/psyopsOS-write-bootmedia", "/tmp/{iso_filename}"], check=True)
+    subprocess.run(
+        ["scp", tkconfig.deaddrop.isodir.as_posix(), f"root@{host}:/tmp/{tkconfig.deaddrop.isofilename}"], check=True
+    )
+    subprocess.run(
+        ["ssh", f"root@{host}", "/usr/sbin/psyopsOS-write-bootmedia", f"/tmp/{tkconfig.deaddrop.isofilename}"],
+        check=True,
+    )
 
 
 def makeparser(prog=None):
@@ -521,7 +516,7 @@ def makeparser(prog=None):
     )
     sub_vm_sub_grubusb.add_argument(
         "--grubusb-image",
-        default=config.tkconfig["deaddrop"]["isodir"] / "psyopsOSgrubusb.img",  # FIXME: hardcoded filename
+        default=tkconfig.artifacts.grubusbimg,
         help="Path to the grubusb image",
     )
 
@@ -537,32 +532,26 @@ def main():
         logging.setLevel("DEBUG")
         sys.excepthook = idb_excepthook
 
-    builder_tag = config.tkconfig["buildcontainer"]["tag_prefix"] + config.tkconfig["alpine_version"]
-
     if parsed.action == "showconfig":
-        pprint.pprint(config.tkconfig, indent=2, sort_dicts=False)
+        pprint.pprint(tkconfig.__dict__, indent=2, sort_dicts=False)
     elif parsed.action == "cog":
-        for path in [config.tkconfig["psyopsroot"] / "telekinesis" / "readme.md"]:
+        for path in [tkconfig.psyopsroot / "telekinesis" / "readme.md"]:
             subprocess.run(["cog", "-r", path.as_posix()], check=True)
     elif parsed.action == "deaddrop":
-        aws_keyid = config.getsecret(config.tkconfig["deaddrop"]["onepassword_item"], "username")
-        aws_secret = config.getsecret(config.tkconfig["deaddrop"]["onepassword_item"], "password")
-        aws_sess = deaddrop.makesession(aws_keyid, aws_secret, config.tkconfig["deaddrop"]["region"])
+        aws_keyid = getsecret(tkconfig.deaddrop.onepassword_item, "username")
+        aws_secret = getsecret(tkconfig.deaddrop.onepassword_item, "password")
+        aws_sess = deaddrop.makesession(aws_keyid, aws_secret, tkconfig.deaddrop.region)
         if parsed.deaddrop_action == "ls":
-            deaddrop.list_files(aws_sess, config.tkconfig["deaddrop"]["bucketname"])
+            deaddrop.list_files(aws_sess, tkconfig.deaddrop.bucketname)
         elif parsed.deaddrop_action == "forcepull":
-            deaddrop.s3_forcepull_directory(
-                aws_sess, config.tkconfig["deaddrop"]["bucketname"], config.tkconfig["deaddrop"]["localpath"]
-            )
+            deaddrop.s3_forcepull_directory(aws_sess, tkconfig.deaddrop.bucketname, tkconfig.deaddrop.localpath)
         elif parsed.deaddrop_action == "forcepush":
-            deaddrop.s3_forcepush_directory(
-                aws_sess, config.tkconfig["deaddrop"]["bucketname"], config.tkconfig["deaddrop"]["localpath"]
-            )
+            deaddrop.s3_forcepush_directory(aws_sess, tkconfig.deaddrop.bucketname, tkconfig.deaddrop.localpath)
         else:
             parser.error(f"Unknown deaddrop action: {parsed.deaddrop_action}")
     elif parsed.action == "builder":
         if parsed.builder_action == "build":
-            build_container(builder_tag, config.tkconfig["buildcontainer"]["builddir"], parsed.rebuild)
+            build_container(tkconfig.buildcontainer.dockertag, tkconfig.buildcontainer.builddir, parsed.rebuild)
         elif parsed.builder_action == "runcmd":
             with get_configured_docker_builder(
                 parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir
