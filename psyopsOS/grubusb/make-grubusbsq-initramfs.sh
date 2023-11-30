@@ -45,9 +45,9 @@ if [ -z "$outfile" ] || [ -z "$initdir" ]; then
 fi
 
 # Derived values
-patchedinit="$initdir"/initramfs-init.patched
+patchedinit="$initdir"/initramfs-init.patched.grubusbsq
 
-patch -o "$patchedinit" "$initdir"/initramfs-init.orig "$initdir"/initramfs-init.psyopsOS.patch
+patch -o "$patchedinit" "$initdir"/initramfs-init.orig "$initdir"/initramfs-init.psyopsOS.grubusbsq.patch
 
 if test -z "$features"; then
     feats=

@@ -113,18 +113,28 @@ class TelekinesisConfig:
         extracted_vars: Path
         """The path to the extracted OVMF_VARS-pure-efi.fd file"""
 
-    @dataclass
     class TelekinesisConfigArtifactsNode:
         """Configuration for the artifacts node"""
 
-        memtest_zipfile: Path
-        """The path to the memtest86+ zipfile"""
-        memtest64efi: Path
-        """The path to the memtest86+ EFI binary"""
-        grubusbimg: Path
-        """The path to the psyopOS grubusb image"""
-        initramfs: Path
-        """The path to the psyopOS initramfs"""
+        def __init__(self, artroot: Path):
+            self.memtest_zipfile = artroot / "memtest.zip"
+            """The path to the memtest86+ zipfile"""
+            self.memtest64efi = artroot / "memtest64.efi"
+            """The path to the memtest86+ EFI binary"""
+
+            self.grubusbsq_img = artroot / "psyopsOS.grubusbsq.img"
+            """The path to the grubusbsq disk image"""
+            self.grubusbsq_initramfs = artroot / "psyopsOS.grubusbsq.initramfs"
+            """The path to the grubusbsq initramfs"""
+            self.grubusbsq_squashfs = artroot / "psyopsOS.grubusbsq.squashfs"
+            """The path to the grubusbsq squashfs image"""
+
+            self.grubusb_img = artroot / "psyopsOS.grubusb.img"
+            """The path to the grubusb disk image"""
+            self.grubusb_initramfs = artroot / "psyopsOS.grubusb.initramfs"
+            """The path to the grubusb initramfs"""
+            self.grubusb_squashfs = artroot / "psyopsOS.grubusb.squashfs"
+            """The path to the grubusb squashfs image"""
 
     # Class variables
 
@@ -167,12 +177,7 @@ class TelekinesisConfig:
             extracted_code=artdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd",
             extracted_vars=artdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd",
         )
-        self.artifacts = self.TelekinesisConfigArtifactsNode(
-            memtest_zipfile=artdir / "memtest.zip",
-            memtest64efi=artdir / "memtest64.efi",
-            grubusbimg=artdir / "psyopsOSgrubusb.img",
-            initramfs=artdir / "initramfs",
-        )
+        self.artifacts = self.TelekinesisConfigArtifactsNode(self.repopaths.artifacts)
 
 
 tkconfig = TelekinesisConfig()

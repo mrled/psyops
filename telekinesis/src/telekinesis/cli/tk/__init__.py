@@ -14,11 +14,11 @@ from telekinesis import deaddrop
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
 from telekinesis.cli.tk.subcommands.mkimage import (
-    mkimage_initramfs,
-    mkimage_initramfs_grubusb,
+    mkimage_grubusbsq_initramfs,
+    mkimage_grubusb_diskimg,
     mkimage_iso,
-    mkimage_squashfs,
-    mkimage_squashfs_grubusb,
+    mkimage_grubusbsq_squashfs,
+    mkimage_grubusbsq_diskimg,
 )
 from telekinesis.cli.tk.subcommands.vm import get_ovmf, vm_grubusb
 from telekinesis.config import getsecret, tkconfig
@@ -155,23 +155,25 @@ def makeparser(prog=None):
     sub_mkimage_subparsers = sub_mkimage.add_subparsers(dest="mkimage_action", required=True)
     sub_mkimage_sub_iso = sub_mkimage_subparsers.add_parser(
         "iso",
-        help="Build the ISO image",
+        help="Build an ISO image using mkimage.sh and the psyopsOScd profile",
     )
-    sub_mkimage_sub_squashfs = sub_mkimage_subparsers.add_parser(
-        "squashfs",
-        help="Build the squashfs image",
+    sub_mkimage_sub_grubusbsq = sub_mkimage_subparsers.add_parser(
+        "grubusbsq",
+        help="Build a disk image that contains GRUB, can do A/B updates, and boots to squashfs root images.",
     )
-    sub_mkimage_initramfs = sub_mkimage_subparsers.add_parser(
-        "initramfs",
-        help="Build the initramfs image which is used by the grubusb image",
+    sub_mkimage_sub_grubusbsq.add_argument(
+        "--stages",
+        default="squashfs,initramfs,grubusb",
+        help="The stages to build, comma-separated. Default: %(default)s",
     )
-    sub_mkimage_sub_squashfs_grubusb = sub_mkimage_subparsers.add_parser(
-        "squashfs-grubusb",
-        help="Build a disk image that contains GRUB and boots squashfs images",
+    sub_mkimage_sub_grubusb = sub_mkimage_subparsers.add_parser(
+        "grubusb",
+        help="Build a disk image that contains GRUB, can do A/B updates, and boots to initramfs root images without squashfs.",
     )
-    sub_mkimage_sub_initramfs_grubusb = sub_mkimage_subparsers.add_parser(
-        "initramfs-grubusb",
-        help="Build a disk image that contains GRUB and boots initramfs images without squashfs",
+    sub_mkimage_sub_grubusb.add_argument(
+        "--stages",
+        default="initramfs,grubusb",
+        help="The stages to build, comma-separated. Default: %(default)s",
     )
 
     # The buildpkg subcommand
@@ -253,34 +255,44 @@ def main():
                 cleandockervol=parsed.clean,
                 dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
             )
-        elif parsed.mkimage_action == "squashfs":
-            mkimage_squashfs(
-                skip_build_apks=parsed.skip_build_apks,
-                rebuild=parsed.rebuild,
-                interactive=parsed.interactive,
-                cleandockervol=parsed.clean,
-                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-            )
-        elif parsed.mkimage_action == "initramfs":
-            mkimage_initramfs(
-                skip_build_apks=parsed.skip_build_apks,
-                rebuild=parsed.rebuild,
-                interactive=parsed.interactive,
-                cleandockervol=parsed.clean,
-                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-            )
-        elif parsed.mkimage_action == "squashfs-grubusb":
-            mkimage_squashfs_grubusb(
-                interactive=parsed.interactive,
-                cleandockervol=parsed.clean,
-                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-            )
-        elif parsed.mkimage_action == "initramfs-grubusb":
-            mkimage_initramfs_grubusb(
-                interactive=parsed.interactive,
-                cleandockervol=parsed.clean,
-                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-            )
+        elif parsed.mkimage_action == "grubusbsq":
+            if "squashfs" in parsed.stages:
+                mkimage_grubusbsq_squashfs(
+                    skip_build_apks=parsed.skip_build_apks,
+                    rebuild=parsed.rebuild,
+                    interactive=parsed.interactive,
+                    cleandockervol=parsed.clean,
+                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+                )
+            if "initramfs" in parsed.stages:
+                mkimage_grubusbsq_initramfs(
+                    skip_build_apks=parsed.skip_build_apks,
+                    rebuild=parsed.rebuild,
+                    interactive=parsed.interactive,
+                    cleandockervol=parsed.clean,
+                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+                )
+            if "grubusb" in parsed.stages:
+                mkimage_grubusbsq_diskimg(
+                    interactive=parsed.interactive,
+                    cleandockervol=parsed.clean,
+                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+                )
+        elif parsed.mkimage_action == "grubusb":
+            if "initramfs" in parsed.stages:
+                mkimage_grubusbsq_initramfs(
+                    skip_build_apks=parsed.skip_build_apks,
+                    rebuild=parsed.rebuild,
+                    interactive=parsed.interactive,
+                    cleandockervol=parsed.clean,
+                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+                )
+            if "grubusb" in parsed.stages:
+                mkimage_grubusb_diskimg(
+                    interactive=parsed.interactive,
+                    cleandockervol=parsed.clean,
+                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+                )
         else:
             parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
     elif parsed.action == "vm":

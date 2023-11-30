@@ -10,6 +10,7 @@ efisize=128
 psyabsize=1024
 kernel=/boot/vmlinuz-lts
 initrd=/boot/initramfs-lts
+squashfs=
 memtest=
 
 # Constant values
@@ -20,7 +21,7 @@ label_psyb=psyopsOS-B # max 16 chars, case sensitive
 usage() {
     cat <<ENDUSAGE
 $script: Make a bootable USB drive for psyopsOS
-Usage: $script [-h] [-l LOOPDEV] [-e EFISIZE] [-s psyabsize] [-k KERNEL] [-i INITRD] [-m MEMTEST] -o OUTPUTIMG
+Usage: $script [-h] [-l LOOPDEV] [-e EFISIZE] [-s psyabsize] [-k KERNEL] [-i INITRD] [-m MEMTEST] -q SQUASHFS -o OUTPUTIMG
 
 ARGUMENTS:
     -h                      Show this help message
@@ -32,6 +33,7 @@ ARGUMENTS:
     -k KERNEL               Path to the kernel file to use (default: "$kernel")
     -i INITRD               Path to the initrd file to use (default: "$initrd")
     -m MEMTEST              Path to the memtest86+ binary to use (optional)
+    -q SQUASHFS             Path to the squashfs file to use (REQUIRED)
     -o OUTPUTIMG            Path to the image file to create (REQUIRED)
 
 * This script requires a privileged container (docker run --privileged=true)
@@ -64,13 +66,14 @@ while test $# -gt 0; do
     -k) kernel="$2"; shift 2;;
     -i) initrd="$2"; shift 2;;
     -m) memtest="$2"; shift 2;;
+    -q) squashfs="$2"; shift 2;;
     -o) outimg="$2"; shift 2;;
     -*) echo "Unknown option: $1; see '$script -h'" >&2; exit 1;;
     *) echo "Unknown argument: $1; see '$script -h'" >&2; exit 1;;
     esac
 done
 
-if test -z "$outimg"; then
+if test -z "$outimg" || test -z "$squashfs" ; then
     echo "Missing required argument(s); see '$script -h'" >&2
     exit 1
 fi
@@ -148,6 +151,7 @@ mkdir -p /mnt/grubusb/psya
 mount "$part_psya" /mnt/grubusb/psya
 cp "$kernel" /mnt/grubusb/psya/kernel
 cp "$initrd" /mnt/grubusb/psya/initramfs
+cp "$squashfs" /mnt/grubusb/psya/squashfs
 
 # Set up the psyopsOS-B partition
 # This contains the same files as psyopsOS-A so either works out of the box,
@@ -157,6 +161,7 @@ mkdir -p /mnt/grubusb/psyb
 mount "$part_psyb" /mnt/grubusb/psyb
 cp "$kernel" /mnt/grubusb/psyb/kernel
 cp "$initrd" /mnt/grubusb/psyb/initramfs
+cp "$squashfs" /mnt/grubusb/psyb/squashfs
 
 # Set up the EFI system partition
 mkfs.fat -F32 -n "$label_efisys" "$part_efisys"
@@ -175,6 +180,16 @@ find /mnt/grubusb/efisys
 #   tty0 is the screen, ttyS0 is the serial port
 kernel_params_suffix="earlyprintk=dbgp console=tty0 console=ttyS0,115200"
 
+# A single menuentry, useful for copying/pasting. This doesn't go anywhere. TODO: deleteme
+cat >/dev/null <<EOF
+menuentry "psyopsOS-A" {
+    search --no-floppy --label psyopsOS-A --set root
+    loopback sqloop /squashfs
+    linux /kernel loop=sqloop ro earlyprintk=dbgp console=tty0 console=ttyS0,115200
+    initrd /initramfs
+}
+EOF
+
 # Create the grub.cfg file
 cat <<EOF > /mnt/grubusb/efisys/grub/grub.cfg
 # psyopsOS grub.cfg
@@ -192,8 +207,8 @@ terminal_output console serial
 #set debug=all
 
 
-menuentry "Welcome to psyopsOS grubusb. GRUB configuration last updated: $(date)" {
-    echo "Welcome to psyopsOS grubusb. GRUB configuration last updated: $(date)"
+menuentry "Welcome to psyopsOS grubusbsq. GRUB configuration last updated: $(date)" {
+    echo "Welcome to psyopsOS grubusbsq. GRUB configuration last updated: $(date)"
 }
 menuentry "----------------------------------------" {
     echo "----------------------------------------"
@@ -201,13 +216,15 @@ menuentry "----------------------------------------" {
 
 menuentry "$label_psya" {
     search --no-floppy --label $label_psya --set root
-    linux /kernel ro psyopsos=$label_psya $kernel_params_suffix
+    loopback sqloop /squashfs
+    linux /kernel rootfstype=squashfs ro psyopsos=$label_psya $kernel_params_suffix
     initrd /initramfs
 }
 
 menuentry "$label_psyb" {
     search --no-floppy --label $label_psyb --set root
-    linux /kernel ro psyopsos=$label_psyb $kernel_params_suffix
+    loopback sqloop /squashfs
+    linux /kernel loop=sqloop ro psyopsos=$label_psyb $kernel_params_suffix
     initrd /initramfs
 }
 EOF

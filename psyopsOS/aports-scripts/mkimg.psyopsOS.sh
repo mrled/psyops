@@ -83,6 +83,7 @@ profile_psyopsOSsq() {
 	desc="The PSYOPS operating system for powerful management of personal infrastructure"
 	image_ext="squashfs"
 	output_format="psyopsOS_squashfs"
+	output_filename="psyopsOS.grubusbsq.squashfs"
 	arch="x86_64 aarch64"
 	# Intentionally install both the world and available packages in development
 	squashfs_apks="$apklist"
