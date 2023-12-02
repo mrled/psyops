@@ -27,7 +27,7 @@ psyopsOS-base
 python3
 ripgrep
 shadow
-squashfs
+squashfs-tools
 sqlite
 strace
 sudo
