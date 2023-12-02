@@ -190,12 +190,23 @@ make_modloop() {
 
 # Include the device tree blobs (used in e.g. ARM)
 include_dtb() {
-    dtbdir=$rootfs/boot/dtbs-$kflavor
-    test -d "$dtbdir" || dtbdir=$rootfs/usr/lib/linux-$kvers
-    test -d "$dtbdir" || dtbdir=$rootfs/boot
+    dtbdir=
+    for possible_dtbdir in \
+        $rootfs/boot/dtbs-$kflavor \
+        $rootfs/usr/lib/linux-$kvers \
+        $rootfs/boot
+    do
+        if test -d "$possible_dtbdir"; then
+            dtbdir="$possible_dtbdir"
+            echo "Found dtbdir: $dtbdir" >&2
+            break
+        fi
+    done
+    if test -z "$dtbdir"; then
+        echo "No dtbdir found; assume our platform doesn't need it" >&2
+        return 0
+    fi
 
-    # If the dtbdir doesn't exist, assume our platform doesn't need it
-    test -d "$dtbdir" || return 0
 
     _opwd=$PWD
     case "$kflavor" in
@@ -205,7 +216,7 @@ include_dtb() {
     mkdir -p "$_dtb"
     _dtb=$(realpath "$_dtb")
     cd "$dtbdir"
-    find -type f \( -name "*.dtb" -o -name "*.dtbo" \) | cpio -pudm "$_dtb" 2> /dev/null
+    find -type f \( -name "*.dtb" -o -name "*.dtbo" \) | cpio -pudm "$_dtb"
     cd "$_opwd"
 }
 
@@ -218,6 +229,11 @@ LABEL=psyopsOS-A /a ext4 ro 0 0
 LABEL=psyopsOS-B /b ext4 ro 0 0
 EOF
 }
+
+#### Main
+
+# Create output directory
+mkdir -p "$outdir"
 
 # Creates APKINDEX etc in the rootfs
 rooted_apk add --initdb --update-cache
@@ -248,7 +264,7 @@ make_modloop "$modloop" "$modloopstage" "$modimg" "$modsig_path"
 make_fstab >"$workdir"/fstab
 patchedinit="$initdir"/initramfs-init.patched.grubusb
 patch -o "$patchedinit" "$initdir"/initramfs-init.orig "$initdir"/initramfs-init.psyopsOS.grubusb.patch
-mkinitfs -s $modsig_path -i "$patchedinit" -q -b $rootfs -F "$features" -f "$workdir"/fstab -o "$workdir"/initramfs-$kflavor $kvers
+mkinitfs -s $modsig_path -i "$patchedinit" -q -b $rootfs -F "$features" -f "$workdir"/fstab -o "$outdir"/initramfs-$kflavor $kvers
 
 for file in System.map config vmlinuz; do
 	if [ -f "$bootdir/$file-$kflavor" ]; then
@@ -258,7 +274,6 @@ for file in System.map config vmlinuz; do
 	fi
 done
 
-mkdir -p "$outdir"
 mv $modloopstage/* "$outdir"
 
 include_dtb
