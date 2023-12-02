@@ -178,6 +178,13 @@ class AlpineDockerBuilder:
             f"PSYOPSOS_BUILD_GIT_REVISION={build_git_revision}",
             "--env",
             f"PSYOPSOS_BUILD_GIT_DIRTY={str(build_git_dirty)}",
+            # For normal Alpine development, this would be set in ~/.abuild/abuild.conf,
+            # which is then read by abuild scripts, but it's easier for us to set it here.
+            "--env",
+            f"PACKAGER_PRIVKEY={self.in_container_apk_key_path}",
+            # Make sure the PATH includes the local bin directory
+            "--env",
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/build/.local/bin",
         ]
 
         if self.interactive:
@@ -197,10 +204,9 @@ class AlpineDockerBuilder:
         self.docker_cmd += [self.docker_builder_tag]
 
         # Commands to pass to the shell to run in the container, used in self.run_docker()
+        # Note that these are NOT used for self.run_docker_raw(), which is what `tk builder runcmd` uses.
         self.docker_shell_commands = [
             "set -e",
-            "export PATH=$PATH:$HOME/.local/bin",
-            f"echo 'PACKAGER_PRIVKEY=\"{self.in_container_apk_key_path}\"' > $HOME/.abuild/abuild.conf",
             "ls -alF $HOME/.abuild",
             "uname -a",
         ]
