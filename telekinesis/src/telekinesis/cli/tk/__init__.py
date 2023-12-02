@@ -203,7 +203,7 @@ def makeparser(prog=None):
     )
     sub_vm_sub_grubusb.add_argument(
         "--grubusb-image",
-        default=tkconfig.artifacts.grubusbimg,
+        default=tkconfig.artifacts.grubusb_img,
         help="Path to the grubusb image",
     )
 
