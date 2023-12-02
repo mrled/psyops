@@ -7,11 +7,11 @@ script=$(basename "$0")
 apk_keys_dir=/etc/apk/keys
 apk_packages=
 apk_repos_file=/etc/apk/repositories
-arch=
+arch=$(apk --print-arch)
+features=
 initdir=
 kflavor=lts
 outdir=
-workdir=
 
 usage() {
     cat <<ENDUSAGE
@@ -20,24 +20,32 @@ Usage: $script [-h]
 
 ARGUMENTS:
     -h                      Show this help message
-    --apk-keys-dir          Directory containing signing keys (required)
-    --apk-packages          Packages to install (required)
-    --apk-repositories      Repositories file to use (required)
-    --arch                  Architecture to build for (required)
-    --kernel-flavor         Kernel flavor to use (required)
+    --apk-keys-dir          Directory containing signing keys
+                            Default: "$apk_keys_dir"
+    --apk-packages          Packages to install
+    --apk-packages-file     File containing packages to install;
+                            may be specified more than once
+    --apk-repositories      Repositories file to use
+                            Default: "$apk_repos_file"
+    --arch                  Architecture to build for
+                            Default: the system arch: "$arch"
+    --kernel-flavor         Kernel flavor to use
+                            Default: "$kflavor"
     --mkinitfs-features     Generate initrd with these mkinitfs features
+                            Default: get from mkinitfs.conf
     --outdir                Output directory (required)
     --psyopsOS-init-dir     Directory containing psyopsOS initramfs files
                             (required)
-    --workdir               Working directory (required)
 
 FILES:
     We require abuild configuration to contain the packager signing key.
         /etc/abuild.conf
         ~/.abuild/abuild.conf
 
-    If --mkinitfs-features is not passed, get defaults from mkinitfs.conf.
+    If --mkinitfs-features is not passed, get defaults from the host's
         /etc/mkinitfs/mkinitfs.conf
+    Note that this is different behavior from upstream update-kernel script,
+    which installs mkinitfs to the rootfs dir and uses its stock config.
 
 ABOUT:
     Inspired by Alpine Linux update-kernel, as called in build_kernel() in mkimg.base.sh.
@@ -49,23 +57,32 @@ while test $# -gt 0; do
     -h|--help) usage; exit 0;;
     --apk-keys-dir) apk_keys_dir="$2"; shift 2;;
     --apk-packages) apk_packages="$2"; shift 2;;
+    --apk-packages-file) apk_packages="$apk_packages $(cat "$2")"; shift 2;;
     --apk-repositories) apk_repos_file="$2"; shift 2;;
     --arch) arch="$2"; shift 2;;
     --kernel-flavor) kflavor="$2"; shift 2;;
     --mkinitfs-features) features="$2"; shift 2;;
     --outdir) outdir="$2"; shift 2;;
     --psyopsOS-init-dir) initdir="$2"; shift 2;;
-    --workdir) workdir="$2"; shift 2;;
     -*) echo "Unknown option: $1; see '$script -h'" >&2; exit 1;;
     *) echo "Unknown argument: $1; see '$script -h'" >&2; exit 1;;
     esac
 done
 
-if [ -z "$arch" ] || [ -z "$initdir" ] || [ -z "$outdir" ] || [ -z "$workdir" ]; then
+if [ -z "$initdir" ] || [ -z "$outdir" ]; then
     echo "Missing required arguments" >&2
     usage >&2
     exit 1
 fi
+
+# Make a temporary working directory
+workdir=/tmp/make-grubusb-kernel.$$
+mkdir -p "$workdir"
+
+cleanup() {
+    rm -rf "$workdir"
+}
+trap cleanup EXIT
 
 # Derived argument values
 rootfs=$workdir/root
@@ -75,14 +92,14 @@ apk_packages="$apk_packages alpine-base linux-$kflavor linux-firmware"
 # Read external configuration
 test -f /etc/abuild.conf && . /etc/abuild.conf
 test -f "$HOME"/.abuild/abuild.conf && . "$HOME"/.abuild/abuild.conf
-local pubkey="${PACKAGER_PUBKEY:-"${PACKAGER_PRIVKEY}.pub"}"
+pubkey="${PACKAGER_PUBKEY:-"${PACKAGER_PRIVKEY}.pub"}"
 if ! test -f "$pubkey" || ! test -f "$PACKAGER_PRIVKEY"; then
     echo "Packager private key file ($PACKAGER_PRIVKEY) and/or public key file ($pubkey) do not exist" >&2
     exit 1
 fi
 
 if [ -z "$features" ]; then
-	. "$ROOT"/etc/mkinitfs/mkinitfs.conf
+	. /etc/mkinitfs/mkinitfs.conf
 fi
 # We always require base and squashfs
 features="base squashfs $features"
@@ -206,6 +223,9 @@ EOF
 rooted_apk add --initdb --update-cache
 
 # Install packages
+# Running this with --no-scripts still seems to run pre-install scripts, can that be right?
+# I notice trying to install nebula-openrc fails bc it creates a user on the host system,
+# ... not the rootfs.
 rooted_apk add --no-scripts $apk_packages
 
 # Copy pubkey file to rootfs
@@ -228,7 +248,7 @@ make_modloop "$modloop" "$modloopstage" "$modimg" "$modsig_path"
 make_fstab >"$workdir"/fstab
 patchedinit="$initdir"/initramfs-init.patched.grubusb
 patch -o "$patchedinit" "$initdir"/initramfs-init.orig "$initdir"/initramfs-init.psyopsOS.grubusb.patch
-mkinitfs -s $modsig_path -i "$patchedinit" -q -b $rootfs -F "$features" -o "$workdir"/initramfs-$kflavor $kvers
+mkinitfs -s $modsig_path -i "$patchedinit" -q -b $rootfs -F "$features" -f "$workdir"/fstab -o "$workdir"/initramfs-$kflavor $kvers
 
 for file in System.map config vmlinuz; do
 	if [ -f "$bootdir/$file-$kflavor" ]; then
