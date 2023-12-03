@@ -236,6 +236,9 @@ def mkimage_grubusb_initramfs(
         psyopsOS_world = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/world")
         psyopsOS_available = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/available")
         repositories_file = os.path.join(builder.in_container_artifacts_dir, "psyopsOS.repositories")
+        in_container_local_repo_path = os.path.join(
+            builder.in_container_artifacts_dir, f"deaddrop/apk/v{alpine_version}/psyopsOS"
+        )
         in_container_build_cmd = [
             "set -x",
             # Now cache the packages we need to build the image.
@@ -245,16 +248,9 @@ def mkimage_grubusb_initramfs(
             # We rely on the host's artifacts/deaddrop/apk being added to /etc/apk/repositories by the Dockerfile
             # so that this cache step can see apks built locally.
             f"sudo apk cache download alpine-base linux-lts linux-firmware {' '.join(apk_cache_list)}",
-            "sudo apk cache download progfiguration_blacksite",
-            "uname -a",
-            "apk --print-arch",
-            "cat /etc/apk/repositories",
-            "ls -alF /home/build/artifacts/deaddrop/apk",
-            "ls -alF /home/build/artifacts/deaddrop/apk/v3.18/psyopsOS/x86_64",
-            "exit",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E {make_grubusb_os_script} --apk-packages-file {psyopsOS_world} --apk-packages-file {psyopsOS_available} --apk-repositories {repositories_file} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
+            f"sudo -E {make_grubusb_os_script} --apk-packages-file {psyopsOS_world} --apk-packages-file {psyopsOS_available} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
         ]
         builder.run_docker(in_container_build_cmd)
         subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)

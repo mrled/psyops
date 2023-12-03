@@ -227,11 +227,6 @@ class AlpineDockerBuilder:
         # Note that these are NOT used for self.run_docker_raw(), which is what `tk builder runcmd` uses.
         self.docker_shell_commands = [
             "set -e",
-            "ls -alF $HOME/.abuild",
-            "uname -a",
-            "ls -alF /var/cache",
-            "ls -alF /etc/apk",
-            "mount",
             "echo 'apk cache:'",
             "ls -alF /var/cache/apk",
         ]

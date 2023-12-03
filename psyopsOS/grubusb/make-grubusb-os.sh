@@ -94,6 +94,8 @@ workdir=/tmp/make-grubusb-kernel.$$
 mkdir -p "$workdir"
 
 cleanup() {
+    # The unmounting is so verbose, don't xtrace it
+    set +x
     # Unmount any filesystems mounted inside the workdir
     while read -r mount ; do
         mountpoint=$(echo "$mount" | cut -d' ' -f2)
@@ -292,6 +294,7 @@ cp "$apk_keys_dir"/* "$rootfs"/etc/apk/keys/
 cp "$apk_repos_file" "$rootfs"/etc/apk/repositories
 mount -o bind /var/cache/apk "$rootfs"/var/cache/apk
 if test -n "$apk_local_repo"; then
+    mkdir -p "$rootfs"/$apk_local_repo
     mount -o bind "$apk_local_repo" "$rootfs"/$apk_local_repo
 fi
 ln -s /var/cache/apk "$rootfs"/etc/apk/cache
