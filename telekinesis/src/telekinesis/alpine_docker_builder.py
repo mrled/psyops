@@ -49,8 +49,10 @@ class AlpineDockerBuilder:
         docker_builder_tag_prefix,
         # If true, add "--interactive --tty" to the docker run command
         interactive=False,
-        # Clean the docker volume before running
-        cleandockervol=False,
+        # Clean the docker volume for the abuild workdir before running
+        clean_abuild_workdir_docker_volume=False,
+        # Clean the docker volume for the apk cache before running - this should rarely/never be necessary
+        clean_apk_cache_docker_volume=False,
         # If true, don't clean the temporary directory containing the APK key
         dangerous_no_clean_tmp_dir=False,
         # If true, add '--privileged=true' to the docker run command
@@ -66,7 +68,8 @@ class AlpineDockerBuilder:
         self.alpine_version = alpine_version
         self.docker_builder_tag_prefix = docker_builder_tag_prefix
         self.interactive = interactive
-        self.cleandockervol = cleandockervol
+        self.clean_abuild_workdir_docker_volume = clean_abuild_workdir_docker_volume
+        self.clean_apk_cache_docker_volume = clean_apk_cache_docker_volume
         self.dangerous_no_clean_tmp_dir = dangerous_no_clean_tmp_dir
         self.docker_builder_dir = docker_builder_dir
         self.privileged = privileged
@@ -81,7 +84,7 @@ class AlpineDockerBuilder:
         self.in_container_psyops_checkout = "/home/build/psyops"
         """The location of the psyops checkout in the container."""
 
-        self.in_container_apks_repo_root = f"{self.in_container_psyops_checkout}/psyopsOS/public/apk"
+        self.in_container_apks_repo_root = f"{self.in_container_artifacts_dir}/deaddrop/apk"
         """The location of APK repositories in the container (inside to the psyops checkout)."""
 
         self.docker_builder_tag = f"{self.docker_builder_tag_prefix}{self.alpine_version}"
@@ -104,15 +107,29 @@ class AlpineDockerBuilder:
         # This would not be necessary on Linux, but
         # on Docker Desktop for Mac (and probably also on Windows),
         # permissions will get fucked up if you try to use a volume on the host.
-        needscreate = False
-        if self.cleandockervol:
-            subprocess.run(["docker", "volume", "rm", self.workdir_volname])
-            needscreate = True
+        docreate_abuild_workdir_volume = False
+        if self.clean_abuild_workdir_docker_volume:
+            subprocess.run(["docker", "volume", "rm", self.abuild_workdir_volname])
+            docreate_abuild_workdir_volume = True
         else:
-            inspected = subprocess.run(f"docker volume inspect {self.workdir_volname}", shell=True)
-            needscreate = inspected.returncode != 0
-        if needscreate:
-            subprocess.run(f"docker volume create {self.workdir_volname}", shell=True)
+            inspected_abuild_workdir = subprocess.run(
+                f"docker volume inspect {self.abuild_workdir_volname}", shell=True
+            )
+            docreate_abuild_workdir_volume = inspected_abuild_workdir.returncode != 0
+        if docreate_abuild_workdir_volume:
+            subprocess.run(f"docker volume create {self.abuild_workdir_volname}", shell=True)
+
+        # A docuer local volume for the apk cache
+        # This means we don't have to redownload the same apks over and over again
+        docreate_apk_cache_volume = False
+        if self.clean_abuild_workdir_docker_volume:
+            subprocess.run(["docker", "volume", "rm", self.apk_cache_volname])
+            docreate_apk_cache_volume = True
+        else:
+            inspected_apk_cache = subprocess.run(f"docker volume inspect {self.apk_cache_volname}", shell=True)
+            docreate_apk_cache_volume = inspected_apk_cache.returncode != 0
+        if docreate_apk_cache_volume:
+            subprocess.run(f"docker volume create {self.apk_cache_volname}", shell=True)
 
         self.mkimage_clean(self.in_container_workdir)
 
@@ -162,7 +179,10 @@ class AlpineDockerBuilder:
             # Use the previously defined docker volume for temporary files etc when building the image.
             # Saving this between runs makes rebuilds much faster.
             "--volume",
-            f"{self.workdir_volname}:{self.in_container_workdir}",
+            f"{self.abuild_workdir_volname}:{self.in_container_workdir}",
+            # Use the previously defined docker volume for the apk cache.
+            "--volume",
+            f"{self.apk_cache_volname}:/var/cache/apk",
             # This is where artifacts will be copied after building
             "--volume",
             f"{self.host_artifacts_dir}:{self.in_container_artifacts_dir}",
@@ -209,6 +229,11 @@ class AlpineDockerBuilder:
             "set -e",
             "ls -alF $HOME/.abuild",
             "uname -a",
+            "ls -alF /var/cache",
+            "ls -alF /etc/apk",
+            "mount",
+            "echo 'apk cache:'",
+            "ls -alF /var/cache/apk",
         ]
 
         return self
@@ -245,7 +270,7 @@ class AlpineDockerBuilder:
             )
 
     @property
-    def workdir_volname(self):
+    def abuild_workdir_volname(self):
         """A volume name for the Docker working directory.
 
         We create a Docker volume for the workdir - it's not a bind mount because Docker volumes are faster.
@@ -253,6 +278,11 @@ class AlpineDockerBuilder:
         This doesn't need to be configurable, it isn't used anywhere else.
         """
         return f"psyopsos-build-workdir-{self.alpine_version}"
+
+    @property
+    def apk_cache_volname(self):
+        """A volume name for the Docker apk cache directory."""
+        return f"psyopsos-apk-cache-{self.alpine_version}"
 
     def mkimage_clean(self, workdir):
         """Clean directories before build
@@ -285,7 +315,7 @@ def get_configured_docker_builder(
         docker_builder_dir=tkconfig.repopaths.build,
         docker_builder_tag_prefix=tkconfig.buildcontainer.dockertag_prefix,
         interactive=interactive,
-        cleandockervol=cleandockervol,
+        clean_abuild_workdir_docker_volume=cleandockervol,
         dangerous_no_clean_tmp_dir=dangerous_no_clean_tmp_dir,
         privileged=True,
     )

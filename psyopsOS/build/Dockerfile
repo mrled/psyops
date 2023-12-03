@@ -6,70 +6,10 @@ LABEL maintainer "me@micahrl.com"
 
 # Include everything necessary for building an Alpine CD image with mkimage,
 # as well as prereqs for building progfiguration_blacksite.
+COPY install-prereqs.sh /usr/local/sbin/install-prereqs.sh
 RUN true \
     && apk update \
-    && apk add \
-        abuild \
-        # abuild-doc \
-        age \
-        # age-doc \
-        alpine-base \
-        alpine-conf \
-        alpine-sdk \
-        apk-tools \
-        bash \
-        bind-tools \
-        build-base \
-        busybox \
-        dosfstools \
-        e2fsprogs \
-        e2fsprogs-extra \
-        fakeroot \
-        git \
-        gpg \
-        linux-firmware-intel \
-        linux-firmware-mediatek \
-        linux-firmware-rtl_bt \
-        linux-lts \
-        lsblk \
-        make \
-        # man-db \
-        # man-pages \
-        minisign \
-        mtools \
-        ncurses \
-        openssh \
-        openssl \
-        parted \
-        python3 \
-        py3-build \
-        py3-installer \
-        py3-pip \
-        py3-requests \
-        py3-setuptools \
-        py3-tz \
-        py3-wheel \
-        ripgrep \
-        rsync \
-        shadow \
-        sqlite \
-        squashfs-tools \
-        sudo \
-        syslinux \
-        tmux \
-        vim \
-        wget \
-        xorriso \
-    # Install grub without running its package scripts.
-    # Grub tries to run grub-probe, which fails in Docker with an error like this:
-    #     (2/2) Installing grub-efi (2.06-r2)
-    #     Executing busybox-1.35.0-r17.trigger
-    #     Executing grub-2.06-r2.trigger
-    #     /usr/sbin/grub-probe: error: failed to get canonical path of `overlay'.
-    #     ERROR: grub-2.06-r2.trigger: script exited with error 1
-    # We need the grub binaries installed to build a bootable ISO,
-    # but we don't need it to actually work on the Docker system, so we skip these.
-    && apk add grub-efi --no-scripts \
+    && /usr/local/sbin/install-prereqs.sh \
     && true
 
 RUN true \
@@ -78,14 +18,18 @@ RUN true \
     && true
 
 # Install the psyopsOS repository signing key
-# Note that the path to add to /etc/apk/repositories should match incontainer_apks_path_prefix in tasks/contstants.py.
+# Note that the path to add to /etc/apk/repositories should match in_container_artifacts_dir in telekinesis alpine_docker_builder.py
 COPY psyops@micahrl.com-62ca1973.rsa.pub /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub
 RUN true \
     && chmod 644 /etc/apk/keys/psyops@micahrl.com-62ca1973.rsa.pub \
     && alpine_release=$(cat /etc/alpine-release) \
     && alpine_release_majmin=${alpine_release%.*} \
-    && echo "/home/build/psyops/psyopsOS/public/apk/v$alpine_release_majmin/psyopsOS" >> /etc/apk/repositories && cat /etc/apk/repositories \
+    && echo "/home/build/artifacts/deaddrop/apk/v$alpine_release_majmin/psyopsOS" >> /etc/apk/repositories && cat /etc/apk/repositories \
     && true
+
+# Set up apk caching; see apk-cache(5)
+VOLUME /var/cache/apk
+RUN ln -s /var/cache/apk /etc/apk/cache
 
 USER build
 

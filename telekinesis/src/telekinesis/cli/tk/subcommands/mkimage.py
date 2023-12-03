@@ -1,7 +1,9 @@
 """The mkimage subcommand"""
 
 import os
+import string
 import subprocess
+import textwrap
 
 from telekinesis import aports
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
@@ -203,15 +205,56 @@ def mkimage_grubusb_initramfs(
         cleandockervol,
         dangerous_no_clean_tmp_dir,
     )
+
+    psyopsOS_apk_repositories = textwrap.dedent(
+        f"""\
+        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main
+        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community
+        @edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main
+        @edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community
+        @edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing
+        https://psyops.micahrl.com/apk/v{alpine_version}/psyopsOS
+        """
+    ).strip()
+    with (tkconfig.artifacts.root / "psyopsOS.repositories").open("w") as f:
+        f.write(psyopsOS_apk_repositories)
+
+    apk_cache_list = []
+    with (tkconfig.repopaths.root / "psyopsOS" / "os-overlay" / "etc" / "apk" / "world").open("r") as f:
+        apk_cache_list += f.read().splitlines()
+    with (tkconfig.repopaths.root / "psyopsOS" / "os-overlay" / "etc" / "apk" / "available").open("r") as f:
+        apk_cache_list += f.read().splitlines()
+
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+        # Add the local copy of the psyopsOS repository to the list of repositories in the container.
+        # This means that when we do "apk cache download" below,
+        # it will be able to find copies of psyopsOS-base and progfiguration_blacksite on local disk.
         initdir = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init")
         make_grubusb_os_script = os.path.join(
             builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-os.sh"
         )
+        psyopsOS_world = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/world")
+        psyopsOS_available = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/available")
+        repositories_file = os.path.join(builder.in_container_artifacts_dir, "psyopsOS.repositories")
         in_container_build_cmd = [
+            "set -x",
+            # Now cache the packages we need to build the image.
+            # This copies them to /var/cache/apk in the container.
+            # It's a little inefficient to copy them,
+            # but it's worrth it so we can mount /var/cache/apk inside the initramfs chroot later.
+            # We rely on the host's artifacts/deaddrop/apk being added to /etc/apk/repositories by the Dockerfile
+            # so that this cache step can see apks built locally.
+            f"sudo apk cache download alpine-base linux-lts linux-firmware {' '.join(apk_cache_list)}",
+            "sudo apk cache download progfiguration_blacksite",
+            "uname -a",
+            "apk --print-arch",
+            "cat /etc/apk/repositories",
+            "ls -alF /home/build/artifacts/deaddrop/apk",
+            "ls -alF /home/build/artifacts/deaddrop/apk/v3.18/psyopsOS/x86_64",
+            "exit",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"{make_grubusb_os_script} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
+            f"sudo -E {make_grubusb_os_script} --apk-packages-file {psyopsOS_world} --apk-packages-file {psyopsOS_available} --apk-repositories {repositories_file} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
         ]
         builder.run_docker(in_container_build_cmd)
         subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)

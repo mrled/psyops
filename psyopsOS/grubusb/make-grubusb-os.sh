@@ -5,9 +5,9 @@ script=$(basename "$0")
 
 # Default argument values
 apk_keys_dir=/etc/apk/keys
+apk_local_repo=
 apk_packages=
 apk_repos_file=/etc/apk/repositories
-arch=$(apk --print-arch)
 features=
 initdir=
 kflavor=lts
@@ -18,17 +18,22 @@ usage() {
 $script: Make kernel, initramfs, etc for psyopsOS grubusb
 Usage: $script [-h]
 
+This script must be run by root.
+
 ARGUMENTS:
     -h                      Show this help message
+    --apk-local-repo        Local repository path to use (optional)
+                            Will be mounted into the rootfs during package
+                            installation and used for apk add,
+                            but not be copied to initramfs repositories file
     --apk-keys-dir          Directory containing signing keys
                             Default: "$apk_keys_dir"
     --apk-packages          Packages to install
     --apk-packages-file     File containing packages to install;
                             may be specified more than once
-    --apk-repositories      Repositories file to use
+    --apk-repositories      Repositories file to use;
+                            will be copied to initramfs
                             Default: "$apk_repos_file"
-    --arch                  Architecture to build for
-                            Default: the system arch: "$arch"
     --kernel-flavor         Kernel flavor to use
                             Default: "$kflavor"
     --mkinitfs-features     Generate initrd with these mkinitfs features
@@ -37,8 +42,12 @@ ARGUMENTS:
     --psyopsOS-init-dir     Directory containing psyopsOS initramfs files
                             (required)
 
+ENVIRONMENT VARIABLES:
+    PACKAGER_PRIVKEY        Path to the packager private key
+    PACKAGER_PUBKEY         Path to the packager public key
+
 FILES:
-    We require abuild configuration to contain the packager signing key.
+    We look in abuild configuration for the packager signing key.
         /etc/abuild.conf
         ~/.abuild/abuild.conf
 
@@ -56,10 +65,10 @@ while test $# -gt 0; do
     case "$1" in
     -h|--help) usage; exit 0;;
     --apk-keys-dir) apk_keys_dir="$2"; shift 2;;
+    --apk-local-repo) apk_local_repo="$2"; shift 2;;
     --apk-packages) apk_packages="$2"; shift 2;;
     --apk-packages-file) apk_packages="$apk_packages $(cat "$2")"; shift 2;;
     --apk-repositories) apk_repos_file="$2"; shift 2;;
-    --arch) arch="$2"; shift 2;;
     --kernel-flavor) kflavor="$2"; shift 2;;
     --mkinitfs-features) features="$2"; shift 2;;
     --outdir) outdir="$2"; shift 2;;
@@ -75,11 +84,24 @@ if [ -z "$initdir" ] || [ -z "$outdir" ]; then
     exit 1
 fi
 
+if [ "$(id -u)" != 0 ]; then
+    echo "This script must be run by root" >&2
+    exit 1
+fi
+
 # Make a temporary working directory
 workdir=/tmp/make-grubusb-kernel.$$
 mkdir -p "$workdir"
 
 cleanup() {
+    # Unmount any filesystems mounted inside the workdir
+    while read -r mount ; do
+        mountpoint=$(echo "$mount" | cut -d' ' -f2)
+        case "$mountpoint" in
+            "$workdir"/*) umount "$mountpoint" ;;
+        esac
+    done </proc/mounts
+    # Remove the temporary workdir
     rm -rf "$workdir"
 }
 trap cleanup EXIT
@@ -110,7 +132,14 @@ features="base squashfs $features"
 rooted_apk() {
     cmd="$1"
     shift
-    apk $cmd -p $rootfs --arch "$arch" --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" "$@"
+    apk $cmd -p $rootfs --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" "$@"
+}
+
+# Run apk in the rootfs via chroot
+chrooted_apk() {
+    cmd="$1"
+    shift
+    chroot $rootfs /sbin/apk $cmd ${apk_local_repo:+-X} ${apk_local_repo} "$@"
 }
 
 # Extract kernel modules and make module dependency list
@@ -176,7 +205,7 @@ make_modloop() {
         done
     fi
 
-    case $arch in
+    case $(apk --print-arch) in
         armhf) mksfs="-Xbcj arm" ;;
         armv7|aarch64) mksfs="-Xbcj arm,armthumb" ;;
         x86|x86_64) mksfs="-Xbcj x86" ;;
@@ -245,13 +274,39 @@ EOF
 mkdir -p "$outdir"
 
 # Creates APKINDEX etc in the rootfs
-rooted_apk add --initdb --update-cache
+rooted_apk add --initdb #--update-cache
 
-# Install packages
-# Running this with --no-scripts still seems to run pre-install scripts, can that be right?
-# I notice trying to install nebula-openrc fails bc it creates a user on the host system,
-# ... not the rootfs.
-rooted_apk add --no-scripts $initial_apk_packages
+# Install required packages inside the initramfs root filesystem
+# Warning: Installing packages --no-scripts still seems to run pre-install scripts, can that be right?
+# I notice trying to install nebula-openrc right here fails bc it creates a user on the host system, not the rootfs.
+# For now, just install required initial packages here.
+#rooted_apk add --no-scripts $initial_apk_packages
+
+# chroot into the rootfs and install the rest of the packages; this will run scripts
+# chroot requires docker run --privileged=true
+# We need to use an APK cache both inside and outside the chroot,
+# otherwise we get temp errors from Alpine mirrors telling us to back off.
+mount -t proc none "$rootfs"/proc
+mkdir -p "$rootfs"/etc/apk/keys
+cp "$apk_keys_dir"/* "$rootfs"/etc/apk/keys/
+cp "$apk_repos_file" "$rootfs"/etc/apk/repositories
+mount -o bind /var/cache/apk "$rootfs"/var/cache/apk
+if test -n "$apk_local_repo"; then
+    mount -o bind "$apk_local_repo" "$rootfs"/$apk_local_repo
+fi
+ln -s /var/cache/apk "$rootfs"/etc/apk/cache
+# chroot $rootfs /bin/sh -c "apk update"
+rooted_apk add ${apk_local_repo:+-X} ${apk_local_repo} alpine-base
+chroot $rootfs /bin/sh -c "ls -alF /var/cache/apk/"
+# chroot $rootfs /sbin/apk update
+# chroot $rootfs /sbin/apk add alpine-base
+chroot $rootfs /sbin/apk add ${apk_local_repo:+-X} ${apk_local_repo} --no-scripts linux-$kflavor linux-firmware
+chroot $rootfs /sbin/apk add ${apk_local_repo:+-X} ${apk_local_repo} $apk_packages
+# for pkg in $apk_packages; do
+#     chroot $rootfs /bin/sh -c "apk add $pkg"
+# done
+
+# Copy required files from initramfs filesystem to output directory
 cp "$bootdir"/vmlinuz-$kflavor "$outdir"/kernel
 cp "$bootdir"/config-$kflavor "$outdir"/config
 cp "$bootdir"/System.map-$kflavor "$outdir"/System.map
@@ -274,6 +329,7 @@ make_modloop "$modloop" "$modloopstage" "$modimg" "$modsig_path"
 
 # Make the initramfs
 make_fstab >"$workdir"/fstab
+mkdir -p "$rootfs"/efisys "$rootfs"/a "$rootfs"/b
 patchedinit="$initdir"/initramfs-init.patched.grubusb
 patch -o "$patchedinit" "$initdir"/initramfs-init.orig "$initdir"/initramfs-init.psyopsOS.grubusb.patch
 mkinitfs -s $modsig_path -i "$patchedinit" -q -b $rootfs -F "$features" -f "$workdir"/fstab -o "$outdir"/initramfs $kvers

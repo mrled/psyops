@@ -43,24 +43,26 @@ class TelekinesisConfig:
             self.build = root / "psyopsOS" / "build"
             """The path to the psyopsOS build directory on the host"""
 
-    @dataclass
     class TelekinesisConfigDeaddropNode:
         """Configuration for the deaddrop config node"""
 
-        bucketname: str
-        """The S3 bucket used for psyopsOS and progfiguration_blacksite"""
-        region: str
-        """The S3 region"""
-        onepassword_item: str
-        """The 1Password item for the IAM user that has access to the bucket"""
-        localpath: Path
-        """Path to the local directory that is synced with the bucket"""
-        isodir: Path
-        """Path to the directory containing the ISO image"""
-        isofilename: str
-        """The filename that our mkimage creates"""
-        sqfilename: str
-        """The filename that our mkimage creates"""
+        def __init__(self, artifacts: Path):
+            self.bucketname = "com-micahrl-psyops-http-bucket"
+            """The S3 bucket used for psyopsOS and progfiguration_blacksite"""
+            self.region = "us-east-2"
+            """The S3 region"""
+            self.onepassword_item = "op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer"
+            """The 1Password item for the IAM user that has access to the bucket"""
+            self.localpath = artifacts / "deaddrop"
+            """Path to the local directory that is synced with the bucket"""
+            self.isodir = self.localpath / "iso"
+            """Path to the directory containing the ISO image"""
+            self.apk_repo_root = self.localpath / "apk"
+            """Path to the directory containing the APK repositories (one per Alpine version)"""
+            self.isofilename = "psyopsOScd-psyboot-x86_64.iso"
+            """The filename that our mkimage creates"""
+            self.sqfilename = "psyopsOSsq-psysquash-x86_64.iso"
+            """The filename that our mkimage creates"""
 
     @dataclass
     class TelekinesisBuildcontainerNode:
@@ -104,6 +106,9 @@ class TelekinesisConfig:
         """Configuration for the artifacts node"""
 
         def __init__(self, artroot: Path):
+            self.root = artroot
+            """The path to the artifacts directory on the host, containing build intermediate files and artifacts"""
+
             self.memtest_zipfile = artroot / "memtest.zip"
             """The path to the memtest86+ zipfile"""
             self.memtest64efi = artroot / "memtest64.efi"
@@ -147,15 +152,7 @@ class TelekinesisConfig:
 
     def __init__(self):
         self.repopaths = self.PsyopsRepoPaths(root=self.psyopsroot)
-        self.deaddrop = self.TelekinesisConfigDeaddropNode(
-            bucketname="com-micahrl-psyops-http-bucket",
-            region="us-east-2",
-            onepassword_item="op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer",
-            localpath=self.psyopsroot / "psyopsOS" / "deaddrop" / "replica",
-            isodir=self.psyopsroot / "psyopsOS" / "deaddrop" / "replica" / "iso",
-            isofilename="psyopsOScd-psyboot-x86_64.iso",
-            sqfilename="psyopsOSsq-psysquash-x86_64.iso",
-        )
+        self.deaddrop = self.TelekinesisConfigDeaddropNode(self.repopaths.artifacts)
         self.buildcontainer = self.TelekinesisBuildcontainerNode(
             alpine_version=self.alpine_version,
             dockertag_prefix="psyopsos-builder-",
