@@ -175,8 +175,8 @@ def makeparser(prog=None):
         "--stages",
         nargs="*",
         default=["osdir", "diskimg"],
-        choices=["osdir", "diskimg"],
-        help="The stages to build, comma-separated. Default: %(default)s",
+        choices=["geninitpatch", "osdir", "diskimg"],
+        help="The stages to build, comma-separated. Default: %(default)s. geninitpatch: Generate the initramfs-init patch. osdir: Build the OS directory. diskimg: Build the disk image from the osdir.",
     )
 
     # The buildpkg subcommand
@@ -223,7 +223,6 @@ def main():
 
     if parsed.debug:
         print(f"Arguments: {parsed}")
-        logging.setLevel("DEBUG")
         sys.excepthook = idb_excepthook
 
     if parsed.action == "showconfig":
@@ -286,6 +285,17 @@ def main():
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
         elif parsed.mkimage_action == "grubusb":
+            if "geninitpatch" in parsed.stages:
+                initdir = tkconfig.repopaths.root / "psyopsOS" / "grubusb" / "initramfs-init"
+                init_patch = initdir / "initramfs-init.psyopsOS.grubusb.patch"
+                with init_patch.open("w") as f:
+                    subprocess.run(["ls", "-larth"], cwd=initdir, check=True)
+                    subprocess.run(
+                        ["diff", "-u", "initramfs-init.orig", "initramfs-init.patched.grubusb"],
+                        cwd=initdir,
+                        check=True,
+                        stdout=f,
+                    )
             if "osdir" in parsed.stages:
                 mkimage_grubusb_initramfs(
                     skip_build_apks=parsed.skip_build_apks,
