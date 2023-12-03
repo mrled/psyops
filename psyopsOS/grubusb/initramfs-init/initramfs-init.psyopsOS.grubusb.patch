@@ -1,10 +1,10 @@
---- psyopsOS/grubusb/initramfs-init/initramfs-init.orig	2023-11-27 19:13:30
-+++ psyopsOS/grubusb/initramfs-init/initramfs-init.patched.wip	2023-11-27 22:51:04
+--- initramfs-init.orig	2023-12-03 13:20:35
++++ initramfs-init.patched.grubusb	2023-12-03 17:50:11
 @@ -1,4 +1,6 @@
  #!/bin/sh
 +
 +set -x
-
+ 
  # this is the init script version
  VERSION=3.8.1-r0
 @@ -389,6 +391,11 @@
@@ -17,12 +17,12 @@
 +		continue
 +		;;
  	esac
-
+ 
  	for i in $myopts; do
 @@ -530,6 +537,38 @@
  	setup_nbd || echo "Failed to setup nbd device."
  fi
-
+ 
 +if [ -n "$KOPT_psyopsos" ]; then
 +	ebegin "Configuring for psyopsOS"
 +
@@ -38,9 +38,9 @@
 +	# In squashfs-based psyopsOS, the partition we're booting from is passed as psyopsos=LABEL.
 +	psyopsOS_boot_device=$(findfs LABEL="$KOPT_psyopsos")
 +	if [ $? != 0 ]; then eend 1 "Failed to find psyopsOS boot device with label $KOPT_psyopsos"; fi
-+	mkdir -p $sysroot/psyopsOS-boot
-+	$MOCK mount -t ext4 -o ro $psyopsOS_boot_device $sysroot/psyopsOS-boot
-+	if [ $? != 0 ]; then eend 1 "Failed to mount psyopsOS boot device with label $KOPT_psyopsos to path $sysroot/psyopsOS-boot"; fi
++	mkdir -p $sysroot/boot
++	$MOCK mount -t ext4 -o ro $psyopsOS_boot_device $sysroot/boot
++	if [ $? != 0 ]; then eend 1 "Failed to mount psyopsOS boot device with label $KOPT_psyopsos to path $sysroot/boot"; fi
 +
 +	KOPT_rootfstype="squashfs"
 +
@@ -50,26 +50,11 @@
 +	else
 +		case "$KOPT_rootflags" in *loop*) ;; *) KOPT_rootflags="$KOPT_rootflags,loop" ;; esac
 +	fi
-+	KOPT_root="$sysroot/psyopsOS-boot/squashfs"
++	KOPT_root="$sysroot/boot/squashfs"
 +
 +	eend 0
 +fi
 +
  # zpool reports /dev/zfs missing if it can't read /etc/mtab
  ln -s /proc/mounts "$ROOT"/etc/mtab
-
-@@ -564,6 +603,14 @@
- 		fi
- 	fi
-
-+	for argument in $(cat /proc/cmdline); do
-+		case "$argument" in
-+		*rootflags=*)
-+			rootflags="${argument#*=}"
-+			;;
-+		esac
-+	done
-+
- 	if [ "$KOPT_overlaytmpfs" = "yes" ]; then
- 		# Create mountpoints
- 		mkdir -p /media/root-ro /media/root-rw $sysroot/media/root-ro \
+ 
