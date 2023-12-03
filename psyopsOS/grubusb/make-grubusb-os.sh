@@ -93,16 +93,20 @@ fi
 workdir=/tmp/make-grubusb-kernel.$$
 mkdir -p "$workdir"
 
-cleanup() {
-    # The unmounting is so verbose, don't xtrace it
-    set +x
-    # Unmount any filesystems mounted inside the workdir
+# Unmount any filesystems mounted inside the workdir
+umount_workdir_submounts() {
     while read -r mount ; do
         mountpoint=$(echo "$mount" | cut -d' ' -f2)
         case "$mountpoint" in
             "$workdir"/*) umount "$mountpoint" ;;
         esac
     done </proc/mounts
+}
+
+cleanup() {
+    # The unmounting is so verbose, don't xtrace it
+    set +x
+    umount_workdir_submounts
     # Remove the temporary workdir
     rm -rf "$workdir"
 }

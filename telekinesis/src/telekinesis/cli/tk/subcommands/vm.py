@@ -39,9 +39,8 @@ def get_ovmf():
         subprocess.run(docker_run_cmd, check=True)
 
 
-def vm_grubusb():
+def vm_grubusb_img():
     """Run the grubusb image in qemu"""
-    get_ovmf()
     subprocess.run(
         [
             "qemu-system-x86_64",
@@ -59,6 +58,31 @@ def vm_grubusb():
             f"if=pflash,format=raw,file={tkconfig.artifacts.ovmf_extracted_vars.as_posix()}",
             "-drive",
             f"format=raw,file={tkconfig.artifacts.grubusb_img.as_posix()}",
+        ],
+        check=True,
+        stdin=sys.stdin,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
+
+
+def vm_grubusb_os():
+    """Run the grubusb OS directory in qemu"""
+    subprocess.run(
+        [
+            "qemu-system-x86_64",
+            "-nic",
+            "user",
+            "-serial",
+            "stdio",
+            # "-display",
+            # "none",
+            "-m",
+            "2048",
+            "-kernel",
+            f"{tkconfig.artifacts.grubusb_os_dir / 'kernel'}",
+            "-initrd",
+            f"{tkconfig.artifacts.grubusb_os_dir / 'initramfs'}",
         ],
         check=True,
         stdin=sys.stdin,

@@ -21,7 +21,7 @@ from telekinesis.cli.tk.subcommands.mkimage import (
     mkimage_grubusbsq_initramfs,
     mkimage_grubusbsq_squashfs,
 )
-from telekinesis.cli.tk.subcommands.vm import get_ovmf, vm_grubusb
+from telekinesis.cli.tk.subcommands.vm import get_ovmf, vm_grubusb_img, vm_grubusb_os
 from telekinesis.config import getsecret, tkconfig
 from telekinesis.rget import rget
 
@@ -173,7 +173,9 @@ def makeparser(prog=None):
     )
     sub_mkimage_sub_grubusb.add_argument(
         "--stages",
-        default="osdir,diskimg",
+        nargs="*",
+        default=["osdir", "diskimg"],
+        choices=["osdir", "diskimg"],
         help="The stages to build, comma-separated. Default: %(default)s",
     )
 
@@ -201,6 +203,10 @@ def makeparser(prog=None):
     sub_vm_sub_grubusb = sub_vm_subparsers.add_parser(
         "grubusb",
         help="Run the grubusb image in qemu",
+    )
+    sub_vm_sub_grubusb = sub_vm_subparsers.add_parser(
+        "osdir",
+        help="Run the kernel/initramfs from the osdir in qemu without building a grubusb image with EFI and A/B partitions",
     )
     sub_vm_sub_grubusb.add_argument(
         "--grubusb-image",
@@ -298,9 +304,11 @@ def main():
         else:
             parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
     elif parsed.action == "vm":
-        if parsed.vm_action == "grubusb":
+        if parsed.vm_action == "diskimg":
             get_ovmf()
-            vm_grubusb()
+            vm_grubusb_img()
+        elif parsed.vm_action == "osdir":
+            vm_grubusb_os()
         else:
             parser.error(f"Unknown vm action: {parsed.vm_action}")
     elif parsed.action == "buildpkg":

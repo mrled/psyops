@@ -19,6 +19,9 @@ The current system is great but it has a few downsides.
 - The ISO image does a couple of convenient things I could replicate: apk package cache and modloop
 - apk package cache allows having packages available that aren't installed. If I'm regenerating initramfs anyway I guess I don't need this, I can just install the packages I need in that. OTOH, having them in a separate package cache is even easier; it lets me install them in a normal alpine way with apkovl.
 - modloop requires some investigation, not sure how the iso script does that yet.
+- HOWEVER, the entire decompressed initramfs is kept in RAM, while a squashfs root only loads into RAM what is actually being used (same as when loading from a normal r/w filesystem like ext4, i guess).
+- In other systems I've worked on, the machine has no local storage (and is not using network storage like NFS root), and when it boots, iPXE pulls the kernel and initrd into RAM via HTTP. In this system, we do have local storage, so we ought to use it to offload RAM.
+- Experimenting 20231203, I found that adding all the APKs from my psyopsOS world file to initrd and running cpio|gz resulted in a 590MB compressed initrd and a 1.4GB uncompressed directory. That's just a quick and dirty test, and could be pared down, but it's an order of magnitude worse than the default tiny initrd of 58MB compressed / 189MB uncompressed.
 
 ### apkovl support without modifying initramfs
 
