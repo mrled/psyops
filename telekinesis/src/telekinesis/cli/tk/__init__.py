@@ -175,8 +175,8 @@ def makeparser(prog=None):
         "--stages",
         nargs="*",
         default=["osdir", "diskimg"],
-        choices=["geninitpatch", "osdir", "diskimg"],
-        help="The stages to build, comma-separated. Default: %(default)s. geninitpatch: Generate the initramfs-init patch. osdir: Build the OS directory. diskimg: Build the disk image from the osdir.",
+        choices=["mkinitpatch", "applyinitpatch", "osdir", "diskimg"],
+        help="The stages to build, comma-separated. Default: %(default)s. mkinitpatch: diff -u initramfs-init.orig initramfs.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch. applyinitpatch: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch. osdir: Build the OS directory. diskimg: Build the disk image from the osdir.",
     )
 
     # The buildpkg subcommand
@@ -285,9 +285,9 @@ def main():
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
         elif parsed.mkimage_action == "grubusb":
-            if "geninitpatch" in parsed.stages:
-                initdir = tkconfig.repopaths.root / "psyopsOS" / "grubusb" / "initramfs-init"
-                init_patch = initdir / "initramfs-init.psyopsOS.grubusb.patch"
+            initdir = tkconfig.repopaths.root / "psyopsOS" / "grubusb" / "initramfs-init"
+            init_patch = initdir / "initramfs-init.psyopsOS.grubusb.patch"
+            if "mkinitpatch" in parsed.stages:
                 with init_patch.open("w") as f:
                     subprocess.run(["ls", "-larth"], cwd=initdir, check=True)
                     subprocess.run(
@@ -296,6 +296,12 @@ def main():
                         check=True,
                         stdout=f,
                     )
+            if "applyinitpatch" in parsed.stages:
+                subprocess.run(
+                    ["patch", "-o", "initramfs-init.patched.grubusb", "initramfs-init.orig", init_patch.as_posix()],
+                    cwd=initdir,
+                    check=True,
+                )
             if "osdir" in parsed.stages:
                 mkimage_grubusb_initramfs(
                     skip_build_apks=parsed.skip_build_apks,
