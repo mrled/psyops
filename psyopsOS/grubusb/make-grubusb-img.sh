@@ -8,8 +8,6 @@ outimg=
 loopdev=/dev/loop0
 efisize=128
 psyabsize=1024
-kernel=/boot/vmlinuz-lts
-initrd=/boot/initramfs-lts
 memtest=
 
 # Constant values
@@ -20,26 +18,25 @@ label_psyb=psyopsOS-B # max 16 chars, case sensitive
 usage() {
     cat <<ENDUSAGE
 $script: Make a bootable USB drive for psyopsOS
-Usage: $script [-h] [-l LOOPDEV] [-e EFISIZE] [-s psyabsize] [-k KERNEL] [-i INITRD] [-m MEMTEST] -o OUTPUTIMG
+Usage: $script [-h] [-l LOOPDEV] [-e EFISIZE] [-s PSYOPSOSSIZE] [-m MEMTEST] -p PSYOPSOSDIR -o OUTPUTIMG
 
 ARGUMENTS:
     -h                      Show this help message
     -l LOOPDEV              Loop device to use (default: "$loopdev")
     -e EFISIZE              Size in MiB of the EFI partition
                             (default: "$efisize")
-    -s PSYABSIZE            Size in MiB of EACH of the psyopsOS-A/B partitions
+    -s PSYOPSOSIZE          Size in MiB of EACH of the psyopsOS-A/B partitions
                             (default: "$psyabsize")
-    -k KERNEL               Path to the kernel file to use (default: "$kernel")
-    -i INITRD               Path to the initrd file to use (default: "$initrd")
     -m MEMTEST              Path to the memtest86+ binary to use (optional)
-    -o OUTPUTIMG            Path to the image file to create (REQUIRED)
+    -p PSYOPSOSDIR          Directory containing psyopsOS files to use (required)
+                            Should contain kernel, initramfs, modloop, etc; see below.
+    -o OUTPUTIMG            Path to the image file to create (required)
 
 * This script requires a privileged container (docker run --privileged=true)
 * Expects these packages:
     * dosfstools (a FAT32 partition is required for EFI boot)
     * e2fsprogs (we use ext4 for its resilience to power loss for OS images)
     * grub-efi
-    * linux-lts: optional, provides the default kernel/initrd
     * lsblk
     * parted
 * Creates an output image with a GPT partition table:
@@ -51,6 +48,15 @@ ARGUMENTS:
 * To get the memtest binary, download the "Pre-Compiled Bootable Binary (.zip)"
   file from <https://memtest.org/>, extract it, and pass the "memtest64.efi"
   file to this script with the -m option.
+* The PSYOPSOSDIR must contain the following files:
+    * kernel
+    * initramfs
+    * modloop
+* The PSYOPSOSDIR may contain additional files:
+    * DTB files (if your platform/kernel uses them)
+    * System.map for kernel debugging
+    * config showing the kernel config
+    * any other files you want to include in the OS image
 
 ENDUSAGE
 }
@@ -61,9 +67,8 @@ while test $# -gt 0; do
     -l) loopdev="$2"; shift 2;;
     -e) efisize="$2"; shift 2;;
     -s) psyabsize="$2"; shift 2;;
-    -k) kernel="$2"; shift 2;;
-    -i) initrd="$2"; shift 2;;
     -m) memtest="$2"; shift 2;;
+    -p) psyosdir="$2"; shift 2;;
     -o) outimg="$2"; shift 2;;
     -*) echo "Unknown option: $1; see '$script -h'" >&2; exit 1;;
     *) echo "Unknown argument: $1; see '$script -h'" >&2; exit 1;;
@@ -146,8 +151,7 @@ losetup_mknod
 mkfs.ext4 -L "$label_psya" "$part_psya"
 mkdir -p /mnt/grubusb/psya
 mount "$part_psya" /mnt/grubusb/psya
-cp "$kernel" /mnt/grubusb/psya/kernel
-cp "$initrd" /mnt/grubusb/psya/initramfs
+cp -r "$psyosdir"/* /mnt/grubusb/psya
 
 # Set up the psyopsOS-B partition
 # This contains the same files as psyopsOS-A so either works out of the box,
@@ -155,8 +159,7 @@ cp "$initrd" /mnt/grubusb/psya/initramfs
 mkfs.ext4 -L "$label_psyb" "$part_psyb"
 mkdir -p /mnt/grubusb/psyb
 mount "$part_psyb" /mnt/grubusb/psyb
-cp "$kernel" /mnt/grubusb/psyb/kernel
-cp "$initrd" /mnt/grubusb/psyb/initramfs
+cp -r "$psyosdir"/* /mnt/grubusb/psyb
 
 # Set up the EFI system partition
 mkfs.fat -F32 -n "$label_efisys" "$part_efisys"
@@ -242,3 +245,5 @@ menuentry "Exit GRUB" {
     exit
 }
 EOF
+
+echo "$script finished successfully"

@@ -14,9 +14,9 @@ def get_ovmf():
 
     TODO: we probably need to build this ourselves, unless Alpine packages it in some normal way in the future.
     """
-    rget(tkconfig.ovmf.url, tkconfig.ovmf.artifact)
-    if not tkconfig.ovmf.extracted_code.exists() or not tkconfig.ovmf.extracted_vars.exists():
-        in_container_rpm_path = f"/work/{tkconfig.ovmf.artifact.name}"
+    rget(tkconfig.artifacts.ovmf_url, tkconfig.artifacts.ovmf_rpm)
+    if not tkconfig.artifacts.ovmf_extracted_code.exists() or not tkconfig.artifacts.ovmf_extracted_vars.exists():
+        in_container_rpm_path = f"/work/{tkconfig.artifacts.ovmf_rpm.name}"
         extract_rpm_script = " && ".join(
             [
                 "apk add rpm2cpio",
@@ -54,11 +54,11 @@ def vm_grubusb():
             "-m",
             "2048",
             "-drive",
-            f"if=pflash,format=raw,readonly=on,file={tkconfig.ovmf.extracted_code.as_posix()}",
+            f"if=pflash,format=raw,readonly=on,file={tkconfig.artifacts.ovmf_extracted_code.as_posix()}",
             "-drive",
-            f"if=pflash,format=raw,file={tkconfig.ovmf.extracted_vars.as_posix()}",
+            f"if=pflash,format=raw,file={tkconfig.artifacts.ovmf_extracted_vars.as_posix()}",
             "-drive",
-            f"format=raw,file={tkconfig.artifacts.grubusbimg.as_posix()}",
+            f"format=raw,file={tkconfig.artifacts.grubusb_img.as_posix()}",
         ],
         check=True,
         stdin=sys.stdin,

@@ -204,21 +204,17 @@ def mkimage_grubusb_initramfs(
         dangerous_no_clean_tmp_dir,
     )
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        initramfs = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_initramfs.name)
-        initdir = os.path.join(builder.in_container_artifacts_dir, "psyopsOS/grubusb/initramfs-init")
-        init_orig = os.path.join(initdir, "initramfs-init.orig")
-        init_patch = os.path.join(initdir, "initramfs-init.psyopsOS.grubusb.patch")
-        init_patched = os.path.join(initdir, "initramfs-init.patched")
+        initdir = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init")
+        make_grubusb_os_script = os.path.join(
+            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-os.sh"
+        )
         in_container_build_cmd = [
-            # Get the kernel version of the lts kernel from /lib/modules
-            # it should only have one match in it because we're in an ephemeral container
-            "modvers=$(cd /lib/modules && echo *-lts)",
-            # Patch the initramfs-init script
-            f"patch -o '{init_patched}' '{init_orig}' '{init_patch}'",
-            f"sudo mkinitfs -K -o '{initramfs}' -i '{init_patched}' $modvers",
+            # We don't have to pass the architecture to this script,
+            # because we should be running in a container with the right architecture.
+            f"{make_grubusb_os_script} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
         ]
         builder.run_docker(in_container_build_cmd)
-        subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_initramfs], check=True)
+        subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)
 
 
 def mkimage_grubusb_diskimg(
@@ -235,10 +231,11 @@ def mkimage_grubusb_diskimg(
         dangerous_no_clean_tmp_dir=dangerous_no_clean_tmp_dir,
     )
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb.sh")
-        initramfs = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_initramfs.name)
+        make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-img.sh")
+        psyopsosdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)
+        memtest64efi = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.memtest64efi.name)
         outimg = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_img.name)
         in_container_build_cmd = [
-            f"sudo sh {make_grubusb_script} -k /boot/vmlinuz-lts -i {initramfs} -o {outimg} -m {tkconfig.artifacts.memtest64efi}",
+            f"sudo sh {make_grubusb_script} -m {memtest64efi} -p {psyopsosdir} -o {outimg}",
         ]
         builder.run_docker(in_container_build_cmd)

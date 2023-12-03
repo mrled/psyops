@@ -100,19 +100,6 @@ class TelekinesisConfig:
             """The Docker image tag of the build container"""
             return f"{self.dockertag_prefix}{self.alpine_version}"
 
-    @dataclass
-    class TelekinesisConfigOVMFNode:
-        """Configuration for the OVMF node"""
-
-        url: str
-        """The URL to download the OVMF firmware from"""
-        artifact: Path
-        """The path to the downloaded RPM artifact"""
-        extracted_code: Path
-        """The path to the extracted OVMF_CODE-pure-efi.fd file"""
-        extracted_vars: Path
-        """The path to the extracted OVMF_VARS-pure-efi.fd file"""
-
     class TelekinesisConfigArtifactsNode:
         """Configuration for the artifacts node"""
 
@@ -121,6 +108,15 @@ class TelekinesisConfig:
             """The path to the memtest86+ zipfile"""
             self.memtest64efi = artroot / "memtest64.efi"
             """The path to the memtest86+ EFI binary"""
+
+            self.ovmf_url = "https://www.kraxel.org/repos/jenkins/edk2/edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm"
+            """The URL to download the OVMF firmware from"""
+            self.ovmf_rpm = artroot / "edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm"
+            """The path to the downloaded OVMF RPM artifact"""
+            self.ovmf_extracted_code = artroot / "ovmf-extracted" / "usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd"
+            """The path to the extracted OVMF_CODE-pure-efi.fd file"""
+            self.ovmf_extracted_vars = artroot / "ovmf-extracted" / "usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd"
+            """The path to the extracted OVMF_VARS-pure-efi.fd file"""
 
             self.grubusbsq_img = artroot / "psyopsOS.grubusbsq.img"
             """The path to the grubusbsq disk image"""
@@ -131,10 +127,13 @@ class TelekinesisConfig:
 
             self.grubusb_img = artroot / "psyopsOS.grubusb.img"
             """The path to the grubusb disk image"""
-            self.grubusb_initramfs = artroot / "psyopsOS.grubusb.initramfs"
-            """The path to the grubusb initramfs"""
-            self.grubusb_squashfs = artroot / "psyopsOS.grubusb.squashfs"
-            """The path to the grubusb squashfs image"""
+
+            self.grubusb_os_dir = artroot / "psyopsOS.grubusb.os"
+            """The path to the grubusb OS directory.
+            Contains a single psyopsOS version for a grubusb image (either A or B), including
+            kernel, initramfs, System.map, config, modloop, and squashfs files,
+            and a boot/ directory which may contain DTB files if appropriate for the platform.
+            """
 
     # Class variables
 
@@ -148,7 +147,6 @@ class TelekinesisConfig:
 
     def __init__(self):
         self.repopaths = self.PsyopsRepoPaths(root=self.psyopsroot)
-        artdir = self.repopaths.artifacts
         self.deaddrop = self.TelekinesisConfigDeaddropNode(
             bucketname="com-micahrl-psyops-http-bucket",
             region="us-east-2",
@@ -170,12 +168,6 @@ class TelekinesisConfig:
             architecture="x86_64",
             mkimage_iso_profile="psyopsOScd",
             mkimage_squashfs_profile="psyopsOSsq",
-        )
-        self.ovmf = self.TelekinesisConfigOVMFNode(
-            url="https://www.kraxel.org/repos/jenkins/edk2/edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm",
-            artifact=artdir / "edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm",
-            extracted_code=artdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd",
-            extracted_vars=artdir / "ovmf-extracted/usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd",
         )
         self.artifacts = self.TelekinesisConfigArtifactsNode(self.repopaths.artifacts)
 

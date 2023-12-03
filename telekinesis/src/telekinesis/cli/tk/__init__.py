@@ -14,11 +14,12 @@ from telekinesis import deaddrop
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
 from telekinesis.cli.tk.subcommands.mkimage import (
-    mkimage_grubusbsq_initramfs,
     mkimage_grubusb_diskimg,
+    mkimage_grubusb_initramfs,
     mkimage_iso,
-    mkimage_grubusbsq_squashfs,
     mkimage_grubusbsq_diskimg,
+    mkimage_grubusbsq_initramfs,
+    mkimage_grubusbsq_squashfs,
 )
 from telekinesis.cli.tk.subcommands.vm import get_ovmf, vm_grubusb
 from telekinesis.config import getsecret, tkconfig
@@ -172,7 +173,7 @@ def makeparser(prog=None):
     )
     sub_mkimage_sub_grubusb.add_argument(
         "--stages",
-        default="initramfs,grubusb",
+        default="osdir,diskimg",
         help="The stages to build, comma-separated. Default: %(default)s",
     )
 
@@ -279,15 +280,16 @@ def main():
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
         elif parsed.mkimage_action == "grubusb":
-            if "initramfs" in parsed.stages:
-                mkimage_grubusbsq_initramfs(
+            if "osdir" in parsed.stages:
+                mkimage_grubusb_initramfs(
                     skip_build_apks=parsed.skip_build_apks,
                     rebuild=parsed.rebuild,
                     interactive=parsed.interactive,
                     cleandockervol=parsed.clean,
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
-            if "grubusb" in parsed.stages:
+            if "diskimg" in parsed.stages:
+                get_memtest()
                 mkimage_grubusb_diskimg(
                     interactive=parsed.interactive,
                     cleandockervol=parsed.clean,

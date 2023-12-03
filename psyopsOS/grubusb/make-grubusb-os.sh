@@ -87,7 +87,7 @@ trap cleanup EXIT
 # Derived argument values
 rootfs=$workdir/root
 bootdir=$rootfs/boot
-apk_packages="$apk_packages alpine-base linux-$kflavor linux-firmware"
+initial_apk_packages="alpine-base linux-$kflavor linux-firmware"
 
 # Read external configuration
 test -f /etc/abuild.conf && . /etc/abuild.conf
@@ -190,7 +190,9 @@ make_modloop() {
 
 # Include the device tree blobs (used in e.g. ARM)
 include_dtb() {
+    _outdir=$1
     dtbdir=
+    # TODO: Why do we look in these directories? Are some of these deprecated?
     for possible_dtbdir in \
         $rootfs/boot/dtbs-$kflavor \
         $rootfs/usr/lib/linux-$kvers \
@@ -198,7 +200,7 @@ include_dtb() {
     do
         if test -d "$possible_dtbdir"; then
             dtbdir="$possible_dtbdir"
-            echo "Found dtbdir: $dtbdir" >&2
+            echo "Found possible dtbdir: $dtbdir" >&2
             break
         fi
     done
@@ -207,16 +209,23 @@ include_dtb() {
         return 0
     fi
 
+    # The upstream update-kernel script differentiates between RPi and non-RPi in this way.
+    # However, I think that if we boot GRUB on the RPi, this may not be important?
+    # TODO: test RPi booting with this disabled.
+    case "$kflavor" in
+        rpi*) _dtb="$_outdir/" ;;
+        *)    _dtb="$_outdir/boot/dtbs-$kflavor" ;;
+    esac
 
     _opwd=$PWD
-    case "$kflavor" in
-        rpi*) _dtb="$outdir/" ;;
-        *)    _dtb="$outdir/boot/dtbs-$kflavor" ;;
-    esac
     mkdir -p "$_dtb"
     _dtb=$(realpath "$_dtb")
     cd "$dtbdir"
+
+    # Using find|cpio this way copies just the dtb/dtbo files to the destination directory
+    # and preserves directory structure
     find -type f \( -name "*.dtb" -o -name "*.dtbo" \) | cpio -pudm "$_dtb"
+
     cd "$_opwd"
 }
 
@@ -242,7 +251,10 @@ rooted_apk add --initdb --update-cache
 # Running this with --no-scripts still seems to run pre-install scripts, can that be right?
 # I notice trying to install nebula-openrc fails bc it creates a user on the host system,
 # ... not the rootfs.
-rooted_apk add --no-scripts $apk_packages
+rooted_apk add --no-scripts $initial_apk_packages
+cp "$bootdir"/vmlinuz-$kflavor "$outdir"/kernel
+cp "$bootdir"/config-$kflavor "$outdir"/config
+cp "$bootdir"/System.map-$kflavor "$outdir"/System.map
 
 # Copy pubkey file to rootfs
 mkdir -p "$rootfs"/etc/apk/keys
@@ -256,7 +268,7 @@ make_depmod "$kvers"
 # Create modloop
 modloopstage=$workdir/boot
 modloop=$workdir/modloop
-modimg=modloop-$kflavor
+modimg=modloop
 modsig_path="$workdir"/$modimg.SIGN.RSA.${pubkey##*/}
 make_modloop "$modloop" "$modloopstage" "$modimg" "$modsig_path"
 
@@ -264,16 +276,10 @@ make_modloop "$modloop" "$modloopstage" "$modimg" "$modsig_path"
 make_fstab >"$workdir"/fstab
 patchedinit="$initdir"/initramfs-init.patched.grubusb
 patch -o "$patchedinit" "$initdir"/initramfs-init.orig "$initdir"/initramfs-init.psyopsOS.grubusb.patch
-mkinitfs -s $modsig_path -i "$patchedinit" -q -b $rootfs -F "$features" -f "$workdir"/fstab -o "$outdir"/initramfs-$kflavor $kvers
-
-for file in System.map config vmlinuz; do
-	if [ -f "$bootdir/$file-$kflavor" ]; then
-		cp "$bootdir/$file-$kflavor" $modloopstage
-	else
-		cp "$bootdir/$file" $modloopstage
-	fi
-done
+mkinitfs -s $modsig_path -i "$patchedinit" -q -b $rootfs -F "$features" -f "$workdir"/fstab -o "$outdir"/initramfs $kvers
 
 mv $modloopstage/* "$outdir"
 
-include_dtb
+include_dtb "$outdir"
+
+echo "$script finished successfully"
