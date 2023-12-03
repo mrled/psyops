@@ -130,20 +130,6 @@ features="base squashfs $features"
 
 #### Functions
 
-# Run apk in the rootfs
-rooted_apk() {
-    cmd="$1"
-    shift
-    apk $cmd -p $rootfs --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" "$@"
-}
-
-# Run apk in the rootfs via chroot
-chrooted_apk() {
-    cmd="$1"
-    shift
-    chroot $rootfs /sbin/apk $cmd ${apk_local_repo:+-X} ${apk_local_repo} "$@"
-}
-
 # Extract kernel modules and make module dependency list
 make_depmod() {
     kvers="$1"
@@ -276,7 +262,9 @@ EOF
 mkdir -p "$outdir"
 
 # Creates APKINDEX etc in the rootfs
-rooted_apk add --initdb #--update-cache
+# We don't have to do --update-cache because we mount /var/cache/apk from the container into the rootfs below,
+# and the container has already run apk update and has a populated cache.
+apk add --initdb -p $rootfs --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file"
 
 # Install required packages inside the initramfs root filesystem
 # Warning: Installing packages --no-scripts still seems to run pre-install scripts, can that be right?
@@ -292,22 +280,25 @@ mount -t proc none "$rootfs"/proc
 mkdir -p "$rootfs"/etc/apk/keys
 cp "$apk_keys_dir"/* "$rootfs"/etc/apk/keys/
 cp "$apk_repos_file" "$rootfs"/etc/apk/repositories
+# Mount the apk cache from the container into the rootfs for access in the chroot
+# This is a Docker volume that contains a regular apk cache; see apk-cache(5)
 mount -o bind /var/cache/apk "$rootfs"/var/cache/apk
+ln -s /var/cache/apk "$rootfs"/etc/apk/cache
+# Mount the local repo from the container into the rootfs for access in the chroot
+# This is the directory containing locally-built APK packages, like psyopsOS-base and progfiguration_blacksite
 if test -n "$apk_local_repo"; then
     mkdir -p "$rootfs"/$apk_local_repo
     mount -o bind "$apk_local_repo" "$rootfs"/$apk_local_repo
 fi
-ln -s /var/cache/apk "$rootfs"/etc/apk/cache
-# chroot $rootfs /bin/sh -c "apk update"
-rooted_apk add ${apk_local_repo:+-X} ${apk_local_repo} alpine-base
-chroot $rootfs /bin/sh -c "ls -alF /var/cache/apk/"
-# chroot $rootfs /sbin/apk update
-# chroot $rootfs /sbin/apk add alpine-base
-chroot $rootfs /sbin/apk add ${apk_local_repo:+-X} ${apk_local_repo} --no-scripts linux-$kflavor linux-firmware
-chroot $rootfs /sbin/apk add ${apk_local_repo:+-X} ${apk_local_repo} $apk_packages
-# for pkg in $apk_packages; do
-#     chroot $rootfs /bin/sh -c "apk add $pkg"
-# done
+# alpine-base contains busybox etc. Running scripts here creates busybox symlinks in /bin etc.
+apk add -p $rootfs --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" ${apk_local_repo:+-X $apk_local_repo} alpine-base
+# Now that busybox is installed, we can chroot
+chroot $rootfs /bin/busybox ls -alF /var/cache/apk/
+# Install Linux kernel and firmware, but don't run scripts because we're not in a regular system
+chroot $rootfs /sbin/apk add ${apk_local_repo:+-X $apk_local_repo} --no-scripts linux-$kflavor linux-firmware
+# Install all the Alpine pacakges we want in the initramfs, and do run scripts
+chroot $rootfs /sbin/apk add ${apk_local_repo:+-X $apk_local_repo} $apk_packages
+find $rootfs
 
 # Copy required files from initramfs filesystem to output directory
 cp "$bootdir"/vmlinuz-$kflavor "$outdir"/kernel
