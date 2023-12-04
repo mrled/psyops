@@ -1,7 +1,6 @@
 """The mkimage subcommand"""
 
 import os
-import string
 import subprocess
 import textwrap
 
@@ -89,14 +88,14 @@ def mkimage_iso(
             print(f"{isofile}")
 
 
-def mkimage_grubusbsq_squashfs(
+def mkimage_grubusb_kernel(
     skip_build_apks: bool = False,
     rebuild: bool = False,
     interactive: bool = False,
     cleandockervol: bool = False,
     dangerous_no_clean_tmp_dir: bool = False,
 ):
-    """Make a psyopsOS squashfs image for use with grubusbsq images"""
+    """Make a psyopsOS kernel, initramfs, etc for grubusb images"""
     alpine_version, apkreponame, builder_tag = mkimage_prepare(
         skip_build_apks,
         rebuild,
@@ -104,101 +103,56 @@ def mkimage_grubusbsq_squashfs(
         dangerous_no_clean_tmp_dir,
     )
 
-    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
-        apkrepopath = apkindexpath + "/" + apkreponame
-        in_container_mkimage_cmd_list = [
-            " ".join(
-                [
-                    "sh",
-                    "-x",
-                    "./mkimage.sh",
-                    "--tag",
-                    tkconfig.buildcontainer.sqtag,
-                    "--outdir",
-                    builder.in_container_artifacts_dir,
-                    "--arch",
-                    tkconfig.buildcontainer.architecture,
-                    "--repository",
-                    f"http://dl-cdn.alpinelinux.org/alpine/v{tkconfig.alpine_version}/main",
-                    "--repository",
-                    f"http://dl-cdn.alpinelinux.org/alpine/v{tkconfig.alpine_version}/community",
-                    "--repository",
-                    apkrepopath,
-                    # This would also allow using the remote APK repo, but I don't think that's necessary because of our local replica
-                    # "--repository",
-                    # apkpaths.uri,
-                    "--workdir",
-                    builder.in_container_workdir,
-                    "--profile",
-                    tkconfig.buildcontainer.mkimage_squashfs_profile,
-                ]
-            ),
-        ]
-        in_container_mkimage_cmd = " && ".join(in_container_mkimage_cmd_list)
-        builder.run_docker([in_container_mkimage_cmd])
+    psyopsOS_apk_repositories = textwrap.dedent(
+        f"""\
+        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main
+        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community
+        @edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main
+        @edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community
+        @edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing
+        https://psyops.micahrl.com/apk/v{alpine_version}/psyopsOS
+        """
+    ).strip()
+    with (tkconfig.artifacts.root / "psyopsOS.repositories").open("w") as f:
+        f.write(psyopsOS_apk_repositories)
 
-
-def mkimage_grubusbsq_initramfs(
-    skip_build_apks: bool = False,
-    rebuild: bool = False,
-    interactive: bool = False,
-    cleandockervol: bool = False,
-    dangerous_no_clean_tmp_dir: bool = False,
-):
-    """Make a psyopsOS initramfs image for grubusbsq images"""
-    alpine_version, apkreponame, builder_tag = mkimage_prepare(
-        skip_build_apks,
-        rebuild,
-        cleandockervol,
-        dangerous_no_clean_tmp_dir,
-    )
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        make_initramfs_script = os.path.join(
-            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusbsq-initramfs.sh"
+        # Add the local copy of the psyopsOS repository to the list of repositories in the container.
+        # This means that when we do "apk cache download" below,
+        # it will be able to find copies of psyopsOS-base and progfiguration_blacksite on local disk.
+        initdir = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init")
+        make_grubusb_kernel_script = os.path.join(
+            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-kernel.sh"
         )
-        psyopsOS_init_dir = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init")
-        initramfs = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusbsq_initramfs.name)
-        # by default mkinitfs doesn't include squashfs
-        mkinitfsfeats = "ata,base,ide,scsi,usb,virtio,ext4,squashfs"
+        repositories_file = os.path.join(builder.in_container_artifacts_dir, "psyopsOS.repositories")
+        in_container_local_repo_path = os.path.join(
+            builder.in_container_artifacts_dir, f"deaddrop/apk/v{alpine_version}/psyopsOS"
+        )
         in_container_build_cmd = [
-            # Get the kernel version of the lts kernel from /lib/modules
-            # it should only have one match in it because we're in an ephemeral container
-            "modvers=$(cd /lib/modules && echo *-lts)",
-            f"sudo sh {make_initramfs_script} -o {initramfs} -I {psyopsOS_init_dir} -F {mkinitfsfeats} -K $modvers",
+            "set -x",
+            # Now cache the packages we need to build the image.
+            # This copies them to /var/cache/apk in the container.
+            # It's a little inefficient to copy them,
+            # but it's worrth it so we can mount /var/cache/apk inside the initramfs chroot later.
+            # We rely on the host's artifacts/deaddrop/apk being added to /etc/apk/repositories by the Dockerfile
+            # so that this cache step can see apks built locally.
+            f"sudo apk cache download alpine-base linux-lts linux-firmware",
+            # We don't have to pass the architecture to this script,
+            # because we should be running in a container with the right architecture.
+            f"sudo -E {make_grubusb_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
         ]
         builder.run_docker(in_container_build_cmd)
-        subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusbsq_initramfs], check=True)
+        subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)
 
 
-def mkimage_grubusbsq_diskimg(
-    interactive: bool = False,
-    cleandockervol: bool = False,
-    dangerous_no_clean_tmp_dir: bool = False,
-):
-    """Make a disk image containing GRUB and a partition for squashfs images that Grub can boot"""
-    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
-        make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusbsq.sh")
-        initramfs = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusbsq_initramfs.name)
-        squashfs = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusbsq_squashfs.name)
-        outimg = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusbsq_img.name)
-        in_container_build_cmd = [
-            # Get the kernel version of the lts kernel from /lib/modules
-            # it should only have one match in it because we're in an ephemeral container
-            "modvers=$(cd /lib/modules && echo *-lts)",
-            f"sudo sh {make_grubusb_script} -k /boot/vmlinuz-lts -i {initramfs} -q {squashfs} -o {outimg} -m {tkconfig.artifacts.memtest64efi}",
-        ]
-        builder.run_docker(in_container_build_cmd)
-
-
-def mkimage_grubusb_initramfs(
+def mkimage_grubusb_squashfs(
     skip_build_apks: bool = False,
     rebuild: bool = False,
     interactive: bool = False,
     cleandockervol: bool = False,
     dangerous_no_clean_tmp_dir: bool = False,
 ):
-    """Make a psyopsOS initramfs image for grubusb images"""
+    """Make a psyopsOS squashfs root filesystem for grubusb images"""
     alpine_version, apkreponame, builder_tag = mkimage_prepare(
         skip_build_apks,
         rebuild,
@@ -229,13 +183,14 @@ def mkimage_grubusb_initramfs(
         # Add the local copy of the psyopsOS repository to the list of repositories in the container.
         # This means that when we do "apk cache download" below,
         # it will be able to find copies of psyopsOS-base and progfiguration_blacksite on local disk.
-        initdir = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init")
-        make_grubusb_os_script = os.path.join(
-            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-os.sh"
+        make_grubusb_squashfs_script = os.path.join(
+            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-squashfs.sh"
         )
         psyopsOS_world = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/world")
         psyopsOS_available = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/available")
+        psyopsOS_overlay = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay")
         repositories_file = os.path.join(builder.in_container_artifacts_dir, "psyopsOS.repositories")
+        outdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)
         in_container_local_repo_path = os.path.join(
             builder.in_container_artifacts_dir, f"deaddrop/apk/v{alpine_version}/psyopsOS"
         )
@@ -247,10 +202,10 @@ def mkimage_grubusb_initramfs(
             # but it's worrth it so we can mount /var/cache/apk inside the initramfs chroot later.
             # We rely on the host's artifacts/deaddrop/apk being added to /etc/apk/repositories by the Dockerfile
             # so that this cache step can see apks built locally.
-            f"sudo apk cache download alpine-base linux-lts linux-firmware {' '.join(apk_cache_list)}",
+            f"sudo apk cache download {' '.join(apk_cache_list)}",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E {make_grubusb_os_script} --apk-packages-file {psyopsOS_world} --apk-packages-file {psyopsOS_available} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
+            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages-file {psyopsOS_world} --apk-packages-file {psyopsOS_available} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {outdir} --psyopsos-overlay-dir {psyopsOS_overlay}",
         ]
         builder.run_docker(in_container_build_cmd)
         subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)
@@ -262,13 +217,6 @@ def mkimage_grubusb_diskimg(
     dangerous_no_clean_tmp_dir: bool = False,
 ):
     """Make a disk image containing GRUB and a partition for initramfs-only images that Grub can boot"""
-    mkimage_grubusbsq_initramfs(
-        skip_build_apks=False,
-        rebuild=False,
-        interactive=interactive,
-        cleandockervol=cleandockervol,
-        dangerous_no_clean_tmp_dir=dangerous_no_clean_tmp_dir,
-    )
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
         make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-img.sh")
         psyopsosdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)

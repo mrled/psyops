@@ -6,7 +6,6 @@ script=$(basename "$0")
 # Default argument values
 apk_keys_dir=/etc/apk/keys
 apk_local_repo=
-apk_packages=
 apk_repos_file=/etc/apk/repositories
 features=
 initdir=
@@ -23,14 +22,10 @@ This script must be run by root.
 ARGUMENTS:
     -h                      Show this help message
     --apk-local-repo        Local repository path to use (optional)
-                            Will be mounted into the initramroot during package
-                            installation and used for apk add,
+                            Will be used for apk add,
                             but not be copied to initramfs repositories file
     --apk-keys-dir          Directory containing signing keys
                             Default: "$apk_keys_dir"
-    --apk-packages          Packages to install
-    --apk-packages-file     File containing packages to install;
-                            may be specified more than once
     --apk-repositories      Repositories file to use;
                             will be copied to initramfs
                             Default: "$apk_repos_file"
@@ -66,8 +61,6 @@ while test $# -gt 0; do
     -h|--help) usage; exit 0;;
     --apk-keys-dir) apk_keys_dir="$2"; shift 2;;
     --apk-local-repo) apk_local_repo="$2"; shift 2;;
-    --apk-packages) apk_packages="$2"; shift 2;;
-    --apk-packages-file) apk_packages="$apk_packages $(cat "$2")"; shift 2;;
     --apk-repositories) apk_repos_file="$2"; shift 2;;
     --kernel-flavor) kflavor="$2"; shift 2;;
     --mkinitfs-features) features="$2"; shift 2;;
@@ -97,21 +90,7 @@ if test -d "$workdir"; then
 fi
 mkdir -p "$workdir"
 
-# Unmount any filesystems mounted inside the workdir
-# We mount filesystems here for access in the squashfs chroot, so we have to clean them up
-umount_workdir_submounts() {
-    while read -r mount ; do
-        mountpoint=$(echo "$mount" | cut -d' ' -f2)
-        case "$mountpoint" in
-            "$workdir"/*) umount "$mountpoint" ;;
-        esac
-    done </proc/mounts
-}
-
 cleanup() {
-    # The unmounting is so verbose, don't xtrace it
-    set +x
-    umount_workdir_submounts
     # Remove the temporary workdir
     rm -rf "$workdir"
 }
@@ -119,7 +98,6 @@ trap cleanup EXIT
 
 # Derived argument values
 initramroot=$workdir/initramroot
-squashroot=$workdir/squashroot
 bootdir=$initramroot/boot
 initial_apk_packages="alpine-base linux-$kflavor linux-firmware"
 
@@ -256,55 +234,9 @@ include_dtb() {
     cd "$_opwd"
 }
 
-# Create the squashfs filesystem
-# chroot into the squashroot and install the rest of the packages; this will run scripts
-# chroot requires docker run --privileged=true
-# We need to use an APK cache both inside and outside the chroot,
-# otherwise we get temp errors from Alpine mirrors telling us to back off.
-make_squashfs() {
-    squashout=$1
-    mkdir -p "$squashroot"
-
-    # Create APKINDEX etc in the squashroot
-    # We don't have to do --update-cache because we mount /var/cache/apk from the container into the squashroot below,
-    # and the container has already run apk update and has a populated cache.
-    apk add --initdb -p "$squashroot" --keys-dir "$apk_keys_dir" --repositories-file "$apk_repos_file"
-
-    mount -t proc none "$squashroot"/proc
-    mkdir -p "$squashroot"/etc/apk/keys
-    cp "$apk_keys_dir"/* "$squashroot"/etc/apk/keys/
-    cp "$apk_repos_file" "$squashroot"/etc/apk/repositories
-
-    # Mount the apk cache from the container into the squashroot for access in the chroot
-    # This is a Docker volume that contains a regular apk cache; see apk-cache(5)
-    mount -o bind /var/cache/apk "$squashroot"/var/cache/apk
-    ln -s /var/cache/apk "$squashroot"/etc/apk/cache
-    # Mount the local repo from the container into the squashroot for access in the chroot
-    # This is the directory containing locally-built APK packages, like psyopsOS-base and progfiguration_blacksite
-    if test -n "$apk_local_repo"; then
-        mkdir -p "$squashroot"/$apk_local_repo
-        mount -o bind "$apk_local_repo" "$squashroot"/$apk_local_repo
-    fi
-    # alpine-base contains busybox etc. Running scripts here creates busybox symlinks in /bin etc.
-    apk add -p $squashroot --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" ${apk_local_repo:+-X $apk_local_repo} alpine-base
-    # Now that busybox is installed, we can chroot
-    # Show us that we have a populated cache
-    chroot $squashroot /bin/busybox ls -alF /var/cache/apk/
-    # Install all the Alpine pacakges we want in the squashroot, and do run scripts
-    chroot $squashroot /sbin/apk add ${apk_local_repo:+-X $apk_local_repo} $apk_packages
-    find $squashroot
-
-    umount_workdir_submounts
-
-    # Squash dat FS
-    mksquashfs "$squashroot" "$squashout" -noappend -comp xz
-}
-
 # Set up the initramfs root filesystem
 setup_initramfs_root() {
     # Creates APKINDEX etc in the initramroot
-    # We don't have to do --update-cache because we mount /var/cache/apk from the container into the initramroot below,
-    # and the container has already run apk update and has a populated cache.
     apk add --initdb -p $initramroot --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" ${apk_local_repo:+-X $apk_local_repo}
 
     # Install alpine-base and Linux kernel and firmware, but don't run scripts because we're not in a regular system
@@ -329,11 +261,6 @@ setup_initramfs_root
 cp "$bootdir"/vmlinuz-$kflavor "$outdir"/kernel
 cp "$bootdir"/config-$kflavor "$outdir"/config
 cp "$bootdir"/System.map-$kflavor "$outdir"/System.map
-
-# Create the squashfs filesystem
-# Write it to workdir first in case writing it to the outdir Docker volume is slow, then mv it over
-make_squashfs "$workdir"/squashfs
-mv "$workdir"/squashfs "$outdir"/squashfs
 
 # Find the kernel version
 kvers=$(basename $(ls -d $initramroot/lib/modules/*"$kflavor"))

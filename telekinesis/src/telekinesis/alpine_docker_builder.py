@@ -170,9 +170,6 @@ class AlpineDockerBuilder:
             # genapkovl-psyopsOS.sh partially sets up the filesystem of the iso live OS
             "--volume",
             f"{self.aports_scripts_overlay_dir}/genapkovl-psyopsOS.sh:/home/build/aports/scripts/genapkovl-psyopsOS.sh",
-            # gensquahsfs-psyopsOS.sh sets up the squashfs filesystem for the squashfs image
-            "--volume",
-            f"{self.aports_scripts_overlay_dir}/gensquashfs-psyopsOS.sh:/home/build/aports/scripts/gensquashfs-psyopsOS.sh",
             # mkimage.psyopsOS.sh defines the profile that we pass to mkimage.sh
             "--volume",
             f"{self.aports_scripts_overlay_dir}/mkimg.psyopsOS.sh:/home/build/aports/scripts/mkimg.psyopsOS.sh",

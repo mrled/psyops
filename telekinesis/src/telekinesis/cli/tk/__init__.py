@@ -15,11 +15,9 @@ from telekinesis.alpine_docker_builder import build_container, get_configured_do
 from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
 from telekinesis.cli.tk.subcommands.mkimage import (
     mkimage_grubusb_diskimg,
-    mkimage_grubusb_initramfs,
+    mkimage_grubusb_kernel,
+    mkimage_grubusb_squashfs,
     mkimage_iso,
-    mkimage_grubusbsq_diskimg,
-    mkimage_grubusbsq_initramfs,
-    mkimage_grubusbsq_squashfs,
 )
 from telekinesis.cli.tk.subcommands.vm import get_ovmf, vm_grubusb_img, vm_grubusb_os
 from telekinesis.config import getsecret, tkconfig
@@ -158,15 +156,6 @@ def makeparser(prog=None):
         "iso",
         help="Build an ISO image using mkimage.sh and the psyopsOScd profile",
     )
-    sub_mkimage_sub_grubusbsq = sub_mkimage_subparsers.add_parser(
-        "grubusbsq",
-        help="Build a disk image that contains GRUB, can do A/B updates, and boots to squashfs root images.",
-    )
-    sub_mkimage_sub_grubusbsq.add_argument(
-        "--stages",
-        default="squashfs,initramfs,grubusb",
-        help="The stages to build, comma-separated. Default: %(default)s",
-    )
     sub_mkimage_sub_grubusb = sub_mkimage_subparsers.add_parser(
         "grubusb",
         help="Build a disk image that contains GRUB, can do A/B updates, and boots to initramfs root images without squashfs.",
@@ -174,9 +163,9 @@ def makeparser(prog=None):
     sub_mkimage_sub_grubusb.add_argument(
         "--stages",
         nargs="*",
-        default=["osdir", "diskimg"],
-        choices=["mkinitpatch", "applyinitpatch", "osdir", "diskimg"],
-        help="The stages to build, comma-separated. Default: %(default)s. mkinitpatch: diff -u initramfs-init.orig initramfs.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch. applyinitpatch: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch. osdir: Build the OS directory. diskimg: Build the disk image from the osdir.",
+        default=["kernel", "squashfs", "diskimg"],
+        choices=["mkinitpatch", "applyinitpatch", "kernel", "squashfs", "diskimg"],
+        help="The stages to build, comma-separated. Default: %(default)s. mkinitpatch: diff -u initramfs-init.orig initramfs.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch. applyinitpatch: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch. kernel: Build the kernel/initramfs/etc. squashfs: Build the squashfs root filesystem. diskimg: Build the disk image from the kernel/squashfs.",
     )
 
     # The buildpkg subcommand
@@ -261,29 +250,6 @@ def main():
                 cleandockervol=parsed.clean,
                 dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
             )
-        elif parsed.mkimage_action == "grubusbsq":
-            if "squashfs" in parsed.stages:
-                mkimage_grubusbsq_squashfs(
-                    skip_build_apks=parsed.skip_build_apks,
-                    rebuild=parsed.rebuild,
-                    interactive=parsed.interactive,
-                    cleandockervol=parsed.clean,
-                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-                )
-            if "initramfs" in parsed.stages:
-                mkimage_grubusbsq_initramfs(
-                    skip_build_apks=parsed.skip_build_apks,
-                    rebuild=parsed.rebuild,
-                    interactive=parsed.interactive,
-                    cleandockervol=parsed.clean,
-                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-                )
-            if "grubusb" in parsed.stages:
-                mkimage_grubusbsq_diskimg(
-                    interactive=parsed.interactive,
-                    cleandockervol=parsed.clean,
-                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-                )
         elif parsed.mkimage_action == "grubusb":
             initdir = tkconfig.repopaths.root / "psyopsOS" / "grubusb" / "initramfs-init"
             init_patch = initdir / "initramfs-init.psyopsOS.grubusb.patch"
@@ -302,8 +268,16 @@ def main():
                     cwd=initdir,
                     check=True,
                 )
-            if "osdir" in parsed.stages:
-                mkimage_grubusb_initramfs(
+            if "kernel" in parsed.stages:
+                mkimage_grubusb_kernel(
+                    skip_build_apks=parsed.skip_build_apks,
+                    rebuild=parsed.rebuild,
+                    interactive=parsed.interactive,
+                    cleandockervol=parsed.clean,
+                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
+                )
+            if "squashfs" in parsed.stages:
+                mkimage_grubusb_squashfs(
                     skip_build_apks=parsed.skip_build_apks,
                     rebuild=parsed.rebuild,
                     interactive=parsed.interactive,

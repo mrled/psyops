@@ -123,13 +123,6 @@ class TelekinesisConfig:
             self.ovmf_extracted_vars = artroot / "ovmf-extracted" / "usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd"
             """The path to the extracted OVMF_VARS-pure-efi.fd file"""
 
-            self.grubusbsq_img = artroot / "psyopsOS.grubusbsq.img"
-            """The path to the grubusbsq disk image"""
-            self.grubusbsq_initramfs = artroot / "psyopsOS.grubusbsq.initramfs"
-            """The path to the grubusbsq initramfs"""
-            self.grubusbsq_squashfs = artroot / "psyopsOS.grubusbsq.squashfs"
-            """The path to the grubusbsq squashfs image"""
-
             self.grubusb_img = artroot / "psyopsOS.grubusb.img"
             """The path to the grubusb disk image"""
 

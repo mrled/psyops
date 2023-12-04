@@ -133,8 +133,10 @@ psya_start=$(( efi_start + efisize ))
 psyb_start=$(( psya_start + psyabsize ))
 psyb_end=$(( psyb_start + psyabsize ))
 
+# Create a sparse output image file - seek to the end but write nothing
 # 1048576 == 1MiB
-dd if=/dev/zero of="$outimg" bs=1048576 count=$imgsize
+test -f "$outimg" && rm "$outimg"
+dd if=/dev/zero of="$outimg" bs=1048576 seek=$imgsize count=0
 
 # Note that this requires a privileged container (docker run --privileged=true)
 losetup "$loopdev" "$outimg"
