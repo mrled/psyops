@@ -201,7 +201,7 @@ def makeparser(prog=None):
     )
     sub_vm_subparsers = sub_vm.add_subparsers(dest="vm_action", required=True)
     sub_vm_sub_grubusb = sub_vm_subparsers.add_parser(
-        "grubusb",
+        "diskimg",
         help="Run the grubusb image in qemu",
     )
     sub_vm_sub_grubusb = sub_vm_subparsers.add_parser(
