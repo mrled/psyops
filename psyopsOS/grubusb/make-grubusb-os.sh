@@ -23,7 +23,7 @@ This script must be run by root.
 ARGUMENTS:
     -h                      Show this help message
     --apk-local-repo        Local repository path to use (optional)
-                            Will be mounted into the rootfs during package
+                            Will be mounted into the initramroot during package
                             installation and used for apk add,
                             but not be copied to initramfs repositories file
     --apk-keys-dir          Directory containing signing keys
@@ -54,7 +54,7 @@ FILES:
     If --mkinitfs-features is not passed, get defaults from the host's
         /etc/mkinitfs/mkinitfs.conf
     Note that this is different behavior from upstream update-kernel script,
-    which installs mkinitfs to the rootfs dir and uses its stock config.
+    which installs mkinitfs to the initramroot dir and uses its stock config.
 
 ABOUT:
     Inspired by Alpine Linux update-kernel, as called in build_kernel() in mkimg.base.sh.
@@ -91,9 +91,14 @@ fi
 
 # Make a temporary working directory
 workdir=/tmp/make-grubusb-kernel.$$
+if test -d "$workdir"; then
+    echo "Temporary working directory $workdir already exists; aborting" >&2
+    exit 1
+fi
 mkdir -p "$workdir"
 
 # Unmount any filesystems mounted inside the workdir
+# We mount filesystems here for access in the squashfs chroot, so we have to clean them up
 umount_workdir_submounts() {
     while read -r mount ; do
         mountpoint=$(echo "$mount" | cut -d' ' -f2)
@@ -113,8 +118,9 @@ cleanup() {
 trap cleanup EXIT
 
 # Derived argument values
-rootfs=$workdir/root
-bootdir=$rootfs/boot
+initramroot=$workdir/initramroot
+squashroot=$workdir/squashroot
+bootdir=$initramroot/boot
 initial_apk_packages="alpine-base linux-$kflavor linux-firmware"
 
 # Read external configuration
@@ -137,12 +143,12 @@ features="base squashfs $features"
 # Extract kernel modules and make module dependency list
 make_depmod() {
     kvers="$1"
-    find $rootfs/lib/modules \
+    find $initramroot/lib/modules \
         -name \*.ko.gz -exec gunzip {} + \
         -o -name \*.ko.xz -exec unxz {} + \
         -o -name \*.ko.zst -exec unzstd --rm {} + \
         -o ! -name '' # don't fail if no files found. busybox find doesn't support -true
-    depmod -b $rootfs "$kvers"
+    depmod -b $initramroot "$kvers"
 }
 
 # Make the modloop squashfs image
@@ -155,10 +161,10 @@ make_modloop() {
     modimg_path=$modloopstage/$modimg
 
     mkdir $modloop $modloopstage
-    cp -a $rootfs/lib/modules $modloop
+    cp -a $initramroot/lib/modules $modloop
     mkdir -p $modloop/modules/firmware
-    find $rootfs/lib/modules -type f -name "*.ko*" | xargs modinfo -k $kvers -F firmware | sort -u | while read FW; do
-        for f in "$rootfs"/lib/firmware/$FW; do
+    find $initramroot/lib/modules -type f -name "*.ko*" | xargs modinfo -k $kvers -F firmware | sort -u | while read FW; do
+        for f in "$initramroot"/lib/firmware/$FW; do
             if ! [ -e "$f" ]; then
                 continue
             fi
@@ -174,8 +180,8 @@ make_modloop() {
     #
     # install extra firmware files in modloop (i.e. not detected by modinfo)
     # for _xfw in $modloopfw; do
-    #     if [ -f "$rootfs/lib/firmware/$_xfw" ]; then
-    #         install -pD "$rootfs/lib/firmware/$_xfw" \
+    #     if [ -f "$initramroot/lib/firmware/$_xfw" ]; then
+    #         install -pD "$initramroot/lib/firmware/$_xfw" \
     #             "$modloop"/modules/firmware/"$_xfw"
     #     else
     #         echo "Warning: extra firmware \"$_xfw\" not found!"
@@ -183,15 +189,15 @@ make_modloop() {
     # done
 
     # wireless regulatory db
-    if [ -e "$rootfs"/lib/modules/*/kernel/net/wireless/cfg80211.ko* ]; then
-        for _regdb in "$rootfs"/lib/firmware/regulatory.db*; do
+    if [ -e "$initramroot"/lib/modules/*/kernel/net/wireless/cfg80211.ko* ]; then
+        for _regdb in "$initramroot"/lib/firmware/regulatory.db*; do
             [ -e "$_regdb" ] && install -pD "$_regdb" "$modloop"/modules/firmware/"${_regdb##*/}"
         done
     fi
 
     # include bluetooth firmware in modloop
-    if [ -e "$rootfs"/lib/modules/*/kernel/drivers/bluetooth/btbcm.ko* ]; then
-        for _btfw in "$rootfs"/lib/firmware/brcm/*.hcd; do
+    if [ -e "$initramroot"/lib/modules/*/kernel/drivers/bluetooth/btbcm.ko* ]; then
+        for _btfw in "$initramroot"/lib/firmware/brcm/*.hcd; do
             install -pD "$_btfw" \
                 "$modloop"/modules/firmware/brcm/"${_btfw##*/}"
         done
@@ -215,9 +221,9 @@ include_dtb() {
     dtbdir=
     # TODO: Why do we look in these directories? Are some of these deprecated?
     for possible_dtbdir in \
-        $rootfs/boot/dtbs-$kflavor \
-        $rootfs/usr/lib/linux-$kvers \
-        $rootfs/boot
+        $initramroot/boot/dtbs-$kflavor \
+        $initramroot/usr/lib/linux-$kvers \
+        $initramroot/boot
     do
         if test -d "$possible_dtbdir"; then
             dtbdir="$possible_dtbdir"
@@ -250,14 +256,64 @@ include_dtb() {
     cd "$_opwd"
 }
 
-# Make an fstab for the initramfs
-# Include some psyopsOS-specific entries that are nice to have in the rescue shell
-make_fstab() {
-    cat </usr/share/mkinitfs/fstab <<EOF
-LABEL=PSYOPSOSEFI /efisys vfat ro 0 0
-LABEL=psyopsOS-A /a ext4 ro 0 0
-LABEL=psyopsOS-B /b ext4 ro 0 0
-EOF
+# Create the squashfs filesystem
+# chroot into the squashroot and install the rest of the packages; this will run scripts
+# chroot requires docker run --privileged=true
+# We need to use an APK cache both inside and outside the chroot,
+# otherwise we get temp errors from Alpine mirrors telling us to back off.
+make_squashfs() {
+    squashout=$1
+    mkdir -p "$squashroot"
+
+    # Create APKINDEX etc in the squashroot
+    # We don't have to do --update-cache because we mount /var/cache/apk from the container into the squashroot below,
+    # and the container has already run apk update and has a populated cache.
+    apk add --initdb -p "$squashroot" --keys-dir "$apk_keys_dir" --repositories-file "$apk_repos_file"
+
+    mount -t proc none "$squashroot"/proc
+    mkdir -p "$squashroot"/etc/apk/keys
+    cp "$apk_keys_dir"/* "$squashroot"/etc/apk/keys/
+    cp "$apk_repos_file" "$squashroot"/etc/apk/repositories
+
+    # Mount the apk cache from the container into the squashroot for access in the chroot
+    # This is a Docker volume that contains a regular apk cache; see apk-cache(5)
+    mount -o bind /var/cache/apk "$squashroot"/var/cache/apk
+    ln -s /var/cache/apk "$squashroot"/etc/apk/cache
+    # Mount the local repo from the container into the squashroot for access in the chroot
+    # This is the directory containing locally-built APK packages, like psyopsOS-base and progfiguration_blacksite
+    if test -n "$apk_local_repo"; then
+        mkdir -p "$squashroot"/$apk_local_repo
+        mount -o bind "$apk_local_repo" "$squashroot"/$apk_local_repo
+    fi
+    # alpine-base contains busybox etc. Running scripts here creates busybox symlinks in /bin etc.
+    apk add -p $squashroot --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" ${apk_local_repo:+-X $apk_local_repo} alpine-base
+    # Now that busybox is installed, we can chroot
+    # Show us that we have a populated cache
+    chroot $squashroot /bin/busybox ls -alF /var/cache/apk/
+    # Install all the Alpine pacakges we want in the squashroot, and do run scripts
+    chroot $squashroot /sbin/apk add ${apk_local_repo:+-X $apk_local_repo} $apk_packages
+    find $squashroot
+
+    umount_workdir_submounts
+
+    # Squash dat FS
+    mksquashfs "$squashroot" "$squashout" -noappend -comp xz
+}
+
+# Set up the initramfs root filesystem
+setup_initramfs_root() {
+    # Creates APKINDEX etc in the initramroot
+    # We don't have to do --update-cache because we mount /var/cache/apk from the container into the initramroot below,
+    # and the container has already run apk update and has a populated cache.
+    apk add --initdb -p $initramroot --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" ${apk_local_repo:+-X $apk_local_repo}
+
+    # Install alpine-base and Linux kernel and firmware, but don't run scripts because we're not in a regular system
+    apk add --no-scripts -p $initramroot --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" ${apk_local_repo:+-X $apk_local_repo} alpine-base linux-$kflavor linux-firmware
+
+    # Set up apk keys in initramroot
+    mkdir -p "$initramroot"/etc/apk/keys
+    cp "$apk_keys_dir"/* "$pubkey" "$initramroot"/etc/apk/keys/
+    cp "$apk_repos_file" "$initramroot"/etc/apk/repositories
 }
 
 #### Main
@@ -265,56 +321,22 @@ EOF
 # Create output directory
 mkdir -p "$outdir"
 
-# Creates APKINDEX etc in the rootfs
-# We don't have to do --update-cache because we mount /var/cache/apk from the container into the rootfs below,
-# and the container has already run apk update and has a populated cache.
-apk add --initdb -p $rootfs --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file"
-
-# Install required packages inside the initramfs root filesystem
-# Warning: Installing packages --no-scripts still seems to run pre-install scripts, can that be right?
-# I notice trying to install nebula-openrc right here fails bc it creates a user on the host system, not the rootfs.
-# For now, just install required initial packages here.
-#rooted_apk add --no-scripts $initial_apk_packages
-
-# chroot into the rootfs and install the rest of the packages; this will run scripts
-# chroot requires docker run --privileged=true
-# We need to use an APK cache both inside and outside the chroot,
-# otherwise we get temp errors from Alpine mirrors telling us to back off.
-mount -t proc none "$rootfs"/proc
-mkdir -p "$rootfs"/etc/apk/keys
-cp "$apk_keys_dir"/* "$rootfs"/etc/apk/keys/
-cp "$apk_repos_file" "$rootfs"/etc/apk/repositories
-# Mount the apk cache from the container into the rootfs for access in the chroot
-# This is a Docker volume that contains a regular apk cache; see apk-cache(5)
-mount -o bind /var/cache/apk "$rootfs"/var/cache/apk
-ln -s /var/cache/apk "$rootfs"/etc/apk/cache
-# Mount the local repo from the container into the rootfs for access in the chroot
-# This is the directory containing locally-built APK packages, like psyopsOS-base and progfiguration_blacksite
-if test -n "$apk_local_repo"; then
-    mkdir -p "$rootfs"/$apk_local_repo
-    mount -o bind "$apk_local_repo" "$rootfs"/$apk_local_repo
-fi
-# alpine-base contains busybox etc. Running scripts here creates busybox symlinks in /bin etc.
-apk add -p $rootfs --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" ${apk_local_repo:+-X $apk_local_repo} alpine-base
-# Now that busybox is installed, we can chroot
-chroot $rootfs /bin/busybox ls -alF /var/cache/apk/
-# Install Linux kernel and firmware, but don't run scripts because we're not in a regular system
-chroot $rootfs /sbin/apk add ${apk_local_repo:+-X $apk_local_repo} --no-scripts linux-$kflavor linux-firmware
-# Install all the Alpine pacakges we want in the initramfs, and do run scripts
-chroot $rootfs /sbin/apk add ${apk_local_repo:+-X $apk_local_repo} $apk_packages
-find $rootfs
+# Set up the initramfs root filesystem
+setup_initramfs_root
 
 # Copy required files from initramfs filesystem to output directory
+# This must run after setup_initramfs_root which installs these files
 cp "$bootdir"/vmlinuz-$kflavor "$outdir"/kernel
 cp "$bootdir"/config-$kflavor "$outdir"/config
 cp "$bootdir"/System.map-$kflavor "$outdir"/System.map
 
-# Copy pubkey file to rootfs
-mkdir -p "$rootfs"/etc/apk/keys
-cp "$pubkey" "$rootfs"/etc/apk/keys/
+# Create the squashfs filesystem
+# Write it to workdir first in case writing it to the outdir Docker volume is slow, then mv it over
+make_squashfs "$workdir"/squashfs
+mv "$workdir"/squashfs "$outdir"/squashfs
 
 # Find the kernel version
-kvers=$(basename $(ls -d $rootfs/lib/modules/*"$kflavor"))
+kvers=$(basename $(ls -d $initramroot/lib/modules/*"$kflavor"))
 
 make_depmod "$kvers"
 
@@ -326,11 +348,9 @@ modsig_path="$workdir"/$modimg.SIGN.RSA.${pubkey##*/}
 make_modloop "$modloop" "$modloopstage" "$modimg" "$modsig_path"
 
 # Make the initramfs
-make_fstab >"$workdir"/fstab
-mkdir -p "$rootfs"/efisys "$rootfs"/a "$rootfs"/b
 patchedinit="$initdir"/initramfs-init.patched.grubusb
 patch -o "$patchedinit" "$initdir"/initramfs-init.orig "$initdir"/initramfs-init.psyopsOS.grubusb.patch
-mkinitfs -s $modsig_path -i "$patchedinit" -q -b $rootfs -F "$features" -f "$workdir"/fstab -o "$outdir"/initramfs $kvers
+mkinitfs -s $modsig_path -i "$patchedinit" -q -b $initramroot -F "$features" -o "$outdir"/initramfs $kvers
 
 mv $modloopstage/* "$outdir"
 

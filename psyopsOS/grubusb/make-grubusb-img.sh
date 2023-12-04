@@ -7,7 +7,7 @@ script=$(basename "$0")
 outimg=
 loopdev=/dev/loop0
 efisize=128
-psyabsize=1024
+psyabsize=1536
 memtest=
 
 # Constant values
@@ -52,6 +52,7 @@ ARGUMENTS:
     * kernel
     * initramfs
     * modloop
+    * squashfs
 * The PSYOPSOSDIR may contain additional files:
     * DTB files (if your platform/kernel uses them)
     * System.map for kernel debugging
