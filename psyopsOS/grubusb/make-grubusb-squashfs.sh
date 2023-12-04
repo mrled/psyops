@@ -282,6 +282,7 @@ find $squashroot
 
 # Squash dat FS
 # Write it to workdir first in case writing it to the outdir Docker volume is slow, then mv it over
+test -f "$outdir"/squashfs && rm "$outdir"/squashfs
 mksquashfs "$squashroot" "$workdir"/squashfs -noappend -comp xz
 mv "$workdir"/squashfs "$outdir"/squashfs
 
