@@ -162,7 +162,7 @@ def makeparser(prog=None):
     )
     sub_mkimage_sub_grubusb.add_argument(
         "--stages",
-        nargs="*",
+        nargs="+",
         default=["kernel", "squashfs", "diskimg"],
         choices=["mkinitpatch", "applyinitpatch", "kernel", "squashfs", "diskimg"],
         help="The stages to build, comma-separated. Default: %(default)s. mkinitpatch: diff -u initramfs-init.orig initramfs.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch. applyinitpatch: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch. kernel: Build the kernel/initramfs/etc. squashfs: Build the squashfs root filesystem. diskimg: Build the disk image from the kernel/squashfs.",
