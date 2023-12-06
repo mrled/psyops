@@ -2,16 +2,14 @@
 
 
 import argparse
-import logging
-import pdb
 import pprint
 import subprocess
 import sys
-import traceback
 import zipfile
 
 from telekinesis import deaddrop
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
+from telekinesis.cli import idb_excepthook
 from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
 from telekinesis.cli.tk.subcommands.mkimage import (
     mkimage_grubusb_diskimg,
@@ -22,16 +20,6 @@ from telekinesis.cli.tk.subcommands.mkimage import (
 from telekinesis.cli.tk.subcommands.vm import get_ovmf, vm_grubusb_img, vm_grubusb_os
 from telekinesis.config import getsecret, tkconfig
 from telekinesis.rget import rget
-
-
-def idb_excepthook(type, value, tb):
-    """Call an interactive debugger in post-mortem mode"""
-    if hasattr(sys, "ps1") or not sys.stderr.isatty():
-        sys.__excepthook__(type, value, tb)
-    else:
-        traceback.print_exception(type, value, tb)
-        print
-        pdb.pm()
 
 
 def get_memtest():
@@ -206,7 +194,8 @@ def makeparser(prog=None):
     return parser
 
 
-def main():
+def main_impl():
+    """Top level program logic for the `tk` command"""
     parser = makeparser()
     parsed = parser.parse_args()
 
@@ -310,3 +299,11 @@ def main():
         deployiso(parsed.host)
     else:
         parser.error(f"Unknown action: {parsed.action}")
+
+
+def main():
+    """Entry point for the `tk` command"""
+    try:
+        main_impl()
+    except KeyboardInterrupt:
+        print("Got KeyboardInterrupt, exiting...")
