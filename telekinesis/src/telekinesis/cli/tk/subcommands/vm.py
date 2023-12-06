@@ -34,6 +34,11 @@ class MungedInterrupts:
         self.old_settings = None
 
     def __enter__(self):
+        print("WARNING!!")
+        print("WARNING!!")
+        print("WARNING!! Ctrl+C and Ctrl+Z are changed to Ctrl+]")
+        print("WARNING!!")
+        print("WARNING!!")
         # Get the current terminal settings, including all control keys and other stuff
         self.old_settings = termios.tcgetattr(sys.stdin)
         # Change the terminal settings so that interrupt and suspend --
@@ -44,6 +49,7 @@ class MungedInterrupts:
     def __exit__(self, exc_type, exc_value, traceback):
         # Restore the terminal settings to what they were before
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
+        print("Ctrl+C and Ctrl+Z restored to normal behavior")
 
 
 def get_ovmf():
