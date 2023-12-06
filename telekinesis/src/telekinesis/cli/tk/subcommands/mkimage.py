@@ -173,7 +173,13 @@ def mkimage_grubusb_squashfs(
     with (tkconfig.artifacts.root / "psyopsOS.repositories").open("w") as f:
         f.write(psyopsOS_apk_repositories)
 
+    extra_required_packages = [
+        # If this isn't present, setup-keyboard in 000-psyopsOS-postboot.start will hang waiting for user input forever.
+        "kbd-bkeymaps",
+    ]
+
     apk_cache_list = []
+    apk_cache_list += extra_required_packages
     with (tkconfig.repopaths.root / "psyopsOS" / "os-overlay" / "etc" / "apk" / "world").open("r") as f:
         apk_cache_list += f.read().splitlines()
     with (tkconfig.repopaths.root / "psyopsOS" / "os-overlay" / "etc" / "apk" / "available").open("r") as f:
@@ -205,7 +211,7 @@ def mkimage_grubusb_squashfs(
             f"sudo apk cache download {' '.join(apk_cache_list)}",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages-file {psyopsOS_world} --apk-packages-file {psyopsOS_available} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {outdir} --psyopsos-overlay-dir {psyopsOS_overlay}",
+            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-packages-file {psyopsOS_available} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {outdir} --psyopsos-overlay-dir {psyopsOS_overlay}",
         ]
         builder.run_docker(in_container_build_cmd)
         subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)
