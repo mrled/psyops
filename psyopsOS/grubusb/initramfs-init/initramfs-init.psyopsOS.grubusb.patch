@@ -1,5 +1,5 @@
 --- initramfs-init.orig	2023-12-03 13:20:35
-+++ initramfs-init.patched.grubusb	2023-12-03 17:50:11
++++ initramfs-init.patched.grubusb	2023-12-04 17:07:50
 @@ -1,4 +1,6 @@
  #!/bin/sh
 +
@@ -7,28 +7,29 @@
  
  # this is the init script version
  VERSION=3.8.1-r0
-@@ -389,6 +391,11 @@
+@@ -387,6 +389,11 @@
+ 		opt="${opt#*=}"
+ 		KOPT_consoles="${opt%%,*} $KOPT_consoles"
  		switch_root_opts="-c /dev/${opt%%,*}"
- 		continue
- 		;;
++		continue
++		;;
 +	# Specially handle psyopsos= kernel option, which makes for a cleaner patch
 +	psyopsos=*)
 +		KOPT_psyopsos="${opt#*=}"
-+		continue
-+		;;
+ 		continue
+ 		;;
  	esac
- 
- 	for i in $myopts; do
-@@ -530,6 +537,38 @@
+@@ -529,7 +536,41 @@
+ 	configure_ip
  	setup_nbd || echo "Failed to setup nbd device."
  fi
- 
++
 +if [ -n "$KOPT_psyopsos" ]; then
 +	ebegin "Configuring for psyopsOS"
 +
 +	# We have to run nlplug-findfs in order to coldplug all the block devices which might have our partitions on them.
 +	nlplug-findfs
-+
+ 
 +	# This is just nice to have when troubleshooting initrd
 +	mkdir -p /efisys /a /b
 +	echo "LABEL=PSYOPSOSEFI /efisys vfat ro 0 0" >> /etc/fstab
@@ -51,6 +52,8 @@
 +		case "$KOPT_rootflags" in *loop*) ;; *) KOPT_rootflags="$KOPT_rootflags,loop" ;; esac
 +	fi
 +	KOPT_root="$sysroot/boot/squashfs"
++	# Enable overlaytmpfs to allow writing to the / filesystem after boot
++	KOPT_overlaytmpfs="yes"
 +
 +	eend 0
 +fi
