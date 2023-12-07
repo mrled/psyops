@@ -2,18 +2,28 @@
 set -eu
 
 rundate="$(date +%Y%m%d-%H%M%S)"
+# Log all stdout and stderr to a file in /var/log
 exec >"/var/log/postboot.$rundate"
 exec 2>&1
 
+# Make a logger function that also logs to the serial port
+# Useful if we cannot log in after boot when debugging
+logyell() {
+	echo "$@" || true
+	prefixedmsg="psyopsOS postboot logyell: $@"
+	logger -t postboot "$prefixedmsg" || true
+	echo "$prefixedmsg" > /dev/ttyS0 || true
+}
+
 if test -e /etc/psyopsOS/status/000-postboot.finished; then
-	echo "psyopsOS postboot has already run once, nothing to do"
+	logyell "psyopsOS postboot has already run once, nothing to do"
 	exit 0
 fi
 
 dying_breath() {
 	_exitcode="$1"
 	_line="$2"
-	echo "Script exiting with error $_exitcode on line $_line"
+	logyell "Script exiting with error $_exitcode on line $_line"
 }
 trap 'dying_breath $? $LINENO' ERR
 
@@ -21,14 +31,12 @@ setup-keymap us us
 
 # Mount the psyops-secret volume
 if ! /usr/local/sbin/psyopsOS-mount-secret.sh; then
-	echo "psyops-secret volume did not mount properly"
+	logyell "psyops-secret volume did not mount properly. Will attempt to configure DHCP network, and then exit."
 	# If psyops-secret doesn't mount, try to configure automatically.
 	# On systems with a single network adapter on a DHCP network, this will work.
 	# Unfortunately, it detects wlan interfaces too, which will probably never work w/o configuration (password etc),
 	# so if the machine has a wifi interface, this will probably not be useful.
-	setup-interfaces -r -a
-	echo "Default DHCP network configuration added because psyops-secret volume did not mount properly"
-	echo "Terminating postboot script because psyops-secret volume did not mount properly"
+	setup-interfaces -r -a || logyell "Failed to configure DHCP"
 	exit 1
 fi
 
