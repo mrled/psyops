@@ -14,25 +14,16 @@ import shutil
 import sys
 import tempfile
 import textwrap
-from typing import List
 
 from progfiguration import logger
 from progfiguration.cli.util import idb_excepthook
 from progfiguration.cmd import magicrun
-from progfiguration.temple import Temple
 
 import progfiguration_blacksite
 import progfiguration_blacksite.nodes
 import progfiguration_blacksite.sitelib.buildsite
 from progfiguration_blacksite.sitelib.controller.ctrlsec import psynet_set
-
-
-def CommaSeparatedStrList(cssl: str) -> List[str]:
-    """Convert a string with commas into a list of strings
-
-    Useful as a type= argument to argparse.add_argument()
-    """
-    return cssl.split(",")
+from progfiguration_blacksite.sitelib.controller import nodemgmt
 
 
 def CIDRv4(s: str) -> str:
@@ -53,87 +44,8 @@ def CIDRv4(s: str) -> str:
     return s
 
 
-node_py_temple = Temple(
-    """\
-from progfiguration.inventory.nodes import InventoryNode
-
-node = InventoryNode(
-    address="{$}hostname",
-    user="root",
-    age_pubkey="{$}age_pubkey",
-    ssh_host_fingerprint="{$}ssh_host_fingerprint",
-    sitedata=dict(
-        notes="",
-        flavortext="{$}flavor_text",
-        psy0mac="{$}psy0mac",
-        serial="{$}serial",
-    ),
-    roles=dict,
-)
-"""
-)
-
-
-def get_node_installer_script_temple(
-    nodename: str,
-    age_key: str,
-    mactab: str,
-    nebula_key: str,
-    nebula_crt: str,
-    ssh_host_key: str,
-) -> Temple:
-    """Get the template for the node installer script"""
-
-    node_installer_script_temple = Temple(
-        r"""#!/usr/bin/env python3
-'''Install the {$}nodename node's configuration'''
-from argparse import ArgumentParser
-from subprocess import run
-from os import makedirs
-
-files = {}
-files["nodename"] = '''{$}nodename
-'''
-files["age.key"] = '''{$}age_key
-'''
-files["mactab"] = '''{$}mactab
-'''
-files["psynet.host.key"] = '''{$}nebula_key
-'''
-files["psynet.host.crt"] = '''{$}nebula_crt
-'''
-files["ssh_host_key"] = '''{$}ssh_host_key
-'''
-
-parser = ArgumentParser(description=__doc__)
-parser.add_argument("device", help="The device to install to, e.g. /dev/sdb. No need for partitions.")
-parser.add_argument("--yes-really-delete-all-data-on-device", action="store_true", help="You must pass this flag to confirm that you want to delete all data on the device. This is a safety measure to prevent you from accidentally wiping your disk.")
-parser.add_argument("--mount-path", default="/mnt/psyops-secret/mount", help="The path to mount the device to. You should not have to change this from the default of %(default)s unless debugging.")
-parsed = parser.parse_args()
-
-if not parsed.yes_really_delete_all_data_on_device:
-    parser.error("You must pass --yes-really-delete-all-data-on-device to confirm that you want to delete all data on the device. This is a safety measure to prevent you from accidentally wiping your disk.")
-run(["mkfs.ext4", "-L", "psyops-secret", parsed.device], check=True)
-makedirs(parsed.mount_path, exist_ok=True)
-run(["mount", parsed.device, parsed.mount_path], check=True)
-
-for filename, contents in files.items():
-    with open(parsed.mount_path + "/" + filename, "w") as f:
-        f.write(contents)
-"""
-    )
-    return node_installer_script_temple.substitute(
-        nodename=nodename,
-        age_key=age_key,
-        mactab=mactab,
-        nebula_key=nebula_key,
-        nebula_crt=nebula_crt,
-        ssh_host_key=ssh_host_key,
-    )
-
-
-def main():
-    """Make a new node for the site"""
+def makeparser():
+    """Return a parser for the progfigsite node command"""
 
     parser = argparse.ArgumentParser(
         description="Make a new node for the site",
@@ -187,8 +99,8 @@ def main():
     psynet_groups_default = "psyopsOS"
     parser.add_argument(
         "--psynet-groups",
-        type=CommaSeparatedStrList,
-        default=CommaSeparatedStrList(psynet_groups_default),
+        nargs="+",
+        default=psynet_groups_default,
         help="The groups to add this node to, comma separated. Defaults to %(default)s",
     )
 
@@ -224,6 +136,12 @@ def main():
         help="The serial number or service tag for the hardeware. Defaults to all %(default)s.",
     )
 
+    return parser
+
+
+def main():
+    """Create a new node in the progfiguration site"""
+    parser = makeparser()
     parsed = parser.parse_args()
 
     logger.setLevel("DEBUG")
@@ -306,7 +224,7 @@ def main():
             if parsed.outscript.exists() and not parsed.force:
                 raise RuntimeError(f"{parsed.outscript} already exists, refusing to overwrite it.")
             parsed.outscript.open("w").write(
-                get_node_installer_script_temple(
+                nodemgmt.get_node_installer_script_temple(
                     nodename=parsed.nodename,
                     age_key=(tmpdir / "age.key").read_text(),
                     mactab=(tmpdir / "mactab").read_text(),
@@ -329,7 +247,7 @@ def main():
     if inventory_node_py_file.exists() and not parsed.force:
         raise RuntimeError(f"Node file {inventory_node_py_file} already exists, please delete it first")
     inventory_node_py_file.open("w").write(
-        node_py_temple.substitute(
+        nodemgmt.node_py_temple.substitute(
             hostname=hostname,
             flavor_text=parsed.flavor_text,
             age_pubkey=age_pubkey,
