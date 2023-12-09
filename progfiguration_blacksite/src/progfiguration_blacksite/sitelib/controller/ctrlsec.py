@@ -120,7 +120,7 @@ def age_delete(host: str) -> None:
 def sshhost_get(host: str) -> str:
     """Get an ssh host key from 1Password"""
     result = subprocess.run(
-        ["op", "item", "get", _op_sshhost_keys_item, "--fields", f"{host}.age"],
+        ["op", "item", "get", _op_sshhost_keys_item, "--fields", f"{host}.sshkey"],
         capture_output=True,
         check=True,
     )
@@ -132,7 +132,7 @@ def sshhost_set(host: str, key: str | Path) -> None:
     if isinstance(key, Path):
         key = key.read_text()
     subprocess.run(
-        ["op", "item", "edit", _op_sshhost_keys_item, f"{host}.age[password]={key}"],
+        ["op", "item", "edit", _op_sshhost_keys_item, f"{host}.sshkey[password]={key}"],
         check=True,
     )
 
@@ -140,6 +140,6 @@ def sshhost_set(host: str, key: str | Path) -> None:
 def sshhost_delete(host: str) -> None:
     """Delete an ssh host key for a node"""
     subprocess.run(
-        ["op", "item", "edit", _op_sshhost_keys_item, f"{host}[delete]"],
+        ["op", "item", "edit", _op_sshhost_keys_item, f"{host}.sshkey[delete]"],
         check=True,
     )

@@ -55,8 +55,7 @@ def make_node_inventory_file(
 
 
 _node_installer_script_temple = Temple(
-    r"""\
-#!/usr/bin/env python3
+    r"""#!/usr/bin/env python3
 '''Install the {$}nodename node's configuration'''
 from argparse import ArgumentParser
 from subprocess import run

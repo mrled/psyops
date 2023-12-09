@@ -116,7 +116,7 @@ class NodeSecrets:
         )
 
     def write_interfaces(self) -> None:
-        """Create a new interfaces file"""
+        """Create a new network.interfaces file"""
         with self.interfaces.open("w") as f:
             f.write(
                 textwrap.dedent(
@@ -161,6 +161,7 @@ class NodeSecrets:
             nodefiles._sshhostprint = f.read().strip()
         # No need to keep this around, we regenerate it on boot
         ssh_host_pubkey.unlink()
+        ctrlsec.sshhost_set(nodename, nodefiles.sshhostkey)
 
         # Nebula key generation
         magicrun(
@@ -194,7 +195,7 @@ class NodeSecrets:
 
         # Info from inventory node module
         nodemod = sitewrapper.site_submodule(f"nodes.{nodename}")
-        mac_address = nodemod.node.sitedata.psy0mac
+        mac_address = nodemod.node.sitedata["psy0mac"]
 
         # Simple file creation
         nodefiles.nodename.open("w").write(nodename)
@@ -203,7 +204,7 @@ class NodeSecrets:
 
         # Age key retrieval
         nodefiles.agekey.open("w").write(ctrlsec.age_get(nodename))
-        nodefiles._agepub = nodemod.node.sitedata.age_pubkey
+        nodefiles._agepub = nodemod.node.sitedata["age_pubkey"]
 
         # SSH key retrieval
         nodefiles.sshhostkey.open("w").write(ctrlsec.sshhost_get(nodename))
@@ -408,7 +409,6 @@ def main():
                 ssh_host_fingerprint=nodesec.sshhostprint,
                 mac_address=parsed.mac_address,
                 serial=parsed.serial,
-                force=parsed.force,
             )
             if parsed.outscript:
                 nodesec.save_installer_script(parsed.outscript)
