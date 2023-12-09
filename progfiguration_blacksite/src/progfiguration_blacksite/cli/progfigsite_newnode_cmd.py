@@ -24,6 +24,7 @@ from progfiguration.temple import Temple
 import progfiguration_blacksite
 import progfiguration_blacksite.nodes
 import progfiguration_blacksite.sitelib.buildsite
+from progfiguration_blacksite.sitelib.controller.ctrlsec import psynet_set
 
 
 def CommaSeparatedStrList(cssl: str) -> List[str]:
@@ -50,11 +51,6 @@ def CIDRv4(s: str) -> str:
     except ValueError as e:
         raise argparse.ArgumentTypeError(f"Invalid CIDR string {s}: {e}") from None
     return s
-
-
-def gopass_insert(name: str, path: Path) -> None:
-    """Insert a secret into gopass"""
-    magicrun(["gopass", "insert", "-m", name, "--force", path.as_posix()])
 
 
 node_py_temple = Temple(
@@ -249,7 +245,7 @@ def main():
         age_keygen_result = magicrun(["age-keygen", "-o", tmpdir / "age.key"])
         age_keygen_err = age_keygen_result.stderr.read().strip()
         age_pubkey = age_keygen_err.split(" ")[2]
-        # gopass_insert(f"psyopsOS/{parsed.nodename}.age.key", outdir / "age.key")
+        # magicrun(["gopass", "insert", "-m", f"psyopsOS/{parsed.nodename}.age.key", "--force", outdir / "age.key"])
 
         magicrun(
             [
@@ -286,8 +282,7 @@ def main():
 
         shutil.move(nebula_key, tmpdir / "psynet.host.key")
         shutil.move(nebula_crt, tmpdir / "psynet.host.crt")
-        gopass_insert(f"psynet/{parsed.nodename}.key", nebula_key)
-        gopass_insert(f"psynet/{parsed.nodename}.crt", nebula_crt)
+        psynet_set(parsed.nodename, nebula_crt, nebula_key)
 
         (tmpdir / "mactab").open("w").write(f"psy0 {parsed.mac_address}\n")
 
@@ -309,9 +304,7 @@ def main():
 
         if parsed.outscript:
             if parsed.outscript.exists() and not parsed.force:
-                raise RuntimeError(
-                    f"{parsed.outscript} already exists, refusing to overwrite it."
-                )
+                raise RuntimeError(f"{parsed.outscript} already exists, refusing to overwrite it.")
             parsed.outscript.open("w").write(
                 get_node_installer_script_temple(
                     nodename=parsed.nodename,
@@ -327,20 +320,14 @@ def main():
             if not outdir:
                 outdir = Path(outdir_default.format(nodename=parsed.nodename))
             if outdir.exists() and not parsed.force:
-                raise RuntimeError(
-                    f"{outdir} already exists, refusing to overwrite it."
-                )
+                raise RuntimeError(f"{outdir} already exists, refusing to overwrite it.")
             outdir.mkdir(parents=True, exist_ok=True)
             for item in os.listdir(tmpdir):
                 shutil.move(tmpdir / item, outdir / item)
 
-    inventory_node_py_file = (
-        Path(progfiguration_blacksite.nodes.__file__).parent / f"{parsed.nodename}.py"
-    )
+    inventory_node_py_file = Path(progfiguration_blacksite.nodes.__file__).parent / f"{parsed.nodename}.py"
     if inventory_node_py_file.exists() and not parsed.force:
-        raise RuntimeError(
-            f"Node file {inventory_node_py_file} already exists, please delete it first"
-        )
+        raise RuntimeError(f"Node file {inventory_node_py_file} already exists, please delete it first")
     inventory_node_py_file.open("w").write(
         node_py_temple.substitute(
             hostname=hostname,
