@@ -16,15 +16,15 @@ _node_py_temple = Temple(
     node = InventoryNode(
         address="{$}hostname",
         user="root",
-        age_pubkey="{$}age_pubkey",
         ssh_host_fingerprint="{$}ssh_host_fingerprint",
         sitedata=dict(
             notes="",
             flavortext="{$}flavor_text",
             psy0mac="{$}psy0mac",
             serial="{$}serial",
+            age_pubkey="{$}age_pubkey",
         ),
-        roles=dict,
+        roles=dict(),
     )
     """
     )
@@ -39,20 +39,17 @@ def make_node_inventory_file(
     ssh_host_fingerprint: str,
     mac_address: str,
     serial: str,
-    force: bool = False,
 ):
     """Make an inventory file for a new node"""
     inventory_node_py_file = Path(progfiguration_blacksite.nodes.__file__).parent / f"{nodename}.py"
-    if inventory_node_py_file.exists() and not force:
-        raise RuntimeError(f"Node file {inventory_node_py_file} already exists, please delete it first")
     inventory_node_py_file.open("w").write(
         _node_py_temple.substitute(
-            hostname=hostname,
-            flavor_text=flavor_text,
-            age_pubkey=age_pubkey,
-            ssh_host_fingerprint=ssh_host_fingerprint,
-            psy0mac=mac_address,
-            serial=serial,
+            hostname=hostname.strip(),
+            flavor_text=flavor_text.strip(),
+            age_pubkey=age_pubkey.strip(),
+            ssh_host_fingerprint=ssh_host_fingerprint.strip(),
+            psy0mac=mac_address.strip(),
+            serial=serial.strip(),
         )
     )
 

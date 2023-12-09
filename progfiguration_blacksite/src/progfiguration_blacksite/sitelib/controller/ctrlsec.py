@@ -59,6 +59,18 @@ def psynet_set(host: str, crt: str | Path, key: str | Path) -> None:
     )
 
 
+def psynet_delete(host: str) -> None:
+    """Delete a node's cert and key for psynet"""
+    subprocess.run(
+        ["op", "item", "edit", _op_psynet_cert_item, f"{host}.crt[delete]"],
+        check=True,
+    )
+    subprocess.run(
+        ["op", "item", "edit", _op_psynet_cert_item, f"{host}.key[delete]"],
+        check=True,
+    )
+
+
 @contextmanager
 def psynetca():
     """A context manager that yields a temporary directory containing the psynet CA"""
@@ -97,10 +109,18 @@ def age_set(host: str, key: str | Path) -> None:
     )
 
 
+def age_delete(host: str) -> None:
+    """Delete an age key for a node"""
+    subprocess.run(
+        ["op", "item", "edit", _op_age_keys_item, f"{host}.age[delete]"],
+        check=True,
+    )
+
+
 def sshhost_get(host: str) -> str:
     """Get an ssh host key from 1Password"""
     result = subprocess.run(
-        ["op", "item", "get", _op_sshhost_keys_item, "--fields", f"{host}"],
+        ["op", "item", "get", _op_sshhost_keys_item, "--fields", f"{host}.age"],
         capture_output=True,
         check=True,
     )
@@ -112,6 +132,14 @@ def sshhost_set(host: str, key: str | Path) -> None:
     if isinstance(key, Path):
         key = key.read_text()
     subprocess.run(
-        ["op", "item", "edit", _op_sshhost_keys_item, f"{host}[password]={key}"],
+        ["op", "item", "edit", _op_sshhost_keys_item, f"{host}.age[password]={key}"],
+        check=True,
+    )
+
+
+def sshhost_delete(host: str) -> None:
+    """Delete an ssh host key for a node"""
+    subprocess.run(
+        ["op", "item", "edit", _op_sshhost_keys_item, f"{host}[delete]"],
         check=True,
     )

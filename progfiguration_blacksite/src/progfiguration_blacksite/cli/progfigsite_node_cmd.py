@@ -8,6 +8,7 @@ This script isn't available when running from a zipapp.
 
 
 import argparse
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -39,6 +40,16 @@ def CIDRv4(s: str) -> str:
     except ValueError as e:
         raise argparse.ArgumentTypeError(f"Invalid CIDR string {s}: {e}") from None
     return s
+
+
+def check_node_exists(nodename: str) -> bool:
+    """Check if a node exists"""
+    try:
+        sitewrapper.site_submodule(f"nodes.{nodename}")
+    except ModuleNotFoundError:
+        return False
+    else:
+        return True
 
 
 class NodeSecrets:
@@ -147,7 +158,7 @@ class NodeSecrets:
         magicrun(["ssh-keygen", "-q", "-f", nodefiles.sshhostkey, "-N", "", "-t", "ed25519"])
         ssh_host_pubkey = secroot / "ssh_host_ed25519_key.pub"
         with ssh_host_pubkey.open("r") as f:
-            nodefiles._sshhostprint = f.read()
+            nodefiles._sshhostprint = f.read().strip()
         # No need to keep this around, we regenerate it on boot
         ssh_host_pubkey.unlink()
 
@@ -182,7 +193,6 @@ class NodeSecrets:
         nodefiles = cls(secroot)
 
         # Info from inventory node module
-        sitewrapper.set_progfigsite_by_filepath(Path(progfiguration_blacksite.__file__), "progfiguration_blacksite")
         nodemod = sitewrapper.site_submodule(f"nodes.{nodename}")
         mac_address = nodemod.node.sitedata.psy0mac
 
@@ -310,6 +320,13 @@ def makeparser():
         help="The name of the existing node.",
     )
 
+    # The "delete" subcommand
+    delete_parser = subparsers.add_parser("delete", help="Delete an existing node's configuration.")
+    delete_parser.add_argument(
+        "nodename",
+        help="The name of the node to delete.",
+    )
+
     return parser
 
 
@@ -328,6 +345,40 @@ def main():
             f"pyproject.toml not found at {parsed.pyproject_root}, please specify the path to the root of the pyproject.toml file with the --pyproject-root option. Note that you should generally be running this script from an editable install of a git checkout, where this will not be necessary."
         )
 
+    sitewrapper.set_progfigsite_by_filepath(Path(progfiguration_blacksite.__file__), "progfiguration_blacksite")
+
+    if parsed.subcommand == "delete":
+        nodemod_file = None
+        try:
+            nodemod = sitewrapper.site_submodule(f"nodes.{parsed.nodename}")
+            nodemod_file = nodemod.__file__
+        except ModuleNotFoundError:
+            print(f"Node module at nodes.{parsed.nodename} does not exist.")
+        except Exception:
+            # This might happen if the module exists but is broken
+            nodes_dir = os.path.dirname(sitewrapper.site_submodule("nodes").__file__)
+            maybe_nodemod_file = os.path.join(nodes_dir, f"{parsed.nodename}.py")
+            if os.path.exists(maybe_nodemod_file):
+                nodemod_file = maybe_nodemod_file
+        if nodemod_file:
+            os.unlink(nodemod_file)
+        try:
+            ctrlsec.psynet_delete(parsed.nodename)
+        except subprocess.CalledProcessError:
+            print(f"No psynet secrets found for {parsed.nodename}.")
+        try:
+            ctrlsec.age_delete(parsed.nodename)
+        except subprocess.CalledProcessError:
+            print(f"No age secrets found for {parsed.nodename}.")
+        try:
+            ctrlsec.sshhost_delete(parsed.nodename)
+        except subprocess.CalledProcessError:
+            print(f"No ssh host secrets found for {parsed.nodename}.")
+
+        return
+
+    # Remaining subcommands take --outdir / --outscript
+
     if parsed.outscript:
         if parsed.outscript.exists() and not parsed.force:
             raise RuntimeError(f"{parsed.outscript} already exists, refusing to overwrite it.")
@@ -338,6 +389,8 @@ def main():
         outdir.mkdir(parents=True, exist_ok=True)
 
     if parsed.subcommand == "new":
+        if check_node_exists(parsed.nodename) and not parsed.force:
+            raise RuntimeError(f"Node {parsed.nodename} already exists, refusing to overwrite it.")
         with tempfile.TemporaryDirectory() as nodesecdir, ctrlsec.psynetca() as psynetca:
             nodesec = NodeSecrets.new(
                 secroot=Path(nodesecdir),
@@ -361,13 +414,17 @@ def main():
                 nodesec.save_installer_script(parsed.outscript)
             else:
                 nodesec.save_directory(outdir)
+        return
 
-    elif parsed.subcommand == "save":
+    if parsed.subcommand == "save":
+        if not check_node_exists(parsed.nodename):
+            raise RuntimeError(f"Node {parsed.nodename} does not exist.")
         with tempfile.TemporaryDirectory() as nodesecdir:
             nodesec = NodeSecrets.from_existing(secroot=Path(nodesecdir), nodename=parsed.nodename)
             if parsed.outscript:
                 nodesec.save_installer_script(parsed.outscript)
             else:
                 nodesec.save_directory(outdir)
-    else:
-        raise parser.error(f"Unknown subcommand {parsed.subcommand}")
+        return
+
+    raise parser.error(f"Unknown subcommand {parsed.subcommand}")
