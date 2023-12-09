@@ -8,22 +8,19 @@ This script isn't available when running from a zipapp.
 
 
 import argparse
-import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import textwrap
 
-from progfiguration import logger
+from progfiguration import logger, sitewrapper
 from progfiguration.cli.util import idb_excepthook
 from progfiguration.cmd import magicrun
 
 import progfiguration_blacksite
-import progfiguration_blacksite.nodes
-import progfiguration_blacksite.sitelib.buildsite
-from progfiguration_blacksite.sitelib.controller.ctrlsec import psynet_set
-from progfiguration_blacksite.sitelib.controller import nodemgmt
+from progfiguration_blacksite.sitelib.controller import ctrlsec, nodemgmt
 
 
 def CIDRv4(s: str) -> str:
@@ -42,6 +39,172 @@ def CIDRv4(s: str) -> str:
     except ValueError as e:
         raise argparse.ArgumentTypeError(f"Invalid CIDR string {s}: {e}") from None
     return s
+
+
+class NodeSecrets:
+    """Files required for a node secrets mount"""
+
+    _agepub: str
+    _sshhostprint: str
+
+    def __init__(self, secroot: Path):
+        self.secroot = secroot
+        """The root directory for the node secrets"""
+        self.nodename = secroot / "nodename"
+        """A file called nodename which contains the node's name"""
+        self.agekey = secroot / "age.key"
+        """The age private key for the node"""
+        self.mactab = secroot / "mactab"
+        """The mactab file for the node"""
+        self.nebulakey = secroot / "psynet.host.key"
+        """The nebula private key for the node"""
+        self.nebulacrt = secroot / "psynet.host.crt"
+        """The nebula certificate for the node"""
+        self.sshhostkey = secroot / "ssh_host_ed25519_key"
+        """The ssh host key for the node"""
+        self.interfaces = secroot / "network.interfaces"
+        """The network.interfaces file for the node"""
+        self.files = [
+            self.nodename,
+            self.agekey,
+            self.mactab,
+            self.nebulakey,
+            self.nebulacrt,
+            self.sshhostkey,
+            self.interfaces,
+        ]
+        """All files that must be present on a psyops-secret volume"""
+
+    @property
+    def agepub(self) -> str:
+        if not self._agepub:
+            self._agepub = self.agekey.read_text().split(" ")[2]
+        return self._agepub
+
+    @property
+    def sshhostprint(self) -> str:
+        if not self._sshhostprint:
+            subprocess.run(["ssh-keygen", "-y", "-f", self.sshhostkey], capture_output=True, check=True, text=True)
+            self._sshhostprint = self.sshhostkey.read_text()
+        return self._sshhostprint
+
+    def save_directory(self, outdir: Path):
+        for f in self.files:
+            shutil.move(f, outdir / f.name)
+
+    def save_installer_script(self, outscript: Path):
+        outscript.open("w").write(
+            nodemgmt.make_node_installer_script_temple(
+                nodename=self.nodename.read_text(),
+                age_key=self.agekey.read_text(),
+                mactab=self.mactab.read_text(),
+                nebula_key=self.nebulakey.read_text(),
+                nebula_crt=self.nebulacrt.read_text(),
+                ssh_host_key=self.sshhostkey.read_text(),
+            )
+        )
+
+    def write_interfaces(self) -> None:
+        """Create a new interfaces file"""
+        with self.interfaces.open("w") as f:
+            f.write(
+                textwrap.dedent(
+                    """\
+                    auto lo
+                    iface lo inet loopback
+
+                    auto psy0
+                    iface psy0 inet dhcp
+                    """
+                )
+            )
+
+    @classmethod
+    def new(
+        cls,
+        secroot: Path,
+        nodename: str,
+        psynetip: str,
+        psynet_groups: list[str],
+        nebula_ca_directory: Path,
+        mac_address: str,
+    ):
+        """Create a new node secrets directory, and make new keys etc."""
+        nodefiles = cls(secroot)
+
+        # Simple file creation
+        nodefiles.nodename.open("w").write(nodename)
+        nodefiles.mactab.open("w").write(f"psy0 {mac_address}\n")
+        nodefiles.write_interfaces()
+
+        # Age key generation
+        age_keygen_result = magicrun(["age-keygen", "-o", nodefiles.agekey])
+        age_keygen_err = age_keygen_result.stderr.read().strip()
+        nodefiles._agepub = age_keygen_err.split(" ")[2]
+        ctrlsec.age_set(nodename, nodefiles.agekey)
+
+        # SSH key generation
+        magicrun(["ssh-keygen", "-q", "-f", nodefiles.sshhostkey, "-N", "", "-t", "ed25519"])
+        ssh_host_pubkey = secroot / "ssh_host_ed25519_key.pub"
+        with ssh_host_pubkey.open("r") as f:
+            nodefiles._sshhostprint = f.read()
+        # No need to keep this around, we regenerate it on boot
+        ssh_host_pubkey.unlink()
+
+        # Nebula key generation
+        magicrun(
+            [
+                "nebula-cert",
+                "sign",
+                "-name",
+                nodename,
+                "-ip",
+                psynetip,
+                "-groups",
+                ",".join(psynet_groups),
+                "-out-key",
+                nodefiles.nebulakey,
+                "-out-crt",
+                nodefiles.nebulacrt,
+            ],
+            cwd=nebula_ca_directory,
+        )
+        ctrlsec.psynet_set(nodename, nodefiles.nebulacrt, nodefiles.nebulakey)
+
+        # TODO: Either handle minisign pubkey in this script, or remove minisign from the design.
+        # I've never used it, but have thought it would be useful to be able to prove that somethins is signed by the controller without having to encrypt it separately for each node.
+
+        return nodefiles
+
+    @classmethod
+    def from_existing(cls, secroot: Path, nodename: str):
+        """Retrieve node secrets from the secret store, and save them to a directory"""
+        nodefiles = cls(secroot)
+
+        # Info from inventory node module
+        sitewrapper.set_progfigsite_by_filepath(Path(progfiguration_blacksite.__file__), "progfiguration_blacksite")
+        nodemod = sitewrapper.site_submodule(f"nodes.{nodename}")
+        mac_address = nodemod.node.sitedata.psy0mac
+
+        # Simple file creation
+        nodefiles.nodename.open("w").write(nodename)
+        nodefiles.write_interfaces()
+        nodefiles.mactab.open("w").write(f"psy0 {mac_address}\n")
+
+        # Age key retrieval
+        nodefiles.agekey.open("w").write(ctrlsec.age_get(nodename))
+        nodefiles._agepub = nodemod.node.sitedata.age_pubkey
+
+        # SSH key retrieval
+        nodefiles.sshhostkey.open("w").write(ctrlsec.sshhost_get(nodename))
+        nodefiles._sshhostprint = nodemod.node.ssh_host_fingerprint
+
+        # Nebula key retrieval
+        nebula_crt, nebula_key = ctrlsec.psynet_get(nodename)
+        nodefiles.nebulacrt.open("w").write(nebula_crt)
+        nodefiles.nebulakey.open("w").write(nebula_key)
+
+        return nodefiles
 
 
 def makeparser():
@@ -65,31 +228,53 @@ def makeparser():
         help="Open the debugger if an unhandled exception is encountered.",
     )
     parser.add_argument(
+        "--pyproject-root",
+        type=Path,
+        default=Path(progfiguration_blacksite.__file__).parent.parent.parent,
+        help="Path to the root of the pyproject.toml file. Defaults to %(default)s. You won't need to override this if running from an editable install of a git checkout.",
+    )
+
+    subparsers = parser.add_subparsers(dest="subcommand", required=True)
+
+    # The out* parent parser
+    outparser = argparse.ArgumentParser(add_help=False)
+    outgroup = outparser.add_mutually_exclusive_group()
+    outdir_default = "./progfiguration-blacksite-{nodename}-secrets"
+    outgroup.add_argument(
+        "--outdir",
+        default="./progfiguration-blacksite-{nodename}-secrets",
+        help=f"A directory to write the node configuration files to. These files can be written directly to a psyopsOS secrets volume. Defaults to {outdir_default.format(nodename='NODENAME')}",
+    )
+    outgroup.add_argument(
+        "--outscript",
+        type=Path,
+        help="A path to write the installer script to. If this is provided, write a Python script that contains the node configuration files and an installer script. The script will take an argument to a device to install to, e.g. /dev/sdb, and overwrite everything on that device -- :) BE CAREFUL (:",
+    )
+
+    # The --force parser
+    forceparser = argparse.ArgumentParser(add_help=False)
+    forceparser.add_argument(
         "--force",
         "-f",
         action="store_true",
         help="Overwrite existing files. This is dangerous, as it will overwrite any changes you have made to the files.",
     )
-    parser.add_argument(
-        "--pyproject-root",
-        type=Path,
-        default=Path(progfiguration_blacksite.__file__).parent.parent,
-        help="Path to the root of the pyproject.toml file. Defaults to %(default)s. You won't need to override this if running from an editable install of a git checkout.",
-    )
-    parser.add_argument("--clean", action="store_true", help="Clean before building.")
 
-    parser.add_argument("nodename", help="The name you want to use for this node")
+    # The 'new' subcommand
+    new_parser = subparsers.add_parser("new", parents=[forceparser, outparser], help="Create a new node")
+
+    new_parser.add_argument("nodename", help="The name you want to use for this node")
 
     default_hostname = "{nodename}.example.com"
-    parser.add_argument(
+    new_parser.add_argument(
         "--hostname",
         default=default_hostname,
-        help="The hostname to use for this node. Defaults to {default_hostname.format(nodename='NODENAME')}",
+        help=f"The hostname to use for this node. Defaults to {default_hostname.format(nodename='NODENAME')}",
     )
 
-    parser.add_argument("--flavor-text", default="", help="Flavor text for the node")
+    new_parser.add_argument("--flavor-text", default="", help="Flavor text for the node")
 
-    parser.add_argument(
+    new_parser.add_argument(
         "--psynetip",
         type=CIDRv4,
         required=True,
@@ -97,43 +282,32 @@ def makeparser():
     )
 
     psynet_groups_default = "psyopsOS"
-    parser.add_argument(
+    new_parser.add_argument(
         "--psynet-groups",
         nargs="+",
         default=psynet_groups_default,
         help="The groups to add this node to, comma separated. Defaults to %(default)s",
     )
 
-    out_group = parser.add_mutually_exclusive_group()
-    outdir_default = "./progfiguration-blacksite-{nodename}-secrets"
-    out_group.add_argument(
-        "--outdir",
-        type=Path,
-        help=f"A directory to write the node configuration files to. These files can be written directly to a psyopsOS secrets volume. Defaults to {outdir_default.format(nodename='NODENAME')}",
-    )
-    out_group.add_argument(
-        "--outscript",
-        type=Path,
-        help="A path to write the installer script to. If this is provided, write a Python script that contains the node configuration files and an installer script. The script will take an argument to a device to install to, e.g. /dev/sdb, and overwrite everything on that device -- :) BE CAREFUL (:",
-    )
-
-    parser.add_argument(
-        "--nebula-ca-directory",
-        type=Path,
-        default=Path("/secrets/psyops-secrets/psynet"),
-        help="The directory containing the nebula CA, see ./psynet.md for more information. Defaults to %(default)s",
-    )
-
-    parser.add_argument(
+    new_parser.add_argument(
         "--mac-address",
         default="00:00:00:00:00:00",
         help="The MAC address of the node's NIC card. If this is not provided it defaults to %(default)s, and you must edit the resulting mactab file with the real address or the network will not be configured properly.",
     )
 
-    parser.add_argument(
+    new_parser.add_argument(
         "--serial",
         default="00000000",
         help="The serial number or service tag for the hardeware. Defaults to all %(default)s.",
+    )
+
+    # The "save" subcommand
+    save_parser = subparsers.add_parser(
+        "save", parents=[forceparser, outparser], help="Save an existing node's configuration"
+    )
+    save_parser.add_argument(
+        "nodename",
+        help="The name of the existing node.",
     )
 
     return parser
@@ -149,113 +323,51 @@ def main():
     if parsed.debug:
         sys.excepthook = idb_excepthook
 
-    hostname = parsed.hostname.format(nodename=parsed.nodename)
-
     if not (parsed.pyproject_root / "pyproject.toml").exists():
         raise RuntimeError(
             f"pyproject.toml not found at {parsed.pyproject_root}, please specify the path to the root of the pyproject.toml file with the --pyproject-root option. Note that you should generally be running this script from an editable install of a git checkout, where this will not be necessary."
         )
 
-    with tempfile.TemporaryDirectory() as tmpdir_s:
-        tmpdir = Path(tmpdir_s)
-        (tmpdir / "nodename").open("w").write(parsed.nodename)
+    if parsed.outscript:
+        if parsed.outscript.exists() and not parsed.force:
+            raise RuntimeError(f"{parsed.outscript} already exists, refusing to overwrite it.")
+    else:
+        outdir = Path(parsed.outdir.format(nodename=parsed.nodename))
+        if outdir.exists() and not parsed.force:
+            raise RuntimeError(f"{outdir} already exists, refusing to overwrite it.")
+        outdir.mkdir(parents=True, exist_ok=True)
 
-        age_keygen_result = magicrun(["age-keygen", "-o", tmpdir / "age.key"])
-        age_keygen_err = age_keygen_result.stderr.read().strip()
-        age_pubkey = age_keygen_err.split(" ")[2]
-        # magicrun(["gopass", "insert", "-m", f"psyopsOS/{parsed.nodename}.age.key", "--force", outdir / "age.key"])
-
-        magicrun(
-            [
-                "ssh-keygen",
-                "-q",
-                "-f",
-                tmpdir / "ssh_host_ed25519_key",
-                "-N",
-                "",
-                "-t",
-                "ed25519",
-            ]
-        )
-        with (tmpdir / "ssh_host_ed25519_key.pub").open("r") as f:
-            ssh_host_fingerprint = f.read()
-        # No need to keep this around, we regenerate it on boot
-        (tmpdir / "ssh_host_ed25519_key.pub").unlink()
-
-        magicrun(
-            [
-                "nebula-cert",
-                "sign",
-                "-name",
-                parsed.nodename,
-                "-ip",
-                parsed.psynetip,
-                "-groups",
-                ",".join(parsed.psynet_groups),
-            ],
-            cwd=parsed.nebula_ca_directory,
-        )
-        nebula_key = parsed.nebula_ca_directory / f"{parsed.nodename}.key"
-        nebula_crt = parsed.nebula_ca_directory / f"{parsed.nodename}.crt"
-
-        shutil.move(nebula_key, tmpdir / "psynet.host.key")
-        shutil.move(nebula_crt, tmpdir / "psynet.host.crt")
-        psynet_set(parsed.nodename, nebula_crt, nebula_key)
-
-        (tmpdir / "mactab").open("w").write(f"psy0 {parsed.mac_address}\n")
-
-        with (tmpdir / "network.interfaces").open("w") as f:
-            f.write(
-                textwrap.dedent(
-                    """\
-                    auto lo
-                    iface lo inet loopback
-
-                    auto psy0
-                    iface psy0 inet dhcp
-                    """
-                )
+    if parsed.subcommand == "new":
+        with tempfile.TemporaryDirectory() as nodesecdir, ctrlsec.psynetca() as psynetca:
+            nodesec = NodeSecrets.new(
+                secroot=Path(nodesecdir),
+                nodename=parsed.nodename,
+                psynetip=parsed.psynetip,
+                psynet_groups=parsed.psynet_groups,
+                nebula_ca_directory=psynetca,
+                mac_address=parsed.mac_address,
             )
-
-        magicrun("ls -alF /tmp")
-        magicrun(f"ls -alF {tmpdir}")
-
-        if parsed.outscript:
-            if parsed.outscript.exists() and not parsed.force:
-                raise RuntimeError(f"{parsed.outscript} already exists, refusing to overwrite it.")
-            parsed.outscript.open("w").write(
-                nodemgmt.get_node_installer_script_temple(
-                    nodename=parsed.nodename,
-                    age_key=(tmpdir / "age.key").read_text(),
-                    mactab=(tmpdir / "mactab").read_text(),
-                    nebula_key=nebula_key,
-                    nebula_crt=nebula_crt,
-                    ssh_host_key=(tmpdir / "ssh_host_ed25519_key").read_text(),
-                )
+            nodemgmt.make_node_inventory_file(
+                nodename=parsed.nodename,
+                hostname=parsed.hostname.format(nodename=parsed.nodename),
+                flavor_text=parsed.flavor_text,
+                age_pubkey=nodesec.agepub,
+                ssh_host_fingerprint=nodesec.sshhostprint,
+                mac_address=parsed.mac_address,
+                serial=parsed.serial,
+                force=parsed.force,
             )
-        else:
-            outdir = parsed.outdir
-            if not outdir:
-                outdir = Path(outdir_default.format(nodename=parsed.nodename))
-            if outdir.exists() and not parsed.force:
-                raise RuntimeError(f"{outdir} already exists, refusing to overwrite it.")
-            outdir.mkdir(parents=True, exist_ok=True)
-            for item in os.listdir(tmpdir):
-                shutil.move(tmpdir / item, outdir / item)
+            if parsed.outscript:
+                nodesec.save_installer_script(parsed.outscript)
+            else:
+                nodesec.save_directory(outdir)
 
-    inventory_node_py_file = Path(progfiguration_blacksite.nodes.__file__).parent / f"{parsed.nodename}.py"
-    if inventory_node_py_file.exists() and not parsed.force:
-        raise RuntimeError(f"Node file {inventory_node_py_file} already exists, please delete it first")
-    inventory_node_py_file.open("w").write(
-        nodemgmt.node_py_temple.substitute(
-            hostname=hostname,
-            flavor_text=parsed.flavor_text,
-            age_pubkey=age_pubkey,
-            ssh_host_fingerprint=ssh_host_fingerprint,
-            psy0mac=parsed.mac_address,
-            serial=parsed.serial,
-        )
-    )
-
-    # TODO: Either handle minisign pubkey in this script, or remove minisign from the design.
-    # I've never used it, but have thought it would be useful to be able to prove that somethins is signed by the controller without having to encrypt it separately for each node.
+    elif parsed.subcommand == "save":
+        with tempfile.TemporaryDirectory() as nodesecdir:
+            nodesec = NodeSecrets.from_existing(secroot=Path(nodesecdir), nodename=parsed.nodename)
+            if parsed.outscript:
+                nodesec.save_installer_script(parsed.outscript)
+            else:
+                nodesec.save_directory(outdir)
+    else:
+        raise parser.error(f"Unknown subcommand {parsed.subcommand}")

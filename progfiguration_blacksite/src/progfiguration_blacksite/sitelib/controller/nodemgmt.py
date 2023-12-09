@@ -1,9 +1,14 @@
 """Node management"""
+
+from pathlib import Path
 import textwrap
+
 from progfiguration.temple import Temple
 
+import progfiguration_blacksite.nodes
 
-node_py_temple = Temple(
+
+_node_py_temple = Temple(
     textwrap.dedent(
         """\
     from progfiguration.inventory.nodes import InventoryNode
@@ -24,21 +29,37 @@ node_py_temple = Temple(
     """
     )
 )
-"""The template for the node.py file"""
 
 
-def get_node_installer_script_temple(
+def make_node_inventory_file(
     nodename: str,
-    age_key: str,
-    mactab: str,
-    nebula_key: str,
-    nebula_crt: str,
-    ssh_host_key: str,
-) -> Temple:
-    """Get the template for the node installer script"""
+    hostname: str,
+    flavor_text: str,
+    age_pubkey: str,
+    ssh_host_fingerprint: str,
+    mac_address: str,
+    serial: str,
+    force: bool = False,
+):
+    """Make an inventory file for a new node"""
+    inventory_node_py_file = Path(progfiguration_blacksite.nodes.__file__).parent / f"{nodename}.py"
+    if inventory_node_py_file.exists() and not force:
+        raise RuntimeError(f"Node file {inventory_node_py_file} already exists, please delete it first")
+    inventory_node_py_file.open("w").write(
+        _node_py_temple.substitute(
+            hostname=hostname,
+            flavor_text=flavor_text,
+            age_pubkey=age_pubkey,
+            ssh_host_fingerprint=ssh_host_fingerprint,
+            psy0mac=mac_address,
+            serial=serial,
+        )
+    )
 
-    node_installer_script_temple = Temple(
-        r"""#!/usr/bin/env python3
+
+_node_installer_script_temple = Temple(
+    r"""\
+#!/usr/bin/env python3
 '''Install the {$}nodename node's configuration'''
 from argparse import ArgumentParser
 from subprocess import run
@@ -74,8 +95,19 @@ for filename, contents in files.items():
     with open(parsed.mount_path + "/" + filename, "w") as f:
         f.write(contents)
 """
-    )
-    return node_installer_script_temple.substitute(
+)
+
+
+def make_node_installer_script_temple(
+    nodename: str,
+    age_key: str,
+    mactab: str,
+    nebula_key: str,
+    nebula_crt: str,
+    ssh_host_key: str,
+) -> Temple:
+    """Get the template for the node installer script"""
+    return _node_installer_script_temple.substitute(
         nodename=nodename,
         age_key=age_key,
         mactab=mactab,
