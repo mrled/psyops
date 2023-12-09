@@ -8,6 +8,7 @@ Secrets should be stored in 1Password, and accessed with the getsecret function.
 from dataclasses import dataclass
 from pathlib import Path
 import subprocess
+from typing import Callable
 
 
 def getsecret(item: str, field: str) -> str:
@@ -51,6 +52,13 @@ class TelekinesisConfig:
             """The S3 bucket used for psyopsOS and progfiguration_blacksite"""
             self.region = "us-east-2"
             """The S3 region"""
+            self.get_credential = lambda: (
+                getsecret("op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer", "username"),
+                getsecret("op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer", "password"),
+            )
+            """A function to retrieve the AWS credentials for writing to the bucket from a password store.
+            Return a tuple of (username, password)
+            """
             self.onepassword_item = "op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer"
             """The 1Password item for the IAM user that has access to the bucket"""
             self.localpath = artifacts / "deaddrop"
@@ -72,8 +80,8 @@ class TelekinesisConfig:
         """The version of Alpine to use"""
         dockertag_prefix: str
         """The Docker image tag prefix (will be suffixed with the Alpine version)"""
-        onepassword_signing_key: str
-        """The 1Password item for the APK signing key"""
+        get_signing_key: Callable[[], str]
+        """A function to retrieve the signing key from a password store"""
         apk_key_filename: str
         """This is the name to set for the APK signing key in the Alpine builder container.
         It doesn't rely on any file with this name existing on the host."""
@@ -149,7 +157,7 @@ class TelekinesisConfig:
         self.buildcontainer = self.TelekinesisBuildcontainerNode(
             alpine_version=self.alpine_version,
             dockertag_prefix="psyopsos-builder-",
-            onepassword_signing_key="op://Personal/psyopsOS_abuild_ssh_key",
+            get_signing_key=lambda: getsecret("op://Personal/psyopsOS_abuild_ssh_key", "notesPlain"),
             apk_key_filename="psyops@micahrl.com-62ca1973.rsa",
             apkreponame="psyopsOS",
             uri=f"https://psyops.micahrl.com/",

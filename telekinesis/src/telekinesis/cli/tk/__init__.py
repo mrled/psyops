@@ -209,8 +209,7 @@ def main_impl():
         for path in [tkconfig.psyopsroot / "telekinesis" / "readme.md"]:
             subprocess.run(["cog", "-r", path.as_posix()], check=True)
     elif parsed.action == "deaddrop":
-        aws_keyid = getsecret(tkconfig.deaddrop.onepassword_item, "username")
-        aws_secret = getsecret(tkconfig.deaddrop.onepassword_item, "password")
+        aws_keyid, aws_secret = tkconfig.deaddrop.get_credential()
         aws_sess = deaddrop.makesession(aws_keyid, aws_secret, tkconfig.deaddrop.region)
         if parsed.deaddrop_action == "ls":
             deaddrop.list_files(aws_sess, tkconfig.deaddrop.bucketname)

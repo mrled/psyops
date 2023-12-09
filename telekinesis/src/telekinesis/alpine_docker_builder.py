@@ -301,7 +301,7 @@ def get_configured_docker_builder(
         aports_checkout_dir=tkconfig.repopaths.aports,
         aports_scripts_overlay_dir=tkconfig.repopaths.psyops_aports_scripts,
         host_artifacts_dir=tkconfig.repopaths.artifacts,
-        apk_key_value=getsecret(tkconfig.buildcontainer.onepassword_signing_key, "notesPlain"),
+        apk_key_value=tkconfig.buildcontainer.get_signing_key(),
         apk_key_filename=tkconfig.buildcontainer.apk_key_filename,
         alpine_version=tkconfig.alpine_version,
         docker_builder_dir=tkconfig.repopaths.build,
