@@ -50,15 +50,6 @@ class TelekinesisConfig:
             """The S3 bucket used for psyopsOS and progfiguration_blacksite"""
             self.region = "us-east-2"
             """The S3 region"""
-            self.get_credential = lambda: (
-                getsecret("op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer", "username"),
-                getsecret("op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer", "password"),
-            )
-            """A function to retrieve the AWS credentials for writing to the bucket from a password store.
-            Return a tuple of (username, password)
-            """
-            self.onepassword_item = "op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer"
-            """The 1Password item for the IAM user that has access to the bucket"""
             self.localpath = artifacts / "deaddrop"
             """Path to the local directory that is synced with the bucket"""
             self.isodir = self.localpath / "iso"
@@ -70,6 +61,14 @@ class TelekinesisConfig:
             self.sqfilename = "psyopsOSsq-psysquash-x86_64.iso"
             """The filename that our mkimage creates"""
 
+        def get_credential(self) -> tuple[str, str]:
+            """Get the AWS credentials from 1Password, and return them as a tuple of (username, password)"""
+            op_uri = "op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer"
+            return (
+                getsecret(op_uri, "username"),
+                getsecret(op_uri, "password"),
+            )
+
     class TelekinesisBuildcontainerNode:
         """Configuration for the buildcontainer node"""
 
@@ -78,8 +77,6 @@ class TelekinesisConfig:
             """The version of Alpine to use"""
             self.dockertag_prefix = "psyopsos-builder-"
             """The Docker image tag prefix (will be suffixed with the Alpine version)"""
-            self.get_signing_key = (lambda: getsecret("op://Personal/psyopsOS_abuild_ssh_key", "notesPlain"),)
-            """A function to retrieve the signing key from a password store"""
             self.apk_key_filename = "psyops@micahrl.com-62ca1973.rsa"
             """This is the name to set for the APK signing key in the Alpine builder container.
             It doesn't rely on any file with this name existing on the host."""
@@ -101,6 +98,10 @@ class TelekinesisConfig:
             which requires a profile_PROFILENAME file in the aports scripts overlay directory"""
             self.dockertag = f"{self.dockertag_prefix}{self.alpine_version}"
             """The Docker image tag of the build container"""
+
+        def get_signing_key(self) -> str:
+            """Get the signing key from 1Password"""
+            return getsecret("op://Personal/psyopsOS_abuild_ssh_key", "notesPlain")
 
     class TelekinesisConfigArtifactsNode:
         """Configuration for the artifacts node"""
