@@ -278,4 +278,7 @@ EOF
 
 umount /mnt/grubusb/efisys
 
+trap - EXIT
+cleanup
+
 echo "$script finished successfully"
