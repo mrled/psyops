@@ -193,7 +193,10 @@ def mkimage_grubusb_squashfs(
             builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-squashfs.sh"
         )
         psyopsOS_world = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/world")
-        psyopsOS_available = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/available")
+        # We previously used this file to get the list of packages to cache,
+        # but it's not necessary because we can just cache everything in the world file.
+        # We cannot install nebula here, bc blacksite needs to create its user before it installs it itself.
+        # psyopsOS_available = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/available")
         psyopsOS_overlay = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay")
         repositories_file = os.path.join(builder.in_container_artifacts_dir, "psyopsOS.repositories")
         outdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)
@@ -211,7 +214,7 @@ def mkimage_grubusb_squashfs(
             f"sudo apk cache download --latest {' '.join(apk_cache_list)}",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-packages-file {psyopsOS_available} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {outdir} --psyopsos-overlay-dir {psyopsOS_overlay}",
+            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {outdir} --psyopsos-overlay-dir {psyopsOS_overlay}",
         ]
         builder.run_docker(in_container_build_cmd)
         subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)

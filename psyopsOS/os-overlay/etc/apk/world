@@ -13,6 +13,7 @@ git
 gzip
 hwids
 jq
+linux-firmware
 lm_sensors
 logger
 lsblk
@@ -24,6 +25,7 @@ openssh
 pciutils
 progfiguration_blacksite
 psyopsOS-base
+py3-pip
 python3
 ripgrep
 shadow
@@ -31,6 +33,7 @@ squashfs-tools
 sqlite
 strace
 sudo
+syslog-ng
 tar
 usbutils
 util-linux
