@@ -237,6 +237,16 @@ psyops_overlay_install root root 0700 usr/local/sbin/psyopsOS-mount-secret.sh
 install -o root -g root -m 0755 -d "$squashroot"/etc/local.d
 psyops_overlay_install root root 0755 etc/local.d/000-psyopsOS-postboot.start
 
+# Configure /etc/fstab
+# Make sure this matches what we do in initramfs-init
+mkdir -p "$squashroot"/mnt/psyopsOS/efisys "$squashroot"/mnt/psyopsOS/a "$squashroot"/mnt/psyopsOS/b "$squashroot"/mnt/psyops-secret/mount
+cat > "$squashroot"/etc/fstab <<EOF
+
+LABEL=PSYOPSOSEFI    /mnt/psyopsOS/efisys       vfat ro,noauto 0 0
+LABEL=psyops-secret  /mnt/psyops-secret/mount  ext4 ro,noauto 0 0
+LABEL=psyopsOS-A     /mnt/psyopsOS/a            ext4 ro,noauto 0 0
+LABEL=psyopsOS-B     /mnt/psyopsOS/b            ext4 ro,noauto 0 0
+EOF
 
 # Add a secret directory that is only readable by root.
 # Mount inside of that, so that no matter what filesystem permissions in the psyops-secret mount are,

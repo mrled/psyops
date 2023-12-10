@@ -1,12 +1,13 @@
 --- initramfs-init.orig	2023-12-03 13:20:35
-+++ initramfs-init.patched.grubusb	2023-12-04 17:07:50
-@@ -1,4 +1,6 @@
++++ initramfs-init.patched.grubusb	2023-12-09 22:51:22
+@@ -1,5 +1,7 @@
  #!/bin/sh
-+
-+set -x
  
++set -x
++
  # this is the init script version
  VERSION=3.8.1-r0
+ SINGLEMODE=no
 @@ -387,6 +389,11 @@
  		opt="${opt#*=}"
  		KOPT_consoles="${opt%%,*} $KOPT_consoles"
@@ -19,29 +20,44 @@
  		continue
  		;;
  	esac
-@@ -529,7 +536,41 @@
+@@ -528,6 +535,55 @@
+ 	# TODO: Might fail because nlplug-findfs hasn't plugged eth0 yet
  	configure_ip
  	setup_nbd || echo "Failed to setup nbd device."
- fi
++fi
 +
 +if [ -n "$KOPT_psyopsos" ]; then
 +	ebegin "Configuring for psyopsOS"
 +
 +	# We have to run nlplug-findfs in order to coldplug all the block devices which might have our partitions on them.
 +	nlplug-findfs
- 
-+	# This is just nice to have when troubleshooting initrd
-+	mkdir -p /efisys /a /b
-+	echo "LABEL=PSYOPSOSEFI /efisys vfat ro 0 0" >> /etc/fstab
-+	echo "LABEL=psyopsOS-A /a ext4 ro 0 0" >> /etc/fstab
-+	echo "LABEL=psyopsOS-B /b ext4 ro 0 0" >> /etc/fstab
 +
-+	# In squashfs-based psyopsOS, the partition we're booting from is passed as psyopsos=LABEL.
-+	psyopsOS_boot_device=$(findfs LABEL="$KOPT_psyopsos")
-+	if [ $? != 0 ]; then eend 1 "Failed to find psyopsOS boot device with label $KOPT_psyopsos"; fi
-+	mkdir -p $sysroot/boot
-+	$MOCK mount -t ext4 -o ro $psyopsOS_boot_device $sysroot/boot
-+	if [ $? != 0 ]; then eend 1 "Failed to mount psyopsOS boot device with label $KOPT_psyopsos to path $sysroot/boot"; fi
++	# Create mountpoints for psyopsOS partitions
++	# Any of these that we actually mount will be moved to $sysroot later,
++	# and will be visible once we have switched root.
++	# Make sure this matches what we do in make-grubusb-squashfs.sh.
++	mkdir -p /mnt/psyopOS/efisys /mnt/psyopOS/a /mnt/psyopOS/b /mnt/psyops-secret/mount
++	cat >> /etc/fstab <<EOF
++LABEL=PSYOPSOSEFI    /mnt/psyopOS/efisys       vfat ro,noauto 0 0
++LABEL=psyops-secret  /mnt/psyops-secret/mount  ext4 ro,noauto 0 0
++LABEL=psyopsOS-A     /mnt/psyopOS/a            ext4 ro,noauto 0 0
++LABEL=psyopsOS-B     /mnt/psyopOS/b            ext4 ro,noauto 0 0
++EOF
++
++	# psyopsOS_boot_device=$(findfs LABEL="$KOPT_psyopsos")
++	# if [ $? != 0 ]; then eend 1 "Failed to find psyopsOS boot device with label $KOPT_psyopsos"; fi
++	# $MOCK mount -t ext4 -o ro $psyopsOS_boot_device /psyopsOS-boot
++	# if [ $? != 0 ]; then eend 1 "Failed to mount psyopsOS boot device with label $KOPT_psyopsos to path /psyopsOS-boot"; fi
++
++	# Mount the psyopsOS A/B partition we booted from, but not the other one
++	# Note that the modloop service will use the first modloop it finds,
++	# so we should have only the one we actually booted from mounted when that service starts.
++	$MOCK mount LABEL="$KOPT_psyopsos"
++	if [ $? != 0 ]; then eend 1 "Failed to mount psyopsOS boot device with label $KOPT_psyopsos"; fi
++	psyopsOS_mountpath=$(grep "LABEL=$KOPT_psyopsos" /etc/fstab | awk '{print $2}')
++	if [ $? != 0 ] || [ -z "$psyopsOS_mountpath" ] || ! [ -e "$psyopsOS_mountpath" ]; then
++		eend 1 "Could not found mountpoint for mounted psyopsOS boot filesystem with label $KOPT_psyopsos"
++	fi
 +
 +	KOPT_rootfstype="squashfs"
 +
@@ -51,13 +67,12 @@
 +	else
 +		case "$KOPT_rootflags" in *loop*) ;; *) KOPT_rootflags="$KOPT_rootflags,loop" ;; esac
 +	fi
-+	KOPT_root="$sysroot/boot/squashfs"
++	# KOPT_root="/psyopsOS-boot/squashfs"
++	KOPT_root="$psyopsOS_mountpath/squashfs"
 +	# Enable overlaytmpfs to allow writing to the / filesystem after boot
 +	KOPT_overlaytmpfs="yes"
 +
 +	eend 0
-+fi
-+
- # zpool reports /dev/zfs missing if it can't read /etc/mtab
- ln -s /proc/mounts "$ROOT"/etc/mtab
+ fi
  
+ # zpool reports /dev/zfs missing if it can't read /etc/mtab
