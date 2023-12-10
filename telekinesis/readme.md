@@ -5,7 +5,7 @@ The PSYOPS build and administration tool.
 This package is used instead of a Makefile or the `invoke` module.
 
 It doesn't need to cover applying `progfiguration_blacksite` to managed nodes,
-but it handles other psyopOS related administration tasks.
+but it handles other psyopsOS related administration tasks.
 
 ## Examples
 
@@ -29,21 +29,22 @@ cog.outl(get_argparse_help_string("tk", makeparser(prog="tk")))
 ]]]-->
 > tk --help
 usage: tk [-h] [--debug]
-          {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployiso} ...
+          {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployiso,vm} ...
 
 Telekinesis: the PSYOPS build and administration tool
 
 positional arguments:
-  {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployiso}
+  {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployiso,vm}
     showconfig          Show the current configuration
     cog                 Run cog on all relevant files
-    deaddrop            Manage the S3 bucket used for psyopOS, called deaddrop,
+    deaddrop            Manage the S3 bucket used for psyopsOS, called deaddrop,
                         or its local replica
     builder             Actions related to the psyopsOS Docker container that is
                         used for making Alpine packages and ISO images
     mkimage             Make a psyopsOS image
     buildpkg            Build a package
     deployiso           Deploy the ISO image to the S3 bucket
+    vm                  Run VM(s)
 
 options:
   -h, --help            show this help message and exit
@@ -167,6 +168,15 @@ ________________________________________________________________________
 > tk mkimage --help
 usage: tk mkimage [-h] [--rebuild] [--interactive] [--clean]
                   [--dangerous-no-clean-tmp-dir] [--skip-build-apks]
+                  {iso,grubusb} ...
+
+positional arguments:
+  {iso,grubusb}
+    iso                 Build an ISO image using mkimage.sh and the psyopsOScd
+                        profile
+    grubusb             Build a disk image that contains GRUB, can do A/B
+                        updates, and boots to initramfs root images without
+                        squashfs.
 
 options:
   -h, --help            show this help message and exit
@@ -178,6 +188,39 @@ options:
                         Don't clean the temporary directory containing the APK
                         key
   --skip-build-apks     Don't build APKs before building ISO
+
+________________________________________________________________________
+
+> tk mkimage iso --help
+usage: tk mkimage iso [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+________________________________________________________________________
+
+> tk mkimage grubusb --help
+usage: tk mkimage grubusb [-h]
+                          [--stages {mkinitpatch,applyinitpatch,kernel,squashfs,sectar,diskimg} [{mkinitpatch,applyinitpatch,kernel,squashfs,sectar,diskimg} ...]]
+                          [--node-secrets NODE_SECRETS]
+
+options:
+  -h, --help            show this help message and exit
+  --stages {mkinitpatch,applyinitpatch,kernel,squashfs,sectar,diskimg} [{mkinitpatch,applyinitpatch,kernel,squashfs,sectar,diskimg} ...]
+                        The stages to build, comma-separated. Default:
+                        ['kernel', 'squashfs', 'diskimg']. mkinitpatch: diff -u
+                        initramfs-init.orig initramfs.patched.grubusb >
+                        initramfs-init.psyopsOS.grubusb.patch. applyinitpatch:
+                        patch -o initramfs-init.patched.grubusb initramfs-
+                        init.orig initramfs-init.psyopsOS.grubusb.patch. kernel:
+                        Build the kernel/initramfs/etc. squashfs: Build the
+                        squashfs root filesystem. sectar: Create a tarball of
+                        secrets for the qreamsqueen test VM. diskimg: Build the
+                        disk image from the kernel/squashfs.
+  --node-secrets NODE_SECRETS
+                        If passed, generate a node-specific grubusb image with a
+                        populated secrets volume containing secrets from
+                        'progfiguration-blacksite-node save NODENAME ...'.
 
 ________________________________________________________________________
 
@@ -207,6 +250,40 @@ usage: tk deployiso [-h] host
 positional arguments:
   host        The remote host to deploy to, assumes root@ accepts the psyops SSH
               key
+
+options:
+  -h, --help  show this help message and exit
+
+________________________________________________________________________
+
+> tk vm --help
+usage: tk vm [-h] {diskimg,osdir} ...
+
+positional arguments:
+  {diskimg,osdir}
+    diskimg        Run the grubusb image in qemu
+    osdir          Run the kernel/initramfs from the osdir in qemu without
+                   building a grubusb image with EFI and A/B partitions
+
+options:
+  -h, --help       show this help message and exit
+
+________________________________________________________________________
+
+> tk vm diskimg --help
+usage: tk vm diskimg [-h] [--grubusb-image GRUBUSB_IMAGE] [--macaddr MACADDR]
+
+options:
+  -h, --help            show this help message and exit
+  --grubusb-image GRUBUSB_IMAGE
+                        Path to the grubusb image
+  --macaddr MACADDR     The MAC address to use for the VM, defaults to
+                        00:00:00:00:00:00
+
+________________________________________________________________________
+
+> tk vm osdir --help
+usage: tk vm osdir [-h]
 
 options:
   -h, --help  show this help message and exit

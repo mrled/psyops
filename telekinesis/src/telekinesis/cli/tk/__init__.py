@@ -80,7 +80,7 @@ def makeparser(prog=None):
     # The deaddrop subcommand
     sub_deaddrop = subparsers.add_parser(
         "deaddrop",
-        help=f"Manage the S3 bucket used for psyopOS, called deaddrop, or its local replica",
+        help=f"Manage the S3 bucket used for psyopsOS, called deaddrop, or its local replica",
     )
     sub_deaddrop_subparsers = sub_deaddrop.add_subparsers(dest="deaddrop_action", required=True)
     sub_deaddrop_sub_ls = sub_deaddrop_subparsers.add_parser(

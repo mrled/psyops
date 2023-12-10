@@ -94,7 +94,7 @@ class TelekinesisConfig:
             self.architecture = "x86_64"
             """The architecture for the ISO image"""
             self.mkimage_iso_profile = "psyopsOScd"
-            """The Alpine mkimage.sh ISO profile for psyopOS,
+            """The Alpine mkimage.sh ISO profile for psyopsOS,
             which requires a profile_PROFILENAME file in the aports scripts overlay directory"""
             self.dockertag = f"{self.dockertag_prefix}{self.alpine_version}"
             """The Docker image tag of the build container"""
