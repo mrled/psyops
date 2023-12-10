@@ -261,6 +261,11 @@ def makeparser():
         type=Path,
         help="A path to write the installer script to. If this is provided, write a Python script that contains the node configuration files and an installer script. The script will take an argument to a device to install to, e.g. /dev/sdb, and overwrite everything on that device -- :) BE CAREFUL (:",
     )
+    outgroup.add_argument(
+        "--outtar",
+        type=Path,
+        help="A path to write a tarball of the node configuration files to. If this is provided, write a tarball that contains the node configuration files. The tarball not be compressed.",
+    )
 
     # The --force parser
     forceparser = argparse.ArgumentParser(add_help=False)
@@ -348,6 +353,16 @@ def main():
 
     sitewrapper.set_progfigsite_by_filepath(Path(progfiguration_blacksite.__file__), "progfiguration_blacksite")
 
+    def _save_result(nodesec: NodeSecrets):
+        """Save the result of a new or save subcommand according to the parsed arguments"""
+        if parsed.outscript:
+            nodesec.save_installer_script(parsed.outscript)
+        elif parsed.outtar:
+            cmd = ["tar", "-C", nodesec.secroot, "-cf", parsed.outtar] + [f.name for f in nodesec.files]
+            subprocess.run(cmd, check=True)
+        else:
+            nodesec.save_directory(Path(parsed.outdir.format(nodename=parsed.nodename)))
+
     if parsed.subcommand == "delete":
         nodemod_file = None
         try:
@@ -383,6 +398,9 @@ def main():
     if parsed.outscript:
         if parsed.outscript.exists() and not parsed.force:
             raise RuntimeError(f"{parsed.outscript} already exists, refusing to overwrite it.")
+    elif parsed.outtar:
+        if parsed.outtar.exists() and not parsed.force:
+            raise RuntimeError(f"{parsed.outtar} already exists, refusing to overwrite it.")
     else:
         outdir = Path(parsed.outdir.format(nodename=parsed.nodename))
         if outdir.exists() and not parsed.force:
@@ -410,10 +428,7 @@ def main():
                 mac_address=parsed.mac_address,
                 serial=parsed.serial,
             )
-            if parsed.outscript:
-                nodesec.save_installer_script(parsed.outscript)
-            else:
-                nodesec.save_directory(outdir)
+            _save_result(nodesec)
         return
 
     if parsed.subcommand == "save":
@@ -421,10 +436,7 @@ def main():
             raise RuntimeError(f"Node {parsed.nodename} does not exist.")
         with tempfile.TemporaryDirectory() as nodesecdir:
             nodesec = NodeSecrets.from_existing(secroot=Path(nodesecdir), nodename=parsed.nodename)
-            if parsed.outscript:
-                nodesec.save_installer_script(parsed.outscript)
-            else:
-                nodesec.save_directory(outdir)
+            _save_result(nodesec)
         return
 
     raise parser.error(f"Unknown subcommand {parsed.subcommand}")

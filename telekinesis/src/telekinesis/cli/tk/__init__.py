@@ -152,8 +152,12 @@ def makeparser(prog=None):
         "--stages",
         nargs="+",
         default=["kernel", "squashfs", "diskimg"],
-        choices=["mkinitpatch", "applyinitpatch", "kernel", "squashfs", "diskimg"],
-        help="The stages to build, comma-separated. Default: %(default)s. mkinitpatch: diff -u initramfs-init.orig initramfs.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch. applyinitpatch: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch. kernel: Build the kernel/initramfs/etc. squashfs: Build the squashfs root filesystem. diskimg: Build the disk image from the kernel/squashfs.",
+        choices=["mkinitpatch", "applyinitpatch", "kernel", "squashfs", "sectar", "diskimg"],
+        help="The stages to build, comma-separated. Default: %(default)s. mkinitpatch: diff -u initramfs-init.orig initramfs.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch. applyinitpatch: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch. kernel: Build the kernel/initramfs/etc. squashfs: Build the squashfs root filesystem. sectar: Create a tarball of secrets for the qreamsqueen test VM. diskimg: Build the disk image from the kernel/squashfs.",
+    )
+    sub_mkimage_sub_grubusb.add_argument(
+        "--node-secrets",
+        help="If passed, generate a node-specific grubusb image with a populated secrets volume containing secrets from 'progfiguration-blacksite-node save NODENAME ...'.",
     )
 
     # The buildpkg subcommand
@@ -272,13 +276,29 @@ def main_impl():
                     cleandockervol=parsed.clean,
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
+            if "sectar" in parsed.stages and parsed.node_secrets:
+                subprocess.run(
+                    [
+                        "progfiguration-blacksite-node",
+                        "save",
+                        parsed.node_secrets,
+                        "--outtar",
+                        tkconfig.artifacts.node_secrets(parsed.node_secrets),
+                        "--force",
+                    ],
+                )
             if "diskimg" in parsed.stages:
                 get_memtest()
-                mkimage_grubusb_diskimg(
+                mgd_kwargs = dict(
+                    out_filename=tkconfig.artifacts.node_image().name,
                     interactive=parsed.interactive,
                     cleandockervol=parsed.clean,
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
+                if parsed.node_secrets:
+                    mgd_kwargs["out_filename"] = tkconfig.artifacts.node_image(parsed.node_secrets).name
+                    mgd_kwargs["secrets_tarball"] = tkconfig.artifacts.node_secrets(parsed.node_secrets)
+                mkimage_grubusb_diskimg(**mgd_kwargs)
         else:
             parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
     elif parsed.action == "vm":

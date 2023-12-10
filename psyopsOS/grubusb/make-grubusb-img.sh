@@ -8,12 +8,14 @@ outimg=
 loopdev=/dev/loop0
 efisize=128
 psyabsize=1536
+secretsize=128
 memtest=
 
 # Constant values
 label_efisys=PSYOPSOSEFI # max 11 chars, no lower case
 label_psya=psyopsOS-A # max 16 chars, case sensitive
 label_psyb=psyopsOS-B # max 16 chars, case sensitive
+label_secret="psyops-secret" # max 16 chars, case sensitive
 
 usage() {
     cat <<ENDUSAGE
@@ -27,6 +29,10 @@ ARGUMENTS:
                             (default: "$efisize")
     -s PSYOPSOSIZE          Size in MiB of EACH of the psyopsOS-A/B partitions
                             (default: "$psyabsize")
+    -x SECRETTARBALL        Path to the secret tarball to use (optional)
+                            If not specified, the secret partition will be empty.
+    -y SECRETSIZE           Size in MiB of the secret partition
+                            (default: "$secretsize")
     -m MEMTEST              Path to the memtest86+ binary to use (optional)
     -p PSYOPSOSDIR          Directory containing psyopsOS files to use (required)
                             Should contain kernel, initramfs, modloop, etc; see below.
@@ -42,8 +48,9 @@ ARGUMENTS:
 * Creates an output image with a GPT partition table:
     * Creates the following partitions:
         1. EFI system partition, FAT32, size EFISIZE, label $label_efisys
-        2. psyopsOS-A partition, ext4, size PSYABSIZE, label $label_psya
-        3. psyopsOS-B partition, ext4, size PSYABSIZE, label $label_psyb
+        2. psyopsOS secret partition, ext4, size SECRETSIZE, label $label_secret
+        3. psyopsOS A partition, ext4, size PSYABSIZE, label $label_psya
+        4. psyopsOS B partition, ext4, size PSYABSIZE, label $label_psyb
     * The total size of the image is (EFISIZE + (2 * PSYABSIZE))
 * To get the memtest binary, download the "Pre-Compiled Bootable Binary (.zip)"
   file from <https://memtest.org/>, extract it, and pass the "memtest64.efi"
@@ -58,6 +65,8 @@ ARGUMENTS:
     * System.map for kernel debugging
     * config showing the kernel config
     * any other files you want to include in the OS image
+* The SECRETTARBALL must contain the files psyopsOS expects to find in the
+  secret partition, see system-secrets-individuation.md for details.
 
 ENDUSAGE
 }
@@ -68,6 +77,8 @@ while test $# -gt 0; do
     -l) loopdev="$2"; shift 2;;
     -e) efisize="$2"; shift 2;;
     -s) psyabsize="$2"; shift 2;;
+    -x) secrettarball="$2"; shift 2;;
+    -y) secretsize="$2"; shift 2;;
     -m) memtest="$2"; shift 2;;
     -p) psyosdir="$2"; shift 2;;
     -o) outimg="$2"; shift 2;;
@@ -83,13 +94,15 @@ fi
 
 # Derived argument values
 part_efisys="${loopdev}p1"
-part_psya="${loopdev}p2"
-part_psyb="${loopdev}p3"
+part_secret="${loopdev}p2"
+part_psya="${loopdev}p3"
+part_psyb="${loopdev}p4"
 
 cleanup() {
     echo "======== Cleaning up..."
     losetup -a
     umount /mnt/grubusb/efisys || true
+    umount /mnt/grubusb/secret || true
     umount /mnt/grubusb/psya || true
     umount /mnt/grubusb/psyb || true
     losetup -d "$loopdev" || true
@@ -98,6 +111,7 @@ cleanup() {
     done
     # Delete devices created by losetup_mknod
     rm "$part_efisys" || true
+    rm "$part_secret" || true
     rm "$part_psya" || true
     rm "$part_psyb" || true
     losetup -a
@@ -128,8 +142,9 @@ losetup_mknod() {
 # Partition math
 efi_start=1 # don't start at 0, cargo culting this
 end_buffer=1 # math is hard, so we add a little extra space at the end
-imgsize=$(( efi_start + efisize + ( 2 * psyabsize ) + end_buffer ))
-psya_start=$(( efi_start + efisize ))
+imgsize=$(( efi_start + efisize + secretsize + ( 2 * psyabsize ) + end_buffer ))
+secret_start=$(( efi_start + efisize ))
+psya_start=$(( secret_start + secretsize ))
 psyb_start=$(( psya_start + psyabsize ))
 psyb_end=$(( psyb_start + psyabsize ))
 
@@ -142,7 +157,8 @@ dd if=/dev/zero of="$outimg" bs=1048576 seek=$imgsize count=0
 losetup "$loopdev" "$outimg"
 
 parted -s "$loopdev" mklabel gpt
-parted -s "$loopdev" mkpart primary fat32   ${efi_start}MiB     ${psya_start}MiB
+parted -s "$loopdev" mkpart primary fat32   ${efi_start}MiB     ${secret_start}MiB
+parted -s "$loopdev" mkpart primary ext4    ${secret_start}MiB  ${psya_start}MiB
 parted -s "$loopdev" mkpart primary ext4    ${psya_start}MiB    ${psyb_start}MiB
 parted -s "$loopdev" mkpart primary ext4    ${psyb_start}MiB    ${psyb_end}MiB
 parted -s "$loopdev" set 1 boot on
@@ -155,6 +171,7 @@ mkfs.ext4 -L "$label_psya" "$part_psya"
 mkdir -p /mnt/grubusb/psya
 mount "$part_psya" /mnt/grubusb/psya
 cp -r "$psyosdir"/* /mnt/grubusb/psya
+umount /mnt/grubusb/psya
 
 # Set up the psyopsOS-B partition
 # This contains the same files as psyopsOS-A so either works out of the box,
@@ -163,6 +180,16 @@ mkfs.ext4 -L "$label_psyb" "$part_psyb"
 mkdir -p /mnt/grubusb/psyb
 mount "$part_psyb" /mnt/grubusb/psyb
 cp -r "$psyosdir"/* /mnt/grubusb/psyb
+umount /mnt/grubusb/psyb
+
+# Set up the secret partition
+mkfs.ext4 -L "$label_secret" "$part_secret"
+if test -n "$secrettarball"; then
+    mkdir -p /mnt/grubusb/secret
+    mount "$part_secret" /mnt/grubusb/secret
+    tar xf "$secrettarball" -C /mnt/grubusb/secret
+    umount /mnt/grubusb/secret
+fi
 
 # Set up the EFI system partition
 mkfs.fat -F32 -n "$label_efisys" "$part_efisys"
@@ -248,5 +275,7 @@ menuentry "Exit GRUB" {
     exit
 }
 EOF
+
+umount /mnt/grubusb/efisys
 
 echo "$script finished successfully"

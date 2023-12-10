@@ -125,7 +125,7 @@ class TelekinesisConfig:
             """The path to the extracted OVMF_VARS-pure-efi.fd file"""
 
             self.grubusb_img = artroot / "psyopsOS.grubusb.img"
-            """The path to the grubusb disk image"""
+            """The path to the generic grubusb disk image (without any secrets)"""
 
             self.grubusb_os_dir = artroot / "psyopsOS.grubusb.os"
             """The path to the grubusb OS directory.
@@ -133,6 +133,21 @@ class TelekinesisConfig:
             kernel, initramfs, System.map, config, modloop, and squashfs files,
             and a boot/ directory which may contain DTB files if appropriate for the platform.
             """
+
+            self.node_secrets_filename_fmt = "psyops-secret.{nodename}.tar"
+            """Format string for building the name of psyops-secret tarball files"""
+            self.node_image_filename_fmt = "psyopsOS.{nodename}.img"
+            """Format string for building the name of psyopsOS image files"""
+
+        def node_secrets(self, nodename: str) -> Path:
+            """Get the path to the node secrets tarball"""
+            return self.root / self.node_secrets_filename_fmt.format(nodename=nodename)
+
+        def node_image(self, nodename: None | str = None) -> Path:
+            """Get the path to the node image. If nodename is None, return the path to the generic image."""
+            if nodename is None:
+                nodename = "generic"
+            return self.root / self.node_image_filename_fmt.format(nodename=nodename)
 
     # Class variables
 

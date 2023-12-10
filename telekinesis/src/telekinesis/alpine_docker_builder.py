@@ -47,6 +47,8 @@ class AlpineDockerBuilder:
         docker_builder_dir,
         # The Docker image tag prefix (will be suffixed with the Alpine version)
         docker_builder_tag_prefix,
+        # A list of volumes to mount in the container, each one passed directly to the --volume argument of docker run
+        extra_volumes: None | list[str] = None,
         # If true, add "--interactive --tty" to the docker run command
         interactive=False,
         # Clean the docker volume for the abuild workdir before running
@@ -67,6 +69,7 @@ class AlpineDockerBuilder:
         self.in_container_apk_key_path = f"/home/build/.abuild/{apk_key_filename}"
         self.alpine_version = alpine_version
         self.docker_builder_tag_prefix = docker_builder_tag_prefix
+        self.extra_volumes = extra_volumes
         self.interactive = interactive
         self.clean_abuild_workdir_docker_volume = clean_abuild_workdir_docker_volume
         self.clean_apk_cache_docker_volume = clean_apk_cache_docker_volume
@@ -158,6 +161,16 @@ class AlpineDockerBuilder:
             # Make sure we're building x86_64 even if we're running on something else like an ARM Mac
             "--platform",
             "linux/amd64",
+        ]
+        if self.interactive:
+            self.docker_cmd += ["--interactive", "--tty"]
+        if self.privileged:
+            self.docker_cmd += ["--privileged=true"]
+
+        # Volume mounts
+        for vol in self.extra_volumes or []:
+            self.docker_cmd += ["--volume", vol]
+        self.docker_cmd += [
             # Give us full access to the psyops dir
             # Mounting this allows the build to access the psyopsOS/os-overlay/ and the public APK packages directory for mkimage.
             # Also gives us access to progfiguration stuff.
@@ -188,6 +201,10 @@ class AlpineDockerBuilder:
             f"{tempdir_apkkey.as_posix()}:{self.in_container_apk_key_path}:ro",
             "--volume",
             f"{tempdir_apkpub.as_posix()}:{self.in_container_apk_key_path}.pub:ro",
+        ]
+
+        # Environment variables
+        self.docker_cmd += [
             # Environment variables that mkimage.sh (or one of the scripts it calls) uses
             "--env",
             f"PSYOPSOS_BUILD_DATE_ISO8601={build_date.strftime('%Y-%m-%dT%H:%M:%S%z')}",
@@ -203,11 +220,6 @@ class AlpineDockerBuilder:
             "--env",
             "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/build/.local/bin",
         ]
-
-        if self.interactive:
-            self.docker_cmd += ["--interactive", "--tty"]
-        if self.privileged:
-            self.docker_cmd += ["--privileged=true"]
 
         # Pass any relevant environment variables to the container
         for envvar in os.environ.keys():
@@ -294,6 +306,7 @@ def get_configured_docker_builder(
     interactive: bool = False,
     cleandockervol: bool = False,
     dangerous_no_clean_tmp_dir: bool = False,
+    extra_volumes: None | list[str] = None,
 ):
     """Make an AlpineDockerBuilder from the configuration"""
     return AlpineDockerBuilder(
@@ -310,4 +323,5 @@ def get_configured_docker_builder(
         clean_abuild_workdir_docker_volume=cleandockervol,
         dangerous_no_clean_tmp_dir=dangerous_no_clean_tmp_dir,
         privileged=True,
+        extra_volumes=extra_volumes,
     )

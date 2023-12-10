@@ -208,7 +208,7 @@ def mkimage_grubusb_squashfs(
             # but it's worrth it so we can mount /var/cache/apk inside the initramfs chroot later.
             # We rely on the host's artifacts/deaddrop/apk being added to /etc/apk/repositories by the Dockerfile
             # so that this cache step can see apks built locally.
-            f"sudo apk cache download {' '.join(apk_cache_list)}",
+            f"sudo apk cache download --latest {' '.join(apk_cache_list)}",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
             f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-packages-file {psyopsOS_available} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {outdir} --psyopsos-overlay-dir {psyopsOS_overlay}",
@@ -218,17 +218,31 @@ def mkimage_grubusb_squashfs(
 
 
 def mkimage_grubusb_diskimg(
+    out_filename: str,
     interactive: bool = False,
     cleandockervol: bool = False,
     dangerous_no_clean_tmp_dir: bool = False,
+    secrets_tarball: str | None = None,
 ):
-    """Make a disk image containing GRUB and a partition for initramfs-only images that Grub can boot"""
-    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+    """Make a disk image containing GRUB and a partition for initramfs-only images that Grub can boot
+
+    If secrets_tarball is not None, it should be a path to a tarball containing node secrets to be included in the image.
+    In that case, out_filename should probably reflect the nodename.
+    """
+    extra_volumes = []
+    extra_scriptargs = ""
+    if secrets_tarball is not None:
+        extra_volumes += [f"{secrets_tarball}:/tmp/secret.tar"]
+        extra_scriptargs = "-x /tmp/secret.tar"
+
+    with get_configured_docker_builder(
+        interactive, cleandockervol, dangerous_no_clean_tmp_dir, extra_volumes=extra_volumes
+    ) as builder:
         make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-img.sh")
         psyopsosdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)
         memtest64efi = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.memtest64efi.name)
-        outimg = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_img.name)
+        outimg = os.path.join(builder.in_container_artifacts_dir, out_filename)
         in_container_build_cmd = [
-            f"sudo sh {make_grubusb_script} -m {memtest64efi} -p {psyopsosdir} -o {outimg}",
+            f"sudo sh {make_grubusb_script} -m {memtest64efi} -p {psyopsosdir} -o {outimg} {extra_scriptargs}",
         ]
         builder.run_docker(in_container_build_cmd)
