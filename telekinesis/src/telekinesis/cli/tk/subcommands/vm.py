@@ -1,5 +1,6 @@
 """The vm subcommand"""
 
+from pathlib import Path
 import subprocess
 import sys
 import termios
@@ -84,12 +85,14 @@ def get_ovmf():
         subprocess.run(docker_run_cmd, check=True)
 
 
-def vm_grubusb_img():
+def vm_grubusb_img(image: Path, macaddr: str):
     """Run the grubusb image in qemu"""
     qemu_cmd = [
         "qemu-system-x86_64",
         "-nic",
         "user",
+        "-net",
+        f"nic,macaddr={macaddr}",
         "-serial",
         "stdio",
         # "-display",
@@ -101,7 +104,7 @@ def vm_grubusb_img():
         "-drive",
         f"if=pflash,format=raw,file={tkconfig.artifacts.ovmf_extracted_vars.as_posix()}",
         "-drive",
-        f"format=raw,file={tkconfig.artifacts.grubusb_img.as_posix()}",
+        f"format=raw,file={image.as_posix()}",
     ]
     with MungedInterrupts():
         subprocess.run(qemu_cmd, check=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)

@@ -2,6 +2,7 @@
 
 
 import argparse
+from pathlib import Path
 import pprint
 import subprocess
 import sys
@@ -181,18 +182,24 @@ def makeparser(prog=None):
         help="Run VM(s)",
     )
     sub_vm_subparsers = sub_vm.add_subparsers(dest="vm_action", required=True)
-    sub_vm_sub_grubusb = sub_vm_subparsers.add_parser(
+    sub_vm_sub_diskimg = sub_vm_subparsers.add_parser(
         "diskimg",
         help="Run the grubusb image in qemu",
     )
-    sub_vm_sub_grubusb = sub_vm_subparsers.add_parser(
+    sub_vm_sub_diskimg.add_argument(
+        "--grubusb-image",
+        type=Path,
+        default=tkconfig.artifacts.node_image(),
+        help="Path to the grubusb image",
+    )
+    sub_vm_sub_diskimg.add_argument(
+        "--macaddr",
+        default="00:00:00:00:00:00",
+        help="The MAC address to use for the VM, defaults to %(default)s",
+    )
+    sub_vm_sub_osdir = sub_vm_subparsers.add_parser(
         "osdir",
         help="Run the kernel/initramfs from the osdir in qemu without building a grubusb image with EFI and A/B partitions",
-    )
-    sub_vm_sub_grubusb.add_argument(
-        "--grubusb-image",
-        default=tkconfig.artifacts.grubusb_img,
-        help="Path to the grubusb image",
     )
 
     return parser
@@ -304,7 +311,7 @@ def main_impl():
     elif parsed.action == "vm":
         if parsed.vm_action == "diskimg":
             get_ovmf()
-            vm_grubusb_img()
+            vm_grubusb_img(parsed.grubusb_image, parsed.macaddr)
         elif parsed.vm_action == "osdir":
             vm_grubusb_os()
         else:

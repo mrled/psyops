@@ -124,9 +124,6 @@ class TelekinesisConfig:
             self.ovmf_extracted_vars = artroot / "ovmf-extracted" / "usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd"
             """The path to the extracted OVMF_VARS-pure-efi.fd file"""
 
-            self.grubusb_img = artroot / "psyopsOS.grubusb.img"
-            """The path to the generic grubusb disk image (without any secrets)"""
-
             self.grubusb_os_dir = artroot / "psyopsOS.grubusb.os"
             """The path to the grubusb OS directory.
             Contains a single psyopsOS version for a grubusb image (either A or B), including
