@@ -90,9 +90,7 @@ def vm_grubusb_img(image: Path, macaddr: str):
     qemu_cmd = [
         "qemu-system-x86_64",
         "-nic",
-        "user",
-        "-net",
-        f"nic,macaddr={macaddr}",
+        f"user,mac={macaddr}",
         "-serial",
         "stdio",
         # "-display",
