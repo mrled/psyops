@@ -2,13 +2,14 @@
 
 
 import argparse
+import os
 from pathlib import Path
 import pprint
 import subprocess
 import sys
 import zipfile
 
-from telekinesis import deaddrop
+from telekinesis import deaddrop, tksecrets
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis.cli import idb_excepthook
 from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
@@ -202,6 +203,53 @@ def makeparser(prog=None):
         help="Run the kernel/initramfs from the osdir in qemu without building a grubusb image with EFI and A/B partitions",
     )
 
+    # The psynet subcommand
+    sub_psynet = subparsers.add_parser(
+        "psynet",
+        help="Manage psynet",
+    )
+    sub_psynet_subparsers = sub_psynet.add_subparsers(dest="psynet_action", required=True)
+    sub_psynet_sub_run = sub_psynet_subparsers.add_parser(
+        "run",
+        help="Run a command in the context of the psynet certificate authority",
+    )
+    sub_psynet_sub_run.add_argument(
+        "--cadir",
+        type=Path,
+        help="The directory containing the psynet certificate authority. If not passed, a temporary directory is created, and deleted along with its contents when the command exits.",
+    )
+    sub_psynet_sub_run.add_argument(
+        "command",
+        nargs="+",
+        help="The command to run in the context of the psynet certificate authority. If any of the arguments start with a dash, you'll need to use '--' to separate the command from the arguments, like '... psynet run -- ls -larth'.",
+    )
+    sub_psynet_sub_get = sub_psynet_subparsers.add_parser(
+        "get",
+        help="Get a node from the psynet",
+    )
+    sub_psynet_sub_get.add_argument(
+        "node",
+        help="The node to get",
+    )
+    sub_psynet_sub_set = sub_psynet_subparsers.add_parser(
+        "set",
+        help="Set a node in the psynet",
+    )
+    sub_psynet_sub_set.add_argument(
+        "node",
+        help="The node to set",
+    )
+    sub_psynet_sub_set.add_argument(
+        "crt",
+        type=Path,
+        help="The filename of the node's certificate",
+    )
+    sub_psynet_sub_set.add_argument(
+        "key",
+        type=Path,
+        help="The filename of the node's key",
+    )
+
     return parser
 
 
@@ -323,6 +371,22 @@ def main_impl():
             abuild_blacksite(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
     elif parsed.action == "deployiso":
         deployiso(parsed.host)
+    elif parsed.action == "psynet":
+        if parsed.psynet_action == "run":
+            if parsed.cadir:
+                os.makedirs(parsed.cadir, exist_ok=True)
+            with tksecrets.psynetca(parsed.cadir) as cadir:
+                subprocess.run(parsed.command, cwd=cadir, check=True)
+        elif parsed.psynet_action == "get":
+            crt, key = tksecrets.psynet_get(parsed.node)
+            print(f"Certificate for {parsed.node}:")
+            print(crt)
+            print(f"Key for {parsed.node}:")
+            print(key)
+        elif parsed.psynet_action == "set":
+            tksecrets.psynet_set(parsed.node, parsed.crt, parsed.key)
+        else:
+            parser.error(f"Unknown psynet action: {parsed.psynet_action}")
     else:
         parser.error(f"Unknown action: {parsed.action}")
 

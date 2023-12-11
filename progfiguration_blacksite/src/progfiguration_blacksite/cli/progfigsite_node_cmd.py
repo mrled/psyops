@@ -4,6 +4,8 @@ This is not part of the progfiguration API,
 just a convenient place to put a script that will only ever run on the controller.
 
 This script isn't available when running from a zipapp.
+
+TODO: migrate this to telekinesis, and remove duplicated code like the psynetca context manager.
 """
 
 

@@ -51,6 +51,10 @@ Resources:
           Type: A
           TTL: "60"
           ResourceRecords: ["10.10.9.2"]
+        - Name: naragua.psynet.micahrl.com.
+          Type: A
+          TTL: "60"
+          ResourceRecords: ["10.10.9.3"]
 
         # psyopsOS nodes
         - Name: psyopsos-test-1.psynet.micahrl.com.
@@ -77,7 +81,7 @@ Resources:
           Type: A
           TTL: "60"
           ResourceRecords: ["10.10.10.6"]
-        - Name: qreamscueen.psynet.micahrl.com.
+        - Name: qreamsqueen.psynet.micahrl.com.
           Type: A
           TTL: "60"
           ResourceRecords: ["10.10.10.7"]

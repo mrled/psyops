@@ -1,5 +1,7 @@
 # Nebula backchannel network
 
+TODO: update this document to use `tk` for running `nebula` where appropriate.
+
 There is a backchannel network for _all_ psyopsOS nodes.
 
 - `10.10.8.0/22` (`10.10.8.0`-`10.10.11.255`) is the total network
