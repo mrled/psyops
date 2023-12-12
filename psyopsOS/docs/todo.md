@@ -6,6 +6,10 @@
 
 * A/B updates
     * Recent progress on this front: building grubusb images
+    * Break the `tk mkimage grubusb` stage `diskimg` into several stages: assembling files including memtest into a directory, and actually building a disk image. We might need to ship a single recent raw image to deaddrop (??), but mostly we'll be shipping the individual files so that booted systems can write them to the ext4 A/B partitions.
+    * Make a `tk` command to deploy built kernel/squashfs/initrd/DTBs/etc to deaddrop. Use a date based version system, and write a file that contains the latest deployed date.
+    * Convert `make-grubusb-img.sh` to a Python script that can both create an image from scratch with A/B/secret/EFISYS partitions, and also one that can update these partitions independent of one another. Normal case will be to update the A/B partition (whatever hasn't been booted from), but we may want to update the grub configuration, memtest, etc as well. This script will have to run on both remote nodes for updating individual partitions, and on builder machine to generate new disk images.
+    * Write an update script that checks deaddrop and applies updates to the non-booted A/B partition. Could also warn about out of date grub config or memtest.
 * A role to control psyopsOS secrets from progfiguration
     * Secrets still have to be mounted by the psyopsOS postboot startup script
     * progfiguration can check whether each file matches what it has internally
