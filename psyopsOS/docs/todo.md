@@ -1,7 +1,11 @@
 # Todo
 
+* Document the `telekinesis` / `tk` package.
+
 ## Ideas
 
+* A/B updates
+    * Recent progress on this front: building grubusb images
 * A role to control psyopsOS secrets from progfiguration
     * Secrets still have to be mounted by the psyopsOS postboot startup script
     * progfiguration can check whether each file matches what it has internally
@@ -23,12 +27,6 @@
 * Make an update mechanism
     * Service that checks for OS updates once/day or something, maybe via similar method like `psyops.micahrl.com/os-update.json`
     * If there's an update, download it to a temp dir, and overwrite the USB drive that contains the OS with it. I hope u tested it!
-    * In a real environment, you'd want an atomic update, but I'm not going to make that here.
-    * In a real environment, you'd want the ability to roll back too.
-* Private networking
-    * Wireguard? This would be really nice. Would require a maintained server :/
-    * Tor for management from anywhere. Punch thru NATs or whatever, no worry about a wireguard server. Need to keep a list of all public keys for all nodes, same way I do now for age keys.
-    * Add a module to progfiguration that can change Nebula firewall rules. Nodes come up locked down to only allow ICMP from anywhere and psynet clients full access, but if we wanted to bring up some kind of cluster that talks to each other, we could add firewall rules in progfiguration that permit this.
 * Tor roles
     * A Tor for all networking mode. Could implement as a role in progfiguration, but better to do as a different flavor of ISO, so that it is up before anything uses the network at all.
     * Offline identity keys <https://support.torproject.org/relay-operators/offline-ed25519/>
@@ -66,3 +64,22 @@
     * Would be cool if we could somehow look up current owner of an IP address per the nebula CA on some local daemon. Distributed. There is a single source of truth for entire DNS space - the nebula CA - so this doesn't violate CAP. However, I'm not sure the information is there.
     * One place that reliable reverse DNS would be nice: syslog-ng use_dns. syslog-ng blocks on DNS lookups, and warns you that this can be used to create DOS attack. Right now only reliable way to do this is with a hosts file... you can tell syslog-ng to only look in hosts file, but then that requires an up to date hosts file.
     * I guess we can punt on the general case for rdns and scalability, and in the specific case of DNS, have a single source of truth for DNS mappings, which generates nebula certs + Route53 entries + a hosts file for syslog server.
+* Make a way to add a node with a single command. Generate keys it needs, re-encrypt groups its in, create a filesystem for a usb drive, add them to the progfigsite checkout. Avoid Docker?
+  * Implemented an early version of this in `progfigsite_node_cmd.py`, but doesn't create the filesystem or re-encrypt groups
+  * Move `progfigsite_node_cmd.py` functionality into `tk`. This will fix some code dupe and makes more sense ultimately as that command creates a new psyopsOS node.
+  * Write out a known_hosts file when creating a new node - Can configure ssh clients to use multiple `known_hosts` files
+* IDEA: single command build/copy/update/reboot
+  * Use case: Run a command and walk away during build
+  * No CI; use local machine as CI
+  * Pull all secrets out of password manager at the beginning. That way you can let password manager lock, no worries with long builds etc
+  * Expect a command on remote systems to tell us what the boot disk is
+  * Expect a command on remote system to tell us whether to use tmp space somewhere for boot disk, or dd it directly to the drive (risky)
+  * Run pipe that will dd iso image from local machine to the remote host. If either of the above commands fail, don't write anything.
+* Idea: bit torrent iso distribution
+  * machines can dedicate disk space to seeding, or not
+  * local machine always seeds
+  * build versioned iso files
+  * no CI again, this avoids that requirement if local dev is set up
+* Add better caching to `tk` for builds. Meaning, it works like `make`, where it'll regenerate an artifact only if its dependencies have changed. Probably have to do this myself?
+* Make psyopsOS startup faster - the `local` service hangs until `progfiguration` finishes, which is not ideal
+* An SSH CA
