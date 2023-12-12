@@ -1,3 +1,5 @@
+# -*- mode: shell-script -*-
+
 pkgname=psyopsOS-base
 maintainer="Micah R Ledbetter <psyops@micahrl.com>"
 pkgver=$version
