@@ -20,7 +20,7 @@ label_secret="psyops-secret" # max 16 chars, case sensitive
 usage() {
     cat <<ENDUSAGE
 $script: Make a bootable USB drive for psyopsOS
-Usage: $script [-h] [-l LOOPDEV] [-e EFISIZE] [-s PSYOPSOSSIZE] [-m MEMTEST] -p PSYOPSOSDIR -o OUTPUTIMG
+Usage: $script [-h] [OPTIONS ...] -p PSYOPSOSDIR -o OUTPUTIMG
 
 ARGUMENTS:
     -h                      Show this help message
