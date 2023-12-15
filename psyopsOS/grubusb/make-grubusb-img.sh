@@ -4,6 +4,7 @@ set -eux
 script=$(basename "$0")
 
 # Default argument values
+psyosdir=
 outimg=
 loopdev=/dev/loop0
 efisize=128
