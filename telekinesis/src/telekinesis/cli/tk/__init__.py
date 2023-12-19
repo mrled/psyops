@@ -7,6 +7,7 @@ from pathlib import Path
 import pprint
 import subprocess
 import sys
+import tarfile
 import zipfile
 
 from telekinesis import deaddrop, tksecrets
@@ -154,8 +155,8 @@ def makeparser(prog=None):
         "--stages",
         nargs="+",
         default=["kernel", "squashfs", "diskimg"],
-        choices=["mkinitpatch", "applyinitpatch", "kernel", "squashfs", "sectar", "diskimg"],
-        help="The stages to build, comma-separated. Default: %(default)s. mkinitpatch: diff -u initramfs-init.orig initramfs.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch. applyinitpatch: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch. kernel: Build the kernel/initramfs/etc. squashfs: Build the squashfs root filesystem. sectar: Create a tarball of secrets for the qreamsqueen test VM. diskimg: Build the disk image from the kernel/squashfs.",
+        choices=["mkinitpatch", "applyinitpatch", "kernel", "squashfs", "ostar", "sectar", "diskimg"],
+        help="The stages to build, comma-separated. Default: %(default)s. mkinitpatch: diff -u initramfs-init.orig initramfs.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch. applyinitpatch: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch. kernel: Build the kernel/initramfs/etc. squashfs: Build the squashfs root filesystem. ostar: Create a tarball of the kernel/squashfs/etc that can be used to apply an A/B update. sectar: Create a tarball of secrets for the qreamsqueen test VM. diskimg: Build the disk image from the kernel/squashfs.",
     )
     sub_mkimage_sub_grubusb.add_argument(
         "--node-secrets",
@@ -331,6 +332,20 @@ def main_impl():
                     cleandockervol=parsed.clean,
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
+            if "ostar" in parsed.stages:
+                items = [
+                    "kernel",
+                    "squashfs",
+                    "initramfs",
+                    "System.map",
+                    "config",
+                    "boot",  # Contains DTB files if the platform requires, otherwise empty
+                ]
+                # We don't compress because the big files - kernel/squashfs/initramfs - are already compressed
+                # Compressing with "w:gz" saved about 4MB out of 630MB as of 20231215
+                with tarfile.open(tkconfig.artifacts.grubusb_os_tarfile.as_posix(), "w") as tar:
+                    for item in items:
+                        tar.add(tkconfig.artifacts.grubusb_os_dir / item, arcname=item)
             if "sectar" in parsed.stages and parsed.node_secrets:
                 subprocess.run(
                     [

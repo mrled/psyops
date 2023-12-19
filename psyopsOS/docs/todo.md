@@ -20,6 +20,10 @@
             * Write the secrets partition if requested, or an empty partition for a generic image
             * Write the A and B partitions
     * Write an update script that checks deaddrop and applies updates to the non-booted A/B partition. Could also warn about out of date grub config or memtest.
+    * Update format
+        * Originally this was going to be separate files: `kernel`, `initramfs`, `squashfs`, `boot/**` for DTBs, `System.map`, `config`.
+        * I could manage a version with a `manifest.json` that includes each file...
+        * But eventually it seems simpler to just make a tarball and go from there. A tarball makes the DTB situation easier, and can be extracted while downloading.
 * A role to control psyopsOS secrets from progfiguration
     * Secrets still have to be mounted by the psyopsOS postboot startup script
     * progfiguration can check whether each file matches what it has internally

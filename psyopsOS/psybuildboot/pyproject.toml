@@ -12,8 +12,7 @@ name = "Micah R Ledbetter"
 email = "me@micahrl.com"
 
 [project.scripts]
-# This works because we have src/psybuildboot/__main__.py
-psybuildboot = "psybuildboot"
+psybuildboot = "psybuildboot.cmd:main"
 
 [project.optional-dependencies]
 development = ["types-requests"]

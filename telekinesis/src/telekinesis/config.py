@@ -130,6 +130,10 @@ class TelekinesisConfig:
             kernel, initramfs, System.map, config, modloop, and squashfs files,
             and a boot/ directory which may contain DTB files if appropriate for the platform.
             """
+            self.grubusb_os_tarfile = artroot / "psyopsOS.grubusb.os.tar"
+            """The path to the grubusb OS tarfile.
+            The grubusb_os_dir in a tarball.
+            """
 
             self.node_secrets_filename_fmt = "psyops-secret.{nodename}.tar"
             """Format string for building the name of psyops-secret tarball files"""

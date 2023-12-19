@@ -1,12 +1,15 @@
 """The psybuildboot command"""
 
 import argparse
+import hashlib
+from io import BytesIO
 import json
 import logging
 import os
 from pathlib import Path
 import subprocess
 import sys
+import tarfile
 
 import requests
 
@@ -120,6 +123,35 @@ def download_manifest_files(manifest: Manifest, destination: Path, clean_other: 
                 rel_path = os.path.relpath(os.path.join(root, file), destination)
                 if rel_path not in manifest.files:
                     os.remove(os.path.join(root, file))
+
+
+def download_and_extract_tarball(url, target_dir, checksum_type='sha256') -> tuple[str, list[tarfile.TarInfo]]:
+    """
+    Download a tarball from a URL, calculate its checksum, and extract it.
+
+    Args:
+    url (str): The URL of the tarball.
+    target_dir (str): The directory to extract the tarball to.
+    checksum_type (str): Type of checksum to calculate (default is 'sha256').
+
+    Returns:
+    str: The calculated checksum.
+    list[tarfile.TarInfo]: A list of the members of the tarball.
+    """
+    if checksum_type not in hashlib.algorithms_available:
+        raise ValueError(f"Unsupported checksum type: {checksum_type}")
+    hasher = hashlib.new(checksum_type)
+    members=[]
+    with requests.get(url, stream=True) as response:
+        response.raise_for_status()
+        for chunk in response.iter_content(chunk_size=8192):
+            hasher.update(chunk)
+            with tarfile.open(fileobj=BytesIO(chunk), mode='r|*') as tar:
+                for member in tar:
+                    if member not in members:
+                        members.append(member)
+                    tar.extract(member, path=target_dir)
+    return hasher.hexdigest(), members
 
 
 def makeparser() -> argparse.ArgumentParser:
