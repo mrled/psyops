@@ -8,6 +8,7 @@ import pprint
 import subprocess
 import sys
 import tarfile
+import textwrap
 import zipfile
 
 from telekinesis import deaddrop, tksecrets
@@ -151,12 +152,47 @@ def makeparser(prog=None):
         "grubusb",
         help="Build a disk image that contains GRUB, can do A/B updates, and boots to initramfs root images without squashfs.",
     )
+
+    grubusb_stages = {
+        "mkinitpatch": "Generate a patch by comparing a locally created/modified initramfs-init.patched.grubusb file (NOT in version control) to the upstream Alpine initramfs-init.orig file (in version control), and saving the resulting patch to initramfs-init.psyopsOS.grubusb.patch (in version control). This is only necessary when making changes to our patch, and is not part of a normal image build. Basically do this: diff -u initramfs-init.orig initramfs-init.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch",
+        "applyinitpatch": "Generate initramfs-init.patched.grubusb by appling our patch to the upstream file. This happens during every normal build. Basically do this: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch",
+        "kernel": "Build the kernel/initramfs/etc.",
+        "squashfs": "Build the squashfs root filesystem.",
+        "ostar": "Create a tarball of the kernel/squashfs/etc that can be used to apply an A/B update.",
+        "sectar": "Create a tarball of secrets for a node-specific grubusb image. Requires that --node-secrets NODENAME is passed, and that the node already exists in progfiguration_blacksite (see 'progfiguration-blacksite-node save --help').",
+        "diskimg": "Build the disk image from the kernel/squashfs. If --node-secrets is passed, the secrets tarball is included in the image. Otherwise, the image is node-agnostic and contains an empty secrets volume.",
+    }
+
+    class StagesHelpAction(argparse.Action):
+        """An argparse action that prints the stages help text and exits
+
+        Nicely format each stage and its description, wrap the text to terminal width, and indent any description that is longer than one line.
+        """
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            terminal_width = os.get_terminal_size().columns
+            max_stage_length = max(len(stage) for stage in grubusb_stages)
+            wrapped_text = "grubusb stages:\n\n"
+            for stage, desc in grubusb_stages.items():
+                # Format the line with a fixed tab stop
+                line = f"{stage.ljust(max_stage_length + 4)}{desc}"
+                wrapped_line = textwrap.fill(line, width=terminal_width, subsequent_indent=" " * (max_stage_length + 4))
+                wrapped_text += wrapped_line + "\n"
+            print(wrapped_text)
+            parser.exit()
+
     sub_mkimage_sub_grubusb.add_argument(
         "--stages",
         nargs="+",
         default=["kernel", "squashfs", "diskimg"],
-        choices=["mkinitpatch", "applyinitpatch", "kernel", "squashfs", "ostar", "sectar", "diskimg"],
-        help="The stages to build, comma-separated. Default: %(default)s. mkinitpatch: diff -u initramfs-init.orig initramfs.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch. applyinitpatch: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch. kernel: Build the kernel/initramfs/etc. squashfs: Build the squashfs root filesystem. ostar: Create a tarball of the kernel/squashfs/etc that can be used to apply an A/B update. sectar: Create a tarball of secrets for the qreamsqueen test VM. diskimg: Build the disk image from the kernel/squashfs.",
+        choices=grubusb_stages.keys(),
+        help="The stages to build, comma-separated. Default: %(default)s. See --list-stages for all possible stages and their descriptions.",
+    )
+    sub_mkimage_sub_grubusb.add_argument(
+        "--list-stages",
+        action=StagesHelpAction,
+        nargs=0,
+        help="Show all possible stages and their descriptions.",
     )
     sub_mkimage_sub_grubusb.add_argument(
         "--node-secrets",
