@@ -264,7 +264,7 @@ def main_impl():
         sys.excepthook = idb_excepthook
 
     if parsed.action == "showconfig":
-        pprint.pprint(tkconfig.__dict__, indent=2, sort_dicts=False)
+        print(tkconfig.pformat(indent=2, sort_dicts=False))
     elif parsed.action == "cog":
         for path in [tkconfig.psyopsroot / "telekinesis" / "readme.md"]:
             subprocess.run(["cog", "-r", path.as_posix()], check=True)

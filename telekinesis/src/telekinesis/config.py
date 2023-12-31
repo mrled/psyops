@@ -6,6 +6,7 @@ Secrets should be stored in 1Password, and accessed with the getsecret function.
 """
 
 from pathlib import Path
+import pprint
 import subprocess
 
 
@@ -165,6 +166,18 @@ class TelekinesisConfig:
         self.deaddrop = self.TelekinesisConfigDeaddropNode(self.repopaths.artifacts)
         self.buildcontainer = self.TelekinesisBuildcontainerNode(self.alpine_version)
         self.artifacts = self.TelekinesisConfigArtifactsNode(self.repopaths.artifacts)
+
+    def pformat(self, **kwargs) -> str:
+        """Return a pretty-printed string representation of the config"""
+        return pprint.pformat(
+            dict(
+                repopaths=self.repopaths.__dict__,
+                deaddrop=self.deaddrop.__dict__,
+                buildcontainer=self.buildcontainer.__dict__,
+                artifacts=self.artifacts.__dict__,
+            ),
+            **kwargs,
+        )
 
 
 tkconfig = TelekinesisConfig()
