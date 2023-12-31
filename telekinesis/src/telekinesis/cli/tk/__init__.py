@@ -239,6 +239,46 @@ def makeparser(prog=None):
         "osdir",
         help="Run the kernel/initramfs from the osdir in qemu without building a grubusb image with EFI and A/B partitions",
     )
+    sub_vm_sub_profile = sub_vm_subparsers.add_parser(
+        "profile",
+        help="Run a predefined VM profile (a shortcut for running specific VMs like qreamsqueen which we use for testing psyopsOS)",
+    )
+
+    profiles = {
+        "qreamsqueen": "Run the qreamsqueen VM. Requires that artifacts/psyopsOS.qreamsqueen.img has been created by running 'tk mkimage grubusb diskimg --node-secrets qreamsqueen'.",
+    }
+
+    class ProfilesHelpAction(argparse.Action):
+        """An argparse action that prints the profiles help text and exits
+
+        Nicely format each profile and its description, wrap the text to terminal width, and indent any description that is longer than one line.
+        """
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            terminal_width = os.get_terminal_size().columns
+            max_profile_length = max(len(profile) for profile in tkconfig.vm_profiles)
+            wrapped_text = "VM profiles:\n\n"
+            for profile, desc in tkconfig.vm_profiles.items():
+                # Format the line with a fixed tab stop
+                line = f"{profile.ljust(max_profile_length + 4)}{desc}"
+                wrapped_line = textwrap.fill(
+                    line, width=terminal_width, subsequent_indent=" " * (max_profile_length + 4)
+                )
+                wrapped_text += wrapped_line + "\n"
+            print(wrapped_text)
+            parser.exit()
+
+    sub_vm_sub_profile.add_argument(
+        "profile",
+        choices=["qreamsqueen"],
+        help="The profile to run. See --list-profiles for all possible profiles and their descriptions.",
+    )
+    sub_vm_sub_profile.add_argument(
+        "--list-profiles",
+        action=ProfilesHelpAction,
+        nargs=0,
+        help="Show all possible profiles and their descriptions.",
+    )
 
     # The psynet subcommand
     sub_psynet = subparsers.add_parser(
@@ -413,6 +453,12 @@ def main_impl():
             vm_grubusb_img(parsed.grubusb_image, parsed.macaddr)
         elif parsed.vm_action == "osdir":
             vm_grubusb_os()
+        elif parsed.vm_action == "profile":
+            if parsed.profile == "qreamsqueen":
+                get_ovmf()
+                vm_grubusb_img(tkconfig.artifacts.node_image("qreamsqueen"), "ac:ed:de:ad:be:ef")
+            else:
+                parser.error(f"Unknown profile: {parsed.profile}")
         else:
             parser.error(f"Unknown vm action: {parsed.vm_action}")
     elif parsed.action == "buildpkg":
