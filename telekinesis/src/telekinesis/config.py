@@ -46,6 +46,7 @@ class TelekinesisConfig:
             """The path to the minisign secret key on the host"""
             self.minisign_pubkey = root / "psyopsOS" / "minisign.pubkey"
             """The path to the minisign public key on the host"""
+            self.neuralupgrade = root / "psyopsOS" / "neuralupgrade"
 
     class TelekinesisConfigDeaddropNode:
         """Configuration for the deaddrop config node"""
@@ -154,6 +155,8 @@ class TelekinesisConfig:
             """Format string for building the name of psyops-secret tarball files"""
             self.node_image_filename_fmt = "psyopsOS.{nodename}.img"
             """Format string for building the name of psyopsOS image files"""
+
+            self.neuralupgrade = artroot / "neuralupgrade.pyz"
 
         def node_secrets(self, nodename: str) -> Path:
             """Get the path to the node secrets tarball"""

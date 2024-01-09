@@ -14,3 +14,6 @@ filesystems = {
         "mountpoint": "/mnt/psyopsOS/b",
     },
 }
+filesystems[filesystems["a"]["label"]] = filesystems["a"]
+filesystems[filesystems["b"]["label"]] = filesystems["b"]
+filesystems[filesystems["efisys"]["label"]] = filesystems["efisys"]

@@ -13,12 +13,13 @@ Used by both the `tk` build tool and on psyopsOS nodes.
 # (Not yet implemented)
 #
 # Show latest version on deaddrop
-neuralupgrade show os
-neuralupgrade show efisys
+neuralupgrade show os --latest
 # Show specific version on deaddrop
 neuralupgrade show os --version $SOME_VERSION
+# Show a/b/efisys partition information, versions, etc
+neuralupgrade show booted
 # Show version of some downloaded update
-neuralupgrade show os --path /path/to/some/version/manifest.json
+neuralupgrade show --minisig /path/to/some/psyopsOS.grubusb.os.tar.minisig
 
 # Download
 # (Not yet implemented)
@@ -71,3 +72,21 @@ cat ./psyopsOS.grubusb.os.tar | ssh root@NODE neuralupgrade apply nonbooted --no
 - Bundle with `psyopsOS-base` package
 - Revert untested support for updating grubusb bootmedia added to psyopsOS-write-bootmedia in `7c98c2440ff5071d681565ef530e6e6a4c53be9d`
 - Put real help in this readme using cogapp
+
+## Packaging and installing
+
+The `pyproject.toml` is intended only for development.
+Installing on psyopsOS nodes always uses zipapp because it's just so much faster.
+
+The easiest thing to do is make a pyz and copy it.
+Something like this would work from the root of the repo:
+
+```sh
+python3 -m zipapp --main neuralupgrade.cmd:main --output artifacts/neuralupgrade.pyz --python "/usr/bin/env python3" psyopsOS/neuralupgrade/src && scp artifacts/neuralupgrade.pyz root@NODE:/tmp/
+```
+
+`tk` can build this and creates `artifacts/neuralupgrade.pyz` with:
+
+```sh
+tk buildpkg neuralupgrade
+```

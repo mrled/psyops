@@ -2,6 +2,7 @@
 
 import os
 import string
+import subprocess
 import time
 
 from telekinesis.alpine_docker_builder import get_configured_docker_builder
@@ -84,3 +85,23 @@ def abuild_psyopsOS_base(interactive: bool, cleandockervol: bool, dangerous_no_c
             os.unlink(apkbuild_path)
         except:
             raise Exception(f"When trying to remove ABKBUILD, got an exception. Manually remove: {apkbuild_path}")
+
+
+def build_neuralupgrade():
+    """Build the neuralupgrade package zipapp package"""
+    srcroot = tkconfig.repopaths.neuralupgrade / "src"
+    subprocess.run(
+        [
+            "python",
+            "-m",
+            "zipapp",
+            "--main",
+            "neuralupgrade.cmd:main",
+            "--output",
+            tkconfig.artifacts.neuralupgrade,
+            "--python",
+            "/usr/bin/env python3",
+            srcroot.as_posix(),
+        ],
+        check=True,
+    )

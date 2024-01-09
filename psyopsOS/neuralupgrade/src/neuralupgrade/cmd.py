@@ -9,25 +9,103 @@ import datetime
 import logging
 import os
 import pdb
+import pprint
+import shutil
 import subprocess
 import sys
+import threading
 import traceback
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 from neuralupgrade import logger
 from neuralupgrade.constants import filesystems
+
 from neuralupgrade.grub_cfg import grub_cfg
 from neuralupgrade.mount import mountfs
 
 
-def minisign_verify(pubkey: str, file: str) -> None:
+def minisign_verify(file: str, pubkey: Optional[str] = None) -> None:
     """Verify a file with minisign."""
-    result = subprocess.run(
-        ["minisign", "-V", "-p", pubkey, "-m", file],
-        text=True,
-    )
+    pubkey_args = ["-p", pubkey] if pubkey else []
+    cmd = ["minisign", "-V", *pubkey_args, "-m", file]
+    logger.debug(f"Running minisign: {cmd}")
+    result = subprocess.run(cmd, text=True)
     if result.returncode != 0:
         raise Exception(f"minisign returned non-zero exit code {result.returncode}")
+
+
+def parse_psyopsOS_minisig_trusted_comment(comment: Optional[str] = None, file: Optional[str] = None) -> dict:
+    """Parse a trusted comment from a psyopsOS minisig
+
+    Example file contents:
+
+        untrusted comment: signature from minisign secret key
+        RURFlbvwaqbpRv1RGZk6b0TkCUmJZvNRKVqfyveYOicg3g1FR6EUmvwkPGwB8yFJ+m9l/Al6sixSOAUVQDwwsfs23Coa9xEHBwI=
+        trusted comment: psyopsOS filename=psyopsOS.grubusb.os.20240129-155151.tar version=20240129-155151 kernel=6.1.75-0-lts alpine=3.18
+        nISvkyfCnUI6Xjgr0vz+g4VbymHJh8rvPAHKncAm5sXVT9HMyQV5+HhgvMP3NLaRKSCng6VAYkIufXYkCmobCQ==
+
+    Can accept either just the "trusted comment: " line, or a path to the minisig file.
+
+    Returns a dict of key=value pairs, like:
+
+        {
+            "filename": "psyopsOS.grubusb.os.20240129-155151.tar",
+            "version": "20240129-155151",
+            "kernel": "6.1.75-0-lts",
+            "alpine": "3.18",
+        }
+    """
+    if comment and file:
+        raise ValueError("Cannot specify both comment and file")
+    if not comment and not file:
+        raise ValueError("Must specify either comment or file")
+
+    prefix = "trusted comment: psyopsOS "
+    if file:
+        with open(file) as f:
+            for line in f.readlines():
+                if line.startswith(prefix):
+                    return parse_psyopsOS_minisig_trusted_comment(comment=line)
+        raise ValueError(f"Could not find trusted comment in {file}")
+
+    if not comment.startswith(prefix):
+        raise ValueError(f"Invalid trusted comment: {comment}")
+
+    # parse all the key=value pairs in the trusted comment
+    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in comment[len(prefix) :].split()]}
+    return metadata
+
+
+def parse_psyopsOS_grub_info_comment(comment: Optional[str] = None, file: Optional[str] = None) -> dict:
+    """Parse a trusted comment from a psyopsOS minisig
+
+    The comment comes from grub.cfg, like this:
+
+        #### The next line is used by neuralupgrade to show information about the current configuration.
+        # neuralupgrade-info: last_updated={last_updated} default_boot_label={default_boot_label} memtest_enabled={memtest_enabled}
+        ####
+
+    Can accept either just the "# neuralupgrade-info: " line, or a path to the grub.cfg file.
+    """
+    if comment and file:
+        raise ValueError("Cannot specify both comment and file")
+    if not comment and not file:
+        raise ValueError("Must specify either comment or file")
+
+    prefix = "# neuralupgrade-info: "
+    if file:
+        with open(file) as f:
+            for line in f.readlines():
+                if line.startswith(prefix):
+                    return parse_psyopsOS_grub_info_comment(comment=line)
+        raise ValueError(f"Could not find trusted comment in {file}")
+
+    if not comment.startswith(prefix):
+        raise ValueError(f"Invalid trusted comment: {comment}")
+
+    # parse all the key=value pairs in the trusted comment
+    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in comment[len(prefix) :].split()]}
+    return metadata
 
 
 def activeside() -> str:
@@ -59,15 +137,154 @@ def sides() -> tuple[str, str]:
     return booted, flipside(booted)
 
 
-def apply_ostar(tarball: str, osmount: str, verify: bool = True):
+def getinfo_os_mount(mountpoint: str) -> dict:
+    """Return information about an os mountpoint"""
+    # with open(os.path.join(mountpoint, "kernel.version")) as f:
+    #     kvers = f.read().strip()
+    # with open(os.path.join(mountpoint, "squahfs.alpine_version")) as f:
+    #     alpine_version = f.read().strip()
+    minisigdata = parse_psyopsOS_minisig_trusted_comment(
+        file=os.path.join(mountpoint, "psyopsOS.grubusb.os.tar.minisig")
+    )
+    return minisigdata
+
+
+def mount_and_do_offthread(label: str, operation: Callable[[], Any]) -> threading.Thread:
+    """Mount a filesystem by label and return the contents of a file, in another thread; return the thread object"""
+
+    def _mount_and_do():
+        with mountfs(label) as mountpoint:
+            return operation()
+
+    thread = threading.Thread(target=_mount_and_do)
+    thread.start()
+    return thread
+
+
+def show_booted_old():
+    """Show information about the booted side of a grubusb device"""
+    booted, nonbooted = sides()
+
+    with mountfs(booted) as mountpoint:
+        try:
+            booted_info = parse_psyopsOS_minisig_trusted_comment(
+                file=os.path.join(mountpoint, "psyopsOS.grubusb.os.tar.minisig")
+            )
+        except FileNotFoundError:
+            booted_info = {"error": "missing minisig"}
+    with mountfs(nonbooted) as mountpoint:
+        try:
+            nonbooted_info = parse_psyopsOS_minisig_trusted_comment(
+                file=os.path.join(mountpoint, "psyopsOS.grubusb.os.tar.minisig")
+            )
+        except FileNotFoundError:
+            booted_info = {"error": "missing minisig"}
+    with mountfs(filesystems["efisys"]["label"]) as mountpoint:
+        efisys_info = parse_psyopsOS_grub_info_comment(file=os.path.join(mountpoint, "grub", "grub.cfg"))
+
+    result = {
+        booted: {
+            "mountpoint": filesystems[booted]["mountpoint"],
+            "running": True,
+            "next_boot": False,
+            **booted_info,
+        },
+        nonbooted: {
+            "mountpoint": filesystems[nonbooted]["mountpoint"],
+            "running": False,
+            "next_boot": False,
+            **nonbooted_info,
+        },
+        filesystems["efisys"]["label"]: {
+            "mountpoint": filesystems["efisys"]["mountpoint"],
+            **efisys_info,
+        },
+    }
+    result[efisys_info["default_boot_label"]]["next_boot"] = True
+    return result
+
+
+def show_booted():
+    """Show information about the grubusb device
+
+    Uses threads to speed up the process of mounting the filesystems and reading the minisig files.
+    """
+    booted, nonbooted = sides()
+    efisys = filesystems["efisys"]["label"]
+
+    result = {
+        booted: {
+            "mountpoint": filesystems[booted]["mountpoint"],
+            "running": True,
+            "next_boot": False,
+        },
+        nonbooted: {
+            "mountpoint": filesystems[nonbooted]["mountpoint"],
+            "running": False,
+            "next_boot": False,
+        },
+        efisys: {
+            "mountpoint": filesystems["efisys"]["mountpoint"],
+        },
+    }
+
+    def _get_os_tc(label: str):
+        with mountfs(label) as mountpoint:
+            try:
+                info = parse_psyopsOS_minisig_trusted_comment(
+                    file=os.path.join(mountpoint, "psyopsOS.grubusb.os.tar.minisig")
+                )
+            except FileNotFoundError:
+                info = {"error": "missing minisig"}
+            except Exception as exc:
+                efisys_info = {"error": str(exc)}
+        result[label] = {**result[label], **info}
+
+    def _get_grub_info():
+        with mountfs(filesystems["efisys"]["label"]) as mountpoint:
+            try:
+                efisys_info = parse_psyopsOS_grub_info_comment(file=os.path.join(mountpoint, "grub", "grub.cfg"))
+            except FileNotFoundError:
+                efisys_info = {"error": "missing grub.cfg"}
+            except Exception as exc:
+                efisys_info = {"error": str(exc)}
+        result[efisys] = {**result[efisys], **efisys_info}
+
+    nonbooted_thread = threading.Thread(target=_get_os_tc, args=(booted,))
+    nonbooted_thread.start()
+    booted_thread = threading.Thread(target=_get_os_tc, args=(nonbooted,))
+    booted_thread.start()
+    efisys_thread = threading.Thread(target=_get_grub_info)
+    efisys_thread.start()
+
+    booted_thread.join()
+    nonbooted_thread.join()
+    efisys_thread.join()
+
+    # Handle these after the threads have joined
+    # I'm not sure what happens if the os tc threads and the efi thread tries to write to the same dict at the same time
+    next_boot = result[efisys]["default_boot_label"]
+    result[next_boot]["next_boot"] = True
+
+    return result
+
+
+def apply_ostar(tarball: str, osmount: str, verify: bool = True, verify_pubkey: Optional[str] = None):
     """Apply an ostar to a device"""
 
     if verify:
-        minisign_verify(tarball)
+        minisign_verify(tarball, pubkey=verify_pubkey)
 
-    logger.debug(f"Extracting {tarball} to {osmount}")
-    subprocess.run(["tar", "-x", "-f", tarball, "-C", osmount], check=True)
-    logger.debug(f"Finished extracting {tarball} to {osmount}")
+    cmd = ["tar", "-x", "-f", tarball, "-C", osmount]
+    logger.debug(f"Extracting {tarball} to {osmount} with {cmd}")
+    subprocess.run(cmd, check=True)
+    minisig = tarball + ".minisig"
+    try:
+        shutil.copy(minisig, os.path.join(osmount, "psyopsOS.grubusb.os.tar.minisig"))
+        logger.debug(f"Copied {minisig} to {osmount}/psyopsOS.grubusb.os.tar.minisig")
+    except FileNotFoundError:
+        logger.warning(f"Could not find {minisig}, partition will not know its version")
+    logger.debug(f"Finished applying {tarball} to {osmount}")
 
 
 # Note to self: we release efisys tarballs containing stuff like memtest, which can be extracted on top of an efisys that has grub-install already run on it
@@ -84,6 +301,7 @@ def configure_efisys(efisys: str, tarball: Optional[str], default_boot_label: st
         f"--boot-directory={efisys}",
         "--removable",
     ]
+    logger.debug(f"Running grub-install: {cmd}")
     subprocess.run(cmd, check=True)
 
     if tarball:
@@ -91,21 +309,28 @@ def configure_efisys(efisys: str, tarball: Optional[str], default_boot_label: st
         subprocess.run(["tar", "-x", "-f", tarball, "-C", efisys], check=True)
         logger.debug(f"Finished extracting {tarball} to {efisys}")
 
+    logger.debug(f"Writing {efisys}/grub/grub.cfg")
     with open(os.path.join(efisys, "grub", "grub.cfg"), "w") as f:
         f.write(grub_cfg(default_boot_label, enable_memtest=memtest))
+
+    logger.debug("Done configuring efisys")
 
 
 def detect_memtest(efisys: str) -> bool:
     """Detect whether memtest is installed, given a mounted efisys filesystem"""
-    return os.path.exists(os.path.join(efisys, "memtest.efi"))
+    exists = os.path.exists(os.path.join(efisys, "memtest64.efi"))
+    logger.debug(f"memtest.efi exists in {efisys}: {exists}")
+    return exists
 
 
-def apply_ostar_nonbooted(tarball: str, verify: bool = True, skip_grubusb: bool = False):
+def apply_ostar_nonbooted(
+    tarball: str, verify: bool = True, verify_pubkey: Optional[str] = None, skip_grubusb: bool = False
+):
     """Apply an ostar update to the non-booted side of a grubusb device (A or B)"""
     updated = datetime.datetime.now()
     booted, nonbooted = sides()
     with mountfs(nonbooted) as mountpoint:
-        apply_ostar(tarball, mountpoint, verify=verify)
+        apply_ostar(tarball, mountpoint, verify=verify, verify_pubkey=verify_pubkey)
     if not skip_grubusb:
         with mountfs(filesystems["efisys"]["label"]) as mountpoint:
             contents = grub_cfg(
@@ -162,17 +387,32 @@ def getparser() -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     verify_parser.add_argument(
         "--no-verify", dest="verify", action="store_false", help="Skip verification of the ostar tarball"
     )
+    verify_parser.add_argument(
+        "--pubkey",
+        default="/etc/psyopsOS/minisign.pubkey",
+        help="Public key to use for verification (default: %(default)s)",
+    )
 
     # device/mountpoint override options
     overrides_parser = argparse.ArgumentParser(add_help=False)
     overrides_parser.add_argument(
         "--efisys-dev", help="Override device for EFI system partition (found by label by default)"
     )
-    overrides_parser.add_argument("--efisys-mountpoint", help="Override mountpoint for EFI system partition")
+    overrides_parser.add_argument(
+        "--efisys-mountpoint", help="Override mountpoint for EFI system partition (found by label in fstab by default)"
+    )
     overrides_parser.add_argument("--a-dev", help="Override device for A side (found by label by default)")
-    overrides_parser.add_argument("--a-mountpoint", help="Override mountpoint for A side")
+    overrides_parser.add_argument(
+        "--a-mountpoint", help="Override mountpoint for A side (found by label in fstab by default)"
+    )
     overrides_parser.add_argument("--b-dev", help="Override device for B side (found by label by default)")
-    overrides_parser.add_argument("--b-mountpoint", help="Override mountpoint for B side")
+    overrides_parser.add_argument(
+        "--b-mountpoint", help="Override mountpoint for B side (found by label in fstab by default)"
+    )
+
+    # neuralupgrade show
+    show_parser = subparsers.add_parser("show", parents=[overrides_parser], help="Show information about boot media")
+    show_parser.add_argument("--minisig", help="Show information from the minisig file of a specific ostar tarball")
 
     # neuralupgrade apply
     apply_parser = subparsers.add_parser(
@@ -215,7 +455,11 @@ def main_implementation(*arguments):
     logger.debug(f"Arguments: {parsed}")
 
     if parsed.subcommand == "show":
-        parser.error("Not implemented")
+        if parsed.minisig:
+            metadata = parse_psyopsOS_minisig_trusted_comment(file=parsed.minisig)
+        else:
+            metadata = show_booted()
+        pprint.pprint(metadata, sort_dicts=False)
     elif parsed.subcommand == "download":
         parser.error("Not implemented")
     elif parsed.subcommand == "check":
@@ -231,7 +475,9 @@ def main_implementation(*arguments):
         # Handle actions
         if "nonbooted" in parsed.type:
             parsed.type.remove("nonbooted")
-            apply_ostar_nonbooted(parsed.ostar, verify=parsed.verify, skip_grubusb=parsed.no_grubusb)
+            apply_ostar_nonbooted(
+                parsed.ostar, verify=parsed.verify, verify_pubkey=parsed.pubkey, skip_grubusb=parsed.no_grubusb
+            )
         for side in ["a", "b"]:
             if side in parsed.type:
                 parsed.type.remove(side)
@@ -244,6 +490,7 @@ def main_implementation(*arguments):
             )
         if parsed.type:
             parser.error(f"Unknown type argument(s): {parsed.type}")
+        pprint.pprint(show_booted(), sort_dicts=False)
     elif parsed.subcommand == "install":
         parser.error("Not implemented")
     else:
@@ -251,5 +498,4 @@ def main_implementation(*arguments):
 
 
 def main():
-    """Wrapper for main() that handles broken pipes"""
-    return broken_pipe_handler(main, *sys.argv)
+    return broken_pipe_handler(main_implementation, *sys.argv)

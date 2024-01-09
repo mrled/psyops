@@ -10,6 +10,7 @@ apk_packages=
 apk_repos_file=/etc/apk/repositories
 default_hostname=psyopsOS-unconfigured
 outdir=
+psyops_root=
 psyopsos_overlay_dir=
 
 usage() {
@@ -36,7 +37,7 @@ ARGUMENTS:
     --default-hostname      Default hostname to use when booting
                             Default: "$default_hostname"
     --outdir                Output directory (required)
-    --psyopsos-overlay-dir  Directory containing psyopsOS overlay files
+    --psyops-root           Path to the psyops repository root directory
                             (required)
 
 ENVIRONMENT VARIABLES:
@@ -66,7 +67,7 @@ while test $# -gt 0; do
     --apk-packages-file) apk_packages="$apk_packages $(cat "$2")"; shift 2;;
     --apk-repositories) apk_repos_file="$2"; shift 2;;
     --outdir) outdir="$2"; shift 2;;
-    --psyopsos-overlay-dir) psyopsos_overlay_dir="$2"; shift 2;;
+    --psyops-root) psyops_root="$2"; psyopsos_overlay_dir="$psyops_root"/psyopsOS/os-overlay shift 2;;
     -*) echo "Unknown option: $1; see '$script -h'" >&2; exit 1;;
     *) echo "Unknown argument: $1; see '$script -h'" >&2; exit 1;;
     esac
@@ -218,6 +219,7 @@ psyops_overlay_install root root 0644 etc/motd
 psyops_overlay_install root root 0644 etc/inittab
 
 install -o root -g root -m 0755 -d "$squashroot"/etc/psyopsOS "$squashroot"/etc/psyopsOS/status
+install -o root -g root -m 0644 "$psyops_root"/psyopsOS/minisign.pubkey "$squashroot"/etc/psyopsOS/minisign.pubkey
 
 # Could generate the date here: "$(date +%Y-%m-%dT%H:%M:%S%z)"
 # However, we do it in tasks.py so we can also get the git stats

@@ -15,7 +15,7 @@ import zipfile
 from telekinesis import deaddrop, minisign, tklogger, tksecrets
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis.cli import idb_excepthook
-from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
+from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base, build_neuralupgrade
 from telekinesis.cli.tk.subcommands.mkimage import (
     mkimage_grubusb_diskimg,
     mkimage_grubusb_kernel,
@@ -50,12 +50,33 @@ def deployiso(host):
     )
 
 
-def deploygrubusb(host):
-    """Deploy the ISO image to a remote host"""
+def deploygrubusb(host, remote_path="/tmp"):
+    """Deploy the ISO image to a remote host
+
+    This uses multiple SSH commands, so enabling SSH master mode is recommended.
+
+    neuralupgrade is copied into /usr/local/sbin/ on the remote host for later use.
+
+    TODO: should I also copy the minisign public key?
+    """
+    build_neuralupgrade()
+    nupyz = tkconfig.artifacts.neuralupgrade
     tarball = tkconfig.artifacts.grubusb_os_tarfile
-    subprocess.run(["scp", tarball.as_posix(), f"root@{host}:/tmp/{tarball.name}"], check=True)
+    minisig = tarball.with_name(tarball.name + ".minisig")
+    subprocess.run(["scp", nupyz.as_posix(), f"root@{host}:/usr/local/sbin/neuralupgrade"], check=True)
+    subprocess.run(["scp", tarball.as_posix(), minisig.as_posix(), f"root@{host}:{remote_path}/"], check=True)
     subprocess.run(
-        ["ssh", f"root@{host}", "/usr/sbin/psyopsOS-write-bootmedia", "grubusb", f"/tmp/{tarball.name}"], check=True
+        [
+            "ssh",
+            f"root@{host}",
+            "/usr/local/sbin/neuralupgrade",
+            "--verbose",
+            "apply",
+            "nonbooted",
+            "--ostar",
+            f"{remote_path}/{tarball.name}",
+        ],
+        check=True,
     )
 
 
@@ -222,7 +243,9 @@ def makeparser(prog=None):
         parents=[buildcontainer_opts],
         help="Build a package",
     )
-    sub_buildpkg.add_argument("package", nargs="+", choices=["base", "blacksite"], help="The package(s) to build")
+    sub_buildpkg.add_argument(
+        "package", nargs="+", choices=["base", "blacksite", "neuralupgrade"], help="The package(s) to build"
+    )
 
     # The deployos subcommand
     sub_deployos = subparsers.add_parser(
@@ -506,6 +529,8 @@ def main_impl():
             abuild_psyopsOS_base(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
         if "blacksite" in parsed.package:
             abuild_blacksite(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
+        if "neuralupgrade" in parsed.package:
+            build_neuralupgrade()
     elif parsed.action == "deployos":
         if parsed.type == "iso":
             deployiso(parsed.host)

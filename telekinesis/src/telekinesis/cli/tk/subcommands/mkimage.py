@@ -201,9 +201,8 @@ def mkimage_grubusb_squashfs(
         # but it's not necessary because we can just cache everything in the world file.
         # We cannot install nebula here, bc blacksite needs to create its user before it installs it itself.
         # psyopsOS_available = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/available")
-        psyopsOS_overlay = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay")
         repositories_file = os.path.join(builder.in_container_artifacts_dir, "psyopsOS.repositories")
-        outdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)
+        in_container_outdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)
         in_container_local_repo_path = os.path.join(
             builder.in_container_artifacts_dir, f"deaddrop/apk/v{alpine_version}/psyopsOS"
         )
@@ -218,10 +217,11 @@ def mkimage_grubusb_squashfs(
             f"sudo apk cache download --latest {' '.join(apk_cache_list)}",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {outdir} --psyopsos-overlay-dir {psyopsOS_overlay}",
+            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {in_container_outdir} --psyops-root {builder.in_container_psyops_checkout}",
         ]
         builder.run_docker(in_container_build_cmd)
-        with open(os.path.join(outdir, "squashfs.alpine_version"), "rb") as f:
+        alpine_version_file = tkconfig.artifacts.grubusb_os_dir / "squashfs.alpine_version"
+        with alpine_version_file.open("w") as f:
             f.write(alpine_version)
         subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)
 
@@ -265,6 +265,7 @@ def mkimage_grubusb_ostar():
     items = [
         "kernel",
         "kernel.version",
+        "modloop",
         "squashfs",
         "squashfs.alpine_version",
         "initramfs",
@@ -278,10 +279,10 @@ def mkimage_grubusb_ostar():
         for item in items:
             tar.add(tkconfig.artifacts.grubusb_os_dir / item, arcname=item)
 
-    with open(tkconfig.artifacts.grubusb_os_dir / "squashfs.alpine_version", "rb") as f:
-        alpine_version = f.read().decode("utf-8").strip()
-    with open(tkconfig.artifacts.grubusb_os_dir / "kernel.version", "rb") as f:
-        kernel_version = f.read().decode("utf-8").strip()
+    with open(tkconfig.artifacts.grubusb_os_dir / "squashfs.alpine_version", "r") as f:
+        alpine_version = f.read().strip()
+    with open(tkconfig.artifacts.grubusb_os_dir / "kernel.version", "r") as f:
+        kernel_version = f.read().strip()
 
     trusted_comment = (
         f"psyopsOS filename={tarball_file} version={build_date} kernel={kernel_version} alpine={alpine_version}"
