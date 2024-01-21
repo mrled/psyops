@@ -360,7 +360,7 @@ def main():
         if parsed.outscript:
             nodesec.save_installer_script(parsed.outscript)
         elif parsed.outtar:
-            cmd = ["tar", "-C", nodesec.secroot, "-cf", parsed.outtar] + [f.name for f in nodesec.files]
+            cmd = ["tar", "-C", nodesec.secroot, "-cf", parsed.outtar.absolute()] + [f.name for f in nodesec.files]
             subprocess.run(cmd, check=True)
         else:
             nodesec.save_directory(Path(parsed.outdir.format(nodename=parsed.nodename)))
