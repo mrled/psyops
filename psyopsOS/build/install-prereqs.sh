@@ -44,7 +44,6 @@ apk add \
     sqlite \
     squashfs-tools \
     sudo \
-    syslinux \
     tmux \
     vim \
     wget \
@@ -60,3 +59,6 @@ apk add \
 # We need the grub binaries installed to build a bootable ISO,
 # but we don't need it to actually work on the Docker system, so we skip these.
 apk add grub-efi --no-scripts
+
+# Install syslinux if it's available (it's not available on aarch64).
+apk add syslinux || true
