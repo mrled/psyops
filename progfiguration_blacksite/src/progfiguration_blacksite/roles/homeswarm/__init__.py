@@ -51,16 +51,6 @@ class Role(ProgfigurationRole):
     url_blacklist = r"^(javascript:)|(https?://[A-Za-z0-9\.-]*((facebook\.com)|(yelp\.com)|(youtube\.com)|(youtu\.be)))"
 
     def apply(self):
-
-        packages = [
-            "docker",
-            "docker-compose",
-            "docker-openrc",
-        ]
-        magicrun(["apk", "add", *packages])
-        magicrun("rc-update add docker default", check=False)
-        magicrun("rc-service docker start")
-
         # Create required users
         archivebox_getent = add_managed_service_account(
             self.archivebox_user, self.archivebox_group, groups=["docker"], shell="/bin/sh"
