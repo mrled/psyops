@@ -120,7 +120,6 @@ __psyopsOS_append_path "$HOME/.local/bin"
 
 @dataclass(kw_only=True)
 class Role(ProgfigurationRole):
-
     timezone: str
 
     remote_syslog_host: str
@@ -146,7 +145,6 @@ class Role(ProgfigurationRole):
         magicrun("rc-update add syslog default")
 
     def apply(self):
-
         set_timezone(self.timezone)
 
         if self.syslogd == "busybox":
@@ -171,3 +169,10 @@ class Role(ProgfigurationRole):
 
         for user in _users:
             configure_user(self.localhost, **user)
+
+        # We have a common pattern of /psyopsos-data/roles/ROLENAME being a "role_dir".
+        # This should be chmod 755 so that all users can read it.
+        # Most roles with create a subdir chmod 700,
+        # so if this isn't created first, /psyopsos-data/roles
+        # will be 700 and other users can't read it.
+        self.localhost.makedirs("/psyopsos-data/roles", owner="root", mode=0o755)
