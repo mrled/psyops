@@ -101,20 +101,21 @@ part_psyb="${loopdev}p4"
 
 cleanup() {
     echo "======== Cleaning up..."
+    set +e
     losetup -a
-    umount /mnt/grubusb/efisys || true
-    umount /mnt/grubusb/secret || true
-    umount /mnt/grubusb/psya || true
-    umount /mnt/grubusb/psyb || true
-    losetup -d "$loopdev" || true
+    umount /mnt/grubusb/efisys
+    umount /mnt/grubusb/secret
+    umount /mnt/grubusb/psya
+    umount /mnt/grubusb/psyb
+    losetup -d "$loopdev"
     for loop in /dev/loop?; do
-        losetup -d "$loop" || true
+        losetup -d "$loop"
     done
     # Delete devices created by losetup_mknod
-    rm "$part_efisys" || true
-    rm "$part_secret" || true
-    rm "$part_psya" || true
-    rm "$part_psyb" || true
+    rm "$part_efisys"
+    rm "$part_secret"
+    rm "$part_psya"
+    rm "$part_psyb"
     losetup -a
     echo "======== Done cleaning up."
 }
