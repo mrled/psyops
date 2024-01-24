@@ -4,20 +4,19 @@
 from dataclasses import dataclass
 from pathlib import Path
 import textwrap
-import time
 
 from progfiguration import logger
 from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost.disks import is_mountpoint
 
+from progfiguration_blacksite.roles.psyopsos_docker import wait_for_docker
 from progfiguration_blacksite.sitelib import get_persistent_secret, line_in_crontab
 from progfiguration_blacksite.sitelib.users import add_managed_service_account
 
 
 @dataclass(kw_only=True)
 class Role(ProgfigurationRole):
-
     roledir: Path
 
     stackname: str = "homeswarm"
@@ -143,17 +142,7 @@ class Role(ProgfigurationRole):
         annals_archivebox_tag = "annals-archivebox-local"
 
         # sometimes Docker isn't running yet when we get here, so we have to wait for it
-        attempts = 0
-        maxattempts = 4
-        while attempts < maxattempts:
-            if magicrun(["docker", "ps"], check=False).returncode == 0:
-                break
-            dockerstatus = magicrun(["rc-service", "docker", "status"])
-            logger.debug(
-                f"Waiting for Docker to start ({attempts}/{maxattempts}). Status: {dockerstatus.stdout.getvalue()}"
-            )
-            time.sleep(15)
-            attempts += 1
+        wait_for_docker(attempts=4, wait=15)
 
         magicrun(
             [

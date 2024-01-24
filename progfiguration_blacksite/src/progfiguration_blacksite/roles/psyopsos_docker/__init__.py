@@ -16,7 +16,9 @@ so that /psyopsos-data/scratch is available.
 
 import string
 from dataclasses import dataclass
+import time
 
+from progfiguration import logger
 from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
@@ -26,6 +28,27 @@ openrc_docker_conf_tmpl = string.Template(
 DOCKER_OPTS="--data-root=$dataroot --storage-driver=overlay2"
 """
 )
+
+
+class DockerNotReady(Exception):
+    pass
+
+
+def wait_for_docker(attempts: int = 4, wait: int = 5):
+    """Wait for docker to be ready
+
+    This is necessary because the docker service starts before the docker daemon is ready to accept connections.
+    """
+    attempt = 0
+    attempts = 4
+    while attempt < attempts:
+        if magicrun(["docker", "ps"], check=False).returncode == 0:
+            return
+        dockerstatus = magicrun(["rc-service", "docker", "status"])
+        logger.debug(f"Waiting for Docker to start ({attempt}/{attempts}). Status: {dockerstatus.stdout.getvalue()}")
+        time.sleep(wait)
+        attempt += 1
+    raise DockerNotReady()
 
 
 @dataclass(kw_only=True)
