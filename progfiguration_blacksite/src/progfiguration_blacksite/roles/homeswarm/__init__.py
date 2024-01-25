@@ -67,7 +67,15 @@ class Role(ProgfigurationRole):
         self.localhost.makedirs(traefik_confdir, owner="root", group="root", mode=0o0755)
         archivebox_sonic_confdir = self.roledir / "archivebox_sonic"
         self.localhost.makedirs(archivebox_sonic_confdir, owner="root", group="root", mode=0o0755)
-        archivebox_datadir = self.roledir / "archivebox"
+
+        # Root for all stuff that the archivebox user should own, like database, git checkout, etc
+        archivebox_rootdir = self.roledir / "archivebox"
+        self.localhost.makedirs(
+            archivebox_rootdir, owner=self.archivebox_user, group=self.archivebox_group, mode=0o0700
+        )
+
+        # The data directory for the ArchiveBox program
+        archivebox_datadir = archivebox_rootdir / "data"
         archivebox_incoming_dir = archivebox_datadir / "incoming"
         self.localhost.makedirs(
             archivebox_incoming_dir, owner=self.archivebox_user, group=self.archivebox_group, mode=0o0700
@@ -126,7 +134,7 @@ class Role(ProgfigurationRole):
 
         # Customize the Archivebox image for local use
         # It's best to build a Docker image in an empty directory, according to its docs
-        annals_archivebox_builddir = self.roledir / "annals.archivebox.build"
+        annals_archivebox_builddir = archivebox_rootdir / "annals.archivebox.build"
         self.localhost.makedirs(annals_archivebox_builddir, owner="root", group="root", mode=0o0755)
         annals_archivebox_dockerfile = annals_archivebox_builddir / "annals.archivebox.Dockerfile"
         self.localhost.temple(
@@ -165,7 +173,7 @@ class Role(ProgfigurationRole):
         # Instead we have to give SYS_ADMIN capability to the container, which is less secure.
         # self.localhost.cp(
         #     self.role_file("chrome.seccomp.json"),
-        #     archivebox_datadir / "chrome.seccomp.json",
+        #     archivebox_rootdir / "chrome.seccomp.json",
         #     owner="root",
         #     group="root",
         #     mode=0o0644,
@@ -190,7 +198,7 @@ class Role(ProgfigurationRole):
         self.localhost.makedirs(pihole_datadir / "dnsmasq", owner="root", group="root", mode=0o0755)
 
         # Archivebox clone
-        archivebox_srcdir = self.roledir / "absrc"
+        archivebox_srcdir = archivebox_rootdir / "absrc"
         # magicrun(
         #     [
         #         "sudo",
@@ -223,7 +231,7 @@ class Role(ProgfigurationRole):
         # Archivebox config file
         # ArchiveBox will generate the Django SECRET_KEY on the first run,
         # but we want to persist it across config rewrites.
-        django_secret_key = get_persistent_secret(archivebox_datadir / "persistent_secret_django_key.txt")
+        django_secret_key = get_persistent_secret(archivebox_rootdir / "persistent_secret_django_key.txt")
         self.localhost.temple(
             self.role_file("ArchiveBox.conf.temple"),
             archivebox_datadir / "ArchiveBox.conf",
@@ -238,7 +246,7 @@ class Role(ProgfigurationRole):
         )
 
         # Archivebox cron job
-        archivebox_schedule_script = archivebox_datadir / "archivebox_daily_grooming.sh"
+        archivebox_schedule_script = archivebox_rootdir / "archivebox_daily_grooming.sh"
         self.localhost.temple(
             self.role_file("archivebox_daily_grooming.sh.temple"),
             archivebox_schedule_script,
