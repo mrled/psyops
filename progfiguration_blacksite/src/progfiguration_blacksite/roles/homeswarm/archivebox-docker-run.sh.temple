@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+# It's useful to be able to run ArchiveBox on the commandline
+# and share the same data dir / database as the one in the swarm.
+# ArchiveBox explicitly supports this,
+# with the massive caveat that if you have two instances writing to the same database
+# it'll corrupt it lololol.
+
 user={$}user
 container={$}container
 volume={$}volume

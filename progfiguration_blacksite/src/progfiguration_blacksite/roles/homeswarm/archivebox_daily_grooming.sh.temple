@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+# This script runs on the host (not in the archivebox container)
+
 # Template variables
 user={$}user
 stackname={$}stackname
