@@ -125,60 +125,6 @@ class Role(ProgfigurationRole):
             mode=0o0600,
         )
 
-        # Build Archivebox Docker image from the dev branch
-        # ... actually I don't think we have to do this,
-        # the archivebox/archivebox:dev image looks like it's up to date with the latest in dev branch.
-        # archivebox_branch = "dev"
-        # archivebox_tag = "local-archivebox-dev"
-        # magicrun(f"docker build -t {archivebox_tag} https://github.com/ArchiveBox/ArchiveBox.git#{archivebox_branch}")
-
-        # Customize the Archivebox image for local use
-        # It's best to build a Docker image in an empty directory, according to its docs
-        annals_archivebox_builddir = archivebox_rootdir / "annals.archivebox.build"
-        self.localhost.makedirs(annals_archivebox_builddir, owner="root", group="root", mode=0o0755)
-        annals_archivebox_dockerfile = annals_archivebox_builddir / "annals.archivebox.Dockerfile"
-        self.localhost.temple(
-            self.role_file("annals.archivebox.Dockerfile.temple"),
-            annals_archivebox_dockerfile,
-            {
-                "archivebox_tag": "archivebox/archivebox:dev",
-            },
-            owner="root",
-            group="root",
-            mode=0o0644,
-        )
-        annals_archivebox_tag = "annals-archivebox-local"
-
-        # sometimes Docker isn't running yet when we get here, so we have to wait for it
-        wait_for_docker(attempts=4, wait=15)
-
-        magicrun(
-            [
-                "docker",
-                "build",
-                "--tag",
-                annals_archivebox_tag,
-                "--file",
-                str(annals_archivebox_dockerfile),
-                str(annals_archivebox_builddir),
-            ]
-        )
-
-        # Chrome seccomp profile
-        # Described here: <https://hub.docker.com/r/zenika/alpine-chrome>
-        # Original via:
-        # <https://github.com/jessfraz/dotfiles/blob/master/etc/docker/seccomp/chrome.json>
-        # This doesn't work with Docker Swarm though sadly:
-        # <https://github.com/moby/moby/issues/41371>
-        # Instead we have to give SYS_ADMIN capability to the container, which is less secure.
-        # self.localhost.cp(
-        #     self.role_file("chrome.seccomp.json"),
-        #     archivebox_rootdir / "chrome.seccomp.json",
-        #     owner="root",
-        #     group="root",
-        #     mode=0o0644,
-        # )
-
         # Archivebox Sonic backend config file
         archivebox_sonic_conf_file = archivebox_sonic_confdir / "sonic.cfg"
         self.localhost.temple(
@@ -196,37 +142,6 @@ class Role(ProgfigurationRole):
         pihole_datadir = self.roledir / "pihole"
         self.localhost.makedirs(pihole_datadir / "pihole", owner="root", group="root", mode=0o0755)
         self.localhost.makedirs(pihole_datadir / "dnsmasq", owner="root", group="root", mode=0o0755)
-
-        # Archivebox clone
-        archivebox_srcdir = archivebox_rootdir / "absrc"
-        # magicrun(
-        #     [
-        #         "sudo",
-        #         "-u",
-        #         self.archivebox_user,
-        #         "git",
-        #         "config",
-        #         "--global",
-        #         "--add",
-        #         "safe.directory",
-        #         str(archivebox_srcdir),
-        #     ]
-        # )
-        if archivebox_srcdir.exists():
-            magicrun(["sudo", "-u", self.archivebox_user, "git", "pull"], cwd=str(archivebox_srcdir))
-        else:
-            magicrun(
-                [
-                    "sudo",
-                    "-u",
-                    self.archivebox_user,
-                    "git",
-                    "clone",
-                    "https://github.com/mrled/ArchiveBox",
-                    archivebox_srcdir.name,
-                ],
-                cwd=str(archivebox_srcdir.parent),
-            )
 
         # Archivebox config file
         # ArchiveBox will generate the Django SECRET_KEY on the first run,
@@ -262,6 +177,8 @@ class Role(ProgfigurationRole):
         line_in_crontab(self.archivebox_user, f"MAILTO={self.archivebox_user}", prepend=True)
         line_in_crontab(self.archivebox_user, f"17 3 * * * {str(archivebox_schedule_script)}")
 
+        archivebox_docker_tag = "archivebox/archivebox:dev"
+
         # Docker Compose file
         homeswarm_compose_file = self.roledir / "compose.yml"
         # pihole_ip = socket.getaddrinfo(self.pihole_domain, None)[0][4][0]
@@ -271,11 +188,10 @@ class Role(ProgfigurationRole):
             homeswarm_compose_file,
             {
                 # "archivebox_container": archivebox_tag,
-                "archivebox_container": annals_archivebox_tag,
+                "archivebox_container": archivebox_docker_tag,
                 "archivebox_uid": archivebox_getent.uid,
                 "archivebox_gid": archivebox_getent.gid,
                 "archivebox_datadir": str(archivebox_datadir),
-                "archivebox_srcdir": str(archivebox_srcdir),
                 # "stackname": self.stackname,
                 "archivebox_domain": self.archivebox_domain,
                 "archivebox_sonic_confdir": str(archivebox_sonic_confdir),
@@ -316,7 +232,7 @@ class Role(ProgfigurationRole):
             "/usr/local/bin/archivebox-docker-run.sh",
             {
                 "user": self.archivebox_user,
-                "container": annals_archivebox_tag,
+                "container": archivebox_docker_tag,
                 "volume": str(archivebox_datadir),
             },
             owner="root",
