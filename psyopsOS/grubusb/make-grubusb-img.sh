@@ -214,7 +214,10 @@ kernel_params_suffix="earlyprintk=dbgp console=tty0 console=ttyS0,115200"
 cat <<EOF > /mnt/grubusb/efisys/grub/grub.cfg
 # psyopsOS grub.cfg
 
+#### WARNING: THIS LINE IS MODIFIED BY THE psyopsOS-write-bootmedia PROGRAM WHEN IT APPLIES A/B UPDATES
+####          THIS VALUE IS EXPECTED TO BE ONE OF psyopsOS-A or psyopsOS-B
 set default="$label_psya"
+
 set timeout=5
 
 insmod all_video

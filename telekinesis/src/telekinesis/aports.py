@@ -17,9 +17,10 @@ def validate_alpine_version(docker_builder_dir: Path, aportsdir: Path, alpine_ve
     cmd = ["git", "name-rev", "--name-only", "HEAD"]
     gitresult = subprocess.run(cmd, cwd=aportsdir.as_posix(), capture_output=True)
     if gitresult.returncode != 0:
-        raise Exception(
-            f"Trying to get version of aports repository at {aportsdir}, with '{" ".join(cmd)}' but got an error: {gitresult.stderr.decode('utf-8')}"
-        )
+        cmdstr = " ".join(cmd)
+        err = f"Trying to get version of aports repository at {aportsdir}, with '{cmdstr}' but got an error: {gitresult.stderr.decode('utf-8')}"
+        raise Exception(err)
+
     aports_alpine_version = ""
     if gitresult.returncode == 0:
         aports_alpine_version = gitresult.stdout.decode("utf-8").strip()
@@ -37,6 +38,4 @@ def validate_alpine_version(docker_builder_dir: Path, aportsdir: Path, alpine_ve
 
     if errors:
         raise Exception("Alpine version mismatch: " + "\n".join(errors))
-    print(
-        f"Validated that the Dockerfile and the aports checkout are both Alpine v{alpine_version}"
-    )
+    print(f"Validated that the Dockerfile and the aports checkout are both Alpine v{alpine_version}")

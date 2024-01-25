@@ -53,14 +53,20 @@ class TelekinesisConfig:
             """The S3 region"""
             self.localpath = artifacts / "deaddrop"
             """Path to the local directory that is synced with the bucket"""
-            self.isodir = self.localpath / "iso"
-            """Path to the directory containing the ISO image"""
+            self.osdir = self.localpath / "os"
+            """Path to the directory containing OS images"""
             self.apk_repo_root = self.localpath / "apk"
             """Path to the directory containing the APK repositories (one per Alpine version)"""
             self.isofilename = "psyopsOScd-psyboot-x86_64.iso"
             """The filename that our mkimage creates"""
             self.sqfilename = "psyopsOSsq-psysquash-x86_64.iso"
             """The filename that our mkimage creates"""
+            self.grubusbtarname = "psyopsOS.grubusb.os.tar"
+            """The filename for the grubusb OS tarball"""
+            self.isopath = self.osdir / self.isofilename
+            """The path to the ISO image"""
+            self.grubusbtarpath = self.osdir / self.grubusbtarname
+            """The path to the grubusb OS tarball"""
 
         def get_credential(self) -> tuple[str, str]:
             """Get the AWS credentials from 1Password, and return them as a tuple of (username, password)"""

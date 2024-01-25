@@ -2,6 +2,7 @@
 
 
 import argparse
+import logging
 import os
 from pathlib import Path
 import pprint
@@ -11,7 +12,7 @@ import tarfile
 import textwrap
 import zipfile
 
-from telekinesis import deaddrop, tksecrets
+from telekinesis import deaddrop, tklogger, tksecrets
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis.cli import idb_excepthook
 from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
@@ -40,12 +41,19 @@ def get_memtest():
 
 def deployiso(host):
     """Deploy the ISO image to a remote host"""
+    isofile = tkconfig.deaddrop.isopath
+    subprocess.run(["scp", isofile.as_posix(), f"root@{host}:/tmp/{isofile.name}"], check=True)
     subprocess.run(
-        ["scp", tkconfig.deaddrop.isodir.as_posix(), f"root@{host}:/tmp/{tkconfig.deaddrop.isofilename}"], check=True
+        ["ssh", f"root@{host}", "/usr/sbin/psyopsOS-write-bootmedia", "iso", f"/tmp/{isofile.name}"], check=True
     )
+
+
+def deploygrubusb(host):
+    """Deploy the ISO image to a remote host"""
+    tarball = tkconfig.artifacts.grubusb_os_tarfile
+    subprocess.run(["scp", tarball.as_posix(), f"root@{host}:/tmp/{tarball.name}"], check=True)
     subprocess.run(
-        ["ssh", f"root@{host}", "/usr/sbin/psyopsOS-write-bootmedia", f"/tmp/{tkconfig.deaddrop.isofilename}"],
-        check=True,
+        ["ssh", f"root@{host}", "/usr/sbin/psyopsOS-write-bootmedia", "grubusb", f"/tmp/{tarball.name}"], check=True
     )
 
 
@@ -64,6 +72,12 @@ def makeparser(prog=None):
         "-d",
         action="store_true",
         help="Open the debugger if an unhandled exception is encountered.",
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Print more information about what is happening.",
     )
 
     subparsers = parser.add_subparsers(dest="action", required=True)
@@ -207,12 +221,15 @@ def makeparser(prog=None):
     )
     sub_buildpkg.add_argument("package", nargs="+", choices=["base", "blacksite"], help="The package(s) to build")
 
-    # The deployiso subcommand
-    sub_deployiso = subparsers.add_parser(
-        "deployiso",
-        help="Deploy the ISO image to the S3 bucket",
+    # The deployos subcommand
+    sub_deployos = subparsers.add_parser(
+        "deployos",
+        help="Deploy the ISO image to a psyopsOS remote host",
     )
-    sub_deployiso.add_argument("host", help="The remote host to deploy to, assumes root@ accepts the psyops SSH key")
+    sub_deployos.add_argument(
+        "--type", default="grubusb", choices=["iso", "grubusb"], help="The type of image to deploy"
+    )
+    sub_deployos.add_argument("host", help="The remote host to deploy to, assumes root@ accepts the psyops SSH key")
 
     # The vm subcommand
     sub_vm = subparsers.add_parser(
@@ -335,9 +352,14 @@ def main_impl():
     parser = makeparser()
     parsed = parser.parse_args()
 
+    conhandler = logging.StreamHandler()
+    conhandler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    tklogger.addHandler(conhandler)
     if parsed.debug:
         print(f"Arguments: {parsed}")
         sys.excepthook = idb_excepthook
+    if parsed.verbose:
+        tklogger.setLevel(logging.DEBUG)
 
     if parsed.action == "showconfig":
         print(tkconfig.pformat(indent=2, sort_dicts=False))
@@ -466,8 +488,13 @@ def main_impl():
             abuild_psyopsOS_base(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
         if "blacksite" in parsed.package:
             abuild_blacksite(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
-    elif parsed.action == "deployiso":
-        deployiso(parsed.host)
+    elif parsed.action == "deployos":
+        if parsed.type == "iso":
+            deployiso(parsed.host)
+        elif parsed.type == "grubusb":
+            deploygrubusb(parsed.host)
+        else:
+            parser.error(f"Unknown deployment type: {parsed.type}")
     elif parsed.action == "psynet":
         if parsed.psynet_action == "run":
             if parsed.cadir:
