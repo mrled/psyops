@@ -3,8 +3,11 @@
 import hashlib
 import os
 from pathlib import Path
+import pprint
 
 import boto3
+
+from telekinesis import tklogger
 
 
 def makesession(aws_access_key_id, aws_secret_access_key, aws_region):
@@ -156,14 +159,26 @@ def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_direc
     for page in paginator.paginate(Bucket=bucket_name):
         for obj in page.get("Contents", []):
             remote_files[obj["Key"]] = obj["ETag"].strip('"')
+    remote_files_list = list(remote_files.keys())
 
     # Upload local files to S3 if they are different or don't exist remotely
-    for local_file_path in local_directory.rglob("*"):
+    local_files_relpath_list = []
+    for local_file_path in list(local_directory.rglob("*")):
         if local_file_path.is_file():
             relative_path = str(local_file_path.relative_to(local_directory))
+            local_files_relpath_list.append(relative_path)
             local_checksum = compute_md5(local_file_path)
 
-            if relative_path not in remote_files or local_checksum != remote_files[relative_path]:
+            exists_remotely = relative_path in remote_files_list
+            remote_checksum = remote_files.get(relative_path, "NONE")
+            checksum_matches = local_checksum == remote_checksum
+            tklogger.debug(
+                f"path relative/existsremote: {relative_path}/{exists_remotely}, checksum local/remote/matches: {local_checksum}/{remote_checksum}/{checksum_matches}"
+            )
+
+            if exists_remotely and checksum_matches:
+                print(f"Skipping {relative_path} because it is already up to date.")
+            else:
                 print(f"Uploading {relative_path}...")
                 extra_args = {}
 
@@ -177,8 +192,7 @@ def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_direc
                 )
 
     # Determine which remote files are not present locally
-    local_files = {path.as_posix() for path in local_directory.rglob("*") if path.is_file()}
-    files_to_delete = remote_files - local_files
+    files_to_delete = [f for f in remote_files_list if f not in local_files_relpath_list]
 
     # Delete files from S3 bucket not present in local directory
     for file_key in files_to_delete:
