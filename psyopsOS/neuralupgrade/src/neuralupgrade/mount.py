@@ -3,7 +3,7 @@ import json
 import subprocess
 import time
 
-from psyopsOSimg import logger
+from neuralupgrade import logger
 
 
 class UmountError(Exception):
@@ -97,18 +97,12 @@ def mountfs(label: str) -> str:
             mounted_rw = True
 
     if mounted_ro:
-        logger.debug(
-            f"Filesystem with label {label} is mounted ro to {fs['mountpoint']}, remounting rw"
-        )
+        logger.debug(f"Filesystem with label {label} is mounted ro to {fs['mountpoint']}, remounting rw")
         subprocess.run(["mount", "-o", "rw,remount", fs["mountpoint"]], check=True)
     elif mounted_rw:
-        logger.debug(
-            f"Filesystem with label {label} is mounted rw to {fs['mountpoint']}, no need to remount"
-        )
+        logger.debug(f"Filesystem with label {label} is mounted rw to {fs['mountpoint']}, no need to remount")
     else:
-        logger.debug(
-            f"Filesystem with label {label} is not mounted, mounting rw to {fs['mountpoint']}"
-        )
+        logger.debug(f"Filesystem with label {label} is not mounted, mounting rw to {fs['mountpoint']}")
         subprocess.run(["mount", "-o", "rw", fs["mountpoint"]], check=True)
 
     try:

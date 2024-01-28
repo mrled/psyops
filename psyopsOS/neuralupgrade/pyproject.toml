@@ -1,6 +1,6 @@
 [project]
-name = "psybuildboot"
-description = "The PSYOPS boot device build and update tool"
+name = "neuralupgrade"
+description = "The psyopsOS upgrade tool"
 license = { text = "WTFPL" }
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -12,13 +12,13 @@ name = "Micah R Ledbetter"
 email = "me@micahrl.com"
 
 [project.scripts]
-psybuildboot = "psybuildboot.cmd:main"
+psybuildboot = "neuralupgrade.cmd:main"
 
 [project.optional-dependencies]
 development = ["types-requests"]
 
 [project.urls]
-Homepage = "https://github.com/mrled/psyops/tree/master/psyopsOS/psybuildboot"
+Homepage = "https://github.com/mrled/psyops/tree/master/psyopsOS/neuralupgrade"
 
 [tool.black]
 line-length = 120
