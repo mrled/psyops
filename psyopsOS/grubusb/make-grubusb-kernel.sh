@@ -265,6 +265,7 @@ cp "$bootdir"/System.map-$kflavor "$outdir"/System.map
 
 # Find the kernel version
 kvers=$(basename $(ls -d $initramroot/lib/modules/*"$kflavor"))
+echo "$kvers" > "$outdir"/kernel.version
 
 make_depmod "$kvers"
 
