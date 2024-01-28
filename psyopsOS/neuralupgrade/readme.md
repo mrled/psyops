@@ -8,8 +8,6 @@ Used by both the `tk` build tool and on psyopsOS nodes.
 
 ## Command sketch
 
-TODO: replace this with real help once implemented using cogapp.
-
 ```sh
 # Show
 # (Not yet implemented)
@@ -64,3 +62,10 @@ neuralupgrade apply a b efisys --efisys-dev /dev/loop0p1 --a-dev /dev/loop0p3 --
 # (Not yet implemented)
 cat ./psyopsOS.grubusb.os.tar | ssh root@NODE neuralupgrade apply nonbooted --no-verify
 ```
+
+## To do
+
+- Finish unimplemented items above
+- Bundle with `psyopsOS-base` package
+- Revert untested support for updating grubusb bootmedia added to psyopsOS-write-bootmedia in `7c98c2440ff5071d681565ef530e6e6a4c53be9d`
+- Put real help in this readme using cogapp
