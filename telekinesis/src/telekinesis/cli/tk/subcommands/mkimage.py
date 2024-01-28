@@ -1,10 +1,13 @@
 """The mkimage subcommand"""
 
+import datetime
 import os
+import shutil
 import subprocess
+import tarfile
 import textwrap
 
-from telekinesis import aports
+from telekinesis import aports, minisign
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
 from telekinesis.config import tkconfig
@@ -153,6 +156,7 @@ def mkimage_grubusb_squashfs(
     dangerous_no_clean_tmp_dir: bool = False,
 ):
     """Make a psyopsOS squashfs root filesystem for grubusb images"""
+    builddate = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     alpine_version, apkreponame, builder_tag = mkimage_prepare(
         skip_build_apks,
         rebuild,
@@ -217,6 +221,8 @@ def mkimage_grubusb_squashfs(
             f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {outdir} --psyopsos-overlay-dir {psyopsOS_overlay}",
         ]
         builder.run_docker(in_container_build_cmd)
+        with open(os.path.join(outdir, "squashfs.alpine_version"), "rb") as f:
+            f.write(alpine_version)
         subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)
 
 
@@ -249,3 +255,56 @@ def mkimage_grubusb_diskimg(
             f"sudo sh {make_grubusb_script} -m {memtest64efi} -p {psyopsosdir} -o {outimg} {extra_scriptargs}",
         ]
         builder.run_docker(in_container_build_cmd)
+
+
+def mkimage_grubusb_ostar():
+    """Create the OS tarball for grubusb images"""
+    build_date = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    tarball_file = tkconfig.artifacts.grubusb_os_tarfile_versioned_format.format(version=build_date)
+
+    items = [
+        "kernel",
+        "kernel.version",
+        "squashfs",
+        "squashfs.alpine_version",
+        "initramfs",
+        "System.map",
+        "config",
+        "boot",  # Contains DTB files if the platform requires, otherwise empty
+    ]
+    # We don't compress because the big files - kernel/squashfs/initramfs - are already compressed
+    # Compressing with "w:gz" saved about 4MB out of 630MB as of 20231215
+    with tarfile.open(tkconfig.artifacts.grubusb_os_tarfile.as_posix(), "w") as tar:
+        for item in items:
+            tar.add(tkconfig.artifacts.grubusb_os_dir / item, arcname=item)
+
+    with open(tkconfig.artifacts.grubusb_os_dir / "squashfs.alpine_version", "rb") as f:
+        alpine_version = f.read().decode("utf-8").strip()
+    with open(tkconfig.artifacts.grubusb_os_dir / "kernel.version", "rb") as f:
+        kernel_version = f.read().decode("utf-8").strip()
+
+    trusted_comment = (
+        f"psyopsOS filename={tarball_file} version={build_date} kernel={kernel_version} alpine={alpine_version}"
+    )
+    # Note that we're signing the tarball using the unversioned name from tkconfig.artifacts,
+    # but the trusted_comment contains the versioned name.
+    # This doesn't matter, even though the default trusted_comment contains the signed filename.
+    minisign.sign(tkconfig.artifacts.grubusb_os_tarfile.as_posix(), trusted_comment=trusted_comment)
+
+
+def mkimage_grubusb_copy_to_deaddrop():
+    """Copy the grubusb OS tarball and signature to the deaddrop, making sure they have correct names
+
+    WARNING:    We read the trusted_comment from the signature file,
+                but we are NOT verifying it first.
+    """
+    sig = f"{tkconfig.artifacts.grubusb_os_tarfile}.minisig"
+    with open(sig, "r") as f:
+        for line in f.readlines():
+            prefix = "trusted comment: psyopsOS "
+            if line.startswith(prefix):
+                # parse all the key=value pairs in the trusted comment
+                metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in line[len(prefix) :].split()]}
+                break
+    shutil.copy(tkconfig.artifacts.grubusb_os_tarfile, tkconfig.deaddrop.osdir / metadata["filename"])
+    shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")

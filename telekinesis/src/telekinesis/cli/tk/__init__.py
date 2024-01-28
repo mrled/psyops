@@ -12,7 +12,7 @@ import tarfile
 import textwrap
 import zipfile
 
-from telekinesis import deaddrop, tklogger, tksecrets
+from telekinesis import deaddrop, minisign, tklogger, tksecrets
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis.cli import idb_excepthook
 from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
@@ -21,6 +21,8 @@ from telekinesis.cli.tk.subcommands.mkimage import (
     mkimage_grubusb_kernel,
     mkimage_grubusb_squashfs,
     mkimage_iso,
+    mkimage_grubusb_ostar,
+    mkimage_grubusb_copy_to_deaddrop,
 )
 from telekinesis.cli.tk.subcommands.vm import get_ovmf, vm_grubusb_img, vm_grubusb_os
 from telekinesis.config import getsecret, tkconfig
@@ -173,6 +175,7 @@ def makeparser(prog=None):
         "kernel": "Build the kernel/initramfs/etc.",
         "squashfs": "Build the squashfs root filesystem.",
         "ostar": "Create a tarball of the kernel/squashfs/etc that can be used to apply an A/B update.",
+        "ostar-dd": "Copy the ostar tarball to the local deaddrop directory. (Use 'tk deaddrop forcepush' to push it to the bucket.)",
         "sectar": "Create a tarball of secrets for a node-specific grubusb image. Requires that --node-secrets NODENAME is passed, and that the node already exists in progfiguration_blacksite (see 'progfiguration-blacksite-node save --help').",
         "diskimg": "Build the disk image from the kernel/squashfs. If --node-secrets is passed, the secrets tarball is included in the image. Otherwise, the image is node-agnostic and contains an empty secrets volume.",
     }
@@ -344,6 +347,31 @@ def makeparser(prog=None):
         help="The filename of the node's key",
     )
 
+    # The signify subcommand
+    sub_signify = subparsers.add_parser(
+        "signify",
+        help="Sign and verify with the psyopsOS signature tooling",
+    )
+    sub_signify_subparsers = sub_signify.add_subparsers(dest="signify_action", required=True)
+    sub_signify_sub_sign = sub_signify_subparsers.add_parser(
+        "sign",
+        help="Sign a file",
+    )
+    sub_signify_sub_sign.add_argument(
+        "file",
+        type=Path,
+        help="The file to sign",
+    )
+    sub_signify_sub_verify = sub_signify_subparsers.add_parser(
+        "verify",
+        help="Verify a file",
+    )
+    sub_signify_sub_verify.add_argument(
+        "file",
+        type=Path,
+        help="The file to verify",
+    )
+
     return parser
 
 
@@ -431,19 +459,9 @@ def main_impl():
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
             if "ostar" in parsed.stages:
-                items = [
-                    "kernel",
-                    "squashfs",
-                    "initramfs",
-                    "System.map",
-                    "config",
-                    "boot",  # Contains DTB files if the platform requires, otherwise empty
-                ]
-                # We don't compress because the big files - kernel/squashfs/initramfs - are already compressed
-                # Compressing with "w:gz" saved about 4MB out of 630MB as of 20231215
-                with tarfile.open(tkconfig.artifacts.grubusb_os_tarfile.as_posix(), "w") as tar:
-                    for item in items:
-                        tar.add(tkconfig.artifacts.grubusb_os_dir / item, arcname=item)
+                mkimage_grubusb_ostar()
+            if "ostar-dd" in parsed.stages:
+                mkimage_grubusb_copy_to_deaddrop()
             if "sectar" in parsed.stages and parsed.node_secrets:
                 subprocess.run(
                     [
@@ -511,6 +529,13 @@ def main_impl():
             tksecrets.psynet_set(parsed.node, parsed.crt, parsed.key)
         else:
             parser.error(f"Unknown psynet action: {parsed.psynet_action}")
+    elif parsed.action == "signify":
+        if parsed.signify_action == "sign":
+            minisign.sign(parsed.file)
+        elif parsed.signify_action == "verify":
+            minisign.verify(parsed.file)
+        else:
+            parser.error(f"Unknown signify action: {parsed.signify_action}")
     else:
         parser.error(f"Unknown action: {parsed.action}")
 

@@ -10,10 +10,10 @@ import pprint
 import subprocess
 
 
-def getsecret(item: str, field: str) -> str:
+def getsecret(vault: str, item: str, field: str) -> str:
     """Get a secret from 1Password"""
     proc = subprocess.run(
-        ["op", "read", f"{item}/{field}"],
+        ["op", "read", f"op://{vault}/{item}/{field}"],
         capture_output=True,
         check=True,
         text=True,
@@ -35,13 +35,17 @@ class TelekinesisConfig:
             self.artifacts = root / "artifacts"
             """The path to the artifacts directory on the host, containing build intermediate files and artifacts"""
             self.aports = root.parent / "aports"
-            """The path to the aports checkout on the host"""
+            """The path to the aports checkout on the host... assumed to be a sibling of ths psyops checkout."""
             self.psyops_aports_scripts = root / "psyopsOS" / "aports-scripts"
             """The path to the psyopsOS aports scripts overlay directory on the host"""
             self.psyopsOS_base = root / "psyopsOS" / "psyopsOS-base"
             """The path to the psyopsOS-base package directory on the host"""
             self.build = root / "psyopsOS" / "build"
             """The path to the psyopsOS build directory on the host"""
+            self.minisign_seckey = root / "psyopsOS" / "minisign.seckey"
+            """The path to the minisign secret key on the host"""
+            self.minisign_pubkey = root / "psyopsOS" / "minisign.pubkey"
+            """The path to the minisign public key on the host"""
 
     class TelekinesisConfigDeaddropNode:
         """Configuration for the deaddrop config node"""
@@ -70,10 +74,10 @@ class TelekinesisConfig:
 
         def get_credential(self) -> tuple[str, str]:
             """Get the AWS credentials from 1Password, and return them as a tuple of (username, password)"""
-            op_uri = "op://Personal/AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer"
+            op_item = "AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer"
             return (
-                getsecret(op_uri, "username"),
-                getsecret(op_uri, "password"),
+                getsecret("Personal", op_item, "username"),
+                getsecret("Personal", op_item, "password"),
             )
 
     class TelekinesisBuildcontainerNode:
@@ -108,7 +112,7 @@ class TelekinesisConfig:
 
         def get_signing_key(self) -> str:
             """Get the signing key from 1Password"""
-            return getsecret("op://Personal/psyopsOS_abuild_ssh_key", "notesPlain")
+            return getsecret("Personal", "psyopsOS_abuild_ssh_key", "notesPlain")
 
     class TelekinesisConfigArtifactsNode:
         """Configuration for the artifacts node"""
@@ -140,6 +144,10 @@ class TelekinesisConfig:
             self.grubusb_os_tarfile = artroot / "psyopsOS.grubusb.os.tar"
             """The path to the grubusb OS tarfile.
             The grubusb_os_dir in a tarball.
+            """
+            self.grubusb_os_tarfile_versioned_format = "psyopsOS.grubusb.os.{version}.tar"
+            """The format string for the versioned grubusb OS tarfile.
+            Used as the base for the filename in S3, and also of the signature file.
             """
 
             self.node_secrets_filename_fmt = "psyops-secret.{nodename}.tar"
