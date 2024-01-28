@@ -65,6 +65,8 @@ cat ./psyopsOS.grubusb.os.tar | ssh root@NODE neuralupgrade apply nonbooted --no
 
 ## To do
 
+- `tk` will continue to build the actual disk image, write filesystems, etc, in `make-grubusb-img.sh`,
+  but I will need to remove the a/b/efisys stuff from that script when this one is ready.
 - Finish unimplemented items above
 - Bundle with `psyopsOS-base` package
 - Revert untested support for updating grubusb bootmedia added to psyopsOS-write-bootmedia in `7c98c2440ff5071d681565ef530e6e6a4c53be9d`
