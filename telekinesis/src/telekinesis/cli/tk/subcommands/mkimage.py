@@ -2,6 +2,7 @@
 
 import datetime
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import tarfile
@@ -91,6 +92,27 @@ def mkimage_iso(
             print(f"{isofile}")
 
 
+def mkimage_grubusb_repositories(alpine_version: str) -> tuple[Path, Path]:
+    psyopsOS_repo = "https://psyops.micahrl.com/apk/v{alpine_version}/psyopsOS"
+    psyopsOS_apk_repositories = textwrap.dedent(
+        f"""\
+        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main
+        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community
+        @edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main
+        @edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community
+        @edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing
+        {psyopsOS_repo}
+        """
+    ).strip()
+    all_repos = tkconfig.artifacts.root / "psyopsOS.repositories.all"
+    psyopsOS_only_repo = tkconfig.artifacts.root / "psyopsOS.repositories.psyopsOSonly"
+    with all_repos.open("w") as f:
+        f.write(psyopsOS_apk_repositories)
+    with psyopsOS_only_repo.open("w") as f:
+        f.write(f"{psyopsOS_repo}\n")
+    return (all_repos, psyopsOS_only_repo)
+
+
 def mkimage_grubusb_kernel(
     skip_build_apks: bool = False,
     rebuild: bool = False,
@@ -106,18 +128,7 @@ def mkimage_grubusb_kernel(
         dangerous_no_clean_tmp_dir,
     )
 
-    psyopsOS_apk_repositories = textwrap.dedent(
-        f"""\
-        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main
-        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community
-        @edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main
-        @edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community
-        @edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing
-        https://psyops.micahrl.com/apk/v{alpine_version}/psyopsOS
-        """
-    ).strip()
-    with (tkconfig.artifacts.root / "psyopsOS.repositories").open("w") as f:
-        f.write(psyopsOS_apk_repositories)
+    all_repos, psyopsOS_only_repo = mkimage_grubusb_repositories(alpine_version)
 
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
         # Add the local copy of the psyopsOS repository to the list of repositories in the container.
@@ -127,7 +138,7 @@ def mkimage_grubusb_kernel(
         make_grubusb_kernel_script = os.path.join(
             builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-kernel.sh"
         )
-        repositories_file = os.path.join(builder.in_container_artifacts_dir, "psyopsOS.repositories")
+        repositories_file = os.path.join(builder.in_container_artifacts_dir, all_repos.name)
         in_container_local_repo_path = os.path.join(
             builder.in_container_artifacts_dir, f"deaddrop/apk/v{alpine_version}/psyopsOS"
         )
@@ -164,18 +175,7 @@ def mkimage_grubusb_squashfs(
         dangerous_no_clean_tmp_dir,
     )
 
-    psyopsOS_apk_repositories = textwrap.dedent(
-        f"""\
-        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main
-        https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/community
-        @edgemain       https://dl-cdn.alpinelinux.org/alpine/edge/main
-        @edgecommunity  https://dl-cdn.alpinelinux.org/alpine/edge/community
-        @edgetesting    https://dl-cdn.alpinelinux.org/alpine/edge/testing
-        https://psyops.micahrl.com/apk/v{alpine_version}/psyopsOS
-        """
-    ).strip()
-    with (tkconfig.artifacts.root / "psyopsOS.repositories").open("w") as f:
-        f.write(psyopsOS_apk_repositories)
+    all_repos, psyopsOS_only_repo = mkimage_grubusb_repositories(alpine_version)
 
     extra_required_packages = [
         # If this isn't present, setup-keyboard in 000-psyopsOS-postboot.start will hang waiting for user input forever.
@@ -201,7 +201,8 @@ def mkimage_grubusb_squashfs(
         # but it's not necessary because we can just cache everything in the world file.
         # We cannot install nebula here, bc blacksite needs to create its user before it installs it itself.
         # psyopsOS_available = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/available")
-        repositories_file = os.path.join(builder.in_container_artifacts_dir, "psyopsOS.repositories")
+        in_container_all_repos = os.path.join(builder.in_container_artifacts_dir, all_repos.name)
+        in_container_psyopsOS_only_repo = os.path.join(builder.in_container_artifacts_dir, psyopsOS_only_repo.name)
         in_container_outdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)
         in_container_local_repo_path = os.path.join(
             builder.in_container_artifacts_dir, f"deaddrop/apk/v{alpine_version}/psyopsOS"
@@ -217,7 +218,7 @@ def mkimage_grubusb_squashfs(
             f"sudo apk cache download --latest {' '.join(apk_cache_list)}",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --outdir {in_container_outdir} --psyops-root {builder.in_container_psyops_checkout}",
+            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {in_container_all_repos} --apk-repositories-psyopsOSonly {in_container_psyopsOS_only_repo} --apk-local-repo {in_container_local_repo_path} --outdir {in_container_outdir} --psyops-root {builder.in_container_psyops_checkout}",
         ]
         builder.run_docker(in_container_build_cmd)
         alpine_version_file = tkconfig.artifacts.grubusb_os_dir / "squashfs.alpine_version"

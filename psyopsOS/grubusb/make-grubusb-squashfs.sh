@@ -8,6 +8,7 @@ apk_keys_dir=/etc/apk/keys
 apk_local_repo=
 apk_packages=
 apk_repos_file=/etc/apk/repositories
+apk_repos_file_psyopsOSonly=
 default_hostname=psyopsOS-unconfigured
 outdir=
 psyops_root=
@@ -34,6 +35,11 @@ ARGUMENTS:
     --apk-repositories      Repositories file to use;
                             will be copied to initramfs
                             Default: "$apk_repos_file"
+    --apk-repositories-psyopsOSonly
+                            A file containing only the psyopsOS repo URL
+                            This is used for a shortcut to install known
+                            psyopsOS packages without searching the upstream
+                            repos
     --default-hostname      Default hostname to use when booting
                             Default: "$default_hostname"
     --outdir                Output directory (required)
@@ -66,6 +72,7 @@ while test $# -gt 0; do
     --apk-packages) apk_packages="$2"; shift 2;;
     --apk-packages-file) apk_packages="$apk_packages $(cat "$2")"; shift 2;;
     --apk-repositories) apk_repos_file="$2"; shift 2;;
+    --apk-repositories-psyopsOSonly) apk_repos_file_psyopsOSonly="$2"; shift 2;;
     --outdir) outdir="$2"; shift 2;;
     --psyops-root) psyops_root="$2"; psyopsos_overlay_dir="$psyops_root"/psyopsOS/os-overlay shift 2;;
     -*) echo "Unknown option: $1; see '$script -h'" >&2; exit 1;;
@@ -167,6 +174,13 @@ mount -t proc none "$squashroot"/proc
 mkdir -p "$squashroot"/etc/apk/keys
 cp "$apk_keys_dir"/* "$squashroot"/etc/apk/keys/
 cp "$apk_repos_file" "$squashroot"/etc/apk/repositories
+
+cp "$apk_repos_file_psyopsOSonly" "$squashroot"/etc/apk/repositories.psyopsOSonly
+mkdir -p "$squashroot"/usr/local/sbin
+cat >> "$squashroot"/usr/local/sbin/psyopsOS-apk <<EOF
+apk --repositories-file /etc/apk/repositories.psyopsOSonly --no-cache "\$@"
+EOF
+chmod 0755 "$squashroot"/usr/local/sbin/psyopsOS-apk
 
 # Mount the apk cache from the container into the squashroot for access in the chroot
 # This is a Docker volume that contains a regular apk cache; see apk-cache(5)
