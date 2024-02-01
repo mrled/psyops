@@ -20,6 +20,7 @@ lsblk
 lsof
 minisign
 mkinitfs
+neuralupgrade
 nvme-cli
 openssh
 pciutils

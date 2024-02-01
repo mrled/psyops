@@ -87,7 +87,7 @@ def abuild_psyopsOS_base(interactive: bool, cleandockervol: bool, dangerous_no_c
             raise Exception(f"When trying to remove ABKBUILD, got an exception. Manually remove: {apkbuild_path}")
 
 
-def build_neuralupgrade():
+def build_neuralupgrade_pyz():
     """Build the neuralupgrade package zipapp package"""
     srcroot = tkconfig.repopaths.neuralupgrade / "src"
     subprocess.run(
@@ -105,3 +105,22 @@ def build_neuralupgrade():
         ],
         check=True,
     )
+
+
+def build_neuralupgrade_apk(interactive: bool, cleandockervol: bool, dangerous_no_clean_tmp_dir: bool):
+    """Build the psyopsOS-base Python package as an Alpine package. Use the mkimage docker container.
+
+    Sign with the psyopsOS key.
+    """
+    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+        apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
+        # Place the apk repo inside the public dir, this means that 'invoke deploy' will copy it
+        apkrepopath = apkindexpath + "/" + tkconfig.buildcontainer.apkreponame
+        in_container_build_cmd = builder.docker_shell_commands + [
+            f"cd {builder.in_container_psyops_checkout}/psyopsOS/abuild/psyopsOS/neuralupgrade",
+            "sudo apk update",
+            f"abuild checksum",
+            f"abuild -r -P {apkindexpath} -D {tkconfig.buildcontainer.apkreponame}",
+            f"ls -larth {apkrepopath}/x86_64/",
+        ]
+        builder.run_docker(in_container_build_cmd)

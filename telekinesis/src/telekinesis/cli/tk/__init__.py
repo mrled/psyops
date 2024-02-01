@@ -15,7 +15,12 @@ import zipfile
 from telekinesis import deaddrop, minisign, tklogger, tksecrets
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis.cli import idb_excepthook
-from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base, build_neuralupgrade
+from telekinesis.cli.tk.subcommands.buildpkg import (
+    abuild_blacksite,
+    abuild_psyopsOS_base,
+    build_neuralupgrade_apk,
+    build_neuralupgrade_pyz,
+)
 from telekinesis.cli.tk.subcommands.mkimage import (
     mkimage_grubusb_diskimg,
     mkimage_grubusb_kernel,
@@ -244,7 +249,10 @@ def makeparser(prog=None):
         help="Build a package",
     )
     sub_buildpkg.add_argument(
-        "package", nargs="+", choices=["base", "blacksite", "neuralupgrade"], help="The package(s) to build"
+        "package",
+        nargs="+",
+        choices=["base", "blacksite", "neuralupgrade-apk", "neuralupgrade-pyz"],
+        help="The package(s) to build",
     )
 
     # The deployos subcommand
@@ -529,8 +537,10 @@ def main_impl():
             abuild_psyopsOS_base(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
         if "blacksite" in parsed.package:
             abuild_blacksite(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
-        if "neuralupgrade" in parsed.package:
-            build_neuralupgrade()
+        if "neuralupgrade-pyz" in parsed.package:
+            build_neuralupgrade_pyz()
+        if "neuralupgrade-apk" in parsed.package:
+            build_neuralupgrade_apk(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
     elif parsed.action == "deployos":
         if parsed.type == "iso":
             deployiso(parsed.host)

@@ -75,18 +75,22 @@ cat ./psyopsOS.grubusb.os.tar | ssh root@NODE neuralupgrade apply nonbooted --no
 
 ## Packaging and installing
 
-The `pyproject.toml` is intended only for development.
-Installing on psyopsOS nodes always uses zipapp because it's just so much faster.
-
-The easiest thing to do is make a pyz and copy it.
-Something like this would work from the root of the repo:
+`neuralupgrade` can be used as a pip package, an Alpine APK package, or a zipapp.
+The Alpine package is built in `psyopsOS/abuild/psyopsOS/neuralupgrade` from repo root.
 
 ```sh
-python3 -m zipapp --main neuralupgrade.cmd:main --output artifacts/neuralupgrade.pyz --python "/usr/bin/env python3" psyopsOS/neuralupgrade/src && scp artifacts/neuralupgrade.pyz root@NODE:/tmp/
-```
+# Install as editable for local development, from this directory
+pip install -e .
 
-`tk` can build this and creates `artifacts/neuralupgrade.pyz` with:
+# Make a zipapp via tk, from anywhere
+tk buildpkg neuralupgrade-pyz
 
-```sh
-tk buildpkg neuralupgrade
+# Make an apk via tk, from anywhere
+tk buildpkg neuralupgrade-apk
+
+# Make a zipapp by hand, from the root of the psyops repo
+python3 -m zipapp --main neuralupgrade.cmd:main --output artifacts/neuralupgrade.pyz --python "/usr/bin/env python3" psyopsOS/neuralupgrade/src
+
+# Copy the zipapp to some remote node, from the root of the psyops repo
+scp artifacts/neuralupgrade.pyz root@NODE:/tmp/
 ```
