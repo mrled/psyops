@@ -93,7 +93,7 @@ def mkimage_iso(
 
 
 def mkimage_grubusb_repositories(alpine_version: str) -> tuple[Path, Path]:
-    psyopsOS_repo = "https://psyops.micahrl.com/apk/v{alpine_version}/psyopsOS"
+    psyopsOS_repo = f"https://psyops.micahrl.com/apk/v{alpine_version}/psyopsOS"
     psyopsOS_apk_repositories = textwrap.dedent(
         f"""\
         https://dl-cdn.alpinelinux.org/alpine/v{alpine_version}/main

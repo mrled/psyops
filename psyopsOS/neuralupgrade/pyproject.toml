@@ -4,7 +4,7 @@ description = "The psyopsOS upgrade tool"
 license = { text = "WTFPL" }
 readme = "readme.md"
 requires-python = ">=3.10"
-version = "1.0.1"
+version = "1.0.3"
 dependencies = ["requests"]
 
 [[project.authors]]
@@ -12,7 +12,7 @@ name = "Micah R Ledbetter"
 email = "me@micahrl.com"
 
 [project.scripts]
-psybuildboot = "neuralupgrade.cmd:main"
+neuralupgrade = "neuralupgrade.cmd:main"
 
 [project.optional-dependencies]
 development = ["types-requests"]

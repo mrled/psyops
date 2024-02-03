@@ -11,7 +11,7 @@ pkgname=neuralupgrade
 maintainer="Micah R Ledbetter <psyops@micahrl.com>"
 pkgver=$(get_version)
 # pkgrel only applies to the apk package format, not the wheel that we build
-pkgrel=1
+pkgrel=0
 pkgdesc="Apply a neural upgrade to psyopsOS"
 url="https://github.com/mrled/psyops"
 arch="noarch"

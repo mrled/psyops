@@ -323,6 +323,17 @@ def detect_memtest(efisys: str) -> bool:
     return exists
 
 
+def write_grub_cfg_carefully():
+    """Write a new grub.cfg file
+
+    - Write it to a temporary file
+    - Move the old one to a backup location
+    - Move the new one into place
+    - Keep backups, but remove more than 10 backups that are older than 30 days or something
+    """
+    raise NotImplementedError("TODO: implement write_grub_cfg_carefully()")
+
+
 def apply_ostar_nonbooted(
     tarball: str, verify: bool = True, verify_pubkey: Optional[str] = None, skip_grubusb: bool = False
 ):
