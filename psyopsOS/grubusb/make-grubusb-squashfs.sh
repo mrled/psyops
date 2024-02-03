@@ -178,7 +178,18 @@ cp "$apk_repos_file" "$squashroot"/etc/apk/repositories
 cp "$apk_repos_file_psyopsOSonly" "$squashroot"/etc/apk/repositories.psyopsOSonly
 mkdir -p "$squashroot"/usr/local/sbin
 cat >> "$squashroot"/usr/local/sbin/psyopsOS-apk <<EOF
-apk --repositories-file /etc/apk/repositories.psyopsOSonly --no-cache "\$@"
+#!/bin/sh
+set -eux
+apk_args="--repositories-file /etc/apk/repositories.psyopsOSonly --no-cache "
+if test \$# -lt 1; then
+	echo "\$0: a simple apk wrapp for the psyopsOS repo only"
+	echo "	Provided so that rapidly updating psyopsOS packages doesn't annoy mirrors"
+	echo "	Runs as 'apk \\\$1 $apk_args \\\$@'"
+	exit 0
+fi
+subcmd="\$1"
+shift
+apk "\$subcmd" \$apk_args "\$@"
 EOF
 chmod 0755 "$squashroot"/usr/local/sbin/psyopsOS-apk
 
