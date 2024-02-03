@@ -2,9 +2,7 @@
 
 
 import argparse
-from contextlib import contextmanager
 import json
-import logging
 import os
 import pdb
 import re
@@ -14,9 +12,6 @@ import time
 import traceback
 from collections.abc import Callable
 from typing import List
-
-
-logger = logging.getLogger(__name__)
 
 
 def idb_excepthook(type, value, tb):
@@ -63,65 +58,38 @@ def umount_retry(mountpoint: str, attempts: int = 2, sleepbetween: int = 1) -> N
     """Unmount a mountpoint, retrying if it fails."""
     for attempt in range(attempts):
         if not subprocess.run(["mountpoint", "-q", mountpoint]).returncode == 0:
-            logger.debug(f"{mountpoint} is not mounted, no need to umount")
             return
         subprocess.run(["umount", "-l", mountpoint])
         if not subprocess.run(["mountpoint", "-q", mountpoint]).returncode == 0:
-            logger.debug(f"Umounted {mountpoint} (attempt {attempt + 1}/{attempts})")
             return
-        logger.debug(
-            f"Umounting {mountpoint} (attempt {attempt + 1}/{attempts}) failed, sleeping for {sleepbetween} seconds"
-        )
         time.sleep(sleepbetween)
     raise UmountError(f"Could not umount {mountpoint} after {attempts} attempts")
 
 
-def lsblk() -> dict:
-    """Return the output of `lsblk --json` as a dict.
+def main(*arguments):
+    parser = argparse.ArgumentParser("Update psyopsOS boot media")
+    parser.add_argument(
+        "--debug", help="Drop into pdb on exception", action="store_true"
+    )
+    parser.add_argument(
+        "--no-progress",
+        help="By default, it shows progress, which requires coreutils dd. With this flag, BusyBox dd will work instead, but you will get no progress as the file is written.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "isopath", help="The path to a new ISO image containing psyopsOS"
+    )
+    parsed = parser.parse_args(arguments[1:])
 
-    WARNING: if a device is mounted to multiple mountpoints, it will only show up once in the output.
-    """
+    if parsed.debug:
+        sys.excepthook = idb_excepthook
+
     lsblk_proc = subprocess.run(
         ["lsblk", "--output", "PATH,LABEL,MOUNTPOINT", "--json"],
         check=True,
         capture_output=True,
     )
-    return json.loads(lsblk_proc.stdout)
-
-
-def fstab() -> list[dict]:
-    """Return the contents of /etc/fstab as a list of dicts"""
-    filesystems = []
-    with open("/etc/fstab") as f:
-        for line in f.readlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            fs = {}
-            (
-                fs["device"],
-                fs["mountpoint"],
-                fs["fstype"],
-                fs["options"],
-                fs["dump"],
-                fs["pass"],
-            ) = line.split()
-            filesystems.append(fs)
-    return filesystems
-
-
-def overwrite_iso_bootmedia(isopath: str, progress: bool = False) -> None:
-    """Overwrite an ISO image that is written to a removable device like a USB drive.
-
-    This works with ISO psyopsOS images - not grubusb.
-
-    psyopsOS ISO images do not support A/B updates,
-    and change the filesystem image that backs the root ramdisk and kernel modloop,
-    which means you should probably reboot soon after applying,
-    but a bad image or failure during write must be recovered out of band.
-    """
-
-    blockdevs = lsblk()["blockdevices"]
+    lsblk = json.loads(lsblk_proc.stdout)
 
     def label_is_psyopsos_boot(label: str) -> bool:
         """Return True if the label is a psyopsOS boot media label.
@@ -138,7 +106,7 @@ def overwrite_iso_bootmedia(isopath: str, progress: bool = False) -> None:
         return False
 
     bootmedia = None
-    for device in blockdevs:
+    for device in lsblk["blockdevices"]:
         # We must use `device.get("label") or ""` not device.get("label", "")`
         # because the latter will return `None` if the key is not found
         # and we need strings.
@@ -163,188 +131,10 @@ def overwrite_iso_bootmedia(isopath: str, progress: bool = False) -> None:
     umount_retry("/.modloop")
     umount_retry(bootmedia["mountpoint"])
 
-    ddcmd = ["dd", f"if={isopath}", f"of={bootmedia['path']}"]
-    if not progress:
+    ddcmd = ["dd", f"if={parsed.isopath}", f"of={bootmedia['path']}"]
+    if not parsed.no_progress:
         ddcmd += ["status=progress"]
     subprocess.run(ddcmd, check=True)
-
-
-class GrubusbUnknownSideError(Exception):
-    pass
-
-
-def bootedside() -> str:
-    """Return the booted side of a grubusb device (A or B)"""
-    with open("/proc/cmdline") as f:
-        cmdline = f.read()
-    for arg in cmdline.split():
-        if arg.startswith("psyopsos="):
-            thisside = arg.split("=")[1]
-            logger.debug(f"Booted side is {thisside}")
-            return thisside
-    raise GrubusbUnknownSideError("Could not determine booted side of grubusb device")
-
-
-def otherside(side: str) -> str:
-    """Given one side of a grubusb image (A or B), return the other side."""
-    A = "psyopsOS-A"
-    B = "psyopsOS-B"
-    if side not in [A, B]:
-        raise GrubusbUnknownSideError(f"Unknown side {side}")
-    opposite = A if side == B else B
-    logger.debug(f"Side {opposite} is opposite {side}")
-    return opposite
-
-
-@contextmanager
-def mountfs(label: str) -> str:
-    """Mount a filesystem by label, yield the mountpoint, and unmount it when done
-
-    Mounts the filesystem to the mountpoint specified in /etc/fstab.
-    - If it's not mounted on entry, it will be mounted rw on entry and unmounted on exit.
-    - If it's mounted ro on entry, it will be remounted rw on entry and remounted ro on exit.
-    - If it's mounted rw on entry, it will be left mounted rw on exit.
-    - If it's mounted to more than one place, or outside of the fstab mountpoint,
-      it will be unmounted from all mountpoints on entry and not remounted on exit.
-    """
-    for fs in fstab():
-        if fs["device"] == f"LABEL={label}":
-            break
-    else:
-        raise Exception(f"Could not find {label} in fstab")
-    fstab_mountpoint = fs["mountpoint"]
-
-    blkid_L = subprocess.run(["blkid", "-L", label], check=True, capture_output=True)
-    devpath = blkid_L.stdout.decode("utf-8").strip()
-
-    # If the device is mounted anywhere aside from the fstab mountpoint
-    # and/or is mounted ro, then we unmount it from all mountpoints and remount it rw to the fstab mountpoint.
-    # POSIX doesn't allow different permissions like ro and rw for the same device mounted to two separate places,
-    # so this is the simplest way to ensure that we can write to the device.
-    findmnt_json = subprocess.run(["findmnt", devpath, "--json"], capture_output=True)
-    logger.debug(f"findmnt --json {devpath} -> {findmnt_json.stdout.decode('utf-8')}")
-    filesystems = []
-    if findmnt_json.returncode == 0:
-        filesystems = json.loads(findmnt_json.stdout)["filesystems"]
-
-    mounted_rw = mounted_ro = False
-    if not filesystems:
-        logger.debug(f"Filesystem with label {label} is not mounted anywhere")
-    elif len(filesystems) > 1 or filesystems[0]["target"] != fs["mountpoint"]:
-        mountpoints = [f["target"] for f in filesystems]
-        logger.debug(
-            f"Filesystem with label {label} is mounted at least one mountpoint aside from the fstab mountpoint ({mountpoints}), unmounting all and will not remount"
-        )
-        for mountpoint in mountpoints:
-            umount_retry(mountpoint)
-    elif len(filesystems) == 1:
-        options = filesystems[0]["options"].split(",")
-        if "ro" in options:
-            mounted_ro = True
-        elif "rw" in options:
-            mounted_rw = True
-
-    if mounted_ro:
-        logger.debug(
-            f"Filesystem with label {label} is mounted ro to {fs['mountpoint']}, remounting rw"
-        )
-        subprocess.run(["mount", "-o", "rw,remount", fs["mountpoint"]], check=True)
-    elif mounted_rw:
-        logger.debug(
-            f"Filesystem with label {label} is mounted rw to {fs['mountpoint']}, no need to remount"
-        )
-    else:
-        logger.debug(
-            f"Filesystem with label {label} is not mounted, mounting rw to {fs['mountpoint']}"
-        )
-        subprocess.run(["mount", "-o", "rw", fs["mountpoint"]], check=True)
-
-    try:
-        yield fstab_mountpoint
-    finally:
-        if mounted_ro:
-            logger.debug(f"Remounting filesystem with label {label} ro")
-            subprocess.run(["mount", "-o", "ro,remount", fs["mountpoint"]], check=True)
-        elif mounted_rw:
-            logger.debug(f"Leaving filesystem with label {label} mounted rw")
-        else:
-            logger.debug(f"Unmounting filesystem with label {label}")
-            umount_retry(fs["mountpoint"])
-
-
-def write_grubusb_nonbooted_side(tarball: str) -> None:
-    """Write to the non-booted side of a grubusb device (A/B updates)"""
-    updateside = otherside(bootedside())
-    with mountfs(updateside) as mountpoint:
-        logger.debug(f"Extracting {tarball} to {mountpoint}")
-        subprocess.run(["tar", "-x", "-f", tarball, "-C", mountpoint], check=True)
-        logger.debug(f"Finished extracting {tarball} to {mountpoint}")
-    with mountfs("PSYOPSOSEFI") as mountpoint:
-        logger.debug(f"Updating grub config on {mountpoint}")
-        grubcfg = os.path.join(mountpoint, "grub", "grub.cfg")
-        doupdate = True
-        newcontents = []
-        with open(grubcfg, "r") as f:
-            for line in f.readlines():
-                if line.startswith("set default="):
-                    if line == f"set default={bootedside}":
-                        doupdate = False
-                        break
-                    else:
-                        newcontents.append(f"set default={updateside}")
-                else:
-                    newcontents.append(line)
-        if doupdate:
-            with open(grubcfg, "w") as f:
-                f.write("\n".join(newcontents))
-            logger.debug(f"Finished grub config on {mountpoint}")
-        else:
-            logger.debug(f"Grub config on {mountpoint} is already up to date")
-
-
-def main(*arguments):
-    parser = argparse.ArgumentParser("Update psyopsOS boot media")
-    parser.add_argument(
-        "--debug", "-d", help="Drop into pdb on exception", action="store_true"
-    )
-    parser.add_argument("--verbose", "-v", help="Verbose logging", action="store_true")
-    subparsers = parser.add_subparsers(
-        dest="subcommand", help="Subcommand to run", required=True
-    )
-    sub_iso = subparsers.add_parser("iso", help="Update an ISO image")
-    sub_iso.add_argument(
-        "--no-progress",
-        help="By default, it shows progress, which requires coreutils dd. With this flag, BusyBox dd will work instead, but you will get no progress as the file is written.",
-        action="store_true",
-    )
-    sub_iso.add_argument(
-        "isopath", help="The path to a new ISO image containing psyopsOS"
-    )
-    sub_grubusb = subparsers.add_parser(
-        "grubusb", help="Write to the non-booted side of a grubusb device (A/B updates)"
-    )
-    sub_grubusb.add_argument(
-        "tarball", help="The path to a new tarball containing psyopsOS"
-    )
-    parsed = parser.parse_args(arguments[1:])
-
-    conhandler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    conhandler.setFormatter(formatter)
-    logger.addHandler(conhandler)
-    if parsed.verbose:
-        logger.setLevel(logging.DEBUG)
-    if parsed.debug:
-        sys.excepthook = idb_excepthook
-
-    logger.debug(f"Arguments: {parsed}")
-
-    if parsed.subcommand == "iso":
-        overwrite_iso_bootmedia(parsed.isopath, not parsed.no_progress)
-    elif parsed.subcommand == "grubusb":
-        write_grubusb_nonbooted_side(parsed.tarball)
-    else:
-        parser.error(f"Unknown subcommand {parsed.subcommand}")
 
 
 if __name__ == "__main__":
