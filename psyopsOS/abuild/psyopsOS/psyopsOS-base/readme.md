@@ -53,3 +53,12 @@ apk add psyopsOS-base progfiguration_blacksite
 
 This is useful so you can upgrade parts of the old system without rebooting,
 and also so you can get the latest version of scripts like `psyopsOS-write-bootmedia`.
+
+## Version history
+
+- 1.0.x: Versioned with a datestamp from the epoch, e.g. `psyopsOS-base-1.0.1706828917-r0`.
+  This had the benefit of automatic versions, but made the version number a little inscrutable.
+  APKBUILD was a template file filled in by a Python script.
+  Lived in psyopsOS/psyopsOS-base.
+- 1.1.x: Versioned manually by updating APKBUILD with more normal looking versions like `psyopsOS-base-1.1.0-r0`.
+  Moved inside the abuild subdir to psyopsOS/abuild/psyopsOS/psyopsOS-base.
