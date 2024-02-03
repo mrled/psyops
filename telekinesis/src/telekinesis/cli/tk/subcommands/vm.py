@@ -6,7 +6,6 @@ import sys
 import termios
 
 from telekinesis.config import tkconfig
-from telekinesis.rget import rget
 
 
 class MungedInterrupts:
@@ -51,38 +50,6 @@ class MungedInterrupts:
         # Restore the terminal settings to what they were before
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
         print("Ctrl+C and Ctrl+Z restored to normal behavior")
-
-
-def get_ovmf():
-    """Download the OVMF firmware image for qemu
-
-    This is somewhat annoying as the project only provides outdated RPM files.
-
-    TODO: we probably need to build this ourselves, unless Alpine packages it in some normal way in the future.
-    """
-    rget(tkconfig.artifacts.ovmf_url, tkconfig.artifacts.ovmf_rpm)
-    if not tkconfig.artifacts.ovmf_extracted_code.exists() or not tkconfig.artifacts.ovmf_extracted_vars.exists():
-        in_container_rpm_path = f"/work/{tkconfig.artifacts.ovmf_rpm.name}"
-        extract_rpm_script = " && ".join(
-            [
-                "apk add rpm2cpio",
-                "mkdir -p /work/ovmf-extracted",
-                "cd /work/ovmf-extracted",
-                f"rpm2cpio {in_container_rpm_path} | cpio -idmv",
-            ]
-        )
-        docker_run_cmd = [
-            "docker",
-            "run",
-            "--rm",
-            "--volume",
-            f"{tkconfig.repopaths.artifacts}:/work",
-            "alpine:3.18",
-            "sh",
-            "-c",
-            extract_rpm_script,
-        ]
-        subprocess.run(docker_run_cmd, check=True)
 
 
 def vm_grubusb_img(image: Path, macaddr: str):

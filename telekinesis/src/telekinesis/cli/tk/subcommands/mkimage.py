@@ -1,6 +1,8 @@
 """The mkimage subcommand"""
 
+from dataclasses import dataclass
 import datetime
+import json
 import os
 from pathlib import Path
 import shutil
@@ -11,6 +13,7 @@ import textwrap
 from telekinesis import aports, minisign
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
 from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
+from telekinesis.cli.tk.subcommands.requisites import get_memtest, get_ovmf
 from telekinesis.config import tkconfig
 
 
@@ -294,19 +297,60 @@ def mkimage_grubusb_ostar():
     minisign.sign(tkconfig.artifacts.grubusb_os_tarfile.as_posix(), trusted_comment=trusted_comment)
 
 
-def mkimage_grubusb_copy_to_deaddrop():
-    """Copy the grubusb OS tarball and signature to the deaddrop, making sure they have correct names
-
-    WARNING:    We read the trusted_comment from the signature file,
-                but we are NOT verifying it first.
-    """
-    sig = f"{tkconfig.artifacts.grubusb_os_tarfile}.minisig"
-    with open(sig, "r") as f:
-        for line in f.readlines():
-            prefix = "trusted comment: psyopsOS "
-            if line.startswith(prefix):
-                # parse all the key=value pairs in the trusted comment
-                metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in line[len(prefix) :].split()]}
-                break
+def mkimage_grubusb_ostar_copy_to_deaddrop():
+    """Copy the grubusb OS tarball and signature to the deaddrop, making sure they have correct names"""
+    trusted_comment = minisign.verify(tkconfig.artifacts.grubusb_os_tarfile)
+    prefix = "psyopsOS "
+    metadata_string = trusted_comment[len(prefix) :]
+    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in metadata_string.split()]}
     shutil.copy(tkconfig.artifacts.grubusb_os_tarfile, tkconfig.deaddrop.osdir / metadata["filename"])
+    sig = f"{tkconfig.artifacts.grubusb_os_tarfile}.minisig"
+    shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")
+
+
+def mkimage_grubusb_efisystar():
+    """Make an EFI system partition tarball for grubusb images
+
+    The EFI system partition is installed by neuralupgrade,
+    which handles installing GRUB and creating its config file.
+
+    This tarball contains some extra files like memtest and the EFI shell.
+    """
+    build_date = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    tarball_file = tkconfig.artifacts.grubusb_efisystar_versioned_format.format(version=build_date)
+    trusted_comment = f"psyopsESP filename={tarball_file} version={build_date}"
+    get_ovmf()
+    get_memtest()
+
+    @dataclass
+    class EfiProgram:
+        localpath: str
+        arcname: str
+        bootentry: str
+
+    programs = [
+        EfiProgram(tkconfig.artifacts.memtest64efi, tkconfig.artifacts.memtest64efi.name, "MemTest86 EFI (64-bit)"),
+        EfiProgram(tkconfig.artifacts.uefishell_extracted_bin, "tcshell.efi", "TianoCore OVMF UEFI Shell (64-bit)"),
+    ]
+    manifest_contents = {
+        "version": 1,
+        "extra_programs": {f"/{program.arcname}": program.bootentry for program in programs},
+    }
+    with tkconfig.artifacts.grubusb_efisystar_manifest.open("w") as f:
+        json.dump(manifest_contents, f, indent=2)
+    with tarfile.open(tkconfig.artifacts.grubusb_efisystar, "w") as tf:
+        for program in programs:
+            tf.add(program.localpath, arcname=program.arcname)
+        tf.add(tkconfig.artifacts.grubusb_efisystar_manifest, arcname="manifest.json")
+    minisign.sign(tkconfig.artifacts.grubusb_efisystar.as_posix(), trusted_comment=trusted_comment)
+
+
+def mkimage_grubusb_efisystar_copy_to_deaddrop():
+    """Copy the grubusb EFI tarball and signature to the deaddrop, making sure they have correct names"""
+    trusted_comment = minisign.verify(tkconfig.artifacts.grubusb_os_tarfile)
+    prefix = "psyopsESP "
+    metadata_string = trusted_comment[len(prefix) :]
+    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in metadata_string.split()]}
+    shutil.copy(tkconfig.artifacts.grubusb_os_tarfile, tkconfig.deaddrop.osdir / metadata["filename"])
+    sig = f"{tkconfig.artifacts.grubusb_os_tarfile}.minisig"
     shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")

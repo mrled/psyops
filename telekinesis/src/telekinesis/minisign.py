@@ -7,7 +7,7 @@ from typing import Union
 from telekinesis.config import getsecret, tkconfig
 
 
-def sign(files: Union[str, list[str]], trusted_comment: str = "", untrusted_comment: str = "") -> None:
+def sign(files: Union[str, list[str]], trusted_comment: str = "", untrusted_comment: str = "") -> str:
     """Sign files with minisign."""
     if isinstance(files, str):
         files = [files]
@@ -18,14 +18,16 @@ def sign(files: Union[str, list[str]], trusted_comment: str = "", untrusted_comm
     if untrusted_comment:
         cmd += ["-c", untrusted_comment]
     cmd += ["-m", *files]
-    result = subprocess.run(cmd, check=True, text=True, input=mspassword)
+    result = subprocess.run(cmd, check=True, text=True, input=mspassword, capture_output=True)
+    return result.stdout.strip()
 
 
-def verify(file: str) -> None:
-    """Verify a file with minisign."""
+def verify(file: str) -> str:
+    """Verify a file with minisign and return the verified trusted comment."""
     result = subprocess.run(
-        ["minisign", "-V", "-p", tkconfig.repopaths.minisign_pubkey, "-m", file],
+        ["minisign", "-V", "-Q", "-p", tkconfig.repopaths.minisign_pubkey, "-m", file],
         check=True,
         text=True,
+        capture_output=True,
     )
-    print(result.stdout)
+    return result.stdout.strip()

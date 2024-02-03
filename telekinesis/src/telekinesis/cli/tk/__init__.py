@@ -23,27 +23,17 @@ from telekinesis.cli.tk.subcommands.buildpkg import (
 )
 from telekinesis.cli.tk.subcommands.mkimage import (
     mkimage_grubusb_diskimg,
+    mkimage_grubusb_efisystar,
+    mkimage_grubusb_efisystar_copy_to_deaddrop,
     mkimage_grubusb_kernel,
     mkimage_grubusb_squashfs,
     mkimage_iso,
     mkimage_grubusb_ostar,
-    mkimage_grubusb_copy_to_deaddrop,
+    mkimage_grubusb_ostar_copy_to_deaddrop,
 )
-from telekinesis.cli.tk.subcommands.vm import get_ovmf, vm_grubusb_img, vm_grubusb_os
-from telekinesis.config import getsecret, tkconfig
-from telekinesis.rget import rget
-
-
-def get_memtest():
-    """Download and extract memtest binaries"""
-    # code to download memtest from memtest.org with requestslibrary:
-    rget(
-        "https://memtest.org/download/v6.20/mt86plus_6.20.binaries.zip",
-        tkconfig.artifacts.memtest_zipfile,
-    )
-    if not tkconfig.artifacts.memtest64efi.exists():
-        with zipfile.ZipFile(tkconfig.artifacts.memtest_zipfile, "r") as zip_ref:
-            zip_ref.extract("memtest64.efi", tkconfig.repopaths.artifacts)
+from telekinesis.cli.tk.subcommands.requisites import get_ovmf, get_memtest
+from telekinesis.cli.tk.subcommands.vm import vm_grubusb_img, vm_grubusb_os
+from telekinesis.config import tkconfig
 
 
 def deployiso(host):
@@ -200,6 +190,8 @@ def makeparser(prog=None):
         "applyinitpatch": "Generate initramfs-init.patched.grubusb by appling our patch to the upstream file. This happens during every normal build. Basically do this: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch",
         "kernel": "Build the kernel/initramfs/etc.",
         "squashfs": "Build the squashfs root filesystem.",
+        "efisystar": "Create a tarball that contains extra EFI system partition files - not GRUB which is installed by neuralupgrade, but optional files like memtest.",
+        "efisystar-dd": "Copy the efisystar tarball to the local deaddrop directory. (Use 'tk deaddrop forcepush' to push it to the bucket.)",
         "ostar": "Create a tarball of the kernel/squashfs/etc that can be used to apply an A/B update.",
         "ostar-dd": "Copy the ostar tarball to the local deaddrop directory. (Use 'tk deaddrop forcepush' to push it to the bucket.)",
         "sectar": "Create a tarball of secrets for a node-specific grubusb image. Requires that --node-secrets NODENAME is passed, and that the node already exists in progfiguration_blacksite (see 'progfiguration-blacksite-node save --help').",
@@ -492,7 +484,11 @@ def main_impl():
             if "ostar" in parsed.stages:
                 mkimage_grubusb_ostar()
             if "ostar-dd" in parsed.stages:
-                mkimage_grubusb_copy_to_deaddrop()
+                mkimage_grubusb_ostar_copy_to_deaddrop()
+            if "efisystar" in parsed.stages:
+                mkimage_grubusb_efisystar()
+            if "efisystar-dd" in parsed.stages:
+                mkimage_grubusb_efisystar_copy_to_deaddrop()
             if "sectar" in parsed.stages and parsed.node_secrets:
                 subprocess.run(
                     [
@@ -568,7 +564,7 @@ def main_impl():
         if parsed.signify_action == "sign":
             minisign.sign(parsed.file)
         elif parsed.signify_action == "verify":
-            minisign.verify(parsed.file)
+            print(minisign.verify(parsed.file))
         else:
             parser.error(f"Unknown signify action: {parsed.signify_action}")
     else:

@@ -131,10 +131,18 @@ class TelekinesisConfig:
             """The URL to download the OVMF firmware from"""
             self.ovmf_rpm = artroot / "edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm"
             """The path to the downloaded OVMF RPM artifact"""
-            self.ovmf_extracted_code = artroot / "ovmf-extracted" / "usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd"
+            self.ovmf_extracted_path = artroot / "ovmf-extracted"
+            """The path to the extracted OVMF files"""
+            self.ovmf_extracted_code = self.ovmf_extracted_path / "usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd"
             """The path to the extracted OVMF_CODE-pure-efi.fd file"""
-            self.ovmf_extracted_vars = artroot / "ovmf-extracted" / "usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd"
+            self.ovmf_extracted_vars = self.ovmf_extracted_path / "usr/share/edk2.git/ovmf-x64/OVMF_VARS-pure-efi.fd"
             """The path to the extracted OVMF_VARS-pure-efi.fd file"""
+            self.uefishell_iso_relpath = "usr/share/edk2.git/ovmf-x64/UefiShell.iso"
+            """The path to the UEFI shell ISO, relative to the extracted OVMF root"""
+            self.uefishell_img_relpath = "uefi_shell_X64.img"
+            """The path to the UEFI shell image relative to the root of the UefiShell.iso file"""
+            self.uefishell_extracted_bin = self.ovmf_extracted_path / "efi/boot/bootx64.efi"
+            """The path to the extracted UEFI shell binary from the image inside ISO"""
 
             self.grubusb_os_dir = artroot / "psyopsOS.grubusb.os"
             """The path to the grubusb OS directory.
@@ -148,6 +156,14 @@ class TelekinesisConfig:
             """
             self.grubusb_os_tarfile_versioned_format = "psyopsOS.grubusb.os.{version}.tar"
             """The format string for the versioned grubusb OS tarfile.
+            Used as the base for the filename in S3, and also of the signature file.
+            """
+            self.grubusb_efisystar = artroot / "psyopsOS.grubusb.efisys.tar"
+            """The path to the grubusb EFI system partition tarball"""
+            self.grubusb_efisystar_manifest = artroot / "psyopsOS.grubusb.efisys.manifest.json"
+            """The path to the JSON manifest for the grubusb EFI system partition tarball"""
+            self.grubusb_efisystar_versioned_format = "psyopsOS.grubusb.efisys.{version}.tar"
+            """The format string for the versioned grubusb EFI system partition tarfile.
             Used as the base for the filename in S3, and also of the signature file.
             """
 
