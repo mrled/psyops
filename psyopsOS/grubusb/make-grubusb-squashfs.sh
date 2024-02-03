@@ -13,6 +13,7 @@ default_hostname=psyopsOS-unconfigured
 outdir=
 psyops_root=
 psyopsos_overlay_dir=
+workdir=/tmp/make-grubusb-squashfs.$$
 
 usage() {
     cat <<ENDUSAGE
@@ -151,7 +152,6 @@ cleanup() {
 
 # Make a temporary working directory
 umask 022
-workdir=/tmp/make-grubusb-squashfs.$$
 if test -d "$workdir"; then
     echo "Temporary working directory $workdir already exists; aborting" >&2
     exit 1
