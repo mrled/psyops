@@ -15,6 +15,7 @@ from typing import Callable, List
 from neuralupgrade import logger
 
 from neuralupgrade.filesystems import Filesystem, Filesystems
+from neuralupgrade.grub_cfg import write_grub_cfg_carefully
 from neuralupgrade.osupdates import apply_updates, parse_psyopsOS_minisig_trusted_comment, show_booted
 
 
@@ -124,6 +125,13 @@ def getparser() -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     apply_parser.add_argument(
         "--esptar", help="A tarball to apply to the EFI System Partition when type includes efisys"
     )
+
+    # neuralupgrade set-default
+    set_default_parser = subparsers.add_parser(
+        "set-default", parents=[overrides_parser], help="Set the default boot label in the grubusb config"
+    )
+    set_default_parser.add_argument("label", help="The label to set as the default boot label")
+
     return parser
 
 
@@ -180,6 +188,10 @@ def main_implementation(*arguments):
             no_update_default_boot_label=parsed.no_grubusb,
             default_boot_label=parsed.default_boot_label,
         )
+
+    elif parsed.subcommand == "set-default":
+        with filesystems.efisys.mount(writable=True):
+            write_grub_cfg_carefully(filesystems, filesystems.efisys.mountpoint, parsed.label)
 
     else:
         parser.error(f"Unknown subcommand {parsed.subcommand}")
