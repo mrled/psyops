@@ -4,7 +4,7 @@ description = "The psyopsOS upgrade tool"
 license = { text = "WTFPL" }
 readme = "readme.md"
 requires-python = ">=3.10"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = ["requests"]
 
 [[project.authors]]

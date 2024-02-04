@@ -4,13 +4,17 @@ set -eux
 script=$(basename "$0")
 
 # Default argument values
-psyosdir=
+neuralupgrade=
+neuralupgrade_args=
+psyostar=
+efisystar=
+secrettarball=
+pubkey=
 outimg=
 loopdev=/dev/loop0
 efisize=128
 psyabsize=1536
 secretsize=128
-memtest=
 
 # Constant values
 label_efisys=PSYOPSOSEFI # max 11 chars, no lower case
@@ -21,7 +25,7 @@ label_secret="psyops-secret" # max 16 chars, case sensitive
 usage() {
     cat <<ENDUSAGE
 $script: Make a bootable USB drive for psyopsOS
-Usage: $script [-h] [OPTIONS ...] -p PSYOPSOSDIR -o OUTPUTIMG
+Usage: $script [-h] [OPTIONS ...] -n NEURALUPGRADE -p PSYOPSOSTAR -E EFISYSTAR -V PUBKEY -o OUTPUTIMG
 
 ARGUMENTS:
     -h                      Show this help message
@@ -31,12 +35,16 @@ ARGUMENTS:
     -s PSYOPSOSIZE          Size in MiB of EACH of the psyopsOS-A/B partitions
                             (default: "$psyabsize")
     -x SECRETTARBALL        Path to the secret tarball to use (optional)
-                            If not specified, the secret partition will be empty.
+                            If not specified, secret partition will be empty
     -y SECRETSIZE           Size in MiB of the secret partition
                             (default: "$secretsize")
-    -m MEMTEST              Path to the memtest86+ binary to use (optional)
-    -p PSYOPSOSDIR          Directory containing psyopsOS files to use (required)
-                            Should contain kernel, initramfs, modloop, etc; see below.
+    -n NEURALUPGRADE        Path to the neural upgrade binary to use
+    -N NEURALUPGRADEARGS    Arguments to pass to the neural upgrade binary
+    -p PSYOPSOSTAR          Path to a psyopsOS tarball to use
+    -E EFISYSTAR            Path to a tarball containing extra files for the
+                            EFI system partition
+    -V PUBKEY               Path to the minisign public key to use for
+                            verifying tarballs
     -o OUTPUTIMG            Path to the image file to create (required)
 
 * This script requires a privileged container (docker run --privileged=true)
@@ -53,19 +61,18 @@ ARGUMENTS:
         3. psyopsOS A partition, ext4, size PSYABSIZE, label $label_psya
         4. psyopsOS B partition, ext4, size PSYABSIZE, label $label_psyb
     * The total size of the image is (EFISIZE + (2 * PSYABSIZE))
-* To get the memtest binary, download the "Pre-Compiled Bootable Binary (.zip)"
-  file from <https://memtest.org/>, extract it, and pass the "memtest64.efi"
-  file to this script with the -m option.
-* The PSYOPSOSDIR must contain the following files:
+* The PSYOPSOSTAR must contain the following files:
     * kernel
     * initramfs
     * modloop
     * squashfs
-* The PSYOPSOSDIR may contain additional files:
+* The PSYOPSOSTAR may contain additional files:
     * DTB files (if your platform/kernel uses them)
     * System.map for kernel debugging
     * config showing the kernel config
     * any other files you want to include in the OS image
+* The EFISYSTAR may contain additional files for the EFI system partition
+  such as a memtest86+ binary.
 * The SECRETTARBALL must contain the files psyopsOS expects to find in the
   secret partition, see system-secrets-individuation.md for details.
 
@@ -80,18 +87,23 @@ while test $# -gt 0; do
     -s) psyabsize="$2"; shift 2;;
     -x) secrettarball="$2"; shift 2;;
     -y) secretsize="$2"; shift 2;;
-    -m) memtest="$2"; shift 2;;
-    -p) psyosdir="$2"; shift 2;;
+    -n) neuralupgrade="$2"; shift 2;;
+    -N) neuralupgrade_args="$2"; shift 2;;
+    -p) psyostar="$2"; shift 2;;
+    -E) efisystar="$2"; shift 2;;
+    -V) pubkey="$2"; shift 2;;
     -o) outimg="$2"; shift 2;;
     -*) echo "Unknown option: $1; see '$script -h'" >&2; exit 1;;
     *) echo "Unknown argument: $1; see '$script -h'" >&2; exit 1;;
     esac
 done
 
-if test -z "$outimg"; then
-    echo "Missing required argument(s); see '$script -h'" >&2
-    exit 1
-fi
+for arg in "$efisystar" "$neuralupgrade" "$psyostar" "$pubkey" "$outimg"; do
+    if test -z "$arg"; then
+        echo "Missing required argument(s); see '$script -h'" >&2
+        exit 1
+    fi
+done
 
 # Derived argument values
 part_efisys="${loopdev}p1"
@@ -102,13 +114,11 @@ part_psyb="${loopdev}p4"
 cleanup() {
     echo "======== Cleaning up..."
     set +e
-    losetup -a
-    umount /mnt/grubusb/efisys
-    umount /mnt/grubusb/secret
-    umount /mnt/grubusb/psya
-    umount /mnt/grubusb/psyb
-    losetup -d "$loopdev"
-    for loop in /dev/loop?; do
+    for mount in /mnt/grubusb/*; do
+        mountpoint -q "$mount" || continue
+        umount "$mount"
+    done
+    for loop in $(losetup -a | cut -d: -f1); do
         losetup -d "$loop"
     done
     # Delete devices created by losetup_mknod
@@ -171,18 +181,34 @@ losetup_mknod
 # Set up the psyopsOS-A partition
 mkfs.ext4 -L "$label_psya" "$part_psya"
 mkdir -p /mnt/grubusb/psya
-mount "$part_psya" /mnt/grubusb/psya
-cp -r "$psyosdir"/* /mnt/grubusb/psya
-umount /mnt/grubusb/psya
 
 # Set up the psyopsOS-B partition
 # This contains the same files as psyopsOS-A so either works out of the box,
 # but it's designed to allow A/B updates.
 mkfs.ext4 -L "$label_psyb" "$part_psyb"
 mkdir -p /mnt/grubusb/psyb
-mount "$part_psyb" /mnt/grubusb/psyb
-cp -r "$psyosdir"/* /mnt/grubusb/psyb
-umount /mnt/grubusb/psyb
+
+# Set up the EFI system partition
+mkfs.fat -F32 -n "$label_efisys" "$part_efisys"
+mkdir -p /mnt/grubusb/efisys
+
+# Install psyopsOS A/B and the EFI system partition
+"$neuralupgrade" apply --help
+"$neuralupgrade" \
+    "--verbose" \
+    $neuralupgrade_args \
+    apply \
+    --efisys-dev "$part_efisys" \
+    --efisys-mountpoint /mnt/grubusb/efisys \
+    --a-dev "$part_psya" \
+    --a-mountpoint /mnt/grubusb/psya \
+    --b-dev "$part_psyb" \
+    --b-mountpoint /mnt/grubusb/psyb \
+    --default-boot-label "$label_psya" \
+    --pubkey "$pubkey" \
+    --ostar "$psyostar" \
+    --esptar "$efisystar" \
+    a b efisys
 
 # Set up the secret partition
 mkfs.ext4 -L "$label_secret" "$part_secret"
@@ -192,96 +218,6 @@ if test -n "$secrettarball"; then
     tar xf "$secrettarball" -C /mnt/grubusb/secret
     umount /mnt/grubusb/secret
 fi
-
-# Set up the EFI system partition
-mkfs.fat -F32 -n "$label_efisys" "$part_efisys"
-mkdir -p /mnt/grubusb/efisys
-mount "$part_efisys" /mnt/grubusb/efisys
-# I don't understand why I need --boot-directory too, but I do
-grub-install --target=x86_64-efi --efi-directory=/mnt/grubusb/efisys --boot-directory=/mnt/grubusb/efisys "$part_efisys" --removable
-
-find /mnt/grubusb/efisys
-
-# Kernel parameters added to both A and B menu entries.
-#
-# debug=all prints dmesg to the screen during boot, and maybe other things
-# earlyprintk=dbgp enables early printk, which prints kernel messages to the screen during boot
-# console=tty0 and console=ttyS0,115200 enable the kernel to print messages to the screen during boot
-#   tty0 is the screen, ttyS0 is the serial port
-kernel_params_suffix="earlyprintk=dbgp console=tty0 console=ttyS0,115200"
-
-# Create the grub.cfg file
-cat <<EOF > /mnt/grubusb/efisys/grub/grub.cfg
-# psyopsOS grub.cfg
-
-#### WARNING: THIS LINE IS MODIFIED BY THE psyopsOS-write-bootmedia PROGRAM WHEN IT APPLIES A/B UPDATES
-####          THIS VALUE IS EXPECTED TO BE ONE OF psyopsOS-A or psyopsOS-B
-set default="$label_psya"
-
-set timeout=5
-
-insmod all_video
-set gfxmode=auto
-serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1
-terminal_input console serial
-terminal_output console serial
-
-# This is slow and uselessly verbose
-#set debug=all
-
-
-menuentry "Welcome to psyopsOS grubusb. GRUB configuration last updated: $(date)" {
-    echo "Welcome to psyopsOS grubusb. GRUB configuration last updated: $(date)"
-}
-menuentry "----------------------------------------" {
-    echo "----------------------------------------"
-}
-
-menuentry "$label_psya" {
-    search --no-floppy --label $label_psya --set root
-    linux /kernel ro psyopsos=$label_psya $kernel_params_suffix
-    initrd /initramfs
-}
-
-menuentry "$label_psyb" {
-    search --no-floppy --label $label_psyb --set root
-    linux /kernel ro psyopsos=$label_psyb $kernel_params_suffix
-    initrd /initramfs
-}
-EOF
-
-if test -n "$memtest"; then
-    cp "$memtest" /mnt/grubusb/efisys/memtest64.efi
-    cat <<EOF >> /mnt/grubusb/efisys/grub/grub.cfg
-menuentry "MemTest86 EFI (64-bit)" {
-    insmod part_gpt
-    insmod fat
-    insmod chain
-    search --no-floppy --label $label_efisys --set root
-    chainloader /memtest64.efi
-}
-EOF
-fi
-
-cat <<EOF >> /mnt/grubusb/efisys/grub/grub.cfg
-menuentry "UEFI fwsetup" {
-    fwsetup
-}
-
-menuentry "Reboot" {
-    reboot
-}
-
-menuentry "Poweroff" {
-    halt
-}
-
-menuentry "Exit GRUB" {
-    exit
-}
-EOF
-
-umount /mnt/grubusb/efisys
 
 trap - EXIT
 cleanup

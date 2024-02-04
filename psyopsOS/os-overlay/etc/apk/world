@@ -10,6 +10,8 @@ doas
 ethtool
 file
 git
+grub
+grub-efi
 gzip
 hwids
 jq

@@ -16,6 +16,7 @@ apk add \
     e2fsprogs \
     e2fsprogs-extra \
     fakeroot \
+    findmnt \
     git \
     gpg \
     linux-firmware-intel \

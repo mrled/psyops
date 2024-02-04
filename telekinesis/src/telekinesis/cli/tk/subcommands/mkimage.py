@@ -12,7 +12,7 @@ import textwrap
 
 from telekinesis import aports, minisign
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
-from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base
+from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base, build_neuralupgrade_pyz
 from telekinesis.cli.tk.subcommands.requisites import get_memtest, get_ovmf
 from telekinesis.config import tkconfig
 
@@ -242,6 +242,12 @@ def mkimage_grubusb_diskimg(
     If secrets_tarball is not None, it should be a path to a tarball containing node secrets to be included in the image.
     In that case, out_filename should probably reflect the nodename.
     """
+
+    # We can't have the neuralupgrade package in the Docker image as an APK package,
+    # because the Docker image is required to build the neuralupgrade APK package.
+    # Instead, make the zipapp (outside of the Docker image) and use that.
+    build_neuralupgrade_pyz()
+
     extra_volumes = []
     extra_scriptargs = ""
     if secrets_tarball is not None:
@@ -252,11 +258,13 @@ def mkimage_grubusb_diskimg(
         interactive, cleandockervol, dangerous_no_clean_tmp_dir, extra_volumes=extra_volumes
     ) as builder:
         make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-img.sh")
-        psyopsosdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)
-        memtest64efi = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.memtest64efi.name)
+        psyopsostar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_tarfile.name)
+        psyopsesptar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_efisystar.name)
+        neuralupgrade = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.neuralupgrade.name)
+        minisign_pubkey = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/minisign.pubkey")
         outimg = os.path.join(builder.in_container_artifacts_dir, out_filename)
         in_container_build_cmd = [
-            f"sudo sh {make_grubusb_script} -m {memtest64efi} -p {psyopsosdir} -o {outimg} {extra_scriptargs}",
+            f"sudo sh {make_grubusb_script} -n {neuralupgrade} -p {psyopsostar} -E {psyopsesptar} -o {outimg} -V {minisign_pubkey} {extra_scriptargs}",
         ]
         builder.run_docker(in_container_build_cmd)
 
