@@ -414,7 +414,10 @@ def main_impl():
     if parsed.action == "showconfig":
         print(tkconfig.pformat(indent=2, sort_dicts=False))
     elif parsed.action == "cog":
-        for path in [tkconfig.psyopsroot / "telekinesis" / "readme.md"]:
+        for path in [
+            tkconfig.psyopsroot / "telekinesis" / "readme.md",
+            tkconfig.psyopsroot / "psyopsOS" / "neuralupgrade" / "readme.md",
+        ]:
             subprocess.run(["cog", "-r", path.as_posix()], check=True)
     elif parsed.action == "deaddrop":
         aws_keyid, aws_secret = tkconfig.deaddrop.get_credential()
