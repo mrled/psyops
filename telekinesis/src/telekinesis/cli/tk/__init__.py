@@ -428,7 +428,7 @@ def main_impl():
         elif parsed.deaddrop_action == "forcepull":
             deaddrop.s3_forcepull_directory(aws_sess, tkconfig.deaddrop.bucketname, tkconfig.deaddrop.localpath)
         elif parsed.deaddrop_action == "forcepush":
-            deaddrop.s3_forcepush_directory(aws_sess, tkconfig.deaddrop.bucketname, tkconfig.deaddrop.localpath)
+            deaddrop.s3_forcepush_deaddrop(aws_sess, tkconfig.deaddrop.bucketname, tkconfig.deaddrop.localpath)
         else:
             parser.error(f"Unknown deaddrop action: {parsed.deaddrop_action}")
     elif parsed.action == "builder":

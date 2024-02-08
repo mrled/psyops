@@ -27,7 +27,11 @@ class S3PriceWarningError(Exception):
     pass
 
 
-def s3_list_remote_files(session: boto3.Session, bucket_name: str) -> tuple[dict[str, str], dict[str, str]]:
+def s3_list_remote_files(
+    session: boto3.Session,
+    bucket_name: str,
+    too_many_requests=1_000_000,
+) -> tuple[dict[str, str], dict[str, str]]:
     """Return a list of all remote files.
 
     Return a tuple[{filepath: MD5}, {filepath: WebsiteRedirectLocation}].
@@ -38,17 +42,15 @@ def s3_list_remote_files(session: boto3.Session, bucket_name: str) -> tuple[dict
     We do NOT use the ETag, which is not the MD5 checksum of the file contents
     for files uploaded as multipart uploads.
     Large files like our OS tarballs are uploaded as multipart uploads automatically by boto3.
+
+    Arguments:
+    - session: boto3 session
+    - bucket_name: name of the S3 bucket
+    - too_many_requests: maximum number of requests before raising a S3PriceWarningError
+        At the time of this writing, 1m requests is $0.40.
     """
 
     s3 = session.client("s3")
-
-    # Get list of all remote files in S3 bucket with their MD5 checksums
-    # Note that S3 API calls do cost money,
-    # but we don't expect it to be very much.
-    # Currently, GET requests cost $0.0004 per 1,000 requests.
-    s3_price_per_request = 0.0004 / 1000
-    # At that price, 1m requests is $0.40.
-    too_many_requests = 1_000_000
 
     files = {}
     redirects = {}
@@ -71,7 +73,7 @@ def s3_list_remote_files(session: boto3.Session, bucket_name: str) -> tuple[dict
                 files[filepath] = md5sum
             if callctr > too_many_requests:
                 raise S3PriceWarningError(
-                    f"Got {objctr} objects using at least {callctr} API calls from S3 so far, this loop just cost you at least ${callctr * s3_price_per_request}."
+                    f"We made (at least) {too_many_requests} requests, but haven't enumerated all the files. Raise the too_many_requests linmit if you're sure you want to do this."
                 )
     tklogger.debug(f"Found {len(files)} files and {len(redirects)} redirects in S3 bucket {bucket_name}.")
 
@@ -114,6 +116,11 @@ def s3_forcepull_directory(session: boto3.Session, bucket_name: str, local_direc
 
     # Set local symlinks to match remote redirects
     for s3link, s3target in remote_symlinks.items():
+        if s3target.startswith("http"):
+            tklogger.warning(
+                f"Skipping symlink {s3link} -> {s3target} because it is a full URL and not a relative path."
+            )
+            continue
         local_link = local_directory / s3link
         local_link.parent.mkdir(parents=True, exist_ok=True)
         local_target_abs = local_directory / s3target.lstrip("/")
@@ -149,32 +156,6 @@ def s3_forcepull_directory(session: boto3.Session, bucket_name: str, local_direc
             directory.rmdir()
 
 
-deaddrop_error_html = """
-<html>
-  <head>
-    <title>PSYOPS Error</title>
-  </head>
-  <body>
-    <h1>PSYOPS Error</h1>
-    <p>See u on <a href="/">the root page</a>.</p>
-  </body>
-</html>
-"""
-
-deaddrop_index_html = """
-<html>
-  <head>
-    <title>PSYOPS</title>
-  </head>
-  <body>
-    <h1>PSYOPS</h1>
-    <p>This site is used for psyopsOS.</p>
-    <p>See the <a href="https://me.micahrl.com/projects/psyopsos/">psyopsOS project page</a> for more information, links to code, etc.</p>
-  </body>
-</html>
-"""
-
-
 def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_directory: Path):
     """Force-push a directory to S3, deleting any remote files that are not in the local directory.
 
@@ -183,20 +164,16 @@ def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_direc
     """
     s3 = session.client("s3")
 
-    # Write local error and index pages
-    with open(local_directory / "error.html", "w") as f:
-        f.write(deaddrop_error_html)
-    with open(local_directory / "index.html", "w") as f:
-        f.write(deaddrop_index_html)
-
     # Get list of all remote files in S3 bucket with their checksums
     remote_files, remote_symlinks = s3_list_remote_files(session, bucket_name)
 
-    # Keep track of symlinks, which we handle as S3 Object Redirects.
-    symlinks: dict[str, str] = {}
+    # Keep track of local files
+    # This includes all files, including symlinks to files,
+    # but not directories or symlinks to directories.
+    # The loop below also ignores macOS garbage .DS_Store and ._* files
+    local_files_relpath_list = []
 
     # Upload local files to S3 if they are different or don't exist remotely
-    local_files_relpath_list = []
     for local_file_path in list(local_directory.rglob("*")):
         # Ignore goddamn fucking macOS gunk files
         if local_file_path.name == ".DS_Store":
@@ -252,6 +229,7 @@ def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_direc
                 if local_file_path.as_posix().endswith(".html"):
                     extra_args["ContentType"] = "text/html"
 
+                # Note that upload_file enables multipart uploads for large files by default
                 s3.upload_file(
                     Filename=local_file_path.as_posix(), Bucket=bucket_name, Key=relative_path, ExtraArgs=extra_args
                 )
@@ -267,3 +245,45 @@ def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_direc
     for link_key in links_to_delete:
         tklogger.debug(f"Deleting remote symlink {link_key}...")
         s3.delete_object(Bucket=bucket_name, Key=link_key)
+
+
+deaddrop_error_html = """
+<html>
+  <head>
+    <title>PSYOPS Error</title>
+  </head>
+  <body>
+    <h1>PSYOPS Error</h1>
+    <p>See u on <a href="/">the root page</a>.</p>
+  </body>
+</html>
+"""
+
+deaddrop_index_html = """
+<html>
+  <head>
+    <title>PSYOPS</title>
+  </head>
+  <body>
+    <h1>PSYOPS</h1>
+    <p>This site is used for psyopsOS.</p>
+    <p>See the <a href="https://me.micahrl.com/projects/psyopsos/">psyopsOS project page</a> for more information, links to code, etc.</p>
+  </body>
+</html>
+"""
+
+
+def s3_forcepush_deaddrop(session: boto3.Session, bucket_name: str, local_directory: Path):
+    """Force-push the local directory to the deaddrop S3 bucket
+
+    Wrapper function for s3_forcepush_directory that also writes the error and index pages.
+    """
+
+    # Write local error and index pages
+    with open(local_directory / "error.html", "w") as f:
+        f.write(deaddrop_error_html)
+    with open(local_directory / "index.html", "w") as f:
+        f.write(deaddrop_index_html)
+
+    # Upload
+    s3_forcepush_directory(session, bucket_name, local_directory)
