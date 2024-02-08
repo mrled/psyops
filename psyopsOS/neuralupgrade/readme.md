@@ -22,13 +22,14 @@ neuralupgrade show booted
 neuralupgrade show --minisig /path/to/some/psyopsOS.grubusb.os.tar.minisig
 
 # Download
-# (Not yet implemented)
 #
 # Download an update to local disk
-neuralupgrade download os /tmp/psyopsOS/os.tar
-neuralupgrade download efisys /tmp/psyopsOS/efisys.tar
+neuralupgrade download --type os /tmp/psyopsOS/os.tar
+neuralupgrade download --type efisys /tmp/psyopsOS/efisys.tar
 # Download a specific version to local disk
-neuralupgrade download os /tmp/psyopsOS/os-SOME_VERSION.tar --version $SOME_VERSION
+neuralupgrade download --type os /tmp/psyopsOS/os-SOME_VERSION.tar --version $SOME_VERSION
+# Download both to a folder, using the name in the repo
+neuralupgrade download /tmp/UPDATES/ --type os efisys --version $SOME_VERSION
 
 # Check
 # (Not yet implemented)
@@ -63,15 +64,6 @@ neuralupgrade apply a b efisys --efisys-dev /dev/loop0p1 --a-dev /dev/loop0p3 --
 # (Not yet implemented)
 cat ./psyopsOS.grubusb.os.tar | ssh root@NODE neuralupgrade apply nonbooted --no-verify
 ```
-
-## To do
-
-- `tk` will continue to build the actual disk image, write filesystems, etc, in `make-grubusb-img.sh`,
-  but I will need to remove the a/b/efisys stuff from that script when this one is ready.
-- Finish unimplemented items above
-- Bundle with `psyopsOS-base` package
-- Revert untested support for updating grubusb bootmedia added to psyopsOS-write-bootmedia in `7c98c2440ff5071d681565ef530e6e6a4c53be9d`
-- Put real help in this readme using cogapp
 
 ## Packaging and installing
 
