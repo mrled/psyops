@@ -24,14 +24,52 @@ def makesession(aws_access_key_id, aws_secret_access_key, aws_region):
     )
 
 
-def list_files(session: boto3.Session, bucket: str):
+class S3PriceWarningError(Exception):
+    pass
+
+
+def s3_list_remote_files(session: boto3.Session, bucket_name: str) -> tuple[dict[str, str], dict[str, str]]:
+    """Return a list of all remote files.
+
+    Return a tuple[{filepath: ETag}, {filepath: WebsiteRedirectLocation}].
+    The first item in the tuple represents regular files mapped to their MD5 checksum.
+    The second item in the tuple represents symlinks mapped to their target.
+    """
+
     s3 = session.client("s3")
-    response = s3.list_objects_v2(Bucket=bucket)
-    if "Contents" in response:
-        for item in response["Contents"]:
-            print(item["Key"])
-    else:
-        print("Bucket is empty or does not exist.")
+
+    # Get list of all remote files in S3 bucket with their ETags
+    # Note that S3 API calls do cost money,
+    # but we don't expect it to be very much.
+    # Currently, GET requests cost $0.0004 per 1,000 requests.
+    s3_price_per_request = 0.0004 / 1000
+    # At that price, 1m requests is $0.40.
+    too_many_requests = 1_000_000
+
+    files = {}
+    redirects = {}
+
+    paginator = s3.get_paginator("list_objects_v2")
+    objctr = 0
+    api_calls_per_obj = 2  # one to .get() and one to .head_object()
+    for page in paginator.paginate(Bucket=bucket_name):
+        for obj in page.get("Contents", []):
+            objctr += 1
+            callctr = objctr * api_calls_per_obj
+            filepath = obj["Key"]
+            md5sum = obj["ETag"].strip('"')
+            head = s3.head_object(Bucket=bucket_name, Key=obj["Key"])
+            redirect = head.get("WebsiteRedirectLocation", "")
+            if redirect:
+                redirects[filepath] = redirect
+            else:
+                files[filepath] = md5sum
+            if callctr > too_many_requests:
+                raise S3PriceWarningError(
+                    f"Got {objctr} objects using at least {callctr} API calls from S3 so far, this loop just cost you at least ${callctr * s3_price_per_request}."
+                )
+
+    return (files, redirects)
 
 
 def compute_md5(file: Path):
@@ -133,11 +171,7 @@ def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_direc
         f.write(deaddrop_index_html)
 
     # Get list of all remote files in S3 bucket with their ETags
-    remote_files = {}
-    paginator = s3.get_paginator("list_objects_v2")
-    for page in paginator.paginate(Bucket=bucket_name):
-        for obj in page.get("Contents", []):
-            remote_files[obj["Key"]] = obj["ETag"].strip('"')
+    remote_files, _ = s3_list_remote_files(session, bucket_name)
     remote_files_list = list(remote_files.keys())
 
     # Upload local files to S3 if they are different or don't exist remotely

@@ -1,6 +1,5 @@
 """The `tk` command"""
 
-
 import argparse
 import logging
 import os
@@ -421,7 +420,11 @@ def main_impl():
         aws_keyid, aws_secret = tkconfig.deaddrop.get_credential()
         aws_sess = deaddrop.makesession(aws_keyid, aws_secret, tkconfig.deaddrop.region)
         if parsed.deaddrop_action == "ls":
-            deaddrop.list_files(aws_sess, tkconfig.deaddrop.bucketname)
+            files, symlinks = deaddrop.s3_list_remote_files(aws_sess, tkconfig.deaddrop.bucketname)
+            print("Files:")
+            pprint.pprint(files)
+            print("Symlinks:")
+            pprint.pprint(symlinks)
         elif parsed.deaddrop_action == "forcepull":
             deaddrop.s3_forcepull_directory(aws_sess, tkconfig.deaddrop.bucketname, tkconfig.deaddrop.localpath)
         elif parsed.deaddrop_action == "forcepush":
