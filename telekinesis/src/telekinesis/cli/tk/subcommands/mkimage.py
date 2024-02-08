@@ -297,7 +297,7 @@ def mkimage_grubusb_ostar():
         kernel_version = f.read().strip()
 
     trusted_comment = (
-        f"psyopsOS filename={tarball_file} version={build_date} kernel={kernel_version} alpine={alpine_version}"
+        f"type=psyopsOS filename={tarball_file} version={build_date} kernel={kernel_version} alpine={alpine_version}"
     )
     # Note that we're signing the tarball using the unversioned name from tkconfig.artifacts,
     # but the trusted_comment contains the versioned name.
@@ -308,9 +308,7 @@ def mkimage_grubusb_ostar():
 def mkimage_grubusb_ostar_copy_to_deaddrop():
     """Copy the grubusb OS tarball and signature to the deaddrop, making sure they have correct names"""
     trusted_comment = minisign.verify(tkconfig.artifacts.grubusb_os_tarfile)
-    prefix = "psyopsOS "
-    metadata_string = trusted_comment[len(prefix) - 1 :]
-    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in metadata_string.split()]}
+    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
     os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
     shutil.copy(tkconfig.artifacts.grubusb_os_tarfile, tkconfig.deaddrop.osdir / metadata["filename"])
     sig = f"{tkconfig.artifacts.grubusb_os_tarfile}.minisig"
@@ -335,7 +333,6 @@ def mkimage_grubusb_efisystar():
     """
     build_date = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     tarball_file = tkconfig.artifacts.grubusb_efisystar_versioned_format.format(version=build_date)
-    trusted_comment = f"psyopsESP filename={tarball_file} version={build_date}"
     get_ovmf()
     get_memtest()
 
@@ -346,9 +343,15 @@ def mkimage_grubusb_efisystar():
         bootentry: str
 
     programs = [
-        EfiProgram(tkconfig.artifacts.memtest64efi, tkconfig.artifacts.memtest64efi.name, "MemTest86 EFI (64-bit)"),
-        EfiProgram(tkconfig.artifacts.uefishell_extracted_bin, "tcshell.efi", "TianoCore OVMF UEFI Shell (64-bit)"),
+        EfiProgram(
+            tkconfig.artifacts.memtest64efi.as_posix(), tkconfig.artifacts.memtest64efi.name, "MemTest86 EFI (64-bit)"
+        ),
+        EfiProgram(
+            tkconfig.artifacts.uefishell_extracted_bin.as_posix(), "tcshell.efi", "TianoCore OVMF UEFI Shell (64-bit)"
+        ),
     ]
+    programs_list = ",".join([program.arcname for program in programs])
+    trusted_comment = f"type=psyopsESP filename={tarball_file} version={build_date} efi_programs={programs_list}"
     manifest_contents = {
         "version": 1,
         "extra_programs": {f"/{program.arcname}": program.bootentry for program in programs},
@@ -365,9 +368,7 @@ def mkimage_grubusb_efisystar():
 def mkimage_grubusb_efisystar_copy_to_deaddrop():
     """Copy the grubusb EFI tarball and signature to the deaddrop, making sure they have correct names"""
     trusted_comment = minisign.verify(tkconfig.artifacts.grubusb_efisystar)
-    prefix = "psyopsESP "
-    metadata_string = trusted_comment[len(prefix) - 1 :]
-    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in metadata_string.split()]}
+    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
     os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
     shutil.copy(tkconfig.artifacts.grubusb_efisystar, tkconfig.deaddrop.osdir / metadata["filename"])
     sig = f"{tkconfig.artifacts.grubusb_efisystar}.minisig"

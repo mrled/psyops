@@ -29,7 +29,7 @@ def parse_psyopsOS_minisig_trusted_comment(comment: Optional[str] = None, file: 
 
         untrusted comment: signature from minisign secret key
         RURFlbvwaqbpRv1RGZk6b0TkCUmJZvNRKVqfyveYOicg3g1FR6EUmvwkPGwB8yFJ+m9l/Al6sixSOAUVQDwwsfs23Coa9xEHBwI=
-        trusted comment: psyopsOS filename=psyopsOS.grubusb.os.20240129-155151.tar version=20240129-155151 kernel=6.1.75-0-lts alpine=3.18
+        trusted comment: type=psyopsOS filename=psyopsOS.grubusb.os.20240129-155151.tar version=20240129-155151 kernel=6.1.75-0-lts alpine=3.18
         nISvkyfCnUI6Xjgr0vz+g4VbymHJh8rvPAHKncAm5sXVT9HMyQV5+HhgvMP3NLaRKSCng6VAYkIufXYkCmobCQ==
 
     Can accept either just the "trusted comment: " line, or a path to the minisig file.
@@ -37,6 +37,7 @@ def parse_psyopsOS_minisig_trusted_comment(comment: Optional[str] = None, file: 
     Returns a dict of key=value pairs, like:
 
         {
+            "type": "psyopsOS",
             "filename": "psyopsOS.grubusb.os.20240129-155151.tar",
             "version": "20240129-155151",
             "kernel": "6.1.75-0-lts",
@@ -48,7 +49,7 @@ def parse_psyopsOS_minisig_trusted_comment(comment: Optional[str] = None, file: 
     if not comment and not file:
         raise ValueError("Must specify either comment or file")
 
-    prefix = "trusted comment: psyopsOS "
+    prefix = "trusted comment: "
     if file:
         with open(file) as f:
             for line in f.readlines():
@@ -88,6 +89,7 @@ def parse_psyopsOS_grub_info_comment(comment: Optional[str] = None, file: Option
                     return parse_psyopsOS_grub_info_comment(comment=line)
         raise ValueError(f"Could not find trusted comment in {file}")
 
+    comment = comment or ""  # Make the fucking linter happy; we know this is not None here but whatever
     if not comment.startswith(prefix):
         raise ValueError(f"Invalid trusted comment: {comment}")
 

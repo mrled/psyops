@@ -14,6 +14,7 @@ from typing import Callable, List
 
 from neuralupgrade import logger
 
+from neuralupgrade.downloader import download_update
 from neuralupgrade.filesystems import Filesystem, Filesystems
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
 from neuralupgrade.osupdates import apply_updates, parse_psyopsOS_minisig_trusted_comment, show_booted
@@ -98,9 +99,46 @@ def getparser() -> tuple[argparse.Namespace, argparse.ArgumentParser]:
         "--b-label", default="psyopsOS-B", help="Override label for B side, default: %(default)s"
     )
 
+    # Repository options
+    repository_parser = argparse.ArgumentParser(add_help=False)
+    repository_parser.add_argument(
+        "--repository",
+        default="https://psyops.micahrl.com/os",
+        help="URL for the psyopsOS update repository, default: %(default)s",
+    )
+    repository_parser.add_argument(
+        "--psyopsOS-filename-format",
+        default="psyopsOS.grubusb.os.{version}.tar",
+        help="The format string for the versioned grubusb EFI system partition tarfile. Used as the base for the filename in S3, and also of the signature file.",
+    )
+    repository_parser.add_argument(
+        "--psyopsESP-filename-format",
+        default="psyopsOS.grubusb.efisys.{version}.tar",
+        help="The format string for the versioned grubusb OS tarfile. Used as the base for the filename in S3, and also of the signature file.",
+    )
+
     # neuralupgrade show
     show_parser = subparsers.add_parser("show", parents=[overrides_parser], help="Show information about boot media")
     show_parser.add_argument("--minisig", help="Show information from the minisig file of a specific ostar tarball")
+
+    # neuralupgrade download
+    download_parser = subparsers.add_parser(
+        "download", parents=[overrides_parser, repository_parser, verify_parser], help="Download updates"
+    )
+    download_parser.add_argument(
+        "--version", default="latest", help="Version of the update to download, default: %(default)s"
+    )
+    download_parser.add_argument(
+        "--type",
+        default=["psyopsOS", "psyopsESP"],
+        nargs="+",
+        choices=["psyopsOS", "psyopsESP"],
+        help="The type of update to download",
+    )
+    download_parser.add_argument(
+        "output",
+        help="Where to download update(s). If it ends in a slash, treated as a directory and download the default filename of the update. If multiple types are passed, this must be a directory.",
+    )
 
     # neuralupgrade apply
     apply_parser = subparsers.add_parser(
@@ -164,7 +202,27 @@ def main_implementation(*arguments):
         pprint.pprint(metadata, sort_dicts=False)
 
     elif parsed.subcommand == "download":
-        parser.error("Not implemented")
+        output: str = parsed.output
+        if len(parsed.type) > 1 and not output.endswith("/"):
+            output += "/"
+        if "psyopsOS" in parsed.type:
+            download_update(
+                parsed.repository,
+                parsed.psyopsOS_filename_format,
+                parsed.version,
+                output,
+                pubkey=parsed.pubkey,
+                verify=parsed.verify,
+            )
+        if "psyopsESP" in parsed.type:
+            download_update(
+                parsed.repository,
+                parsed.psyopsESP_filename_format,
+                parsed.version,
+                output,
+                pubkey=parsed.pubkey,
+                verify=parsed.verify,
+            )
 
     elif parsed.subcommand == "check":
         parser.error("Not implemented")
