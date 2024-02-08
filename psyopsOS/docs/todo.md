@@ -1,13 +1,6 @@
 # Todo
 
 * Document the `telekinesis` / `tk` package.
-* Document the psyopsOS APK repo
-    * Learned it's much better to keep packages just like Alpine does:
-      all package code is in a single place
-      (for psyopsOS APK repo, it's psyopsOS/abuild/psyopsOS/$pkgname/APKBUILD),
-      the $pkgname/.. directory will be the name of the APK repo (so `psyopsOS` for me),
-      keeping source code separate from APKBUILD is fine
-      (`psyopsOS/neuralupgrade` is the Python code; `psyopsOS/abuild/psyopsOS/neuralupgrade` is where the ABUILD is).
 
 ## Chores
 
