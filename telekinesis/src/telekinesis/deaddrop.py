@@ -91,27 +91,21 @@ def s3_forcepull_directory(session: boto3.Session, bucket_name: str, local_direc
     s3 = session.client("s3")
 
     # Download files from bucket
-    remote_files = set()
-    paginator = s3.get_paginator("list_objects_v2")
-    for page in paginator.paginate(Bucket=bucket_name):
-        for obj in page.get("Contents", []):
-            remote_files.add(obj["Key"])
-            local_file_path = local_directory / obj["Key"]
+    remote_files, _ = s3_list_remote_files(session, bucket_name)
+    for filepath, remote_checksum in remote_files.items():
+        local_file_path = local_directory / filepath
 
-            # Checksum comparison
-            should_download = False
-            if local_file_path.exists():
-                local_checksum = compute_md5(local_file_path)
-                remote_checksum = obj["ETag"].strip('"')
-                should_download = local_checksum != remote_checksum
-            else:
-                should_download = True
+        # Checksum comparison
+        should_download = True
+        if local_file_path.exists():
+            local_checksum = compute_md5(local_file_path)
+            should_download = local_checksum != remote_checksum
 
-            # Download file if it doesn't exist or checksum is different
-            if should_download:
-                print(f"Downloading {obj['Key']}...")
-                local_file_path.parent.mkdir(parents=True, exist_ok=True)
-                s3.download_file(bucket_name, obj["Key"], local_file_path.as_posix())
+        # Download file if it doesn't exist or checksum is different
+        if should_download:
+            print(f"Downloading {filepath}...")
+            local_file_path.parent.mkdir(parents=True, exist_ok=True)
+            s3.download_file(bucket_name, filepath, local_file_path.as_posix())
 
     # Delete local files not present in bucket
     local_files = set()
@@ -121,7 +115,7 @@ def s3_forcepull_directory(session: boto3.Session, bucket_name: str, local_direc
             relative_path = str(local_file_path.relative_to(local_directory))
             local_files.add(relative_path)
 
-            if relative_path not in remote_files:
+            if relative_path not in remote_files.keys():
                 print(f"Deleting local file {relative_path}...")
                 local_file_path.unlink()
         elif local_file_path.is_dir():
