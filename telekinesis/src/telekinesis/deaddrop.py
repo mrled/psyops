@@ -34,27 +34,6 @@ def list_files(session: boto3.Session, bucket: str):
         print("Bucket is empty or does not exist.")
 
 
-def s3_upload_directory(directory, bucketname):
-    """Upload a directory to S3 using AWS creds from ~/.aws
-
-    TODO: keep track of all uploaded files, then at the end list all files in the bucket and delete any we didn't upload
-    """
-    import boto3
-
-    s3client = boto3.client("s3")
-    for root, _, files in os.walk(directory):
-        for filename in files:
-            local_filepath = os.path.join(root, filename)
-            relative_filepath = os.path.relpath(local_filepath, directory)
-            print(f"Uploading {local_filepath}...")
-            extra_args = {}
-            # If you don't do this, browsing to these files will download them without displaying them.
-            # We mostly just care about this for the index/error html files.
-            if filename.endswith(".html"):
-                extra_args["ContentType"] = "text/html"
-            s3client.upload_file(local_filepath, bucketname, relative_filepath, ExtraArgs=extra_args)
-
-
 def compute_md5(file: Path):
     """Compute the MD5 checksum of a file"""
     hash_md5 = hashlib.md5()
