@@ -28,13 +28,14 @@ from telekinesis.cli.tk import makeparser
 cog.outl(get_argparse_help_string("tk", makeparser(prog="tk")))
 ]]]-->
 > tk --help
-usage: tk [-h] [--debug]
-          {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployiso,vm} ...
+usage: tk [-h] [--debug] [--verbose]
+          {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployos,vm,psynet,signify}
+          ...
 
 Telekinesis: the PSYOPS build and administration tool
 
 positional arguments:
-  {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployiso,vm}
+  {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployos,vm,psynet,signify}
     showconfig          Show the current configuration
     cog                 Run cog on all relevant files
     deaddrop            Manage the S3 bucket used for psyopsOS, called deaddrop,
@@ -43,13 +44,16 @@ positional arguments:
                         used for making Alpine packages and ISO images
     mkimage             Make a psyopsOS image
     buildpkg            Build a package
-    deployiso           Deploy the ISO image to the S3 bucket
+    deployos            Deploy the ISO image to a psyopsOS remote host
     vm                  Run VM(s)
+    psynet              Manage psynet
+    signify             Sign and verify with the psyopsOS signature tooling
 
 options:
   -h, --help            show this help message and exit
   --debug, -d           Open the debugger if an unhandled exception is
                         encountered.
+  --verbose, -v         Print more information about what is happening.
 
 ________________________________________________________________________
 
@@ -201,22 +205,16 @@ ________________________________________________________________________
 
 > tk mkimage grubusb --help
 usage: tk mkimage grubusb [-h]
-                          [--stages {mkinitpatch,applyinitpatch,kernel,squashfs,sectar,diskimg} [{mkinitpatch,applyinitpatch,kernel,squashfs,sectar,diskimg} ...]]
-                          [--node-secrets NODE_SECRETS]
+                          [--stages {mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} [{mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} ...]]
+                          [--list-stages] [--node-secrets NODE_SECRETS]
 
 options:
   -h, --help            show this help message and exit
-  --stages {mkinitpatch,applyinitpatch,kernel,squashfs,sectar,diskimg} [{mkinitpatch,applyinitpatch,kernel,squashfs,sectar,diskimg} ...]
+  --stages {mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} [{mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} ...]
                         The stages to build, comma-separated. Default:
-                        ['kernel', 'squashfs', 'diskimg']. mkinitpatch: diff -u
-                        initramfs-init.orig initramfs.patched.grubusb >
-                        initramfs-init.psyopsOS.grubusb.patch. applyinitpatch:
-                        patch -o initramfs-init.patched.grubusb initramfs-
-                        init.orig initramfs-init.psyopsOS.grubusb.patch. kernel:
-                        Build the kernel/initramfs/etc. squashfs: Build the
-                        squashfs root filesystem. sectar: Create a tarball of
-                        secrets for the qreamsqueen test VM. diskimg: Build the
-                        disk image from the kernel/squashfs.
+                        ['kernel', 'squashfs', 'diskimg']. See --list-stages for
+                        all possible stages and their descriptions.
+  --list-stages         Show all possible stages and their descriptions.
   --node-secrets NODE_SECRETS
                         If passed, generate a node-specific grubusb image with a
                         populated secrets volume containing secrets from
@@ -227,10 +225,12 @@ ________________________________________________________________________
 > tk buildpkg --help
 usage: tk buildpkg [-h] [--rebuild] [--interactive] [--clean]
                    [--dangerous-no-clean-tmp-dir]
-                   {base,blacksite} [{base,blacksite} ...]
+                   {base,blacksite,neuralupgrade-apk,neuralupgrade-pyz}
+                   [{base,blacksite,neuralupgrade-apk,neuralupgrade-pyz} ...]
 
 positional arguments:
-  {base,blacksite}      The package(s) to build
+  {base,blacksite,neuralupgrade-apk,neuralupgrade-pyz}
+                        The package(s) to build
 
 options:
   -h, --help            show this help message and exit
@@ -244,29 +244,33 @@ options:
 
 ________________________________________________________________________
 
-> tk deployiso --help
-usage: tk deployiso [-h] host
+> tk deployos --help
+usage: tk deployos [-h] [--type {iso,grubusb}] host
 
 positional arguments:
-  host        The remote host to deploy to, assumes root@ accepts the psyops SSH
-              key
+  host                  The remote host to deploy to, assumes root@ accepts the
+                        psyops SSH key
 
 options:
-  -h, --help  show this help message and exit
+  -h, --help            show this help message and exit
+  --type {iso,grubusb}  The type of image to deploy
 
 ________________________________________________________________________
 
 > tk vm --help
-usage: tk vm [-h] {diskimg,osdir} ...
+usage: tk vm [-h] {diskimg,osdir,profile} ...
 
 positional arguments:
-  {diskimg,osdir}
-    diskimg        Run the grubusb image in qemu
-    osdir          Run the kernel/initramfs from the osdir in qemu without
-                   building a grubusb image with EFI and A/B partitions
+  {diskimg,osdir,profile}
+    diskimg             Run the grubusb image in qemu
+    osdir               Run the kernel/initramfs from the osdir in qemu without
+                        building a grubusb image with EFI and A/B partitions
+    profile             Run a predefined VM profile (a shortcut for running
+                        specific VMs like qreamsqueen which we use for testing
+                        psyopsOS)
 
 options:
-  -h, --help       show this help message and exit
+  -h, --help            show this help message and exit
 
 ________________________________________________________________________
 
@@ -284,6 +288,110 @@ ________________________________________________________________________
 
 > tk vm osdir --help
 usage: tk vm osdir [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+________________________________________________________________________
+
+> tk vm profile --help
+usage: tk vm profile [-h] [--list-profiles] {qreamsqueen}
+
+positional arguments:
+  {qreamsqueen}    The profile to run. See --list-profiles for all possible
+                   profiles and their descriptions.
+
+options:
+  -h, --help       show this help message and exit
+  --list-profiles  Show all possible profiles and their descriptions.
+
+________________________________________________________________________
+
+> tk psynet --help
+usage: tk psynet [-h] {run,get,set} ...
+
+positional arguments:
+  {run,get,set}
+    run          Run a command in the context of the psynet certificate
+                 authority
+    get          Get a node from the psynet
+    set          Set a node in the psynet
+
+options:
+  -h, --help     show this help message and exit
+
+________________________________________________________________________
+
+> tk psynet run --help
+usage: tk psynet run [-h] [--cadir CADIR] command [command ...]
+
+positional arguments:
+  command        The command to run in the context of the psynet certificate
+                 authority. If any of the arguments start with a dash, you'll
+                 need to use '--' to separate the command from the arguments,
+                 like '... psynet run -- ls -larth'.
+
+options:
+  -h, --help     show this help message and exit
+  --cadir CADIR  The directory containing the psynet certificate authority. If
+                 not passed, a temporary directory is created, and deleted along
+                 with its contents when the command exits.
+
+________________________________________________________________________
+
+> tk psynet get --help
+usage: tk psynet get [-h] node
+
+positional arguments:
+  node        The node to get
+
+options:
+  -h, --help  show this help message and exit
+
+________________________________________________________________________
+
+> tk psynet set --help
+usage: tk psynet set [-h] node crt key
+
+positional arguments:
+  node        The node to set
+  crt         The filename of the node's certificate
+  key         The filename of the node's key
+
+options:
+  -h, --help  show this help message and exit
+
+________________________________________________________________________
+
+> tk signify --help
+usage: tk signify [-h] {sign,verify} ...
+
+positional arguments:
+  {sign,verify}
+    sign         Sign a file
+    verify       Verify a file
+
+options:
+  -h, --help     show this help message and exit
+
+________________________________________________________________________
+
+> tk signify sign --help
+usage: tk signify sign [-h] file
+
+positional arguments:
+  file        The file to sign
+
+options:
+  -h, --help  show this help message and exit
+
+________________________________________________________________________
+
+> tk signify verify --help
+usage: tk signify verify [-h] file
+
+positional arguments:
+  file        The file to verify
 
 options:
   -h, --help  show this help message and exit
