@@ -309,11 +309,20 @@ def mkimage_grubusb_ostar_copy_to_deaddrop():
     """Copy the grubusb OS tarball and signature to the deaddrop, making sure they have correct names"""
     trusted_comment = minisign.verify(tkconfig.artifacts.grubusb_os_tarfile)
     prefix = "psyopsOS "
-    metadata_string = trusted_comment[len(prefix) :]
+    metadata_string = trusted_comment[len(prefix) - 1 :]
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in metadata_string.split()]}
+    os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
     shutil.copy(tkconfig.artifacts.grubusb_os_tarfile, tkconfig.deaddrop.osdir / metadata["filename"])
     sig = f"{tkconfig.artifacts.grubusb_os_tarfile}.minisig"
     shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")
+
+    # symlink the minisig to latest.minisig
+    latest_sig = tkconfig.deaddrop.osdir / (
+        tkconfig.artifacts.grubusb_os_tarfile_versioned_format.format(version="latest") + ".minisig"
+    )
+    if latest_sig.exists():
+        latest_sig.unlink()
+    latest_sig.symlink_to(f"{metadata['filename']}.minisig")
 
 
 def mkimage_grubusb_efisystar():
@@ -355,10 +364,19 @@ def mkimage_grubusb_efisystar():
 
 def mkimage_grubusb_efisystar_copy_to_deaddrop():
     """Copy the grubusb EFI tarball and signature to the deaddrop, making sure they have correct names"""
-    trusted_comment = minisign.verify(tkconfig.artifacts.grubusb_os_tarfile)
+    trusted_comment = minisign.verify(tkconfig.artifacts.grubusb_efisystar)
     prefix = "psyopsESP "
-    metadata_string = trusted_comment[len(prefix) :]
+    metadata_string = trusted_comment[len(prefix) - 1 :]
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in metadata_string.split()]}
-    shutil.copy(tkconfig.artifacts.grubusb_os_tarfile, tkconfig.deaddrop.osdir / metadata["filename"])
-    sig = f"{tkconfig.artifacts.grubusb_os_tarfile}.minisig"
+    os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
+    shutil.copy(tkconfig.artifacts.grubusb_efisystar, tkconfig.deaddrop.osdir / metadata["filename"])
+    sig = f"{tkconfig.artifacts.grubusb_efisystar}.minisig"
     shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")
+
+    # symlink the minisig to latest.minisig
+    latest_sig = tkconfig.deaddrop.osdir / (
+        tkconfig.artifacts.grubusb_efisystar_versioned_format.format(version="latest") + ".minisig"
+    )
+    if latest_sig.exists():
+        latest_sig.unlink()
+    latest_sig.symlink_to(f"{metadata['filename']}.minisig")

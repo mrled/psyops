@@ -3,7 +3,6 @@
 import hashlib
 import os
 from pathlib import Path
-import pprint
 
 import boto3
 
@@ -12,16 +11,16 @@ from telekinesis import tklogger
 
 def makesession(aws_access_key_id, aws_secret_access_key, aws_region):
     """Return a boto3 session"""
-    import boto3
-
     if aws_access_key_id is None:
         aws_access_key_id = os.environ["AWS_ACCESS_KEY_ID"]
     if aws_secret_access_key is None:
         aws_secret_access_key = os.environ["AWS_SECRET_ACCESS_KEY"]
-    return boto3.session.Session(
+    session = boto3.session.Session(
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
     )
+    tklogger.debug(f"Created boto3 session")
+    return session
 
 
 class S3PriceWarningError(Exception):
@@ -31,14 +30,19 @@ class S3PriceWarningError(Exception):
 def s3_list_remote_files(session: boto3.Session, bucket_name: str) -> tuple[dict[str, str], dict[str, str]]:
     """Return a list of all remote files.
 
-    Return a tuple[{filepath: ETag}, {filepath: WebsiteRedirectLocation}].
+    Return a tuple[{filepath: MD5}, {filepath: WebsiteRedirectLocation}].
     The first item in the tuple represents regular files mapped to their MD5 checksum.
     The second item in the tuple represents symlinks mapped to their target.
+
+    We assume the md5 checksums are stored in the metadata of the S3 objects.
+    We do NOT use the ETag, which is not the MD5 checksum of the file contents
+    for files uploaded as multipart uploads.
+    Large files like our OS tarballs are uploaded as multipart uploads automatically by boto3.
     """
 
     s3 = session.client("s3")
 
-    # Get list of all remote files in S3 bucket with their ETags
+    # Get list of all remote files in S3 bucket with their MD5 checksums
     # Note that S3 API calls do cost money,
     # but we don't expect it to be very much.
     # Currently, GET requests cost $0.0004 per 1,000 requests.
@@ -52,14 +56,15 @@ def s3_list_remote_files(session: boto3.Session, bucket_name: str) -> tuple[dict
     paginator = s3.get_paginator("list_objects_v2")
     objctr = 0
     api_calls_per_obj = 2  # one to .get() and one to .head_object()
+    tklogger.debug(f"Listing objects in S3 bucket {bucket_name}...")
     for page in paginator.paginate(Bucket=bucket_name):
         for obj in page.get("Contents", []):
             objctr += 1
             callctr = objctr * api_calls_per_obj
             filepath = obj["Key"]
-            md5sum = obj["ETag"].strip('"')
             head = s3.head_object(Bucket=bucket_name, Key=obj["Key"])
             redirect = head.get("WebsiteRedirectLocation", "")
+            md5sum = head["Metadata"].get("md5", "")
             if redirect:
                 redirects[filepath] = redirect
             else:
@@ -68,6 +73,7 @@ def s3_list_remote_files(session: boto3.Session, bucket_name: str) -> tuple[dict
                 raise S3PriceWarningError(
                     f"Got {objctr} objects using at least {callctr} API calls from S3 so far, this loop just cost you at least ${callctr * s3_price_per_request}."
                 )
+    tklogger.debug(f"Found {len(files)} files and {len(redirects)} redirects in S3 bucket {bucket_name}.")
 
     return (files, redirects)
 
@@ -85,13 +91,12 @@ def s3_forcepull_directory(session: boto3.Session, bucket_name: str, local_direc
     """Force-pull a directory from S3, deleting any local files that are not in the bucket
 
     Use MD5 checksums to determine whether a file has been modified locally and needs to be re-downloaded.
-    Note that we assume the ETag is the MD5 checksum, which is only true when not using multi-part upload.
-    We don't use it in psyopsOS.
     """
     s3 = session.client("s3")
 
+    remote_files, remote_symlinks = s3_list_remote_files(session, bucket_name)
+
     # Download files from bucket
-    remote_files, _ = s3_list_remote_files(session, bucket_name)
     for filepath, remote_checksum in remote_files.items():
         local_file_path = local_directory / filepath
 
@@ -103,9 +108,25 @@ def s3_forcepull_directory(session: boto3.Session, bucket_name: str, local_direc
 
         # Download file if it doesn't exist or checksum is different
         if should_download:
-            print(f"Downloading {filepath}...")
+            tklogger.debug(f"Downloading {filepath}...")
             local_file_path.parent.mkdir(parents=True, exist_ok=True)
             s3.download_file(bucket_name, filepath, local_file_path.as_posix())
+
+    # Set local symlinks to match remote redirects
+    for s3link, s3target in remote_symlinks.items():
+        local_link = local_directory / s3link
+        local_link.parent.mkdir(parents=True, exist_ok=True)
+        local_target_abs = local_directory / s3target.lstrip("/")
+        local_target = os.path.relpath(local_target_abs.as_posix(), local_link.parent.as_posix())
+        if local_link.exists() and local_link.is_symlink() and local_link.resolve() == local_target_abs:
+            tklogger.debug(
+                f"Skipping symlink {local_link.as_posix()} -> {local_target} because it is already up to date."
+            )
+        else:
+            if local_link.exists():
+                local_link.unlink()
+            tklogger.debug(f"Creating local symlink {local_link.as_posix()} -> {local_target}")
+            os.symlink(local_target, local_link.as_posix())
 
     # Delete local files not present in bucket
     local_files = set()
@@ -114,9 +135,9 @@ def s3_forcepull_directory(session: boto3.Session, bucket_name: str, local_direc
         if local_file_path.is_file():
             relative_path = str(local_file_path.relative_to(local_directory))
             local_files.add(relative_path)
-
-            if relative_path not in remote_files.keys():
-                print(f"Deleting local file {relative_path}...")
+            exists_remotely = relative_path in remote_files.keys() or relative_path in remote_symlinks.keys()
+            if not exists_remotely:
+                tklogger.debug(f"Deleting local file {relative_path}...")
                 local_file_path.unlink()
         elif local_file_path.is_dir():
             directories.add(local_file_path)
@@ -124,7 +145,7 @@ def s3_forcepull_directory(session: boto3.Session, bucket_name: str, local_direc
     # Delete empty directories
     for directory in sorted(directories, key=lambda x: len(x.parts), reverse=True):
         if not any(directory.iterdir()):
-            print(f"Deleting empty directory {directory}...")
+            tklogger.debug(f"Deleting empty directory {directory}...")
             directory.rmdir()
 
 
@@ -155,7 +176,11 @@ deaddrop_index_html = """
 
 
 def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_directory: Path):
-    """Force-push a directory to S3, deleting any remote files that are not in the local directory"""
+    """Force-push a directory to S3, deleting any remote files that are not in the local directory.
+
+    Calculate a local MD5 checksum and add it as metadata to the S3 object.
+    We don't use ETag for this because it is not the MD5 checksum of the file contents for files uploaded as multipart uploads.
+    """
     s3 = session.client("s3")
 
     # Write local error and index pages
@@ -164,48 +189,81 @@ def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_direc
     with open(local_directory / "index.html", "w") as f:
         f.write(deaddrop_index_html)
 
-    # Get list of all remote files in S3 bucket with their ETags
-    remote_files, _ = s3_list_remote_files(session, bucket_name)
-    remote_files_list = list(remote_files.keys())
+    # Get list of all remote files in S3 bucket with their checksums
+    remote_files, remote_symlinks = s3_list_remote_files(session, bucket_name)
+
+    # Keep track of symlinks, which we handle as S3 Object Redirects.
+    symlinks: dict[str, str] = {}
 
     # Upload local files to S3 if they are different or don't exist remotely
     local_files_relpath_list = []
     for local_file_path in list(local_directory.rglob("*")):
-        # Ignore directories, as there is no concept of directories in S3
+        # Ignore goddamn fucking macOS gunk files
+        if local_file_path.name == ".DS_Store":
+            continue
+        if local_file_path.name.startswith("._"):
+            continue
+
+        # Ignore directories, as there is no concept of directories in S3.
+        # Note that is_file() returns False for symlinks which point to directories, which is good too.
         if not local_file_path.is_file():
             continue
 
         relative_path = str(local_file_path.relative_to(local_directory))
-
         local_files_relpath_list.append(relative_path)
-        local_checksum = compute_md5(local_file_path)
 
-        exists_remotely = relative_path in remote_files_list
-        remote_checksum = remote_files.get(relative_path, "NONE")
-        checksum_matches = local_checksum == remote_checksum
-        tklogger.debug(
-            f"path relative/existsremote: {relative_path}/{exists_remotely}, checksum local/remote/matches: {local_checksum}/{remote_checksum}/{checksum_matches}"
-        )
+        # Handle symlinks
+        if local_file_path.is_symlink():
+            target = local_file_path.resolve()
+            try:
+                reltarget = str(target.relative_to(local_directory))
+                # S3 Object Redirects must be absolute paths from bucket root with a leading slash (or a full URL).
+                abstarget = f"/{reltarget}"
+            except ValueError:
+                tklogger.warning(
+                    f"Skipping symlink {relative_path} -> {target} because it points outside of the local directory."
+                )
+                continue
+            if relative_path in remote_symlinks and remote_symlinks[relative_path] == abstarget:
+                tklogger.debug(f"Skipping symlink {relative_path} -> {abstarget} because it is already up to date.")
+            else:
+                tklogger.debug(f"Creating S3 Object Redirect for {relative_path} -> {abstarget}")
+                s3.put_object(Bucket=bucket_name, Key=relative_path, WebsiteRedirectLocation=abstarget)
 
-        if exists_remotely and checksum_matches:
-            print(f"Skipping {relative_path} because it is already up to date.")
+        # Handle regular files
         else:
-            print(f"Uploading {relative_path}...")
-            extra_args = {}
+            local_checksum = compute_md5(local_file_path)
 
-            # If you don't do this, browsing to these files will download them without displaying them.
-            # We mostly just care about this for the index/error html files.
-            if local_file_path.as_posix().endswith(".html"):
-                extra_args["ContentType"] = "text/html"
-
-            s3.upload_file(
-                Filename=local_file_path.as_posix(), Bucket=bucket_name, Key=relative_path, ExtraArgs=extra_args
+            exists_remotely = relative_path in remote_files.keys()
+            remote_checksum = remote_files.get(relative_path, "NONE")
+            checksum_matches = local_checksum == remote_checksum
+            tklogger.debug(
+                f"path relative/existsremote: {relative_path}/{exists_remotely}, checksum local/remote/matches: {local_checksum}/{remote_checksum}/{checksum_matches}"
             )
 
-    # Determine which remote files are not present locally
-    files_to_delete = [f for f in remote_files_list if f not in local_files_relpath_list]
+            if exists_remotely and checksum_matches:
+                tklogger.debug(f"Skipping {relative_path} because it is already up to date.")
+            else:
+                tklogger.debug(f"Uploading {relative_path}...")
+                extra_args = {"Metadata": {"md5": local_checksum}}
+
+                # If you don't do this, browsing to these files will download them without displaying them.
+                # We mostly just care about this for the index/error html files.
+                if local_file_path.as_posix().endswith(".html"):
+                    extra_args["ContentType"] = "text/html"
+
+                s3.upload_file(
+                    Filename=local_file_path.as_posix(), Bucket=bucket_name, Key=relative_path, ExtraArgs=extra_args
+                )
 
     # Delete files from S3 bucket not present in local directory
+    files_to_delete = [f for f in remote_files.keys() if f not in local_files_relpath_list]
     for file_key in files_to_delete:
-        print(f"Deleting remote file {file_key}...")
+        tklogger.debug(f"Deleting remote file {file_key}...")
         s3.delete_object(Bucket=bucket_name, Key=file_key)
+
+    # Delete redirecting objects from S3 bucket not present as symlinks in local directory
+    links_to_delete = [f for f in remote_symlinks.keys() if f not in local_files_relpath_list]
+    for link_key in links_to_delete:
+        tklogger.debug(f"Deleting remote symlink {link_key}...")
+        s3.delete_object(Bucket=bucket_name, Key=link_key)
