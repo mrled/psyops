@@ -164,32 +164,36 @@ def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_direc
     # Upload local files to S3 if they are different or don't exist remotely
     local_files_relpath_list = []
     for local_file_path in list(local_directory.rglob("*")):
-        if local_file_path.is_file():
-            relative_path = str(local_file_path.relative_to(local_directory))
-            local_files_relpath_list.append(relative_path)
-            local_checksum = compute_md5(local_file_path)
+        # Ignore directories, as there is no concept of directories in S3
+        if not local_file_path.is_file():
+            continue
 
-            exists_remotely = relative_path in remote_files_list
-            remote_checksum = remote_files.get(relative_path, "NONE")
-            checksum_matches = local_checksum == remote_checksum
-            tklogger.debug(
-                f"path relative/existsremote: {relative_path}/{exists_remotely}, checksum local/remote/matches: {local_checksum}/{remote_checksum}/{checksum_matches}"
+        relative_path = str(local_file_path.relative_to(local_directory))
+
+        local_files_relpath_list.append(relative_path)
+        local_checksum = compute_md5(local_file_path)
+
+        exists_remotely = relative_path in remote_files_list
+        remote_checksum = remote_files.get(relative_path, "NONE")
+        checksum_matches = local_checksum == remote_checksum
+        tklogger.debug(
+            f"path relative/existsremote: {relative_path}/{exists_remotely}, checksum local/remote/matches: {local_checksum}/{remote_checksum}/{checksum_matches}"
+        )
+
+        if exists_remotely and checksum_matches:
+            print(f"Skipping {relative_path} because it is already up to date.")
+        else:
+            print(f"Uploading {relative_path}...")
+            extra_args = {}
+
+            # If you don't do this, browsing to these files will download them without displaying them.
+            # We mostly just care about this for the index/error html files.
+            if local_file_path.as_posix().endswith(".html"):
+                extra_args["ContentType"] = "text/html"
+
+            s3.upload_file(
+                Filename=local_file_path.as_posix(), Bucket=bucket_name, Key=relative_path, ExtraArgs=extra_args
             )
-
-            if exists_remotely and checksum_matches:
-                print(f"Skipping {relative_path} because it is already up to date.")
-            else:
-                print(f"Uploading {relative_path}...")
-                extra_args = {}
-
-                # If you don't do this, browsing to these files will download them without displaying them.
-                # We mostly just care about this for the index/error html files.
-                if local_file_path.as_posix().endswith(".html"):
-                    extra_args["ContentType"] = "text/html"
-
-                s3.upload_file(
-                    Filename=local_file_path.as_posix(), Bucket=bucket_name, Key=relative_path, ExtraArgs=extra_args
-                )
 
     # Determine which remote files are not present locally
     files_to_delete = [f for f in remote_files_list if f not in local_files_relpath_list]
