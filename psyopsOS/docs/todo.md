@@ -1,7 +1,6 @@
 # Todo
 
 * Document the `telekinesis` / `tk` package.
-* Document the A/B updates better (see `a-b-updates.md`)
 * Document the psyopsOS APK repo
     * Learned it's much better to keep packages just like Alpine does:
       all package code is in a single place
@@ -20,6 +19,9 @@ I might never get around to these because they're annoying
 * Rename anything with `grubusb` in it to something else --
   not sure what yet, but not all architectures use GRUB and not all installations are on USB,
   maybe `abmode` or something like that.
+* Rename `psyops-secret` label to something else
+* Rename `/mnt/psyops-secrets/mount` to a different path that is less cumbersome,
+  and make sure it matches the label in plurality.
 
 ## Ideas
 

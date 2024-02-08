@@ -1,48 +1,89 @@
-## A/B Updates
+# A/B Updates
 
-TODO: document how this works. Here is a dump from the todo file before it was implemented.
+psyopsOS can apply A/B operating system updates.
+The work has been done for x86_64;
+I think something similar should work for Raspberry Pi but I haven't looked deeply into it.
 
-* A/B updates
-    * Recent progress on this front: building grubusb images
-    * Break the `tk mkimage grubusb` stage `diskimg` into several stages: assembling files including memtest into a directory, and actually building a disk image. We might need to ship a single recent raw image to deaddrop (??), but mostly we'll be shipping the individual files so that booted systems can write them to the ext4 A/B partitions.
-    * Make a `tk` command to deploy built kernel/squashfs/initrd/DTBs/etc to deaddrop. Use a date based version system, and write a file that contains the latest deployed date.
-    * Convert `make-grubusb-img.sh` to a Python script that can both create an image from scratch with A/B/secret/EFISYS partitions, and also one that can update these partitions independent of one another. Normal case will be to update the A/B partition (whatever hasn't been booted from), but we may want to update the grub configuration, memtest, etc as well. This script will have to run on both remote nodes for updating individual partitions, and on builder machine to generate new disk images.
-        * Script on each node must:
-            * Check deaddrop for new version (maybe this is a different script/service)
-            * Mount the non-booted A/B partition, write each file to it, and remove any files that should no longer be used (maybe this happens with DTB files?)
-            * Secondarily, should be able to update PSYOPSOSEFI partition and GRUB configuration, and memtest or any other things we boot that way
-        * Script on the builder must:
-            * Find artifacts from previous build steps: kernel/initrd/squashfs/memtest/DTBs/etc
-            * Zero out the existing image
-            * Write the PSYOPSEFI partition from scratch
-            * Write the secrets partition if requested, or an empty partition for a generic image
-            * Write the A and B partitions
-    * Write an update script that checks deaddrop and applies updates to the non-booted A/B partition. Could also warn about out of date grub config or memtest.
-    * Update format
-        * Originally this was going to be separate files: `kernel`, `initramfs`, `squashfs`, `boot/**` for DTBs, `System.map`, `config`.
-        * I could manage a version with a `manifest.json` that includes each file...
-        * But eventually it seems simpler to just make a tarball and go from there. A tarball makes the DTB situation easier, and can be extracted while downloading.
-        * Extraction while downloading is useful for one-off updates from a trusted controller node (my laptop), but can't be permitted for updates from the `pysops.micahrl.com` server, which we are treating as untrusted.
-        * We will probably wait to implement extraction while downloading until later, but use a tarball for this for the moment.
-        * For updates from `psyops.micahrl.com`, we will expect to first download a copy of the manifest, signature, and tarball, verify the signature, then the manifest with the signature, and then hash the tarball to make sure it matches what's in the manifest.
-    * How will we version these?
-        * We don't have to force this to fit into pip or some other fuckhead versioning system, we use datestamps like 20240126-212806.
-        * Stored in the S3 bucket as e.g. `img/grubusb/VERSION/manifest.json`
-        * Manifest includes version (again, so it's useful when downloaded locally), full URL to tarball, and tarball checksum
-        * Manifest file is signed with minisign. We don't have to sign the tarball, it's verified by checksum from the signed manifest.
-        * To get the latest version, use S3 Object Redirect with a `img/grubusb/latest/manifest.json`
-            * Object Redirect only works with objects, not folders
-            * We could add Object Redirect to `tarball.tar` and `signature.minisign` (or whatever), so that the client just pulls from `latest` every time. This isn't atomic tho, and I guess a bug could cause it to go out of sync.
-            * Or we can use e.g. `"repopath": "https://psyops.micahrl.com/img/grubusb/VERSION/", "tarball": "tarball.tar", ...` to the `manifest.json`. This lets `manifest.json` use relative paths (`"tarball": "tarball.tar"`), which will continue to work when downloaded locally, but it bakes the repo into the manifest, which is less flexible to changine the repo URL or something.
-        * Actually, what if we did this: keep the version (which is a date) in the filename; use an out of band signature file that contains the filename; only have a `latest` for the signature file.
-            * The client will have to download the update and its signature in two requests under any scheme we're considering anyway
-            * If the version and date are already recorded in the filename, there's no reason for the manifest file to exist.
-            * The client fetches the `latest` signature FIRST, and then fetches whatever filename is specified in the signature, and then verifies. This means that updates are atomic (at least assuming adding the S3 Object Redirect is atomic), since even if the `latest` signature gets replaced after the client fetches it, it will fetch the actual update by name.
-            * The version number also must be kept on the partition, so that some sort of update check can be made. Probably save the version in the tarball at build time. Or maybe the updater does it -- place a `version.json` or something on the filesystem when it applies the update, including the version and date applied.
-        * Do we need to release psyopsOS + efisys together in a bundle? I am assuming no.
-    * Verification
-        * I wanted to use minisign because that's what all the cool kids use.
-        * However, the fucking thing only works with private key FILES signing other FILES. There is no way to provide a private key via a string, and no way to sign arbitrary data without writing it to a file first.
-        * I guess the minisign way isn't totally impossible to work, it's just clunky, and I don't love saving private keys to disk for signing. They do stay encrypted so maybe... I save them to disk encrypted, then pull the password out of the secret store and provide that at runtime.
-        * It would be nice if we could securely, incrementally, and atomically download and write updates without first downloading to tmp storage then verifying then applying. To do this would require more sophistication than I have tho. I think you can use existing cryptographic ideas to build something like this but I'm not aware of anything off the shelf. Maybe "streaming verification" is a thing, maybe we chunk verification, or something like a merkel tree. But I think all of these would require custom tooling.
-        * Alpine appears to use RSA keys from OpenSSL for signing APK packages. Maybe I just do this. Or something that uses high level Python `cryptography` functions.
+Images are built with `tk mkimage grubusb`.
+This calls `neuralupgrade apply ...` behind the scenes.
+It creates a disk image with four labeled partitions:
+
+1. `PSYOPSOSEFI`: The EFI System Partition, containing GRUB and maybe some EFI programs like memtest.
+2. `psyops-secret`: A secrets partition, which might contain a particular machine's secrets, or blank and suitable for booting up and configuring later
+3. `psyopsOS-A`: An OS partition
+4. `psyopsOS-B`: An OS partition
+
+The OS partitions are not root filesystems,
+they store a kernel and initramfs for booting,
+a modloop containing kernel modules (that doesn't require loading them into RAM),
+a squashfs for read-only root filesystem,
+and some supporting files like a System.map, boot/ directory, version files, etc.
+
+GRUB is configured to boot either the A or B partition by default,
+but either is accessible from the GRUB menu.
+When booting, GRUB passes the partition label via kernel command line like `psyopsos=psyopsOS-A`,
+so this is visible from a booted system's `/proc/cmdline`.
+
+A system can apply an OS upgrade with `neuralupgrade apply nonbooted`.
+That verifies the signature of an OS upgrade tarball,
+extracts the upgrade tarball to the nonbooted partition,
+and upgrades the GRUB configuration on the EFI System Partition to boot from the upgraded partition.
+It transparently handles mounting partitions read-write and unmounting them when finished.
+
+We can also apply EFI System Partition updates.
+`neuralupgrade` knows to run `grub-install`,
+and we also build tarballs that (at least for now) just contain EFI programs like memtest,
+which `neuralupgrade` can apply with `neuralupgrade apply efisys`.
+When `neuralupgrade` changes the GRUB configuration,
+whether that's in applying an update to the nonbooted side,
+or applying an efisys upgrade,
+or any other time,
+it does so as carefully as possible.
+We don't get true atomiticity from the FAT32 EFI system partition,
+but we do keep backups of old GRUB configurations,
+write the new configuration out to a new file,
+and move the new version into the `grub.cfg` filename
+to minimize the chances of an inconsistent write.
+It's not perfect, but it's the best we can do given FAT32.
+And I find myself in [good company](https://crawshaw.io/blog/jsonfile).
+
+Updates are verified with `minisign`.
+We use minisign's trusted comments feature for a few key=value pairs.
+Here's an example from a recent local build:
+
+```text
+> cat artifacts/psyopsOS.grubusb.os.tar.minisig
+untrusted comment: signature from minisign secret key
+RURFlbvwaqbpRhKh+8bfF/6FT1eyY0TTzStsYXjDM6w6VbVrmXvi+rWDM01apVH0BHphsTFNrE15r8LbmZuCe9BcWBm3AQBPiwQ=
+trusted comment: psyopsOS filename=psyopsOS.grubusb.os.20240202-212117.tar version=20240202-212117 kernel=6.1.75-0-lts alpine=3.18
+HxZ9wysLaUZZJTgxQKtwlBMZIRtTaH4Q6Y5zyVOhwVaSMPmDZk2IInPm3uZH+2gSdxuGkiRF1CV68y7w/5ahCg==
+```
+
+Note that the signature file is `psyopsOS.grubusb.os.tar.minisig`,
+and indeed it was created from a psyopsOS tarball called `psyopsOS.grubusb.os.tar`,
+but the trusted comment includes
+`filename=psyopsOS.grubusb.os.20240202-212117.tar`.
+That `filename` value is something we embed ourselves, and is totally meaningless to minisign.
+(Actually, minisign generates a default trusted command with a `filename`,
+but minisign doesn't use that during verification.)
+It also includes a `version` (which is just a build date),
+and a kernel and alpine version string.
+We can use all of these to provide information about the contents of an update,
+and we even copy this signature file to the OS partition after extracting the OS tarball there.
+
+We use the `filename` in a couple of useful ways.
+For one, it's useful for the build scripts to create the OS tarball in a known location
+without a versioned filename,
+so that other build steps can use it.
+More interesting is how it will help with clients pulliing updates over HTTP.
+`neuralupgrade` doesn't yet support HTTP update repositories,
+but it will soon.
+When it does, it will request a file like `https://psyops.micahrl.com/os/latest.minisig`.
+This will point to a file with an actual name like `psyopsOS.grubusb.os.20240202-212117.tar.minisig`,
+but it'll use S3 Object Redirect so a separate HTTP request is not required.
+We don't need to have a `latest.tar`,
+because the minisig contains the filename.
+This prevents a race condition between uploading a new tarball and a client trying to upgrade its nonbooted partition.
+And because the first thing we pull is the signature,
+which is validated by a public key on each client,
+the update process is secured.

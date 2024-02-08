@@ -11,6 +11,17 @@ Inside there will be package names.
 E.g. `./psyopsOS/psyopsOS-base`.
 
 Just like the official abuild repo,
-some pacakges are self-contained, like `psyopsOS-base`,
+some packages are self-contained, like `psyopsOS-base`,
 while others rely on source code from elsewhere --
 perhaps elsewhere on the Internet or elsewhere in the psyops git repository.
+E.g. `neuralupgrade` is a Python package in `psyopsOS/neuralupgrade/`,
+and it has a directory in our abuild repo at `psyopsOS/abuild/psyopsOS/neuralupgrade`.
+
+## Previous versions
+
+In the past, we've tried to hack around abuild's behavior of
+naming the repo after the package's parent directory
+by building packages in temp dirs.
+This worked but it was kind of finnicky and clearly fighting the tooling.
+
+The `progfiguration_blacksite` still does it that way.
