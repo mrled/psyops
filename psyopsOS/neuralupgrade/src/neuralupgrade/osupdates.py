@@ -8,112 +8,14 @@ from typing import Optional
 
 from neuralupgrade import logger
 from neuralupgrade.coginitivedefects import MultiError
+from neuralupgrade.downloader import download_update_signature
 from neuralupgrade.filesystems import Filesystem, Filesystems, Mount, sides
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
+from neuralupgrade.update_metadata import minisign_verify, parse_trusted_comment, parse_psyopsOS_grub_info_comment
 
 
-def minisign_verify(file: str, pubkey: Optional[str] = None) -> None:
-    """Verify a file with minisign."""
-    pubkey_args = ["-p", pubkey] if pubkey else []
-    cmd = ["minisign", "-V", *pubkey_args, "-m", file]
-    logger.debug(f"Running minisign: {cmd}")
-    result = subprocess.run(cmd, text=True)
-    if result.returncode != 0:
-        raise Exception(f"minisign returned non-zero exit code {result.returncode}")
-
-
-def parse_trusted_comment(
-    comment: Optional[str] = None, sigcontents: Optional[str] = None, sigfile: Optional[str] = None
-) -> dict:
-    """Parse a trusted comment from a psyopsOS minisig.
-
-    Can provide just the comment,
-    the contents of the minisig file,
-    or the path to the minisig file.
-
-    Example file contents:
-
-        untrusted comment: signature from minisign secret key
-        RURFlbvwaqbpRv1RGZk6b0TkCUmJZvNRKVqfyveYOicg3g1FR6EUmvwkPGwB8yFJ+m9l/Al6sixSOAUVQDwwsfs23Coa9xEHBwI=
-        trusted comment: type=psyopsOS filename=psyopsOS.grubusb.os.20240129-155151.tar version=20240129-155151 kernel=6.1.75-0-lts alpine=3.18
-        nISvkyfCnUI6Xjgr0vz+g4VbymHJh8rvPAHKncAm5sXVT9HMyQV5+HhgvMP3NLaRKSCng6VAYkIufXYkCmobCQ==
-
-    Returns a dict of key=value pairs, like:
-
-        {
-            "type": "psyopsOS",
-            "filename": "psyopsOS.grubusb.os.20240129-155151.tar",
-            "version": "20240129-155151",
-            "kernel": "6.1.75-0-lts",
-            "alpine": "3.18",
-        }
-
-    Note that we do NOT verify the signature! This is just a parser.
-    """
-    trusted_comment_prefix = "trusted comment: "
-    argcount = sum([1 for x in [comment, sigcontents, sigfile] if x])
-    if argcount != 1:
-        raise ValueError(
-            f"Must specify exactly one of comment, sigcontents, or sigfile; got {comment}, {sigcontents}, {sigfile}"
-        )
-    if sigfile:
-        sigcontents = open(sigfile).read()
-        if not sigcontents:
-            raise ValueError(f"Empty file {sigfile}")
-    if sigcontents:
-        for line in sigcontents.splitlines():
-            if line.startswith(trusted_comment_prefix):
-                comment = line
-                break
-        else:
-            raise ValueError("No trusted comment in minisig contents")
-    logger.debug(f"Parsing trusted comment: {comment}")
-    trusted_comment = comment[len(trusted_comment_prefix) - 1 :]
-
-    # Trusted comment fields should be a space-separated list of key=value pairs.
-    # Some old versions also included a value that wasn't a key=value pair.
-    # Just ignore that if it's there.
-    # metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
-    kvs = [x.split("=") for x in trusted_comment.split() if "=" in x]
-    metadata = {kv[0]: kv[1] for kv in kvs}
-    return metadata
-
-
-def parse_psyopsOS_grub_info_comment(comment: Optional[str] = None, file: Optional[str] = None) -> dict:
-    """Parse a trusted comment from a psyopsOS minisig
-
-    The comment comes from grub.cfg, like this:
-
-        #### The next line is used by neuralupgrade to show information about the current configuration.
-        # neuralupgrade-info: last_updated={last_updated} default_boot_label={default_boot_label} extra_programs={extra_programs}
-        ####
-
-    Can accept either just the "# neuralupgrade-info: " line, or a path to the grub.cfg file.
-    """
-    argcount = sum([1 for x in [comment, file] if x])
-    if argcount != 1:
-        raise ValueError("Must specify exactly one of comment or file; got {comment}, {file}")
-
-    prefix = "# neuralupgrade-info: "
-    if file:
-        with open(file) as f:
-            for line in f.readlines():
-                if line.startswith(prefix):
-                    comment = line
-                    break
-            else:
-                raise ValueError(f"Could not find trusted comment in {file}")
-
-    if not comment.startswith(prefix):
-        raise ValueError(f"Invalid grub info comment: {comment}")
-
-    # parse all the key=value pairs in the trusted comment
-    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in comment[len(prefix) :].split()]}
-    return metadata
-
-
-def show_booted(filesystems: Filesystems) -> dict:
-    """Show information about the grubusb device
+def get_system_versions(filesystems: Filesystems) -> dict:
+    """Show information about the OS of the running system.
 
     Uses threads to speed up the process of mounting the filesystems and reading the minisig files.
     """
@@ -133,6 +35,8 @@ def show_booted(filesystems: Filesystems) -> dict:
         "efisys": {
             "mountpoint": filesystems.efisys.mountpoint,
         },
+        "booted": booted,
+        "nonbooted": nonbooted,
     }
 
     def _get_os_tc(label: str):
@@ -146,22 +50,34 @@ def show_booted(filesystems: Filesystems) -> dict:
                 info = {"error": str(exc), "minisig_path": minisig_path, "traceback": traceback.format_exc()}
         result[label] = {**result[label], **info}
 
-    def _get_grub_info():
+    def _get_esp_info():
         with filesystems.efisys.mount(writable=False) as mountpoint:
+            minisig_path = os.path.join(mountpoint, "psyopsOS.grubusb.efisys.tar.minisig")
+            try:
+                trusted_metadata = parse_trusted_comment(sigfile=minisig_path)
+            except FileNotFoundError:
+                trusted_metadata = {f"error": "missing minisig at {minisig_path}"}
+            except Exception as exc:
+                trusted_metadata = {
+                    "error": str(exc),
+                    "minisig_path": minisig_path,
+                    "traceback": traceback.format_exc(),
+                }
             grub_cfg_path = os.path.join(mountpoint, "grub", "grub.cfg")
             try:
-                info = parse_psyopsOS_grub_info_comment(file=grub_cfg_path)
+                grub_cfg_info = parse_psyopsOS_grub_info_comment(file=grub_cfg_path)
             except FileNotFoundError:
-                info = {"error": f"missing grub.cfg at {grub_cfg_path}"}
+                grub_cfg_info = {"error": f"missing grub.cfg at {grub_cfg_path}"}
             except Exception as exc:
-                info = {"error": str(exc), "grub_cfg_path": grub_cfg_path, "traceback": traceback.format_exc()}
-        result["efisys"] = {**result["efisys"], **info}
+                grub_cfg_info = {"error": str(exc), "grub_cfg_path": grub_cfg_path, "traceback": traceback.format_exc()}
+        # TODO: currently if any keys overlap between grub_cfg_info and trusted_metadata, the latter will overwrite the former, fix?
+        result["efisys"] = {**result["efisys"], **grub_cfg_info, **trusted_metadata}
 
     nonbooted_thread = threading.Thread(target=_get_os_tc, args=(booted,))
     nonbooted_thread.start()
     booted_thread = threading.Thread(target=_get_os_tc, args=(nonbooted,))
     booted_thread.start()
-    efisys_thread = threading.Thread(target=_get_grub_info)
+    efisys_thread = threading.Thread(target=_get_esp_info)
     efisys_thread.start()
 
     booted_thread.join()
@@ -198,7 +114,14 @@ def apply_ostar(tarball: str, osmount: str, verify: bool = True, verify_pubkey: 
 
 
 # Note to self: we release efisys tarballs containing stuff like memtest, which can be extracted on top of an efisys that has grub-install already run on it
-def configure_efisys(filesystems: Filesystems, efisys: str, default_boot_label: str, tarball: Optional[str] = None):
+def configure_efisys(
+    filesystems: Filesystems,
+    efisys: str,
+    default_boot_label: str,
+    tarball: Optional[str] = None,
+    verify: bool = True,
+    verify_pubkey: Optional[str] = None,
+):
     """Populate the EFI system partition with the necessary files"""
 
     # I don't understand why I need --boot-directory too, but I do
@@ -213,6 +136,8 @@ def configure_efisys(filesystems: Filesystems, efisys: str, default_boot_label: 
     subprocess.run(cmd, check=True)
 
     if tarball:
+        if verify:
+            minisign_verify(tarball, pubkey=verify_pubkey)
         logger.debug(f"Extracting efisys tarball {tarball} to {efisys}")
         subprocess.run(
             [
@@ -230,6 +155,12 @@ def configure_efisys(filesystems: Filesystems, efisys: str, default_boot_label: 
             check=True,
         )
         logger.debug(f"Finished extracting {tarball} to {efisys}")
+        minisig = tarball + ".minisig"
+        try:
+            shutil.copy(minisig, os.path.join(efisys, "psyopsOS.grubusb.efisys.tar.minisig"))
+            logger.debug(f"Copied {minisig} to {efisys}/psyopsOS.grubusb.efisys.tar.minisig")
+        except FileNotFoundError:
+            logger.warning(f"Could not find {minisig}, partition will not know its version")
 
     write_grub_cfg_carefully(filesystems, efisys, default_boot_label)
     logger.debug("Done configuring efisys")
@@ -305,6 +236,7 @@ def apply_updates(
         if "efisys" in targets and "nonbooted" not in targets:
             detect_existing_default_boot_label = True
 
+    apply_err = None
     try:
         if detect_existing_default_boot_label:
             # We need to get the default boot label from the existing grub.cfg file.
@@ -347,7 +279,9 @@ def apply_updates(
             targets.remove("efisys")
             efisys_mountpoint, _ = idempotently_mount("efisys", filesystems.efisys, writable=True)
             # This handles any updates to the default_boot_label in grub.cfg.
-            configure_efisys(filesystems, efisys_mountpoint, default_boot_label, tarball=esptar)
+            configure_efisys(
+                filesystems, efisys_mountpoint, default_boot_label, tarball=esptar, verify=verify, verify_pubkey=pubkey
+            )
         elif default_boot_label:
             # If we didn't handle updates to default_boot_label in grub.cfg above, do so here.
             efisys_mountpoint, _ = idempotently_mount("efisys", filesystems.efisys, writable=True)
@@ -357,20 +291,74 @@ def apply_updates(
             raise Exception(f"Unknown targets argument(s): {targets}")
 
     except Exception as exc:
-        exceptions = unmount_all_returning_exceptions()
-        if exceptions:
-            exceptions.append(exc)
-            raise MultiError(
-                f"Encountered exception when applying updates to {filesystems} with targets {targets}, and exceptions unmounting filesystems to clean up",
-                exceptions,
-            )
-        else:
-            raise
+        apply_err = exc
 
     finally:
-        exceptions = unmount_all_returning_exceptions()
-        if exceptions:
-            raise MultiError(
-                f"Encountered exceptions when exiting Mount context managers for {filesystems} with targets {targets}",
-                exceptions,
+        umount_errs = unmount_all_returning_exceptions()
+        if umount_errs:
+            multierr_msg = (
+                f"Encountered error(s) exiting mount context managers for {filesystems} with targets {targets}"
             )
+            if apply_err:
+                raise MultiError(multierr_msg, umount_errs) from apply_err
+            raise MultiError(multierr_msg, umount_errs)
+        elif apply_err:
+            raise apply_err
+
+
+def check_updates(
+    filesystems: Filesystems,
+    targets: list[str],
+    update_version: str,
+    repository: str,
+    psyopsOS_filename_format: str,
+    psyopsESP_filename_format: str,
+) -> dict[str, dict[str, str]]:
+    """Check if the system is up to date.
+
+    Return a dictionary where the keys are the targets and the values are dictionaries with the following keys:
+    - label: The label of the filesystem
+    - mountpoint: The mountpoint of the filesystem
+    - current_version: The current version of the filesystem
+    - compared_to: The version to compare to
+    - up_to_date: Whether the filesystem is up to date
+    """
+
+    system_versions = get_system_versions(filesystems)
+    esp_version = update_version
+    os_version = update_version
+    if update_version == "latest":
+        if "a" in targets or "b" in targets or "nonbooted" in targets or "booted" in targets:
+            os_latest_sig = download_update_signature(repository, psyopsOS_filename_format, "latest")
+            os_version = os_latest_sig.unverified_metadata["version"]
+        if "efisys" in targets:
+            esp_latest_sig = download_update_signature(repository, psyopsESP_filename_format, "latest")
+            esp_version = esp_latest_sig.unverified_metadata["version"]
+
+    result = {}
+    for updatetype in targets:
+        if updatetype in ["a", "b", "nonbooted", "booted"]:
+            if updatetype in ["nonbooted", "booted"]:
+                filesystem = filesystems.bylabel(system_versions[updatetype])
+            elif updatetype in ["a", "b"]:
+                filesystem = filesystems[updatetype]
+            else:
+                raise ValueError(f"Unknown updatetype {updatetype}")
+            current_version = system_versions[filesystem.label].get("version", "UNKNOWN")
+            compared_to = os_version
+        elif updatetype in ["efisys"]:
+            filesystem = filesystems.efisys
+            current_version = system_versions["efisys"].get("version", "UNKNOWN")
+            compared_to = esp_version
+        else:
+            raise ValueError(f"Unknown updatetype {updatetype}")
+        up_to_date = compared_to == current_version
+        result[updatetype] = {
+            "label": filesystem.label,
+            "mountpoint": filesystem.mountpoint,
+            "current_version": current_version,
+            "compared_to": compared_to,
+            "up_to_date": up_to_date,
+        }
+
+    return result

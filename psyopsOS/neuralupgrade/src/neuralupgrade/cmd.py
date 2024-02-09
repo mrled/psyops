@@ -1,4 +1,4 @@
-"""The psyopsOSimg command
+"""The neuralupgrade command
 
 This command is deployed to nodes so that they can update their own OS.
 """
@@ -14,10 +14,12 @@ from typing import Callable, List
 
 from neuralupgrade import logger
 
+from neuralupgrade.coginitivedefects import MultiError
 from neuralupgrade.downloader import download_repository_file, download_update, download_update_signature
 from neuralupgrade.filesystems import Filesystem, Filesystems
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
-from neuralupgrade.osupdates import apply_updates, parse_trusted_comment, show_booted
+from neuralupgrade.osupdates import apply_updates, check_updates, get_system_versions
+from neuralupgrade.update_metadata import parse_trusted_comment
 
 
 def display_dict(d, indent=0, indent_step=4):
@@ -114,6 +116,80 @@ def get_argparse_help_string(name: str, parser: argparse.ArgumentParser, wrap: i
     return docstring
 
 
+def subcommand_apply(parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems) -> int:
+    # Check for invalid combinations
+    if "nonbooted" in parsed.target and ("a" in parsed.target or "b" in parsed.target):
+        parser.error("Cannot specify 'nonbooted' and 'a' or 'b' at the same time")
+    updating_os = "a" in parsed.target or "b" in parsed.target or "nonbooted" in parsed.target
+    updating_esp = "efisys" in parsed.target
+    os_tar = None
+    esp_tar = None
+    os_tar_downloaded = False
+    esp_tar_downloaded = False
+    update_err = None
+    try:
+        if updating_os:
+            if parsed.os_tar:
+                os_tar = parsed.os_tar
+            elif parsed.os_version:
+                os_tar = download_update(
+                    parsed.repository,
+                    parsed.psyopsOS_filename_format,
+                    parsed.os_version,
+                    parsed.update_tmpdir,
+                    pubkey=parsed.pubkey,
+                    verify=parsed.verify,
+                )
+            else:
+                parser.error("Must specify --os-tar or --os-version when applying os updates")
+        if updating_esp:
+            if parsed.esp_tar:
+                esp_tar = parsed.esp_tar
+            elif parsed.esp_version:
+                esp_tar = download_update(
+                    parsed.repository,
+                    parsed.psyopsESP_filename_format,
+                    parsed.esp_version,
+                    parsed.update_tmpdir,
+                    pubkey=parsed.pubkey,
+                    verify=parsed.verify,
+                )
+            else:
+                parser.error("Must specify --esp-tar or --esp-version when applying efisys updates")
+        apply_updates(
+            filesystems,
+            parsed.target,
+            ostar=os_tar,
+            esptar=esp_tar,
+            verify=parsed.verify,
+            pubkey=parsed.pubkey,
+            no_update_default_boot_label=parsed.no_grubusb,
+            default_boot_label=parsed.default_boot_label,
+        )
+    except Exception as exc:
+        update_err = exc
+    finally:
+        cleanup_errs = []
+        try:
+            if os_tar_downloaded:
+                os.remove(os_tar)
+        except Exception as e:
+            cleanup_errs.append(e)
+        try:
+            if esp_tar_downloaded:
+                os.remove(esp_tar)
+        except Exception as e:
+            cleanup_errs.append(e)
+
+        if cleanup_errs:
+            cleanup_msg = f"Encountered errors cleaning up downloaded updates: {cleanup_errs}"
+            if update_err:
+                raise MultiError(cleanup_msg, cleanup_errs) from update_err
+            raise MultiError(cleanup_msg, cleanup_errs)
+        elif update_err:
+            raise update_err
+
+
 def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     parser = argparse.ArgumentParser(prog=prog, description="Update psyopsOS boot media")
     parser.add_argument("--debug", "-d", help="Drop into pdb on exception", action="store_true")
@@ -156,6 +232,7 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     overrides_group.add_argument(
         "--b-label", default="psyopsOS-B", help="Override label for B side, default: %(default)s"
     )
+    overrides_group.add_argument("--update-tmpdir", default="/tmp", help="Temporary directory for update downloads")
 
     # Repository options
     repository_group = parser.add_argument_group("Repository options")
@@ -237,25 +314,40 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
         help="Where to download update(s). If it ends in a slash, treated as a directory and download the default filename of the update. If multiple types are passed, this must be a directory.",
     )
 
+    # neuralupgrade check
+    check_parser = subparsers.add_parser("check", help="Check whether the running system is up to date")
+    check_parser.add_argument(
+        "--version", default="latest", help="Version of the update to check, default: %(default)s"
+    )
+    check_parser.add_argument(
+        "--target",
+        default=["nonbooted", "efisys"],
+        nargs="+",
+        choices=["a", "b", "nonbooted", "efisys"],
+        help="The target filesystem(s) to check",
+    )
+
     # neuralupgrade apply
     apply_parser = subparsers.add_parser("apply", help="Apply psyopsOS or EFI system partition updates")
     apply_parser.add_argument(
-        "type", nargs="+", choices=["a", "b", "nonbooted", "efisys"], help="The type of update to apply"
+        "target", nargs="+", choices=["a", "b", "nonbooted", "efisys"], help="The target(s) to apply updates to"
     )
     apply_parser.add_argument(
         "--default-boot-label",
         dest="default_boot_label",
         help="Default boot label if writing the grub.cfg file",
     )
-    apply_parser.add_argument("--ostar", help="The ostar tarball to apply; required for a/b/nonbooted")
     apply_parser.add_argument(
         "--no-grubusb",
         action="store_true",
-        help="Skip updating the grubusb config (only applies when type includes nonbooted)",
+        help="Skip updating the grubusb config (only applies when target includes nonbooted)",
     )
-    apply_parser.add_argument(
-        "--esptar", help="A tarball to apply to the EFI System Partition when type includes efisys"
-    )
+    os_update_group = apply_parser.add_mutually_exclusive_group()
+    os_update_group.add_argument("--os-tar", help="A local path to a psyopsOS tarball to apply")
+    os_update_group.add_argument("--os-version", help="A version in the remote repository to apply")
+    esp_update_group = apply_parser.add_mutually_exclusive_group()
+    esp_update_group.add_argument("--esp-tar", help="A local path to an efisys tarball to apply")
+    esp_update_group.add_argument("--esp-version", help="A version in the remote repository to apply")
 
     # neuralupgrade set-default
     set_default_parser = subparsers.add_parser("set-default", help="Set the default boot label in the grubusb config")
@@ -285,11 +377,14 @@ def main_implementation(*arguments):
         b=Filesystem(parsed.b_label, device=parsed.b_dev, mountpoint=parsed.b_mountpoint),
     )
 
+    if not parsed.update_tmpdir.endswith("/"):
+        parsed.update_tmpdir += "/"
+
     if parsed.subcommand == "show":
         metadata = {}
         for target in parsed.target:
             if target == "system":
-                metadata["system"] = show_booted(filesystems)
+                metadata["system"] = get_system_versions(filesystems)
             elif target == "latest":
                 os_result = download_update_signature(parsed.repository, parsed.psyopsOS_filename_format, "latest")
                 esp_result = download_update_signature(parsed.repository, parsed.psyopsESP_filename_format, "latest")
@@ -335,27 +430,24 @@ def main_implementation(*arguments):
             )
 
     elif parsed.subcommand == "check":
-        parser.error("Not implemented")
+        checked = check_updates(
+            filesystems,
+            parsed.target,
+            parsed.version,
+            parsed.repository,
+            parsed.psyopsOS_filename_format,
+            parsed.psyopsESP_filename_format,
+        )
+        for fs, fsmd in checked.items():
+            if fsmd["up_to_date"]:
+                print(f"{fs}: {fsmd['label']} is version {fsmd['compared_to']}")
+            else:
+                print(
+                    f"{fs}: {fsmd['label']} is currently version {fsmd['current_version']}, not version {fsmd['compared_to']}"
+                )
 
     elif parsed.subcommand == "apply":
-        # Check for invalid combinations
-        if "nonbooted" in parsed.type and ("a" in parsed.type or "b" in parsed.type):
-            parser.error("Cannot specify 'nonbooted' and 'a' or 'b' at the same time")
-        ostar_required = "a" in parsed.type or "b" in parsed.type or "nonbooted" in parsed.type
-        if ostar_required and not parsed.ostar:
-            parser.error("Must specify --ostar when applying ostar updates")
-        if "efisys" in parsed.type and not parsed.esptar:
-            parser.error("Must specify --esptar when applying efisys updates")
-        apply_updates(
-            filesystems,
-            parsed.type,
-            ostar=parsed.ostar,
-            esptar=parsed.esptar,
-            verify=parsed.verify,
-            pubkey=parsed.pubkey,
-            no_update_default_boot_label=parsed.no_grubusb,
-            default_boot_label=parsed.default_boot_label,
-        )
+        subcommand_apply(parsed, parser, filesystems)
 
     elif parsed.subcommand == "set-default":
         with filesystems.efisys.mount(writable=True):

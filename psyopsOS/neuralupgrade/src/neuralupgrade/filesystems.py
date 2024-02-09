@@ -108,7 +108,7 @@ class Mount:
         return self.mountpoint
 
     def __exit__(self, exc_type, exc_value, traceback):
-        exceptions = []
+        cleanup_errs = []
         try:
             if self.exit_remount_ro:
                 logger.debug(f"Remounting filesystem on {self.device} ro")
@@ -119,16 +119,21 @@ class Mount:
                 logger.debug(f"Unmounting filesystem on {self.device}")
                 umount_retry(self.mountpoint)
         except Exception as e:
-            exceptions.append(e)
+            cleanup_errs.append(e)
 
-        if exc_type:
-            exceptions.append(exc_value)
-
-        if exceptions:
-            raise MultiError(
-                f"Encountered exceptions when exiting Mount context manager for {self.device} on {self.mountpoint}",
-                exceptions,
+        # Properly handle exceptions, whether they were raised from the context manager block (exc_typ/exc_value),
+        # or from the cleanup block (cleanup_errs).
+        # This __exit__ function is called whether the block exited normally or with an exception,
+        # so we need to differentiate between the two cases.
+        if cleanup_errs:
+            cleanup_err_msg = (
+                f"Encountered exceptions when exiting Mount context manager for {self.device} on {self.mountpoint}"
             )
+            if exc_type:
+                raise MultiError(cleanup_err_msg, cleanup_errs) from exc_value
+            raise MultiError(cleanup_err_msg, cleanup_errs)
+        if exc_type:
+            raise exc_value
 
     def get_existing_mountpoints(self):
         """Return a list of mountpoints where the device is mounted"""

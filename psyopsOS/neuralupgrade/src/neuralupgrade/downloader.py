@@ -4,7 +4,7 @@ import os
 import requests
 
 from neuralupgrade import logger
-from neuralupgrade.osupdates import minisign_verify, parse_trusted_comment
+from neuralupgrade.update_metadata import minisign_verify, parse_trusted_comment
 
 
 def is_folder(path: str) -> bool:
@@ -74,7 +74,7 @@ def download_update(
     and finally verify that the signature matches the tarball.
     """
 
-    downloaded = download_update_signature(repository_url, filename_format, version, output)
+    downloaded = download_update_signature(repository_url, filename_format, version)
 
     update_filename = downloaded.unverified_metadata["filename"]
     update_url = f"{repository_url}/{update_filename}"
@@ -93,7 +93,7 @@ def download_update(
         update_local_path = output
         minisig_filepath = os.path.basename(output) + ".minisig"
     with open(minisig_filepath, "w") as file:
-        file.write(downloaded.signature_text)
+        file.write(downloaded.text)
 
     logger.debug(f"Downloading update from {update_url} to {update_local_path}")
     with requests.get(update_url, stream=True) as response:
@@ -108,3 +108,5 @@ def download_update(
     if verify:
         verified_metadata = minisign_verify(update_local_path, pubkey)
         logger.debug(f"Update verified with minisign pubkey {pubkey}, VERIFIED metadata: {verified_metadata}")
+
+    return update_local_path
