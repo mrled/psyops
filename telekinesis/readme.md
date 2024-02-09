@@ -9,9 +9,34 @@ but it handles other psyopsOS related administration tasks.
 
 ## Examples
 
-* Create the build container: `tk builder build`
-* Run a command inside the build container: `tk builder runcmd -- ls -alF /`
-  * Run `mkimage.sh` from the `aports` checkout in the build container: `tk builder runcmd -- ./mkimage.sh -h`
+```sh
+# Create the build container
+tk builder build
+
+# Run a command inside the build container
+tk builder runcmd -- ls -alF /
+
+# Run mkimage.sh from the aports checkout in the build container (for debugging)
+tk builder runcmd -- ./mkimage.sh -h
+
+# Build packages in the build container
+tk buildpkg base blacksite neuralupgrade-apk
+
+# Build everything required for a bootable grubusb image
+tk mkimage grubusb --stages kernel squashfs efisystar ostar diskimg
+
+# Build OS tarballs and copy them to local deaddrop
+tk mkimage grubusb --stages efisystar efisystar-dd ostar ostar-dd
+
+# Rebuild a single package, but not the other packates
+tk buildpkg neuralupgrade-apk &&
+  tk mkimage --skip-build-apks grubusb --stages squashfs ostar efisystar
+
+# Rebuild certain pacakges, make OS tarballs, and upload everything to deaddrop
+tk buildpkg neuralupgrade-apk &&
+  tk mkimage --skip-build-apks grubusb --stages squashfs kernel ostar ostar-dd efisystar efisystar-dd &&
+  tk deaddrop forcepush
+```
 
 ## Full help
 
