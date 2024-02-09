@@ -7,7 +7,6 @@ import argparse
 import logging
 import os
 import pdb
-import pprint
 import sys
 import textwrap
 import traceback
@@ -19,6 +18,32 @@ from neuralupgrade.downloader import download_repository_file, download_update, 
 from neuralupgrade.filesystems import Filesystem, Filesystems
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
 from neuralupgrade.osupdates import apply_updates, parse_trusted_comment, show_booted
+
+
+def display_dict(d, indent=0, indent_step=4):
+    """Recursively display a dictionary with indentation and wrapping to the terminal.
+
+    Optimized for a compact representation of update metadata.
+    If dict values are also dicts, print the key with indentation and then recursively print the dict.
+    """
+    try:
+        terminal_width = os.get_terminal_size().columns
+    except OSError:
+        terminal_width = 80
+    wrapper = textwrap.TextWrapper(width=terminal_width)
+    for key, value in d.items():
+        if isinstance(value, dict):
+            # Print the key with indentation and then recursively print the dict
+            print(" " * indent + str(key) + ":")
+            display_dict(value, indent + indent_step, indent_step)
+        else:
+            # For other types, print the key and value on the same line, with wrapping if necessary
+            initial_indent = " " * indent + str(key) + ": "
+            subsequent_indent = " " * (indent + indent_step)
+            wrapper.initial_indent = initial_indent
+            wrapper.subsequent_indent = subsequent_indent
+            wrapped_text = wrapper.fill(str(value))
+            print(wrapped_text)
 
 
 def idb_excepthook(type, value, tb):
@@ -268,8 +293,10 @@ def main_implementation(*arguments):
             elif target == "latest":
                 os_result = download_update_signature(parsed.repository, parsed.psyopsOS_filename_format, "latest")
                 esp_result = download_update_signature(parsed.repository, parsed.psyopsESP_filename_format, "latest")
-                metadata[os_result.url] = os_result.unverified_metadata
-                metadata[esp_result.url] = esp_result.unverified_metadata
+                metadata["latest"] = {
+                    os_result.url: os_result.unverified_metadata,
+                    esp_result.url: esp_result.unverified_metadata,
+                }
             else:
                 if not target.endswith(".minisig"):
                     target += ".minisig"
@@ -282,7 +309,7 @@ def main_implementation(*arguments):
                         metadata[target] = parse_trusted_comment(sigcontents=target_sig)
                     except Exception:
                         parser.error(f"Target {target} does not exist")
-        pprint.pprint(metadata, sort_dicts=False)
+        display_dict(metadata)
 
     elif parsed.subcommand == "download":
         output: str = parsed.output
