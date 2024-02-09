@@ -184,7 +184,7 @@ apk_args="--repositories-file /etc/apk/repositories.psyopsOSonly --no-cache "
 if test \$# -lt 1; then
 	echo "\$0: a simple apk wrapp for the psyopsOS repo only"
 	echo "	Provided so that rapidly updating psyopsOS packages doesn't annoy mirrors"
-	echo "	Runs as 'apk \\\$1 $apk_args \\\$@'"
+	echo "	Runs as 'apk \\\$1 \$apk_args \\\$@'"
 	exit 0
 fi
 subcmd="\$1"
