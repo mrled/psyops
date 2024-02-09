@@ -9,15 +9,16 @@ import os
 import pdb
 import pprint
 import sys
+import textwrap
 import traceback
 from typing import Callable, List
 
 from neuralupgrade import logger
 
-from neuralupgrade.downloader import download_update
+from neuralupgrade.downloader import download_repository_file, download_update, download_update_signature
 from neuralupgrade.filesystems import Filesystem, Filesystems
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
-from neuralupgrade.osupdates import apply_updates, parse_psyopsOS_minisig_trusted_comment, show_booted
+from neuralupgrade.osupdates import apply_updates, parse_trusted_comment, show_booted
 
 
 def idb_excepthook(type, value, tb):
@@ -95,68 +96,107 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run", required=True)
 
     # verification options
-    verify_parser = argparse.ArgumentParser(add_help=False)
-    verify_parser.add_argument(
+    verify_group = parser.add_argument_group("Verification options")
+    verify_group.add_argument(
         "--no-verify", dest="verify", action="store_false", help="Skip verification of the ostar tarball"
     )
-    verify_parser.add_argument(
+    verify_group.add_argument(
         "--pubkey",
         default="/etc/psyopsOS/minisign.pubkey",
         help="Public key to use for verification (default: %(default)s)",
     )
 
     # device/mountpoint override options
-    overrides_parser = argparse.ArgumentParser(add_help=False)
-    overrides_parser.add_argument(
+    overrides_group = parser.add_argument_group("Device/mountpoint override options")
+    overrides_group.add_argument(
         "--efisys-dev", help="Override device for EFI system partition (found by label by default)"
     )
-    overrides_parser.add_argument(
+    overrides_group.add_argument(
         "--efisys-mountpoint", help="Override mountpoint for EFI system partition (found by label in fstab by default)"
     )
-    overrides_parser.add_argument(
+    overrides_group.add_argument(
         "--efisys-label", default="PSYOPSOSEFI", help="Override label for EFI system partition, default: %(default)s"
     )
-    overrides_parser.add_argument("--a-dev", help="Override device for A side (found by label by default)")
-    overrides_parser.add_argument(
+    overrides_group.add_argument("--a-dev", help="Override device for A side (found by label by default)")
+    overrides_group.add_argument(
         "--a-mountpoint", help="Override mountpoint for A side (found by label in fstab by default)"
     )
-    overrides_parser.add_argument(
+    overrides_group.add_argument(
         "--a-label", default="psyopsOS-A", help="Override label for A side, default: %(default)s"
     )
-    overrides_parser.add_argument("--b-dev", help="Override device for B side (found by label by default)")
-    overrides_parser.add_argument(
+    overrides_group.add_argument("--b-dev", help="Override device for B side (found by label by default)")
+    overrides_group.add_argument(
         "--b-mountpoint", help="Override mountpoint for B side (found by label in fstab by default)"
     )
-    overrides_parser.add_argument(
+    overrides_group.add_argument(
         "--b-label", default="psyopsOS-B", help="Override label for B side, default: %(default)s"
     )
 
     # Repository options
-    repository_parser = argparse.ArgumentParser(add_help=False)
-    repository_parser.add_argument(
+    repository_group = parser.add_argument_group("Repository options")
+    repository_group.add_argument(
         "--repository",
         default="https://psyops.micahrl.com/os",
         help="URL for the psyopsOS update repository, default: %(default)s",
     )
-    repository_parser.add_argument(
+    repository_group.add_argument(
         "--psyopsOS-filename-format",
         default="psyopsOS.grubusb.os.{version}.tar",
         help="The format string for the versioned grubusb EFI system partition tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
-    repository_parser.add_argument(
+    repository_group.add_argument(
         "--psyopsESP-filename-format",
         default="psyopsOS.grubusb.efisys.{version}.tar",
         help="The format string for the versioned grubusb OS tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
 
     # neuralupgrade show
-    show_parser = subparsers.add_parser("show", parents=[overrides_parser], help="Show information about boot media")
-    show_parser.add_argument("--minisig", help="Show information from the minisig file of a specific ostar tarball")
+    show_parser = subparsers.add_parser(
+        "show",
+        help="Show information about the running system and/or updates. By default shows running system information.",
+    )
+
+    target_options = {
+        "Literal string 'system'": "Show information about the running system",
+        "Literal string 'latest'": "Show information about the latest version of psyopsOS and psyopsESP in the repository",
+        "Repository filename": "Show information about an update with this filename in the repository, like 'psyopsOS.grubusb.efisys.20240208-210341.tar'. If the filename doesn't end with .minisig, append it. If the update doesn't exist, raise an error.",
+        "Local path": "Show information about an update at this path, like '/path/to/update.tar.minisig'. If the filename doesn't end with .minisig, append it. If the update doesn't exist, raise an error. Local paths are checked before the repository.",
+    }
+
+    class TargetHelpAction(argparse.Action):
+        """An argparse action that prints the target options help text and exits
+
+        Nicely format each stage and its description, wrap the text to terminal width, and indent any description that is longer than one line.
+        """
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            terminal_width = os.get_terminal_size().columns
+            max_stage_length = max(len(stage) for stage in target_options)
+            lines = ["Valid targets", ""]
+            for stage, desc in target_options.items():
+                # Format the line with a fixed tab stop
+                line = f"{stage.ljust(max_stage_length + 4)}{desc}"
+                wrapped_line = textwrap.fill(line, width=terminal_width, subsequent_indent=" " * (max_stage_length + 4))
+                lines.append(wrapped_line)
+            lines += ["", "If multiple targets are passed, show information about each one in order.", ""]
+            print("\n".join(lines))
+            parser.exit()
+
+    show_parser.add_argument(
+        "target",
+        default=["system"],
+        nargs="*",
+        help="What to show information about. Defaults to showing information about the running system. See --list-targets for more information.",
+    )
+    show_parser.add_argument(
+        "--list-targets",
+        nargs=0,
+        action=TargetHelpAction,
+        help="List the available targets for the 'show' subcommand",
+    )
 
     # neuralupgrade download
-    download_parser = subparsers.add_parser(
-        "download", parents=[overrides_parser, repository_parser, verify_parser], help="Download updates"
-    )
+    download_parser = subparsers.add_parser("download", help="Download updates")
     download_parser.add_argument(
         "--version", default="latest", help="Version of the update to download, default: %(default)s"
     )
@@ -173,11 +213,7 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     )
 
     # neuralupgrade apply
-    apply_parser = subparsers.add_parser(
-        "apply",
-        parents=[overrides_parser, verify_parser],
-        help="Apply psyopsOS or EFI system partition updates",
-    )
+    apply_parser = subparsers.add_parser("apply", help="Apply psyopsOS or EFI system partition updates")
     apply_parser.add_argument(
         "type", nargs="+", choices=["a", "b", "nonbooted", "efisys"], help="The type of update to apply"
     )
@@ -197,9 +233,7 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     )
 
     # neuralupgrade set-default
-    set_default_parser = subparsers.add_parser(
-        "set-default", parents=[overrides_parser], help="Set the default boot label in the grubusb config"
-    )
+    set_default_parser = subparsers.add_parser("set-default", help="Set the default boot label in the grubusb config")
     set_default_parser.add_argument("label", help="The label to set as the default boot label")
 
     return parser
@@ -227,10 +261,27 @@ def main_implementation(*arguments):
     )
 
     if parsed.subcommand == "show":
-        if parsed.minisig:
-            metadata = parse_psyopsOS_minisig_trusted_comment(file=parsed.minisig)
-        else:
-            metadata = show_booted(filesystems)
+        metadata = {}
+        for target in parsed.target:
+            if target == "system":
+                metadata["system"] = show_booted(filesystems)
+            elif target == "latest":
+                os_result = download_update_signature(parsed.repository, parsed.psyopsOS_filename_format, "latest")
+                esp_result = download_update_signature(parsed.repository, parsed.psyopsESP_filename_format, "latest")
+                metadata[os_result.url] = os_result.unverified_metadata
+                metadata[esp_result.url] = esp_result.unverified_metadata
+            else:
+                if not target.endswith(".minisig"):
+                    target += ".minisig"
+                if os.path.exists(target):
+                    target_path = os.path.abspath(target)
+                    metadata[target_path] = parse_trusted_comment(sigfile=target_path)
+                else:
+                    try:
+                        target_sig = download_repository_file(parsed.repository, target)
+                        metadata[target] = parse_trusted_comment(sigcontents=target_sig)
+                    except Exception:
+                        parser.error(f"Target {target} does not exist")
         pprint.pprint(metadata, sort_dicts=False)
 
     elif parsed.subcommand == "download":

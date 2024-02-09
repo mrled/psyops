@@ -3,10 +3,10 @@ import os
 import shutil
 import subprocess
 import threading
+import traceback
 from typing import Optional
 
 from neuralupgrade import logger
-
 from neuralupgrade.coginitivedefects import MultiError
 from neuralupgrade.filesystems import Filesystem, Filesystems, Mount, sides
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
@@ -22,8 +22,14 @@ def minisign_verify(file: str, pubkey: Optional[str] = None) -> None:
         raise Exception(f"minisign returned non-zero exit code {result.returncode}")
 
 
-def parse_psyopsOS_minisig_trusted_comment(comment: Optional[str] = None, file: Optional[str] = None) -> dict:
-    """Parse a trusted comment from a psyopsOS minisig
+def parse_trusted_comment(
+    comment: Optional[str] = None, sigcontents: Optional[str] = None, sigfile: Optional[str] = None
+) -> dict:
+    """Parse a trusted comment from a psyopsOS minisig.
+
+    Can provide just the comment,
+    the contents of the minisig file,
+    or the path to the minisig file.
 
     Example file contents:
 
@@ -31,8 +37,6 @@ def parse_psyopsOS_minisig_trusted_comment(comment: Optional[str] = None, file: 
         RURFlbvwaqbpRv1RGZk6b0TkCUmJZvNRKVqfyveYOicg3g1FR6EUmvwkPGwB8yFJ+m9l/Al6sixSOAUVQDwwsfs23Coa9xEHBwI=
         trusted comment: type=psyopsOS filename=psyopsOS.grubusb.os.20240129-155151.tar version=20240129-155151 kernel=6.1.75-0-lts alpine=3.18
         nISvkyfCnUI6Xjgr0vz+g4VbymHJh8rvPAHKncAm5sXVT9HMyQV5+HhgvMP3NLaRKSCng6VAYkIufXYkCmobCQ==
-
-    Can accept either just the "trusted comment: " line, or a path to the minisig file.
 
     Returns a dict of key=value pairs, like:
 
@@ -43,25 +47,35 @@ def parse_psyopsOS_minisig_trusted_comment(comment: Optional[str] = None, file: 
             "kernel": "6.1.75-0-lts",
             "alpine": "3.18",
         }
+
+    Note that we do NOT verify the signature! This is just a parser.
     """
-    if comment and file:
-        raise ValueError("Cannot specify both comment and file")
-    if not comment and not file:
-        raise ValueError("Must specify either comment or file")
+    trusted_comment_prefix = "trusted comment: "
+    argcount = sum([1 for x in [comment, sigcontents, sigfile] if x])
+    if argcount != 1:
+        raise ValueError(
+            f"Must specify exactly one of comment, sigcontents, or sigfile; got {comment}, {sigcontents}, {sigfile}"
+        )
+    if sigfile:
+        sigcontents = open(sigfile).read()
+        if not sigcontents:
+            raise ValueError(f"Empty file {sigfile}")
+    if sigcontents:
+        for line in sigcontents.splitlines():
+            if line.startswith(trusted_comment_prefix):
+                comment = line
+                break
+        else:
+            raise ValueError("No trusted comment in minisig contents")
+    logger.debug(f"Parsing trusted comment: {comment}")
+    trusted_comment = comment[len(trusted_comment_prefix) - 1 :]
 
-    prefix = "trusted comment: "
-    if file:
-        with open(file) as f:
-            for line in f.readlines():
-                if line.startswith(prefix):
-                    return parse_psyopsOS_minisig_trusted_comment(comment=line)
-        raise ValueError(f"Could not find trusted comment in {file}")
-
-    if not comment.startswith(prefix):
-        raise ValueError(f"Invalid trusted comment: {comment}")
-
-    # parse all the key=value pairs in the trusted comment
-    metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in comment[len(prefix) :].split()]}
+    # Trusted comment fields should be a space-separated list of key=value pairs.
+    # Some old versions also included a value that wasn't a key=value pair.
+    # Just ignore that if it's there.
+    # metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
+    kvs = [x.split("=") for x in trusted_comment.split() if "=" in x]
+    metadata = {kv[0]: kv[1] for kv in kvs}
     return metadata
 
 
@@ -76,22 +90,22 @@ def parse_psyopsOS_grub_info_comment(comment: Optional[str] = None, file: Option
 
     Can accept either just the "# neuralupgrade-info: " line, or a path to the grub.cfg file.
     """
-    if comment and file:
-        raise ValueError("Cannot specify both comment and file")
-    if not comment and not file:
-        raise ValueError("Must specify either comment or file")
+    argcount = sum([1 for x in [comment, file] if x])
+    if argcount != 1:
+        raise ValueError("Must specify exactly one of comment or file; got {comment}, {file}")
 
     prefix = "# neuralupgrade-info: "
     if file:
         with open(file) as f:
             for line in f.readlines():
                 if line.startswith(prefix):
-                    return parse_psyopsOS_grub_info_comment(comment=line)
-        raise ValueError(f"Could not find trusted comment in {file}")
+                    comment = line
+                    break
+            else:
+                raise ValueError(f"Could not find trusted comment in {file}")
 
-    comment = comment or ""  # Make the fucking linter happy; we know this is not None here but whatever
     if not comment.startswith(prefix):
-        raise ValueError(f"Invalid trusted comment: {comment}")
+        raise ValueError(f"Invalid grub info comment: {comment}")
 
     # parse all the key=value pairs in the trusted comment
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in comment[len(prefix) :].split()]}
@@ -123,25 +137,25 @@ def show_booted(filesystems: Filesystems) -> dict:
 
     def _get_os_tc(label: str):
         with filesystems.bylabel(label).mount(writable=False) as mountpoint:
+            minisig_path = os.path.join(mountpoint, "psyopsOS.grubusb.os.tar.minisig")
             try:
-                info = parse_psyopsOS_minisig_trusted_comment(
-                    file=os.path.join(mountpoint, "psyopsOS.grubusb.os.tar.minisig")
-                )
+                info = parse_trusted_comment(sigfile=minisig_path)
             except FileNotFoundError:
-                info = {"error": "missing minisig"}
+                info = {f"error": "missing minisig at {minisig_path}"}
             except Exception as exc:
-                efisys_info = {"error": str(exc)}
+                info = {"error": str(exc), "minisig_path": minisig_path, "traceback": traceback.format_exc()}
         result[label] = {**result[label], **info}
 
     def _get_grub_info():
         with filesystems.efisys.mount(writable=False) as mountpoint:
+            grub_cfg_path = os.path.join(mountpoint, "grub", "grub.cfg")
             try:
-                efisys_info = parse_psyopsOS_grub_info_comment(file=os.path.join(mountpoint, "grub", "grub.cfg"))
+                info = parse_psyopsOS_grub_info_comment(file=grub_cfg_path)
             except FileNotFoundError:
-                efisys_info = {"error": "missing grub.cfg"}
+                info = {"error": f"missing grub.cfg at {grub_cfg_path}"}
             except Exception as exc:
-                efisys_info = {"error": str(exc)}
-        result["efisys"] = {**result["efisys"], **efisys_info}
+                info = {"error": str(exc), "grub_cfg_path": grub_cfg_path, "traceback": traceback.format_exc()}
+        result["efisys"] = {**result["efisys"], **info}
 
     nonbooted_thread = threading.Thread(target=_get_os_tc, args=(booted,))
     nonbooted_thread.start()

@@ -1,9 +1,64 @@
+from dataclasses import dataclass
 import os
 
 import requests
 
 from neuralupgrade import logger
-from neuralupgrade.osupdates import parse_psyopsOS_minisig_trusted_comment, minisign_verify
+from neuralupgrade.osupdates import minisign_verify, parse_trusted_comment
+
+
+def is_folder(path: str) -> bool:
+    """Check if a path is a folder by checking if it ends with a slash.
+
+    Rely on the user and/or logic in cmd.py
+    to append a / if the path must be folder and a / isn't present.
+
+    This has to work even for paths that don't exist yet.
+    """
+    return path.endswith("/")
+
+
+def download_repository_file(repository_url: str, filename: str) -> str:
+    """Download a repository file and return its contents
+
+    Not suitable for large files which should be streamed.
+    """
+    url = f"{repository_url}/{filename}"
+    logger.debug(f"Downloading file from {url}")
+    response = requests.get(url)
+    response.raise_for_status()
+    text_content = response.text
+    logger.debug(f"Item retrieved from {url}: {response.text}")
+    return text_content
+
+
+@dataclass
+class DownloadedSignatureResult:
+    url: str
+    text: str
+    unverified_metadata: dict
+
+
+def download_update_signature(repository_url: str, filename_format: str, version: str) -> DownloadedSignatureResult:
+    """Download a psyopsOS update signature
+
+    The signature isn't verified here --
+    that only happens when the update is downloaded.
+
+    Return a DownloadedSignatureResult.
+    """
+    minisig_filename = filename_format.format(version=version) + ".minisig"
+    minisig_url = f"{repository_url}/{minisig_filename}"
+
+    logger.debug(f"Downloading update minisig from {minisig_url}")
+    response = requests.get(minisig_url)
+    response.raise_for_status()
+    text_content = response.text
+    logger.debug(f"Update minisig retrieved from {minisig_url}: {response.text}")
+    unverified_metadata = parse_trusted_comment(sigcontents=text_content)
+    logger.debug(f"Parsed UNVERIFIED metadata from minisig: {unverified_metadata}")
+
+    return DownloadedSignatureResult(minisig_url, text_content, unverified_metadata)
 
 
 def download_update(
@@ -18,45 +73,27 @@ def download_update(
     download that from the repo,
     and finally verify that the signature matches the tarball.
     """
-    minisig_filename = filename_format.format(version=version) + ".minisig"
-    minisig_url = f"{repository_url}/{minisig_filename}"
-    output_is_dir = output.endswith("/")
-    if output_is_dir:
-        os.makedirs(output, exist_ok=True)
-        minisig_local_path = f"{output}{minisig_filename}"
-    else:
-        os.makedirs(os.path.dirname(output), exist_ok=True)
-        minisig_local_path = output + ".minisig"
 
-    logger.debug(f"Downloading update minisig from {minisig_url} to {minisig_local_path}")
-    with requests.get(minisig_url, stream=True) as response:
-        response.raise_for_status()
-        with open(minisig_local_path, "wb") as file:
-            for chunk in response.iter_content(chunk_size=8192):
-                if not chunk:
-                    continue
-                file.write(chunk)
-    logger.debug(f"Update minisig downloaded to {minisig_local_path}")
+    downloaded = download_update_signature(repository_url, filename_format, version, output)
 
-    unverified_metadata = parse_psyopsOS_minisig_trusted_comment(file=minisig_local_path)
-    logger.debug(f"Parsed UNVERIFIED metadata from minisig: {unverified_metadata}")
-
-    update_filename = unverified_metadata["filename"]
+    update_filename = downloaded.unverified_metadata["filename"]
     update_url = f"{repository_url}/{update_filename}"
 
-    if output_is_dir:
+    if is_folder(output):
         update_local_path = f"{output}{update_filename}"
-        if unverified_metadata["filename"] + ".minisig" != minisig_filename:
-            # If the output is a directory,
-            # and the minisig filename doesn't match the metadata, rename it to match.
-            # This might happen if the minisig was downloaded as "latest" version.
-            old_minisig_filename = minisig_filename
-            minisig_filename = unverified_metadata["filename"] + ".minisig"
-            logger.debug(f"Renaming minisig file to match metadata: {old_minisig_filename} -> {minisig_filename}")
-            os.rename(minisig_local_path, f"{output}{minisig_filename}")
+        # If the output is a directory,
+        # and the tarball filename is different from the minisig filename,
+        # which might happen if the minisig was downloaded as "latest" version,
+        # the minisig file shoudl always be saved with its tarball's filename + .minisig.
+        minisig_filename = downloaded.unverified_metadata["filename"] + ".minisig"
+        minisig_filepath = f"{output}{minisig_filename}"
     else:
-        # If the output is a file, that file represents the update tarball.
+        # If the output is a file, that file represents the update tarball,
+        # and the minisig file should be saved with the same name + .minisig.
         update_local_path = output
+        minisig_filepath = os.path.basename(output) + ".minisig"
+    with open(minisig_filepath, "w") as file:
+        file.write(downloaded.signature_text)
 
     logger.debug(f"Downloading update from {update_url} to {update_local_path}")
     with requests.get(update_url, stream=True) as response:
