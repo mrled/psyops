@@ -102,16 +102,27 @@ from neuralupgrade.cmd import get_argparse_help_string, getparser
 cog.outl(get_argparse_help_string("neuralupgrade", getparser(prog="neuralupgrade")))
 ]]]-->
 > neuralupgrade --help
-usage: neuralupgrade [-h] [--debug] [--verbose]
-                     {show,download,apply,set-default} ...
+usage: neuralupgrade [-h] [--debug] [--verbose] [--no-verify] [--pubkey PUBKEY]
+                     [--efisys-dev EFISYS_DEV]
+                     [--efisys-mountpoint EFISYS_MOUNTPOINT]
+                     [--efisys-label EFISYS_LABEL] [--a-dev A_DEV]
+                     [--a-mountpoint A_MOUNTPOINT] [--a-label A_LABEL]
+                     [--b-dev B_DEV] [--b-mountpoint B_MOUNTPOINT]
+                     [--b-label B_LABEL] [--update-tmpdir UPDATE_TMPDIR]
+                     [--repository REPOSITORY]
+                     [--psyopsOS-filename-format PSYOPSOS_FILENAME_FORMAT]
+                     [--psyopsESP-filename-format PSYOPSESP_FILENAME_FORMAT]
+                     {show,download,check,apply,set-default} ...
 
 Update psyopsOS boot media
 
 positional arguments:
-  {show,download,apply,set-default}
+  {show,download,check,apply,set-default}
                         Subcommand to run
-    show                Show information about boot media
+    show                Show information about the running system and/or
+                        updates. By default shows running system information.
     download            Download updates
+    check               Check whether the running system is up to date
     apply               Apply psyopsOS or EFI system partition updates
     set-default         Set the default boot label in the grubusb config
 
@@ -120,18 +131,12 @@ options:
   --debug, -d           Drop into pdb on exception
   --verbose, -v         Verbose logging
 
-________________________________________________________________________
+Verification options:
+  --no-verify           Skip verification of the ostar tarball
+  --pubkey PUBKEY       Public key to use for verification (default:
+                        /etc/psyopsOS/minisign.pubkey)
 
-> neuralupgrade show --help
-usage: neuralupgrade show [-h] [--efisys-dev EFISYS_DEV]
-                          [--efisys-mountpoint EFISYS_MOUNTPOINT]
-                          [--efisys-label EFISYS_LABEL] [--a-dev A_DEV]
-                          [--a-mountpoint A_MOUNTPOINT] [--a-label A_LABEL]
-                          [--b-dev B_DEV] [--b-mountpoint B_MOUNTPOINT]
-                          [--b-label B_LABEL] [--minisig MINISIG]
-
-options:
-  -h, --help            show this help message and exit
+Device/mountpoint override options:
   --efisys-dev EFISYS_DEV
                         Override device for EFI system partition (found by label
                         by default)
@@ -151,52 +156,10 @@ options:
                         Override mountpoint for B side (found by label in fstab
                         by default)
   --b-label B_LABEL     Override label for B side, default: psyopsOS-B
-  --minisig MINISIG     Show information from the minisig file of a specific
-                        ostar tarball
+  --update-tmpdir UPDATE_TMPDIR
+                        Temporary directory for update downloads
 
-________________________________________________________________________
-
-> neuralupgrade download --help
-usage: neuralupgrade download [-h] [--efisys-dev EFISYS_DEV]
-                              [--efisys-mountpoint EFISYS_MOUNTPOINT]
-                              [--efisys-label EFISYS_LABEL] [--a-dev A_DEV]
-                              [--a-mountpoint A_MOUNTPOINT] [--a-label A_LABEL]
-                              [--b-dev B_DEV] [--b-mountpoint B_MOUNTPOINT]
-                              [--b-label B_LABEL] [--repository REPOSITORY]
-                              [--psyopsOS-filename-format PSYOPSOS_FILENAME_FORMAT]
-                              [--psyopsESP-filename-format PSYOPSESP_FILENAME_FORMAT]
-                              [--no-verify] [--pubkey PUBKEY]
-                              [--version VERSION]
-                              [--type {psyopsOS,psyopsESP} [{psyopsOS,psyopsESP} ...]]
-                              output
-
-positional arguments:
-  output                Where to download update(s). If it ends in a slash,
-                        treated as a directory and download the default filename
-                        of the update. If multiple types are passed, this must
-                        be a directory.
-
-options:
-  -h, --help            show this help message and exit
-  --efisys-dev EFISYS_DEV
-                        Override device for EFI system partition (found by label
-                        by default)
-  --efisys-mountpoint EFISYS_MOUNTPOINT
-                        Override mountpoint for EFI system partition (found by
-                        label in fstab by default)
-  --efisys-label EFISYS_LABEL
-                        Override label for EFI system partition, default:
-                        PSYOPSOSEFI
-  --a-dev A_DEV         Override device for A side (found by label by default)
-  --a-mountpoint A_MOUNTPOINT
-                        Override mountpoint for A side (found by label in fstab
-                        by default)
-  --a-label A_LABEL     Override label for A side, default: psyopsOS-A
-  --b-dev B_DEV         Override device for B side (found by label by default)
-  --b-mountpoint B_MOUNTPOINT
-                        Override mountpoint for B side (found by label in fstab
-                        by default)
-  --b-label B_LABEL     Override label for B side, default: psyopsOS-B
+Repository options:
   --repository REPOSITORY
                         URL for the psyopsOS update repository, default:
                         https://psyops.micahrl.com/os
@@ -208,97 +171,87 @@ options:
                         The format string for the versioned grubusb OS tarfile.
                         Used as the base for the filename in S3, and also of the
                         signature file.
-  --no-verify           Skip verification of the ostar tarball
-  --pubkey PUBKEY       Public key to use for verification (default:
-                        /etc/psyopsOS/minisign.pubkey)
+
+________________________________________________________________________
+
+> neuralupgrade show --help
+usage: neuralupgrade show [-h] [--list-targets] [target ...]
+
+positional arguments:
+  target          What to show information about. Defaults to showing
+                  information about the running system. See --list-targets for
+                  more information.
+
+options:
+  -h, --help      show this help message and exit
+  --list-targets  List the available targets for the 'show' subcommand
+
+________________________________________________________________________
+
+> neuralupgrade download --help
+usage: neuralupgrade download [-h] [--version VERSION]
+                              [--type {psyopsOS,psyopsESP} [{psyopsOS,psyopsESP} ...]]
+                              output
+
+positional arguments:
+  output                Where to download update(s). If it ends in a slash,
+                        treated as a directory and download the default filename
+                        of the update. If multiple types are passed, this must
+                        be a directory.
+
+options:
+  -h, --help            show this help message and exit
   --version VERSION     Version of the update to download, default: latest
   --type {psyopsOS,psyopsESP} [{psyopsOS,psyopsESP} ...]
                         The type of update to download
 
 ________________________________________________________________________
 
+> neuralupgrade check --help
+usage: neuralupgrade check [-h] [--version VERSION]
+                           [--target {a,b,nonbooted,efisys} [{a,b,nonbooted,efisys} ...]]
+
+options:
+  -h, --help            show this help message and exit
+  --version VERSION     Version of the update to check, default: latest
+  --target {a,b,nonbooted,efisys} [{a,b,nonbooted,efisys} ...]
+                        The target filesystem(s) to check
+
+________________________________________________________________________
+
 > neuralupgrade apply --help
-usage: neuralupgrade apply [-h] [--efisys-dev EFISYS_DEV]
-                           [--efisys-mountpoint EFISYS_MOUNTPOINT]
-                           [--efisys-label EFISYS_LABEL] [--a-dev A_DEV]
-                           [--a-mountpoint A_MOUNTPOINT] [--a-label A_LABEL]
-                           [--b-dev B_DEV] [--b-mountpoint B_MOUNTPOINT]
-                           [--b-label B_LABEL] [--no-verify] [--pubkey PUBKEY]
-                           [--default-boot-label DEFAULT_BOOT_LABEL]
-                           [--ostar OSTAR] [--no-grubusb] [--esptar ESPTAR]
+usage: neuralupgrade apply [-h] [--default-boot-label DEFAULT_BOOT_LABEL]
+                           [--no-grubusb]
+                           [--os-tar OS_TAR | --os-version OS_VERSION]
+                           [--esp-tar ESP_TAR | --esp-version ESP_VERSION]
                            {a,b,nonbooted,efisys} [{a,b,nonbooted,efisys} ...]
 
 positional arguments:
   {a,b,nonbooted,efisys}
-                        The type of update to apply
+                        The target(s) to apply updates to
 
 options:
   -h, --help            show this help message and exit
-  --efisys-dev EFISYS_DEV
-                        Override device for EFI system partition (found by label
-                        by default)
-  --efisys-mountpoint EFISYS_MOUNTPOINT
-                        Override mountpoint for EFI system partition (found by
-                        label in fstab by default)
-  --efisys-label EFISYS_LABEL
-                        Override label for EFI system partition, default:
-                        PSYOPSOSEFI
-  --a-dev A_DEV         Override device for A side (found by label by default)
-  --a-mountpoint A_MOUNTPOINT
-                        Override mountpoint for A side (found by label in fstab
-                        by default)
-  --a-label A_LABEL     Override label for A side, default: psyopsOS-A
-  --b-dev B_DEV         Override device for B side (found by label by default)
-  --b-mountpoint B_MOUNTPOINT
-                        Override mountpoint for B side (found by label in fstab
-                        by default)
-  --b-label B_LABEL     Override label for B side, default: psyopsOS-B
-  --no-verify           Skip verification of the ostar tarball
-  --pubkey PUBKEY       Public key to use for verification (default:
-                        /etc/psyopsOS/minisign.pubkey)
   --default-boot-label DEFAULT_BOOT_LABEL
                         Default boot label if writing the grub.cfg file
-  --ostar OSTAR         The ostar tarball to apply; required for a/b/nonbooted
-  --no-grubusb          Skip updating the grubusb config (only applies when type
-                        includes nonbooted)
-  --esptar ESPTAR       A tarball to apply to the EFI System Partition when type
-                        includes efisys
+  --no-grubusb          Skip updating the grubusb config (only applies when
+                        target includes nonbooted)
+  --os-tar OS_TAR       A local path to a psyopsOS tarball to apply
+  --os-version OS_VERSION
+                        A version in the remote repository to apply
+  --esp-tar ESP_TAR     A local path to an efisys tarball to apply
+  --esp-version ESP_VERSION
+                        A version in the remote repository to apply
 
 ________________________________________________________________________
 
 > neuralupgrade set-default --help
-usage: neuralupgrade set-default [-h] [--efisys-dev EFISYS_DEV]
-                                 [--efisys-mountpoint EFISYS_MOUNTPOINT]
-                                 [--efisys-label EFISYS_LABEL] [--a-dev A_DEV]
-                                 [--a-mountpoint A_MOUNTPOINT]
-                                 [--a-label A_LABEL] [--b-dev B_DEV]
-                                 [--b-mountpoint B_MOUNTPOINT]
-                                 [--b-label B_LABEL]
-                                 label
+usage: neuralupgrade set-default [-h] label
 
 positional arguments:
-  label                 The label to set as the default boot label
+  label       The label to set as the default boot label
 
 options:
-  -h, --help            show this help message and exit
-  --efisys-dev EFISYS_DEV
-                        Override device for EFI system partition (found by label
-                        by default)
-  --efisys-mountpoint EFISYS_MOUNTPOINT
-                        Override mountpoint for EFI system partition (found by
-                        label in fstab by default)
-  --efisys-label EFISYS_LABEL
-                        Override label for EFI system partition, default:
-                        PSYOPSOSEFI
-  --a-dev A_DEV         Override device for A side (found by label by default)
-  --a-mountpoint A_MOUNTPOINT
-                        Override mountpoint for A side (found by label in fstab
-                        by default)
-  --a-label A_LABEL     Override label for A side, default: psyopsOS-A
-  --b-dev B_DEV         Override device for B side (found by label by default)
-  --b-mountpoint B_MOUNTPOINT
-                        Override mountpoint for B side (found by label in fstab
-                        by default)
-  --b-label B_LABEL     Override label for B side, default: psyopsOS-B
+  -h, --help  show this help message and exit
 
 <!--[[[end]]]-->
