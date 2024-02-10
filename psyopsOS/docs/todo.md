@@ -18,8 +18,6 @@ I might never get around to these because they're annoying
 
 ## Ideas
 
-* Updates
-    * Implement pulling updates from S3
 * Can I move blacksite APKBUILD to inside `psyopsOS/abuild/psyopsOS/progfiguration_blacksite`?
 * A role to control psyopsOS secrets from progfiguration
     * Secrets still have to be mounted by the psyopsOS postboot startup script
