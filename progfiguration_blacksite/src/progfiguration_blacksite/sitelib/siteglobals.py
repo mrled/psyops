@@ -15,7 +15,10 @@ psyops_ssh_pubkey = (
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS"
 )
 
+psyops_email = "psyops@micahrl.com"
+
 home_domain = Bunch(
     dns="home.micahrl.com",
     zone="Z32HSYI0AGMFV9",
+    aws_region="us-east-2",
 )

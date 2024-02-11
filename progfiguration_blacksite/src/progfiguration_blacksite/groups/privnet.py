@@ -56,25 +56,37 @@ group = dict(
         acmeupdater_base={
             "role_dir": Path("/psyopsos-data/roles/acmeupdater"),
             "sshkey": AgeSecretReference("acmeupdater_sshkey"),
-            # "acme_email": "psyops@micahrl.com",
         },
         acmeupdater_synology={
             "legodir": RoleCalculationReference("acmeupdater_base", "legodir"),
-            "aws_region": "us-east-2",
+            "aws_region": siteglobals.home_domain.aws_region,
             "aws_access_key_id": AgeSecretReference("acmeupdater_aws_access_key_id"),
-            "aws_secret_access_key": AgeSecretReference(
-                "acmeupdater_aws_secret_access_key"
-            ),
-            "aws_zone": "Z32HSYI0AGMFV9",
-            "acmedns_email": "psyops@micahrl.com",
+            "aws_secret_access_key": AgeSecretReference("acmeupdater_aws_secret_access_key"),
+            "aws_zone": siteglobals.home_domain.zone,
+            "acmedns_email": siteglobals.psyops_email,
             "domain": "chenoska.home.micahrl.com",
             "synology_user": "mrladmin",
             "synology_host": "chenoska.home.micahrl.com",
-            "acmeupdater_user": "acmeupdater",
+            "acmeupdater_user": RoleCalculationReference("acmeupdater_base", "username"),
+            "acmeupdater_sshid_name": RoleCalculationReference("acmeupdater_base", "sshid_name"),
             "capthook_hooksdir": RoleCalculationReference("capthook", "hooksdir"),
             "capthook_user": RoleCalculationReference("capthook", "username"),
             "synology_ssh_keyscan": "chenoska.home.micahrl.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJLuNmro3TGPnbqZfiAxWf5oVeCFHp/waQVZ/yod5rU8",
             "job_suffix": "chenoska",
+        },
+        acmeupdater_pikvm={
+            "legodir": RoleCalculationReference("acmeupdater_base", "legodir"),
+            "aws_region": siteglobals.home_domain.aws_region,
+            "aws_access_key_id": AgeSecretReference("acmeupdater_aws_access_key_id"),
+            "aws_secret_access_key": AgeSecretReference("acmeupdater_aws_secret_access_key"),
+            "aws_zone": siteglobals.home_domain.zone,
+            "acmedns_email": siteglobals.psyops_email,
+            "domain": "yalda.home.micahrl.com",
+            "acmeupdater_user": RoleCalculationReference("acmeupdater_base", "username"),
+            "acmeupdater_sshid_name": RoleCalculationReference("acmeupdater_base", "sshid_name"),
+            "capthook_hooksdir": RoleCalculationReference("capthook", "hooksdir"),
+            "capthook_user": RoleCalculationReference("capthook", "username"),
+            "pikvm_ssh_keyscan": "yalda.home.micahrl.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILoAe1SM0s3YWPE38dEYxA/x3JnzQI7WW5YqpIRBaI1y",
         },
         pullbackup={
             "sshkey": AgeSecretReference("pullbackup_sshkey"),
@@ -103,15 +115,11 @@ group = dict(
         homeswarm={
             "roledir": Path("/mnt/homeswarm"),
             "balancer_domain": "homeswarm-traefik.home.micahrl.com",
-            "acme_email": "psyops@micahrl.com",
-            "acme_aws_region": "us-east-2",
+            "acme_email": siteglobals.psyops_email,
+            "acme_aws_region": siteglobals.home_domain.aws_region,
             "acme_aws_zone": siteglobals.home_domain.zone,
-            "acme_aws_access_key_id": AgeSecretReference(
-                "acmeupdater_aws_access_key_id"
-            ),
-            "acme_aws_secret_access_key": AgeSecretReference(
-                "acmeupdater_aws_secret_access_key"
-            ),
+            "acme_aws_access_key_id": AgeSecretReference("acmeupdater_aws_access_key_id"),
+            "acme_aws_secret_access_key": AgeSecretReference("acmeupdater_aws_secret_access_key"),
             "whoami_domain": "homeswarm-whoami.home.micahrl.com",
             "archivebox_domain": "archivebox.home.micahrl.com",
             "zerossl_kid": AgeSecretReference("zerossl_kid"),

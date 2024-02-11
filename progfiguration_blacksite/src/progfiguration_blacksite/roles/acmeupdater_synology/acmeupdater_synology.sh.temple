@@ -1,7 +1,7 @@
 #!/bin/sh
-set -eu
+# -*- mode: sh -*-
 
-date="$(date +%Y%m%d)"
+set -eu
 
 export AWS_REGION="{$}aws_region"
 export AWS_ACCESS_KEY_ID="{$}aws_access_key_id"
@@ -14,13 +14,15 @@ email="{$}acmedns_email"
 domain="{$}domain"
 synouser="{$}synology_user"
 synohost="{$}synology_host"
+sshidname="{$}ssh_id_name"
 
+date="$(date +%Y%m%d)"
 sshhost="$synouser"@"$synohost"
 tmppath="/tmp/${date}-acme-update"
 tmpcrt="$tmppath/$domain.crt"
 tmpkey="$tmppath/$domain.key"
 tmpupdater="$tmppath/syno-tls-update.py"
-sshid="$HOME/.ssh/id_acmeupdater"
+sshid="$HOME/.ssh/$sshidname"
 
 echoexec() { echo "Running: $*"; $*; }
 
@@ -34,10 +36,6 @@ echoexec /usr/local/bin/acmeupdater_wraplego.py \
 crt="$(cat "$legodir"/certificates/"$domain".crt | base64)"
 key="$(cat "$legodir"/certificates/"$domain".key | base64)"
 updater="$(cat "$updaterscript" | base64)"
-
-# ssh -i "$sshid" "$sshhost" "mkdir -p $tmppath"
-# scp -i "$sshid" -r "$legodir"/certificates/"$domain".* "$sshhost":"$tmppath/"
-# scp -i "$sshid" -r "$updaterscript" $sshhost:$tmpupdater
 
 echo "$(cat <<ENDSSH
 
