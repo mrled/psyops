@@ -195,19 +195,19 @@ mkdir -p /mnt/grubusb/efisys
 # Install psyopsOS A/B and the EFI system partition
 "$neuralupgrade" apply --help
 "$neuralupgrade" \
-    "--verbose" \
     $neuralupgrade_args \
-    apply \
+    "--verbose" \
     --efisys-dev "$part_efisys" \
     --efisys-mountpoint /mnt/grubusb/efisys \
     --a-dev "$part_psya" \
     --a-mountpoint /mnt/grubusb/psya \
     --b-dev "$part_psyb" \
     --b-mountpoint /mnt/grubusb/psyb \
-    --default-boot-label "$label_psya" \
     --pubkey "$pubkey" \
-    --ostar "$psyostar" \
-    --esptar "$efisystar" \
+    apply \
+    --default-boot-label "$label_psya" \
+    --os-tar "$psyostar" \
+    --esp-tar "$efisystar" \
     a b efisys
 
 # Set up the secret partition
