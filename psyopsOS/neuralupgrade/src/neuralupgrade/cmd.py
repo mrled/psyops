@@ -361,9 +361,10 @@ def main_implementation(*arguments):
     parsed = parser.parse_args(arguments[1:])
 
     conhandler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    formatter = logging.Formatter("%(name)s %(levelname)s %(message)s")
     conhandler.setFormatter(formatter)
     logger.addHandler(conhandler)
+    logger.setLevel(logging.INFO)
     if parsed.verbose:
         logger.setLevel(logging.DEBUG)
     if parsed.debug:

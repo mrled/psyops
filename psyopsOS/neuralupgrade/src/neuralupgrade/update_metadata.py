@@ -11,9 +11,15 @@ def minisign_verify(file: str, pubkey: Optional[str] = None) -> None:
     pubkey_args = ["-p", pubkey] if pubkey else []
     cmd = ["minisign", "-V", *pubkey_args, "-m", file]
     logger.debug(f"Running minisign: {cmd}")
-    result = subprocess.run(cmd, text=True)
+    result = subprocess.run(cmd, text=True, capture_output=True)
+    stdout = result.stdout.strip()
+    stderr = result.stderr.strip()
+    logger.debug(f"minisign stdout: {stdout}")
+    logger.debug(f"minisign stderr: {stderr}")
     if result.returncode != 0:
-        raise Exception(f"minisign returned non-zero exit code {result.returncode}")
+        raise Exception(
+            f"minisign returned non-zero exit code {result.returncode} with stdout '{stdout}' and stderr '{stderr}'"
+        )
 
 
 def parse_trusted_comment(

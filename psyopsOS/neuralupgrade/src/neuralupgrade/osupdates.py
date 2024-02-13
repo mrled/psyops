@@ -110,6 +110,7 @@ def apply_ostar(tarball: str, osmount: str, verify: bool = True, verify_pubkey: 
         logger.debug(f"Copied {minisig} to {osmount}/psyopsOS.grubusb.os.tar.minisig")
     except FileNotFoundError:
         logger.warning(f"Could not find {minisig}, partition will not know its version")
+    subprocess.run(["sync"], check=True)
     logger.debug(f"Finished applying {tarball} to {osmount}")
 
 
@@ -133,7 +134,15 @@ def configure_efisys(
         "--removable",
     ]
     logger.debug(f"Running grub-install: {cmd}")
-    subprocess.run(cmd, check=True)
+    grub_result = subprocess.run(cmd, capture_output=True, text=True)
+    grub_stderr = grub_result.stderr.strip()
+    grub_stdout = grub_result.stdout.strip()
+    if grub_result.returncode != 0:
+        raise Exception(
+            f"grub-install returned non-zero exit code {grub_result.returncode} with stdout '{grub_stdout}' and stderr '{grub_stderr}'"
+        )
+    logger.debug(f"grub-install stdout: {grub_stdout}")
+    logger.debug(f"grub-install stderr: {grub_stderr}")
 
     if tarball:
         if verify:
@@ -161,6 +170,7 @@ def configure_efisys(
             logger.debug(f"Copied {minisig} to {efisys}/psyopsOS.grubusb.efisys.tar.minisig")
         except FileNotFoundError:
             logger.warning(f"Could not find {minisig}, partition will not know its version")
+    subprocess.run(["sync"], check=True)
 
     write_grub_cfg_carefully(filesystems, efisys, default_boot_label)
     logger.debug("Done configuring efisys")
@@ -208,11 +218,18 @@ def apply_updates(
             mounts[name] = (mountpoint, mount)
         return mounts[name]
 
+    def idempotently_umount(name: str):
+        if name in mounts:
+            _, mount = mounts.pop(name)
+            mount.__exit__(None, None, None)
+
     def unmount_all_returning_exceptions():
         exceptions = []
-        for _, mount in mounts.values():
+        # Make sure we aren't mutating the dict while iterating over it
+        mount_names = list(mounts.keys())
+        for name in mount_names:
             try:
-                mount.__exit__(None, None, None)
+                idempotently_umount(name)
             except Exception as exc:
                 exceptions.append(exc)
         return exceptions
@@ -266,6 +283,9 @@ def apply_updates(
             booted, nonbooted = sides(filesystems)
             nonbooted_mountpoint, _ = idempotently_mount("nonbooted", filesystems.bylabel(nonbooted), writable=True)
             apply_ostar(ostar, nonbooted_mountpoint, verify=verify, verify_pubkey=pubkey)
+            subprocess.run(["sync"], check=True)
+            idempotently_umount("nonbooted")
+            logger.info(f"Updated nonbooted side {nonbooted} with {ostar} at {nonbooted_mountpoint}")
             if not no_update_default_boot_label:
                 default_boot_label = nonbooted
 
@@ -274,6 +294,9 @@ def apply_updates(
                 targets.remove(side)
                 this_ab_mountpoint, _ = idempotently_mount(side, filesystems[side], writable=True)
                 apply_ostar(ostar, this_ab_mountpoint, verify=verify, verify_pubkey=pubkey)
+                subprocess.run(["sync"], check=True)
+                idempotently_umount(side)
+                logger.info(f"Updated {side} side with {ostar} at {this_ab_mountpoint}")
 
         if "efisys" in targets:
             targets.remove("efisys")
@@ -282,10 +305,14 @@ def apply_updates(
             configure_efisys(
                 filesystems, efisys_mountpoint, default_boot_label, tarball=esptar, verify=verify, verify_pubkey=pubkey
             )
+            subprocess.run(["sync"], check=True)
+            logger.info(f"Updated efisys with {esptar} at {efisys_mountpoint}")
         elif default_boot_label:
             # If we didn't handle updates to default_boot_label in grub.cfg above, do so here.
             efisys_mountpoint, _ = idempotently_mount("efisys", filesystems.efisys, writable=True)
             write_grub_cfg_carefully(filesystems, efisys_mountpoint, default_boot_label, updated=updated)
+            subprocess.run(["sync"], check=True)
+            logger.info(f"Updated GRUB default boot label to {default_boot_label} at {efisys_mountpoint}")
 
         if targets:
             raise Exception(f"Unknown targets argument(s): {targets}")

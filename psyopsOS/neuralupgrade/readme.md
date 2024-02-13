@@ -10,7 +10,6 @@ Used by both the `tk` build tool and on psyopsOS nodes.
 
 ```sh
 # Show
-# (Not yet implemented)
 #
 # Show latest version on deaddrop
 neuralupgrade show os --latest

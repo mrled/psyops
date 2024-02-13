@@ -5,6 +5,7 @@ import glob
 import json
 import os
 import shutil
+import subprocess
 from typing import Optional
 
 from neuralupgrade import logger
@@ -180,10 +181,12 @@ def write_grub_cfg_carefully(
     if os.path.exists(grubcfg):
         logger.debug(f"Backing up old {grubcfg} to {grubcfg_backup}")
         shutil.copy(grubcfg, grubcfg_backup)
+        subprocess.run(["sync"], check=True)
     else:
         logger.debug(f"No old {grubcfg} to back up")
     logger.debug(f"Moving new {tmpfile} to {grubcfg}")
     shutil.move(tmpfile, grubcfg)
+    subprocess.run(["sync"], check=True)
 
     oldfiles = glob.glob(os.path.join(mountpoint, "grub", "grub.cfg.old.*"))
     for idx, oldfile in enumerate(oldfiles):
@@ -198,3 +201,4 @@ def write_grub_cfg_carefully(
             os.remove(oldfile)
         else:
             logger.debug(f"Keeping {oldfile} because it's newer than {max_old_days} days")
+    subprocess.run(["sync"], check=True)
