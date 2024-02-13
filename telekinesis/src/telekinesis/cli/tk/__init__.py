@@ -286,8 +286,8 @@ def makeparser(prog=None):
         help="Run a predefined VM profile (a shortcut for running specific VMs like qreamsqueen which we use for testing psyopsOS)",
     )
 
-    profiles = {
-        "qreamsqueen": "Run the qreamsqueen VM. Requires that artifacts/psyopsOS.qreamsqueen.img has been created by running 'tk mkimage grubusb diskimg --node-secrets qreamsqueen'.",
+    vm_profiles = {
+        "qreamsqueen": "Run the qreamsqueen VM. Requires that artifacts/psyopsOS.qreamsqueen.img has been created by running 'tk mkimage grubusb --stages diskimg --node-secrets qreamsqueen'.",
     }
 
     class ProfilesHelpAction(argparse.Action):
@@ -298,9 +298,9 @@ def makeparser(prog=None):
 
         def __call__(self, parser, namespace, values, option_string=None):
             terminal_width = os.get_terminal_size().columns
-            max_profile_length = max(len(profile) for profile in tkconfig.vm_profiles)
+            max_profile_length = max(len(profile) for profile in vm_profiles)
             wrapped_text = "VM profiles:\n\n"
-            for profile, desc in tkconfig.vm_profiles.items():
+            for profile, desc in vm_profiles.items():
                 # Format the line with a fixed tab stop
                 line = f"{profile.ljust(max_profile_length + 4)}{desc}"
                 wrapped_line = textwrap.fill(
