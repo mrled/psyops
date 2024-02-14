@@ -459,12 +459,20 @@ def main_impl():
             if "mkinitpatch" in parsed.stages:
                 with init_patch.open("w") as f:
                     subprocess.run(["ls", "-larth"], cwd=initdir, check=True)
-                    subprocess.run(
+                    diffresult = subprocess.run(
                         ["diff", "-u", "initramfs-init.orig", "initramfs-init.patched.grubusb"],
                         cwd=initdir,
-                        check=True,
+                        check=False,
                         stdout=f,
                     )
+                    # Diff returns 0 if the files are the same, 1 if they are different, and >1 if there was an error
+                    if diffresult.returncode == 0:
+                        tklogger.debug(f"initramfs-init.patched.grubusb was the same as initramfs-init.orig")
+                    elif diffresult.returncode == 1:
+                        tklogger.debug(f"initramfs-init.patched.grubusb was different from initramfs-init.orig")
+                    else:
+                        tklogger.error(f"diff returned {diffresult.returncode}")
+                        sys.exit(1)
             if "applyinitpatch" in parsed.stages:
                 subprocess.run(
                     ["patch", "-o", "initramfs-init.patched.grubusb", "initramfs-init.orig", init_patch.as_posix()],
