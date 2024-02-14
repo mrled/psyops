@@ -208,7 +208,7 @@ apk add -p $squashroot --keys-dir $apk_keys_dir --repositories-file "$apk_repos_
 # Now that busybox is installed, we can chroot
 # Show us that we have a populated cache
 chroot $squashroot /bin/busybox ls -alF /var/cache/apk/
-# Install all the Alpine pacakges we want in the squashroot, and do run scripts
+# Install all the Alpine packages we want in the squashroot, and do run scripts
 chroot $squashroot /sbin/apk add ${apk_local_repo:+-X $apk_local_repo} $apk_packages
 
 # # squishsquash

@@ -32,7 +32,7 @@ tk mkimage grubusb --stages efisystar efisystar-dd ostar ostar-dd
 tk buildpkg neuralupgrade-apk &&
   tk mkimage --skip-build-apks grubusb --stages squashfs ostar efisystar
 
-# Rebuild certain pacakges, make OS tarballs, and upload everything to deaddrop
+# Rebuild certain packages, make OS tarballs, and upload everything to deaddrop
 tk buildpkg neuralupgrade-apk &&
   tk mkimage --skip-build-apks grubusb --stages squashfs kernel ostar ostar-dd efisystar efisystar-dd &&
   tk deaddrop forcepush
