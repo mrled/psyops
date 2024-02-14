@@ -317,7 +317,7 @@ def get_configured_docker_builder(
         apk_key_value=tkconfig.buildcontainer.get_signing_key(),
         apk_key_filename=tkconfig.buildcontainer.apk_key_filename,
         alpine_version=tkconfig.alpine_version,
-        docker_builder_dir=tkconfig.repopaths.build,
+        docker_builder_dir=tkconfig.repopaths.buildcontainer,
         docker_builder_tag_prefix=tkconfig.buildcontainer.dockertag_prefix,
         interactive=interactive,
         clean_abuild_workdir_docker_volume=cleandockervol,

@@ -40,7 +40,7 @@ class TelekinesisConfig:
             """The path to the psyopsOS aports scripts overlay directory on the host"""
             self.psyopsOS_base = root / "psyopsOS" / "psyopsOS-base"
             """The path to the psyopsOS-base package directory on the host"""
-            self.build = root / "psyopsOS" / "build"
+            self.buildcontainer = root / "psyopsOS" / "buildcontainer"
             """The path to the psyopsOS build directory on the host"""
             self.minisign_seckey = root / "psyopsOS" / "minisign.seckey"
             """The path to the minisign secret key on the host"""

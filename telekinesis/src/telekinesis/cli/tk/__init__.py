@@ -436,7 +436,7 @@ def main_impl():
             parser.error(f"Unknown deaddrop action: {parsed.deaddrop_action}")
     elif parsed.action == "builder":
         if parsed.builder_action == "build":
-            build_container(tkconfig.buildcontainer.dockertag, tkconfig.repopaths.build, parsed.rebuild)
+            build_container(tkconfig.buildcontainer.dockertag, tkconfig.repopaths.buildcontainer, parsed.rebuild)
         elif parsed.builder_action == "runcmd":
             with get_configured_docker_builder(
                 parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir

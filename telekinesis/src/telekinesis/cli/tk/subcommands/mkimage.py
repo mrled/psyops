@@ -25,10 +25,12 @@ def mkimage_prepare(
 ):
     """Do common setup for mkimage commands"""
 
-    aports.validate_alpine_version(tkconfig.repopaths.build, tkconfig.repopaths.aports, tkconfig.alpine_version)
+    aports.validate_alpine_version(
+        tkconfig.repopaths.buildcontainer, tkconfig.repopaths.aports, tkconfig.alpine_version
+    )
 
     # Make sure we have an up-to-date Docker builder
-    build_container(tkconfig.buildcontainer.dockertag, tkconfig.repopaths.build, rebuild)
+    build_container(tkconfig.buildcontainer.dockertag, tkconfig.repopaths.buildcontainer, rebuild)
 
     # Build the APKs that are also included in the ISO
     # Building them here makes sure that they are up-to-date
