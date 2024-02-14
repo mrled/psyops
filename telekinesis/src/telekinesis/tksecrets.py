@@ -1,25 +1,21 @@
-"""Secrets for telekinetic operations"""
+"""Secrets for telekinetic operations
+
+This expects a working gopass installation
+with the psyops password store already mounted to the 'psyops' alias.
+"""
 
 import shutil
 import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Tuple
 
 
-_op_psynet_cert_item = "psyopsOS_psynet_certificates"
-"""The 1Password item for the psynet certificates; must already exist in 1Password
-
-It should have a NODE.crt and a NODE.key field for each node in the psynet.
-ca.crt and ca.key are for the certificate authority.
-"""
-
-
-def getsecret(vault: str, item: str, field: str) -> str:
-    """Get a secret from 1Password"""
+def gopass_get(path: str, mount: str = "psyops/") -> str:
+    """Get a secret from psyops"""
+    fullpath = f"{mount}{path}"
     proc = subprocess.run(
-        ["op", "read", f"op://{vault}/{item}/{field}"],
+        ["gopass", "cat", fullpath],
         capture_output=True,
         check=True,
         text=True,
@@ -27,45 +23,16 @@ def getsecret(vault: str, item: str, field: str) -> str:
     return proc.stdout.strip()
 
 
-def psynet_get(host: str) -> Tuple[str, str]:
-    """Get a node from the psynet"""
-    result = subprocess.run(
-        ["op", "item", "get", _op_psynet_cert_item, "--fields", f"{host}.crt,{host}.key"],
-        capture_output=True,
-        check=True,
-    )
-    # stdout contains a string like '"<crt>","<key>"'
-    # note that the crt and key have quotes around them in the result, so we have to strip that
-    # crt and key have newlines in them, but that is ok
-    crt, key = result.stdout.decode().split(",")
-    return (crt.strip().strip('"'), key.strip().strip('"'))
-
-
-def psynet_set(host: str, crt: str | Path, key: str | Path) -> None:
-    """Set a node's cert and key for psynet (will overwrite if already exists)"""
-    if isinstance(crt, Path):
-        crt = crt.read_text()
-    if isinstance(key, Path):
-        key = key.read_text()
+def gopass_set(value: str | Path, path: str, mount: str = "psyops/") -> None:
+    """Set a secret in psyops"""
+    if isinstance(value, Path):
+        value = value.read_text()
+    fullpath = f"{mount}{path}"
     subprocess.run(
-        ["op", "item", "edit", _op_psynet_cert_item, f"{host}.crt[password]={crt}"],
+        ["gopass", "insert", "-f", fullpath],
+        input=value,
         check=True,
-    )
-    subprocess.run(
-        ["op", "item", "edit", _op_psynet_cert_item, f"{host}.key[password]={key}"],
-        check=True,
-    )
-
-
-def psynet_delete(host: str) -> None:
-    """Delete a node's cert and key for psynet"""
-    subprocess.run(
-        ["op", "item", "edit", _op_psynet_cert_item, f"{host}.crt[delete]"],
-        check=True,
-    )
-    subprocess.run(
-        ["op", "item", "edit", _op_psynet_cert_item, f"{host}.key[delete]"],
-        check=True,
+        text=True,
     )
 
 
@@ -85,7 +52,8 @@ def psynetca(directory: Path | None = None):
             directory = tempdir
         crtpath = directory / "ca.crt"
         keypath = directory / "ca.key"
-        crt, key = psynet_get("ca")
+        crt = gopass_get("psynet/ca.crt")
+        key = gopass_get("psynet/ca.key")
         with open(crtpath, "w") as f:
             f.write(crt)
         with open(keypath, "w") as f:

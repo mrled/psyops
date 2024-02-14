@@ -562,13 +562,15 @@ def main_impl():
             with tksecrets.psynetca(parsed.cadir) as cadir:
                 subprocess.run(parsed.command, cwd=cadir, check=True)
         elif parsed.psynet_action == "get":
-            crt, key = tksecrets.psynet_get(parsed.node)
+            crt = tksecrets.gopass_get(f"psynet/{parsed.node}.crt")
+            key = tksecrets.gopass_get(f"psynet/{parsed.node}.key")
             print(f"Certificate for {parsed.node}:")
             print(crt)
             print(f"Key for {parsed.node}:")
             print(key)
         elif parsed.psynet_action == "set":
-            tksecrets.psynet_set(parsed.node, parsed.crt, parsed.key)
+            tksecrets.gopass_set(parsed.crt, f"psynet/{parsed.node}.crt")
+            tksecrets.gopass_set(parsed.key, f"psynet/{parsed.node}.key")
         else:
             parser.error(f"Unknown psynet action: {parsed.psynet_action}")
     elif parsed.action == "signify":

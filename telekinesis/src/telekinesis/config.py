@@ -8,7 +8,7 @@ Secrets should be stored in 1Password, and accessed with the getsecret function.
 from pathlib import Path
 import pprint
 
-from telekinesis.tksecrets import getsecret
+from telekinesis.tksecrets import gopass_get
 
 
 class TelekinesisConfig:
@@ -61,10 +61,9 @@ class TelekinesisConfig:
 
         def get_credential(self) -> tuple[str, str]:
             """Get the AWS credentials from 1Password, and return them as a tuple of (username, password)"""
-            op_item = "AWS_IAM_user_com-micahrl-psyops-http-bucket-deployer"
             return (
-                getsecret("Personal", op_item, "username"),
-                getsecret("Personal", op_item, "password"),
+                gopass_get("psyopsOS/deaddrop.keyid"),
+                gopass_get("psyopsOS/deaddrop.secretkey"),
             )
 
     class TelekinesisBuildcontainerNode:
@@ -99,7 +98,7 @@ class TelekinesisConfig:
 
         def get_signing_key(self) -> str:
             """Get the signing key from 1Password"""
-            return getsecret("Personal", "psyopsOS_abuild_ssh_key", "notesPlain")
+            return gopass_get("psyopsOS/abuild.rsa.key")
 
     class TelekinesisConfigArtifactsNode:
         """Configuration for the artifacts node"""

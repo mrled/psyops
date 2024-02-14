@@ -4,14 +4,14 @@ import subprocess
 from typing import Union
 
 from telekinesis.config import tkconfig
-from telekinesis.tksecrets import getsecret
+from telekinesis.tksecrets import gopass_get
 
 
 def sign(files: Union[str, list[str]], trusted_comment: str = "", untrusted_comment: str = "") -> str:
     """Sign files with minisign."""
     if isinstance(files, str):
         files = [files]
-    mspassword = getsecret("Personal", "psyopsOS-minisign.seckey", "password")
+    mspassword = gopass_get("psyopsOS/minisign.seckey")
     cmd = ["minisign", "-S", "-s", tkconfig.repopaths.minisign_seckey]
     if trusted_comment:
         cmd += ["-t", trusted_comment]
