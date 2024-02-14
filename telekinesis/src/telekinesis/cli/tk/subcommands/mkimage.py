@@ -95,7 +95,16 @@ def mkimage_iso(
             print(f"{isofile}")
 
 
-def mkimage_grubusb_repositories(alpine_version: str) -> tuple[Path, Path]:
+def generate_apk_repositories_files(alpine_version: str) -> tuple[Path, Path]:
+    """Generate APK repositories files
+
+    The first file contains Alpine main/community,
+    tagged edge main/community/testing,
+    and the psyopsOS repository on deaddrop.
+    The second file contains only the psyopsOS repository on deaddrop.
+
+    Returns a tuple of paths to the two files.
+    """
     psyopsOS_repo = f"https://psyops.micahrl.com/apk/v{alpine_version}/psyopsOS"
     psyopsOS_apk_repositories = textwrap.dedent(
         f"""\
@@ -131,7 +140,7 @@ def mkimage_grubusb_kernel(
         dangerous_no_clean_tmp_dir,
     )
 
-    all_repos, psyopsOS_only_repo = mkimage_grubusb_repositories(alpine_version)
+    all_repos, psyopsOS_only_repo = generate_apk_repositories_files(alpine_version)
 
     with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
         # Add the local copy of the psyopsOS repository to the list of repositories in the container.
@@ -178,7 +187,7 @@ def mkimage_grubusb_squashfs(
         dangerous_no_clean_tmp_dir,
     )
 
-    all_repos, psyopsOS_only_repo = mkimage_grubusb_repositories(alpine_version)
+    all_repos, psyopsOS_only_repo = generate_apk_repositories_files(alpine_version)
 
     extra_required_packages = [
         # If this isn't present, setup-keyboard in 000-psyopsOS-postboot.start will hang waiting for user input forever.
