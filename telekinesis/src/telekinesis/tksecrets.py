@@ -36,6 +36,15 @@ def gopass_set(value: str | Path, path: str, mount: str = "psyops/") -> None:
     )
 
 
+def gopass_rm(path: str, mount: str = "psyops/") -> None:
+    """Remove a secret from psyops"""
+    fullpath = f"{mount}{path}"
+    subprocess.run(
+        ["gopass", "rm", fullpath],
+        check=True,
+    )
+
+
 @contextmanager
 def psynetca(directory: Path | None = None):
     """A context manager that yields a directory containing the psynet CA

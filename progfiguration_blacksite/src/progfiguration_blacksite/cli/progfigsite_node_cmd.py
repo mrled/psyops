@@ -8,7 +8,6 @@ This script isn't available when running from a zipapp.
 TODO: migrate this to telekinesis, and remove duplicated code like the psynetca context manager.
 """
 
-
 import argparse
 import os
 from pathlib import Path
@@ -23,7 +22,9 @@ from progfiguration.cli.util import idb_excepthook
 from progfiguration.cmd import magicrun
 
 import progfiguration_blacksite
-from progfiguration_blacksite.sitelib.controller import ctrlsec, nodemgmt
+from progfiguration_blacksite.sitelib.controller import nodemgmt
+
+from telekinesis import tksecrets
 
 
 def CIDRv4(s: str) -> str:
@@ -154,7 +155,7 @@ class NodeSecrets:
         age_keygen_result = magicrun(["age-keygen", "-o", nodefiles.agekey])
         age_keygen_err = age_keygen_result.stderr.read().strip()
         nodefiles._agepub = age_keygen_err.split(" ")[2]
-        ctrlsec.age_set(nodename, nodefiles.agekey)
+        tksecrets.gopass_set(nodefiles.agekey, f"progfiguration/nodeage/{nodename}.age")
 
         # SSH key generation
         magicrun(["ssh-keygen", "-q", "-f", nodefiles.sshhostkey, "-N", "", "-t", "ed25519"])
@@ -163,7 +164,7 @@ class NodeSecrets:
             nodefiles._sshhostprint = f.read().strip()
         # No need to keep this around, we regenerate it on boot
         ssh_host_pubkey.unlink()
-        ctrlsec.sshhost_set(nodename, nodefiles.sshhostkey)
+        tksecrets.gopass_set(nodefiles.sshhostkey, f"psyopsOS/sshhostkeys/{nodename}")
 
         # Nebula key generation
         magicrun(
@@ -183,7 +184,8 @@ class NodeSecrets:
             ],
             cwd=nebula_ca_directory,
         )
-        ctrlsec.psynet_set(nodename, nodefiles.nebulacrt, nodefiles.nebulakey)
+        tksecrets.gopass_set(nodefiles.nebulakey, f"psynet/{nodename}.key")
+        tksecrets.gopass_set(nodefiles.nebulacrt, f"psynet/{nodename}.crt")
 
         # TODO: Either handle minisign pubkey in this script, or remove minisign from the design.
         # I've never used it, but have thought it would be useful to be able to prove that somethins is signed by the controller without having to encrypt it separately for each node.
@@ -205,15 +207,18 @@ class NodeSecrets:
         nodefiles.mactab.open("w").write(f"psy0 {mac_address}\n")
 
         # Age key retrieval
-        nodefiles.agekey.open("w").write(ctrlsec.age_get(nodename))
+        node_age = tksecrets.gopass_get(f"progfiguration/nodeage/{nodename}.age")
+        nodefiles.agekey.open("w").write(node_age)
         nodefiles._agepub = nodemod.node.sitedata["age_pubkey"]
 
         # SSH key retrieval
-        nodefiles.sshhostkey.open("w").write(ctrlsec.sshhost_get(nodename))
+        node_ssh = tksecrets.gopass_get(f"psyopsOS/sshhostkeys/{nodename}")
+        nodefiles.sshhostkey.open("w").write(node_ssh)
         nodefiles._sshhostprint = nodemod.node.ssh_host_fingerprint
 
         # Nebula key retrieval
-        nebula_crt, nebula_key = ctrlsec.psynet_get(nodename)
+        nebula_crt = tksecrets.gopass_get(f"psynet/{nodename}.crt")
+        nebula_key = tksecrets.gopass_get(f"psynet/{nodename}.key")
         nodefiles.nebulacrt.open("w").write(nebula_crt)
         nodefiles.nebulakey.open("w").write(nebula_key)
 
@@ -381,15 +386,16 @@ def main():
         if nodemod_file:
             os.unlink(nodemod_file)
         try:
-            ctrlsec.psynet_delete(parsed.nodename)
+            tksecrets.gopass_rm(f"progfiguration/nodeage/{parsed.nodename}.age")
         except subprocess.CalledProcessError:
             print(f"No psynet secrets found for {parsed.nodename}.")
         try:
-            ctrlsec.age_delete(parsed.nodename)
+            tksecrets.gopass_rm(f"psyopsOS/sshhostkeys/{parsed.nodename}")
         except subprocess.CalledProcessError:
             print(f"No age secrets found for {parsed.nodename}.")
         try:
-            ctrlsec.sshhost_delete(parsed.nodename)
+            tksecrets.gopass_rm(f"psynet/{parsed.nodename}.crt")
+            tksecrets.gopass_rm(f"psynet/{parsed.nodename}.key")
         except subprocess.CalledProcessError:
             print(f"No ssh host secrets found for {parsed.nodename}.")
 
@@ -412,7 +418,7 @@ def main():
     if parsed.subcommand == "new":
         if check_node_exists(parsed.nodename) and not parsed.force:
             raise RuntimeError(f"Node {parsed.nodename} already exists, refusing to overwrite it.")
-        with tempfile.TemporaryDirectory() as nodesecdir, ctrlsec.psynetca() as psynetca:
+        with tempfile.TemporaryDirectory() as nodesecdir, tksecrets.psynetca() as psynetca:
             nodesec = NodeSecrets.new(
                 secroot=Path(nodesecdir),
                 nodename=parsed.nodename,

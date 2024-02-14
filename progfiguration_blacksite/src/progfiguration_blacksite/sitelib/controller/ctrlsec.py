@@ -1,12 +1,13 @@
 """Controller secrets management"""
 
-
 from contextlib import contextmanager
 import shutil
 import subprocess
 from pathlib import Path
 import tempfile
 from typing import Tuple
+
+from telekinesis import tksecrets
 
 
 _op_psynet_cert_item = "psyopsOS_psynet_certificates"
