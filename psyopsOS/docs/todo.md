@@ -1,7 +1,5 @@
 # Todo
 
-* Document the `telekinesis` / `tk` package.
-
 ## Chores
 
 I might never get around to these because they're annoying
@@ -15,6 +13,8 @@ I might never get around to these because they're annoying
 
 ## Ideas
 
+* Support Raspberry Pi 3 and greater, with GRUB and A/B updates
+* Support switching A/B sides with kexec in neuralupgrade
 * Can I move blacksite APKBUILD to inside `psyopsOS/abuild/psyopsOS/progfiguration_blacksite`?
 * A role to control psyopsOS secrets from progfiguration
     * Secrets still have to be mounted by the psyopsOS postboot startup script
