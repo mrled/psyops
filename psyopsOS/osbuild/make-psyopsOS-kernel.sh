@@ -277,7 +277,7 @@ modsig_path="$workdir"/$modimg.SIGN.RSA.${pubkey##*/}
 make_modloop "$modloop" "$modloopstage" "$modimg" "$modsig_path"
 
 # Make the initramfs
-patchedinit="$initdir"/initramfs-init.patched.grubusb
+patchedinit="$initdir"/initramfs-init.patched
 test -f "$outdir"/initramfs && rm "$outdir"/initramfs
 mkinitfs -s $modsig_path -i "$patchedinit" -q -b $initramroot -F "$features" -o "$outdir"/initramfs $kvers
 

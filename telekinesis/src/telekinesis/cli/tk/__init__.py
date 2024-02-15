@@ -185,8 +185,8 @@ def makeparser(prog=None):
     )
 
     grubusb_stages = {
-        "mkinitpatch": "Generate a patch by comparing a locally created/modified initramfs-init.patched.grubusb file (NOT in version control) to the upstream Alpine initramfs-init.orig file (in version control), and saving the resulting patch to initramfs-init.psyopsOS.grubusb.patch (in version control). This is only necessary when making changes to our patch, and is not part of a normal image build. Basically do this: diff -u initramfs-init.orig initramfs-init.patched.grubusb > initramfs-init.psyopsOS.grubusb.patch",
-        "applyinitpatch": "Generate initramfs-init.patched.grubusb by appling our patch to the upstream file. This happens during every normal build. Basically do this: patch -o initramfs-init.patched.grubusb initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch",
+        "mkinitpatch": "Generate a patch by comparing a locally created/modified initramfs-init.patched file (NOT in version control) to the upstream Alpine initramfs-init.orig file (in version control), and saving the resulting patch to initramfs-init.psyopsOS.grubusb.patch (in version control). This is only necessary when making changes to our patch, and is not part of a normal image build. Basically do this: diff -u initramfs-init.orig initramfs-init.patched > initramfs-init.psyopsOS.grubusb.patch",
+        "applyinitpatch": "Generate initramfs-init.patched by appling our patch to the upstream file. This happens during every normal build. Basically do this: patch -o initramfs-init.patched initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch",
         "kernel": "Build the kernel/initramfs/etc.",
         "squashfs": "Build the squashfs root filesystem.",
         "efisystar": "Create a tarball that contains extra EFI system partition files - not GRUB which is installed by neuralupgrade, but optional files like memtest.",
@@ -459,22 +459,22 @@ def main_impl():
             if "mkinitpatch" in parsed.stages:
                 with init_patch.open("w") as f:
                     diffresult = subprocess.run(
-                        ["diff", "-u", "initramfs-init.orig", "initramfs-init.patched.grubusb"],
+                        ["diff", "-u", "initramfs-init.orig", "initramfs-init.patched"],
                         cwd=initdir,
                         check=False,
                         stdout=f,
                     )
                     # Diff returns 0 if the files are the same, 1 if they are different, and >1 if there was an error
                     if diffresult.returncode == 0:
-                        tklogger.debug(f"initramfs-init.patched.grubusb was the same as initramfs-init.orig")
+                        tklogger.debug(f"initramfs-init.patched was the same as initramfs-init.orig")
                     elif diffresult.returncode == 1:
-                        tklogger.debug(f"initramfs-init.patched.grubusb was different from initramfs-init.orig")
+                        tklogger.debug(f"initramfs-init.patched was different from initramfs-init.orig")
                     else:
                         tklogger.error(f"diff returned {diffresult.returncode}")
                         sys.exit(1)
             if "applyinitpatch" in parsed.stages:
                 subprocess.run(
-                    ["patch", "-o", "initramfs-init.patched.grubusb", "initramfs-init.orig", init_patch.as_posix()],
+                    ["patch", "-o", "initramfs-init.patched", "initramfs-init.orig", init_patch.as_posix()],
                     cwd=initdir,
                     check=True,
                 )
