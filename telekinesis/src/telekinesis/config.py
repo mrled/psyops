@@ -7,18 +7,8 @@ Secrets should be stored in 1Password, and accessed with the getsecret function.
 
 from pathlib import Path
 import pprint
-import subprocess
 
-
-def getsecret(vault: str, item: str, field: str) -> str:
-    """Get a secret from 1Password"""
-    proc = subprocess.run(
-        ["op", "read", f"op://{vault}/{item}/{field}"],
-        capture_output=True,
-        check=True,
-        text=True,
-    )
-    return proc.stdout.strip()
+from telekinesis.tksecrets import getsecret
 
 
 class TelekinesisConfig:

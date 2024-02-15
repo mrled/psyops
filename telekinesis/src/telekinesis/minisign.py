@@ -1,10 +1,10 @@
 """Minisign signing and verification."""
 
-
 import subprocess
 from typing import Union
 
-from telekinesis.config import getsecret, tkconfig
+from telekinesis.config import tkconfig
+from telekinesis.tksecrets import getsecret
 
 
 def sign(files: Union[str, list[str]], trusted_comment: str = "", untrusted_comment: str = "") -> str:

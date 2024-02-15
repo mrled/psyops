@@ -16,6 +16,17 @@ ca.crt and ca.key are for the certificate authority.
 """
 
 
+def getsecret(vault: str, item: str, field: str) -> str:
+    """Get a secret from 1Password"""
+    proc = subprocess.run(
+        ["op", "read", f"op://{vault}/{item}/{field}"],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+    return proc.stdout.strip()
+
+
 def psynet_get(host: str) -> Tuple[str, str]:
     """Get a node from the psynet"""
     result = subprocess.run(
