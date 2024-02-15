@@ -52,17 +52,17 @@ We use minisign's trusted comments feature for a few key=value pairs.
 Here's an example from a recent local build:
 
 ```text
-> cat artifacts/psyopsOS.grubusb.os.tar.minisig
+> cat artifacts/psyopsOS.tar.minisig
 untrusted comment: signature from minisign secret key
 RURFlbvwaqbpRhKh+8bfF/6FT1eyY0TTzStsYXjDM6w6VbVrmXvi+rWDM01apVH0BHphsTFNrE15r8LbmZuCe9BcWBm3AQBPiwQ=
-trusted comment: psyopsOS filename=psyopsOS.grubusb.os.20240202-212117.tar version=20240202-212117 kernel=6.1.75-0-lts alpine=3.18
+trusted comment: psyopsOS filename=psyopsOS.20240202-212117.tar version=20240202-212117 kernel=6.1.75-0-lts alpine=3.18
 HxZ9wysLaUZZJTgxQKtwlBMZIRtTaH4Q6Y5zyVOhwVaSMPmDZk2IInPm3uZH+2gSdxuGkiRF1CV68y7w/5ahCg==
 ```
 
-Note that the signature file is `psyopsOS.grubusb.os.tar.minisig`,
-and indeed it was created from a psyopsOS tarball called `psyopsOS.grubusb.os.tar`,
+Note that the signature file is `psyopsOS.tar.minisig`,
+and indeed it was created from a psyopsOS tarball called `psyopsOS.tar`,
 but the trusted comment includes
-`filename=psyopsOS.grubusb.os.20240202-212117.tar`.
+`filename=psyopsOS.20240202-212117.tar`.
 That `filename` value is something we embed ourselves, and is totally meaningless to minisign.
 (Actually, minisign generates a default trusted command with a `filename`,
 but minisign doesn't use that during verification.)
@@ -79,7 +79,7 @@ More interesting is how it will help with clients pulliing updates over HTTP.
 `neuralupgrade` doesn't yet support HTTP update repositories,
 but it will soon.
 When it does, it will request a file like `https://psyops.micahrl.com/os/latest.minisig`.
-This will point to a file with an actual name like `psyopsOS.grubusb.os.20240202-212117.tar.minisig`,
+This will point to a file with an actual name like `psyopsOS.20240202-212117.tar.minisig`,
 but it'll use S3 Object Redirect so a separate HTTP request is not required.
 We don't need to have a `latest.tar`,
 because the minisig contains the filename.

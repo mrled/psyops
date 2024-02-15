@@ -9,9 +9,6 @@ I might never get around to these because they're annoying
 * Rename `efisys` to `psyopsESP`; ESP is EFI System Partition and Extra Sensory Perception
 * Rename `progfiguration_blacksite` to something shorter;
   I chose this because it's unambiguous, but it's too long
-* Rename anything with `grubusb` in it to something else --
-  not sure what yet, but not all architectures use GRUB and not all installations are on USB,
-  maybe `abmode` or something like that.
 * Rename `psyops-secret` label to something else
 * Rename `/mnt/psyops-secrets/mount` to a different path that is less cumbersome,
   and make sure it matches the label in plurality.

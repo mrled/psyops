@@ -18,7 +18,7 @@ neuralupgrade show os --version $SOME_VERSION
 # Show a/b/efisys partition information, versions, etc
 neuralupgrade show booted
 # Show version of some downloaded update
-neuralupgrade show --minisig /path/to/some/psyopsOS.grubusb.os.tar.minisig
+neuralupgrade show --minisig /path/to/some/psyopsOS.tar.minisig
 
 # Download
 #
@@ -51,17 +51,13 @@ neuralupgrade apply efisys --version $SOME_VERSION
 neuralupgrade apply nonbooted --force
 # Apply some downloaded update to non-booted A/B partition
 # First reads the minisign signature and fails if the tarfile doesn't verify
-neuralupgrade apply nonbooted --ostar /path/to/some/psyopsOS.grubusb.os.tar
+neuralupgrade apply nonbooted --ostar /path/to/some/psyopsOS.tar
 # Ignore the signature (perhaps if the image was just built locally)
-neuralupgrade apply nonbooted --ostar /path/to/some/psyopsOS.grubusb.os.tar --no-verify
+neuralupgrade apply nonbooted --ostar /path/to/some/psyopsOS.tar --no-verify
 # When writing to a disk image or other unusual scenarios, you may need to pass explicit A/B sides and device names
 neuralupgrade apply a --efisys-dev /dev/loop0p1 --a-dev /dev/loop0p3
 # Write updates to a a new disk or disk image
-neuralupgrade apply a b efisys --efisys-dev /dev/loop0p1 --a-dev /dev/loop0p3 --b-dev /dev/loop0p4 --ostar /path/to/psyopsOS.grubusb.os.tar --efisys-tar /path/to/efisys.tar
-# Apply an update being passed over stdin from e.g. a trusted laptop
-# This streams the update over the network, without saving a copy in temp storage first
-# (Not yet implemented)
-cat ./psyopsOS.grubusb.os.tar | ssh root@NODE neuralupgrade apply nonbooted --no-verify
+neuralupgrade apply a b efisys --efisys-dev /dev/loop0p1 --a-dev /dev/loop0p3 --b-dev /dev/loop0p4 --os-tar /path/to/psyopsOS.tar --esp-tar /path/to/psyopsESP.tar
 ```
 
 ## Packaging and installing
