@@ -1,7 +1,7 @@
 # NEURALUPGRADE
 
 A Python package responsible for
-applying psyopsOS grubusb OS / EFI upgrades.
+applying psyopsOS OS / EFI upgrades.
 Used by both the `tk` build tool and on psyopsOS nodes.
 
 (My third attempt of this so far.)
