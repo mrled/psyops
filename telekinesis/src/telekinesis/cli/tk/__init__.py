@@ -35,6 +35,38 @@ from telekinesis.cli.tk.subcommands.vm import vm_grubusb_img, vm_grubusb_os
 from telekinesis.config import tkconfig
 
 
+class ListKeyValuePairsAndExit(argparse.Action):
+    """An argparse action that lists key-value pairs and exits.
+
+    Nicely format each key and its value, wrap the text to terminal width, and indent any value that is longer than one line.
+    """
+
+    def __init__(
+        self, option_strings, dest, kvpairs: dict[str, str], kvpair_help_prefix="", kvpair_help_suffix="", **kwargs
+    ):
+        self.kvpairs = kvpairs
+        self.kvpair_help_prefix = kvpair_help_prefix
+        self.kvpair_help_suffix = kvpair_help_suffix
+        super(ListKeyValuePairsAndExit, self).__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        print(self._help_text)
+        parser.exit()
+
+    @property
+    def _help_text(self) -> str:
+        terminal_width = os.get_terminal_size().columns
+        max_key_len = max(len(key) for key in self.kvpairs)
+        wrapped_text = self.kvpair_help_prefix + "\n\n"
+        for key, value in self.kvpairs.items():
+            # Format the line with a fixed tab stop
+            line = f"{key.ljust(max_key_len + 4)}{value}"
+            wrapped_line = textwrap.fill(line, width=terminal_width, subsequent_indent=" " * (max_key_len + 4))
+            wrapped_text += wrapped_line + "\n"
+        wrapped_text += self.kvpair_help_suffix
+        return wrapped_text
+
+
 def deployiso(host):
     """Deploy the ISO image to a remote host"""
     isofile = tkconfig.deaddrop.isopath
@@ -197,24 +229,6 @@ def makeparser(prog=None):
         "diskimg": "Build the disk image from the kernel/squashfs. If --node-secrets is passed, the secrets tarball is included in the image. Otherwise, the image is node-agnostic and contains an empty secrets volume.",
     }
 
-    class StagesHelpAction(argparse.Action):
-        """An argparse action that prints the stages help text and exits
-
-        Nicely format each stage and its description, wrap the text to terminal width, and indent any description that is longer than one line.
-        """
-
-        def __call__(self, parser, namespace, values, option_string=None):
-            terminal_width = os.get_terminal_size().columns
-            max_stage_length = max(len(stage) for stage in grubusb_stages)
-            wrapped_text = "grubusb stages:\n\n"
-            for stage, desc in grubusb_stages.items():
-                # Format the line with a fixed tab stop
-                line = f"{stage.ljust(max_stage_length + 4)}{desc}"
-                wrapped_line = textwrap.fill(line, width=terminal_width, subsequent_indent=" " * (max_stage_length + 4))
-                wrapped_text += wrapped_line + "\n"
-            print(wrapped_text)
-            parser.exit()
-
     sub_mkimage_sub_grubusb.add_argument(
         "--stages",
         nargs="+",
@@ -224,7 +238,10 @@ def makeparser(prog=None):
     )
     sub_mkimage_sub_grubusb.add_argument(
         "--list-stages",
-        action=StagesHelpAction,
+        action=ListKeyValuePairsAndExit,
+        kvpairs=grubusb_stages,
+        kvpair_help_prefix="grubusb stages:",
+        kvpair_help_suffix="",
         nargs=0,
         help="Show all possible stages and their descriptions.",
     )
@@ -290,26 +307,6 @@ def makeparser(prog=None):
         "qreamsqueen": "Run the qreamsqueen VM. Requires that artifacts/psyopsOS.qreamsqueen.img has been created by running 'tk mkimage grubusb --stages diskimg --node-secrets qreamsqueen'.",
     }
 
-    class ProfilesHelpAction(argparse.Action):
-        """An argparse action that prints the profiles help text and exits
-
-        Nicely format each profile and its description, wrap the text to terminal width, and indent any description that is longer than one line.
-        """
-
-        def __call__(self, parser, namespace, values, option_string=None):
-            terminal_width = os.get_terminal_size().columns
-            max_profile_length = max(len(profile) for profile in vm_profiles)
-            wrapped_text = "VM profiles:\n\n"
-            for profile, desc in vm_profiles.items():
-                # Format the line with a fixed tab stop
-                line = f"{profile.ljust(max_profile_length + 4)}{desc}"
-                wrapped_line = textwrap.fill(
-                    line, width=terminal_width, subsequent_indent=" " * (max_profile_length + 4)
-                )
-                wrapped_text += wrapped_line + "\n"
-            print(wrapped_text)
-            parser.exit()
-
     sub_vm_sub_profile.add_argument(
         "profile",
         choices=["qreamsqueen"],
@@ -317,7 +314,10 @@ def makeparser(prog=None):
     )
     sub_vm_sub_profile.add_argument(
         "--list-profiles",
-        action=ProfilesHelpAction,
+        action=ListKeyValuePairsAndExit,
+        kvpairs=vm_profiles,
+        kvpair_help_prefix="VM profiles:",
+        kvpair_help_suffix="",
         nargs=0,
         help="Show all possible profiles and their descriptions.",
     )
