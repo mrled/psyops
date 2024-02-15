@@ -4,7 +4,7 @@ psyopsOS can apply A/B operating system updates.
 The work has been done for x86_64;
 I think something similar should work for Raspberry Pi but I haven't looked deeply into it.
 
-Images are built with `tk mkimage grubusb`.
+Images are built with `tk mkimage diskimg`.
 This calls `neuralupgrade apply ...` behind the scenes.
 It creates a disk image with four labeled partitions:
 
