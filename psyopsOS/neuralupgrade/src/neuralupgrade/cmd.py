@@ -243,12 +243,12 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     )
     repository_group.add_argument(
         "--psyopsOS-filename-format",
-        default="psyopsOS.grubusb.os.{version}.tar",
+        default="psyopsOS.{version}.tar",
         help="The format string for the versioned psyopsESP tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
     repository_group.add_argument(
         "--psyopsESP-filename-format",
-        default="psyopsOS.grubusb.efisys.{version}.tar",
+        default="psyopsESP.{version}.tar",
         help="The format string for the versioned psyopsOS tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
 
@@ -261,7 +261,7 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     target_options = {
         "Literal string 'system'": "Show information about the running system",
         "Literal string 'latest'": "Show information about the latest version of psyopsOS and psyopsESP in the repository",
-        "Repository filename": "Show information about an update with this filename in the repository, like 'psyopsOS.grubusb.efisys.20240208-210341.tar'. If the filename doesn't end with .minisig, append it. If the update doesn't exist, raise an error.",
+        "Repository filename": "Show information about an update with this filename in the repository, like 'psyopsOS.20240208-210341.tar'. If the filename doesn't end with .minisig, append it. If the update doesn't exist, raise an error.",
         "Local path": "Show information about an update at this path, like '/path/to/update.tar.minisig'. If the filename doesn't end with .minisig, append it. If the update doesn't exist, raise an error. Local paths are checked before the repository.",
     }
 

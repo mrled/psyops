@@ -35,14 +35,14 @@ def parse_trusted_comment(
 
         untrusted comment: signature from minisign secret key
         RURFlbvwaqbpRv1RGZk6b0TkCUmJZvNRKVqfyveYOicg3g1FR6EUmvwkPGwB8yFJ+m9l/Al6sixSOAUVQDwwsfs23Coa9xEHBwI=
-        trusted comment: type=psyopsOS filename=psyopsOS.grubusb.os.20240129-155151.tar version=20240129-155151 kernel=6.1.75-0-lts alpine=3.18
+        trusted comment: type=psyopsOS filename=psyopsOS.20240129-155151.tar version=20240129-155151 kernel=6.1.75-0-lts alpine=3.18
         nISvkyfCnUI6Xjgr0vz+g4VbymHJh8rvPAHKncAm5sXVT9HMyQV5+HhgvMP3NLaRKSCng6VAYkIufXYkCmobCQ==
 
     Returns a dict of key=value pairs, like:
 
         {
             "type": "psyopsOS",
-            "filename": "psyopsOS.grubusb.os.20240129-155151.tar",
+            "filename": "psyopsOS.20240129-155151.tar",
             "version": "20240129-155151",
             "kernel": "6.1.75-0-lts",
             "alpine": "3.18",

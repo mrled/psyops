@@ -41,7 +41,7 @@ def get_system_versions(filesystems: Filesystems) -> dict:
 
     def _get_os_tc(label: str):
         with filesystems.bylabel(label).mount(writable=False) as mountpoint:
-            minisig_path = os.path.join(mountpoint, "psyopsOS.grubusb.os.tar.minisig")
+            minisig_path = os.path.join(mountpoint, "psyopsOS.tar.minisig")
             try:
                 info = parse_trusted_comment(sigfile=minisig_path)
             except FileNotFoundError:
@@ -52,7 +52,7 @@ def get_system_versions(filesystems: Filesystems) -> dict:
 
     def _get_esp_info():
         with filesystems.efisys.mount(writable=False) as mountpoint:
-            minisig_path = os.path.join(mountpoint, "psyopsOS.grubusb.efisys.tar.minisig")
+            minisig_path = os.path.join(mountpoint, "psyopsESP.tar.minisig")
             try:
                 trusted_metadata = parse_trusted_comment(sigfile=minisig_path)
             except FileNotFoundError:
@@ -106,8 +106,8 @@ def apply_ostar(tarball: str, osmount: str, verify: bool = True, verify_pubkey: 
     subprocess.run(cmd, check=True)
     minisig = tarball + ".minisig"
     try:
-        shutil.copy(minisig, os.path.join(osmount, "psyopsOS.grubusb.os.tar.minisig"))
-        logger.debug(f"Copied {minisig} to {osmount}/psyopsOS.grubusb.os.tar.minisig")
+        shutil.copy(minisig, os.path.join(osmount, "psyopsOS.tar.minisig"))
+        logger.debug(f"Copied {minisig} to {osmount}/psyopsOS.tar.minisig")
     except FileNotFoundError:
         logger.warning(f"Could not find {minisig}, partition will not know its version")
     subprocess.run(["sync"], check=True)
@@ -166,8 +166,8 @@ def configure_efisys(
         logger.debug(f"Finished extracting {tarball} to {efisys}")
         minisig = tarball + ".minisig"
         try:
-            shutil.copy(minisig, os.path.join(efisys, "psyopsOS.grubusb.efisys.tar.minisig"))
-            logger.debug(f"Copied {minisig} to {efisys}/psyopsOS.grubusb.efisys.tar.minisig")
+            shutil.copy(minisig, os.path.join(efisys, "psyopsESP.tar.minisig"))
+            logger.debug(f"Copied {minisig} to {efisys}/psyopsESP.tar.minisig")
         except FileNotFoundError:
             logger.warning(f"Could not find {minisig}, partition will not know its version")
     subprocess.run(["sync"], check=True)

@@ -140,25 +140,25 @@ class TelekinesisConfig:
             self.uefishell_extracted_bin = self.ovmf_extracted_path / "efi/boot/bootx64.efi"
             """The path to the extracted UEFI shell binary from the image inside ISO"""
 
-            self.osdir_path = artroot / "psyopsOS.grubusb.os"
+            self.osdir_path = artroot / "psyopsOS.dir"
             """The path to the OS directory.
             Contains a single psyopsOS version, including
             kernel, initramfs, System.map, config, modloop, and squashfs files,
             and a boot/ directory which may contain DTB files if appropriate for the platform.
             """
-            self.ostar_path = artroot / "psyopsOS.grubusb.os.tar"
+            self.ostar_path = artroot / "psyopsOS.tar"
             """The path to the OS tarfile.
             The osdir_path in a tarball.
             """
-            self.ostar_versioned_fmt = "psyopsOS.grubusb.os.{version}.tar"
+            self.ostar_versioned_fmt = "psyopsOS.{version}.tar"
             """The format string for the versioned OS tarfile.
             Used as the base for the filename in S3, and also of the signature file.
             """
-            self.esptar_path = artroot / "psyopsOS.grubusb.efisys.tar"
+            self.esptar_path = artroot / "psyopsESP.tar"
             """The path to the EFI system partition tarball"""
-            self.esptar_manifest = artroot / "psyopsOS.grubusb.efisys.manifest.json"
+            self.esptar_manifest = artroot / "psyopsESP.manifest.json"
             """The path to the JSON manifest for the EFI system partition tarball"""
-            self.esptar_versioned_fmt = "psyopsOS.grubusb.efisys.{version}.tar"
+            self.esptar_versioned_fmt = "psyopsESP.{version}.tar"
             """The format string for the versioned EFI system partition tarfile.
             Used as the base for the filename in S3, and also of the signature file.
             """
