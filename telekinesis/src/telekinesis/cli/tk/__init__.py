@@ -215,8 +215,8 @@ def makeparser(prog=None):
     )
 
     diskimg_stages = {
-        "mkinitpatch": "Generate a patch by comparing a locally created/modified initramfs-init.patched file (NOT in version control) to the upstream Alpine initramfs-init.orig file (in version control), and saving the resulting patch to initramfs-init.psyopsOS.grubusb.patch (in version control). This is only necessary when making changes to our patch, and is not part of a normal image build. Basically do this: diff -u initramfs-init.orig initramfs-init.patched > initramfs-init.psyopsOS.grubusb.patch",
-        "applyinitpatch": "Generate initramfs-init.patched by appling our patch to the upstream file. This happens during every normal build. Basically do this: patch -o initramfs-init.patched initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch",
+        "mkinitpatch": "Generate a patch by comparing a locally created/modified initramfs-init.patched file (NOT in version control) to the upstream Alpine initramfs-init.orig file (in version control), and saving the resulting patch to initramfs-init.patch (in version control). This is only necessary when making changes to our patch, and is not part of a normal image build. Basically do this: diff -u initramfs-init.orig initramfs-init.patched > initramfs-init.patch",
+        "applyinitpatch": "Generate initramfs-init.patched by appling our patch to the upstream file. This happens during every normal build. Basically do this: patch -o initramfs-init.patched initramfs-init.orig initramfs-init.patch",
         "kernel": "Build the kernel/initramfs/etc.",
         "squashfs": "Build the squashfs root filesystem.",
         "efisystar": "Create a tarball that contains extra EFI system partition files - not GRUB which is installed by neuralupgrade, but optional files like memtest.",
@@ -453,7 +453,7 @@ def main_impl():
             )
         elif parsed.mkimage_action == "diskimg":
             initdir = tkconfig.repopaths.root / "psyopsOS" / "osbuild" / "initramfs-init"
-            init_patch = initdir / "initramfs-init.psyopsOS.grubusb.patch"
+            init_patch = initdir / "initramfs-init.patch"
             if "mkinitpatch" in parsed.stages:
                 with init_patch.open("w") as f:
                     diffresult = subprocess.run(
