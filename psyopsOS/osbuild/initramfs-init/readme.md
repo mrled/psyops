@@ -10,5 +10,5 @@ To make the patch:
 3. `diff -u initramfs-init.orig initramfs-init.patched.wip > initramfs-init.psyopsOS.patch`
 
 Don't commit `initramfs-init.new`.
-When building a grubusb image, it runs
+When building a new image, it runs
 `patch -o initramfs-init.patched initramfs-init.orig initramfs-init.psyopsOS.patch`
