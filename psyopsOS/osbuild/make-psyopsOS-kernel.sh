@@ -278,7 +278,6 @@ make_modloop "$modloop" "$modloopstage" "$modimg" "$modsig_path"
 
 # Make the initramfs
 patchedinit="$initdir"/initramfs-init.patched.grubusb
-patch -o "$patchedinit" "$initdir"/initramfs-init.orig "$initdir"/initramfs-init.psyopsOS.grubusb.patch
 test -f "$outdir"/initramfs && rm "$outdir"/initramfs
 mkinitfs -s $modsig_path -i "$patchedinit" -q -b $initramroot -F "$features" -o "$outdir"/initramfs $kvers
 
