@@ -127,14 +127,14 @@ def generate_apk_repositories_files(alpine_version: str) -> tuple[Path, Path]:
     return (all_repos, psyopsOS_only_repo)
 
 
-def mkimage_grubusb_kernel(
+def make_kernel(
     skip_build_apks: bool = False,
     rebuild: bool = False,
     interactive: bool = False,
     cleandockervol: bool = False,
     dangerous_no_clean_tmp_dir: bool = False,
 ):
-    """Make a psyopsOS kernel, initramfs, etc for grubusb images"""
+    """Make a psyopsOS kernel, initramfs, etc for disk images (not ISOs)"""
     alpine_version, apkreponame, builder_tag = mkimage_prepare(
         skip_build_apks,
         rebuild,
@@ -173,14 +173,14 @@ def mkimage_grubusb_kernel(
         subprocess.run(["ls", "-larth", tkconfig.artifacts.osdir_path], check=True)
 
 
-def mkimage_grubusb_squashfs(
+def make_squashfs(
     skip_build_apks: bool = False,
     rebuild: bool = False,
     interactive: bool = False,
     cleandockervol: bool = False,
     dangerous_no_clean_tmp_dir: bool = False,
 ):
-    """Make a psyopsOS squashfs root filesystem for grubusb images"""
+    """Make a psyopsOS squashfs root filesystem for disk images (not ISOs)"""
     builddate = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     alpine_version, apkreponame, builder_tag = mkimage_prepare(
         skip_build_apks,
@@ -241,7 +241,7 @@ def mkimage_grubusb_squashfs(
         subprocess.run(["ls", "-larth", tkconfig.artifacts.osdir_path], check=True)
 
 
-def mkimage_grubusb_diskimg(
+def make_grub_diskimg(
     out_filename: str,
     interactive: bool = False,
     cleandockervol: bool = False,
@@ -280,8 +280,8 @@ def mkimage_grubusb_diskimg(
         builder.run_docker(in_container_build_cmd)
 
 
-def mkimage_grubusb_ostar():
-    """Create the OS tarball for grubusb images"""
+def make_ostar():
+    """Create the OS tarball"""
     build_date = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     tarball_file = tkconfig.artifacts.ostar_versioned_fmt.format(version=build_date)
 
@@ -316,8 +316,8 @@ def mkimage_grubusb_ostar():
     minisign.sign(tkconfig.artifacts.ostar_path.as_posix(), trusted_comment=trusted_comment)
 
 
-def mkimage_grubusb_ostar_copy_to_deaddrop():
-    """Copy the grubusb OS tarball and signature to the deaddrop, making sure they have correct names"""
+def copy_ostar_to_deaddrop():
+    """Copy the OS tarball and signature to the deaddrop, making sure they have correct names"""
     trusted_comment = minisign.verify(tkconfig.artifacts.ostar_path)
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
     os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
@@ -334,8 +334,8 @@ def mkimage_grubusb_ostar_copy_to_deaddrop():
     latest_sig.symlink_to(f"{metadata['filename']}.minisig")
 
 
-def mkimage_grubusb_efisystar():
-    """Make an EFI system partition tarball for grubusb images
+def make_esptar():
+    """Make an EFI system partition tarball
 
     The EFI system partition is installed by neuralupgrade,
     which handles installing GRUB and creating its config file.
@@ -376,8 +376,8 @@ def mkimage_grubusb_efisystar():
     minisign.sign(tkconfig.artifacts.esptar_path.as_posix(), trusted_comment=trusted_comment)
 
 
-def mkimage_grubusb_efisystar_copy_to_deaddrop():
-    """Copy the grubusb EFI tarball and signature to the deaddrop, making sure they have correct names"""
+def copy_esptar_to_deaddrop():
+    """Copy the EFI tarball and signature to the deaddrop, making sure they have correct names"""
     trusted_comment = minisign.verify(tkconfig.artifacts.esptar_path)
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
     os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)

@@ -19,17 +19,17 @@ from telekinesis.cli.tk.subcommands.buildpkg import (
     build_neuralupgrade_pyz,
 )
 from telekinesis.cli.tk.subcommands.mkimage import (
-    mkimage_grubusb_diskimg,
-    mkimage_grubusb_efisystar,
-    mkimage_grubusb_efisystar_copy_to_deaddrop,
-    mkimage_grubusb_kernel,
-    mkimage_grubusb_squashfs,
+    make_grub_diskimg,
+    make_esptar,
+    copy_esptar_to_deaddrop,
+    make_kernel,
+    make_squashfs,
     mkimage_iso,
-    mkimage_grubusb_ostar,
-    mkimage_grubusb_ostar_copy_to_deaddrop,
+    make_ostar,
+    copy_ostar_to_deaddrop,
 )
 from telekinesis.cli.tk.subcommands.requisites import get_ovmf, get_memtest
-from telekinesis.cli.tk.subcommands.vm import vm_grubusb_img, vm_grubusb_os
+from telekinesis.cli.tk.subcommands.vm import vm_diskimg, vm_osdir
 from telekinesis.config import tkconfig
 
 
@@ -477,7 +477,7 @@ def main_impl():
                     check=True,
                 )
             if "kernel" in parsed.stages:
-                mkimage_grubusb_kernel(
+                make_kernel(
                     skip_build_apks=parsed.skip_build_apks,
                     rebuild=parsed.rebuild,
                     interactive=parsed.interactive,
@@ -485,7 +485,7 @@ def main_impl():
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
             if "squashfs" in parsed.stages:
-                mkimage_grubusb_squashfs(
+                make_squashfs(
                     skip_build_apks=parsed.skip_build_apks,
                     rebuild=parsed.rebuild,
                     interactive=parsed.interactive,
@@ -493,13 +493,13 @@ def main_impl():
                     dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
                 )
             if "ostar" in parsed.stages:
-                mkimage_grubusb_ostar()
+                make_ostar()
             if "ostar-dd" in parsed.stages:
-                mkimage_grubusb_ostar_copy_to_deaddrop()
+                copy_ostar_to_deaddrop()
             if "efisystar" in parsed.stages:
-                mkimage_grubusb_efisystar()
+                make_esptar()
             if "efisystar-dd" in parsed.stages:
-                mkimage_grubusb_efisystar_copy_to_deaddrop()
+                copy_esptar_to_deaddrop()
             if "sectar" in parsed.stages and parsed.node_secrets:
                 subprocess.run(
                     [
@@ -522,19 +522,19 @@ def main_impl():
                 if parsed.node_secrets:
                     mgd_kwargs["out_filename"] = tkconfig.artifacts.node_image(parsed.node_secrets).name
                     mgd_kwargs["secrets_tarball"] = tkconfig.artifacts.node_secrets(parsed.node_secrets)
-                mkimage_grubusb_diskimg(**mgd_kwargs)
+                make_grub_diskimg(**mgd_kwargs)
         else:
             parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
     elif parsed.action == "vm":
         if parsed.vm_action == "diskimg":
             get_ovmf()
-            vm_grubusb_img(parsed.grubusb_image, parsed.macaddr)
+            vm_diskimg(parsed.grubusb_image, parsed.macaddr)
         elif parsed.vm_action == "osdir":
-            vm_grubusb_os()
+            vm_osdir()
         elif parsed.vm_action == "profile":
             if parsed.profile == "qreamsqueen":
                 get_ovmf()
-                vm_grubusb_img(tkconfig.artifacts.node_image("qreamsqueen"), "ac:ed:de:ad:be:ef")
+                vm_diskimg(tkconfig.artifacts.node_image("qreamsqueen"), "ac:ed:de:ad:be:ef")
             else:
                 parser.error(f"Unknown profile: {parsed.profile}")
         else:

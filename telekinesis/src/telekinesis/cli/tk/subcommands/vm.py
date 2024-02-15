@@ -52,8 +52,8 @@ class MungedInterrupts:
         print("Ctrl+C and Ctrl+Z restored to normal behavior")
 
 
-def vm_grubusb_img(image: Path, macaddr: str):
-    """Run the grubusb image in qemu"""
+def vm_diskimg(image: Path, macaddr: str):
+    """Run the disk image in qemu"""
     qemu_cmd = [
         "qemu-system-x86_64",
         "-nic",
@@ -75,8 +75,8 @@ def vm_grubusb_img(image: Path, macaddr: str):
         subprocess.run(qemu_cmd, check=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
 
 
-def vm_grubusb_os():
-    """Run the grubusb OS directory in qemu"""
+def vm_osdir():
+    """Run the OS directory in qemu"""
     squashfs = tkconfig.artifacts.osdir_path / "squashfs"
     qemu_cmd = [
         "qemu-system-x86_64",
