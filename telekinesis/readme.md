@@ -22,19 +22,19 @@ tk builder runcmd -- ./mkimage.sh -h
 # Build packages in the build container
 tk buildpkg base blacksite neuralupgrade-apk
 
-# Build everything required for a bootable grubusb image
-tk mkimage grubusb --stages kernel squashfs efisystar ostar diskimg
+# Build everything required for a bootable disk image
+tk mkimage diskimg --stages kernel squashfs efisystar ostar diskimg
 
 # Build OS tarballs and copy them to local deaddrop
-tk mkimage grubusb --stages efisystar efisystar-dd ostar ostar-dd
+tk mkimage diskimg --stages efisystar efisystar-dd ostar ostar-dd
 
 # Rebuild a single package, but not the other packates
 tk buildpkg neuralupgrade-apk &&
-  tk mkimage --skip-build-apks grubusb --stages squashfs ostar efisystar
+  tk mkimage --skip-build-apks diskimg --stages squashfs ostar efisystar
 
 # Rebuild certain packages, make OS tarballs, and upload everything to deaddrop
 tk buildpkg neuralupgrade-apk &&
-  tk mkimage --skip-build-apks grubusb --stages squashfs kernel ostar ostar-dd efisystar efisystar-dd &&
+  tk mkimage --skip-build-apks diskimg --stages squashfs kernel ostar ostar-dd efisystar efisystar-dd &&
   tk deaddrop forcepush
 ```
 
@@ -197,13 +197,13 @@ ________________________________________________________________________
 > tk mkimage --help
 usage: tk mkimage [-h] [--rebuild] [--interactive] [--clean]
                   [--dangerous-no-clean-tmp-dir] [--skip-build-apks]
-                  {iso,grubusb} ...
+                  {iso,diskimg} ...
 
 positional arguments:
-  {iso,grubusb}
+  {iso,diskimg}
     iso                 Build an ISO image using mkimage.sh and the psyopsOScd
                         profile
-    grubusb             Build a disk image that contains GRUB, can do A/B
+    diskimg             Build a disk image that contains GRUB, can do A/B
                         updates, and boots to initramfs root images without
                         squashfs.
 
@@ -228,8 +228,8 @@ options:
 
 ________________________________________________________________________
 
-> tk mkimage grubusb --help
-usage: tk mkimage grubusb [-h]
+> tk mkimage diskimg --help
+usage: tk mkimage diskimg [-h]
                           [--stages {mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} [{mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} ...]]
                           [--list-stages] [--node-secrets NODE_SECRETS]
 
@@ -241,7 +241,7 @@ options:
                         all possible stages and their descriptions.
   --list-stages         Show all possible stages and their descriptions.
   --node-secrets NODE_SECRETS
-                        If passed, generate a node-specific grubusb image with a
+                        If passed, generate a node-specific image with a
                         populated secrets volume containing secrets from
                         'progfiguration-blacksite-node save NODENAME ...'.
 
@@ -270,7 +270,7 @@ options:
 ________________________________________________________________________
 
 > tk deployos --help
-usage: tk deployos [-h] [--type {iso,grubusb}] host
+usage: tk deployos [-h] [--type {iso,diskimg}] host
 
 positional arguments:
   host                  The remote host to deploy to, assumes root@ accepts the
@@ -278,7 +278,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --type {iso,grubusb}  The type of image to deploy
+  --type {iso,diskimg}  The type of image to deploy
 
 ________________________________________________________________________
 
@@ -287,9 +287,9 @@ usage: tk vm [-h] {diskimg,osdir,profile} ...
 
 positional arguments:
   {diskimg,osdir,profile}
-    diskimg             Run the grubusb image in qemu
+    diskimg             Run the disk image in qemu
     osdir               Run the kernel/initramfs from the osdir in qemu without
-                        building a grubusb image with EFI and A/B partitions
+                        building a disk image with EFI and A/B partitions
     profile             Run a predefined VM profile (a shortcut for running
                         specific VMs like qreamsqueen which we use for testing
                         psyopsOS)
@@ -300,12 +300,12 @@ options:
 ________________________________________________________________________
 
 > tk vm diskimg --help
-usage: tk vm diskimg [-h] [--grubusb-image GRUBUSB_IMAGE] [--macaddr MACADDR]
+usage: tk vm diskimg [-h] [--disk-image DISK_IMAGE] [--macaddr MACADDR]
 
 options:
   -h, --help            show this help message and exit
-  --grubusb-image GRUBUSB_IMAGE
-                        Path to the grubusb image
+  --disk-image DISK_IMAGE
+                        Path to the disk image
   --macaddr MACADDR     The MAC address to use for the VM, defaults to
                         00:00:00:00:00:00
 
