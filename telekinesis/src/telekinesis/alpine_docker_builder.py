@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 
-from telekinesis.config import getsecret, tkconfig
+from telekinesis.config import tkconfig
 
 
 def build_container(builder_tag: str, builder_dir: str, rebuild: bool = False):

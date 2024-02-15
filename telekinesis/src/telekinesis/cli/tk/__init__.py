@@ -7,9 +7,7 @@ from pathlib import Path
 import pprint
 import subprocess
 import sys
-import tarfile
 import textwrap
-import zipfile
 
 from telekinesis import deaddrop, minisign, tklogger, tksecrets
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
