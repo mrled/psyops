@@ -110,11 +110,12 @@ part_efisys="${loopdev}p1"
 part_secret="${loopdev}p2"
 part_psya="${loopdev}p3"
 part_psyb="${loopdev}p4"
+mntbase="/mnt/psyopsOSimg"
 
 cleanup() {
     echo "======== Cleaning up..."
     set +e
-    for mount in /mnt/grubusb/*; do
+    for mount in "$mntbase"/*; do
         mountpoint -q "$mount" || continue
         umount "$mount"
     done
@@ -180,17 +181,17 @@ losetup_mknod
 
 # Set up the psyopsOS-A partition
 mkfs.ext4 -L "$label_psya" "$part_psya"
-mkdir -p /mnt/grubusb/psya
+mkdir -p "$mntbase"/psya
 
 # Set up the psyopsOS-B partition
 # This contains the same files as psyopsOS-A so either works out of the box,
 # but it's designed to allow A/B updates.
 mkfs.ext4 -L "$label_psyb" "$part_psyb"
-mkdir -p /mnt/grubusb/psyb
+mkdir -p "$mntbase"/psyb
 
 # Set up the EFI system partition
 mkfs.fat -F32 -n "$label_efisys" "$part_efisys"
-mkdir -p /mnt/grubusb/efisys
+mkdir -p "$mntbase"/efisys
 
 # Install psyopsOS A/B and the EFI system partition
 "$neuralupgrade" apply --help
@@ -198,11 +199,11 @@ mkdir -p /mnt/grubusb/efisys
     $neuralupgrade_args \
     "--verbose" \
     --efisys-dev "$part_efisys" \
-    --efisys-mountpoint /mnt/grubusb/efisys \
+    --efisys-mountpoint "$mntbase"/efisys \
     --a-dev "$part_psya" \
-    --a-mountpoint /mnt/grubusb/psya \
+    --a-mountpoint "$mntbase"/psya \
     --b-dev "$part_psyb" \
-    --b-mountpoint /mnt/grubusb/psyb \
+    --b-mountpoint "$mntbase"/psyb \
     --pubkey "$pubkey" \
     apply \
     --default-boot-label "$label_psya" \
@@ -213,10 +214,10 @@ mkdir -p /mnt/grubusb/efisys
 # Set up the secret partition
 mkfs.ext4 -L "$label_secret" "$part_secret"
 if test -n "$secrettarball"; then
-    mkdir -p /mnt/grubusb/secret
-    mount "$part_secret" /mnt/grubusb/secret
-    tar xf "$secrettarball" -C /mnt/grubusb/secret
-    umount /mnt/grubusb/secret
+    mkdir -p "$mntbase"/secret
+    mount "$part_secret" "$mntbase"/secret
+    tar xf "$secrettarball" -C "$mntbase"/secret
+    umount "$mntbase"/secret
 fi
 
 trap - EXIT

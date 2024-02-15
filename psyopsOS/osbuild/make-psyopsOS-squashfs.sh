@@ -13,11 +13,11 @@ default_hostname=psyopsOS-unconfigured
 outdir=
 psyops_root=
 psyopsos_overlay_dir=
-workdir=/tmp/make-grubusb-squashfs.$$
+workdir=/tmp/make-psyopsOS-squashfs.$$
 
 usage() {
     cat <<ENDUSAGE
-$script: Make squashfs for psyopsOS grubusb
+$script: Make squashfs for psyopsOS
 Usage: $script [-h]
 
 This script must be run by root.

@@ -14,7 +14,7 @@ outdir=
 
 usage() {
     cat <<ENDUSAGE
-$script: Make kernel, initramfs, etc for psyopsOS grubusb
+$script: Make kernel, initramfs, etc for psyopsOS
 Usage: $script [-h]
 
 This script must be run by root.
@@ -83,7 +83,7 @@ if [ "$(id -u)" != 0 ]; then
 fi
 
 # Make a temporary working directory
-workdir=/tmp/make-grubusb-kernel.$$
+workdir=/tmp/make-psyopsOS-kernel.$$
 if test -d "$workdir"; then
     echo "Temporary working directory $workdir already exists; aborting" >&2
     exit 1
