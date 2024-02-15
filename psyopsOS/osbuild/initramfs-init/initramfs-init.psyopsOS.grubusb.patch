@@ -2,7 +2,7 @@
 +++ initramfs-init.patched	2024-02-14 20:48:26
 @@ -1,5 +1,7 @@
  #!/bin/sh
- 
+
 +set -x
 +
  # this is the init script version
@@ -35,7 +35,7 @@
 +	# Create mountpoints for psyopsOS partitions
 +	# Any of these that we actually mount will be moved to $sysroot later,
 +	# and will be visible once we have switched root.
-+	# Make sure this matches what we do in make-grubusb-squashfs.sh.
++	# Make sure this matches what we do in make-psyopsOS-squashfs.sh.
 +	mkdir -p /mnt/psyopsOS/efisys /mnt/psyopsOS/a /mnt/psyopsOS/b /mnt/psyops-secret/mount
 +	cat >> /etc/fstab <<EOF
 +LABEL=PSYOPSOSEFI    /mnt/psyopsOS/efisys       vfat ro,noauto 0 0
@@ -74,5 +74,5 @@
 +
 +	eend 0
  fi
- 
+
  # zpool reports /dev/zfs missing if it can't read /etc/mtab
