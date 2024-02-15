@@ -454,11 +454,10 @@ def main_impl():
                 dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
             )
         elif parsed.mkimage_action == "grubusb":
-            initdir = tkconfig.repopaths.root / "psyopsOS" / "grubusb" / "initramfs-init"
+            initdir = tkconfig.repopaths.root / "psyopsOS" / "osbuild" / "initramfs-init"
             init_patch = initdir / "initramfs-init.psyopsOS.grubusb.patch"
             if "mkinitpatch" in parsed.stages:
                 with init_patch.open("w") as f:
-                    subprocess.run(["ls", "-larth"], cwd=initdir, check=True)
                     diffresult = subprocess.run(
                         ["diff", "-u", "initramfs-init.orig", "initramfs-init.patched.grubusb"],
                         cwd=initdir,

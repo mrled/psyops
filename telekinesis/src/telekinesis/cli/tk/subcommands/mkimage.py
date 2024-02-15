@@ -148,9 +148,9 @@ def mkimage_grubusb_kernel(
         # Add the local copy of the psyopsOS repository to the list of repositories in the container.
         # This means that when we do "apk cache download" below,
         # it will be able to find copies of psyopsOS-base and progfiguration_blacksite on local disk.
-        initdir = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/initramfs-init")
-        make_grubusb_kernel_script = os.path.join(
-            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-kernel.sh"
+        initdir = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/osbuild/initramfs-init")
+        make_kernel_script = os.path.join(
+            builder.in_container_psyops_checkout, "psyopsOS/osbuild/make-psyopsOS-kernel.sh"
         )
         repositories_file = os.path.join(builder.in_container_artifacts_dir, all_repos.name)
         in_container_local_repo_path = os.path.join(
@@ -167,7 +167,7 @@ def mkimage_grubusb_kernel(
             f"sudo apk cache download alpine-base linux-lts linux-firmware",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E {make_grubusb_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
+            f"sudo -E {make_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
         ]
         builder.run_docker(in_container_build_cmd)
         subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)
@@ -207,8 +207,8 @@ def mkimage_grubusb_squashfs(
         # Add the local copy of the psyopsOS repository to the list of repositories in the container.
         # This means that when we do "apk cache download" below,
         # it will be able to find copies of psyopsOS-base and progfiguration_blacksite on local disk.
-        make_grubusb_squashfs_script = os.path.join(
-            builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-squashfs.sh"
+        make_squashfs_script = os.path.join(
+            builder.in_container_psyops_checkout, "psyopsOS/osbuild/make-psyopsOS-squashfs.sh"
         )
         psyopsOS_world = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/world")
         # We previously used this file to get the list of packages to cache,
@@ -232,7 +232,7 @@ def mkimage_grubusb_squashfs(
             f"sudo apk cache download --latest {' '.join(apk_cache_list)}",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E /bin/sh {make_grubusb_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {in_container_all_repos} --apk-repositories-psyopsOSonly {in_container_psyopsOS_only_repo} --apk-local-repo {in_container_local_repo_path} --outdir {in_container_outdir} --psyops-root {builder.in_container_psyops_checkout}",
+            f"sudo -E /bin/sh {make_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {in_container_all_repos} --apk-repositories-psyopsOSonly {in_container_psyopsOS_only_repo} --apk-local-repo {in_container_local_repo_path} --outdir {in_container_outdir} --psyops-root {builder.in_container_psyops_checkout}",
         ]
         builder.run_docker(in_container_build_cmd)
         alpine_version_file = tkconfig.artifacts.grubusb_os_dir / "squashfs.alpine_version"
@@ -268,14 +268,14 @@ def mkimage_grubusb_diskimg(
     with get_configured_docker_builder(
         interactive, cleandockervol, dangerous_no_clean_tmp_dir, extra_volumes=extra_volumes
     ) as builder:
-        make_grubusb_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/grubusb/make-grubusb-img.sh")
+        make_img_sript = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/osbuild/make-psyopsOS-img.sh")
         psyopsostar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_tarfile.name)
         psyopsesptar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_efisystar.name)
         neuralupgrade = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.neuralupgrade.name)
         minisign_pubkey = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/minisign.pubkey")
         outimg = os.path.join(builder.in_container_artifacts_dir, out_filename)
         in_container_build_cmd = [
-            f"sudo sh {make_grubusb_script} -n {neuralupgrade} -p {psyopsostar} -E {psyopsesptar} -o {outimg} -V {minisign_pubkey} {extra_scriptargs}",
+            f"sudo sh {make_img_sript} -n {neuralupgrade} -p {psyopsostar} -E {psyopsesptar} -o {outimg} -V {minisign_pubkey} {extra_scriptargs}",
         ]
         builder.run_docker(in_container_build_cmd)
 
