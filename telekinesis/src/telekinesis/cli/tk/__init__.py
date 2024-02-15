@@ -74,7 +74,7 @@ def deployiso(host):
     )
 
 
-def deploygrubusb(host, remote_path="/tmp"):
+def deploy_ostar(host, remote_path="/tmp"):
     """Deploy the ISO image to a remote host
 
     This uses multiple SSH commands, so enabling SSH master mode is recommended.
@@ -209,12 +209,12 @@ def makeparser(prog=None):
         "iso",
         help="Build an ISO image using mkimage.sh and the psyopsOScd profile",
     )
-    sub_mkimage_sub_grubusb = sub_mkimage_subparsers.add_parser(
-        "grubusb",
+    sub_mkimage_sub_diskimg = sub_mkimage_subparsers.add_parser(
+        "diskimg",
         help="Build a disk image that contains GRUB, can do A/B updates, and boots to initramfs root images without squashfs.",
     )
 
-    grubusb_stages = {
+    diskimg_stages = {
         "mkinitpatch": "Generate a patch by comparing a locally created/modified initramfs-init.patched file (NOT in version control) to the upstream Alpine initramfs-init.orig file (in version control), and saving the resulting patch to initramfs-init.psyopsOS.grubusb.patch (in version control). This is only necessary when making changes to our patch, and is not part of a normal image build. Basically do this: diff -u initramfs-init.orig initramfs-init.patched > initramfs-init.psyopsOS.grubusb.patch",
         "applyinitpatch": "Generate initramfs-init.patched by appling our patch to the upstream file. This happens during every normal build. Basically do this: patch -o initramfs-init.patched initramfs-init.orig initramfs-init.psyopsOS.grubusb.patch",
         "kernel": "Build the kernel/initramfs/etc.",
@@ -223,29 +223,29 @@ def makeparser(prog=None):
         "efisystar-dd": "Copy the efisystar tarball to the local deaddrop directory. (Use 'tk deaddrop forcepush' to push it to the bucket.)",
         "ostar": "Create a tarball of the kernel/squashfs/etc that can be used to apply an A/B update.",
         "ostar-dd": "Copy the ostar tarball to the local deaddrop directory. (Use 'tk deaddrop forcepush' to push it to the bucket.)",
-        "sectar": "Create a tarball of secrets for a node-specific grubusb image. Requires that --node-secrets NODENAME is passed, and that the node already exists in progfiguration_blacksite (see 'progfiguration-blacksite-node save --help').",
+        "sectar": "Create a tarball of secrets for a node-specific disk image. Requires that --node-secrets NODENAME is passed, and that the node already exists in progfiguration_blacksite (see 'progfiguration-blacksite-node save --help').",
         "diskimg": "Build the disk image from the kernel/squashfs. If --node-secrets is passed, the secrets tarball is included in the image. Otherwise, the image is node-agnostic and contains an empty secrets volume.",
     }
 
-    sub_mkimage_sub_grubusb.add_argument(
+    sub_mkimage_sub_diskimg.add_argument(
         "--stages",
         nargs="+",
         default=["kernel", "squashfs", "diskimg"],
-        choices=grubusb_stages.keys(),
+        choices=diskimg_stages.keys(),
         help="The stages to build, comma-separated. Default: %(default)s. See --list-stages for all possible stages and their descriptions.",
     )
-    sub_mkimage_sub_grubusb.add_argument(
+    sub_mkimage_sub_diskimg.add_argument(
         "--list-stages",
         action=ListKeyValuePairsAndExit,
-        kvpairs=grubusb_stages,
-        kvpair_help_prefix="grubusb stages:",
+        kvpairs=diskimg_stages,
+        kvpair_help_prefix="diskimg stages:",
         kvpair_help_suffix="",
         nargs=0,
         help="Show all possible stages and their descriptions.",
     )
-    sub_mkimage_sub_grubusb.add_argument(
+    sub_mkimage_sub_diskimg.add_argument(
         "--node-secrets",
-        help="If passed, generate a node-specific grubusb image with a populated secrets volume containing secrets from 'progfiguration-blacksite-node save NODENAME ...'.",
+        help="If passed, generate a node-specific image with a populated secrets volume containing secrets from 'progfiguration-blacksite-node save NODENAME ...'.",
     )
 
     # The buildpkg subcommand
@@ -267,7 +267,7 @@ def makeparser(prog=None):
         help="Deploy the ISO image to a psyopsOS remote host",
     )
     sub_deployos.add_argument(
-        "--type", default="grubusb", choices=["iso", "grubusb"], help="The type of image to deploy"
+        "--type", default="diskimg", choices=["iso", "diskimg"], help="The type of image to deploy"
     )
     sub_deployos.add_argument("host", help="The remote host to deploy to, assumes root@ accepts the psyops SSH key")
 
@@ -279,13 +279,13 @@ def makeparser(prog=None):
     sub_vm_subparsers = sub_vm.add_subparsers(dest="vm_action", required=True)
     sub_vm_sub_diskimg = sub_vm_subparsers.add_parser(
         "diskimg",
-        help="Run the grubusb image in qemu",
+        help="Run the disk image in qemu",
     )
     sub_vm_sub_diskimg.add_argument(
-        "--grubusb-image",
+        "--disk-image",
         type=Path,
         default=tkconfig.artifacts.node_image(),
-        help="Path to the grubusb image",
+        help="Path to the disk image",
     )
     sub_vm_sub_diskimg.add_argument(
         "--macaddr",
@@ -294,7 +294,7 @@ def makeparser(prog=None):
     )
     sub_vm_sub_osdir = sub_vm_subparsers.add_parser(
         "osdir",
-        help="Run the kernel/initramfs from the osdir in qemu without building a grubusb image with EFI and A/B partitions",
+        help="Run the kernel/initramfs from the osdir in qemu without building a disk image with EFI and A/B partitions",
     )
     sub_vm_sub_profile = sub_vm_subparsers.add_parser(
         "profile",
@@ -302,7 +302,7 @@ def makeparser(prog=None):
     )
 
     vm_profiles = {
-        "qreamsqueen": "Run the qreamsqueen VM. Requires that artifacts/psyopsOS.qreamsqueen.img has been created by running 'tk mkimage grubusb --stages diskimg --node-secrets qreamsqueen'.",
+        "qreamsqueen": "Run the qreamsqueen VM. Requires that artifacts/psyopsOS.qreamsqueen.img has been created by running 'tk mkimage diskimg --stages diskimg --node-secrets qreamsqueen'.",
     }
 
     sub_vm_sub_profile.add_argument(
@@ -451,7 +451,7 @@ def main_impl():
                 cleandockervol=parsed.clean,
                 dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
             )
-        elif parsed.mkimage_action == "grubusb":
+        elif parsed.mkimage_action == "diskimg":
             initdir = tkconfig.repopaths.root / "psyopsOS" / "osbuild" / "initramfs-init"
             init_patch = initdir / "initramfs-init.psyopsOS.grubusb.patch"
             if "mkinitpatch" in parsed.stages:
@@ -528,7 +528,7 @@ def main_impl():
     elif parsed.action == "vm":
         if parsed.vm_action == "diskimg":
             get_ovmf()
-            vm_diskimg(parsed.grubusb_image, parsed.macaddr)
+            vm_diskimg(parsed.disk_image, parsed.macaddr)
         elif parsed.vm_action == "osdir":
             vm_osdir()
         elif parsed.vm_action == "profile":
@@ -551,8 +551,8 @@ def main_impl():
     elif parsed.action == "deployos":
         if parsed.type == "iso":
             deployiso(parsed.host)
-        elif parsed.type == "grubusb":
-            deploygrubusb(parsed.host)
+        elif parsed.type == "diskimg":
+            deploy_ostar(parsed.host)
         else:
             parser.error(f"Unknown deployment type: {parsed.type}")
     elif parsed.action == "psynet":
