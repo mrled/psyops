@@ -227,7 +227,7 @@ class Filesystems:
 
 
 def activeside() -> str:
-    """Return the booted side of a grubusb device, by reading from the kernel command line.
+    """Return the booted side (A or B), by reading from the kernel command line.
 
     Expect this to be the A or B label.
     """
@@ -238,11 +238,11 @@ def activeside() -> str:
             thisside = arg.split("=")[1]
             logger.debug(f"Booted side is {thisside}")
             return thisside
-    raise ValueError("Could not determine booted side of grubusb device")
+    raise ValueError("Could not determine booted side")
 
 
 def flipside(side: str, filesystems: Filesystems) -> str:
-    """Given one side of a grubusb image (A or B), return the other side."""
+    """Given one side (A or B), return the other side."""
     if side not in [filesystems.a.label, filesystems.b.label]:
         raise ValueError(f"Unknown side {side}")
     opposite = filesystems.a.label if side == filesystems.b.label else filesystems.b.label
@@ -251,6 +251,6 @@ def flipside(side: str, filesystems: Filesystems) -> str:
 
 
 def sides(filesystems: Filesystems) -> tuple[str, str]:
-    """Return the booted side and the nonbooted side of a grubusb device (A or B)"""
+    """Return the booted side and the nonbooted side (A or B)"""
     booted = activeside()
     return booted, flipside(booted, filesystems)

@@ -36,8 +36,8 @@ terminal_output console serial
 # This is slow and uselessly verbose
 #set debug=all
 
-menuentry "Welcome to psyopsOS grubusb. GRUB configuration last updated: {last_updated}" {{
-    echo "Welcome to psyopsOS grubusb. GRUB configuration last updated: {last_updated}"
+menuentry "Welcome to psyopsOS. GRUB configuration last updated: {last_updated}" {{
+    echo "Welcome to psyopsOS. GRUB configuration last updated: {last_updated}"
 }}
 menuentry "----------------------------------------" {{
     echo "----------------------------------------"

@@ -163,7 +163,7 @@ def subcommand_apply(parsed: argparse.Namespace, parser: argparse.ArgumentParser
             esptar=esp_tar,
             verify=parsed.verify,
             pubkey=parsed.pubkey,
-            no_update_default_boot_label=parsed.no_grubusb,
+            no_update_default_boot_label=parsed.no_grub_cfg,
             default_boot_label=parsed.default_boot_label,
         )
     except Exception as exc:
@@ -244,12 +244,12 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     repository_group.add_argument(
         "--psyopsOS-filename-format",
         default="psyopsOS.grubusb.os.{version}.tar",
-        help="The format string for the versioned grubusb EFI system partition tarfile. Used as the base for the filename in S3, and also of the signature file.",
+        help="The format string for the versioned psyopsESP tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
     repository_group.add_argument(
         "--psyopsESP-filename-format",
         default="psyopsOS.grubusb.efisys.{version}.tar",
-        help="The format string for the versioned grubusb OS tarfile. Used as the base for the filename in S3, and also of the signature file.",
+        help="The format string for the versioned psyopsOS tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
 
     # neuralupgrade show
@@ -338,9 +338,9 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
         help="Default boot label if writing the grub.cfg file",
     )
     apply_parser.add_argument(
-        "--no-grubusb",
+        "--no-grub-cfg",
         action="store_true",
-        help="Skip updating the grubusb config (only applies when target includes nonbooted)",
+        help="Skip updating the grub.cfg file (only applies when target includes nonbooted)",
     )
     os_update_group = apply_parser.add_mutually_exclusive_group()
     os_update_group.add_argument("--os-tar", help="A local path to a psyopsOS tarball to apply")
@@ -350,7 +350,7 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     esp_update_group.add_argument("--esp-version", help="A version in the remote repository to apply")
 
     # neuralupgrade set-default
-    set_default_parser = subparsers.add_parser("set-default", help="Set the default boot label in the grubusb config")
+    set_default_parser = subparsers.add_parser("set-default", help="Set the default boot label in the grub.cfg file")
     set_default_parser.add_argument("label", help="The label to set as the default boot label")
 
     return parser

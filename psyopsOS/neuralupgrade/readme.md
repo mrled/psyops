@@ -123,7 +123,7 @@ positional arguments:
     download            Download updates
     check               Check whether the running system is up to date
     apply               Apply psyopsOS or EFI system partition updates
-    set-default         Set the default boot label in the grubusb config
+    set-default         Set the default boot label in the grub.cfg file
 
 options:
   -h, --help            show this help message and exit
@@ -163,11 +163,11 @@ Repository options:
                         URL for the psyopsOS update repository, default:
                         https://psyops.micahrl.com/os
   --psyopsOS-filename-format PSYOPSOS_FILENAME_FORMAT
-                        The format string for the versioned grubusb EFI system
-                        partition tarfile. Used as the base for the filename in
-                        S3, and also of the signature file.
+                        The format string for the versioned psyopsESP tarfile.
+                        Used as the base for the filename in S3, and also of the
+                        signature file.
   --psyopsESP-filename-format PSYOPSESP_FILENAME_FORMAT
-                        The format string for the versioned grubusb OS tarfile.
+                        The format string for the versioned psyopsOS tarfile.
                         Used as the base for the filename in S3, and also of the
                         signature file.
 
@@ -220,7 +220,7 @@ ________________________________________________________________________
 
 > neuralupgrade apply --help
 usage: neuralupgrade apply [-h] [--default-boot-label DEFAULT_BOOT_LABEL]
-                           [--no-grubusb]
+                           [--no-grub-cfg]
                            [--os-tar OS_TAR | --os-version OS_VERSION]
                            [--esp-tar ESP_TAR | --esp-version ESP_VERSION]
                            {a,b,nonbooted,efisys} [{a,b,nonbooted,efisys} ...]
@@ -233,7 +233,7 @@ options:
   -h, --help            show this help message and exit
   --default-boot-label DEFAULT_BOOT_LABEL
                         Default boot label if writing the grub.cfg file
-  --no-grubusb          Skip updating the grubusb config (only applies when
+  --no-grub-cfg         Skip updating the grub.cfg file (only applies when
                         target includes nonbooted)
   --os-tar OS_TAR       A local path to a psyopsOS tarball to apply
   --os-version OS_VERSION
