@@ -53,7 +53,7 @@ def deploygrubusb(host, remote_path="/tmp"):
 
     TODO: should I also copy the minisign public key?
     """
-    build_neuralupgrade()
+    build_neuralupgrade_pyz()
     nupyz = tkconfig.artifacts.neuralupgrade
     tarball = tkconfig.artifacts.grubusb_os_tarfile
     minisig = tarball.with_name(tarball.name + ".minisig")
