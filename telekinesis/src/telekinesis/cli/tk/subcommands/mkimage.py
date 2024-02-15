@@ -167,10 +167,10 @@ def mkimage_grubusb_kernel(
             f"sudo apk cache download alpine-base linux-lts linux-firmware",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E {make_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.grubusb_os_dir.name}",
+            f"sudo -E {make_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.osdir_path.name}",
         ]
         builder.run_docker(in_container_build_cmd)
-        subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)
+        subprocess.run(["ls", "-larth", tkconfig.artifacts.osdir_path], check=True)
 
 
 def mkimage_grubusb_squashfs(
@@ -217,7 +217,7 @@ def mkimage_grubusb_squashfs(
         # psyopsOS_available = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/available")
         in_container_all_repos = os.path.join(builder.in_container_artifacts_dir, all_repos.name)
         in_container_psyopsOS_only_repo = os.path.join(builder.in_container_artifacts_dir, psyopsOS_only_repo.name)
-        in_container_outdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_dir.name)
+        in_container_outdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.osdir_path.name)
         in_container_local_repo_path = os.path.join(
             builder.in_container_artifacts_dir, f"deaddrop/apk/v{alpine_version}/psyopsOS"
         )
@@ -235,10 +235,10 @@ def mkimage_grubusb_squashfs(
             f"sudo -E /bin/sh {make_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {in_container_all_repos} --apk-repositories-psyopsOSonly {in_container_psyopsOS_only_repo} --apk-local-repo {in_container_local_repo_path} --outdir {in_container_outdir} --psyops-root {builder.in_container_psyops_checkout}",
         ]
         builder.run_docker(in_container_build_cmd)
-        alpine_version_file = tkconfig.artifacts.grubusb_os_dir / "squashfs.alpine_version"
+        alpine_version_file = tkconfig.artifacts.osdir_path / "squashfs.alpine_version"
         with alpine_version_file.open("w") as f:
             f.write(alpine_version)
-        subprocess.run(["ls", "-larth", tkconfig.artifacts.grubusb_os_dir], check=True)
+        subprocess.run(["ls", "-larth", tkconfig.artifacts.osdir_path], check=True)
 
 
 def mkimage_grubusb_diskimg(
@@ -269,8 +269,8 @@ def mkimage_grubusb_diskimg(
         interactive, cleandockervol, dangerous_no_clean_tmp_dir, extra_volumes=extra_volumes
     ) as builder:
         make_img_sript = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/osbuild/make-psyopsOS-img.sh")
-        psyopsostar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_os_tarfile.name)
-        psyopsesptar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.grubusb_efisystar.name)
+        psyopsostar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.ostar_path.name)
+        psyopsesptar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.esptar_path.name)
         neuralupgrade = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.neuralupgrade.name)
         minisign_pubkey = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/minisign.pubkey")
         outimg = os.path.join(builder.in_container_artifacts_dir, out_filename)
@@ -283,7 +283,7 @@ def mkimage_grubusb_diskimg(
 def mkimage_grubusb_ostar():
     """Create the OS tarball for grubusb images"""
     build_date = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-    tarball_file = tkconfig.artifacts.grubusb_os_tarfile_versioned_format.format(version=build_date)
+    tarball_file = tkconfig.artifacts.ostar_versioned_fmt.format(version=build_date)
 
     items = [
         "kernel",
@@ -298,13 +298,13 @@ def mkimage_grubusb_ostar():
     ]
     # We don't compress because the big files - kernel/squashfs/initramfs - are already compressed
     # Compressing with "w:gz" saved about 4MB out of 630MB as of 20231215
-    with tarfile.open(tkconfig.artifacts.grubusb_os_tarfile.as_posix(), "w") as tar:
+    with tarfile.open(tkconfig.artifacts.ostar_path.as_posix(), "w") as tar:
         for item in items:
-            tar.add(tkconfig.artifacts.grubusb_os_dir / item, arcname=item)
+            tar.add(tkconfig.artifacts.osdir_path / item, arcname=item)
 
-    with open(tkconfig.artifacts.grubusb_os_dir / "squashfs.alpine_version", "r") as f:
+    with open(tkconfig.artifacts.osdir_path / "squashfs.alpine_version", "r") as f:
         alpine_version = f.read().strip()
-    with open(tkconfig.artifacts.grubusb_os_dir / "kernel.version", "r") as f:
+    with open(tkconfig.artifacts.osdir_path / "kernel.version", "r") as f:
         kernel_version = f.read().strip()
 
     trusted_comment = (
@@ -313,21 +313,21 @@ def mkimage_grubusb_ostar():
     # Note that we're signing the tarball using the unversioned name from tkconfig.artifacts,
     # but the trusted_comment contains the versioned name.
     # This doesn't matter, even though the default trusted_comment contains the signed filename.
-    minisign.sign(tkconfig.artifacts.grubusb_os_tarfile.as_posix(), trusted_comment=trusted_comment)
+    minisign.sign(tkconfig.artifacts.ostar_path.as_posix(), trusted_comment=trusted_comment)
 
 
 def mkimage_grubusb_ostar_copy_to_deaddrop():
     """Copy the grubusb OS tarball and signature to the deaddrop, making sure they have correct names"""
-    trusted_comment = minisign.verify(tkconfig.artifacts.grubusb_os_tarfile)
+    trusted_comment = minisign.verify(tkconfig.artifacts.ostar_path)
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
     os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
-    shutil.copy(tkconfig.artifacts.grubusb_os_tarfile, tkconfig.deaddrop.osdir / metadata["filename"])
-    sig = f"{tkconfig.artifacts.grubusb_os_tarfile}.minisig"
+    shutil.copy(tkconfig.artifacts.ostar_path, tkconfig.deaddrop.osdir / metadata["filename"])
+    sig = f"{tkconfig.artifacts.ostar_path}.minisig"
     shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")
 
     # symlink the minisig to latest.minisig
     latest_sig = tkconfig.deaddrop.osdir / (
-        tkconfig.artifacts.grubusb_os_tarfile_versioned_format.format(version="latest") + ".minisig"
+        tkconfig.artifacts.ostar_versioned_fmt.format(version="latest") + ".minisig"
     )
     if latest_sig.exists():
         latest_sig.unlink()
@@ -343,7 +343,7 @@ def mkimage_grubusb_efisystar():
     This tarball contains some extra files like memtest and the EFI shell.
     """
     build_date = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-    tarball_file = tkconfig.artifacts.grubusb_efisystar_versioned_format.format(version=build_date)
+    tarball_file = tkconfig.artifacts.esptar_versioned_fmt.format(version=build_date)
     get_ovmf()
     get_memtest()
 
@@ -367,27 +367,27 @@ def mkimage_grubusb_efisystar():
         "version": 1,
         "extra_programs": {f"/{program.arcname}": program.bootentry for program in programs},
     }
-    with tkconfig.artifacts.grubusb_efisystar_manifest.open("w") as f:
+    with tkconfig.artifacts.esptar_manifest.open("w") as f:
         json.dump(manifest_contents, f, indent=2)
-    with tarfile.open(tkconfig.artifacts.grubusb_efisystar, "w") as tf:
+    with tarfile.open(tkconfig.artifacts.esptar_path, "w") as tf:
         for program in programs:
             tf.add(program.localpath, arcname=program.arcname)
-        tf.add(tkconfig.artifacts.grubusb_efisystar_manifest, arcname="manifest.json")
-    minisign.sign(tkconfig.artifacts.grubusb_efisystar.as_posix(), trusted_comment=trusted_comment)
+        tf.add(tkconfig.artifacts.esptar_manifest, arcname="manifest.json")
+    minisign.sign(tkconfig.artifacts.esptar_path.as_posix(), trusted_comment=trusted_comment)
 
 
 def mkimage_grubusb_efisystar_copy_to_deaddrop():
     """Copy the grubusb EFI tarball and signature to the deaddrop, making sure they have correct names"""
-    trusted_comment = minisign.verify(tkconfig.artifacts.grubusb_efisystar)
+    trusted_comment = minisign.verify(tkconfig.artifacts.esptar_path)
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
     os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
-    shutil.copy(tkconfig.artifacts.grubusb_efisystar, tkconfig.deaddrop.osdir / metadata["filename"])
-    sig = f"{tkconfig.artifacts.grubusb_efisystar}.minisig"
+    shutil.copy(tkconfig.artifacts.esptar_path, tkconfig.deaddrop.osdir / metadata["filename"])
+    sig = f"{tkconfig.artifacts.esptar_path}.minisig"
     shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")
 
     # symlink the minisig to latest.minisig
     latest_sig = tkconfig.deaddrop.osdir / (
-        tkconfig.artifacts.grubusb_efisystar_versioned_format.format(version="latest") + ".minisig"
+        tkconfig.artifacts.esptar_versioned_fmt.format(version="latest") + ".minisig"
     )
     if latest_sig.exists():
         latest_sig.unlink()

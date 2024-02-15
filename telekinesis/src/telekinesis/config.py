@@ -66,12 +66,8 @@ class TelekinesisConfig:
             """The filename that our mkimage creates"""
             self.sqfilename = "psyopsOSsq-psysquash-x86_64.iso"
             """The filename that our mkimage creates"""
-            self.grubusbtarname = "psyopsOS.grubusb.os.tar"
-            """The filename for the grubusb OS tarball"""
             self.isopath = self.osdir / self.isofilename
             """The path to the ISO image"""
-            self.grubusbtarpath = self.osdir / self.grubusbtarname
-            """The path to the grubusb OS tarball"""
 
         def get_credential(self) -> tuple[str, str]:
             """Get the AWS credentials from 1Password, and return them as a tuple of (username, password)"""
@@ -144,26 +140,26 @@ class TelekinesisConfig:
             self.uefishell_extracted_bin = self.ovmf_extracted_path / "efi/boot/bootx64.efi"
             """The path to the extracted UEFI shell binary from the image inside ISO"""
 
-            self.grubusb_os_dir = artroot / "psyopsOS.grubusb.os"
-            """The path to the grubusb OS directory.
-            Contains a single psyopsOS version for a grubusb image (either A or B), including
+            self.osdir_path = artroot / "psyopsOS.grubusb.os"
+            """The path to the OS directory.
+            Contains a single psyopsOS version, including
             kernel, initramfs, System.map, config, modloop, and squashfs files,
             and a boot/ directory which may contain DTB files if appropriate for the platform.
             """
-            self.grubusb_os_tarfile = artroot / "psyopsOS.grubusb.os.tar"
-            """The path to the grubusb OS tarfile.
-            The grubusb_os_dir in a tarball.
+            self.ostar_path = artroot / "psyopsOS.grubusb.os.tar"
+            """The path to the OS tarfile.
+            The osdir_path in a tarball.
             """
-            self.grubusb_os_tarfile_versioned_format = "psyopsOS.grubusb.os.{version}.tar"
-            """The format string for the versioned grubusb OS tarfile.
+            self.ostar_versioned_fmt = "psyopsOS.grubusb.os.{version}.tar"
+            """The format string for the versioned OS tarfile.
             Used as the base for the filename in S3, and also of the signature file.
             """
-            self.grubusb_efisystar = artroot / "psyopsOS.grubusb.efisys.tar"
-            """The path to the grubusb EFI system partition tarball"""
-            self.grubusb_efisystar_manifest = artroot / "psyopsOS.grubusb.efisys.manifest.json"
-            """The path to the JSON manifest for the grubusb EFI system partition tarball"""
-            self.grubusb_efisystar_versioned_format = "psyopsOS.grubusb.efisys.{version}.tar"
-            """The format string for the versioned grubusb EFI system partition tarfile.
+            self.esptar_path = artroot / "psyopsOS.grubusb.efisys.tar"
+            """The path to the EFI system partition tarball"""
+            self.esptar_manifest = artroot / "psyopsOS.grubusb.efisys.manifest.json"
+            """The path to the JSON manifest for the EFI system partition tarball"""
+            self.esptar_versioned_fmt = "psyopsOS.grubusb.efisys.{version}.tar"
+            """The format string for the versioned EFI system partition tarfile.
             Used as the base for the filename in S3, and also of the signature file.
             """
 

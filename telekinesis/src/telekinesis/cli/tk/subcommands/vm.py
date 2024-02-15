@@ -77,7 +77,7 @@ def vm_grubusb_img(image: Path, macaddr: str):
 
 def vm_grubusb_os():
     """Run the grubusb OS directory in qemu"""
-    squashfs = tkconfig.artifacts.grubusb_os_dir / "squashfs"
+    squashfs = tkconfig.artifacts.osdir_path / "squashfs"
     qemu_cmd = [
         "qemu-system-x86_64",
         "-nic",
@@ -89,9 +89,9 @@ def vm_grubusb_os():
         "-m",
         "2048",
         "-kernel",
-        f"{tkconfig.artifacts.grubusb_os_dir / 'kernel'}",
+        f"{tkconfig.artifacts.osdir_path / 'kernel'}",
         "-initrd",
-        f"{tkconfig.artifacts.grubusb_os_dir / 'initramfs'}",
+        f"{tkconfig.artifacts.osdir_path / 'initramfs'}",
         "-append",
         "root=/dev/sda rootfstype=squashfs rootflags=ro",
         "-drive",

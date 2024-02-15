@@ -85,7 +85,7 @@ def deploygrubusb(host, remote_path="/tmp"):
     """
     build_neuralupgrade_pyz()
     nupyz = tkconfig.artifacts.neuralupgrade
-    tarball = tkconfig.artifacts.grubusb_os_tarfile
+    tarball = tkconfig.artifacts.ostar_path
     minisig = tarball.with_name(tarball.name + ".minisig")
     subprocess.run(["scp", nupyz.as_posix(), f"root@{host}:/usr/local/sbin/neuralupgrade"], check=True)
     subprocess.run(["scp", tarball.as_posix(), minisig.as_posix(), f"root@{host}:{remote_path}/"], check=True)
