@@ -22,7 +22,7 @@ spec:
         - name: mindcontrol-config
           mountPath: /mindcontrol-config
         - name: mindcontrol-theme
-          mountpath: /srv/dex/web/themes/mindcontrol
+          mountPath: /srv/dex/web/themes/mindcontrol
       containers:
       - name: dex
         image: dexidp/dex
@@ -44,7 +44,7 @@ spec:
         - name: dexconfig
           mountPath: /etc/dex
         - name: mindcontrol-theme
-          mountpath: /srv/dex/web/themes/mindcontrol
+          mountPath: /srv/dex/web/themes/mindcontrol
       volumes:
       - name: dexconfig
         configMap:
