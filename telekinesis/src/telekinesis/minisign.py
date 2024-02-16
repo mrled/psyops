@@ -11,7 +11,7 @@ def sign(files: Union[str, list[str]], trusted_comment: str = "", untrusted_comm
     """Sign files with minisign."""
     if isinstance(files, str):
         files = [files]
-    mspassword = gopass_get("psyopsOS/minisign.seckey")
+    mspassword = gopass_get("psyopsOS/minisign.seckey.pw")
     cmd = ["minisign", "-S", "-s", tkconfig.repopaths.minisign_seckey]
     if trusted_comment:
         cmd += ["-t", trusted_comment]

@@ -20,7 +20,7 @@ def gopass_get(path: str, mount: str = "psyops/") -> str:
         check=True,
         text=True,
     )
-    return proc.stdout.strip()
+    return proc.stdout
 
 
 def gopass_set(value: str | Path, path: str, mount: str = "psyops/") -> None:
