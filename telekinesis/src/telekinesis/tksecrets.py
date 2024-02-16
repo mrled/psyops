@@ -12,7 +12,16 @@ from pathlib import Path
 
 
 def gopass_get(path: str, mount: str = "psyops/") -> str:
-    """Get a secret from psyops"""
+    """Get a secret from psyops
+
+    gopass is not supposed to add a newline to the end of the secret unless its being printed to the terminal.
+    <https://github.com/gopasspw/gopass/pull/325>
+    However, it seems that this isn't working.
+    Going to strip exactly one newline from the end of the output to work around this,
+    but if gopass fixes it, my fix will break everything.
+
+    What they need is a way to tell it explicitly to not add a newline.
+    """
     fullpath = f"{mount}{path}"
     proc = subprocess.run(
         ["gopass", "cat", fullpath],
@@ -20,7 +29,8 @@ def gopass_get(path: str, mount: str = "psyops/") -> str:
         check=True,
         text=True,
     )
-    return proc.stdout
+    result = proc.stdout[0:-1]
+    return result
 
 
 def gopass_set(value: str | Path, path: str, mount: str = "psyops/") -> None:
