@@ -1,0 +1,11 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: bridgetroll-mw
+  namespace: bridgetroll
+spec:
+  forwardAuth:
+    address: "http://tfa.bridgetroll.svc.cluster.local:4181"
+    trustForwardHeader: true
+    authResponseHeaders:
+      - X-Forwarded-User

@@ -13,5 +13,8 @@ spec:
         - name: whoami-service
           kind: Service
           port: 80
+      middlewares:
+        - name: bridgetroll-mw
+          namespace: bridgetroll
   tls:
     secretName: younix-dot-us-wildcard-backing-secret

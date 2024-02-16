@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tfa
+  namespace: bridgetroll
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tfa
+  template:
+    metadata:
+      labels:
+        app: tfa
+    spec:
+      containers:
+        - image: thomseddon/traefik-forward-auth:2
+          name: tfa
+          ports:
+            - containerPort: 4181
+          env:
+            - name: DEFAULT_PROVIDER
+              value: oidc
+            - name: PROVIDERS_OIDC_CLIENT_ID
+              value: ${dexClientId}
+            - name: PROVIDERS_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dex-tfa-client-secret
+                  key: dexTfaClientSecret
+            - name: PROVIDERS_OIDC_ISSUER_URL
+              value: https://dex.${clusterTld}
+            - name: SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tfa-secrets
+                  key: httpSecret
+            - name: AUTH_HOST
+              value: tfa.${clusterTld}
+            - name: COOKIE_DOMAIN
+              value: ${clusterTld}
+            - name: LOG_LEVEL
+              value: debug

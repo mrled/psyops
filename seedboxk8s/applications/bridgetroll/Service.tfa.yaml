@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tfa
+  namespace: bridgetroll
+  labels:
+    app: tfa
+spec:
+  ports:
+  - port: 4181
+    targetPort: 4181
+  selector:
+    app: tfa

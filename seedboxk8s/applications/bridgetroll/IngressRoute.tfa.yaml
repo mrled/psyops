@@ -1,0 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tfa
+  namespace: bridgetroll
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`tfa.${clusterTld}`)
+    kind: Rule
+    services:
+    - name: tfa
+      port: 4181
+    middlewares:
+    - name: bridgetroll-mw
+  # The cert has to be valid for *all* URLs we want to protect.
+  # In this case, we are protecting a bunch of subdomains,
+  # so a wildcard cert works well.
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret

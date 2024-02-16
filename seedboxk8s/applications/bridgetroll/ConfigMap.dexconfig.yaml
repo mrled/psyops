@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dexconfig
+  namespace: bridgetroll
+data:
+  config.yaml: |+
+    # This is the canonical URL that all clients MUST use to refer to dex. If a
+    # path is provided, dex's HTTP service will listen at a non-root URL.
+    issuer: https://dex.${clusterTld}
+
+    # Users are defined under staticPasswords in this file,
+    # but this is still needed for sessions n' tokens n' shit
+    # https://github.com/dexidp/dex/blob/master/examples/k8s/dex.yaml
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+
+    web:
+      http: 0.0.0.0:5556
+
+    frontend:
+      issuer: Chemtrails
+      dir: /srv/dex/web
+      theme: mindcontrol
+
+    # https://dexidp.io/docs/id-tokens/#expiration-and-rotation-settings
+    expiry:
+      idTokens: 2160h
+      authRequests: 2160h
+      refreshTokens:
+        reuseInterval: 3s
+        validIfNotUsedFor: 2160h # 90 days
+        absoluteLifetime: 3960h # 165 days
+    oauth2:
+      skipApprovalScreen: true
+
+    staticClients:
+    - id: "${dexClientId}"
+      redirectURIs:
+      - https://tfa.${clusterTld}/_oauth
+      name: "${clusterTld}"
+      secretEnv: DEX_TFA_CLIENT_SECRET
+
+    logger:
+      level: "debug"
+      # format: json or text
+      format: "text"
+
+    # cannot specify static passwords without enabling password db
+    enablePasswordDB: true
+
+    staticPasswords:
+    - username: freeleech
+      email: freeleech@${clusterTld}
+      hashFromEnv: BCRYPTPASS_FREELEECH
+      userID: freeleech

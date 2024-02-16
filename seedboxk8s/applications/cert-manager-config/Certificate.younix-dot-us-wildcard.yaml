@@ -8,12 +8,13 @@ spec:
   - '*.younix.us'
   issuerRef:
     kind: ClusterIssuer
-    name: letsencrypt-staging
+    name: letsencrypt-production
   secretName: younix-dot-us-wildcard-backing-secret
   secretTemplate:
     annotations:
       reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
       reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: >-
+        bridgetroll,
         kube-system,
         registry,
         traefik,

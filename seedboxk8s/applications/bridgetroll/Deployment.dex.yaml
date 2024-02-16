@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dex
+  namespace: bridgetroll
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dex
+  template:
+    metadata:
+      labels:
+        app: dex
+    spec:
+      serviceAccountName: dex
+      containers:
+      - name: dex
+        image: dexidp/dex
+        command: ['dex', 'serve', '/etc/dex/config.yaml']
+        ports:
+        - containerPort: 5556
+        env:
+        - name: DEX_TFA_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: dex-tfa-client-secret
+              key: dexTfaClientSecret
+        - name: BCRYPTPASS_FREELEECH
+          valueFrom:
+            secretKeyRef:
+              name: dex-users
+              key: freeleech
+        volumeMounts:
+        - name: dexconfig
+          mountPath: /etc/dex
+      volumes:
+      - name: dexconfig
+        configMap:
+          name: dexconfig
