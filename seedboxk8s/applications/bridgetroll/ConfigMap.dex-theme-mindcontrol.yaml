@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dex-theme-mindcontrol
+  namespace: bridgetroll
+# The theme is just 3 files: il2.png, il2.svg, and styles.css.
+# favicon.png and logo.png should be symlinked to il2.png.
+data:
+  il2_png_b64: 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
+
+  il2_svg: |+
+    <svg xmlns:x="http://ns.adobe.com/Extensibility/1.0/" xmlns:i="http://ns.adobe.com/AdobeIllustrator/10.0/" xmlns:graph="http://ns.adobe.com/Graphs/1.0/" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" viewBox="0 0 100 125" style="enable-background:new 0 0 100 100;" xml:space="preserve"><switch><foreignObject requiredExtensions="http://ns.adobe.com/AdobeIllustrator/10.0/" x="0" y="0" width="1" height="1"/><g i:extraneous="self"><g><path d="M96.9,82L53.1,13.9c-1.5-2.3-4.8-2.3-6.3,0L3.1,82c-1.6,2.5,0.2,5.7,3.1,5.7h87.5C96.7,87.8,98.5,84.5,96.9,82z      M72.5,66.6c-1,1.1-10.2,10.9-22.5,10.9c-12.3,0-21.5-9.8-22.5-10.9c-2.5-2.8-2.5-7.1,0-10c1-1.1,10.2-10.9,22.5-10.9     c12.3,0,21.5,9.8,22.5,10.9C75,59.5,75,63.8,72.5,66.6z"/><path d="M68.8,59.9c-0.3-0.4-8.5-9.3-18.9-9.3c-10.4,0-18.5,8.9-18.9,9.3c-0.9,1-0.9,2.4,0,3.4c0.3,0.4,8.5,9.3,18.9,9.3     c10.4,0,18.5-8.9,18.9-9.3C69.7,62.4,69.7,60.9,68.8,59.9z M50,69.1c-4.1,0-7.4-3.3-7.4-7.4c0-4.1,3.3-7.4,7.4-7.4     s7.4,3.3,7.4,7.4C57.4,65.7,54.1,69.1,50,69.1z"/><path d="M54.3,61.6c0,2.4-1.9,4.3-4.3,4.3c-2.4,0-4.3-1.9-4.3-4.3c0-0.5,0.1-1,0.2-1.4c0.4,0.3,0.8,0.4,1.3,0.4     c1.3,0,2.3-1,2.3-2.3c0-0.3-0.1-0.7-0.2-0.9c0.2,0,0.4-0.1,0.6-0.1C52.4,57.3,54.3,59.3,54.3,61.6z"/></g></g></switch><text x="0" y="115" fill="#000000" font-size="5px" font-weight="bold" font-family="'Helvetica Neue', Helvetica, Arial-Unicode, Arial, Sans-serif">Created by Adrien Coquet</text><text x="0" y="120" fill="#000000" font-size="5px" font-weight="bold" font-family="'Helvetica Neue', Helvetica, Arial-Unicode, Arial, Sans-serif">from the Noun Project</text></svg>
+
+  styles_css: |+
+    .theme-body {
+      background-color: #efefef;
+      color: #333;
+      font-family: 'Source Sans Pro', Helvetica, sans-serif;
+    }
+
+    .theme-navbar {
+      background-color: #fff;
+      box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+      color: #333;
+      font-size: 13px;
+      font-weight: 100;
+      height: 46px;
+      overflow: hidden;
+      padding: 0 10px;
+    }
+
+    .theme-navbar__logo-wrap {
+      display: inline-block;
+      height: 100%;
+      overflow: hidden;
+      padding: 10px 15px;
+      width: 300px;
+    }
+
+    .theme-navbar__logo {
+      height: 100%;
+      max-height: 25px;
+    }
+
+    .theme-heading {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 10px;
+      margin-top: 0;
+    }
+
+    .theme-panel {
+      background-color: #fff;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+      padding: 30px;
+    }
+
+    .theme-btn-provider {
+      background-color: #fff;
+      color: #333;
+      min-width: 250px;
+    }
+
+    .theme-btn-provider:hover {
+      color: #999;
+    }
+
+    .theme-btn--primary {
+      background-color: #333;
+      border: none;
+      color: #fff;
+      min-width: 200px;
+      padding: 6px 12px;
+    }
+
+    .theme-btn--primary:hover {
+      background-color: #666;
+      color: #fff;
+    }
+
+    .theme-btn--success {
+      background-color: #2FC98E;
+      color: #fff;
+      width: 250px;
+    }
+
+    .theme-btn--success:hover {
+      background-color: #49E3A8;
+    }
+
+    .theme-form-row {
+      display: block;
+      margin: 20px auto;
+    }
+
+    .theme-form-input {
+      border-radius: 4px;
+      border: 1px solid #CCC;
+      box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+      color: #666;
+      display: block;
+      font-size: 14px;
+      height: 36px;
+      line-height: 1.42857143;
+      margin: auto;
+      padding: 6px 12px;
+      width: 250px;
+    }
+
+    .theme-form-input:focus,
+    .theme-form-input:active {
+      border-color: #66AFE9;
+      outline: none;
+    }
+
+    .theme-form-label {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 4px auto;
+      position: relative;
+      text-align: left;
+      width: 250px;
+    }
+
+    .theme-link-back {
+      margin-top: 4px;
+    }
+

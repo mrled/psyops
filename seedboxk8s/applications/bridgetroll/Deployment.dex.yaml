@@ -14,6 +14,15 @@ spec:
         app: dex
     spec:
       serviceAccountName: dex
+      initContainers:
+      - name: unpack-theme
+        image: busybox
+        command: ['sh', '-c', 'cp /mindcontrol-config/* /srv/dex/web/themes/mindcontrol/; cd /srv/dex/web/themes/mindcontrol; base64 -d il2_png_b64 > il2.png; ln -s il2.png favicon.png; ln -s il2.png logo.png;']
+        volumeMounts:
+        - name: mindcontrol-config
+          mountPath: /mindcontrol-config
+        - name: mindcontrol-theme
+          mountpath: /srv/dex/web/themes/mindcontrol
       containers:
       - name: dex
         image: dexidp/dex
@@ -34,7 +43,14 @@ spec:
         volumeMounts:
         - name: dexconfig
           mountPath: /etc/dex
+        - name: mindcontrol-theme
+          mountpath: /srv/dex/web/themes/mindcontrol
       volumes:
       - name: dexconfig
         configMap:
           name: dexconfig
+      - name: mindcontrol-config
+        configMap:
+          name: dex-theme-mindcontrol
+      - name: mindcontrol-theme
+        emptyDir: {}
