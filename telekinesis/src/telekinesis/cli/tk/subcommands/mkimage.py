@@ -12,7 +12,12 @@ import textwrap
 
 from telekinesis import aports, minisign
 from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
-from telekinesis.cli.tk.subcommands.buildpkg import abuild_blacksite, abuild_psyopsOS_base, build_neuralupgrade_pyz
+from telekinesis.cli.tk.subcommands.buildpkg import (
+    abuild_blacksite,
+    abuild_psyopsOS_base,
+    build_neuralupgrade_apk,
+    build_neuralupgrade_pyz,
+)
 from telekinesis.cli.tk.subcommands.requisites import get_memtest, get_ovmf
 from telekinesis.config import tkconfig
 
@@ -41,6 +46,7 @@ def mkimage_prepare(
     if not skip_build_apks:
         abuild_blacksite(False, cleandockervol, dangerous_no_clean_tmp_dir)
         abuild_psyopsOS_base(False, cleandockervol, dangerous_no_clean_tmp_dir)
+        build_neuralupgrade_apk(False, cleandockervol, dangerous_no_clean_tmp_dir)
 
     return (tkconfig.alpine_version, tkconfig.buildcontainer.apkreponame, tkconfig.buildcontainer.dockertag)
 
