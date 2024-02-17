@@ -8,6 +8,7 @@ Secrets should be stored in 1Password, and accessed with the getsecret function.
 from pathlib import Path
 import pprint
 
+from telekinesis.architectures import Architecture, all_architectures
 from telekinesis.tksecrets import gopass_get
 
 
@@ -72,7 +73,7 @@ class TelekinesisConfig:
         def __init__(self, alpine_version: str):
             self.alpine_version = alpine_version
             """The version of Alpine to use"""
-            self.dockertag_prefix = "psyopsos-builder-"
+            self.dockertag_prefix = "psyopsos-builder"
             """The Docker image tag prefix (will be suffixed with the Alpine version)"""
             self.apk_key_filename = "psyops@micahrl.com-62ca1973.rsa"
             """This is the name to set for the APK signing key in the Alpine builder container.
@@ -93,30 +94,56 @@ class TelekinesisConfig:
             self.mkimage_iso_profile = "psyopsOScd"
             """The Alpine mkimage.sh ISO profile for psyopsOS,
             which requires a profile_PROFILENAME file in the aports scripts overlay directory"""
-            self.dockertag = f"{self.dockertag_prefix}{self.alpine_version}"
-            """The Docker image tag of the build container"""
 
         def get_signing_key(self) -> str:
             """Get the signing key from 1Password"""
             return gopass_get("psyopsOS/abuild.rsa.key")
 
+        def build_container_tag(self, architecture: Architecture) -> str:
+            """Get the Docker image tag for the build container"""
+            return f"{self.dockertag_prefix}-{architecture.name}-alpine-{self.alpine_version}"
+
+    class TkConfigNoArchArtifactsNode:
+        """Configuration for non-architecture-specific artifacts"""
+
+        def __init__(self, artroot: Path):
+            self.noarchroot = artroot / "noarch"
+            """The path to the noarch artifacts directory on the host"""
+
+            self.node_secrets_filename_fmt = "psyops-secret.{nodename}.tar"
+            """Format string for building the name of psyops-secret tarball files"""
+
+            self.neuralupgrade = self.noarchroot / "neuralupgrade.pyz"
+            """Path to the pyz file for neuralupgrade"""
+
+        def node_secrets(self, nodename: str) -> Path:
+            """Get the path to the node secrets tarball"""
+            return self.noarchroot / self.node_secrets_filename_fmt.format(nodename=nodename)
+
     class TelekinesisConfigArtifactsNode:
         """Configuration for the artifacts node"""
 
-        def __init__(self, artroot: Path):
-            self.root = artroot
-            """The path to the artifacts directory on the host, containing build intermediate files and artifacts"""
+        def __init__(self, artroot: Path, arch: Architecture):
+            self.archroot = artroot / arch.name
+            """The path to the architecture-specific artifacts directory"""
 
-            self.memtest_zipfile = artroot / "memtest.zip"
+            self.architecture = arch
+            """The architecture for these artifacts"""
+
+            # TODO: some of the downloaded things are x86_64-specific
+
+            self.memtest_zipfile = self.archroot / "memtest.zip"
             """The path to the memtest86+ zipfile"""
-            self.memtest64efi = artroot / "memtest64.efi"
+            self.memtest64efi = self.archroot / "memtest64.efi"
             """The path to the memtest86+ EFI binary"""
 
             self.ovmf_url = "https://www.kraxel.org/repos/jenkins/edk2/edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm"
             """The URL to download the OVMF firmware from"""
-            self.ovmf_rpm = artroot / "edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm"
+            self.ovmf_rpm = (
+                self.archroot / "edk2.git-ovmf-x64-0-20220719.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm"
+            )
             """The path to the downloaded OVMF RPM artifact"""
-            self.ovmf_extracted_path = artroot / "ovmf-extracted"
+            self.ovmf_extracted_path = self.archroot / "ovmf-extracted"
             """The path to the extracted OVMF files"""
             self.ovmf_extracted_code = self.ovmf_extracted_path / "usr/share/edk2.git/ovmf-x64/OVMF_CODE-pure-efi.fd"
             """The path to the extracted OVMF_CODE-pure-efi.fd file"""
@@ -129,45 +156,37 @@ class TelekinesisConfig:
             self.uefishell_extracted_bin = self.ovmf_extracted_path / "efi/boot/bootx64.efi"
             """The path to the extracted UEFI shell binary from the image inside ISO"""
 
-            self.osdir_path = artroot / "psyopsOS.dir"
+            self.osdir_path = self.archroot / "psyopsOS.dir"
             """The path to the OS directory.
             Contains a single psyopsOS version, including
             kernel, initramfs, System.map, config, modloop, and squashfs files,
             and a boot/ directory which may contain DTB files if appropriate for the platform.
             """
-            self.ostar_path = artroot / "psyopsOS.tar"
+            self.ostar_path = self.archroot / "psyopsOS.tar"
             """The path to the OS tarfile.
             The osdir_path in a tarball.
             """
-            self.ostar_versioned_fmt = "psyopsOS.{version}.tar"
+            self.ostar_versioned_fmt = "psyopsOS.{arch}.{version}.tar"
             """The format string for the versioned OS tarfile.
             Used as the base for the filename in S3, and also of the signature file.
             """
-            self.esptar_path = artroot / "psyopsESP.tar"
+            self.esptar_path = self.archroot / "psyopsESP.tar"
             """The path to the EFI system partition tarball"""
-            self.esptar_manifest = artroot / "psyopsESP.manifest.json"
+            self.esptar_manifest = self.archroot / "psyopsESP.manifest.json"
             """The path to the JSON manifest for the EFI system partition tarball"""
-            self.esptar_versioned_fmt = "psyopsESP.{version}.tar"
+            self.esptar_versioned_fmt = "psyopsESP.{arch}.{version}.tar"
             """The format string for the versioned EFI system partition tarfile.
             Used as the base for the filename in S3, and also of the signature file.
             """
 
-            self.node_secrets_filename_fmt = "psyops-secret.{nodename}.tar"
-            """Format string for building the name of psyops-secret tarball files"""
-            self.node_image_filename_fmt = "psyopsOS.{nodename}.img"
+            self.node_image_filename_fmt = "psyopsOS.{arch}.{nodename}.img"
             """Format string for building the name of psyopsOS image files"""
-
-            self.neuralupgrade = artroot / "neuralupgrade.pyz"
-
-        def node_secrets(self, nodename: str) -> Path:
-            """Get the path to the node secrets tarball"""
-            return self.root / self.node_secrets_filename_fmt.format(nodename=nodename)
 
         def node_image(self, nodename: None | str = None) -> Path:
             """Get the path to the node image. If nodename is None, return the path to the generic image."""
             if nodename is None:
                 nodename = "generic"
-            return self.root / self.node_image_filename_fmt.format(nodename=nodename)
+            return self.archroot / self.node_image_filename_fmt.format(nodename=nodename)
 
     # Class variables
 
@@ -183,7 +202,11 @@ class TelekinesisConfig:
         self.repopaths = self.PsyopsRepoPaths(root=self.psyopsroot)
         self.deaddrop = self.TelekinesisConfigDeaddropNode(self.repopaths.artifacts)
         self.buildcontainer = self.TelekinesisBuildcontainerNode(self.alpine_version)
-        self.artifacts = self.TelekinesisConfigArtifactsNode(self.repopaths.artifacts)
+        self.noarch_artifacts = self.TkConfigNoArchArtifactsNode(self.repopaths.artifacts)
+        self.arch_artifacts = {
+            name: self.TelekinesisConfigArtifactsNode(self.repopaths.artifacts, arch)
+            for name, arch in all_architectures.items()
+        }
 
     def pformat(self, **kwargs) -> str:
         """Return a pretty-printed string representation of the config"""
@@ -192,7 +215,8 @@ class TelekinesisConfig:
                 repopaths=self.repopaths.__dict__,
                 deaddrop=self.deaddrop.__dict__,
                 buildcontainer=self.buildcontainer.__dict__,
-                artifacts=self.artifacts.__dict__,
+                noarch_artifacts=self.noarch_artifacts.__dict__,
+                artifacts=self.arch_artifacts.__dict__,
             ),
             **kwargs,
         )

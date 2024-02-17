@@ -9,11 +9,18 @@ import subprocess
 import sys
 import tempfile
 
+from telekinesis.architectures import Architecture
 from telekinesis.config import tkconfig
 
 
-def build_container(builder_tag: str, builder_dir: str, rebuild: bool = False):
-    cmd = ["docker", "build", "--platform", "linux/amd64", "--progress=plain"]
+def build_container(
+    builder_tag: str,
+    builder_dir: str,
+    platform: str,
+    rebuild: bool = False,
+):
+    """Generic function to build a Docker container"""
+    cmd = ["docker", "build", "--platform", platform, "--progress=plain"]
     if rebuild:
         cmd += ["--no-cache"]
     cmd += ["--tag", builder_tag, builder_dir]
@@ -29,6 +36,8 @@ class AlpineDockerBuilder:
 
     def __init__(
         self,
+        # Architecture to use
+        architecture: Architecture,
         # The path to the psyops checkout on the host
         psyops_checkout_dir,
         # The path to the aports checkout directory on the host
@@ -60,6 +69,8 @@ class AlpineDockerBuilder:
         # If true, add '--privileged=true' to the docker run command
         privileged=False,
     ):
+        self.architecture = architecture
+        self.platform = f"linux/{architecture.docker}"
         self.psyopsdir = psyops_checkout_dir
         self.aports_checkout_dir = aports_checkout_dir
         self.aports_scripts_overlay_dir = aports_scripts_overlay_dir
@@ -81,21 +92,27 @@ class AlpineDockerBuilder:
         """An in-container path for handling the mkimage working directory.
         A docker volume will be mounter here. Clean with `invoke dockervolclean`."""
 
-        self.in_container_artifacts_dir = "/home/build/artifacts"
-        """The location of the artifacts directory in the container."""
+        self.in_container_artifacts_root = "/home/build/artifacts"
+        """The location of the artifacts root directory in the container"""
+
+        self.in_container_noarch_artifacts_dir = f"{self.in_container_artifacts_root}/noarch"
+        """The location of the noarch artifacts directory in the container."""
+
+        self.in_container_arch_artifacts_dir = f"{self.in_container_artifacts_root}/{architecture.name}"
+        """The location of the architecture-specific artifacts directory in the container."""
 
         self.in_container_psyops_checkout = "/home/build/psyops"
         """The location of the psyops checkout in the container."""
 
-        self.in_container_apks_repo_root = f"{self.in_container_artifacts_dir}/deaddrop/apk"
+        self.in_container_apks_repo_root = f"{self.in_container_artifacts_root}/deaddrop/apk"
         """The location of APK repositories in the container (inside to the psyops checkout)."""
 
-        self.docker_builder_tag = f"{self.docker_builder_tag_prefix}{self.alpine_version}"
+        self.docker_builder_tag = tkconfig.buildcontainer.build_container_tag(architecture)
         """The tag for the Docker image, including the Alpine version suffix"""
 
     def __enter__(self):
         os.umask(0o022)
-        build_container(self.docker_builder_tag, self.docker_builder_dir)
+        build_container(self.docker_builder_tag, self.docker_builder_dir, self.platform)
 
         os.makedirs(self.host_artifacts_dir, exist_ok=True)
 
@@ -158,9 +175,8 @@ class AlpineDockerBuilder:
             "docker",
             "run",
             "--rm",
-            # Make sure we're building x86_64 even if we're running on something else like an ARM Mac
             "--platform",
-            "linux/amd64",
+            self.platform,
         ]
         if self.interactive:
             self.docker_cmd += ["--interactive", "--tty"]
@@ -195,7 +211,7 @@ class AlpineDockerBuilder:
             f"{self.apk_cache_volname}:/var/cache/apk",
             # This is where artifacts will be copied after building
             "--volume",
-            f"{self.host_artifacts_dir}:{self.in_container_artifacts_dir}",
+            f"{self.host_artifacts_dir}:{self.in_container_artifacts_root}",
             # Mount my APK keys into the container
             "--volume",
             f"{tempdir_apkkey.as_posix()}:{self.in_container_apk_key_path}:ro",
@@ -267,7 +283,8 @@ class AlpineDockerBuilder:
 
     def __exit__(self, exc_type, exc_value, traceback):
         if not self.dangerous_no_clean_tmp_dir:
-            shutil.rmtree(self.tempdir)
+            if self.tempdir.exists():
+                shutil.rmtree(self.tempdir)
         else:
             print(
                 f"WARNING: not cleaning temporary directory {self.tempdir}. It contains the APK key without a password, make sure to delete it manually!"
@@ -281,12 +298,12 @@ class AlpineDockerBuilder:
         Use this for its name.
         This doesn't need to be configurable, it isn't used anywhere else.
         """
-        return f"psyopsos-build-workdir-{self.alpine_version}"
+        return f"{self.docker_builder_tag}-workdir"
 
     @property
     def apk_cache_volname(self):
         """A volume name for the Docker apk cache directory."""
-        return f"psyopsos-apk-cache-{self.alpine_version}"
+        return f"{self.docker_builder_tag}-apkcache"
 
     def mkimage_clean(self, workdir):
         """Clean directories before build
@@ -303,6 +320,7 @@ class AlpineDockerBuilder:
 
 
 def get_configured_docker_builder(
+    architecture: Architecture,
     interactive: bool = False,
     cleandockervol: bool = False,
     dangerous_no_clean_tmp_dir: bool = False,
@@ -310,6 +328,7 @@ def get_configured_docker_builder(
 ):
     """Make an AlpineDockerBuilder from the configuration"""
     return AlpineDockerBuilder(
+        architecture,
         psyops_checkout_dir=tkconfig.psyopsroot,
         aports_checkout_dir=tkconfig.repopaths.aports,
         aports_scripts_overlay_dir=tkconfig.repopaths.psyops_aports_scripts,

@@ -9,8 +9,12 @@ import subprocess
 import sys
 import textwrap
 
-from telekinesis import deaddrop, minisign, tklogger, tksecrets
-from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
+from telekinesis import aports, deaddrop, minisign, tklogger, tksecrets
+from telekinesis.alpine_docker_builder import (
+    AlpineDockerBuilder,
+    build_container,
+    get_configured_docker_builder,
+)
 from telekinesis.cli import idb_excepthook
 from telekinesis.cli.tk.subcommands.buildpkg import (
     abuild_blacksite,
@@ -19,16 +23,17 @@ from telekinesis.cli.tk.subcommands.buildpkg import (
     build_neuralupgrade_pyz,
 )
 from telekinesis.cli.tk.subcommands.mkimage import (
-    make_grub_diskimg,
-    make_esptar,
     copy_esptar_to_deaddrop,
+    copy_ostar_to_deaddrop,
+    make_esptar,
+    make_grub_diskimg,
     make_kernel,
+    make_ostar,
     make_squashfs,
     mkimage_iso,
-    make_ostar,
-    copy_ostar_to_deaddrop,
 )
-from telekinesis.cli.tk.subcommands.requisites import get_ovmf, get_memtest
+from telekinesis.cli.tk.subcommands.requisites import get_x64_ovmf
+from telekinesis.architectures import Architecture, all_architectures
 from telekinesis.cli.tk.subcommands.vm import vm_diskimg, vm_osdir
 from telekinesis.config import tkconfig
 
@@ -65,27 +70,27 @@ class ListKeyValuePairsAndExit(argparse.Action):
         return wrapped_text
 
 
-def deployiso(host):
-    """Deploy the ISO image to a remote host"""
-    isofile = tkconfig.deaddrop.isopath
-    subprocess.run(["scp", isofile.as_posix(), f"root@{host}:/tmp/{isofile.name}"], check=True)
-    subprocess.run(
-        ["ssh", f"root@{host}", "/usr/sbin/psyopsOS-write-bootmedia", "iso", f"/tmp/{isofile.name}"], check=True
-    )
+def CommaSeparatedStrList(cssl: str) -> list[str]:
+    """Convert a string with commas into a list of strings
+
+    Useful as a type= argument to argparse.add_argument()
+    """
+    return cssl.split(",")
 
 
-def deploy_ostar(host, remote_path="/tmp"):
-    """Deploy the ISO image to a remote host
+def deploy_ostar(host, tarball, remote_path="/tmp"):
+    """Deploy the ostar to a remote host
 
     This uses multiple SSH commands, so enabling SSH master mode is recommended.
 
     neuralupgrade is copied into /usr/local/sbin/ on the remote host for later use.
 
     TODO: should I also copy the minisign public key?
+    TODO: is copying neuralupgrade a good idea, now that it's an APK package?
+    TODO: this doesn't work with architectures yet
     """
     build_neuralupgrade_pyz()
-    nupyz = tkconfig.artifacts.neuralupgrade
-    tarball = tkconfig.artifacts.ostar_path
+    nupyz = tkconfig.noarch_artifacts.neuralupgrade
     minisig = tarball.with_name(tarball.name + ".minisig")
     subprocess.run(["scp", nupyz.as_posix(), f"root@{host}:/usr/local/sbin/neuralupgrade"], check=True)
     subprocess.run(["scp", tarball.as_posix(), minisig.as_posix(), f"root@{host}:{remote_path}/"], check=True)
@@ -125,6 +130,13 @@ def makeparser(prog=None):
         "-v",
         action="store_true",
         help="Print more information about what is happening.",
+    )
+    archlist = ",".join(all_architectures.keys())
+    parser.add_argument(
+        "--architecture",
+        default=list(all_architectures.keys()),
+        type=CommaSeparatedStrList,
+        help=f"The architecture(s) to build for. Default: {archlist}.",
     )
 
     subparsers = parser.add_subparsers(dest="action", required=True)
@@ -232,7 +244,7 @@ def makeparser(prog=None):
         nargs="+",
         default=["kernel", "squashfs", "diskimg"],
         choices=diskimg_stages.keys(),
-        help="The stages to build, comma-separated. Default: %(default)s. See --list-stages for all possible stages and their descriptions.",
+        help="The stages to build. Default: %(default)s. See --list-stages for all possible stages and their descriptions.",
     )
     sub_mkimage_sub_diskimg.add_argument(
         "--list-stages",
@@ -284,7 +296,6 @@ def makeparser(prog=None):
     sub_vm_sub_diskimg.add_argument(
         "--disk-image",
         type=Path,
-        default=tkconfig.artifacts.node_image(),
         help="Path to the disk image",
     )
     sub_vm_sub_diskimg.add_argument(
@@ -400,6 +411,7 @@ def main_impl():
     parser = makeparser()
     parsed = parser.parse_args()
 
+    #### Early setup
     conhandler = logging.StreamHandler()
     conhandler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
     tklogger.addHandler(conhandler)
@@ -408,6 +420,56 @@ def main_impl():
         sys.excepthook = idb_excepthook
     if parsed.verbose:
         tklogger.setLevel(logging.DEBUG)
+
+    #### Handle stuff that needs to be done for multiple subcommands
+
+    _build_container_cms: dict[str, AlpineDockerBuilder] = {}
+    """Keep a cache of build container context managers"""
+
+    def getbldcm(arch: Architecture):
+        """Get a build container context manager"""
+        if arch.name not in _build_container_cms:
+            _build_container_cms[arch.name] = get_configured_docker_builder(
+                arch, parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir
+            )
+        return _build_container_cms[arch.name]
+
+    def mkimage_prepare(architecture: Architecture):
+        """Do common setup for mkimage commands"""
+        builder = getbldcm(architecture)
+        aports.validate_alpine_version(
+            tkconfig.repopaths.buildcontainer, tkconfig.repopaths.aports, tkconfig.alpine_version
+        )
+
+        # Make sure we have an up-to-date Docker builder
+        build_container(
+            tkconfig.buildcontainer.build_container_tag(architecture),
+            tkconfig.repopaths.buildcontainer,
+            f"linux/{builder.architecture.docker}",
+            rebuild=parsed.rebuild,
+        )
+
+        # Build the APKs that are also included in the ISO
+        # Building them here makes sure that they are up-to-date
+        # and especially that they're built on the right Python version
+        # (Different Alpine versions use different Python versions,
+        # and if the latest APK doesn't match what's installed on the new ISO,
+        # it will fail.)
+        if not parsed.skip_build_apks:
+            abuild_blacksite(builder)
+            abuild_psyopsOS_base(builder)
+            build_neuralupgrade_apk(builder)
+
+    #### Early argument validation
+    try:
+        interactive = parsed.interactive
+    except AttributeError:
+        interactive = False
+    if interactive and len(parsed.architecture) > 1:
+        parser.error("Can't run an interactive build container for multiple architectures at once")
+    architectures = [all_architectures[arch] for arch in parsed.architecture]
+
+    #### Main logic
 
     if parsed.action == "showconfig":
         print(tkconfig.pformat(indent=2, sort_dicts=False))
@@ -434,23 +496,26 @@ def main_impl():
             parser.error(f"Unknown deaddrop action: {parsed.deaddrop_action}")
     elif parsed.action == "builder":
         if parsed.builder_action == "build":
-            build_container(tkconfig.buildcontainer.dockertag, tkconfig.repopaths.buildcontainer, parsed.rebuild)
+            for arch in architectures:
+                platform = f"linux/{arch.docker}"
+                build_container(
+                    tkconfig.buildcontainer.build_container_tag(arch),
+                    tkconfig.repopaths.buildcontainer,
+                    platform,
+                    rebuild=parsed.rebuild,
+                )
         elif parsed.builder_action == "runcmd":
-            with get_configured_docker_builder(
-                parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir
-            ) as builder:
-                builder.run_docker_raw(parsed.command)
+            for arch in architectures:
+                with getbldcm(arch) as builder:
+                    builder.run_docker_raw(parsed.command)
         else:
             parser.error(f"Unknown builder action: {parsed.builder_action}")
     elif parsed.action == "mkimage":
         if parsed.mkimage_action == "iso":
-            mkimage_iso(
-                skip_build_apks=parsed.skip_build_apks,
-                rebuild=parsed.rebuild,
-                interactive=parsed.interactive,
-                cleandockervol=parsed.clean,
-                dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-            )
+            for arch in architectures:
+                mkimage_prepare(arch)
+                with getbldcm(arch) as builder:
+                    mkimage_iso(builder)
         elif parsed.mkimage_action == "diskimg":
             initdir = tkconfig.repopaths.root / "psyopsOS" / "osbuild" / "initramfs-init"
             init_patch = initdir / "initramfs-init.patch"
@@ -477,29 +542,27 @@ def main_impl():
                     check=True,
                 )
             if "kernel" in parsed.stages:
-                make_kernel(
-                    skip_build_apks=parsed.skip_build_apks,
-                    rebuild=parsed.rebuild,
-                    interactive=parsed.interactive,
-                    cleandockervol=parsed.clean,
-                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-                )
+                for arch in architectures:
+                    mkimage_prepare(arch)
+                    with getbldcm(arch) as builder:
+                        make_kernel(builder)
             if "squashfs" in parsed.stages:
-                make_squashfs(
-                    skip_build_apks=parsed.skip_build_apks,
-                    rebuild=parsed.rebuild,
-                    interactive=parsed.interactive,
-                    cleandockervol=parsed.clean,
-                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-                )
+                for arch in architectures:
+                    mkimage_prepare(arch)
+                    with getbldcm(arch) as builder:
+                        make_squashfs(builder)
             if "ostar" in parsed.stages:
-                make_ostar()
+                for arch in architectures:
+                    make_ostar(arch)
             if "ostar-dd" in parsed.stages:
-                copy_ostar_to_deaddrop()
+                for arch in architectures:
+                    copy_ostar_to_deaddrop(arch)
             if "efisystar" in parsed.stages:
-                make_esptar()
+                for arch in architectures:
+                    make_esptar(arch)
             if "efisystar-dd" in parsed.stages:
-                copy_esptar_to_deaddrop()
+                for arch in architectures:
+                    copy_esptar_to_deaddrop(arch)
             if "sectar" in parsed.stages and parsed.node_secrets:
                 subprocess.run(
                     [
@@ -507,52 +570,64 @@ def main_impl():
                         "save",
                         parsed.node_secrets,
                         "--outtar",
-                        tkconfig.artifacts.node_secrets(parsed.node_secrets),
+                        tkconfig.noarch_artifacts.node_secrets(parsed.node_secrets),
                         "--force",
                     ],
                 )
             if "diskimg" in parsed.stages:
-                get_memtest()
-                mgd_kwargs = dict(
-                    out_filename=tkconfig.artifacts.node_image().name,
-                    interactive=parsed.interactive,
-                    cleandockervol=parsed.clean,
-                    dangerous_no_clean_tmp_dir=parsed.dangerous_no_clean_tmp_dir,
-                )
-                if parsed.node_secrets:
-                    mgd_kwargs["out_filename"] = tkconfig.artifacts.node_image(parsed.node_secrets).name
-                    mgd_kwargs["secrets_tarball"] = tkconfig.artifacts.node_secrets(parsed.node_secrets)
-                make_grub_diskimg(**mgd_kwargs)
+                for arch in architectures:
+                    mkimage_prepare(arch)
+                    out_filename = tkconfig.arch_artifacts[arch.name].node_image().name
+                    secrets_tarball = ""
+                    if parsed.node_secrets:
+                        out_filename = tkconfig.arch_artifacts[arch.name].node_image(parsed.node_secrets).name
+                        secrets_tarball = tkconfig.noarch_artifacts.node_secrets(parsed.node_secrets)
+                    with getbldcm(arch) as builder:
+                        make_grub_diskimg(out_filename, builder, secrets_tarball=secrets_tarball)
         else:
             parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
     elif parsed.action == "vm":
+        # TODO: handle architecture
+        if len(architectures) > 1:
+            parser.error("Can't run multiple VMs at once")
+        arch: Architecture = architectures[0]
         if parsed.vm_action == "diskimg":
-            get_ovmf()
-            vm_diskimg(parsed.disk_image, parsed.macaddr)
+            get_x64_ovmf()
+            diskimg = parsed.disk_image
+            if not diskimg:
+                diskimg = tkconfig.arch_artifacts[arch.name].node_image()
+            vm_diskimg(diskimg, parsed.macaddr)
         elif parsed.vm_action == "osdir":
             vm_osdir()
         elif parsed.vm_action == "profile":
             if parsed.profile == "qreamsqueen":
-                get_ovmf()
-                vm_diskimg(tkconfig.artifacts.node_image("qreamsqueen"), "ac:ed:de:ad:be:ef")
+                get_x64_ovmf()
+                vm_diskimg(tkconfig.arch_artifacts[arch.name].node_image("qreamsqueen"), "ac:ed:de:ad:be:ef")
             else:
                 parser.error(f"Unknown profile: {parsed.profile}")
         else:
             parser.error(f"Unknown vm action: {parsed.vm_action}")
     elif parsed.action == "buildpkg":
-        if "base" in parsed.package:
-            abuild_psyopsOS_base(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
-        if "blacksite" in parsed.package:
-            abuild_blacksite(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
+        # arch-specific packages
+        for arch in architectures:
+            builder = getbldcm(arch)
+            if "base" in parsed.package:
+                abuild_psyopsOS_base(builder)
+            if "blacksite" in parsed.package:
+                abuild_blacksite(builder)
+            if "neuralupgrade-apk" in parsed.package:
+                build_neuralupgrade_apk(builder)
+        # no-arch packages
         if "neuralupgrade-pyz" in parsed.package:
             build_neuralupgrade_pyz()
-        if "neuralupgrade-apk" in parsed.package:
-            build_neuralupgrade_apk(parsed.interactive, parsed.clean, parsed.dangerous_no_clean_tmp_dir)
     elif parsed.action == "deployos":
+        if len(architectures) > 1:
+            parser.error("Can't deploy to multiple architectures at once")
+        arch = architectures[0]
         if parsed.type == "iso":
-            deployiso(parsed.host)
+            raise NotImplementedError("Deploying ISO images is not implemented")
         elif parsed.type == "diskimg":
-            deploy_ostar(parsed.host)
+            deploy_ostar(parsed.host, tkconfig.arch_artifacts[arch.name].node_image(parsed.host))
         else:
             parser.error(f"Unknown deployment type: {parsed.type}")
     elif parsed.action == "psynet":

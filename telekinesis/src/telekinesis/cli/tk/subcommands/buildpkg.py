@@ -3,16 +3,14 @@
 import subprocess
 from typing import Optional
 
-from telekinesis.alpine_docker_builder import get_configured_docker_builder
+from telekinesis.alpine_docker_builder import AlpineDockerBuilder, get_configured_docker_builder
 from telekinesis.config import tkconfig
 
 
 def abuild_psyopsOS_package(
     package: str,
+    builder: AlpineDockerBuilder,
     setupcmds: Optional[list[str]] = None,
-    interactive: bool = False,
-    cleandockervol: bool = False,
-    dangerous_no_clean_tmp_dir: bool = False,
 ):
     """Build a psyopsOS APK package in the mkimage docker container.
 
@@ -24,7 +22,7 @@ def abuild_psyopsOS_package(
     setupcmds: A list of commands to run before building the package.
     """
     setupcmds = setupcmds or []
-    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+    with builder:
         apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
         # Place the apk repo inside the public dir, this means that 'invoke deploy' will copy it
         in_container_package_path = f"{builder.in_container_psyops_checkout}/psyopsOS/abuild/psyopsOS/{package}"
@@ -39,10 +37,10 @@ def abuild_psyopsOS_package(
 
 
 # TODO: can the blacksite apk package be built with build_psyopsOS_apk()?
-def abuild_blacksite(interactive: bool, cleandockervol: bool, dangerous_no_clean_tmp_dir: bool):
+def abuild_blacksite(builder: AlpineDockerBuilder):
     """Build the progfiguration psyops blacksite Python package as an Alpine package. Use the mkimage docker container."""
 
-    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+    with builder:
         apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
         apkrepopath = apkindexpath + "/" + tkconfig.buildcontainer.apkreponame
 
@@ -67,7 +65,7 @@ def abuild_blacksite(interactive: bool, cleandockervol: bool, dangerous_no_clean
         builder.run_docker(in_container_build_cmd)
 
 
-def abuild_psyopsOS_base(interactive: bool, cleandockervol: bool, dangerous_no_clean_tmp_dir: bool):
+def abuild_psyopsOS_base(builder: AlpineDockerBuilder):
     """Build the psyopsOS-base Alpine package"""
     setupcmds = [
         # grub-efi package is broken in Docker.
@@ -80,7 +78,7 @@ def abuild_psyopsOS_base(interactive: bool, cleandockervol: bool, dangerous_no_c
         "sudo apk del grub-efi",
         "sudo apk fix",
     ]
-    abuild_psyopsOS_package("psyopsOS-base", setupcmds, interactive, cleandockervol, dangerous_no_clean_tmp_dir)
+    abuild_psyopsOS_package("psyopsOS-base", builder, setupcmds=setupcmds)
 
 
 def build_neuralupgrade_pyz():
@@ -94,7 +92,7 @@ def build_neuralupgrade_pyz():
             "--main",
             "neuralupgrade.cmd:main",
             "--output",
-            tkconfig.artifacts.neuralupgrade,
+            tkconfig.noarch_artifacts.neuralupgrade,
             "--python",
             "/usr/bin/env python3",
             srcroot.as_posix(),
@@ -103,6 +101,6 @@ def build_neuralupgrade_pyz():
     )
 
 
-def build_neuralupgrade_apk(interactive: bool, cleandockervol: bool, dangerous_no_clean_tmp_dir: bool):
+def build_neuralupgrade_apk(builder):
     """Build the neuralupgrade APK package"""
-    abuild_psyopsOS_package("neuralupgrade", [], interactive, cleandockervol, dangerous_no_clean_tmp_dir)
+    abuild_psyopsOS_package("neuralupgrade", builder)

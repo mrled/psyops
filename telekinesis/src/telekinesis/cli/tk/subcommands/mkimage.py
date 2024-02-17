@@ -10,65 +10,19 @@ import subprocess
 import tarfile
 import textwrap
 
-from telekinesis import aports, minisign
-from telekinesis.alpine_docker_builder import build_container, get_configured_docker_builder
-from telekinesis.cli.tk.subcommands.buildpkg import (
-    abuild_blacksite,
-    abuild_psyopsOS_base,
-    build_neuralupgrade_apk,
-    build_neuralupgrade_pyz,
-)
-from telekinesis.cli.tk.subcommands.requisites import get_memtest, get_ovmf
+from telekinesis import minisign
+from telekinesis.alpine_docker_builder import AlpineDockerBuilder
+from telekinesis.architectures import Architecture
+from telekinesis.cli.tk.subcommands.buildpkg import build_neuralupgrade_pyz
+from telekinesis.cli.tk.subcommands.requisites import get_x64_memtest, get_x64_ovmf
 from telekinesis.config import tkconfig
 
 
-def mkimage_prepare(
-    skip_build_apks: bool = False,
-    rebuild: bool = False,
-    cleandockervol: bool = False,
-    dangerous_no_clean_tmp_dir: bool = False,
-):
-    """Do common setup for mkimage commands"""
-
-    aports.validate_alpine_version(
-        tkconfig.repopaths.buildcontainer, tkconfig.repopaths.aports, tkconfig.alpine_version
-    )
-
-    # Make sure we have an up-to-date Docker builder
-    build_container(tkconfig.buildcontainer.dockertag, tkconfig.repopaths.buildcontainer, rebuild)
-
-    # Build the APKs that are also included in the ISO
-    # Building them here makes sure that they are up-to-date
-    # and especially that they're built on the right Python version
-    # (Different Alpine versions use different Python versions,
-    # and if the latest APK doesn't match what's installed on the new ISO,
-    # it will fail.)
-    if not skip_build_apks:
-        abuild_blacksite(False, cleandockervol, dangerous_no_clean_tmp_dir)
-        abuild_psyopsOS_base(False, cleandockervol, dangerous_no_clean_tmp_dir)
-        build_neuralupgrade_apk(False, cleandockervol, dangerous_no_clean_tmp_dir)
-
-    return (tkconfig.alpine_version, tkconfig.buildcontainer.apkreponame, tkconfig.buildcontainer.dockertag)
-
-
-def mkimage_iso(
-    skip_build_apks: bool = False,
-    rebuild: bool = False,
-    interactive: bool = False,
-    cleandockervol: bool = False,
-    dangerous_no_clean_tmp_dir: bool = False,
-):
+def mkimage_iso(architecture: Architecture, builder: AlpineDockerBuilder):
     """Make a psyopsOS ISO image"""
-    alpine_version, apkreponame, builder_tag = mkimage_prepare(
-        skip_build_apks,
-        rebuild,
-        cleandockervol,
-        dangerous_no_clean_tmp_dir,
-    )
-
-    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+    with builder:
         apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
-        apkrepopath = apkindexpath + "/" + apkreponame
+        apkrepopath = apkindexpath + "/" + tkconfig.buildcontainer.apkreponame
         in_container_mkimage_cmd_list = [
             " ".join(
                 [
@@ -78,9 +32,9 @@ def mkimage_iso(
                     "--tag",
                     tkconfig.buildcontainer.isotag,
                     "--outdir",
-                    builder.in_container_artifacts_dir,
+                    builder.in_container_arch_artifacts_dir,
                     "--arch",
-                    tkconfig.buildcontainer.architecture,
+                    architecture.mkimage,
                     "--repository",
                     f"http://dl-cdn.alpinelinux.org/alpine/v{tkconfig.alpine_version}/main",
                     "--repository",
@@ -99,7 +53,7 @@ def mkimage_iso(
         ]
         in_container_mkimage_cmd = " && ".join(in_container_mkimage_cmd_list)
         builder.run_docker([in_container_mkimage_cmd])
-        for isofile in tkconfig.repopaths.artifacts.glob("*.iso"):
+        for isofile in tkconfig.repopaths.artifacts.glob("*/*.iso"):
             print(f"{isofile}")
 
 
@@ -124,8 +78,8 @@ def generate_apk_repositories_files(alpine_version: str) -> tuple[Path, Path]:
         {psyopsOS_repo}
         """
     ).strip()
-    all_repos = tkconfig.artifacts.root / "psyopsOS.repositories.all"
-    psyopsOS_only_repo = tkconfig.artifacts.root / "psyopsOS.repositories.psyopsOSonly"
+    all_repos = tkconfig.noarch_artifacts.noarchroot / "psyopsOS.repositories.all"
+    psyopsOS_only_repo = tkconfig.noarch_artifacts.noarchroot / "psyopsOS.repositories.psyopsOSonly"
     with all_repos.open("w") as f:
         f.write(psyopsOS_apk_repositories)
     with psyopsOS_only_repo.open("w") as f:
@@ -133,24 +87,11 @@ def generate_apk_repositories_files(alpine_version: str) -> tuple[Path, Path]:
     return (all_repos, psyopsOS_only_repo)
 
 
-def make_kernel(
-    skip_build_apks: bool = False,
-    rebuild: bool = False,
-    interactive: bool = False,
-    cleandockervol: bool = False,
-    dangerous_no_clean_tmp_dir: bool = False,
-):
+def make_kernel(builder: AlpineDockerBuilder):
     """Make a psyopsOS kernel, initramfs, etc for disk images (not ISOs)"""
-    alpine_version, apkreponame, builder_tag = mkimage_prepare(
-        skip_build_apks,
-        rebuild,
-        cleandockervol,
-        dangerous_no_clean_tmp_dir,
-    )
+    all_repos, psyopsOS_only_repo = generate_apk_repositories_files(tkconfig.alpine_version)
 
-    all_repos, psyopsOS_only_repo = generate_apk_repositories_files(alpine_version)
-
-    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+    with builder:
         # Add the local copy of the psyopsOS repository to the list of repositories in the container.
         # This means that when we do "apk cache download" below,
         # it will be able to find copies of psyopsOS-base and progfiguration_blacksite on local disk.
@@ -158,12 +99,15 @@ def make_kernel(
         make_kernel_script = os.path.join(
             builder.in_container_psyops_checkout, "psyopsOS/osbuild/make-psyopsOS-kernel.sh"
         )
-        repositories_file = os.path.join(builder.in_container_artifacts_dir, all_repos.name)
+        repositories_file = os.path.join(builder.in_container_noarch_artifacts_dir, all_repos.name)
         in_container_local_repo_path = os.path.join(
-            builder.in_container_artifacts_dir, f"deaddrop/apk/v{alpine_version}/psyopsOS"
+            builder.in_container_artifacts_root, f"deaddrop/apk/v{tkconfig.alpine_version}/psyopsOS"
         )
+        arch_artifacts = tkconfig.arch_artifacts[builder.architecture.name]
+        in_container_osdir = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.osdir_path.name)
         in_container_build_cmd = [
             "set -x",
+            f"sudo apk update",
             # Now cache the packages we need to build the image.
             # This copies them to /var/cache/apk in the container.
             # It's a little inefficient to copy them,
@@ -173,29 +117,17 @@ def make_kernel(
             f"sudo apk cache download alpine-base linux-lts linux-firmware",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E {make_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {builder.in_container_artifacts_dir}/{tkconfig.artifacts.osdir_path.name}",
+            f"sudo -E {make_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {in_container_osdir}",
         ]
         builder.run_docker(in_container_build_cmd)
-        subprocess.run(["ls", "-larth", tkconfig.artifacts.osdir_path], check=True)
+        if arch_artifacts.osdir_path.exists():
+            subprocess.run(["ls", "-larth", arch_artifacts.osdir_path], check=True)
 
 
-def make_squashfs(
-    skip_build_apks: bool = False,
-    rebuild: bool = False,
-    interactive: bool = False,
-    cleandockervol: bool = False,
-    dangerous_no_clean_tmp_dir: bool = False,
-):
+def make_squashfs(builder: AlpineDockerBuilder):
     """Make a psyopsOS squashfs root filesystem for disk images (not ISOs)"""
-    builddate = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-    alpine_version, apkreponame, builder_tag = mkimage_prepare(
-        skip_build_apks,
-        rebuild,
-        cleandockervol,
-        dangerous_no_clean_tmp_dir,
-    )
 
-    all_repos, psyopsOS_only_repo = generate_apk_repositories_files(alpine_version)
+    all_repos, psyopsOS_only_repo = generate_apk_repositories_files(tkconfig.alpine_version)
 
     extra_required_packages = [
         # If this isn't present, setup-keyboard in 000-psyopsOS-postboot.start will hang waiting for user input forever.
@@ -209,7 +141,7 @@ def make_squashfs(
     with (tkconfig.repopaths.root / "psyopsOS" / "os-overlay" / "etc" / "apk" / "available").open("r") as f:
         apk_cache_list += f.read().splitlines()
 
-    with get_configured_docker_builder(interactive, cleandockervol, dangerous_no_clean_tmp_dir) as builder:
+    with builder:
         # Add the local copy of the psyopsOS repository to the list of repositories in the container.
         # This means that when we do "apk cache download" below,
         # it will be able to find copies of psyopsOS-base and progfiguration_blacksite on local disk.
@@ -221,11 +153,15 @@ def make_squashfs(
         # but it's not necessary because we can just cache everything in the world file.
         # We cannot install nebula here, bc blacksite needs to create its user before it installs it itself.
         # psyopsOS_available = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/os-overlay/etc/apk/available")
-        in_container_all_repos = os.path.join(builder.in_container_artifacts_dir, all_repos.name)
-        in_container_psyopsOS_only_repo = os.path.join(builder.in_container_artifacts_dir, psyopsOS_only_repo.name)
-        in_container_outdir = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.osdir_path.name)
+        in_container_all_repos = os.path.join(builder.in_container_noarch_artifacts_dir, all_repos.name)
+        in_container_psyopsOS_only_repo = os.path.join(
+            builder.in_container_noarch_artifacts_dir, psyopsOS_only_repo.name
+        )
+        arch_artifacts = tkconfig.arch_artifacts[builder.architecture.name]
+        osdir_path = arch_artifacts.osdir_path
+        in_container_outdir = os.path.join(builder.in_container_arch_artifacts_dir, osdir_path.name)
         in_container_local_repo_path = os.path.join(
-            builder.in_container_artifacts_dir, f"deaddrop/apk/v{alpine_version}/psyopsOS"
+            builder.in_container_artifacts_root, f"deaddrop/apk/v{tkconfig.alpine_version}/psyopsOS"
         )
         in_container_build_cmd = [
             "set -x",
@@ -241,55 +177,49 @@ def make_squashfs(
             f"sudo -E /bin/sh {make_squashfs_script} --apk-packages {' '.join(extra_required_packages)} --apk-packages-file {psyopsOS_world} --apk-repositories {in_container_all_repos} --apk-repositories-psyopsOSonly {in_container_psyopsOS_only_repo} --apk-local-repo {in_container_local_repo_path} --outdir {in_container_outdir} --psyops-root {builder.in_container_psyops_checkout}",
         ]
         builder.run_docker(in_container_build_cmd)
-        alpine_version_file = tkconfig.artifacts.osdir_path / "squashfs.alpine_version"
+        alpine_version_file = osdir_path / "squashfs.alpine_version"
         with alpine_version_file.open("w") as f:
-            f.write(alpine_version)
-        subprocess.run(["ls", "-larth", tkconfig.artifacts.osdir_path], check=True)
+            f.write(tkconfig.alpine_version)
+        subprocess.run(["ls", "-larth", osdir_path], check=True)
 
 
 def make_grub_diskimg(
     out_filename: str,
-    interactive: bool = False,
-    cleandockervol: bool = False,
-    dangerous_no_clean_tmp_dir: bool = False,
-    secrets_tarball: str | None = None,
+    builder: AlpineDockerBuilder,
+    secrets_tarball: str = "",
 ):
-    """Make a disk image containing GRUB and a partition for initramfs-only images that Grub can boot
-
-    If secrets_tarball is not None, it should be a path to a tarball containing node secrets to be included in the image.
-    In that case, out_filename should probably reflect the nodename.
-    """
+    """Make a disk image containing GRUB and a partition for initramfs-only images that Grub can boot"""
 
     # We can't have the neuralupgrade package in the Docker image as an APK package,
     # because the Docker image is required to build the neuralupgrade APK package.
     # Instead, make the zipapp (outside of the Docker image) and use that.
     build_neuralupgrade_pyz()
 
-    extra_volumes = []
-    extra_scriptargs = ""
     if secrets_tarball is not None:
-        extra_volumes += [f"{secrets_tarball}:/tmp/secret.tar"]
+        builder.extra_volumes = [f"{secrets_tarball}:/tmp/secret.tar"]
         extra_scriptargs = "-x /tmp/secret.tar"
 
-    with get_configured_docker_builder(
-        interactive, cleandockervol, dangerous_no_clean_tmp_dir, extra_volumes=extra_volumes
-    ) as builder:
+    with builder:
+        arch_artifacts = tkconfig.arch_artifacts[builder.architecture.name]
         make_img_sript = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/osbuild/make-psyopsOS-img.sh")
-        psyopsostar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.ostar_path.name)
-        psyopsesptar = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.esptar_path.name)
-        neuralupgrade = os.path.join(builder.in_container_artifacts_dir, tkconfig.artifacts.neuralupgrade.name)
+        psyopsostar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.ostar_path.name)
+        psyopsesptar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.esptar_path.name)
+        neuralupgrade = os.path.join(
+            builder.in_container_noarch_artifacts_dir, tkconfig.noarch_artifacts.neuralupgrade.name
+        )
         minisign_pubkey = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/minisign.pubkey")
-        outimg = os.path.join(builder.in_container_artifacts_dir, out_filename)
+        outimg = os.path.join(builder.in_container_arch_artifacts_dir, out_filename)
         in_container_build_cmd = [
             f"sudo sh {make_img_sript} -n {neuralupgrade} -p {psyopsostar} -E {psyopsesptar} -o {outimg} -V {minisign_pubkey} {extra_scriptargs}",
         ]
         builder.run_docker(in_container_build_cmd)
 
 
-def make_ostar():
+def make_ostar(architecture: Architecture):
     """Create the OS tarball"""
     build_date = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-    tarball_file = tkconfig.artifacts.ostar_versioned_fmt.format(version=build_date)
+    arch_artifacts = tkconfig.arch_artifacts[architecture.name]
+    tarball_file = arch_artifacts.ostar_versioned_fmt.format(arch=architecture.name, version=build_date)
 
     items = [
         "kernel",
@@ -304,43 +234,42 @@ def make_ostar():
     ]
     # We don't compress because the big files - kernel/squashfs/initramfs - are already compressed
     # Compressing with "w:gz" saved about 4MB out of 630MB as of 20231215
-    with tarfile.open(tkconfig.artifacts.ostar_path.as_posix(), "w") as tar:
+    with tarfile.open(arch_artifacts.ostar_path.as_posix(), "w") as tar:
         for item in items:
-            tar.add(tkconfig.artifacts.osdir_path / item, arcname=item)
+            tar.add(arch_artifacts.osdir_path / item, arcname=item)
 
-    with open(tkconfig.artifacts.osdir_path / "squashfs.alpine_version", "r") as f:
+    with open(arch_artifacts.osdir_path / "squashfs.alpine_version", "r") as f:
         alpine_version = f.read().strip()
-    with open(tkconfig.artifacts.osdir_path / "kernel.version", "r") as f:
+    with open(arch_artifacts.osdir_path / "kernel.version", "r") as f:
         kernel_version = f.read().strip()
 
-    trusted_comment = (
-        f"type=psyopsOS filename={tarball_file} version={build_date} kernel={kernel_version} alpine={alpine_version}"
-    )
-    # Note that we're signing the tarball using the unversioned name from tkconfig.artifacts,
+    trusted_comment = f"type=psyopsOS filename={tarball_file} version={build_date} kernel={kernel_version} alpine={alpine_version} architecture={architecture.kernel}"
+
+    # Note that we're signing the tarball using the unversioned name from arch_artifacts,
     # but the trusted_comment contains the versioned name.
     # This doesn't matter, even though the default trusted_comment contains the signed filename.
-    minisign.sign(tkconfig.artifacts.ostar_path.as_posix(), trusted_comment=trusted_comment)
+    minisign.sign(arch_artifacts.ostar_path.as_posix(), trusted_comment=trusted_comment)
 
 
-def copy_ostar_to_deaddrop():
+def copy_ostar_to_deaddrop(architecture: Architecture):
     """Copy the OS tarball and signature to the deaddrop, making sure they have correct names"""
-    trusted_comment = minisign.verify(tkconfig.artifacts.ostar_path)
+    arch_artifacts = tkconfig.arch_artifacts[architecture.name]
+    trusted_comment = minisign.verify(arch_artifacts.ostar_path)
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
     os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
-    shutil.copy(tkconfig.artifacts.ostar_path, tkconfig.deaddrop.osdir / metadata["filename"])
-    sig = f"{tkconfig.artifacts.ostar_path}.minisig"
+    shutil.copy(arch_artifacts.ostar_path, tkconfig.deaddrop.osdir / metadata["filename"])
+    sig = f"{arch_artifacts.ostar_path}.minisig"
     shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")
 
     # symlink the minisig to latest.minisig
-    latest_sig = tkconfig.deaddrop.osdir / (
-        tkconfig.artifacts.ostar_versioned_fmt.format(version="latest") + ".minisig"
-    )
+    ostar_name = arch_artifacts.ostar_versioned_fmt.format(arch=architecture.name, version="latest")
+    latest_sig = tkconfig.deaddrop.osdir / (ostar_name + ".minisig")
     if latest_sig.exists():
         latest_sig.unlink()
     latest_sig.symlink_to(f"{metadata['filename']}.minisig")
 
 
-def make_esptar():
+def make_esptar(architecture: Architecture):
     """Make an EFI system partition tarball
 
     The EFI system partition is installed by neuralupgrade,
@@ -349,9 +278,10 @@ def make_esptar():
     This tarball contains some extra files like memtest and the EFI shell.
     """
     build_date = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-    tarball_file = tkconfig.artifacts.esptar_versioned_fmt.format(version=build_date)
-    get_ovmf()
-    get_memtest()
+    arch_artifacts = tkconfig.arch_artifacts[architecture.name]
+    tarball_file = arch_artifacts.esptar_versioned_fmt.format(arch=architecture.name, version=build_date)
+    get_x64_ovmf()
+    get_x64_memtest()
 
     @dataclass
     class EfiProgram:
@@ -360,11 +290,9 @@ def make_esptar():
         bootentry: str
 
     programs = [
+        EfiProgram(arch_artifacts.memtest64efi.as_posix(), arch_artifacts.memtest64efi.name, "MemTest86 EFI (64-bit)"),
         EfiProgram(
-            tkconfig.artifacts.memtest64efi.as_posix(), tkconfig.artifacts.memtest64efi.name, "MemTest86 EFI (64-bit)"
-        ),
-        EfiProgram(
-            tkconfig.artifacts.uefishell_extracted_bin.as_posix(), "tcshell.efi", "TianoCore OVMF UEFI Shell (64-bit)"
+            arch_artifacts.uefishell_extracted_bin.as_posix(), "tcshell.efi", "TianoCore OVMF UEFI Shell (64-bit)"
         ),
     ]
     programs_list = ",".join([program.arcname for program in programs])
@@ -373,28 +301,28 @@ def make_esptar():
         "version": 1,
         "extra_programs": {f"/{program.arcname}": program.bootentry for program in programs},
     }
-    with tkconfig.artifacts.esptar_manifest.open("w") as f:
+    with arch_artifacts.esptar_manifest.open("w") as f:
         json.dump(manifest_contents, f, indent=2)
-    with tarfile.open(tkconfig.artifacts.esptar_path, "w") as tf:
+    with tarfile.open(arch_artifacts.esptar_path, "w") as tf:
         for program in programs:
             tf.add(program.localpath, arcname=program.arcname)
-        tf.add(tkconfig.artifacts.esptar_manifest, arcname="manifest.json")
-    minisign.sign(tkconfig.artifacts.esptar_path.as_posix(), trusted_comment=trusted_comment)
+        tf.add(arch_artifacts.esptar_manifest, arcname="manifest.json")
+    minisign.sign(arch_artifacts.esptar_path.as_posix(), trusted_comment=trusted_comment)
 
 
-def copy_esptar_to_deaddrop():
+def copy_esptar_to_deaddrop(architecture: Architecture):
     """Copy the EFI tarball and signature to the deaddrop, making sure they have correct names"""
-    trusted_comment = minisign.verify(tkconfig.artifacts.esptar_path)
+    arch_artifacts = tkconfig.arch_artifacts[architecture.name]
+    trusted_comment = minisign.verify(arch_artifacts.esptar_path)
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
     os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
-    shutil.copy(tkconfig.artifacts.esptar_path, tkconfig.deaddrop.osdir / metadata["filename"])
-    sig = f"{tkconfig.artifacts.esptar_path}.minisig"
+    shutil.copy(arch_artifacts.esptar_path, tkconfig.deaddrop.osdir / metadata["filename"])
+    sig = f"{arch_artifacts.esptar_path}.minisig"
     shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")
 
     # symlink the minisig to latest.minisig
-    latest_sig = tkconfig.deaddrop.osdir / (
-        tkconfig.artifacts.esptar_versioned_fmt.format(version="latest") + ".minisig"
-    )
+    esptar_name = arch_artifacts.esptar_versioned_fmt.format(arch=architecture.name, version="latest")
+    latest_sig = tkconfig.deaddrop.osdir / (esptar_name + ".minisig")
     if latest_sig.exists():
         latest_sig.unlink()
     latest_sig.symlink_to(f"{metadata['filename']}.minisig")

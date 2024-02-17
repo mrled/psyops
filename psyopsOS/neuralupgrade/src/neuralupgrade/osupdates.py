@@ -1,5 +1,6 @@
 import datetime
 import os
+import platform
 import shutil
 import subprocess
 import threading
@@ -45,7 +46,7 @@ def get_system_versions(filesystems: Filesystems) -> dict:
             try:
                 info = parse_trusted_comment(sigfile=minisig_path)
             except FileNotFoundError:
-                info = {f"error": "missing minisig at {minisig_path}"}
+                info = {"error": f"missing minisig at {minisig_path}"}
             except Exception as exc:
                 info = {"error": str(exc), "minisig_path": minisig_path, "traceback": traceback.format_exc()}
         result[label] = {**result[label], **info}
@@ -56,7 +57,7 @@ def get_system_versions(filesystems: Filesystems) -> dict:
             try:
                 trusted_metadata = parse_trusted_comment(sigfile=minisig_path)
             except FileNotFoundError:
-                trusted_metadata = {f"error": "missing minisig at {minisig_path}"}
+                trusted_metadata = {"error": f"missing minisig at {minisig_path}"}
             except Exception as exc:
                 trusted_metadata = {
                     "error": str(exc),
@@ -125,10 +126,16 @@ def configure_efisys(
 ):
     """Populate the EFI system partition with the necessary files"""
 
+    machine = platform.machine()
+    if machine == "x86_64":
+        target = "x86_64-efi"
+    else:
+        raise Exception(f"Unsupported machine type {machine} for efisys configuration")
+
     # I don't understand why I need --boot-directory too, but I do
     cmd = [
         "grub-install",
-        "--target=x86_64-efi",
+        f"--target={target}",
         f"--efi-directory={efisys}",
         f"--boot-directory={efisys}",
         "--removable",

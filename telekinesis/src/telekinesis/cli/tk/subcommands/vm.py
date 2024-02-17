@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import sys
 import termios
+from telekinesis.architectures import Architecture
 
 from telekinesis.config import tkconfig
 
@@ -52,10 +53,11 @@ class MungedInterrupts:
         print("Ctrl+C and Ctrl+Z restored to normal behavior")
 
 
-def vm_diskimg(image: Path, macaddr: str):
+def vm_diskimg(architecture: Architecture, image: Path, macaddr: str):
     """Run the disk image in qemu"""
+    arch_artifacts = tkconfig.arch_artifacts[architecture.name]
     qemu_cmd = [
-        "qemu-system-x86_64",
+        f"qemu-system-{architecture.qemu}",
         "-nic",
         f"user,mac={macaddr}",
         "-serial",
@@ -65,9 +67,9 @@ def vm_diskimg(image: Path, macaddr: str):
         "-m",
         "2048",
         "-drive",
-        f"if=pflash,format=raw,readonly=on,file={tkconfig.artifacts.ovmf_extracted_code.as_posix()}",
+        f"if=pflash,format=raw,readonly=on,file={arch_artifacts.ovmf_extracted_code.as_posix()}",
         "-drive",
-        f"if=pflash,format=raw,file={tkconfig.artifacts.ovmf_extracted_vars.as_posix()}",
+        f"if=pflash,format=raw,file={arch_artifacts.ovmf_extracted_vars.as_posix()}",
         "-drive",
         f"format=raw,file={image.as_posix()}",
     ]
@@ -75,11 +77,12 @@ def vm_diskimg(image: Path, macaddr: str):
         subprocess.run(qemu_cmd, check=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
 
 
-def vm_osdir():
+def vm_osdir(architecture: Architecture):
     """Run the OS directory in qemu"""
-    squashfs = tkconfig.artifacts.osdir_path / "squashfs"
+    arch_artifacts = tkconfig.arch_artifacts[architecture.name]
+    squashfs = arch_artifacts.osdir_path / "squashfs"
     qemu_cmd = [
-        "qemu-system-x86_64",
+        f"qemu-system-{architecture.qemu}",
         "-nic",
         "user",
         "-serial",
@@ -89,9 +92,9 @@ def vm_osdir():
         "-m",
         "2048",
         "-kernel",
-        f"{tkconfig.artifacts.osdir_path / 'kernel'}",
+        f"{arch_artifacts.osdir_path / 'kernel'}",
         "-initrd",
-        f"{tkconfig.artifacts.osdir_path / 'initramfs'}",
+        f"{arch_artifacts.osdir_path / 'initramfs'}",
         "-append",
         "root=/dev/sda rootfstype=squashfs rootflags=ro",
         "-drive",
