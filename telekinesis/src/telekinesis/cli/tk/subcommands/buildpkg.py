@@ -46,6 +46,9 @@ def abuild_blacksite(builder: AlpineDockerBuilder):
 
         in_container_build_cmd = [
             f"cd {builder.in_container_psyops_checkout}/progfiguration_blacksite",
+            # We need a venv or pip will whine about system python
+            "python3 -m venv --system-site-packages /tmp/venv",
+            "source /tmp/venv/bin/activate",
             # This installs progfiguration as editable from our local checkout.
             # It means we don't have to install it over the network,
             # and it also lets us test local changes to progfiguration.
@@ -59,7 +62,7 @@ def abuild_blacksite(builder: AlpineDockerBuilder):
             "pip install -U setuptools",
             f"progfiguration-blacksite-buildapk --abuild-repo-name {tkconfig.buildcontainer.apkreponame} --apks-index-path {apkindexpath}",
             f"echo 'Build packages are found in {apkrepopath}/x86_64/:'",
-            f"ls -larth {apkrepopath}/x86_64/",
+            f"ls -larth {apkrepopath}/{builder.architecture.mkimage}/",
         ]
 
         builder.run_docker(in_container_build_cmd)

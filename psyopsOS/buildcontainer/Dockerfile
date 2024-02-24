@@ -1,7 +1,7 @@
 # Dockerfile to build psyopsOS ISOs
 
 # This should be the lowest version among all running psyopsOS systems
-FROM alpine:3.18
+FROM alpine:3.19
 LABEL maintainer "me@micahrl.com"
 
 # Include everything necessary for building an Alpine CD image with mkimage,
