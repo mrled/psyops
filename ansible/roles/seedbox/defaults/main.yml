@@ -25,13 +25,17 @@ seedbox_tentacles_config_dir: "{{ seedbox_config_dir }}/tentacles"
 seedbox_cops_config_dir: "{{ seedbox_config_dir }}/cops"
 seedbox_stash_config_dir: "{{ seedbox_config_dir }}/stash"
 seedbox_ersatztv_config_dir: "{{ seedbox_config_dir }}/ersatztv"
+seedbox_shhh_docker_build_dir: "{{ seedbox_config_dir }}/shhh-docker-build"
+seedbox_shhh_config_dir: "{{ seedbox_config_dir }}/shhh"
 seedbox_stack_name: seedbox
 
 # Set this to true to remove the docker stack before deploying
 seedbox_docker_greenfield_deploy: false
 
-# Set this to true to force building the x3 image even if it is cached
+# Set these to true to force building Docker image even if it is cached
 seedbox_x3_docker_force_build: false
+seedbox_transmission_docker_force_build: false
+seedbox_shhh_docker_force_build: false
 
 seedbox_plex_ports:
   - description: for access to the Plex Media Server [required]

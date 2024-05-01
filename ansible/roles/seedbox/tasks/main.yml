@@ -122,6 +122,7 @@
     - "{{ seedbox_media.trix }}/cache"
     - "{{ seedbox_ersatztv_config_dir }}/roothome"
     - "{{ seedbox_ersatztv_config_dir }}/xdg_data_home/ersatztv"
+    - "{{ seedbox_shhh_config_dir}}"
 
 - name: Create seedbox config dirs (0755 root)
   file:
@@ -233,6 +234,30 @@
     source: build
   tags:
   - seedbox_docker_build_x3
+
+- name: Upload shhh image source
+  copy:
+    src: shhh-docker/
+    dest: "{{ seedbox_shhh_docker_build_dir }}"
+    owner: root
+    group: root
+    mode: 0700
+  register: seedbox_shhh_docker_copy
+  tags:
+  - seedbox_docker_build_shhh
+
+- name: Build shhh image
+  docker_image:
+    build:
+      pull: yes
+      path: "{{ seedbox_shhh_docker_build_dir }}"
+    name: local/shhh
+    tag: ansibuilt
+    force_tag: yes
+    force_source: "{{ seedbox_shhh_docker_copy.changed or seedbox_shhh_docker_force_build }}"
+    source: build
+  tags:
+  - seedbox_docker_build_shhh
 
 - name: Create Dex config directory
   file:

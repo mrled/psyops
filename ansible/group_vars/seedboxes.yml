@@ -33,7 +33,7 @@ seedbox_media:
   itunes: "{{ seedbox_media_root }}/iTunes"
   trix: "{{ seedbox_media_root }}/Trix"
 seedbox_media_selinux_enable:
-- /mnt/8tbmirror
+- /mnt/seedboxmedia
 
 seedbox_root_domain: "{{ global_seedbox_domain }}"
 seedbox_misc_domain: "seedbox.{{ seedbox_root_domain }}"
@@ -56,6 +56,7 @@ seedbox_tautulli_domain: tautulli.{{ seedbox_root_domain }}
 seedbox_kibana_domain: kibana.{{ seedbox_root_domain }}
 seedbox_stash_domain: 6.{{ seedbox_root_domain }}
 seedbox_ersatztv_domain: ersatztv.{{ seedbox_root_domain }}
+seedbox_shhh_domain: shhh.{{ seedbox_root_domain }}
 
 seedbox_acme_email: psyops@micahrl.com
 seedbox_acme_aws_region: "{{ global_home_zone_updater_region }}"
