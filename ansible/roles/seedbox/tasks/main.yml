@@ -123,6 +123,10 @@
     - "{{ seedbox_ersatztv_config_dir }}/roothome"
     - "{{ seedbox_ersatztv_config_dir }}/xdg_data_home/ersatztv"
     - "{{ seedbox_shhh_config_dir}}"
+    - "{{ seedbox_lazylibrarian_config_dir}}"
+    - "{{ seedbox_onionproxy_config_dir}}"
+    - "{{ seedbox_tor_config_dir}}"
+    - "{{ seedbox_torprivoxy_config_dir }}"
 
 - name: Create seedbox config dirs (0755 root)
   file:
@@ -196,7 +200,8 @@
     dest: "{{ seedbox_transmission_docker_build_dir }}"
     owner: root
     group: root
-    mode: "0700"
+    directory_mode: 0700
+    mode: 0600
   register: seedbox_transmission_docker_copy
 
 - name: Build transmission image
@@ -217,7 +222,8 @@
     dest: "{{ seedbox_x3_docker_build_dir }}"
     owner: root
     group: root
-    mode: 0700
+    directory_mode: 0700
+    mode: 0600
   register: seedbox_x3_docker_copy
   tags:
   - seedbox_docker_build_x3
@@ -241,7 +247,8 @@
     dest: "{{ seedbox_shhh_docker_build_dir }}"
     owner: root
     group: root
-    mode: 0700
+    directory_mode: 0700
+    mode: 0600
   register: seedbox_shhh_docker_copy
   tags:
   - seedbox_docker_build_shhh
@@ -258,6 +265,91 @@
     source: build
   tags:
   - seedbox_docker_build_shhh
+
+- name: Upload tor image source
+  copy:
+    src: torproxy-docker/
+    dest: "{{ seedbox_tor_docker_build_dir }}"
+    owner: root
+    group: root
+    directory_mode: 0700
+    mode: 0600
+  register: seedbox_tor_docker_copy
+  tags:
+  - seedbox_docker_build_tor
+
+- name: Build tor image
+  docker_image:
+    build:
+      pull: yes
+      path: "{{ seedbox_tor_docker_build_dir }}"
+    name: local/tor
+    tag: ansibuilt
+    force_tag: yes
+    force_source: "{{ seedbox_tor_docker_copy.changed or seedbox_tor_docker_force_build }}"
+    source: build
+  tags:
+  - seedbox_docker_build_tor
+
+- name: Upload torprivoxy image source
+  copy:
+    src: torprivoxy-docker/
+    dest: "{{ seedbox_torprivoxy_docker_build_dir }}"
+    owner: root
+    group: root
+    directory_mode: 0700
+    mode: 0600
+  register: seedbox_torprivoxy_docker_copy
+  tags:
+  - seedbox_docker_build_torprivoxy
+
+- name: Build privoxy image
+  docker_image:
+    build:
+      pull: yes
+      path: "{{ seedbox_torprivoxy_docker_build_dir }}"
+    name: local/privoxy
+    tag: ansibuilt
+    force_tag: yes
+    force_source: "{{ seedbox_torprivoxy_docker_copy.changed or seedbox_torprivoxy_docker_force_build }}"
+    source: build
+  tags:
+  - seedbox_docker_build_torprivoxy
+
+- name: Upload tor config file
+  copy:
+    src: torproxy/torrc
+    dest: "{{ seedbox_tor_config_dir }}"
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+  - seedbox_docker_deploy
+
+- name: Upload onionproxy config file
+  template:
+    src: onionproxy.nginx.conf.j2
+    dest: "{{ seedbox_onionproxy_config_dir }}/nginx.conf"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Upload onionproxy root site
+  copy:
+    src: onionproxy/html/
+    dest: "{{ seedbox_onionproxy_config_dir }}/html"
+    owner: root
+    group: root
+    mode: 0644
+    directory_mode: 0755
+
+- name: Upload torprivoxy config file
+  copy:
+    src: torprivoxy/config
+    dest: "{{ seedbox_torprivoxy_config_dir }}/config"
+    owner: root
+    group: root
+    mode: 0644
 
 - name: Create Dex config directory
   file:

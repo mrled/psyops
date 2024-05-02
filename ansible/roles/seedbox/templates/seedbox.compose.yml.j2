@@ -283,6 +283,28 @@ services:
       - "traefik.http.services.seedbox-shhh.loadbalancer.server.port=6969"
       - "traefik.http.routers.seedbox-shhh.middlewares=seedbox-auth-bridgetroll-mw"
 
+  lazylibrarian:
+    image: ghcr.io/linuxserver/lazylibrarian
+    environment:
+      PUID: "{{ seedbox_uid }}"
+      PGID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+      DOCKER_MODS: "linuxserver/mods:lazylibrarian-ffmpeg|linuxserver/mods:universal-calibre"
+    volumes:
+      - "{{ seedbox_lazylibrarian_config_dir }}:/config"
+      # - "{{ seedbox_media.books }}/Calibre:/books"
+      - "{{ seedbox_media_dir }}:/media"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seedbox-lazylibrarian.rule=Host(`{{ seedbox_lazylibrarian_domain }}`)"
+      - "traefik.http.routers.seedbox-lazylibrarian.tls=true"
+      - "traefik.http.routers.seedbox-lazylibrarian.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-lazylibrarian.service=seedbox-lazylibrarian"
+      - "traefik.http.services.seedbox-lazylibrarian.loadbalancer.server.port=5299"
+      - "traefik.http.routers.seedbox-lazylibrarian.middlewares=seedbox-auth-bridgetroll-mw"
+
   ersatztv:
     image: jasongdove/ersatztv:develop
     environment:
@@ -488,6 +510,45 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
+  tor:
+    image: local/tor:ansibuilt
+    volumes:
+      - "{{ seedbox_tor_config_dir }}/torrc:/etc/tor/torrc:ro"
+    networks:
+      - dernetverk
+
+  torprivoxy:
+    image: local/privoxy:ansibuilt
+    volumes:
+      - "{{ seedbox_torprivoxy_config_dir }}/config:/etc/privoxy/config:ro"
+    networks:
+      - dernetverk
+
+  onionproxy:
+    image: nginx:latest
+    volumes:
+      - "{{ seedbox_onionproxy_config_dir }}/nginx.conf:/etc/nginx/nginx.conf:ro"
+      - "{{ seedbox_onionproxy_config_dir }}/html:/html:ro"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
+      # We listen on both HTTP and HTTPS for this service.
+      # Note that allowing HTTP ingress requires an exception in the global redirect to HTTPS
+      # on the balancer service.
+      - "traefik.http.routers.seedbox-onionproxy-http.rule=HostRegexp(`{subdomain:[a-zA-Z0-9]+}.{{ seedbox_onionproxy_domain }}`) || Host(`{{ seedbox_onionproxy_domain }}`)"
+      - "traefik.http.routers.seedbox-onionproxy-http.entrypoints=http"
+      - "traefik.http.routers.seedbox-onionproxy-http.service=seedbox-onionproxy"
+      - "traefik.http.services.seedbox-onionproxy.loadbalancer.server.port=80"
+      - "traefik.http.routers.seedbox-onionproxy-https.rule=HostRegexp(`{subdomain:[a-zA-Z0-9]+}.{{ seedbox_onionproxy_domain }}`) || Host(`{{ seedbox_onionproxy_domain }}`)"
+      - "traefik.http.routers.seedbox-onionproxy-https.entrypoints=https"
+      - "traefik.http.routers.seedbox-onionproxy-https.tls=true"
+      - "traefik.http.routers.seedbox-onionproxy-https.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-onionproxy-https.service=seedbox-onionproxy"
+      # Don't require auth for the onionproxy
+      # - "traefik.http.routers.seedbox-onionproxy-https.middlewares=seedbox-auth-bridgetroll-mw"
+
   balancer:
     image: traefik:2.5
     command: --web --docker --docker.swarmMode --docker.watch --docker.domain={{ seedbox_balancer_domain }} --logLevel=DEBUG
@@ -514,7 +575,8 @@ services:
       - "traefik.http.routers.seedbox-traefik-api.middlewares=seedbox-auth-bridgetroll-mw"
 
       # global redirect to https
-      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      # Note the EXCEPTIONS to the HostRegexp that allow some hosts to be HTTP!
+      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`) && !HostRegexp(`{subdomain:[a-zA-Z0-9]+}.{{ seedbox_onionproxy_domain }}`) && !Host(`{{ seedbox_onionproxy_domain }}`)"
       - "traefik.http.routers.http-catchall.entrypoints=http"
       - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
 

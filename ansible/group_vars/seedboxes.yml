@@ -57,6 +57,8 @@ seedbox_kibana_domain: kibana.{{ seedbox_root_domain }}
 seedbox_stash_domain: 6.{{ seedbox_root_domain }}
 seedbox_ersatztv_domain: ersatztv.{{ seedbox_root_domain }}
 seedbox_shhh_domain: shhh.{{ seedbox_root_domain }}
+seedbox_lazylibrarian_domain: library.{{ seedbox_root_domain }}
+seedbox_onionproxy_domain: onion.{{ seedbox_root_domain }}
 
 seedbox_acme_email: psyops@micahrl.com
 seedbox_acme_aws_region: "{{ global_home_zone_updater_region }}"

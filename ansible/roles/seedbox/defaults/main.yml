@@ -27,6 +27,12 @@ seedbox_stash_config_dir: "{{ seedbox_config_dir }}/stash"
 seedbox_ersatztv_config_dir: "{{ seedbox_config_dir }}/ersatztv"
 seedbox_shhh_docker_build_dir: "{{ seedbox_config_dir }}/shhh-docker-build"
 seedbox_shhh_config_dir: "{{ seedbox_config_dir }}/shhh"
+seedbox_lazylibrarian_config_dir: "{{ seedbox_config_dir }}/lazylibrarian"
+seedbox_onionproxy_config_dir: "{{ seedbox_config_dir }}/onionproxy"
+seedbox_tor_config_dir: "{{ seedbox_config_dir }}/tor"
+seedbox_tor_docker_build_dir: "{{ seedbox_config_dir }}/tor-docker-build"
+seedbox_torprivoxy_config_dir: "{{ seedbox_config_dir }}/torprivoxy"
+seedbox_torprivoxy_docker_build_dir: "{{ seedbox_config_dir }}/torprivoxy-docker-build"
 seedbox_stack_name: seedbox
 
 # Set this to true to remove the docker stack before deploying
@@ -36,6 +42,8 @@ seedbox_docker_greenfield_deploy: false
 seedbox_x3_docker_force_build: false
 seedbox_transmission_docker_force_build: false
 seedbox_shhh_docker_force_build: false
+seedbox_tor_docker_force_build: false
+seedbox_torprivoxy_docker_force_build: false
 
 seedbox_plex_ports:
   - description: for access to the Plex Media Server [required]
