@@ -1,4 +1,4 @@
-FROM alpine:3.18
+FROM alpine:3.19
 LABEL maintainer "me@micahrl.com"
 
 #### Development notes
@@ -80,7 +80,9 @@ RUN true \
         # For calculating a bcrypt password with htpasswd
         apache2-utils \
         alpine-sdk \
+        ansible ansible-core ansible-core-doc \
         apk-tools-doc \
+        aws-cli \
         bash bash-doc \
         bash-completion \
         black \
@@ -91,10 +93,12 @@ RUN true \
         # I got tired of fucking with busybox's wget
         curl curl-doc \
         docker docker-doc docker-bash-completion docker-zsh-completion \
+        docker-compose \
         emacs-nox emacs-doc \
         file file-doc \
         # Used for kubenrasty
         flux@edgetesting flux-bash-completion@edgetesting flux-zsh-completion@edgetesting \
+        gcc \
         git git-doc \
         gopass gopass-doc gopass-bash-completion gopass-zsh-completion \
         # Installs GPG 2.x, not 1.x (gnupg1 gnupg1-doc)
@@ -111,22 +115,35 @@ RUN true \
         kubectl@edgecommunity kubectl-bash-completion@edgecommunity kubectl-zsh-completion@edgecommunity \
         # By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
         less less-doc \
+        # for (at least) PyNACL
+        libffi-dev \
+        linux-headers \
+        make \
         man-db man-db-doc man-pages \
         minisign minisign-doc \
+        musl-dev \
         # provides tput
         ncurses \
         nebula \
         neovim neovim-doc \
         openssh-client openssh-doc \
-        openssl \
+        openssl openssl-dev \
         parallel parallel-doc \
         pwgen pwgen-doc \
-        python3 python3-doc \
+        python3 python3-dev python3-doc \
+        py3-bcrypt \
         py3-build \
+        py3-boto3 \
+        # The cryptography package relies on rust to build;
+        # it is much easier to get it from the apk repo than build it with pip.
+        py3-cryptography \
+        py3-dnspython \
         # Apparently required to install my whl into a directory for apk
         # https://wiki.alpinelinux.org/wiki/APKBUILD_examples:Python
         py3-installer \
         py3-mypy \
+        py3-netaddr \
+        py3-passlib \
         py3-pip py3-pip-doc \
         py3-requests \
         py3-setuptools \
@@ -135,10 +152,13 @@ RUN true \
         py3-yaml \
         ripgrep ripgrep-doc ripgrep-bash-completion ripgrep-zsh-completion \
         rsync rsync-doc \
+        ruby \
         s3cmd \
         shadow shadow-doc \
-        sops@edgetesting \
+        sops@edgecommunity \
         sqlite sqlite-doc \
+        # Required for Ansible to use SSH password auth instead of public keys
+        sshpass sshpass-doc \
         strace strace-doc \
         # Useful to have the 'ipsec' command when working with Algo
         strongswan strongswan-doc \
@@ -151,50 +171,15 @@ RUN true \
     #
     && update-ca-certificates --fresh \
     #
-    # Configure Python stuff, including for later building C modules
-    # (Useful to keep on the image permanently, so we can compile C modules in virtualenvs)
-    # These prereqs include support for PyNACL
-    # && python3 -m ensurepip \
-    && python3 -m pip install --upgrade pip \
-    && apk add \
-        # general
-        gcc \
-        linux-headers \
-        make \
-        musl-dev \
-        python3-dev \
-        # for (at least) PyNACL
-        libffi-dev \
-        openssl-dev \
-        # The cryptography package relies on rust to build;
-        # it is much easier to get it from the apk repo than build it with pip.
-        py3-cryptography \
-    #
-    # Configure Ruby stuff
-    && apk add \
-        ruby \
-    #
-    # Get more packages, idk what even this order is
-    && apk add \
-        ansible ansible-core ansible-core-doc \
-        aws-cli \
-        docker-compose \
-        py3-bcrypt \
-        # py3-boto \
-        py3-boto3 \
-        py3-dnspython \
-        py3-netaddr \
-        py3-passlib \
-        py3-yaml \
-        # Required for Ansible to use SSH password auth instead of public keys
-        sshpass sshpass-doc \
-    #
     # Get some Python packages that are not in apk repos
-    && python3 -m pip install \
+    # New versions of Alpine / Python prohibit global pip installs,
+    # so we make a venv for them instead and add it to default $PATH
+    && python3 -m venv /usr/local/systemvenv \
+    && /usr/local/systemvenv/bin/pip install \
         gandi.cli \
         invoke \
-        mitogen \
-    && install -d -o root -g root -m 755 /usr/local/bin \
+    && echo 'case "$PATH" in *"/usr/local/systemvenv/bin"*);; *) export PATH="/usr/local/systemvenv/bin:$PATH";; esac' > /etc/profile.d/systemvenv.sh \
+    && chmod 644 /etc/profile.d/systemvenv.sh \
     #
     && true
 
