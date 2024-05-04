@@ -13,3 +13,11 @@ xpack:
 
 # I think this is the default?
 action.auto_create_index: true
+
+http.port: 9200
+# Allow CORS from dejavu
+http.cors.enabled: true
+http.cors.allow-origin: 'http://localhost:1358,http://127.0.0.1:1358,https://{{ seedbox_dejavu_domain }}:443,https://{{ seedbox_dejavu_domain }}'
+#http.cors.allow-origin: '*'
+http.cors.allow-headers: X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
+http.cors.allow-credentials: true

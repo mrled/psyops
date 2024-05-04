@@ -464,6 +464,27 @@ services:
       interval: 10s
       timeout: 10s
       retries: 120
+    # We have to expose Elastic outside of Docker for external REST API clients,
+    # including DejaVu.
+    # We do not place it behind the bridge troll because it handles its own auth.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
+      - "traefik.http.routers.seedbox-elastic.rule=Host(`{{ seedbox_elastic_domain }}`)"
+      - "traefik.http.routers.seedbox-elastic.entrypoints=https"
+      - "traefik.http.routers.seedbox-elastic.tls=true"
+      - "traefik.http.routers.seedbox-elastic.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-elastic.service=seedbox-elastic"
+      - "traefik.http.services.seedbox-elastic.loadbalancer.server.port=9200"
+      #- "traefik.http.routers.seedbox-elastic.middlewares=seedbox-auth-bridgetroll-mw"
+      - "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST"
+      - "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolallowheaders=*"
+      - "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolalloworiginlist=https://dejavu.subliminal.link"
+      #- "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolallowcredentials=true"
+      #- "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolmaxage=100"
+      #- "traefik.http.middlewares.cors-elastic-mw.headers.addvaryheader=true"
+      - "traefik.http.routers.seedbox-elastic.middlewares=cors-elastic-mw"
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.13.3
@@ -488,6 +509,21 @@ services:
       - "traefik.http.routers.seedbox-kibana.service=seedbox-kibana"
       - "traefik.http.services.seedbox-kibana.loadbalancer.server.port=5601"
       - "traefik.http.routers.seedbox-kibana.middlewares=seedbox-auth-bridgetroll-mw"
+
+  dejavu:
+    image: appbaseio/dejavu
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
+      - "traefik.http.routers.seedbox-dejavu.rule=Host(`{{ seedbox_dejavu_domain }}`)"
+      - "traefik.http.routers.seedbox-dejavu.entrypoints=https"
+      - "traefik.http.routers.seedbox-dejavu.tls=true"
+      - "traefik.http.routers.seedbox-dejavu.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-dejavu.service=seedbox-dejavu"
+      - "traefik.http.services.seedbox-dejavu.loadbalancer.server.port=1358"
+      - "traefik.http.routers.seedbox-dejavu.middlewares=seedbox-auth-bridgetroll-mw"
 
   logstash:
     image: docker.elastic.co/logstash/logstash:8.13.3
