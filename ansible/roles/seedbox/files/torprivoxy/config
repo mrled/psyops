@@ -3,11 +3,11 @@
 user-manual /usr/share/doc/privoxy/user-manual/
 confdir /etc/privoxy
 logdir /var/log/privoxy
-actionsfile match-all.action # Actions that are applied to all sites and maybe overruled later on.
-actionsfile default.action   # Main actions file
-actionsfile user.action      # User customizations
-filterfile default.filter
-filterfile user.filter      # User customizations
+#actionsfile match-all.action # Actions that are applied to all sites and maybe overruled later on.
+#actionsfile default.action   # Main actions file
+#actionsfile user.action      # User customizations
+#filterfile default.filter
+#filterfile user.filter      # User customizations
 logfile privoxy.log
 toggle  1
 enable-remote-toggle  0
