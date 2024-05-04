@@ -49,6 +49,21 @@
       - passlib
     state: latest
 
+- name: Configure Docker
+  template:
+    src: docker.daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: "0644"
+  register: docker_daemon_json_result
+
+- name: Restart Docker
+  systemd:
+    name: docker
+    state: restarted
+  when: docker_daemon_json_result.changed
+
 - name: Configure seedbox backups
   import_tasks: backups.yml
   tags: seedbox_backups
@@ -110,9 +125,6 @@
     - "{{ seedbox_jackett_config_dir }}"
     - "{{ seedbox_heimdall_config_dir }}"
     - "{{ seedbox_tautulli_config_dir }}"
-    - "{{ seedbox_elastic_config_dir }}"
-    - "{{ seedbox_filebeat_config_dir }}"
-    - "{{ seedbox_kibana_config_dir }}"
     - "{{ seedbox_rtorrent_config_dir }}"
     - "{{ seedbox_prowlarr_config_dir }}"
     - "{{ seedbox_stash_config_dir }}"
@@ -127,16 +139,6 @@
     - "{{ seedbox_onionproxy_config_dir}}"
     - "{{ seedbox_tor_config_dir}}"
     - "{{ seedbox_torprivoxy_config_dir }}"
-
-- name: Create seedbox config dirs (0755 root)
-  file:
-    path: "{{ item }}"
-    state: directory
-    owner: "root"
-    group: "root"
-    mode: "0755"
-  with_items:
-    - "{{ seedbox_logstash_config_dir }}"
 
 - name: Make seedbox media subdirs
   file:
@@ -412,39 +414,6 @@
   - seedbox_docker_deploy
   - seedbox_dex
 
-- name: Install logstash config
-  template:
-    src: logstash.conf.j2
-    dest: "{{ seedbox_logstash_config_dir }}/logstash.conf"
-    owner: root
-    group: root
-    mode: "0644"
-
-- name: Install filebeat config
-  template:
-    src: filebeat.yml.j2
-    dest: "{{ seedbox_filebeat_config_dir }}/filebeat.yml"
-    owner: root
-    group: root
-    mode: "0644"
-
-- name: Install Kibana config
-  template:
-    src: kibana.yml.j2
-    dest: "{{ seedbox_kibana_config_dir }}/kibana.yml"
-    owner: root
-    group: root
-    mode: "0644"
-
-- name: Install Kibana favicons
-  copy:
-    src: kibana/favicons/
-    dest: "{{ seedbox_kibana_config_dir }}/favicons"
-    owner: root
-    group: root
-    mode: "0644"
-    directory_mode: "0755"
-
 - name: Install traefik config
   template:
     src: traefik.yml.j2
@@ -477,6 +446,11 @@
     mode: "0600"
   notify: seedbox stack redeploy
   tags: seedbox_docker_deploy
+
+- name: Apply ELK configuration
+  import_tasks: elk.yml
+  tags:
+  - seedbox_elk
 
 - name: Install seedbox compose file
   template:
@@ -513,6 +487,13 @@
   tags:
   - seedbox_docker_deploy
   - seedbox_dex
+  - seedbox_elk
+
+- name: Apply Elastic configuration (may fail if stack is still coming up)
+  command: "{{ seedbox_elastic_config_dir }}/configure-elastic.py rundocker"
+  tags:
+  - seedbox_elk
+  - seedbox_configure_elastic
 
 - name: Run Plex tasks
   import_tasks: plex.yml

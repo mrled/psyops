@@ -1,5 +1,8 @@
+telemetry.optIn: false
 server.publicBaseUrl: "https://{{ seedbox_kibana_domain }}/"
 server.port: 5601
 server.host: "0.0.0.0"
+elasticsearch.username: "{{ seedbox_kibana_user }}"
+elasticsearch.password: "{{ seedbox_kibana_password }}"
 elasticsearch.hosts:
   - http://elastic:9200

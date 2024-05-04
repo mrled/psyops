@@ -1,0 +1,45 @@
+filebeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: false
+
+# This has a problem for me:
+# https://discuss.elastic.co/t/how-do-i-fix-invalid-fieldreference-errors/283912
+# related to the traefik let's encrypt label
+# ... and apparently it is not fixable?
+#filebeat.autodiscover:
+#  providers:
+#    - type: docker
+#      hints.enabled: true
+
+# Files we want to watch.
+# Most containers are logging to stdout, which is sent to logstash by Docker;
+# only the logs that don't go to stdout like that are watched here.
+#
+# This is run within a container, so the /seedbox path must be mounted into the container.
+filebeat.inputs:
+- type: log
+  paths:
+  - /seedbox/cops/log/nginx/*.log
+  - /seedbox/cops/log/php/*.log
+  tags: ["cops"]
+- type: log
+  paths:
+  - /seedbox/plex/Library/Application Support/Plex Media Server/Logs/*.log
+  - /seedbox/plex/Library/Application Support/Plex Media Server/Logs/*/*.log
+  tags: ["plex"]
+
+processors:
+- add_cloud_metadata: ~
+
+output.logstash:
+  hosts: ["logstash:{{ seedbox_logstash_container_logs_port }}"]
+#output.elasticsearch:
+#  hosts: ["elastic:9200"]
+#  protocol: "http"
+#  username: "{{ seedbox_logstash_ingestion_user }}"
+#  password: "{%raw%}{{ seedbox_logstash_ingestion_password }}{%endraw%}"
+#  ssl.verification_mode: none
+#  data_stream.type: "logs"
+#  data_stream.dataset: "filebeat-docker"
+#  data_stream.namespace: "default"

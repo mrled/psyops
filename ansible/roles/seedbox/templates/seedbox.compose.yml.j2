@@ -450,23 +450,31 @@ services:
       - "traefik.http.routers.seedbox-whoami.middlewares=seedbox-auth-bridgetroll-mw"
 
   elastic:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.3
     environment:
-      "discovery.type": single-node
       ES_JAVA_OPTS: -Xms2g -Xmx2g
+      ELASTIC_PASSWORD: "{{ seedbox_elastic_password }}"
     networks:
       - dernetverk
     volumes:
-      - "{{ seedbox_elastic_config_dir }}:/data"
+      - "{{ seedbox_elastic_config_dir }}/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml"
+      - "{{ seedbox_elastic_config_dir }}/data:/usr/share/elasticsearch/data"
+    healthcheck:
+      test: "curl -s http://localhost:9200 | grep -q 'missing authentication credentials'"
+      interval: 10s
+      timeout: 10s
+      retries: 120
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.14.1
+    image: docker.elastic.co/kibana/kibana:8.13.3
     depends_on:
       - elastic
     environment:
       SERVER_NAME: "{{ seedbox_kibana_domain }}"
     volumes:
-      - "{{ seedbox_kibana_config_dir }}/kibana.yml:/usr/share/kibana/config/kibana.yml"
+      - "{{ seedbox_kibana_config_dir }}/config:/usr/share/kibana/config"
+      - "{{ seedbox_kibana_config_dir }}/data:/usr/share/kibana/data"
+      - "{{ seedbox_kibana_config_dir }}/logs:/var/log/kibana"
       - "{{ seedbox_kibana_config_dir }}/favicons:/usr/share/kibana/src/core/server/core_app/assets/favicons"
     networks:
       - dernetverk
@@ -482,21 +490,27 @@ services:
       - "traefik.http.routers.seedbox-kibana.middlewares=seedbox-auth-bridgetroll-mw"
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:7.14.1
+    image: docker.elastic.co/logstash/logstash:8.13.3
     depends_on:
       - elastic
     ports:
-      # GELF (graylog format) log ingestion endpoint
-      - "12201:12201/udp"
+      ## GELF (graylog format) log ingestion endpoint
+      #- "{{ seedbox_logstash_gelf_port }}:{{ seedbox_logstash_gelf_port }}/udp"
+      ## Regular syslog format ingestion endpoint
+      #- "{{ seedbox_logstash_syslogudp_port }}:{{ seedbox_logstash_syslogudp_port }}/udp"
+      # syslog format ingestion endpoint for Docker to use (so logstash can grok filter it)
+      - "{{ seedbox_logstash_docker_port }}:{{ seedbox_logstash_docker_port }}/udp"
     networks:
       - dernetverk
     deploy:
       mode: global
     volumes:
-      - "{{ seedbox_logstash_config_dir }}:/usr/share/logstash/pipeline"
+      - "{{ seedbox_logstash_config_dir }}/logstash.yml:/usr/share/logstash/config/logstash.yml"
+      - "{{ seedbox_logstash_config_dir }}/pipelines.yml:/usr/share/logstash/config/pipelines.yml"
+      - "{{ seedbox_logstash_config_dir }}/pipelines:/usr/share/logstash/pipelines"
 
-  filebeater:
-    image: docker.elastic.co/beats/filebeat:7.14.1
+  filebeater-container-logfiles:
+    image: docker.elastic.co/beats/filebeat:8.13.3
     user: root
     depends_on:
       - logstash
@@ -506,7 +520,7 @@ services:
       mode: global
     volumes:
       - "{{ seedbox_config_dir }}:/seedbox"
-      - "{{ seedbox_filebeat_config_dir }}/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+      - "{{ seedbox_filebeat_config_dir }}/container-logfiles.yml:/usr/share/filebeat/filebeat.yml:ro"
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
@@ -594,10 +608,12 @@ services:
       placement:
         constraints:
           - node.role == manager
+    # If you enabled this, traefik will fucking COMMIT SUICIDE IF IT CANT TALK TO THE LOG DAEMON,
+    # amazing
     # logging:
     #   driver: gelf
     #   options:
-    #     gelf-address: "udp://logstash:12201"
+    #     gelf-address: "udp://logstash:{{ seedbox_logstash_traefik_port }}"
 
 configs:
   dex_config:
@@ -607,3 +623,5 @@ configs:
 networks:
   dernetverk:
     driver: overlay
+    # attachable lets us run containers on the command line that have access to the network
+    attachable: true

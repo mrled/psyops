@@ -85,3 +85,14 @@ seedbox_SeedboxBackupUser_wasabi_access_key: "{{ vault_seedbox_SeedboxBackupUser
 seedbox_SeedboxBackupUser_wasabi_secret_key: "{{ vault_seedbox_SeedboxBackupUser_wasabi_secret_key }}"
 seedbox_backup_s3_uri: boto3+s3://mrled-seedbox-backup
 seedbox_backup_s3_endpoint: https://s3.us-west-1.wasabisys.com
+
+# ELK shit
+seedbox_elastic_password: "{{ vault_seedbox_elastic_password }}"
+seedbox_kibana_user: kibana_system
+seedbox_kibana_password: "{{ vault_seedbox_kibana_password }}"
+# NOTE: logstash_system is some built in user that is not designed for log ingestion,#
+# but that we do need to create a password for ...
+# and we have to create our own user for ingestion too.
+seedbox_logstash_ingestion_user: logstash_ingestion
+seedbox_logstash_ingestion_password: "{{ vault_seedbox_logstash_ingestion_password }}"
+seedbox_logstash_system_password: "{{ vault_seedbox_logstash_system_password }}"

@@ -20,8 +20,12 @@ frontend:
 
 # https://dexidp.io/docs/id-tokens/#expiration-and-rotation-settings
 expiry:
-  idTokens: 168h
-
+  idTokens: 2160h
+  authRequests: 2160h
+  refreshTokens:
+    reuseInterval: 3s
+    validIfNotUsedFor: 2160h # 90 days
+    absoluteLifetime: 3960h # 165 days
 oauth2:
   skipApprovalScreen: true
 

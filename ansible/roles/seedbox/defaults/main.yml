@@ -7,7 +7,6 @@ seedbox_headphones_config_dir: "{{ seedbox_config_dir }}/headphones"
 seedbox_radarr_config_dir: "{{ seedbox_config_dir }}/radarr"
 seedbox_jackett_config_dir: "{{ seedbox_config_dir }}/jackett"
 seedbox_prowlarr_config_dir: "{{ seedbox_config_dir }}/prowlarr"
-seedbox_stack_needs_redeploy: false
 seedbox_traefik_config_dir: "{{ seedbox_config_dir }}/traefik"
 seedbox_traefik_config_file: "{{ seedbox_traefik_config_dir }}/traefik.yml"
 seedbox_traefik_acme_json: "{{ seedbox_traefik_config_dir }}/acme.json"
@@ -108,6 +107,17 @@ seedbox_elastic_config_dir: "{{ seedbox_config_dir }}/elastic"
 seedbox_logstash_config_dir: "{{ seedbox_config_dir }}/logstash"
 seedbox_filebeat_config_dir: "{{ seedbox_config_dir }}/filebeat"
 seedbox_kibana_config_dir: "{{ seedbox_config_dir }}/kibana"
+
+seedbox_logstash_beats_port: 5044
+seedbox_logstash_gelf_port: 12201
+seedbox_logstash_syslogudp_port: 1514
+# Used for ingestion of filebeats logs inside of seedbox containers
+seedbox_logstash_container_logs_port: 5045
+# Used for ingestion of Traefik logs
+seedbox_logstash_traefik_port: 12202
+# Used for docker ingestion in a particular format
+# See pipeline.docker-daemon.conf.j2 and/or docker.daemon.json.j2
+seedbox_logstash_docker_port: 1515
 
 # List of directories to set selinux to allow seedbox samba user
 # (seedbox_media_root is always allowed).

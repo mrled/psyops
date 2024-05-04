@@ -1,0 +1,15 @@
+cluster.name: "{{ seedbox_stack_name }}"
+network.host: 0.0.0.0
+discovery.type: single-node
+
+xpack:
+  security:
+    # Require passwords for all connections, including logstash ingestion
+    enabled: true
+    # Disable HTTPS because we're on a secure Docker network
+    http.ssl.enabled: false
+    transport.ssl.enabled: false
+  license.self_generated.type: basic
+
+# I think this is the default?
+action.auto_create_index: true
