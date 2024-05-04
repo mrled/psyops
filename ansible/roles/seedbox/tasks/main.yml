@@ -244,11 +244,16 @@
 - name: Upload shhh image source
   copy:
     src: shhh-docker/
-    dest: "{{ seedbox_shhh_docker_build_dir }}"
+    dest: "{{ seedbox_shhh_docker_build_dir }}/{{ item }}"
     owner: root
     group: root
+    mode: "{{ item.mode }}"
     directory_mode: 0700
-    mode: 0600
+  with_items:
+  - path: entrypoint.sh
+    mode: "0700"
+  - path: Dockerfile
+    mode: "0600"
   register: seedbox_shhh_docker_copy
   tags:
   - seedbox_docker_build_shhh
