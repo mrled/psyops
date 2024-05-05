@@ -53,7 +53,7 @@ from telekinesis.cli.tk import makeparser
 cog.outl(get_argparse_help_string("tk", makeparser(prog="tk")))
 ]]]-->
 > tk --help
-usage: tk [-h] [--debug] [--verbose]
+usage: tk [-h] [--debug] [--verbose] [--architecture ARCHITECTURE]
           {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployos,vm,psynet,signify}
           ...
 
@@ -79,6 +79,9 @@ options:
   --debug, -d           Open the debugger if an unhandled exception is
                         encountered.
   --verbose, -v         Print more information about what is happening.
+  --architecture ARCHITECTURE
+                        The architecture(s) to build for. Default:
+                        x86_64,aarch64.
 
 ________________________________________________________________________
 
@@ -236,9 +239,9 @@ usage: tk mkimage diskimg [-h]
 options:
   -h, --help            show this help message and exit
   --stages {mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} [{mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} ...]
-                        The stages to build, comma-separated. Default:
-                        ['kernel', 'squashfs', 'diskimg']. See --list-stages for
-                        all possible stages and their descriptions.
+                        The stages to build. Default: ['kernel', 'squashfs',
+                        'diskimg']. See --list-stages for all possible stages
+                        and their descriptions.
   --list-stages         Show all possible stages and their descriptions.
   --node-secrets NODE_SECRETS
                         If passed, generate a node-specific image with a
