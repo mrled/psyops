@@ -21,6 +21,7 @@ node = InventoryNode(
     roles=dict(
         seedboxk8s=dict(
             psyops_seedboxk8s_flux_deploy_id=AgeSecretReference("psyops_seedboxk8s_flux_deploy_id"),
+            flux_agekey=AgeSecretReference("seedboxk8s_flux_age_key"),
         ),
     ),
 )

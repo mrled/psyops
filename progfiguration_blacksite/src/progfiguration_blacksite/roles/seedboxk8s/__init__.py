@@ -28,6 +28,9 @@ class Role(ProgfigurationRole):
     # A GitHub deploy key for the psyops repo for the seedboxk8s Flux deployment
     psyops_seedboxk8s_flux_deploy_id: str
 
+    # An age key for Flux to use with SOPS
+    flux_agekey: str
+
     k0s_version = "v1.29.4+k0s.0"
     k0sctl_version = "v0.17.5"
     helm_version = "v3.14.4"
@@ -209,6 +212,12 @@ class Role(ProgfigurationRole):
                 "--branch=master",
                 "--private-key-file=/etc/seedboxk8s/flux/psyops_seedboxk8s_flux_deploy_id",
             ]
+        )
+
+        # The secret filename must end with `.agekey`
+        self.localhost.set_file_contents("/etc/seedboxk8s/flux.agekey", self.flux_agekey, "root", "root", 0o600)
+        magicrun(
+            "k0s kubectl create secret generic sops-age --namespace=flux-system --from-file=/etc/seedboxk8s/flux.agekey"
         )
 
         # Configure Helm repositories
