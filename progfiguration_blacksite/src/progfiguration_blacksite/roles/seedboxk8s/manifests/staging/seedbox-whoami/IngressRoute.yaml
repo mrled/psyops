@@ -1,0 +1,15 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: whoami-ingress-route
+  namespace: whoami
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: PathPrefix(`/whoami`)
+      kind: Rule
+      services:
+        - name: whoami-service
+          kind: Service
+          port: 80

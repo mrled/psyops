@@ -56,7 +56,7 @@ Resources:
           TTL: "60"
           ResourceRecords: ["10.10.9.3"]
 
-        # psyopsOS nodes
+        # Server nodes
         - Name: psyopsos-test-1.psynet.micahrl.com.
           Type: A
           TTL: "60"
@@ -85,6 +85,10 @@ Resources:
           Type: A
           TTL: "60"
           ResourceRecords: ["10.10.10.7"]
+        - name: tagasaw.psynet.micahrl.com.
+          Type: A
+          TTL: "60"
+          ResourceRecords: ["10.10.10.8"]
 
         # Services
         - Name: syslog.psynet.micahrl.com.

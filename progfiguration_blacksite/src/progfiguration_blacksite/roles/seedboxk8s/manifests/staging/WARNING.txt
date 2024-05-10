@@ -1,0 +1,1 @@
+This directory is automatically managed. Files placed here that are not found in the progfiguration package will be deleted.

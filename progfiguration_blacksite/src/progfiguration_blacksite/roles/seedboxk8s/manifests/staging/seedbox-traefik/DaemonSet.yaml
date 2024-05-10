@@ -1,0 +1,56 @@
+---
+# Installing as a DaemonSet mimics Docker Swarm Mode routing mesh,
+# where all exposed ports are available on all nodes,
+# and the mesh automatically routes incoming requests to a node running the service.
+# Load balancing on a multi-node Swarm cluster might be done externally like with HAProxy.
+# On a single-node Swarm cluster, just set DNS to the cluster's IP address,
+# and no load balancer is necessary.
+# This means we do not need MetalLB or anything like it.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik-account
+      containers:
+      - name: traefik
+        image: traefik:v3.0
+        args:
+          - --api.insecure=true
+          - --api.dashboard=true
+          - --accesslog
+          - --entrypoints.web.Address=:10080
+          - --entrypoints.websecure.Address=:10443
+          - --entrypoints.traefik.Address=:19000
+          - --providers.kubernetescrd
+        ports:
+        - name: web
+          containerPort: 10080
+          hostPort: 10080
+          protocol: TCP
+        - name: websecure
+          containerPort: 10443
+          hostPort: 10443
+          protocol: TCP
+        # We won't need admin after we set up HTTP routes for the dashboard
+        - name: traefik
+          containerPort: 19000
+          hostPort: 19000
+          protocol: TCP
+
+        # # Allow Traefik to bind to privileged ports 80 and 443
+        # securityContext:
+        #   capabilities:
+        #     drop:
+        #       - ALL
+        #     add:
+        #       - NET_BIND_SERVICE

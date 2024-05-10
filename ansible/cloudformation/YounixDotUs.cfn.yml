@@ -60,6 +60,36 @@ Resources:
             # Keybase verification
             - '"v=spf1 include:spf.messagingengine.com ?all"'
 
+        # Seedboxk8s staging host
+        - Name: seedboxk8s.younix.us.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["100.86.119.112"]
+        - Name: "*.younix.us."
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["seedboxk8s.younix.us."]
+
+  Seedboxk8sYounixDotUsZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+        - PolicyName: Seedboxk8sAllowUpdatingYounixDotUsZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZones
+                  - route53:ListResourceRecordSets
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                Resource:
+                  "Fn::Join": ["", ["arn:aws:route53:::hostedzone/", { "Ref": "YounixDotUsZone" }]]
+
 Outputs:
   OriginZoneId:
     Description: The ID of the younix.us. root zone
