@@ -64,55 +64,8 @@ spec:
 
     helm:
       concurrencyLevel: 5
-      repositories:
-        # - name: metallb
-        #   url: https://metallb.github.io/metallb
-        # - name: traefik
-        #   url: https://traefik.github.io/charts
-        # - name: bitnami
-        #   url: https://charts.bitnami.com/bitnami
-      charts:
-
-        # Our LoadBalancer implementation
-        # - name: metallb
-        #   chartname: metallb/metallb
-        #   namespace: metallb
-        #   values: |
-        #     speaker:
-        #       memberlist:
-        #         # The default value of 7946 is used by Docker, so we'll use a different one.
-        #         # The seedbox host currently runs a Docker Swarm cluster,
-        #         # and we want to keep that running until we can fully switch the cluster to k0s.
-        #         mlBindPort: 17946
-
-        # # Our Ingress Controller
-        # - name: traefik
-        #   chartname: traefik/traefik
-        #   version: "27.0.2"
-        #   namespace: traefik
-        #   values: |
-        #     # deployment:
-        #     #   kind: DaemonSet
-        #     additionalArguments:
-        #       - --api.insecure=true
-        #       - --api.dashboard=true
-        #       - --accesslog
-        #       - --entrypoints.web.Address=:80
-        #       - --entrypoints.websecure.Address=:443
-        #       - --entrypoints.admin.Address=:8080
-        #       - --providers.kubernetescrd
-        #     ports:
-        #       web:
-        #         port: 80
-        #         exposedPort: 10080
-        #       websecure:
-        #         port: 443
-        #         exposedPort: 10443
-        #       admin:
-        #         port: 8080
-        #         exposedPort: 18080
-        #       hostNetwork: true
-
+      repositories: {}
+      charts: {}
     storage:
       create_default_storage_class: false
       type: external_storage
