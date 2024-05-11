@@ -82,3 +82,11 @@ spec:
       - kind: ConfigMap
         name: example-config-map
 ```
+
+## Dependencies
+
+Make sure that kustomizations which define CRDs
+are dependencies of any kustomization which uses the CRDs.
+This means you may need to break up directories into two --
+for instance, the first one might install a Helm chart that includes CRDs,
+and the second one can make resources from those CRDs.
