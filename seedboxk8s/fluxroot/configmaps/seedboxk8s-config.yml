@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: seedboxk8s-config
-  namespace: default
+  namespace: flux-system
 data:
   clusterTld: younix.us
   clusterPrimaryDns: seedbox.younix.us
