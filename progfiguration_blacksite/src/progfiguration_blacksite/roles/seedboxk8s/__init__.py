@@ -15,6 +15,7 @@ import re
 import shutil
 import time
 
+from progfiguration import logger
 from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
@@ -199,26 +200,37 @@ class Role(ProgfigurationRole):
         magicrun("chmod 0600 /root/.kube/config")
 
         # Bootstrap flux
-        # This is idempotent
-        magicrun(
-            [
-                "flux",
-                "bootstrap",
-                "github",
-                "--owner=mrled",
-                "--personal",
-                "--repository=psyops",
-                "--path=seedboxk8s/manifests",
-                "--branch=master",
-                "--private-key-file=/etc/seedboxk8s/flux/psyops_seedboxk8s_flux_deploy_id",
-            ]
-        )
+        # This is idempotent, but a little slow, so we only do it if we have to.
+        flux_ns_result = magicrun("k0s kubectl get ns flux-system", check=False)
+        if flux_ns_result.returncode != 0:
+            logger.info("Bootstrapping flux, this will take a minute or two the first time.")
+            # You have to have already generated the private key and added to this repo as a progfiguration secret
+            # and added the public key to the repo's deploy keys on GitHub in advance.
+            magicrun(
+                [
+                    "flux",
+                    "bootstrap",
+                    "git",
+                    "--url=ssh://git@github.com/mrled/psyops",
+                    "--path=seedboxk8s/manifests",
+                    "--branch=master",
+                    "--private-key-file=/etc/seedboxk8s/flux/psyops_seedboxk8s_flux_deploy_id",
+                    "--silent",  # or else it will hang waiting for confirmation
+                ]
+            )
+        else:
+            logger.info("Flux already bootstrapped, skipping.")
 
         # The secret filename must end with `.agekey`
+        oldkey_hash = None
+        if os.path.exists("/etc/seedboxk8s/flux.agekey"):
+            oldkey_hash = hash_file_nosecurity("/etc/seedboxk8s/flux.agekey")
         self.localhost.set_file_contents("/etc/seedboxk8s/flux.agekey", self.flux_agekey, "root", "root", 0o600)
-        magicrun(
-            "k0s kubectl create secret generic sops-age --namespace=flux-system --from-file=/etc/seedboxk8s/flux.agekey"
-        )
+        newkey_hash = hash_file_nosecurity("/etc/seedboxk8s/flux.agekey")
+        if oldkey_hash != newkey_hash:
+            magicrun(
+                "k0s kubectl create secret generic sops-age --namespace=flux-system --from-file=/etc/seedboxk8s/flux.agekey"
+            )
 
         # Configure Helm repositories
         # These operations are idempotent
