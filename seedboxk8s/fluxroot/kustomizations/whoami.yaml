@@ -20,3 +20,4 @@ spec:
     substituteFrom:
       - kind: ConfigMap
         name: seedboxk8s-config
+        namespace: flux-system
