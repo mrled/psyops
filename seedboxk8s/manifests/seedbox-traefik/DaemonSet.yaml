@@ -28,23 +28,19 @@ spec:
           - --api.insecure=true
           - --api.dashboard=true
           - --accesslog
-          - --entrypoints.web.Address=:10080
-          - --entrypoints.websecure.Address=:10443
-          - --entrypoints.traefik.Address=:19000
+          # Listen on all interfaces, from inside the container
+          - --entrypoints.web.Address=:20080
+          - --entrypoints.websecure.Address=:20443
           - --providers.kubernetescrd
         ports:
+        # Forward the ports from the host to the container
         - name: web
-          containerPort: 10080
-          hostPort: 10080
+          containerPort: 20080
+          hostPort: 20080
           protocol: TCP
         - name: websecure
-          containerPort: 10443
-          hostPort: 10443
-          protocol: TCP
-        # We won't need admin after we set up HTTP routes for the dashboard
-        - name: traefik
-          containerPort: 19000
-          hostPort: 19000
+          containerPort: 20443
+          hostPort: 20443
           protocol: TCP
 
         # # Allow Traefik to bind to privileged ports 80 and 443
