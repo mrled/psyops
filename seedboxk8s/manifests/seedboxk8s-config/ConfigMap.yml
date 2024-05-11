@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: seedboxk8s-config
+  namespace: default
+data:
+  clusterTld: younix.us
+  clusterPrimaryDns: seedbox.younix.us
+  clusterPrimaryIp: "100.86.119.112"
