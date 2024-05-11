@@ -227,7 +227,9 @@ class Role(ProgfigurationRole):
             oldkey_hash = hash_file_nosecurity("/etc/seedboxk8s/flux.agekey")
         self.localhost.set_file_contents("/etc/seedboxk8s/flux.agekey", self.flux_agekey, "root", "root", 0o600)
         newkey_hash = hash_file_nosecurity("/etc/seedboxk8s/flux.agekey")
-        if oldkey_hash != newkey_hash:
+        if magicrun("k0s kubectl get secret sops-age --namespace=flux-system", check=False).returncode != 0:
             magicrun(
                 "k0s kubectl create secret generic sops-age --namespace=flux-system --from-file=/etc/seedboxk8s/flux.agekey"
             )
+        elif oldkey_hash != newkey_hash:
+            raise Exception("The flux age key changed and I'n not sure what to do about it. Lol!")
