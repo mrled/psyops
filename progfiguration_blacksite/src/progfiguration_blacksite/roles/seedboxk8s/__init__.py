@@ -231,6 +231,9 @@ class Role(ProgfigurationRole):
             magicrun(
                 "k0s kubectl create secret generic sops-age --namespace=flux-system --from-file=/etc/seedboxk8s/flux.agekey"
             )
+            magicrun(
+                "flux create kustomization psyops-secrets --source=flux-system --path=seedboxk8s/secrets --prune=true --interval=10m --decryption-provider=sops --decryption-secret=sops-age"
+            )
 
         # Configure Helm repositories
         # These operations are idempotent
