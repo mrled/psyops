@@ -14,9 +14,7 @@ spec:
 
     # for each cert-manager new EAB credencials are required
     externalAccountBinding:
-      keyIDSecretRef:
-        name: zerossl-eab-hmac
-        key: eab-kid
+      keyID: Mw3AqUA-9TpLcNOBJkGpHA
       keySecretRef:
         name: zerossl-eab-hmac
         key: eab-hmac
