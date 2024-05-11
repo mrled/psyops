@@ -5,11 +5,13 @@ metadata:
   namespace: whoami
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
-    - match: PathPrefix(`/whoami`)
+    - match: Host(`whoami.${clusterTld}`)
       kind: Rule
       services:
         - name: whoami-service
           kind: Service
           port: 80
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret
