@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 15m
-  path: /seedboxk8s/applications/cert-manager
+  path: /seedboxk8s/applications/cert-manager-config
   prune: true
   timeout: 2m
   sourceRef:
