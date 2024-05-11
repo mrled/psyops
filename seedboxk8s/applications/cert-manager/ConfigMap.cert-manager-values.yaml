@@ -12,5 +12,5 @@ data:
         dns01-recursive-nameservers-only: true
         dns01-recursive-nameservers: "1.1.1.1:53"
     ingressShim:
-      defaultIssuerName: zerossl-production
+      defaultIssuerName: letsencrypt-staging
       defaultIssuerKind: ClusterIssuer
