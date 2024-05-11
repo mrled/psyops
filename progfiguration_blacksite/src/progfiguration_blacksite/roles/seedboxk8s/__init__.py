@@ -212,7 +212,7 @@ class Role(ProgfigurationRole):
                     "bootstrap",
                     "git",
                     "--url=ssh://git@github.com/mrled/psyops",
-                    "--path=seedboxk8s/manifests",
+                    "--path=seedboxk8s/fluxroot",
                     "--branch=master",
                     "--private-key-file=/etc/seedboxk8s/flux/psyops_seedboxk8s_flux_deploy_id",
                     "--silent",  # or else it will hang waiting for confirmation
@@ -231,17 +231,3 @@ class Role(ProgfigurationRole):
             magicrun(
                 "k0s kubectl create secret generic sops-age --namespace=flux-system --from-file=/etc/seedboxk8s/flux.agekey"
             )
-            magicrun(
-                "flux create kustomization psyops-secrets --source=flux-system --path=seedboxk8s/secrets --prune=true --interval=10m --decryption-provider=sops --decryption-secret=sops-age"
-            )
-
-        # Configure Helm repositories
-        # These operations are idempotent
-        # magicrun("helm repo add bitnami https://charts.bitnami.com/bitnami")
-        # magicrun("helm repo add traefik https://traefik.github.io/charts")
-        # magicrun("helm repo update")
-
-        # Apply Helm charts
-        # magicrun(
-        #     "helm upgrade --install traefik traefik/traefik --version 28.0.0 --values /etc/seedboxk8s/helm/traefik.values.yaml"
-        # )
