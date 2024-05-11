@@ -62,10 +62,6 @@ spec:
   # These extensions 1. are k0s specific and 2. contain our own customizations
   extensions:
 
-    helm:
-      concurrencyLevel: 5
-      repositories: {}
-      charts: {}
     storage:
       create_default_storage_class: false
       type: external_storage

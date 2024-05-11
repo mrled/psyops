@@ -20,7 +20,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
-  path: ./seedboxk8s/manifests
+  path: ./seedboxk8s/fluxroot
   prune: true
   sourceRef:
     kind: GitRepository
