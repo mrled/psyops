@@ -3,8 +3,9 @@
 # Examine certificates using openssl
 certinfo() {
     hostname="$1"
+    port="${2:-443}"
     echo "" |
-        openssl s_client -showcerts -servername "$hostname" -connect "$hostname":443 2>/dev/null |
+        openssl s_client -showcerts -servername "$hostname" -connect "$hostname":"$port" 2>/dev/null |
         openssl x509 -inform pem -noout -text
 }
 
@@ -14,7 +15,7 @@ certinfo() {
 # - the Let's Encrypt staging CA, which returns somethign like `Issuer: C=US, O=(STAGING) Let's Encrypt, CN=(STAGING) Artificial Apricot R3`
 # - the LE prod CA, which returns something like `Issuer: C=US, O=Let's Encrypt, CN=R3`
 certissuer() {
-    certinfo "$1" | grep 'Issuer: '
+    certinfo "$@" | grep 'Issuer: '
 }
 
 # From <https://fluxcd.io/flux/faq/#what-is-the-behavior-of-kustomize-used-by-flux>
