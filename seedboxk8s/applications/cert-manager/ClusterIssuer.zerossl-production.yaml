@@ -10,7 +10,7 @@ spec:
 
     # name of a secret used to store the ACME account private key
     privateKeySecretRef:
-      name: zerossl-prod-certificates
+      name: zerossl-prod-private-key
 
     # for each cert-manager new EAB credencials are required
     externalAccountBinding:
