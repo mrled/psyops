@@ -36,6 +36,10 @@ and allow for simple ConfigMap delcarations for cluster-wide configuration.
 Everything else is placed inside `applications/`
 and is referenced by one of the Kustomizations.
 
+See also
+[a very similar architecture](https://geek-cookbook.funkypenguin.co.nz/kubernetes/deployment/flux/design/)
+for the Geek Cookbook.
+
 ## Kustomizations in fluxroot/seedboxk8s repository
 
 Here's an example
@@ -90,3 +94,8 @@ are dependencies of any kustomization which uses the CRDs.
 This means you may need to break up directories into two --
 for instance, the first one might install a Helm chart that includes CRDs,
 and the second one can make resources from those CRDs.
+
+## Why move from Docker Swarm
+
+* It honestly seems like Swarm Mode is just dying on the vine. It's too bad because of how nice it is. But wow.
+* Getting bad internal DNS entries after redeploys for years now. Deploy a set of services with a compose file, change one of them, deploy again, and sometimes the internal DNS resolver starts giving the wrong (old?) value for the internal DNS name of the service. To fix you have to destroy and redeploy the entire stack. This looks like gateway timeouts from Traefik when trying to go to the affected services. You can only tell by exec'ing into containers and asking the DNS resolver what the address is of the service you want, and comparing that to what the service container thinks its IP address is.

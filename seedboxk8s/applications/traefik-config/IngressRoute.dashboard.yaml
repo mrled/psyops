@@ -7,6 +7,9 @@ spec:
   entryPoints:
     - websecure
   routes:
+    # Dont' forget that there is nothing at the root of this service;
+    # the dashboard is at /dashboard/
+    # (and the trailing slash is important!)
     - match: Host(`traefik.${clusterTld}`)
       kind: Rule
       services:
