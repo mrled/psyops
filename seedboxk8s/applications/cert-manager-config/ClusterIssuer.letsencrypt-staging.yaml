@@ -12,9 +12,13 @@ spec:
       name: letsencrypt-staging-private-key
 
     solvers:
-    - selector: {}
+    - selector:
+        dnsNames:
+        - '*.younix.us'
       dns01:
         route53:
+          region: us-east-2
+          hostedZoneID: Z02081123S4X7YC5EUFE5
           accessKeyIDSecretRef:
             name: aws-route53-credential
             key: access-key-id
