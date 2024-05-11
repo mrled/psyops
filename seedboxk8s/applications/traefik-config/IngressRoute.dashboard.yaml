@@ -5,10 +5,12 @@ metadata:
   namespace: traefik
 spec:
   entryPoints:
-    - web
+    - websecure
   routes:
-    - match: PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+    - match: Host(`traefik.${clusterTld}`)
       kind: Rule
       services:
         - name: api@internal
           kind: TraefikService
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret
