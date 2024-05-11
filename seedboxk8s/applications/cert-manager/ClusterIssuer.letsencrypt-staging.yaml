@@ -1,0 +1,23 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: psyops@micahrl.com
+
+    # name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-staging-private-key
+
+    solvers:
+    - selector: {}
+      dns01:
+        route53:
+          accessKeyIDSecretRef:
+            name: aws-route53-credential
+            key: access-key-id
+          secretAccessKeySecretRef:
+            name: aws-route53-credential
+            key: secret-access-key
