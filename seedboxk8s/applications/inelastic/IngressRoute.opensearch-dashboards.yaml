@@ -10,8 +10,8 @@ spec:
     - match: Host(`inelastic-api.${clusterTld}`)
       kind: Rule
       services:
-        - name: opensearch
+        - name: opensearch-dashboards
           kind: Service
-          port: 9200
+          port: 5601
   tls:
     secretName: younix-dot-us-wildcard-backing-secret

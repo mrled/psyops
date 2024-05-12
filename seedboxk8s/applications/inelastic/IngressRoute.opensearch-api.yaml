@@ -12,6 +12,6 @@ spec:
       services:
         - name: opensearch-cluster-master
           kind: Service
-          port: 5601
+          port: 9200
   tls:
     secretName: younix-dot-us-wildcard-backing-secret
