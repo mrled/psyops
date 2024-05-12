@@ -8,4 +8,4 @@ metadata:
   namespace: inelastic
 spec:
   ca:
-    secretName: inelastic-ca-backing-cert
+    secretName: inelastic-ca-backing-secret
