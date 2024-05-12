@@ -6,7 +6,7 @@ metadata:
 spec:
   secretName: opensearch-transport-backing-secret
   issuerRef:
-    name: opensearch-ca
+    name: inelastic-ca-issuer
     kind: Issuer
   commonName: opensearch-node
   dnsNames:
