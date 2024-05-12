@@ -9,6 +9,6 @@ spec:
   secretName: inelastic-ca-backing-secret
   issuerRef:
     kind: Issuer
-    name: selfsigned-issuer
+    name: selfsigned
   duration: 175200h # 20 years
   renewBefore: 720h # 30 days
