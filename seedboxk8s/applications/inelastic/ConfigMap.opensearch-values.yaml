@@ -21,7 +21,7 @@ data:
 
     config:
       opensearch.yml: |
-        cluser.name: inelastic
+        cluster.name: inelastic
         discovery.type: single-node
         plugins.security.ssl:
           http:
