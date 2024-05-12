@@ -7,3 +7,4 @@ data:
   clusterTld: younix.us
   clusterPrimaryDns: seedbox.younix.us
   clusterPrimaryIp: "100.86.119.112"
+  nodeLocalSlowStorageRoot: /seedboxmedia/seedboxk8s

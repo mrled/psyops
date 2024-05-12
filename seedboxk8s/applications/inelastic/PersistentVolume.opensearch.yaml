@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: opensearch
+  namespace: inelastic
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-slow-storage
+  hostPath:
+    path: ${nodeLocalSlowStorageRoot}/inelastic
+    type: DirectoryOrCreate

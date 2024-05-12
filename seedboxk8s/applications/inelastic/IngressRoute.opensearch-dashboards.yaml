@@ -1,0 +1,17 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: opensearch-api-ingress-route
+  namespace: inelastic
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`inelastic-api.${clusterTld}`)
+      kind: Rule
+      services:
+        - name: opensearch
+          kind: Service
+          port: 9200
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret
