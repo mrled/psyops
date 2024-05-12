@@ -21,8 +21,6 @@ data:
 
     config:
       opensearch.yml: |
-        cluster.name: ${CLUSTER_NAME}
-        node.name: ${NODE_NAME}
         discovery.type: single-node
 
     persistence:
