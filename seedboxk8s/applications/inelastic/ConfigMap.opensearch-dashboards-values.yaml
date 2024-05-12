@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: opensearch-dashboard-values
+  name: opensearch-dashboards-values
   namespace: inelastic
 data:
   values.yaml: |-
