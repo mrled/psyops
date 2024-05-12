@@ -23,8 +23,23 @@ data:
       opensearch.yml: |
         cluser.name: inelastic
         discovery.type: single-node
-        plugins.security.ssl.http.enabled: false
-        plugins.security.ssl.transport.enabled: false
+        plugins.security.ssl:
+          http:
+            enabled: false
+          transport:
+            verification_mode: certificate
+            pemcert_filepath: /usr/share/opensearch/config/certs/tls.crt
+            pemkey_filepath: /usr/share/opensearch/config/certs/tls.key
+            pemtrustedcas_filepath: /usr/share/opensearch/config/certs/ca.crt
+
+    extraVolumes:
+      - name: opensearch-certs
+        secret:
+          secretName: opensearch-transport-backing-secret
+    extraVolumeMounts:
+      - name: opensearch-certs
+        mountPath: "/usr/share/opensearch/config/certs"
+        readOnly: true
 
     persistence:
       enabled: true
