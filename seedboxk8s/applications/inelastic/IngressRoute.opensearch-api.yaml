@@ -10,7 +10,7 @@ spec:
     - match: Host(`inelastic-dashboards.${clusterTld}`)
       kind: Rule
       services:
-        - name: opensearch-dashboards
+        - name: opensearch-cluster-master
           kind: Service
           port: 5601
   tls:
