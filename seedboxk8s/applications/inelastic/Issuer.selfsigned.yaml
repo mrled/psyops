@@ -1,0 +1,10 @@
+# The transport connections between OpenSearch nodes
+# must be encrypted with TLS in recent OpenSearch versions.
+# We use this self-signed issuer to make it happy.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned
+  namespace: inelastic
+spec:
+  selfSigned: {}

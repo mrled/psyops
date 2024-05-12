@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: inelastic-ca
+  namespace: inelastic
+spec:
+  isCA: true
+  commonName: "Inelastic CA"
+  secretName: inelastic-ca-backing-secret
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  duration: 175200h # 20 years
+  renewBefore: 720h # 30 days
