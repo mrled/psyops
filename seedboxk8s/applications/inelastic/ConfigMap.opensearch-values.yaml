@@ -14,7 +14,8 @@ data:
       - secretRef:
           name: opensearch-env-secrets
     extraEnvs:
-      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      - name: DISABLE_INSTALL_DEMO_CONFIG
+        value: "true"
 
     opensearchJavaOpts: "-Xmx512M -Xms512M"
 
