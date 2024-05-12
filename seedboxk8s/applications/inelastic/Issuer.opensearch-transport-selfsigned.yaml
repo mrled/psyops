@@ -5,6 +5,6 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: opensearch-selfsigned
-  namespace: opensearch
+  namespace: inelastic
 spec:
   selfSigned: {}
