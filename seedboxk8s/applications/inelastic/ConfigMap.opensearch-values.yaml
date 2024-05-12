@@ -21,7 +21,10 @@ data:
 
     config:
       opensearch.yml: |
+        cluser.name: inelastic
         discovery.type: single-node
+        plugins.security.ssl.http.enabled: false
+        plugins.security.ssl.transport.enabled: false
 
     persistence:
       enabled: true
