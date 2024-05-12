@@ -4,8 +4,8 @@
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: selfsigned
-  namespace: inelastic-ca-issuer
+  name: inelastic-ca-issuer
+  namespace: inelastic
 spec:
   ca:
     secretName: inelastic-ca-backing-cert
