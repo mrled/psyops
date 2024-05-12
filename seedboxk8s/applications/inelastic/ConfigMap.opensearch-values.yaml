@@ -31,7 +31,7 @@ data:
       labels:
         # Add default labels for the volumeClaimTemplate of the StatefulSet
         enabled: false
-      storageClass: local-low-storage
+      storageClass: local-slow-storage
       accessModes:
         - ReadWriteOnce
       size: 10Gi
