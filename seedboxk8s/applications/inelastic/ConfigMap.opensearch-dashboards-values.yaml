@@ -5,3 +5,18 @@ metadata:
   namespace: inelastic
 data:
   values.yaml: |-
+    opensearchHosts: "http://opensearch-cluster-master:9200"
+
+    config:
+      opensearch_dashboards.yml:
+        opensearch.ssl.certificateAuthorities: ["/usr/share/opensearch-dashboards/config/certs/ca.crt"]
+
+    extraVolumes:
+      - name: opensearch-certs
+        secret:
+          secretName: opensearch-transport-backing-secret
+
+    extraVolumeMounts:
+      - name: opensearch-certs
+        mountPath: "/usr/share/opensearch-dashboards/config/certs"
+        readOnly: true
