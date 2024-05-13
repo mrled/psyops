@@ -73,3 +73,17 @@ kube_resources() {
     kubectl describe nodes | grep -A 3 "Resource .*Requests .*Limits"
     echo
 }
+
+helm_pull_from_flux() {
+    # Pull out the Helm repo in name <tab> URL format from the cluster.
+    # The HelmRepository CRD is a Flux custom resource;
+    # Helm itself just uses a local config file,
+    # so we do this to get our Flux configuration locally.
+    # This is idempotent and safe to do repeatedly.
+    kvpair_path="{range .items[*]}{.metadata.name}{'\t'}{.spec.url}{'\n'}{end}"
+    kubectl get HelmRepository -A -o jsonpath="$kvpair_path" |
+        while read -r name url; do
+            helm repo add "$name" "$url"
+        done
+    helm repo update
+}

@@ -317,3 +317,93 @@ kubectl apply --server-side --field-manager=kustomize-controller -f kubernasty/m
   and shows which pods are consuming them.
 * CPU is specified like `123m`, where the `m` is for `millicpu`
 * <https://stackoverflow.com/questions/38869673/pod-in-pending-state-due-to-insufficient-cpu>
+
+## Helm doesn't store its repos in the cluster
+
+Helm doesn't store its repos in the cluster;
+it stores them in a config file on whatever machine contains the Helm binary.
+_Flux_ stores Helm repos in the cluster as a `HelmRepository` custom resource,
+but the Helm binary running on your laptop or a cluster node doesn't know anything about these.
+
+You can use this one liner to pull all the Flux-managed HelmRepository resources
+from the cluster and save them to the local Helm configuration.
+
+```sh
+kubectl get HelmRepository -A -o \
+    jsonpath="{range .items[*]}{.metadata.name}{'\t'}{.spec.url}{'\n'}{end}" |
+      while read -r name url; do helm repo add "$name" "$url"; done
+helm repo update
+```
+
+I include a function that does this in {{< repolink "kubernasty/cluster.sh" >}}.
+
+This doesn't keep anything in sync;
+you have to re-run it if you add any new repos to Flux.
+
+## Modifying a Helm chart's values.yaml
+
+A common pattern for Helm charts is to have a `values.yaml`
+which allows custom settings or overrides.
+In Flux, it's easiest to define these by making a new ConfigMap with a `values.yaml` key,
+and including YAML as a _string_ as the value.
+
+```yaml
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: example-chart
+  namespace: examplens
+spec:
+  chart:
+    spec:
+      chart: example-chart
+      version: 2.19.0
+      sourceRef:
+        kind: HelmRepository
+        name: example-repository
+        namespace: flux-system
+  interval: 15m
+  timeout: 5m
+  releaseName: example-release
+  valuesFrom:
+  - kind: ConfigMap
+    name: example-chart-values
+    valuesKey: values.yaml
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-chart-values
+  namespace: examplens
+data:
+  values.yaml: |-
+    someSetting: someValue
+    more:
+      stuff_like: "this"
+    etc: true
+```
+
+**But if you modify the `values.yaml` and push, Flux will not redeploy the HelmRelease**.
+
+Instead, you need to extract the contents of `values.yaml` into a temp file,
+and apply it with Helm.
+
+```yaml
+someSetting: someValue
+more:
+  stuff_like: "this"
+etc: true
+```
+
+```sh
+helm upgrade -n examplens example-release example-repository/example-chart -f TEMP.yaml
+```
+
+This is one reason it's really useful to
+[install the Helm binary]({{< ref "/docs/core/prerequisites" >}}#helm)
+even though we are using Flux.
+
+For this to work, your local Helm configuration must include all the repositories that Flux is configured to use.
+You can set them with a simple command, see
+[Helm doesn't store its repos in the cluster](#helm-doesnt-store-its-repos-in-the-cluster), above.
