@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: https-registry
+  namespace: registry
+spec:
+  commonName: registry.registry.svc.cluster.local
+  dnsNames:
+  - registry.registry.svc.cluster.local
+  secretName: https-registry-backing-secret
+  duration: 360h # 15 days
+  renewBefore: 72h # 3 days before expiry
+  issuerRef:
+    name: cluster-ca-issuer
+    kind: ClusterIssuer

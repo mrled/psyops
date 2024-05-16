@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  namespace: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+      - name: docker-auth
+        image: cesanta/docker_auth:1
+        ports:
+        - containerPort: 5001
+        volumeMounts:
+        - name: config-volume
+          mountPath: /config
+        - name: token-cert-volume
+          mountPath: /token-certs
+        - name: https-cert-volume
+          mountPath: /https-certs
+        env:
+        - name: CONFIG_PATH
+          value: "/config/auth_config.yml"
+        args: ["-logtostderr", "-v", "5", "/config/auth_config.yml"]
+      volumes:
+      - name: config-volume
+        secret:
+          secretName: docker-auth-config
+      - name: token-cert-volume
+        secret:
+          secretName: docker-auth-cert-backing-secret
+      - name: https-cert-volume
+        secret:
+          secretName: https-auth-backing-secret
