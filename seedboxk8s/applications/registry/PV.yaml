@@ -12,6 +12,5 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-slow-storage
   hostPath:
-    # path: ${nodeLocalSlowStorageRoot}/registry
-    path: /seedboxmedia/seedboxk8s/registry
+    path: ${nodeLocalSlowStorageRoot}/registry
     type: DirectoryOrCreate
