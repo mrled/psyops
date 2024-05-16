@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitserver
+  namespace: clustergit
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clustergit
+  template:
+    metadata:
+      labels:
+        app: clustergit
+    spec:
+      initContainers:
+        - name: take-git-repositories-dir-ownership
+          image: registry.registry.svc.cluster.local/repository/clustergit:latest
+          command: ["chown", "-R", "git:git", "/home/git"]
+          volumeMounts:
+            - mountPath: "/home/git/repositories"
+              name: clustergit-repositories
+              readOnly: false
+      containers:
+        - image: registry.registry.svc.cluster.local/repository/clustergit:latest
+          name: gitserver
+          ports:
+            - containerPort: 22
+          volumeMounts:
+            # Note that because we are using subpaths,
+            # we have to restart the container before any changes to the ConfigMap or Secret take effect.
+            - mountPath: "/etc/ssh/sshd_config"
+              name: gitserver-config
+              subPath: sshd_config
+            - mountPath: "/home/git/.ssh/authorized_keys"
+              name: gitserver-config
+              subPath: authorized_keys
+            - mountPath: "/etc/ssh/ssh_host_ed25519_key"
+              name: ssh-host-keys
+              subPath: ssh_host_ed25519_key
+            - mountPath: "/etc/ssh/ssh_host_ed25519_key.pub"
+              name: ssh-host-keys
+              subPath: ssh_host_ed25519_key.pub
+            - mountPath: "/home/git/repositories"
+              name: clustergit-repositories
+              readOnly: false
+      imagePullSecrets:
+        - name: registry-k8s-dockerconfigjson
+      volumes:
+        - name: gitserver-config
+          configMap:
+            name: gitserver-config
+            defaultMode: 0600
+        - name: ssh-host-keys
+          secret:
+            secretName: ssh-host-keys
+            defaultMode: 0600
+        - name: clustergit-repositories
+          persistentVolumeClaim:
+            claimName: clustergit-repositories-pvc
