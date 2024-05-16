@@ -32,6 +32,10 @@ class Role(ProgfigurationRole):
     # An age key for Flux to use with SOPS
     flux_agekey: str
 
+    # Internal cluster CA
+    ca_key: str
+    ca_crt: str
+
     k0s_version = "v1.29.4+k0s.0"
     k0sctl_version = "v0.17.5"
     helm_version = "v3.14.4"
@@ -152,6 +156,28 @@ class Role(ProgfigurationRole):
             0o600,
             dirmode=0o0700,
         )
+
+        # Internal CA for the cluster
+        # Generate one like this:
+        #       openssl genrsa -out seedboxk8s.ca.key 4096
+        #       openssl req -x509 -new -nodes -key seedboxk8s.ca.key -sha256 -days 36500 -out seedboxk8s.ca.crt -subj "/CN=SeedboxK8s Internal CA"
+        # That's valid for approximately 100 years.
+        # There's no easy way to have cert-manager generate this for us in the cluster,
+        # because we need to have it on the nodes,
+        # and also because we want to have just the cert in a ConfigMap
+        # which we will have to copy there anyway,
+        # so we create it out of band and copy it to the places it needs to go all at once
+        # and make it valid for 100 years.
+        #
+        # WARNING: It must be the same key and/or cert that is also found in:
+        # - cluster-ca/ConfigMap.cluster-ca-cert.yaml
+        # - cluster-ca/Secret.cluster-ca-backing-secret.yaml
+        #
+        # self.localhost.set_file_contents("/etc/seedboxk8s/ca.crt", self.ca_crt, "root", "root", 0o644)
+        self.localhost.set_file_contents(
+            "/usr/local/share/ca-certificates/seedboxk8s.ca.crt", self.ca_crt, "root", "root", 0o644
+        )
+        magicrun("update-ca-trust")
 
         # k0s configuration
         changed_k0s_yaml = True

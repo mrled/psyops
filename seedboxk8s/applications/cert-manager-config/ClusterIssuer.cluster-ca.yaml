@@ -1,0 +1,7 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: cluster-ca-issuer
+spec:
+  ca:
+    secretName: cluster-ca-cert-backing-secret
