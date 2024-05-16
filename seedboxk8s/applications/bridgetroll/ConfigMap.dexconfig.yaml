@@ -22,8 +22,8 @@ data:
 
     frontend:
       issuer: Chemtrails
-      #dir: /srv/dex/web
-      #theme: mindcontrol
+      dir: /srv/dex/web
+      theme: mindcontrol
 
     # https://dexidp.io/docs/id-tokens/#expiration-and-rotation-settings
     expiry:
