@@ -98,3 +98,6 @@ seedbox_kibana_password: "{{ vault_seedbox_kibana_password }}"
 seedbox_logstash_ingestion_user: logstash_ingestion
 seedbox_logstash_ingestion_password: "{{ vault_seedbox_logstash_ingestion_password }}"
 seedbox_logstash_system_password: "{{ vault_seedbox_logstash_system_password }}"
+
+# The IP address for Traefik to be exposed on
+seedbox_ingress_ipaddr: 100.86.119.112

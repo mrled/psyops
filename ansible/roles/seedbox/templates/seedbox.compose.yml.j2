@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   #
 
@@ -598,9 +596,10 @@ services:
   balancer:
     image: traefik:2.5
     command: --web --docker --docker.swarmMode --docker.watch --docker.domain={{ seedbox_balancer_domain }} --logLevel=DEBUG
+
     ports:
-      - "80:80/tcp"
-      - "443:443/tcp"
+      - "{{ seedbox_ingress_ipaddr }}:80:80"
+      - "{{ seedbox_ingress_ipaddr }}:443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - "{{ seedbox_traefik_config_file }}:/traefik.yml:ro"
@@ -633,6 +632,7 @@ services:
       #- "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
 
     networks:
+      - host
       - dernetverk
     deploy:
       mode: global
@@ -652,6 +652,11 @@ configs:
     name: dex_config_{{ seedbox_dex_config_hash }}
 
 networks:
+  # The host driver disables the build-in network isolation as the container shares the host's network stack.
+  # This will enable host_ip property on port entries.
+  host:
+    driver: host
+    external: true
   dernetverk:
     driver: overlay
     # attachable lets us run containers on the command line that have access to the network
