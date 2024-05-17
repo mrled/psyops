@@ -33,5 +33,10 @@ spec:
                 secretKeyRef:
                   name: browser-registry-user
                   key: password
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                secretKeyRef:
+                  name: browser-secret
+                  key: secretKeyBase
             - name: ENABLE_DELETE_IMAGES
               value: "false"

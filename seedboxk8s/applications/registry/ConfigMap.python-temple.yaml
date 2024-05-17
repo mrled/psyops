@@ -13,14 +13,28 @@ data:
     class Temple(Template):
       delimiter = "{$}"
     parser = argparse.ArgumentParser()
+    parser.add_argument('--verbose', '-v', action='store_true')
     parser.add_argument('template')
     parser.add_argument('replacements')
     parser.add_argument('output')
     parsed = parser.parse_args()
     def main():
       with open(parsed.template, 'r') as f:
-        template = Temple(f.read())
+        tmpl_str = f.read()
+      if parsed.verbose:
+        print("Template:")
+        print(tmpl_str)
+      template = Temple(tmpl_str)
       with open(parsed.replacements, 'r') as f:
         replacements = json.load(f)
+      if parsed.verbose:
+        print("Replacements:")
+        print(json.dumps(replacements))
+      result = template.substitute(replacements)
+      if parsed.verbose:
+        print("Result:")
+        print(result)
       with open(parsed.output, 'w') as f:
-        f.write(template.substitute(replacements))
+        f.write(result)
+    if __name__ == '__main__':
+      main()

@@ -16,7 +16,7 @@ spec:
       initContainers:
       - name: prepare-config
         image: python:3-alpine
-        command: ["/usr/local/bin/python3", "/temple/temple.py", "/unprocseed/auth_config.yml", "/substitutions/substitutions.json", "/processed/auth_config.yml"]
+        command: ["/usr/local/bin/python3", "/temple/temple.py", "/unprocessed/auth_config.yml", "/substitutions/substitutions.json", "/processed/auth_config.yml"]
         volumeMounts:
         - name: python-temple
           mountPath: /temple
@@ -33,13 +33,10 @@ spec:
         - containerPort: 5001
         volumeMounts:
         - name: processed-config
-          mountPath: /config
+          mountPath: /processed
         - name: token-cert-volume
           mountPath: /token-certs
-        env:
-        - name: CONFIG_PATH
-          value: "/config/auth_config.yml"
-        args: ["-logtostderr", "-v", "5", "/config/auth_config.yml"]
+        args: ["-logtostderr", "-v", "5", "/processed/auth_config.yml"]
       volumes:
       - name: python-temple
         configMap:

@@ -25,5 +25,9 @@ spec:
         - name: browser
           kind: Service
           port: 80
+      # Require authentication only for the browser service
+      middlewares:
+        - name: bridgetroll-mw
+          namespace: bridgetroll
   tls:
     secretName: younix-dot-us-wildcard-backing-secret
