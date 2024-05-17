@@ -1,0 +1,24 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: browser-ingress-route
+  namespace: registry
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # We have to keep the browser on a separate domain
+    # so that it can use the bridgetroll auth middleware.
+    # Docker clients won't support that middleware;
+    # they use token based auth instead with the docker_auth deployment.
+    - match: Host(`registry-browser.${clusterTld}`)
+      kind: Rule
+      services:
+        - name: browser
+          kind: Service
+          port: 80
+      middlewares:
+        - name: bridgetroll-mw
+          namespace: bridgetroll
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret
