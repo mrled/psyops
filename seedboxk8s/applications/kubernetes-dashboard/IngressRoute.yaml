@@ -14,5 +14,6 @@ spec:
       port: 8000
     middlewares:
     - name: bridgetroll-mw
+      namespace: bridgetroll
   tls:
     secretName: younix-dot-us-wildcard-backing-secret
