@@ -16,6 +16,7 @@ spec:
       reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: >-
         bridgetroll,
         kube-system,
+        kubernetes-dashboard,
         registry,
         traefik,
         whoami,
