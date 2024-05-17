@@ -1,7 +1,7 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: tfa
+  name: kubernetes-dashboard
   namespace: kubernetes-dashboard
 spec:
   entryPoints:
@@ -10,7 +10,7 @@ spec:
   - match: Host(`kubernetes.${clusterTld}`)
     kind: Rule
     services:
-    - name: kubernetes-dashboard
+    - name: kubernetes-dashboard-web
       port: 80
     middlewares:
     - name: bridgetroll-mw
