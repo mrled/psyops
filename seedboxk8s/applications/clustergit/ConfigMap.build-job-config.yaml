@@ -47,7 +47,7 @@ data:
     set -eux
 
     # Create the git user
-    adduser -h /home/git -s /usr/bin/git-shell -D -u "$GIT_UID" -g "$GIT_GID" git
+    adduser -h /home/git -s /bin/sh -D -u "$GIT_UID" -g "$GIT_GID" git
 
     # Unlock it to allow logins -- when created with -D, the user is created locked,
     # and cannot even use ssh keys to log in.
