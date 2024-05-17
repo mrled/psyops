@@ -5,8 +5,7 @@ metadata:
   namespace: bridgetroll
 spec:
   forwardAuth:
-    #address: "http://tfa.bridgetroll.svc.cluster.local:4181"
-    address: "https://dex.${clusterTld}/auth"
+    address: "http://tfa.bridgetroll.svc.cluster.local:4181"
     trustForwardHeader: true
     authResponseHeaders:
       - X-Forwarded-User
