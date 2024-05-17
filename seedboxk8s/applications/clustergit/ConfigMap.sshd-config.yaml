@@ -21,4 +21,4 @@ data:
     Subsystem sftp internal-sftp
     Match User git
       ForceCommand /usr/bin/git-shell -c "$SSH_ORIGINAL_COMMAND"
-      ChrootDirectory %h
+      ChrootDirectory /srv/git/
