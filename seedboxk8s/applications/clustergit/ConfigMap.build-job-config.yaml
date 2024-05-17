@@ -26,11 +26,9 @@ data:
 
     # Build the image
     container="$(buildah from alpine:3.19)"
-    buildah run "$container" -- sh -c 'true
-      && apk add --no-cache git openssh-server
-      && mkdir -p /home/git/.ssh /home/git/repositories
-      && rm -f /etc/motd
-      '
+    buildah run "$container" -- apk add --no-cache git openssh-server
+    buildah run "$container" -- mkdir -p /home/git/.ssh /home/git/repositories
+    buildah run "$container" -- rm -f /etc/motd
     buildah copy "$container" --chmod 755 /config/entrypoint.sh /usr/local/bin/entrypoint.sh
     buildah config \
       --port 22 \
