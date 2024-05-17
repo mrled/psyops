@@ -24,7 +24,7 @@ spec:
               name: clustergit-repositories
               readOnly: false
       containers:
-        - image: registry.registry.svc.cluster.local/repository/clustergit:latest
+        - image: registry.${clusterTld}/repository/clustergit:latest
           name: gitserver
           ports:
             - containerPort: 22
