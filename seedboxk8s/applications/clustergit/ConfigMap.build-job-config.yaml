@@ -27,19 +27,8 @@ data:
     # Build the image
     container="$(buildah from alpine:3.19)"
     buildah run "$container" -- apk add --no-cache git openssh-server
-    buildah run "$container" -- mkdir -p /srv/git
 
-    # The permissions requirements for sshd's ChrootDirectory are very strict:
-    # every directory in the path must be owned by root and not writable by anyone else,
-    # even the root group.
-    buildah run "$container" -- chmod 711 / /srv /srv/git
-
-    # Make /srv/git/home/git a valid path,
-    # because ChrootDirectory will chroot to /srv/git and then expect a /home/git inside that.
-    buildah run "$container" -- ln -s . /srv/git/home
-    buildah run "$container" -- ln -s . /srv/git/git
-
-    buildah run "$container" -- mkdir -p /home/git/.ssh /srv/git/repositories
+    buildah run "$container" -- mkdir -p /home/git/.ssh
     buildah run "$container" -- chmod 700 /home/git /home/git/.ssh
     buildah run "$container" -- rm -f /etc/motd
     buildah copy --chmod 755 "$container" /config/entrypoint.sh /usr/local/bin/entrypoint.sh
@@ -70,10 +59,9 @@ data:
     chmod 600 /home/git/.ssh/authorized_keys
 
     # Set correct ownership
-    chown -R git:git /home/git
+    chown git:git /home/git /home/git/.ssh /home/git/.ssh/authorized_keys
     # We don't chown -R because that could take a long time on every startup
     chown git:git /home/git/repositories
-    chown git:git /home/git/.ssh/authorized_keys
 
     # Run sshd in the foreground
     /usr/sbin/sshd -De
