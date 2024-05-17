@@ -44,6 +44,9 @@ spec:
           configMap:
             name: sshd-config
             defaultMode: 0600
+        - name: authorized-keys
+          configMap:
+            name: authorized-keys
         - name: ssh-host-keys
           secret:
             secretName: ssh-host-keys
