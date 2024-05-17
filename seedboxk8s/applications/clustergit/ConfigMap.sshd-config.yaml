@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: gitserver-config
+  name: sshd-config
   namespace: clustergit
 data:
   sshd_config: |-
@@ -22,6 +22,3 @@ data:
     Match User git
       ForceCommand /usr/bin/git-shell -c "$SSH_ORIGINAL_COMMAND"
       ChrootDirectory %h
-
-  authorized_keys: |-
-    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS

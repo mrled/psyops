@@ -47,7 +47,6 @@ spec:
         - name: ssh-host-keys
           secret:
             secretName: ssh-host-keys
-            defaultMode: 0644
         - name: clustergit-repositories
           persistentVolumeClaim:
             claimName: clustergit-repositories-pvc
