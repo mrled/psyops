@@ -29,7 +29,7 @@ data:
     buildah run "$container" -- apk add --no-cache git openssh-server
     buildah run "$container" -- mkdir -p /home/git/.ssh /home/git/repositories
     buildah run "$container" -- rm -f /etc/motd
-    buildah copy "$container" --chmod 755 /config/entrypoint.sh /usr/local/bin/entrypoint.sh
+    buildah copy --chmod 755 "$container" /config/entrypoint.sh /usr/local/bin/entrypoint.sh
     buildah config \
       --port 22 \
       --env "GIT_UID=1000" \
