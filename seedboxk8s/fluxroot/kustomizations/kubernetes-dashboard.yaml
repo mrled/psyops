@@ -1,0 +1,25 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
+kind: Kustomization
+metadata:
+  name: traefik-config
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: /seedboxk8s/applications/traefik-config
+  prune: true
+  timeout: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: traefik
+    - name: bridgetroll
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  validation: server
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: seedboxk8s-config

@@ -1,0 +1,18 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tfa
+  namespace: kubernetes-dashboard
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`kubernetes.${clusterTld}`)
+    kind: Rule
+    services:
+    - name: kubernetes-dashboard
+      port: 80
+    middlewares:
+    - name: bridgetroll-mw
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret
