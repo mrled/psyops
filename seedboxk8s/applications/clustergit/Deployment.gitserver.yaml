@@ -15,14 +15,6 @@ spec:
       labels:
         app: clustergit
     spec:
-      initContainers:
-        - name: take-git-repositories-dir-ownership
-          image: registry.registry.svc.cluster.local/repository/clustergit:latest
-          command: ["chown", "-R", "git:git", "/home/git"]
-          volumeMounts:
-            - mountPath: "/home/git/repositories"
-              name: clustergit-repositories
-              readOnly: false
       containers:
         - image: registry.${clusterTld}/repository/clustergit:latest
           name: gitserver
