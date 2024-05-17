@@ -1,11 +1,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
 kind: Kustomization
 metadata:
-  name: traefik-config
+  name: kubernetes-dashboard
   namespace: flux-system
 spec:
   interval: 15m
-  path: /seedboxk8s/applications/traefik-config
+  path: /seedboxk8s/applications/kubernetes-dashboard
   prune: true
   timeout: 2m
   sourceRef:
