@@ -31,6 +31,7 @@ spec:
           # Listen on all interfaces, from inside the container
           - --entrypoints.web.Address=:80
           - --entrypoints.websecure.Address=:443
+          - --entrypoints.clustergit-ssh.Address=:20022
           - --providers.kubernetescrd
           # Allow cross-namespace references
           - --providers.kubernetescrd.allowCrossNamespace=true
@@ -43,6 +44,10 @@ spec:
         - name: websecure
           containerPort: 443
           hostPort: 443
+          protocol: TCP
+        - name: clustergit-ssh
+          containerPort: 20022
+          hostPort: 20022
           protocol: TCP
 
         # # Allow Traefik to bind to privileged ports 80 and 443

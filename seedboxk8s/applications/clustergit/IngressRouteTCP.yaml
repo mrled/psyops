@@ -1,0 +1,13 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: gitserver-ssh-ingress
+  namespace: clustergit
+spec:
+  entryPoints:
+    - clustergit-ssh
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: gitserver
+          port: 22
