@@ -24,11 +24,10 @@ spec:
             # Note that because we are using subpaths,
             # we have to restart the container before any changes to the ConfigMap or Secret take effect.
             - mountPath: "/etc/ssh/sshd_config"
-              name: gitserver-config
+              name: sshd-config
               subPath: sshd_config
-            - mountPath: "/home/git/.ssh/authorized_keys"
-              name: gitserver-config
-              subPath: authorized_keys
+            - mountPath: "/authorized_keys"
+              name: authorized-keys
             - mountPath: "/etc/ssh/ssh_host_ed25519_key"
               name: ssh-host-keys
               subPath: ssh_host_ed25519_key
@@ -41,14 +40,14 @@ spec:
       imagePullSecrets:
         - name: registry-k8s-dockerconfigjson
       volumes:
-        - name: gitserver-config
+        - name: sshd-config
           configMap:
-            name: gitserver-config
+            name: sshd-config
             defaultMode: 0600
         - name: ssh-host-keys
           secret:
             secretName: ssh-host-keys
-            defaultMode: 0600
+            defaultMode: 0644
         - name: clustergit-repositories
           persistentVolumeClaim:
             claimName: clustergit-repositories-pvc
