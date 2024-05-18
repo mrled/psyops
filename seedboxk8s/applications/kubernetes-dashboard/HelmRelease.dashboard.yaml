@@ -14,8 +14,13 @@ spec:
   interval: 15m
   timeout: 5m
   values:
+    api:
+      args:
+        - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS."
     web:
       args:
-        - --enable-skip-login
-        - --enable-insecure-login
         - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS."
+    kong:
+      proxy:
+        http:
+          enabled: true

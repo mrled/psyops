@@ -22,7 +22,7 @@ spec:
         # Accept any emails passed to us by the auth provider
         email_domains = [ "*" ]
         # The kubernetes-dashboard service in the same namespace
-        upstreams = [ "http://kubernetes-dashboard" ]
+        upstreams = [ "http://kubernetes-dashboard-kong" ]
       extraArgs:
         provider: oidc
         provider-display-name: "MIND CONTROL"
