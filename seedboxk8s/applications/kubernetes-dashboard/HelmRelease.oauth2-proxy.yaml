@@ -25,12 +25,12 @@ spec:
         upstreams = [ "http://kubernetes-dashboard-kong" ]
         banner = "PREPARE FOR BODY CAVITY SEARCH"
         provider = "oidc"
-        provider-display-name = "MIND CONTROL"
-        redirect-url = "https://dex.younix.us/oauth2/callback"
-        oidc-issuer-url = "https://dex.younix.us/dex"
-        cookie-secure = true
-        pass-authorization-header = true
-        skip-provider-button = true
-        session-store-type = "cookies"
-        cookie-refresh = "15m"
+        provider_display_name = "MIND CONTROL"
+        redirect_url = "https://dex.younix.us/oauth2/callback"
+        oidc_issuer_url = "https://dex.younix.us/dex"
+        cookie_secure = true
+        pass_authorization_header = true
+        skip_provider_button = true
+        session_store_type = "cookies"
+        cookie_refresh = "15m"
       google: {}
