@@ -1,12 +1,11 @@
 # WARNING: when changing this file, you must redeploy the registry service
 # because the file here is mounted as a subpath in the registry deployment.
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
   name: docker-auth-config
   namespace: registry
-type: Opaque
-stringData:
+data:
   auth_config.yml: |
     server:
       addr: ":5001"
