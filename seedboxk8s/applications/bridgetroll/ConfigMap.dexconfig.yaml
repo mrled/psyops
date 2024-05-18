@@ -44,7 +44,7 @@ data:
       secretEnv: DEX_TFA_CLIENT_SECRET
     - id: kubernetes-dashboard-dex-client
       redirectURIs:
-      - kubernetes.${clusterTld}
+      - https://kubernetes.${clusterTld}/oauth2/callback
       name: kubernetes.${clusterTld}
       secretEnv: DEX_K8S_DASH_CLIENT_SECRET
 
