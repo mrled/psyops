@@ -23,10 +23,17 @@ spec:
         email_domains = [ "*" ]
         # The kubernetes-dashboard service in the same namespace
         upstreams = [ "http://kubernetes-dashboard-kong" ]
-      extraArgs:
-        provider: oidc
-        provider-display-name: "MIND CONTROL"
-        skip-provider-button: "true"
-        pass-authorization-header: "true"
+
+        banner = "PREPARE FOR BODY CAVITY SEARCH"
+
+        provider = "oidc"
+        provider-display-name = "MIND CONTROL"
+        redirect-url = "https://dex.younix.us/oauth2/callback"
+        oidc-issuer-url = "https://dex.younix.us/dex"
+        cookie-secure = true
+        pass-authorization-header = true
+        skip-provider-button = true
+        pass-authorization-header = true
         session-store-type: cookies
         cookie-refresh: 15m
+      google: {}
