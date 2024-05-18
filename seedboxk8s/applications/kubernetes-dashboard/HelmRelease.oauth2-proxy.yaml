@@ -31,6 +31,6 @@ spec:
         cookie_secure = true
         pass_authorization_header = true
         skip_provider_button = true
-        session_store_type = "cookies"
+        session_store_type = "cookie"
         cookie_refresh = "15m"
       google: {}
