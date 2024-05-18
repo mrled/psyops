@@ -22,3 +22,4 @@ spec:
     extraArgs:
       - --enable-skip-login
       - --enable-insecure-login
+      - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS"
