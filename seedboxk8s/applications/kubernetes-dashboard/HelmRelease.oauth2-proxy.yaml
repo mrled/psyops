@@ -27,7 +27,7 @@ spec:
         provider = "oidc"
         provider_display_name = "MIND CONTROL"
         redirect_url = "https://dex.younix.us/oauth2/callback"
-        oidc_issuer_url = "https://dex.younix.us/"
+        oidc_issuer_url = "https://dex.younix.us"
         cookie_secure = true
         pass_authorization_header = true
         skip_provider_button = true
