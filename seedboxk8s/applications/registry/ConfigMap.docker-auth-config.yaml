@@ -1,0 +1,62 @@
+# WARNING: when changing this file, you must redeploy the registry service
+# because the file here is mounted as a subpath in the registry deployment.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-auth-config
+  namespace: registry
+type: Opaque
+stringData:
+  auth_config.yml: |
+    server:
+      addr: ":5001"
+    token:
+      issuer: Seedbox K8s Registry Auth
+      expiration: 900
+      realm: https://registry.${clusterTld}/auth
+      certificate: /token-certs/tls.crt
+      key: /token-certs/tls.key
+
+    # Passwords MUST be bcrypt; they can be generated with htpasswd, e.g.:
+    # docker run --entrypoint htpasswd httpd:2 -Bbn admin testpassword | sed 's/[^:].*://'
+    users:
+      # User for manual administrative tasks
+      "admin":
+        password: "{$}adminPasswordBcrypt"
+      # The ci/cd user that will push images in k8s jobs
+      "cicd":
+        password: "{$}cicdPasswordBcrypt"
+      # The k8s cluster user for pulling internally
+      "k8s":
+        password: "{$}k8sPasswordBcrypt"
+      # The user for the browser web UI
+      "browser":
+        password: "{$}browserPasswordBcrypt"
+      # Allow anonymous access
+      # ... I canNOT get this to work at all.
+      # What happens is when I do a HTTP request without a token,
+      # I get a 401 from the registry service,
+      # and docker_auth logs NOTHING.
+      # The registry service only appears to talk to docker_authif a username is provided.
+      # "": {}
+
+    acl:
+      - match: {account: "cicd"}
+        actions: ["*"]
+        comment: "Allow ci/cd to push"
+      - match: {account: "admin"}
+        actions: ["*"]
+        comment: "Allow admin to do anything"
+      - match: {account: "browser"}
+        actions: ["*"]
+        comment: "Allow browser to do anything"
+      - match: {account: "k8s"}
+        actions: ["pull"]
+        comment: "Allow k8s to pull"
+      # Can't get anonymous access to work
+      # - match: {type: "catalog"}
+      #   actions: ["*"]
+      #   comment: "Allow anonymous catalog queries"
+      # - match: {}
+      #   actions: ["pull"]
+      #   comment: "Allow anonymous pull"

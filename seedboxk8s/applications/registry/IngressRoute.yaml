@@ -1,0 +1,29 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: registry-ingress-route
+  namespace: registry
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`registry.${clusterTld}`) && PathPrefix(`/v2`)
+      kind: Rule
+      services:
+        - name: registry
+          kind: Service
+          port: 80
+    - match: Host(`registry.${clusterTld}`) && PathPrefix(`/auth`)
+      kind: Rule
+      services:
+        - name: auth
+          kind: Service
+          port: 80
+    - match: Host(`registry.${clusterTld}`)
+      kind: Rule
+      services:
+        - name: browser
+          kind: Service
+          port: 80
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret

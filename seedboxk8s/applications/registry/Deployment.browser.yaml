@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: browser
+  namespace: registry
+  labels:
+    app: browser
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: browser
+  template:
+    metadata:
+      labels:
+        app: browser
+    spec:
+      containers:
+        - name: browser
+          image: klausmeyer/docker-registry-browser
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DOCKER_REGISTRY_URL
+              value: https://registry.${clusterTld}
+            - name: TOKEN_AUTH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: browser-registry-user
+                  key: username
+            - name: TOKEN_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: browser-registry-user
+                  key: password
+            - name: ENABLE_DELETE_IMAGES
+              value: "false"

@@ -1,0 +1,27 @@
+# WARNING: when changing this file, you must redeploy the registry service
+# because the file here is mounted as a subpath in the registry deployment.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: python-temple
+  namespace: registry
+type: Opaque
+stringData:
+  temple.py: |
+    #!/usr/bin/env python3
+    import argparse, json, sys
+    from string import Template
+    class Temple(Template):
+      delimiter = "{$}"
+    parser = argparse.ArgumentParser()
+    parser.add_argument('template')
+    parser.add_argument('replacements')
+    parser.add_argument('output')
+    parsed = parser.parse_args()
+    def main():
+      with open(parsed.template, 'r') as f:
+        template = Temple(f.read())
+      with open(parsed.replacements, 'r') as f:
+        replacements = json.load(f)
+      with open(parsed.output, 'w') as f:
+        f.write(template.substitute(replacements))

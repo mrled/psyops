@@ -15,5 +15,3 @@ spec:
     organizations:
       - seedboxk8s
   commonName: seedboxk8s-docker-auth
-  # dnsNames:
-  #   - <your-dns-name>

@@ -13,29 +13,45 @@ spec:
       labels:
         app: auth
     spec:
+      initContainers:
+      - name: prepare-config
+        image: python:3-alpine
+        command: ["/usr/local/bin/python3", "/temple/temple.py", "/unprocseed/auth_config.yml", "/substitutions/substitutions.json", "/processed/auth_config.yml"]
+        volumeMounts:
+        - name: python-temple
+          mountPath: /temple
+        - name: unprocessed-config
+          mountPath: /unprocessed
+        - name: config-substitutions
+          mountPath: /substitutions
+        - name: processed-config
+          mountPath: /processed
       containers:
       - name: docker-auth
         image: cesanta/docker_auth:1
         ports:
         - containerPort: 5001
         volumeMounts:
-        - name: config-volume
+        - name: processed-config
           mountPath: /config
         - name: token-cert-volume
           mountPath: /token-certs
-        - name: https-cert-volume
-          mountPath: /https-certs
         env:
         - name: CONFIG_PATH
           value: "/config/auth_config.yml"
         args: ["-logtostderr", "-v", "5", "/config/auth_config.yml"]
       volumes:
-      - name: config-volume
+      - name: python-temple
+        configMap:
+          name: python-temple
+      - name: unprocessed-config
+        configMap:
+          name: docker-auth-config
+      - name: config-substitutions
         secret:
-          secretName: docker-auth-config
+          secretName: docker-auth-config-secret-substitutions
+      - name: processed-config
+        emptyDir: {}
       - name: token-cert-volume
         secret:
           secretName: docker-auth-cert-backing-secret
-      - name: https-cert-volume
-        secret:
-          secretName: https-auth-backing-secret
