@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: seedboxmedia-nfs-pv
+  labels:
+    app: seedboxmedia-nfs
+spec:
+  capacity:
+    storage: 15Ti
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    path: /seedboxmedia
+    server: 127.0.0.1
+  persistentVolumeReclaimPolicy: Retain

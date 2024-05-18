@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarr
+  namespace: sonarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarr
+  template:
+    metadata:
+      labels:
+        app: sonarr
+    spec:
+      containers:
+        - image: linuxserver/sonarr
+          name: sonarr
+          ports:
+            - containerPort: 8989
+          env:
+            - name: PUID
+              # value: "${plexUid}"
+              value: "989"
+            - name: PGID
+              # value: "${plexGid}"
+              value: "986"
+            - name: TZ
+              # value: ${timezone}
+              value: America/Chicago
+          volumeMounts:
+            - mountPath: /config
+              name: sonarr-pvc
+              readOnly: false
+            - mountPath: /media
+              name: seedboxmedia-nfs
+              readOnly: false
+      volumes:
+        - name: sonarr-pvc
+          persistentVolumeClaim:
+            claimName: sonarr-pvc
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc

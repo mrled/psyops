@@ -50,6 +50,12 @@ class Role(ProgfigurationRole):
             magicrun("dnf install python3.11-requests -y")
             import requests
 
+        magicrun("dnf install nfs-utils rpcbind -y")
+        magicrun("systemctl enable --now nfs-server rpcbind")
+        magicrun("systemctl start nfs-server rpcbind")
+        self.localhost.cp(self.role_file("exports.txt"), "/etc/exports", "root", "root", 0o644)
+        magicrun("exportfs -rav")
+
         # k0s binary
         if (
             not os.path.exists("/usr/local/bin/k0s")

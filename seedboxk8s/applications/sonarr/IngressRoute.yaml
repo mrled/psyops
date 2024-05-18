@@ -1,0 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sonarr
+  namespace: sonarr
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # - match: Host(`sonarr.${clusterTld}`)
+    - match: Host(`sonarr.younix.us`)
+      kind: Rule
+      services:
+        - name: sonarr
+          kind: Service
+          port: 8989
+      middlewares:
+        - name: bridgetroll-mw
+          namespace: bridgetroll
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret
