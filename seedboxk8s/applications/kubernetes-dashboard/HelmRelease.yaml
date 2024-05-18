@@ -14,12 +14,8 @@ spec:
   interval: 15m
   timeout: 5m
   values:
-    ingress:
-      enabled: false
-    protocolHttp: true
-    service:
-      type: ClusterIP
-    extraArgs:
-      - --enable-skip-login
-      - --enable-insecure-login
-      - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS"
+    web:
+      args:
+        - --enable-skip-login
+        - --enable-insecure-login
+        - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS"
