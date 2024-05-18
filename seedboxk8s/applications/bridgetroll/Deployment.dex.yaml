@@ -35,6 +35,11 @@ spec:
             secretKeyRef:
               name: dex-tfa-client-secret
               key: dexTfaClientSecret
+        - name: DEX_K8S_DASH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: dex-k8s-dash-client-secret
+              key: dexK8sDashClientSecret
         - name: BCRYPTPASS_FREELEECH
           valueFrom:
             secretKeyRef:

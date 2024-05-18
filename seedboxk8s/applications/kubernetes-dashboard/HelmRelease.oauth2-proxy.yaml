@@ -1,0 +1,32 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: oauth2-proxy
+  namespace: kubernetes-dashboard
+spec:
+  chart:
+    spec:
+      chart: oauth2-proxy
+      version: 6.18.x
+      sourceRef:
+        kind: HelmRepository
+        name: oauth2-proxy
+        namespace: flux-system
+  interval: 15m
+  timeout: 5m
+  releaseName: oauth2-proxy
+  values:
+    config:
+      existingSecret: oauth2-proxy-secret
+      configFile: |+
+        # Accept any emails passed to us by the auth provider
+        email_domains = [ "*" ]
+        # The kubernetes-dashboard service in the same namespace
+        upstreams = [ "http://kubernetes-dashboard" ]
+      extraArgs:
+        provider: oidc
+        provider-display-name: "MIND CONTROL"
+        skip-provider-button: "true"
+        pass-authorization-header: "true"
+        session-store-type: cookies
+        cookie-refresh: 15m

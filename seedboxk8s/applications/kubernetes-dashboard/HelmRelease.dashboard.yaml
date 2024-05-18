@@ -18,4 +18,4 @@ spec:
       args:
         - --enable-skip-login
         - --enable-insecure-login
-        - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS"
+        - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS."

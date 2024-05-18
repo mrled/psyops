@@ -42,6 +42,11 @@ data:
       - https://tfa.${clusterTld}/_oauth
       name: "${clusterTld}"
       secretEnv: DEX_TFA_CLIENT_SECRET
+    - id: kubernetes-dashboard.${clusterTld}
+      redirectURIs:
+      - kubernetes-dashboard.${clusterTld}
+      name: kubernetes-dashboard-dex-client
+      secretEnv: DEX_K8S_DASH_CLIENT_SECRET
 
     logger:
       level: "debug"

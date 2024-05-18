@@ -12,8 +12,8 @@ spec:
     services:
     - name: kubernetes-dashboard-web
       port: 8000
-    middlewares:
-    - name: bridgetroll-mw
-      namespace: bridgetroll
+    # middlewares:
+    # - name: bridgetroll-mw
+    #   namespace: bridgetroll
   tls:
     secretName: younix-dot-us-wildcard-backing-secret
