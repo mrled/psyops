@@ -12,8 +12,10 @@ spec:
     services:
     - name: oauth2-proxy
       port: 80
-    # middlewares:
+    middlewares:
     # - name: bridgetroll-mw
     #   namespace: bridgetroll
+    - name: oauth2-proxy
+      namespace: kubernetes-dashboard
   tls:
     secretName: younix-dot-us-wildcard-backing-secret

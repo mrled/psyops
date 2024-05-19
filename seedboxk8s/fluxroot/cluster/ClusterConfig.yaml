@@ -1,0 +1,8 @@
+apiVersion: k0s.k0sproject.io/v1beta1
+kind: ClusterConfig
+spec:
+  api:
+    extraArgs:
+      oidc-issuer-url: https://dex.younix.us
+      oidc-client-id: seedboxk8s-kubernetes
+      oidc-username-claim: email

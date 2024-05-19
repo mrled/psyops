@@ -35,6 +35,11 @@ spec:
             secretKeyRef:
               name: dex-tfa-client-secret
               key: dexTfaClientSecret
+        - name: DEX_K8S_API_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: dex-client-secrets
+              key: dexDeedboxk8sKubernetesApiClientSecret
         - name: DEX_K8S_DASH_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
