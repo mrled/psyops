@@ -65,3 +65,48 @@ data:
 
     # Run sshd in the foreground
     /usr/sbin/sshd -De
+
+  # git-shell customizations.
+  # See also git-shell(1).
+  # Can override the four default commands:
+  # git-receive-pack, git-upload-pack, git-upload-archive, git-cvsserver.
+  # Can also specify other commands that the user can run.
+
+  # Allow keys to be restricted to a certain repo with REPOROOT
+  # (like GitHub deploy keys).
+  # Not a git-shell command, but used by the other commands.
+  git-reporoot-lookup: |-
+    #!/bin/sh
+    if test "$REPOROOT"; then
+      if ! test -d "$REPOROOT"; then
+        echo "Repository root does not exist: $REPOROOT" >&2
+        exit 1
+      fi
+
+    fi
+
+    echo "/home/git/repositories/$1"
+
+  git-receive-pack: |-
+    #!/bin/sh
+    set -e
+    git-reporoot-lookup || exit 1
+    git receive-pack "$@"
+
+  git-upload-pack: |-
+    #!/bin/sh
+    set -e
+    git-reporoot-lookup || exit 1
+    git upload-pack "$@"
+
+  git-upload-archive: |-
+    #!/bin/sh
+    set -e
+    git-reporoot-lookup || exit 1
+    git upload-archive "$@"
+
+  git-cvsserver: |-
+    #!/bin/sh
+    set -e
+    echo "I love the idea of a Kubernetes server that runs on CVS, but not enough to learn CVS and implement it."
+    exit 1
