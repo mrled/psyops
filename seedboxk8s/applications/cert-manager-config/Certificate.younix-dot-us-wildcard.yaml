@@ -18,6 +18,7 @@ spec:
         kube-system,
         kubernetes-dashboard,
         registry,
+        sonarr,
         traefik,
         whoami,
       reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
