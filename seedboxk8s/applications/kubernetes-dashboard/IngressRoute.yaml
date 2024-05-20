@@ -10,11 +10,9 @@ spec:
   - match: Host(`kubernetes.${clusterTld}`)
     kind: Rule
     services:
-    - name: oauth2-proxy
+    - name: kubernetes-dashboard-kong-proxy
       port: 80
     middlewares:
-    # - name: bridgetroll-mw
-    #   namespace: bridgetroll
     - name: oauth2-proxy
       namespace: kubernetes-dashboard
   tls:

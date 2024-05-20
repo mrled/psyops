@@ -33,4 +33,6 @@ spec:
         skip_provider_button = true
         session_store_type = "cookie"
         cookie_refresh = "15m"
+        set_xauthrequest = true
+        set_authorization_header = true
       google: {}
