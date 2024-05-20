@@ -10,12 +10,15 @@ spec:
   # and ofc it must be unique in the cluster.
   ClusterIP: 10.96.0.100
   ports:
-  - protocol: TCP
+  - name: web
+    protocol: TCP
     port: 80
     targetPort: 80
-  - protocol: TCP
+  - name: websecure
+    protocol: TCP
     port: 443
     targetPort: 443
-  - protocol: TCP
+  - name: clustergit-ssh
+    protocol: TCP
     port: 20022
     targetPort: 20022
