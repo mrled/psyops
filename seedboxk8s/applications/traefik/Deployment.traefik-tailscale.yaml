@@ -28,3 +28,16 @@ spec:
           - --providers.kubernetescrd
           # Allow cross-namespace references
           - --providers.kubernetescrd.allowCrossNamespace=true
+      ports:
+        - name: web
+          containerPort: 80
+          hostPort: 80
+          protocol: TCP
+        - name: websecure
+          containerPort: 443
+          hostPort: 443
+          protocol: TCP
+        - name: clustergit-ssh
+          containerPort: 20022
+          hostPort: 20022
+          protocol: TCP
