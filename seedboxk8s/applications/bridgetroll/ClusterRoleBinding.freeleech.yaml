@@ -1,0 +1,21 @@
+# Give admin access to the freeleech user in Dex.
+# A better way to do this in the general case is to use a group,
+# but Dex doesn't support static groups,
+# so this will work for the statically defined freeleech user.
+# (Dex does support other providers that do support groups, like LDAP,
+# but even if we had LDAP set up right now,
+# this would let us log in or test Dex independent of LDAP.)
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: freeleech-role-binding
+  namespace: bridgetroll
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: User
+  name: freeleech@${clusterTld}
+  apiGroup: rbac.authorization.k8s.io
