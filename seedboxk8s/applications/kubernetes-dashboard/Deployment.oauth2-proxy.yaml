@@ -9,8 +9,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: oauth2-proxy
-      app.kubernetes.io/name: oauth2-proxy
+      app: oauth2-proxy
   template:
     metadata:
       labels:
