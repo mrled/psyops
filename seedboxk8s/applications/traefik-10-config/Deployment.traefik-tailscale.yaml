@@ -20,7 +20,7 @@ spec:
         args:
           - --api.insecure=true
           - --api.dashboard=true
-          - --accesslog
+          - --accesslog=true
           # Listen on all interfaces, from inside the container
           - --entrypoints.web.Address=:80
           - --entrypoints.websecure.Address=:443
