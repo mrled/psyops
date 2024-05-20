@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 15m
-  path: /seedboxk8s/applications/traefik-config
+  path: /seedboxk8s/applications/traefik-10-config
   prune: false
   timeout: 2m
   sourceRef:
