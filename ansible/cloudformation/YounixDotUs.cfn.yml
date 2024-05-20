@@ -64,16 +64,11 @@ Resources:
         - Name: seedboxk8s.younix.us.
           Type: A
           TTL: 300
-          ResourceRecords: ["100.86.119.112"]
+          ResourceRecords: ["100.69.221.89"]
         - Name: "*.younix.us."
           Type: CNAME
           TTL: 300
           ResourceRecords: ["seedboxk8s.younix.us."]
-        - Name: seedboxk8s-test.younix.us.
-          Type: A
-          TTL: 300
-          # Must match the traefik service ClusterIP and also be present in the tailscale pod's TS_DEST_IP env var.
-          ResourceRecords: ["10.96.0.100"]
 
   Seedboxk8sYounixDotUsZoneUpdaterGroup:
     Type: AWS::IAM::Group
