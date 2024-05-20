@@ -30,17 +30,19 @@ spec:
     env:
     # Store the state in a k8s secret
     - name: TS_KUBE_SECRET
-      value: "tailscale"
+      value: "tailscale-auth"
     - name: TS_USERSPACE
       value: "false"
     - name: TS_DEBUG_FIREWALL_MODE
       value: auto
-    - name: TS_AUTHKEY
-      valueFrom:
-        secretKeyRef:
-          name: tailscale-auth
-          key: TS_AUTHKEY
-          optional: true
+
+    # - name: TS_AUTHKEY
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: tailscale-auth
+    #       key: TS_AUTHKEY
+    #       optional: true
+
     # Must match what's set in the traefik-tailscale Service
     - name: TS_DEST_IP
       value: "10.96.0.100"
