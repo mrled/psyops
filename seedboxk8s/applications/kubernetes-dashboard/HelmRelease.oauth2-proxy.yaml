@@ -35,4 +35,6 @@ spec:
         cookie_refresh = "15m"
         set_xauthrequest = true
         set_authorization_header = true
+        set_basic_auth = false
+        silence_ping_logging = true
       google: {}
