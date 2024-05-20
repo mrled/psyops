@@ -42,3 +42,27 @@ spec:
       enabled: true
       # Override default restriction against running on control plane nodes
       tolerations: []
+
+    storageClasses:
+      - name: seedbox-slow-mirror
+        storageClass:
+          fsType: ext4
+          reclaimPolicy: Delete
+          annotations: {}
+          isDefaultClass: false
+          volumeBindingMode: WaitForFirstConsumer
+          allowVolumeExpansion: true
+          additionalParameters:
+            "topolvm.io/device-class": "seedbox-slow-mirror"
+          mountOptions: []
+      - name: seedbox-bootdisk-fast-single
+        storageClass:
+          fsType: ext4
+          reclaimPolicy: Delete
+          annotations: {}
+          isDefaultClass: false
+          volumeBindingMode: WaitForFirstConsumer
+          allowVolumeExpansion: true
+          additionalParameters:
+            "topolvm.io/device-class": "seedbox-bootdisk-fast-single"
+          mountOptions: []
