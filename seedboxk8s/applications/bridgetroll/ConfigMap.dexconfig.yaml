@@ -37,21 +37,24 @@ data:
       skipApprovalScreen: true
 
     staticClients:
+
+    # The traefik-forward-auth client used for most services
     - id: "${dexClientId}"
       redirectURIs:
       - https://tfa.${clusterTld}/_oauth
       name: "${clusterTld}"
       secretEnv: DEX_TFA_CLIENT_SECRET
+
+    # The Kubernetes API client.
+    # The API itself doesn't need a redirect URI or secret,
+    # and those values don't need to be added into eh ~/.kube/config,
+    # but any web application that uses the Kubernetes API does need them to be set properly,
+    # like the Kubernetes Dashboard.
     - id: seedboxk8s-kubernetes
       redirectURIs:
       - https://kubernetes.${clusterTld}/oauth2/callback
       name: seedboxk8s-kubernetes
       secretEnv: DEX_K8S_API_CLIENT_SECRET
-    - id: kubernetes-dashboard-dex-client
-      redirectURIs:
-      - https://kubernetes.${clusterTld}/oauth2/callback
-      name: kubernetes.${clusterTld}
-      secretEnv: DEX_K8S_DASH_CLIENT_SECRET
 
     logger:
       level: "debug"
