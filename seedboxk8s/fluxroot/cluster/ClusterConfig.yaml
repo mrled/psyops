@@ -1,5 +1,7 @@
 apiVersion: k0s.k0sproject.io/v1beta1
 kind: ClusterConfig
+metadata:
+  name: cluster-config
 spec:
   api:
     extraArgs:
