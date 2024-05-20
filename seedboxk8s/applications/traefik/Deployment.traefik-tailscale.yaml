@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik-tailscale
+  namespace: traefik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik-tailscale
+  template:
+    metadata:
+      labels:
+        app: traefik-tailscale
+    spec:
+      serviceAccountName: traefik-account
+      containers:
+      - name: traefik-tailscale
+        image: traefik:v3.0
+        args:
+          - --api.insecure=true
+          - --api.dashboard=true
+          - --accesslog
+          # Listen on all interfaces, from inside the container
+          - --entrypoints.web.Address=:80
+          - --entrypoints.websecure.Address=:443
+          - --entrypoints.clustergit-ssh.Address=:20022
+          - --providers.kubernetescrd
+          # Allow cross-namespace references
+          - --providers.kubernetescrd.allowCrossNamespace=true
