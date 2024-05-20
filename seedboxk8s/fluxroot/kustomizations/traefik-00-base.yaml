@@ -6,7 +6,7 @@ metadata:
 spec:
   interval: 15m
   path: /seedboxk8s/applications/traefik-00-base
-  prune: false
+  prune: true
   timeout: 2m
   sourceRef:
     kind: GitRepository
