@@ -12,7 +12,7 @@ spec:
     kind: GitRepository
     name: flux-system
   dependsOn:
-    - name: traefik
+    - name: traefik-00-base
     - name: bridgetroll
   decryption:
     provider: sops
