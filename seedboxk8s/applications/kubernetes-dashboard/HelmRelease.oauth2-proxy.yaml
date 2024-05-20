@@ -28,13 +28,15 @@ spec:
         provider_display_name = "MIND CONTROL"
         redirect_url = "https://kubernetes.${clusterTld}/oauth2/callback"
         oidc_issuer_url = "https://dex.${clusterTld}"
+        scope = "openid email groups"
         cookie_secure = true
-        pass_authorization_header = true
+        #pass_authorization_header = true
         skip_provider_button = true
         session_store_type = "cookie"
         cookie_refresh = "15m"
         set_xauthrequest = true
         set_authorization_header = true
         set_basic_auth = false
+        pass_access_token = true
         silence_ping_logging = true
       google: {}
