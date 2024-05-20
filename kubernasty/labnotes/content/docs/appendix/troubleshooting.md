@@ -407,3 +407,16 @@ even though we are using Flux.
 For this to work, your local Helm configuration must include all the repositories that Flux is configured to use.
 You can set them with a simple command, see
 [Helm doesn't store its repos in the cluster](#helm-doesnt-store-its-repos-in-the-cluster), above.
+
+## Running a container with `kubectl run` with stdout/err to current terminal
+
+Normally, when you run a container with `kubectl run`,
+you have to use `kubectl logs CONTAINER -n NAMESPACE` to see any output.
+
+But if you use `--attach --restart=Never`, it will show the output in the current terminal.
+
+To run an ephemeral container, you might do something like:
+`kubectl run tmpcontainer --rm --attach --restart=Never -i --tty --image=quay.io/oauth2-proxy/oauth2-proxy -- oauth2-proxy --help`.
+
+This is similar to running a Docker command like:
+`docker run --rm -it quay.io/oauth2-proxy/oauth2-proxy oauth2-proxy --help`.
