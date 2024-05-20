@@ -57,6 +57,12 @@ spec:
     - fe80::6c27:daff:feb1:3625
     - fe80::9825:9aff:fe82:3e4f
     - fe80::d082:55ff:fee7:9b39
+
+    extraArgs:
+      oidc-issuer-url: https://dex.younix.us
+      oidc-client-id: seedboxk8s-kubernetes
+      oidc-username-claim: email
+
   controllerManager: {}
 
   # These extensions 1. are k0s specific and 2. contain our own customizations
