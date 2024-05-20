@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- traefik-v3.0-kubernetes-crd-definition-v1.yml
+- ClusterRole*.yaml
+- ClusterRoleBinding*.yaml
+- Role*.yaml
+- RoleBinding*.yaml
+- ServiceAccount*.yaml
+- *.yaml
