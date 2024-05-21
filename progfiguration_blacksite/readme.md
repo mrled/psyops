@@ -62,3 +62,16 @@ apk add progfiguration
 * Set `PROGFIGSITE_APKBUILD_DEBUG`,
   and the `APKBUILD` file will print debugging messages.
   (See `sitelib/buildsite/APKBUILD.temple` for more info.)
+
+## Decrypting secrets
+
+Nodes decrypt secrets based on what's in their secret filesystem.
+
+The controller key can decrypt all secrets.
+Use the ability for progfiguration to pass arguments to the secret store
+to decrypt secrets with the controller's key.
+
+```sh
+gopass cat psyops/progfiguration/controller.age > controller.age
+progfiguration-blacksite --secret-store-arguments age_key=./controller.age decrypt --node tagasaw
+```
