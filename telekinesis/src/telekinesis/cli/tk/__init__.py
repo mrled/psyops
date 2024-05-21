@@ -257,7 +257,8 @@ def makeparser(prog=None):
     )
     sub_mkimage_sub_diskimg.add_argument(
         "--node-secrets",
-        help="If passed, generate a node-specific image with a populated secrets volume containing secrets from 'progfiguration-blacksite-node save NODENAME ...'.",
+        metavar="NODENAME",
+        help="If passed, generate a node-specific image with a populated secrets volume containing secrets from 'progfiguration-blacksite-node save NODENAME ...' (which is run automatically by this).",
     )
 
     # The buildpkg subcommand
@@ -529,9 +530,9 @@ def main_impl():
                     )
                     # Diff returns 0 if the files are the same, 1 if they are different, and >1 if there was an error
                     if diffresult.returncode == 0:
-                        tklogger.debug(f"initramfs-init.patched was the same as initramfs-init.orig")
+                        tklogger.debug("initramfs-init.patched was the same as initramfs-init.orig")
                     elif diffresult.returncode == 1:
-                        tklogger.debug(f"initramfs-init.patched was different from initramfs-init.orig")
+                        tklogger.debug("initramfs-init.patched was different from initramfs-init.orig")
                     else:
                         tklogger.error(f"diff returned {diffresult.returncode}")
                         sys.exit(1)
@@ -577,13 +578,15 @@ def main_impl():
             if "diskimg" in parsed.stages:
                 for arch in architectures:
                     mkimage_prepare(arch)
-                    out_filename = tkconfig.arch_artifacts[arch.name].node_image().name
+                    out_filename = tkconfig.arch_artifacts[arch.name].node_image(arch.name).name
                     secrets_tarball = ""
                     if parsed.node_secrets:
-                        out_filename = tkconfig.arch_artifacts[arch.name].node_image(parsed.node_secrets).name
+                        out_filename = (
+                            tkconfig.arch_artifacts[arch.name].node_image(arch.name, parsed.node_secrets).name
+                        )
                         secrets_tarball = tkconfig.noarch_artifacts.node_secrets(parsed.node_secrets)
                     with getbldcm(arch) as builder:
-                        make_grub_diskimg(out_filename, builder, secrets_tarball=secrets_tarball)
+                        make_grub_diskimg(out_filename, builder, secrets_tarball=secrets_tarball.as_posix())
         else:
             parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
     elif parsed.action == "vm":
@@ -595,14 +598,14 @@ def main_impl():
             get_x64_ovmf()
             diskimg = parsed.disk_image
             if not diskimg:
-                diskimg = tkconfig.arch_artifacts[arch.name].node_image()
+                diskimg = tkconfig.arch_artifacts[arch.name].node_image(arch.name)
             vm_diskimg(diskimg, parsed.macaddr)
         elif parsed.vm_action == "osdir":
             vm_osdir()
         elif parsed.vm_action == "profile":
             if parsed.profile == "qreamsqueen":
                 get_x64_ovmf()
-                vm_diskimg(tkconfig.arch_artifacts[arch.name].node_image("qreamsqueen"), "ac:ed:de:ad:be:ef")
+                vm_diskimg(tkconfig.arch_artifacts[arch.name].node_image(arch.name, "qreamsqueen"), "ac:ed:de:ad:be:ef")
             else:
                 parser.error(f"Unknown profile: {parsed.profile}")
         else:
@@ -627,7 +630,7 @@ def main_impl():
         if parsed.type == "iso":
             raise NotImplementedError("Deploying ISO images is not implemented")
         elif parsed.type == "diskimg":
-            deploy_ostar(parsed.host, tkconfig.arch_artifacts[arch.name].node_image(parsed.host))
+            deploy_ostar(parsed.host, tkconfig.arch_artifacts[arch.name].node_image(arch.name, parsed.host))
         else:
             parser.error(f"Unknown deployment type: {parsed.type}")
     elif parsed.action == "psynet":

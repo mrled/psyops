@@ -182,11 +182,11 @@ class TelekinesisConfig:
             self.node_image_filename_fmt = "psyopsOS.{arch}.{nodename}.img"
             """Format string for building the name of psyopsOS image files"""
 
-        def node_image(self, nodename: None | str = None) -> Path:
+        def node_image(self, architecture: str, nodename: None | str = None) -> Path:
             """Get the path to the node image. If nodename is None, return the path to the generic image."""
             if nodename is None:
                 nodename = "generic"
-            return self.archroot / self.node_image_filename_fmt.format(nodename=nodename)
+            return self.archroot / self.node_image_filename_fmt.format(arch=architecture, nodename=nodename)
 
     # Class variables
 

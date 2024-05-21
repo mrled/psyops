@@ -87,76 +87,23 @@ It's just a little API, but the files it serves are static JSON files.
 
 Currently hosted on S3, see `../terraform/com-micahrl-psyops-http-bucket.tf`.
 
+Pushing binaries to it is handled by `tk deaddrop`.
+
 ### Building it
 
+We use a tool called `telekinesis` at the root of this repo, or `tk` for short.
+`tk` is basically an overgrown PyInvoke script,
+which was an overgrown Makefile.
+
 ```sh
+# In the root of the repo:
 python3 -m venv --upgrade-deps venv
 . venv/bin/activate
-pip install -r requirements.txt
-invoke --list
+pip install -e ./telekinesis
+tk --help
 ```
 
-#### Doing a clean build
-
-To reset any cache and start over from scratch, do the following.
-
-From your host system:
-
-```sh
-invoke clean
-```
-
-Then, from the psyops container, run
-
-```sh
-invoke progfiguration-abuild
-invoke psyopsOS-base-abuild
-invoke deploy
-```
-
-Finally, from the host system again:
-
-```sh
-invoke cleandockervol
-invoke build-docker-container --rebuild
-
-invoke mkimage
-```
-
-### Errors after updates
-
-#### Rebuild the docker container
-
-If you get errors like the following,
-it's an indication that the apk cache on the image has gone stale:
-
-```
-Signing: /tmp/update-kernel.KAKJJL/boot/modloop-lts
-ERROR: intel-ucode-20220510-r0: No such file or directory
-gzip: invalid magic
-```
-
-The easiest way to handle this is to rebuild the build container with
-`invoke build-docker-container --rebuild`.
-
-#### Check aports
-
-Note that wherever you keep your local `aports` checkout, you'll have to keep that updated as well.
-If you get build errors in the mkimage phase, this is probably part of the problem!
-
-Additionally:
-The Alpine image build system dot-sources ALL mkimage.*.sh files.
-This is intended so you can define functions like `profile_psyopsOS() { ... }`,
-but we can also abuse it to override built-in functions that don't have any other hooks.
-
-Compare any overridden functions in that file to the original versions in the `aports` repo and adjust as necessary.
-
-#### How to do a manual build without `tasks.py`
-
-This may be helpful for errors that you can't otherwise resolve.
-Run the command `invoke mkimage --whatif` and read the output at the end.
-It will show a command to launch the Docker container interactively,
-and a command to run once inside the Docker container.
+See [the `tk` readme](../telekinesis/readme.md) for detailed helm.
 
 ## References
 

@@ -194,7 +194,6 @@ mkfs.fat -F32 -n "$label_efisys" "$part_efisys"
 mkdir -p "$mntbase"/efisys
 
 # Install psyopsOS A/B and the EFI system partition
-"$neuralupgrade" apply --help
 "$neuralupgrade" \
     $neuralupgrade_args \
     "--verbose" \
@@ -213,6 +212,7 @@ mkdir -p "$mntbase"/efisys
 
 # Set up the secret partition
 mkfs.ext4 -L "$label_secret" "$part_secret"
+ls -alF "$secrettarball"
 if test -n "$secrettarball"; then
     mkdir -p "$mntbase"/secret
     mount "$part_secret" "$mntbase"/secret

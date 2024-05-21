@@ -145,7 +145,7 @@ cleanup() {
     set +x
     umount_workdir_submounts
     # Remove the temporary workdir
-    rm -rf "$workdir"
+    #rm -rf "$workdir"
 }
 
 #### Main
@@ -203,13 +203,20 @@ if test -n "$apk_local_repo"; then
     mkdir -p "$squashroot"/$apk_local_repo
     mount -o bind "$apk_local_repo" "$squashroot"/$apk_local_repo
 fi
+
+# Make sure the chroot can resolve DNS
+cp /etc/resolv.conf "$squashroot"/etc/resolv.conf
+chmod 0644 "$squashroot"/etc/resolv.conf
+
 # alpine-base contains busybox etc. Running scripts here creates busybox symlinks in /bin etc.
-apk add -p $squashroot --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" ${apk_local_repo:+-X $apk_local_repo} alpine-base
+apk add -p $squashroot --keys-dir $apk_keys_dir --repositories-file "$apk_repos_file" ${apk_local_repo:+-X $apk_local_repo} --no-network --cache-dir /var/cache/apk alpine-base
 # Now that busybox is installed, we can chroot
-# Show us that we have a populated cache
+
+echo "Show the cache in the squashroot"
 chroot $squashroot /bin/busybox ls -alF /var/cache/apk/
-# Install all the Alpine packages we want in the squashroot, and do run scripts
-chroot $squashroot /sbin/apk add ${apk_local_repo:+-X $apk_local_repo} $apk_packages
+
+echo "Install all the Alpine packages we want in the squashroot, and do run scripts"
+chroot $squashroot /sbin/apk add --cache-dir /var/cache/apk ${apk_local_repo:+-X $apk_local_repo} $apk_packages
 
 # # squishsquash
 # gourdpw='$6$MD90OtVoclidZroK$PL5K20z8wWVhNhqNpt.M4HQIBbSzmfopAI87ZqtgaL0Fx616Zy/WApy0WOvA1J8PgXyEjbRzkcKa9Ogr2lccT1'

@@ -38,6 +38,68 @@ tk buildpkg neuralupgrade-apk &&
   tk deaddrop forcepush
 ```
 
+## Dependencies
+
+* Docker.
+  The Alpine build process must run on an existing Alpine system;
+  using Docker lets us run this anywhere, including macOS.
+* An `aports` checkout.
+  This should match the version of the [builder system Dockerfile](../psyopsOS/buildcontainer/Dockerfile).
+  `git fetch --tags` to get all the latest tags,
+  and then check it out with something like `git checkout v3.19.1`.
+  The scripts look in the `psyops` parent directory for an `aports` repository,
+  but can be configured to look anywhere.
+
+## Troubleshooting
+
+Errors can be hard to track down,
+because we use a lot of custom infrastructure to emulate the normal Alpine build environment,
+which isn't perfectly documented to begin with.
+
+In general, try looking at what commands failed to run in Docker
+(the build container prints out its commands before it runs them)
+and running them inside a Docker container yourself.
+The best way to do that is with `tk mkimage --interactive`,
+which will run all the prep code,
+start the Docker container,
+and print what it would have run in non-interactive mode for you to run yourself.
+
+Each stage might run more than one container,
+and it'll make each one interactive.
+
+Interactive mode requires building for just one architecture,
+you'll save time by just running the failing stage interactively,
+and you might want to skip building the APK packages,
+so the full command is probably something like
+`tk --architecture x86_64 mkimage --skip-build-apks --interactive diskimg --stages squashfs`.
+Argument order is important.
+
+### Rebuild the docker container
+
+If you get errors like the following,
+it's an indication that the apk cache on the image has gone stale:
+
+```text
+Signing: /tmp/update-kernel.KAKJJL/boot/modloop-lts
+ERROR: intel-ucode-20220510-r0: No such file or directory
+gzip: invalid magic
+```
+
+The easiest way to handle this is to rebuild the build container with
+`tk builder build`.
+
+### Check aports
+
+Note that wherever you keep your local `aports` checkout, you'll have to keep that updated as well.
+If you get build errors in the mkimage phase, this is probably part of the problem!
+
+Additionally:
+The Alpine image build system dot-sources ALL mkimage.*.sh files.
+This is intended so you can define functions like `profile_psyopsOS() { ... }`,
+but we can also abuse it to override built-in functions that don't have any other hooks.
+
+Compare any overridden functions in that file to the original versions in the `aports` repo and adjust as necessary.
+
 ## Full help
 
 <!--[[[cog
