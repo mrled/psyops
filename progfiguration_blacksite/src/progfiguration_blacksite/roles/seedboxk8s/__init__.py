@@ -36,8 +36,15 @@ class Role(ProgfigurationRole):
     ca_key: str
     ca_crt: str
 
-    k0s_version = "v1.29.4+k0s.0"
+    # Probably need to update all of these at once
+    k0s_version = "v1.30.0+k0s.0"
     k0sctl_version = "v0.17.5"
+
+    # This must match the containerd version on the system
+    # Better to use system packages for this,
+    # except that I think my Rocky Linux 8.x is too old or something.
+    crictl_version = "1.6.31"
+
     helm_version = "v3.14.4"
     kubeseal_version = "0.26.0"
     flux_version = "2.2.3"
@@ -79,6 +86,23 @@ class Role(ProgfigurationRole):
             download_github_release(
                 "k0sproject/k0sctl", "k0sctl-linux-amd64", outfile="/usr/local/bin/k0sctl", version=self.k0sctl_version
             )
+
+        # crictl binary
+        if not os.path.exists("/usr/local/bin/crictl") or magicrun(
+            "/usr/local/bin/crictl --version"
+        ).stdout.read().strip().endswith(self.crictl_version):
+            print("Downloading crictl")
+            download_github_release(
+                "kubernetes-sigs/cri-tools",
+                f"crictl-{re.escape(self.crictl_version)}-linux-amd64.tar.gz",
+                outfile="/tmp/crictl.tgz",
+                version=self.crictl_version,
+            )
+            self.localhost.makedirs("/tmp/crictl")
+            magicrun(["tar", "xvf", "/tmp/crictl.tgz", "-C", "/tmp/crictl"])
+            os.rename("/tmp/crictl/crictl", "/usr/local/bin/crictl")
+            shutil.rmtree("/tmp/crictl")
+            os.unlink("/tmp/crictl.tgz")
 
         # helm binary
         if not os.path.exists("/usr/local/bin/helm") or magicrun(
