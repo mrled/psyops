@@ -7,10 +7,14 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - match: Host(`kubernetes.${clusterTld}`)
+  # - match: Host(`kubernetes.${clusterTld}`)
+  - match: Host(`kubernetes.younix.us`)
     kind: Rule
     services:
     - name: oauth2-proxy
       port: 80
+    middlewares:
+    - name: forward-auth-headers
+      namespace: kubernetes-dashboard
   tls:
     secretName: younix-dot-us-wildcard-backing-secret

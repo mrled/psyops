@@ -1,0 +1,9 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: forward-auth-headers
+  namespace: kubernetes-dashboard
+spec:
+  headers:
+    customRequestHeaders:
+      Authorization: "Authorization"
