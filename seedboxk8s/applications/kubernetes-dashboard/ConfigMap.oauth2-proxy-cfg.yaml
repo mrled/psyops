@@ -18,6 +18,7 @@ data:
     oidc_issuer_url = "https://dex.younix.us"
     scope = "openid email groups"
     cookie_secure = true
+    cookie_httponly = true
     #pass_authorization_header = true
     skip_provider_button = true
     session_store_type = "cookie"

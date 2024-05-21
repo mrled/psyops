@@ -23,6 +23,9 @@ spec:
         - --https-address=0.0.0.0:4443
         - --metrics-address=0.0.0.0:44180
         - --config=/etc/oauth2_proxy/oauth2_proxy.cfg
+        - --standard-logging=true
+        - --request-logging=true
+        - --auth-logging=true
         env:
         - name: OAUTH2_PROXY_CLIENT_ID
           valueFrom:
