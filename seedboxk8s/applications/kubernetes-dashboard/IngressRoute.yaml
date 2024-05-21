@@ -10,10 +10,7 @@ spec:
   - match: Host(`kubernetes.${clusterTld}`)
     kind: Rule
     services:
-    - name: kubernetes-dashboard-kong-proxy
-      port: 80
-    middlewares:
     - name: oauth2-proxy
-      namespace: kubernetes-dashboard
+      port: 80
   tls:
     secretName: younix-dot-us-wildcard-backing-secret
