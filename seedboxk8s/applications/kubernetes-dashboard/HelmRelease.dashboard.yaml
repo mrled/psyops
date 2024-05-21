@@ -14,6 +14,10 @@ spec:
   interval: 15m
   timeout: 5m
   values:
+    settings:
+      global:
+        clusterName: seedboxk8s
+        itemsPerPage: 100
     api:
       args:
         - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS."
