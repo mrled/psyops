@@ -7,17 +7,14 @@ metadata:
     app: oauth2-proxy
 spec:
   selector:
-    app.kubernetes.io/instance: oauth2-proxy
-    app.kubernetes.io/name: oauth2-proxy
+    app: oauth2-proxy
   type: ClusterIP
   ports:
-  - appProtocol: http
-    name: http
+  - name: http
     port: 80
+    targetPort: 4180
     protocol: TCP
-    targetPort: http
-  - appProtocol: http
-    name: metrics
+  - name: metrics
     port: 44180
+    targetPort: 44180
     protocol: TCP
-    targetPort: metrics
