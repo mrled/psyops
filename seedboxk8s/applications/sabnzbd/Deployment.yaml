@@ -80,4 +80,4 @@ spec:
             claimName: sabnzbd-config-pvc
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
-            claimName: seedboxmedia-nfs-sabnzbd-pvc
+            claimName: seedboxmedia-nfs-pvc

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: seedboxmedia-nfs-sabnzbd-pvc
+  name: seedboxmedia-nfs-pvc
   namespace: sabnzbd
 spec:
   accessModes:
