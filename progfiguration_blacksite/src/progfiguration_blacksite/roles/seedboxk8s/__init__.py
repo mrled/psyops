@@ -11,15 +11,19 @@
 
 from dataclasses import dataclass
 import os
-import re
-import shutil
 import time
 
 from progfiguration import logger
 from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
-from progfiguration_blacksite.sitelib.githubrelease import download_github_release
+from progfiguration_blacksite.roles.seedboxk8s.installdeps import (
+    install_k0s_github_release,
+    install_k0sctl_github_release,
+    install_helm_website_release,
+    install_kubeseal_github_release,
+    install_flux_github_release,
+)
 from progfiguration_blacksite.sitelib.role_helpers import copy_role_dir_recursively, hash_file_nosecurity
 
 
@@ -55,118 +59,19 @@ class Role(ProgfigurationRole):
         except ImportError:
             # At the time of this writing, we're using Rocky Linux 8.x and python3.11 RPM
             magicrun("dnf install python3.11-requests -y")
-            import requests
+            import requests  # noqa: F401
 
         magicrun("dnf install nfs-utils rpcbind -y")
         magicrun("systemctl enable --now nfs-server rpcbind")
         magicrun("systemctl start nfs-server rpcbind")
         self.localhost.cp(self.role_file("exports.txt"), "/etc/exports", "root", "root", 0o644)
-        magicrun("exportfs -rav")
 
-        # k0s binary
-        if (
-            not os.path.exists("/usr/local/bin/k0s")
-            or magicrun("/usr/local/bin/k0s version").stdout.read().strip() != self.k0s_version
-        ):
-            print("Downloading k0s")
-            download_github_release(
-                "k0sproject/k0s",
-                f"k0s-{re.escape(self.k0s_version)}-amd64",
-                outfile="/usr/local/bin/k0s",
-                version=self.k0s_version,
-            )
-
-        # k0sctl binary
-        if (
-            not os.path.exists("/usr/local/bin/k0sctl")
-            or magicrun("/usr/local/bin/k0sctl version").stdout.read().strip().split("\n")[0]
-            != f"version: {self.k0sctl_version}"
-        ):
-            print("Downloading k0sctl")
-            download_github_release(
-                "k0sproject/k0sctl", "k0sctl-linux-amd64", outfile="/usr/local/bin/k0sctl", version=self.k0sctl_version
-            )
-
-        # crictl binary
-        if not os.path.exists("/usr/local/bin/crictl") or magicrun(
-            "/usr/local/bin/crictl --version"
-        ).stdout.read().strip().endswith(self.crictl_version):
-            print("Downloading crictl")
-            download_github_release(
-                "kubernetes-sigs/cri-tools",
-                f"crictl-{re.escape(self.crictl_version)}-linux-amd64.tar.gz",
-                outfile="/tmp/crictl.tgz",
-                version=self.crictl_version,
-            )
-            self.localhost.makedirs("/tmp/crictl")
-            magicrun(["tar", "xvf", "/tmp/crictl.tgz", "-C", "/tmp/crictl"])
-            os.rename("/tmp/crictl/crictl", "/usr/local/bin/crictl")
-            shutil.rmtree("/tmp/crictl")
-            os.unlink("/tmp/crictl.tgz")
-
-        # helm binary
-        if not os.path.exists("/usr/local/bin/helm") or magicrun(
-            "/usr/local/bin/helm version"
-        ).stdout.read().strip().startswith(self.helm_version):
-            print("Downloading helm")
-            try:
-                response = requests.get(f"https://get.helm.sh/helm-{self.helm_version}-linux-amd64.tar.gz", stream=True)
-                if response.status_code == 200:
-                    with open("/tmp/helm.tar.gz", "wb") as f:
-                        for chunk in response.iter_content(1024):
-                            f.write(chunk)
-                else:
-                    raise Exception(f"Failed to download helm: {response.status_code}")
-                self.localhost.makedirs("/tmp/helminstall")
-                magicrun(["tar", "xvf", "/tmp/helm.tar.gz", "-C", "/tmp/helminstall"])
-                os.rename("/tmp/helminstall/linux-amd64/helm", "/usr/local/bin/helm")
-            finally:
-                if os.path.exists("/tmp/helminstall"):
-                    shutil.rmtree("/tmp/helminstall")
-                if os.path.exists("/tmp/helm.tar.gz"):
-                    os.unlink("/tmp/helm.tar.gz")
-
-        # flux binary
-        if not os.path.exists("/usr/local/bin/flux") and not magicrun("flux --version").stdout.read().strip().endswith(
-            self.flux_version
-        ):
-            print("Downloading flux")
-            try:
-                download_github_release(
-                    "fluxcd/flux2",
-                    "flux_.*_linux_amd64",
-                    outfile="/tmp/flux.tgz",
-                    version=f"v{self.flux_version}",
-                )
-                self.localhost.makedirs("/tmp/flux")
-                magicrun(["tar", "xvf", "/tmp/flux.tgz", "-C", "/tmp/flux"])
-                os.rename("/tmp/flux/flux", "/usr/local/bin/flux")
-            finally:
-                if os.path.exists("/tmp/flux"):
-                    shutil.rmtree("/tmp/flux")
-                if os.path.exists("/tmp/flux.tgz"):
-                    os.unlink("/tmp/flux.tgz")
-
-        # kubeseal binary
-        if not os.path.exists("/usr/local/bin/kubeseal") or not magicrun(
-            "/usr/local/bin/kubeseal --version"
-        ).stdout.read().strip().endswith(self.kubeseal_version):
-            print("Downloading kubeseal")
-            try:
-                self.localhost.makedirs("/tmp/kubeseal")
-                download_github_release(
-                    "bitnami-labs/sealed-secrets",
-                    "kubeseal-.*-linux-amd64.tar.gz$",
-                    outfile="/tmp/kubeseal.tgz",
-                    version=self.kubeseal_version,
-                )
-                magicrun(["tar", "xvf", "/tmp/kubeseal.tgz", "-C", "/tmp/kubeseal"])
-                os.rename("/tmp/kubeseal/kubeseal", "/usr/local/bin/kubeseal")
-            finally:
-                if os.path.exists("/tmp/kubeseal"):
-                    shutil.rmtree("/tmp/kubeseal")
-                if os.path.exists("/tmp/kubeseal.tgz"):
-                    os.unlink("/tmp/kubeseal.tgz")
+        install_k0s_github_release(self.k0s_version)
+        install_k0sctl_github_release(self.k0sctl_version)
+        # install_crictl_github_release(self.crictl_version)
+        install_helm_website_release(self.helm_version)
+        install_kubeseal_github_release(self.kubeseal_version)
+        install_flux_github_release(self.flux_version)
 
         # profile.d setup
         self.localhost.cp(
