@@ -38,3 +38,7 @@ spec:
       replicaCount: 1
     node:
       kubeletWorkDirectory: /var/lib/k0s/kubelet
+    scheduler:
+      enabled: true
+      # Override default restriction against running on control plane nodes
+      tolerations: []
