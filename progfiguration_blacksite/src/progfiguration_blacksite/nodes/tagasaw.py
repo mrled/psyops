@@ -45,9 +45,10 @@ node = InventoryNode(
     sitedata=dict(
         notes="",
         flavortext="The American rhinoceros, native to its prairies, is poached for its thick, blue denim hide. Sunscreen is necessary to survive here.",
-        psy0mac="00:00:00:00:00:00",
+        psy0mac="b4:2e:99:ea:fc:6e",
         serial="00000000",
         age_pubkey="age1j7c4lzf86l3493mg8g7jhx5hawvnc4gxv0nlau7d9nmfgycalfesykwznl",
+        # This needs to be uncommented while the machine is running Rocky Linux
         age_key_path="/etc/progfiguration/age.key",
     ),
     roles=dict(
