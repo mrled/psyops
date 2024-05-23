@@ -34,5 +34,9 @@ spec:
         - name: seedbox-slow-mirror
           options:
             - --mirrors 1
+    controller:
+      # We only have one node in this cluster anyway;
+      # without this the controller won't start.
+      replicaCount: 1
     node:
       kubeletWorkDirectory: /var/lib/k0s/kubelet
