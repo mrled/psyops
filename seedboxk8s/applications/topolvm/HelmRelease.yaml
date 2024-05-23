@@ -21,19 +21,21 @@ spec:
       socketName: /run/topolvm/lvmd.sock
       deviceClasses:
         # The seedbox vg is on multiple slow HDDs
-        - name: seedbox-slow
+        - name: seedbox-slow-single
           volume-group: seedbox
           default: true
           spare-gb: 10
+        - name: seedbox-slow-mirror
+          volume-group: seedbox
+          default: false
+          spare-gb: 10
+          lvcreate-options:
+            - --mirrors 1
         # The cl_tagasaw vg is on a single fast SSD
         - name: seedbox-bootdisk-fast-single
           volume-group: cl_tagasaw
           default: false
           spare-gb: 10
-      lvmCreateOptionClasses:
-        - name: seedbox-slow-mirror
-          options:
-            - --mirrors 1
     controller:
       # We only have one node in this cluster anyway;
       # without this the controller won't start.
