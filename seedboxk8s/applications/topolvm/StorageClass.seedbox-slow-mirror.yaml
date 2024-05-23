@@ -1,0 +1,8 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: seedbox-slow-mirror
+provisioner: topolvm.io
+parameters:
+  device-class: seedbox-slow-mirror
+allowVolumeExpansion: true
