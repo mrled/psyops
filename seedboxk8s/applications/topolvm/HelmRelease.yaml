@@ -30,3 +30,9 @@ spec:
           volume-group: cl_tagasaw
           default: false
           spare-gb: 10
+      lvmCreateOptionClasses:
+        - name: seedbox-slow-mirror
+          options:
+            - --mirrors 1
+    node:
+      kubeletWorkDirectory: /var/lib/k0s/kubelet
