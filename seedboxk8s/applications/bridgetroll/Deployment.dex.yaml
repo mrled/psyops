@@ -17,7 +17,7 @@ spec:
       initContainers:
       - name: unpack-theme
         image: busybox
-        command: ['sh', '-c', 'cp /mindcontrol-config/* /srv/dex/web/themes/mindcontrol/; cd /srv/dex/web/themes/mindcontrol; base64 -d il2_png_b64 > il2.png; ln -s il2.png favicon.png; ln -s il2.png logo.png;']
+        command: ['sh', '-c', 'cp /mindcontrol-config/* /srv/dex/web/themes/mindcontrol/; cd /srv/dex/web/themes/mindcontrol; base64 -d il2_png_b64 > il2.png; ln -sf il2.png favicon.png; ln -sf il2.png logo.png;']
         volumeMounts:
         - name: mindcontrol-config
           mountPath: /mindcontrol-config
