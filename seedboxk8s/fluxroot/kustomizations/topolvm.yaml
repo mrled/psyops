@@ -24,7 +24,8 @@ spec:
       kind: DaemonSet
       name: topolvm-node
       namespace: topolvm-system
-    - apiVersion: apps/v1
-      kind: DaemonSet
-      name: topolvm-scheduler
-      namespace: topolvm-system
+    # We don't need a scheduler in a single-node cluster, and it's not deployed by default anyway
+    # - apiVersion: apps/v1
+    #   kind: DaemonSet
+    #   name: topolvm-scheduler
+    #   namespace: topolvm-system
