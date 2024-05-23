@@ -26,7 +26,7 @@ spec:
           default: false
           spare-gb: 10
           lvcreate-options:
-            - --mirrors 1
+            - "-m1"
         # The cl_tagasaw vg is on a single fast SSD
         - name: seedbox-bootdisk-fast-single
           volume-group: cl_tagasaw
