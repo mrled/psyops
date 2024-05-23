@@ -21,10 +21,6 @@ spec:
       socketName: /run/topolvm/lvmd.sock
       deviceClasses:
         # The seedbox vg is on multiple slow HDDs
-        - name: seedbox-slow-single
-          volume-group: seedbox
-          default: true
-          spare-gb: 10
         - name: seedbox-slow-mirror
           volume-group: seedbox
           default: false
