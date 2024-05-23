@@ -1,0 +1,32 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: topolvm
+  namespace: topolvm-system
+spec:
+  chart:
+    spec:
+      chart: topolvm
+      version: 14.1.x
+      sourceRef:
+        kind: HelmRepository
+        name: topolvm
+        namespace: flux-system
+  interval: 15m
+  timeout: 5m
+  releaseName: topolvm
+  values:
+    lvmd:
+      managed: true
+      socketName: /run/topolvm/lvmd.sock
+      deviceClasses:
+        # The seedbox vg is on multiple slow HDDs
+        - name: seedbox-slow
+          volume-group: seedbox
+          default: true
+          spare-gb: 10
+        # The cl_tagasaw vg is on a single fast SSD
+        - name: seedbox-bootdisk-fast-single
+          volume-group: cl_tagasaw
+          default: false
+          spare-gb: 10

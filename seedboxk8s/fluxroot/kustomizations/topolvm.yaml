@@ -1,0 +1,30 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: topolvm
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: /seedboxk8s/applications/topolvm
+  prune: true
+  timeout: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: topolvm-controller
+      namespace: topolvm-system
+    - apiVersion: apps/v1
+      kind: DaemonSet
+      name: topolvm-lvmd-0
+      namespace: topolvm-system
+    - apiVersion: apps/v1
+      kind: DaemonSet
+      name: topolvm-node
+      namespace: topolvm-system
+    - apiVersion: apps/v1
+      kind: DaemonSet
+      name: topolvm-scheduler
+      namespace: topolvm-system
