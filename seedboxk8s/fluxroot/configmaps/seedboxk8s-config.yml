@@ -15,5 +15,5 @@ data:
 
   # These are the UID/GID that all *arr apps, downloaders, and media will be owned by.
   # They need to be the same in all the containers and the media filesystem.
-  plexUid: "989"
-  plexGid: "986"
+  plexUid: '"989"'
+  plexGid: '"986"'
