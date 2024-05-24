@@ -20,9 +20,9 @@ spec:
             - containerPort: 8080
           env:
             - name: PUID
-              value: ${plexUid}
+              value: ${quote}${plexUid}${quote}
             - name: PGID
-              value: ${plexGid}
+              value: ${quote}${plexGid}${quote}
             - name: TZ
               value: ${timezone}
           volumeMounts:
