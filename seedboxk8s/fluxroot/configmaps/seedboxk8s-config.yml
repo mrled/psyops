@@ -15,5 +15,7 @@ data:
 
   # These are the UID/GID that all *arr apps, downloaders, and media will be owned by.
   # They need to be the same in all the containers and the media filesystem.
+  # This fucking format of quoted quotes is because Flux is fucking fucked.
+  # <https://github.com/kubernetes-sigs/kustomize/issues/5558>
   plexUid: '"989"'
   plexGid: '"986"'
