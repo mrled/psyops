@@ -11,8 +11,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  dependsOn:
-    - name: seedboxmedia
   decryption:
     provider: sops
     secretRef:
