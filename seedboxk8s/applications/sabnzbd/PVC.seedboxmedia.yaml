@@ -9,6 +9,4 @@ spec:
   resources:
     requests:
       storage: 512Mi
-  selector:
-    matchLabels:
-      app: seedboxmedia-nfs-sabnzbd-pv
+  volumeName: seedboxmedia-nfs-pv
