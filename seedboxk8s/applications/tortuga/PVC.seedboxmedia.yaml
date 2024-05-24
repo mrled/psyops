@@ -11,4 +11,4 @@ spec:
       storage: 512Mi
   selector:
     matchLabels:
-      app: seedboxmedia-nfs
+      app: seedboxmedia-nfs-tortuga

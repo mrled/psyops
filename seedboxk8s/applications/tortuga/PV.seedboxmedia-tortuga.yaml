@@ -1,12 +1,14 @@
+# PVs are not namespaced, but they can only be used by a single PVC, which is namespaced.
+
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: seedboxmedia-nfs-pv
+  name: seedboxmedia-nfs-tortuga
   labels:
-    app: seedboxmedia-nfs
+    app: seedboxmedia-nfs-tortuga
 spec:
   capacity:
-    storage: 15Ti
+    storage: 12Ti
   accessModes:
     - ReadWriteMany
   nfs:
