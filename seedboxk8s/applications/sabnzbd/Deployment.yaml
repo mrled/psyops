@@ -13,6 +13,33 @@ spec:
       labels:
         app: sabnzbd
     spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command:
+            - sh
+            - -c
+            - >
+              if test -f /config/import-data-complete; then
+                exit 0;
+              fi;
+              while test ! -f /import/import-data-ready; do
+                sleep 1;
+              done;
+              tar -xvf /import/import.tar.gz -C /config;
+              cp -r /import/* /config/;
+              chown -R $PUID:$PGID /config/*;
+              touch /config/import-data-complete;
+          env:
+            - name: PUID
+              value: ${plexUid}
+            - name: PGID
+              value: ${plexGid}
+          volumeMounts:
+            - name: sabnzbd-config-pvc
+              mountPath: /config
+            - name: import
+              mountPath: /import
       containers:
         - image: linuxserver/sabnzbd
           name: sabnzbd
@@ -33,6 +60,8 @@ spec:
               name: seedboxmedia-nfs
               readOnly: false
       volumes:
+        - name: import
+          emptyDir: {}
         - name: sabnzbd-config-pvc
           persistentVolumeClaim:
             claimName: sabnzbd-config-pvc
