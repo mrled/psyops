@@ -46,7 +46,7 @@ Here's an example
 
 ```yaml
 # Note the fluxcd-specific Kustomization API version
-apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
+apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   # Other Kustomizations can depend on this one by its name
