@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: seedboxmedia-nfs-sabnzbd-pvc
+  namespace: sabnzbd
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 512Mi
+  selector:
+    matchLabels:
+      app: seedboxmedia-nfs-sabnzbd-pv

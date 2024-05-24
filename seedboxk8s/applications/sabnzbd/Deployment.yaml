@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sabnzbd
+  namespace: sabnzbd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sabnzbd
+  template:
+    metadata:
+      labels:
+        app: sabnzbd
+    spec:
+      containers:
+        - image: linuxserver/sabnzbd
+          name: sabnzbd
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PUID
+              value: "${plexUid}"
+            - name: PGID
+              value: "${plexGid}"
+            - name: TZ
+              value: ${timezone}
+          volumeMounts:
+            - mountPath: /config
+              name: sabnzbd-config-pvc
+              readOnly: false
+            - mountPath: /media
+              name: seedboxmedia-nfs
+              readOnly: false
+      volumes:
+        - name: sabnzbd-config-pvc
+          persistentVolumeClaim:
+            claimName: sabnzbd-config-pvc
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-sabnzbd-pvc

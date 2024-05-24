@@ -1,0 +1,20 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sabnzbd
+  namespace: sabnzbd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`sabnzbd.${clusterTld}`)
+      kind: Rule
+      services:
+        - name: sabnzbd
+          kind: Service
+          port: 8989
+      middlewares:
+        - name: bridgetroll-mw
+          namespace: bridgetroll
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret
