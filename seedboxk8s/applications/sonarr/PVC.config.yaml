@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: sabnzbd-config-pvc
-  namespace: sabnzbd
+  name: sonarr-config-pvc
+  namespace: tortuga
 spec:
   accessModes:
   - ReadWriteOnce

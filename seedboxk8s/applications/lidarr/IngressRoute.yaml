@@ -1,16 +1,16 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: sonarr
+  name: lidarr
   namespace: tortuga
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`sonarr.${clusterTld}`)
+    - match: Host(`lidarr.${clusterTld}`)
       kind: Rule
       services:
-        - name: sonarr
+        - name: lidarr
           kind: Service
           port: 80
       middlewares:

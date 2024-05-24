@@ -2,7 +2,7 @@ apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: sabnzbd
-  namespace: sabnzbd
+  namespace: tortuga
 spec:
   entryPoints:
     - websecure
@@ -12,7 +12,7 @@ spec:
       services:
         - name: sabnzbd
           kind: Service
-          port: 8080
+          port: 80
       middlewares:
         - name: bridgetroll-mw
           namespace: bridgetroll

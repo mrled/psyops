@@ -2,11 +2,13 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: seedboxmedia-nfs-pvc
-  namespace: sabnzbd
+  namespace: tortuga
 spec:
   accessModes:
   - ReadWriteMany
   resources:
     requests:
       storage: 512Mi
-  volumeName: seedboxmedia-nfs-pv
+  selector:
+    matchLabels:
+      app: seedboxmedia-nfs

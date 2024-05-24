@@ -13,7 +13,7 @@ spec:
     name: flux-system
   dependsOn:
     - name: topolvm
-    - name: seedboxmedia
+    - name: tortuga
   decryption:
     provider: sops
     secretRef:

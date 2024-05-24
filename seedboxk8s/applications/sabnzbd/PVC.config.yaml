@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: sonarr-pvc
-  namespace: sonarr
+  name: sabnzbd-config-pvc
+  namespace: tortuga
 spec:
   accessModes:
   - ReadWriteOnce
-  storageClassName: local-slow-storage
+  storageClassName: seedbox-slow-mirror
   resources:
     requests:
-      storage: 512Mi
+      storage: 1Gi

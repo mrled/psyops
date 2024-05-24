@@ -1,11 +1,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
 kind: Kustomization
 metadata:
-  name: sonarr
+  name: lidarr
   namespace: flux-system
 spec:
   interval: 15m
-  path: /seedboxk8s/applications/sonarr
+  path: /seedboxk8s/applications/lidarr
   prune: true
   timeout: 2m
   sourceRef:

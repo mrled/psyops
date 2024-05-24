@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sabnzbd
+  name: lidarr
   namespace: tortuga
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sabnzbd
+      app: lidarr
   template:
     metadata:
       labels:
-        app: sabnzbd
+        app: lidarr
     spec:
       initContainers:
         - name: import-data
@@ -49,15 +49,15 @@ spec:
             - name: PGID
               value: ${plexGid}
           volumeMounts:
-            - name: sabnzbd-config-pvc
+            - name: lidarr-config-pvc
               mountPath: /config
             - name: import
               mountPath: /import
       containers:
-        - image: linuxserver/sabnzbd
-          name: sabnzbd
+        - image: linuxserver/lidarr
+          name: lidarr
           ports:
-            - containerPort: 8080
+            - containerPort: 8686
           env:
             - name: PUID
               value: ${plexUid}
@@ -67,7 +67,7 @@ spec:
               value: ${timezone}
           volumeMounts:
             - mountPath: /config
-              name: sabnzbd-config-pvc
+              name: lidarr-config-pvc
               readOnly: false
             - mountPath: /media
               name: seedboxmedia-nfs
@@ -75,9 +75,9 @@ spec:
       volumes:
         - name: import
           emptyDir: {}
-        - name: sabnzbd-config-pvc
+        - name: lidarr-config-pvc
           persistentVolumeClaim:
-            claimName: sabnzbd-config-pvc
+            claimName: lidarr-config-pvc
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc

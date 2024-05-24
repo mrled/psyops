@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sonarr
-  namespace: sonarr
+  namespace: tortuga
 spec:
   replicas: 1
   selector:
@@ -13,6 +13,46 @@ spec:
       labels:
         app: sonarr
     spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command:
+            - sh
+            - -c
+            # BE VERY CAREFUL WITH TRAILING SEMICOLONS
+            - >
+              if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
+                for f in /config/{*,.*}; do
+                  if test "$f" = "/config/." || test "$f" = "/config/.."; then
+                    continue;
+                  fi;
+                  echo "Removing $f recursively...";
+                  rm -f "$f";
+                done;
+                rm -rf /config/*;
+              elif test -f /config/import-data-complete; then
+                exit 0;
+              fi;
+              while test ! -f /import/import-data-ready; do
+                sleep 1;
+              done;
+              echo "Extracting data...";
+              tar -xvf /import/import.tar.gz -C /config;
+              echo "Extraction complete.";
+              touch /config/import-data-complete;
+              exit 0;
+          env:
+            - name: DANGER_CLEAR_EXISTING_DATA
+              value: "false"
+            - name: PUID
+              value: ${plexUid}
+            - name: PGID
+              value: ${plexGid}
+          volumeMounts:
+            - name: sonarr-config-pvc
+              mountPath: /config
+            - name: import
+              mountPath: /import
       containers:
         - image: linuxserver/sonarr
           name: sonarr
@@ -20,22 +60,24 @@ spec:
             - containerPort: 8989
           env:
             - name: PUID
-              value: ${quote}${plexUid}${quote}
+              value: ${plexUid}
             - name: PGID
-              value: ${quote}${plexGid}${quote}
+              value: ${plexGid}
             - name: TZ
               value: ${timezone}
           volumeMounts:
             - mountPath: /config
-              name: sonarr-pvc
+              name: sonarr-config-pvc
               readOnly: false
             - mountPath: /media
               name: seedboxmedia-nfs
               readOnly: false
       volumes:
-        - name: sonarr-pvc
+        - name: import
+          emptyDir: {}
+        - name: sonarr-config-pvc
           persistentVolumeClaim:
-            claimName: sonarr-pvc
+            claimName: sonarr-config-pvc
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc
