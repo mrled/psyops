@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonarr
-  namespace: sonarr
+  name: sabnzbd
+  namespace: sabnzbd
 spec:
   selector:
-    app: sonarr
+    app: sabnzbd
   ports:
   - protocol: TCP
-    port: 8989
+    port: 8080
