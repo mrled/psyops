@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: shhh-build
   namespace: tortuga
+  annotations:
+    please: runagain
 spec:
   template:
     spec:
