@@ -1,19 +1,22 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: dashboard
+  name: traefik-localnet-dashboard
   namespace: traefik
 spec:
   entryPoints:
     - websecure
   routes:
-    # Dont' forget that there is nothing at the root of this service;
+    # Don't forget that there is nothing at the root of this service;
     # the dashboard is at /dashboard/
     # (and the trailing slash is important!)
-    - match: Host(`traefik.${clusterFqdn}`)
+    - match: Host(`traefik-localnet.${clusterFqdn}`)
       kind: Rule
       services:
         - name: api@internal
           kind: TraefikService
+  selector:
+    matchLabels:
+      app: traefik-localnet
   tls:
     secretName: younix-dot-us-wildcard-backing-secret

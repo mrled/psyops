@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: traefik-localnet
+  namespace: traefik
+spec:
+  selector:
+    matchLabels:
+      name: traefik-localnet
+  template:
+    metadata:
+      labels:
+        name: traefik-localnet
+    spec:
+      serviceAccountName: traefik-account
+      containers:
+      - name: traefik-localnet
+        image: traefik:v3.0
+        args:
+          - --api.insecure=true
+          - --api.dashboard=true
+          - --accesslog=true
+          - --entrypoints.transmission-peer-tcp.Address=:${transmissionPeerPort}
+          - --entrypoints.transmission-peer-udp.Address=:${transmissionPeerPort}/udp
+          - --entrypoints.whoami-http-tcp.Address=:${whoamiHttpTcpPort}
+          - --providers.kubernetescrd
+          - --providers.kubernetescrd.allowCrossNamespace=true
+        ports:
+        - name: transmission-peer-tcp
+          containerPort: ${transmissionPeerPort}
+          hostPort: ${transmissionPeerPort}
+          protocol: TCP
+        - name: transmission-peer-udp
+          containerPort: ${transmissionPeerPort}
+          hostPort: ${transmissionPeerPort}
+          protocol: UDP
+        - name: whoami-http-tcp
+          containerPort: ${whoamiHttpTcpPort}
+          hostPort: ${whoamiHttpTcpPort}
+          protocol: TCP
