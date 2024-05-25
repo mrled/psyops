@@ -61,13 +61,6 @@ spec:
               protocol: TCP
             - containerPort: ${transmissionPeerPort}
               protocol: UDP
-          env:
-            - name: PUID
-              value: ${plexUidStr}
-            - name: PGID
-              value: ${plexGidStr}
-            - name: TZ
-              value: ${timezone}
           volumeMounts:
             - mountPath: /config
               name: transmission-config-pvc

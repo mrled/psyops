@@ -56,9 +56,9 @@ spec:
             - containerPort: 5299
           env:
             - name: PUID
-              value: ${plexUidStr}
+              value: ${quote}${plexUid}${quote}
             - name: PGID
-              value: ${plexGidStr}
+              value: ${quote}${plexGid}${quote}
             - name: TZ
               value: ${timezone}
             - name: DOCKER_MODS

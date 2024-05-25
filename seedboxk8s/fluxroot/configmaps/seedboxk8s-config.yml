@@ -8,6 +8,9 @@ data:
 
   # I am not impressed with the way Flux and/or Kustomize handles ConfigMaps.
   # Here are some examples for our edification.
+  # Flux has its own Kustomization type kustomization.kustomize.toolkit.fluxcd.io.
+  # <https://fluxcd.io/flux/faq/#are-there-two-kustomization-types>
+  # It can do neat things like substitute values from ConfigMaps with postBuild.substituteFrom.
   #
   # This is a string, like normal YAML. Great.
   # exampleStr: asdf
@@ -16,10 +19,27 @@ data:
   # Instead, you must make it a string:
   # exampleIntValid: "123"
   #
-  # Flux has its own Kustomization type kustomization.kustomize.toolkit.fluxcd.io.
-  # <https://fluxcd.io/flux/faq/#are-there-two-kustomization-types>
-  # It can do neat things like substitute values from ConfigMaps with postBuild.substituteFrom.
-  # However, when it does that, it effectively unquotes any value.
+  # In a manifest like a Deployment, if this ConfigMap is referenced in a postBuild.substituteFrom,
+  # you can reference the above values like this:
+  # - name: EXAMPLE_STR
+  #   value: ${exampleStr}
+  #
+  # However, Flux substitutes strings from a ConfigMap like this one, it effectively unquotes any value.
+  # This means that if you do this:
+  # - name: EXAMPLE_INT
+  #   value: ${exampleIntValid}
+  # It will end up looking like this:
+  # - name: EXAMPLE_INT
+  #   value: 123
+  # That is -- it is now a NUMBER. Its type has changed.
+  # It doesn't matter if you quote the token like this:
+  # - name: EXAMPLE_INT
+  #   value: "${exampleIntValid}"
+  # EVEN THAT will STILL end up looking like this:
+  # - name: EXAMPLE_INT
+  #   value: 123
+  # !!!!!!!!!!!!LAKSJDLKSADJF
+  #
   # For things that are still strings if the quotes are removed, like exampleStr above, this is fine.
   # But for things that are another type if the quotes are removed, like exampleIntValid above,
   # this can be a problem.
@@ -35,10 +55,20 @@ data:
   # <https://github.com/kubernetes-sigs/kustomize/issues/5558>
   # ...
   # <a horrible scream>
-  # ...
+  #
   # That looks like this:
   # exampleStringContainingNumbers: '"123"'
-
+  # Of course, you might ALSO need it as a number in other contexts,
+  # so you might ALSO need to do this:
+  # exampleInt: "123"
+  #
+  # Instead, you could keep track of it just one way:
+  # exampleInt: "123"
+  # And then also provide a stupid quote as a variable:
+  # quote: '"'
+  # And then use it like this:
+  # exampleStringContainingNumbers: ${quote}${exampleInt}${quote}
+  # NO I AM NOT FUCKING KIDDING.
   quote: '"'
 
   clusterTld: younix.us
@@ -50,11 +80,8 @@ data:
 
   timezone: America/Chicago
 
-  # Let's keep track of two versions of the same thing, I love doing that, that's what I like about using computers. Fuck's sake.
   plexUid: "989"
   plexGid: "986"
-  plexUidStr: '"989"'
-  plexGidStr: '"986"'
 
   # This is exposed as a NodePort and therefore must be in the node port range for the cluster;
   # by default this is 30000-32767.
