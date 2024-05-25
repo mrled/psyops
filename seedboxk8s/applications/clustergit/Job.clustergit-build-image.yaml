@@ -3,6 +3,9 @@ kind: Job
 metadata:
   name: buildah-podman-job
   namespace: clustergit
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+    # please: runagain
 spec:
   template:
     spec:

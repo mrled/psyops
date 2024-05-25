@@ -3,8 +3,9 @@ kind: Job
 metadata:
   name: x3-build
   namespace: tortuga
-  # annotations:
-  #   please: runagain
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+    # please: runagain
 spec:
   template:
     spec:
