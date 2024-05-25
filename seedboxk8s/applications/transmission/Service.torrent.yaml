@@ -9,7 +9,7 @@ spec:
     app: transmission
   ports:
   - protocol: TCP
-    port: ${transmissionPeerPort}98
+    port: ${transmissionPeerPort}
     targetPort: ${transmissionPeerPort}
   - protocol: UDP
     port: ${transmissionPeerPort}
