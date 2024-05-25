@@ -13,4 +13,3 @@ spec:
     env:
     - name: THING_ONE
       value: ${quote}${plexUid}${quote}
-    restartPolicy: Never
