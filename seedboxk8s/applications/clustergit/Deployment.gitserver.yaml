@@ -16,7 +16,7 @@ spec:
         app: clustergit
     spec:
       containers:
-        - image: registry.${clusterTld}/clustergit/clustergit:latest
+        - image: registry.${clusterFqdn}/clustergit/clustergit:latest
           name: gitserver
           ports:
             - containerPort: 22

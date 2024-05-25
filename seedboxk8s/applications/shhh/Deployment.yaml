@@ -50,7 +50,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${clusterTld}/tortuga/shhh:latest
+        - image: registry.${clusterFqdn}/tortuga/shhh:latest
           name: shhh
           securityContext:
             runAsUser: ${plexUid}

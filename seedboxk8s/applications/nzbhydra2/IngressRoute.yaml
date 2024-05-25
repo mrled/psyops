@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`nzbhydra2.${clusterTld}`)
+    - match: Host(`nzbhydra2.${clusterFqdn}`)
       kind: Rule
       services:
         - name: nzbhydra2

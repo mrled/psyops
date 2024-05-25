@@ -12,7 +12,7 @@ data:
     token:
       issuer: Seedbox K8s Registry Auth
       expiration: 900
-      realm: https://registry.${clusterTld}/auth
+      realm: https://registry.${clusterFqdn}/auth
       certificate: /token-certs/tls.crt
       key: /token-certs/tls.key
 

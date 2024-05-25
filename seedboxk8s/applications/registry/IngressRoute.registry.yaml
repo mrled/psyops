@@ -7,13 +7,13 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`registry.${clusterTld}`) && PathPrefix(`/auth`)
+    - match: Host(`registry.${clusterFqdn}`) && PathPrefix(`/auth`)
       kind: Rule
       services:
         - name: auth
           kind: Service
           port: 80
-    - match: Host(`registry.${clusterTld}`)
+    - match: Host(`registry.${clusterFqdn}`)
       kind: Rule
       middlewares:
         - name: registry-redirect-root

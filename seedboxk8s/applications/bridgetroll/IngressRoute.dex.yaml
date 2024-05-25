@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - match: Host(`dex.${clusterTld}`)
+  - match: Host(`dex.${clusterFqdn}`)
     kind: Rule
     services:
     - name: dex

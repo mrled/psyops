@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`transmission.${clusterTld}`)
+    - match: Host(`transmission.${clusterFqdn}`)
       kind: Rule
       services:
         - name: transmission-http

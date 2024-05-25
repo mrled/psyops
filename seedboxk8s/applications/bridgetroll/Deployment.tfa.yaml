@@ -29,15 +29,15 @@ spec:
                   name: dex-tfa-client-secret
                   key: dexTfaClientSecret
             - name: PROVIDERS_OIDC_ISSUER_URL
-              value: https://dex.${clusterTld}
+              value: https://dex.${clusterFqdn}
             - name: SECRET
               valueFrom:
                 secretKeyRef:
                   name: tfa-secrets
                   key: httpSecret
             - name: AUTH_HOST
-              value: tfa.${clusterTld}
+              value: tfa.${clusterFqdn}
             - name: COOKIE_DOMAIN
-              value: ${clusterTld}
+              value: ${clusterFqdn}
             - name: LOG_LEVEL
               value: debug

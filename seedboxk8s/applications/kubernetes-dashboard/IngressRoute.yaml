@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-  # - match: Host(`kubernetes.${clusterTld}`)
+  # - match: Host(`kubernetes.${clusterFqdn}`)
   - match: Host(`kubernetes.younix.us`)
     kind: Rule
     services:
