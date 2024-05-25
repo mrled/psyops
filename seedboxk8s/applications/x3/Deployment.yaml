@@ -57,11 +57,25 @@ spec:
             runAsGroup: ${plexGid}
           ports:
             - containerPort: 6969
+          env:
+            # Requires also setting securityContext above
+            - name: USER
+              value: ${quote}${plexUid}${quote}
+            - name: STASH_STASH
+              value: /data/stash
+            - name: STASH_GENERATED
+              value: /data/generated
+            - name: STASH_METADATA
+              value: /data/metadata
+            - name: STASH_CACHE
+              value: /data/cache
+            - name: STASH_CONFIG_FILE
+              value: /config/stash.yml
           volumeMounts:
             - mountPath: /config
               name: x3-config-pvc
               readOnly: false
-            - mountPath: /media
+            - mountPath: /data
               name: seedboxmedia-nfs
               readOnly: false
       volumes:
