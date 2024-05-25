@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shhh-build
+  namespace: tortuga
+data:
+  buildah.sh: |+
+    #!/bin/sh
+    set -eu
+
+    # Get config vars
+    imgns="$CLUSTERGIT_IMAGENAMESPACE"
+    imgname="$CLUSTERGIT_IMAGENAME"
+    imgtag="$CLUSTERGIT_IMAGETAG"
+    regserver="$CLUSTERGIT_REGISTRY"
+    reguser="$CLUSTERGIT_REGISTRY_USERNAME"
+    regpass="$CLUSTERGIT_REGISTRY_PASSWORD"
+
+    # Log in first
+    echo "Logging in to $regserver as $reguser..."
+    buildah login --username "$reguser" --password "$regpass" "$regserver"
+    echo "Logged in to $regserver as $reguser."
+
+    # No more secrets at this point, show what commands we are running
+    set -x
+
+    # Get the release
+    W="$(echo Juvfcnee | tr 'A-Za-z' 'N-ZA-Mn-za-m')"
+    curl -L -o /tmp/Juvfcnee.tgz "http://$W.servarr.com/v1/update/nightly/updatefile?os=linux&runtime=netcore&arch=x64"
+
+    # Build the image
+    container="$(buildah from debian:bookworm)"
+    buildah run "$container" -- apt-get update
+    buildah run "$container" -- apt-get install -y curl libicu72 python3 python3-pip sqlite3 tzdata
+    buildah run "$container" -- rm -rf /var/lib/apt/lists/*
+    buildah copy --mode 0755 "$container" "/config/entrypoint.sh" "/usr/local/sbin/entrypoint.sh"
+    buildah copy --mode 0644 "$container" "/tmp/Juvfcnee.tgz" "/opt/Juvfcnee.tgz"
+    buildah run "$container" -- tar -xvzf /opt/Juvfcnee.tgz -C /opt
+    buildah run "$container" -- rm /opt/Juvfcnee.tgz
+    buildah run "$container" -- mv /opt/${W} /opt/Juvfcnee
+    buildah run "$container" -- ln -s /config /opt/Juvfcnee/.config
+    buildah config \
+      --port 6969 \
+      --volume /config \
+      --entrypoint "/usr/local/sbin/entrypoint.sh" \
+      "$container"
+    buildah commit "$container" "$imgname"
+    buildah tag "$imgname" "$regserver/$imgns/$imgname:$imgtag"
+    buildah push "$imgname" "$regserver/$imgns/$imgname:$imgtag"
+
+  entrypoint.sh: |+
+    #!/bin/sh
+    set -eu
+    PUID=${PUID:-911}
+    PGID=${PGID:-911}
+    TZ=${TZ:-UTC}
+    W="$(echo Juvfcnee | tr 'A-Za-z' 'N-ZA-Mn-za-m')"
+    w="$(echo juvfcnee | tr 'A-Za-z' 'N-ZA-Mn-za-m')"
+    cp /usr/share/zoneinfo/$TZ /etc/localtime
+    groupadd -g $PGID "$w"
+    useradd -u $PUID -g "$w" -d /config -s /bin/sh -M "$w"
+    chown -R "$w":"$w" /opt/Juvfcnee
+    ls -alF /opt/Juvfcnee
+    # echo exec su - "$w" -c "$*"
+    exec su - "$w" -c "/opt/Juvfcnee/$W"

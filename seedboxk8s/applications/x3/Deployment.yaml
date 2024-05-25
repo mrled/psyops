@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: x3
+  namespace: tortuga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: x3
+  template:
+    metadata:
+      labels:
+        app: x3
+    spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command:
+            - sh
+            - -c
+            # BE VERY CAREFUL WITH TRAILING SEMICOLONS
+            - >
+              if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
+                for f in /config/{*,.*}; do
+                  if test "$f" = "/config/." || test "$f" = "/config/.."; then
+                    continue;
+                  fi;
+                  echo "Removing $f recursively...";
+                  rm -f "$f";
+                done;
+                rm -rf /config/*;
+              elif test -f /config/import-data-complete; then
+                exit 0;
+              fi;
+              while test ! -f /import/import-data-ready; do
+                sleep 1;
+              done;
+              echo "Extracting data...";
+              tar -xvf /import/import.tar.gz -C /config;
+              echo "Extraction complete.";
+              touch /config/import-data-complete;
+              exit 0;
+          env:
+            - name: DANGER_CLEAR_EXISTING_DATA
+              value: "false"
+          volumeMounts:
+            - name: x3-config-pvc
+              mountPath: /config
+            - name: import
+              mountPath: /import
+      containers:
+        - image: registry.${clusterTld}/tortuga/x3:latest
+          name: x3
+          securityContext:
+            runAsUser: ${plexUid}
+            runAsGroup: ${plexGid}
+          ports:
+            - containerPort: 6969
+          volumeMounts:
+            - mountPath: /config
+              name: x3-config-pvc
+              readOnly: false
+            - mountPath: /media
+              name: seedboxmedia-nfs
+              readOnly: false
+      volumes:
+        - name: import
+          emptyDir: {}
+        - name: x3-config-pvc
+          persistentVolumeClaim:
+            claimName: x3-config-pvc
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc

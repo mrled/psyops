@@ -1,0 +1,20 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: shhh
+  namespace: tortuga
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`shhh.${clusterTld}`)
+      kind: Rule
+      services:
+        - name: shhh
+          kind: Service
+          port: 80
+      middlewares:
+        - name: bridgetroll-mw
+          namespace: bridgetroll
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret

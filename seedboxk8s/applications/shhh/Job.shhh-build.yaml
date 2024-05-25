@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: shhh-build
+  namespace: tortuga
+spec:
+  template:
+    spec:
+      containers:
+      - name: build-container
+        image: quay.io/buildah/stable
+
+        # Equivalent to 'docker run --privileged'.
+        # Required for buildah.
+        securityContext:
+          privileged: true
+          allowPrivilegeEscalation: true
+
+        command: ["/bin/sh", "/config/buildah.sh"]
+        env:
+          - name: CLUSTERGIT_IMAGENAMESPACE
+            value: tortuga
+          - name: CLUSTERGIT_IMAGENAME
+            value: shhh
+          - name: CLUSTERGIT_IMAGETAG
+            value: latest
+          - name: CLUSTERGIT_REGISTRY
+            value: registry.${clusterTld}
+          - name: CLUSTERGIT_REGISTRY_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: registry-user-tortugacicd
+                key: username
+          - name: CLUSTERGIT_REGISTRY_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: registry-user-tortugacicd
+                key: password
+        volumeMounts:
+          - name: varlibcontainers
+            mountPath: /var/lib/containers
+          - name: build-job-config
+            mountPath: /config
+      restartPolicy: Never
+      volumes:
+        - name: varlibcontainers
+          emptyDir: {}
+        - name: build-job-config
+          configMap:
+            name: shhh-build
