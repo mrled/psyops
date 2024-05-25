@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nzbhydra2
+  namespace: tortuga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nzbhydra2
+  template:
+    metadata:
+      labels:
+        app: nzbhydra2
+    spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command:
+            - sh
+            - -c
+            # BE VERY CAREFUL WITH TRAILING SEMICOLONS
+            - >
+              if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
+                for f in /config/{*,.*}; do
+                  if test "$f" = "/config/." || test "$f" = "/config/.."; then
+                    continue;
+                  fi;
+                  echo "Removing $f recursively...";
+                  rm -f "$f";
+                done;
+                rm -rf /config/*;
+              elif test -f /config/import-data-complete; then
+                exit 0;
+              fi;
+              while test ! -f /import/import-data-ready; do
+                sleep 1;
+              done;
+              echo "Extracting data...";
+              tar -xvf /import/import.tar.gz -C /config;
+              echo "Extraction complete.";
+              touch /config/import-data-complete;
+              exit 0;
+          env:
+            - name: DANGER_CLEAR_EXISTING_DATA
+              value: "false"
+            - name: PUID
+              value: ${plexUid}
+            - name: PGID
+              value: ${plexGid}
+          volumeMounts:
+            - name: nzbhydra2-config-pvc
+              mountPath: /config
+            - name: import
+              mountPath: /import
+      containers:
+        - image: linuxserver/nzbhydra2
+          name: nzbhydra2
+          ports:
+            - containerPort: 5076
+          env:
+            - name: PUID
+              value: ${plexUid}
+            - name: PGID
+              value: ${plexGid}
+            - name: TZ
+              value: ${timezone}
+          volumeMounts:
+            - mountPath: /config
+              name: nzbhydra2-config-pvc
+              readOnly: false
+            - mountPath: /media
+              name: seedboxmedia-nfs
+              readOnly: false
+      volumes:
+        - name: import
+          emptyDir: {}
+        - name: nzbhydra2-config-pvc
+          persistentVolumeClaim:
+            claimName: nzbhydra2-config-pvc
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc

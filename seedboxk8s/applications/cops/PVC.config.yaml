@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cops-config-pvc
+  namespace: tortuga
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: seedbox-slow-mirror
+  resources:
+    requests:
+      storage: 1Gi

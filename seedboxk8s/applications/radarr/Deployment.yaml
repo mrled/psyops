@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: tortuga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command:
+            - sh
+            - -c
+            # BE VERY CAREFUL WITH TRAILING SEMICOLONS
+            - >
+              if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
+                for f in /config/{*,.*}; do
+                  if test "$f" = "/config/." || test "$f" = "/config/.."; then
+                    continue;
+                  fi;
+                  echo "Removing $f recursively...";
+                  rm -f "$f";
+                done;
+                rm -rf /config/*;
+              elif test -f /config/import-data-complete; then
+                exit 0;
+              fi;
+              while test ! -f /import/import-data-ready; do
+                sleep 1;
+              done;
+              echo "Extracting data...";
+              tar -xvf /import/import.tar.gz -C /config;
+              echo "Extraction complete.";
+              touch /config/import-data-complete;
+              exit 0;
+          env:
+            - name: DANGER_CLEAR_EXISTING_DATA
+              value: "false"
+            - name: PUID
+              value: ${plexUid}
+            - name: PGID
+              value: ${plexGid}
+          volumeMounts:
+            - name: radarr-config-pvc
+              mountPath: /config
+            - name: import
+              mountPath: /import
+      containers:
+        - image: linuxserver/radarr
+          name: radarr
+          ports:
+            - containerPort: 7878
+          env:
+            - name: PUID
+              value: ${plexUid}
+            - name: PGID
+              value: ${plexGid}
+            - name: TZ
+              value: ${timezone}
+          volumeMounts:
+            - mountPath: /config
+              name: radarr-config-pvc
+              readOnly: false
+            - mountPath: /media
+              name: seedboxmedia-nfs
+              readOnly: false
+      volumes:
+        - name: import
+          emptyDir: {}
+        - name: radarr-config-pvc
+          persistentVolumeClaim:
+            claimName: radarr-config-pvc
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc

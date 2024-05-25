@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: transmission-http
+  namespace: tortuga
+spec:
+  selector:
+    app: transmission
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9091

@@ -19,3 +19,9 @@ data:
   # <https://github.com/kubernetes-sigs/kustomize/issues/5558>
   plexUid: '"989"'
   plexGid: '"986"'
+
+  # This is exposed as a NodePort and therefore must be in the node port range for the cluster;
+  # by default this is 30000-32767.
+  # These ports must be forwarded from the router.
+  # TODO: consider traefik IngressRouteTCP and IngressRouteUDP instead of a NodePort.
+  transmissionPeerPort: 30298
