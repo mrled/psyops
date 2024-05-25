@@ -31,6 +31,8 @@ data:
       # The user for the browser web UI
       "browser":
         password: "{$}browserPasswordBcrypt"
+      "tortugacicd":
+        password: "{$}tortugacicdPasswordBcrypt"
       # Allow anonymous access
       # ... I canNOT get this to work at all.
       # What happens is when I do a HTTP request without a token,
@@ -52,6 +54,11 @@ data:
       - match: {account: "k8s"}
         actions: ["pull"]
         comment: "Allow k8s to pull"
+      - match:
+          account: "tortugacicd"
+          name: "tortuga/*"
+        actions: ["*"]
+        comment: "Allow tortugacicd to push to the tortuga namespace"
       # Can't get anonymous access to work
       # - match: {type: "catalog"}
       #   actions: ["*"]

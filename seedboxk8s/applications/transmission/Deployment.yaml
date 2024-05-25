@@ -54,8 +54,11 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: linuxserver/transmission
+        - image: registry.${clusterTld}/tortuga/transmission:latest
           name: transmission
+          securityContext:
+            runAsUser: ${plexUid}
+            runAsGroup: ${plexGid}
           ports:
             - containerPort: 9091
             - containerPort: ${transmissionPeerPort}
