@@ -10,8 +10,11 @@ confdir=/seedboxmedia/seedboxconf
 
 # Everything we care about:
 # tobackup="cops ersatztv heimdall hydra2 jackett lazylibrarian lidarr plex radarr sabnzbd shhh sonarr stash tautulli transmission"
-# Just the smaller ones for testing:
-tobackup="cops ersatztv heimdall hydra2 jackett lazylibrarian radarr sabnzbd shhh sonarr stash tautulli transmission"
+# What we're migrating for now:
+tobackup="cops heimdall hydra2 lazylibrarian lidarr radarr sabnzbd shhh sonarr stash tautulli transmission"
+# Remaining:
+# tobackup="ersatztv plex"
+
 # Everything:
 # 2.5M	/seedboxmedia/seedboxconf/cops
 # 44M	/seedboxmedia/seedboxconf/ersatztv
@@ -24,7 +27,6 @@ tobackup="cops ersatztv heimdall hydra2 jackett lazylibrarian radarr sabnzbd shh
 # 13M	/seedboxmedia/seedboxconf/prowlarr
 # 330M	/seedboxmedia/seedboxconf/radarr
 # 30M	/seedboxmedia/seedboxconf/sabnzbd
-# 28K	/seedboxmedia/seedboxconf/seedbox.compose.yml
 # 35M	/seedboxmedia/seedboxconf/shhh
 # 159M	/seedboxmedia/seedboxconf/sonarr
 # 17M	/seedboxmedia/seedboxconf/stash
