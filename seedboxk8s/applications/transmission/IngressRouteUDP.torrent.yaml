@@ -7,7 +7,6 @@ spec:
   entryPoints:
     - torrent-udp
   routes:
-    - match: Host(`*`)
-      services:
+    - services:
         - name: transmission-torrent
           port: ${transmissionPeerPort}
