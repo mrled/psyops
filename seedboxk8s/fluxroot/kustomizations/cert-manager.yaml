@@ -22,5 +22,7 @@ spec:
       namespace: cert-manager
   postBuild:
     substituteFrom:
+      - kind: Secret
+        name: seedboxk8s-config
       - kind: ConfigMap
         name: seedboxk8s-config

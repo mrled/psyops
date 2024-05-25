@@ -17,6 +17,8 @@ spec:
       name: sops-age
   postBuild:
     substituteFrom:
+      - kind: Secret
+        name: seedboxk8s-config
       - kind: ConfigMap
         name: seedboxk8s-config
 
