@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: shhh-build
   namespace: tortuga
+  annotations:
+    please: runagain
 data:
   buildah.sh: |+
     #!/bin/sh
