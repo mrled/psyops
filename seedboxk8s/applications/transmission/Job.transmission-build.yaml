@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: transmission-build
   namespace: tortuga
+  annotations:
+    fuckshit: goddammit
 spec:
   template:
     spec:
