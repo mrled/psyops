@@ -8,9 +8,11 @@ spec:
   selector:
     app: transmission
   ports:
-  - protocol: TCP
+  - name: transmission-torrent-tcp
+    protocol: TCP
     port: ${transmissionPeerPort}
     targetPort: ${transmissionPeerPort}
-  - protocol: UDP
+  - name: transmission-torrent-udp
+    protocol: UDP
     port: ${transmissionPeerPort}
     targetPort: ${transmissionPeerPort}
