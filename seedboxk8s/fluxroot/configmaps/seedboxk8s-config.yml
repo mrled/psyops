@@ -24,4 +24,4 @@ data:
   # by default this is 30000-32767.
   # These ports must be forwarded from the router.
   # TODO: consider traefik IngressRouteTCP and IngressRouteUDP instead of a NodePort.
-  transmissionPeerPort: 30298
+  transmissionPeerPort: "30298"
