@@ -4,7 +4,7 @@ metadata:
   name: transmission-build
   namespace: tortuga
 data:
-  gitserver.buildah.sh: |-
+  buildah.sh: |-
     #!/bin/sh
     set -eu
 

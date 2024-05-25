@@ -44,10 +44,6 @@ spec:
           env:
             - name: DANGER_CLEAR_EXISTING_DATA
               value: "false"
-            - name: PUID
-              value: ${plexUid}
-            - name: PGID
-              value: ${plexGid}
           volumeMounts:
             - name: nzbhydra2-config-pvc
               mountPath: /config
@@ -60,9 +56,9 @@ spec:
             - containerPort: 5076
           env:
             - name: PUID
-              value: ${plexUid}
+              value: ${plexUidStr}
             - name: PGID
-              value: ${plexGid}
+              value: ${plexGidStr}
             - name: TZ
               value: ${timezone}
           volumeMounts:

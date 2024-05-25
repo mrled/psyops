@@ -16,7 +16,7 @@ spec:
           privileged: true
           allowPrivilegeEscalation: true
 
-        command: ["/bin/sh", "/config/gitserver.buildah.sh"]
+        command: ["/bin/sh", "/config/buildah.sh"]
         env:
           - name: CLUSTERGIT_IMAGENAMESPACE
             value: tortuga
