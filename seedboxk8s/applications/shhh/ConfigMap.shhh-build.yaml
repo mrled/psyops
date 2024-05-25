@@ -33,8 +33,8 @@ data:
     buildah run "$container" -- apt-get update
     buildah run "$container" -- apt-get install -y curl libicu72 python3 python3-pip sqlite3 tzdata
     buildah run "$container" -- rm -rf /var/lib/apt/lists/*
-    buildah copy --mode 0755 "$container" "/config/entrypoint.sh" "/usr/local/sbin/entrypoint.sh"
-    buildah copy --mode 0644 "$container" "/tmp/Juvfcnee.tgz" "/opt/Juvfcnee.tgz"
+    buildah copy --chmod 0755 "$container" "/config/entrypoint.sh" "/usr/local/sbin/entrypoint.sh"
+    buildah copy --chmod 0644 "$container" "/tmp/Juvfcnee.tgz" "/opt/Juvfcnee.tgz"
     buildah run "$container" -- tar -xvzf /opt/Juvfcnee.tgz -C /opt
     buildah run "$container" -- rm /opt/Juvfcnee.tgz
     buildah run "$container" -- mv /opt/${W} /opt/Juvfcnee
