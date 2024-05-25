@@ -39,6 +39,8 @@ data:
   # That looks like this:
   # exampleStringContainingNumbers: '"123"'
 
+  quote: '"'
+
   clusterTld: younix.us
   clusterPrimaryDns: seedbox.younix.us
   clusterPrimaryIp: "100.86.119.112"
