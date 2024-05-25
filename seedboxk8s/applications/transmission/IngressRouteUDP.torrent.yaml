@@ -7,8 +7,7 @@ spec:
   entryPoints:
     - torrent-udp
   routes:
-    - kind: Rule
-      services:
+    - services:
         - name: transmission-torrent
           kind: Service
           port: ${transmissionTorrentPort}
