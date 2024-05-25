@@ -12,6 +12,7 @@ spec:
     kind: GitRepository
     name: flux-system
   dependsOn:
+    - name: fluxcfg
     - name: cert-manager
   decryption:
     provider: sops

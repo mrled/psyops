@@ -1,0 +1,15 @@
+# This Kustomization has to happen before any that reference the seedboxk8s-config ConfigMap or Secret.
+
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: fluxcfg
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: /seedboxk8s/applications/fluxcfg
+  prune: true
+  timeout: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
