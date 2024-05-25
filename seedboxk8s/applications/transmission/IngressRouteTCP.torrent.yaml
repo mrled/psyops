@@ -7,7 +7,7 @@ spec:
   entryPoints:
     - torrent-tcp
   routes:
-    - match: Host(`*`)
+    - match: HostSNI(`*`)
       services:
         - name: transmission-torrent
           port: ${transmissionPeerPort}
