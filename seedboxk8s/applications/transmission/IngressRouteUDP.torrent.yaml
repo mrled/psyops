@@ -1,11 +1,11 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRouteUDP
 metadata:
-  name: transmission-peer-udp
+  name: torrent-udp
   namespace: tortuga
 spec:
   entryPoints:
-    - transmission-peer-udp
+    - torrent-udp
   routes:
     - kind: Rule
       services:

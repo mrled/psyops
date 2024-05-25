@@ -20,17 +20,17 @@ spec:
           - --api.insecure=true
           - --api.dashboard=true
           - --accesslog=true
-          - --entrypoints.transmission-peer-tcp.Address=:${transmissionPeerPort}
-          - --entrypoints.transmission-peer-udp.Address=:${transmissionPeerPort}/udp
+          - --entrypoints.torrent-tcp.Address=:${transmissionPeerPort}
+          - --entrypoints.torrent-udp.Address=:${transmissionPeerPort}/udp
           - --entrypoints.whoami-http-tcp.Address=:${whoamiHttpTcpPort}
           - --providers.kubernetescrd
           - --providers.kubernetescrd.allowCrossNamespace=true
         ports:
-        - name: transmission-peer-tcp
+        - name: torrent-tcp
           containerPort: ${transmissionPeerPort}
           hostPort: ${transmissionPeerPort}
           protocol: TCP
-        - name: transmission-peer-udp
+        - name: torrent-udp
           containerPort: ${transmissionPeerPort}
           hostPort: ${transmissionPeerPort}
           protocol: UDP
