@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+
+import subprocess
+import sys
+from os import path
+
+
+def sh(cmd):
+    return subprocess.run(
+        cmd, shell=True, check=True, text=True, capture_output=True
+    ).stdout
+
+
+staged_files = sh(
+    "git --no-pager diff --cached --name-only --diff-filter=ACM"
+).splitlines()
+modified_files = sh("git ls-files --modified").splitlines()
+committing_files = set(staged_files + modified_files)
+
+for f in committing_files:
+    if not f.startswith("kubernasty") and not f.startswith("seedboxk8s"):
+        continue
+
+k8s_secrets = [
+    f
+    for f in committing_files
+    if (f.startswith("kubernasty") or f.startswith("seedboxk8s"))
+    and path.basename(f).startswith("Secret")
+]
+for file in k8s_secrets:
+    with open(file, "r") as f:
+        content = f.read()
+        if "^sops:$" not in content:
+            print(f"Error: Secret file '{file}' is not encrypted by SOPS!")
+            sys.exit(1)
