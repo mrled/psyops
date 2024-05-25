@@ -7,8 +7,7 @@ spec:
   entryPoints:
     - whoami-http-tcp
   routes:
-    - kind: Rule
-      services:
+    - services:
         - name: whoami-service
           kind: Service
           port: 80
