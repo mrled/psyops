@@ -15,8 +15,5 @@ spec:
       services:
         - name: api@internal
           kind: TraefikService
-  selector:
-    matchLabels:
-      app: traefik-tailscale
   tls:
     secretName: younix-dot-us-wildcard-backing-secret

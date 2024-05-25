@@ -38,3 +38,7 @@ spec:
           containerPort: ${whoamiHttpTcpPort}
           hostPort: ${whoamiHttpTcpPort}
           protocol: TCP
+
+
+# TODO: expose the dashboard here, make a service for it, and make an ingressroute on the OTHER traefik controller that talks so the service.
+# Might need to make a load balancer for localnet, move this localnet traefik instance to a Deployment, point the load balancer to the localnet traefik deployment, so that the deployment can expose the admin dashboard internally to the service.
