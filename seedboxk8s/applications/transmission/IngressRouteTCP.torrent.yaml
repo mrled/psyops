@@ -10,4 +10,4 @@ spec:
     - match: Host(`*`)
       services:
         - name: transmission-torrent
-          port: ${transmissionTorrentPort}
+          port: ${transmissionPeerPort}
