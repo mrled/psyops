@@ -49,8 +49,8 @@ data:
   timezone: America/Chicago
 
   # Let's keep track of two versions of the same thing, I love doing that, that's what I like about using computers. Fuck's sake.
-  plexUid: 989
-  plexGid: 986
+  plexUid: "989"
+  plexGid: "986"
   plexUidStr: '"989"'
   plexGidStr: '"986"'
 
