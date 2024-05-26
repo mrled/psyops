@@ -3,8 +3,8 @@ kind: Kustomization
 metadata:
   name: whoami
   namespace: flux-system
-  annotations:
-    please: redeploy
+  # annotations:
+  #   please: redeploy
 spec:
   interval: 15m
   path: /seedboxk8s/applications/whoami
