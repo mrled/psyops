@@ -3,8 +3,6 @@ kind: Deployment
 metadata:
   name: traefik-tailscale
   namespace: traefik
-  annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
 spec:
   replicas: 1
   selector:
@@ -28,6 +26,8 @@ spec:
           - --entrypoints.websecure.Address=:443
           - --entrypoints.clustergit-ssh.Address=:20022
           - --providers.kubernetescrd
+          # Only watch for Ingresses with the ingress class "traefik-tailscale"
+          - --providers.kubernetescrd.ingressclass=traefik-tailscale
           # Allow cross-namespace references
           - --providers.kubernetescrd.allowCrossNamespace=true
       ports:

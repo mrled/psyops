@@ -3,8 +3,6 @@ kind: DaemonSet
 metadata:
   name: traefik-localnet
   namespace: traefik
-  annotations:
-    kubernetes.io/ingress.class: traefik-localnet
 spec:
   selector:
     matchLabels:
@@ -27,6 +25,8 @@ spec:
           - --entrypoints.whoami-http-tcp.Address=:${whoamiHttpTcpPort}
           - --providers.kubernetescrd
           - --providers.kubernetescrd.allowCrossNamespace=true
+          # Only watch for Ingresses with the ingress class "traefik-localnet"
+          - --providers.kubernetescrd.ingressclass=traefik-localnet
         ports:
         - name: torrent-tcp
           containerPort: ${transmissionPeerPort}
