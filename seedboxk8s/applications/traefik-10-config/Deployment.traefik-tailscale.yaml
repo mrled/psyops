@@ -37,21 +37,16 @@ spec:
         ports:
           - name: web
             containerPort: 80
-            hostPort: 80
             protocol: TCP
           - name: websecure
             containerPort: 443
-            hostPort: 443
             protocol: TCP
           - name: clustergit-ssh
             containerPort: 20022
-            hostPort: 20022
             protocol: TCP
           - name: plex32400
             containerPort: 32400
-            hostPort: 32400
             protocol: TCP
           - name: plex64800
             containerPort: 64800
-            hostPort: 64800
             protocol: TCP
