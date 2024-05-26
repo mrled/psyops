@@ -13,7 +13,7 @@ spec:
     - match: Path(`/`)
       kind: Rule
       services:
-        - name: plex-statefulset-svc
+        - name: plex-standalone-svc
           kind: Service
           port: 32400
   tls:

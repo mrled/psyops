@@ -11,7 +11,7 @@ spec:
   routes:
     - match: HostSNI(`*`)
       services:
-        - name: plex-statefulset-svc
+        - name: plex-standalone-svc
           port: 32400
   tls:
     secretName: younix-dot-us-wildcard-backing-secret
