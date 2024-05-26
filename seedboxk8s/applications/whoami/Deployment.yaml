@@ -18,19 +18,3 @@ spec:
         ports:
         - containerPort: 80
           name: whoami-http
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: whoami-service
-  namespace: whoami
-spec:
-  selector:
-    app: whoami
-  ports:
-    # The external port is deliberately not handled by the ingress controller
-    # so that we can test before we have the ingress controller working.
-    - protocol: TCP
-      port: 80
-      targetPort: whoami-http
-  type: ClusterIP
