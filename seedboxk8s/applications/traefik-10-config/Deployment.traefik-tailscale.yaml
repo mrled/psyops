@@ -27,7 +27,9 @@ spec:
           - --entrypoints.websecure.Address=:443
           - --entrypoints.clustergit-ssh.Address=:20022
           - --entrypoints.plex32400.address=:32400
+          - --entrypoints.plex32400.transport.tcp=true
           - --entrypoints.plex64800.address=:64800
+          - --entrypoints.plex64800.transport.tcp=true
 
           - --providers.kubernetescrd
           # Only watch for Ingresses with the ingress class "traefik-tailscale"
