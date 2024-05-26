@@ -3,6 +3,8 @@ kind: DaemonSet
 metadata:
   name: traefik-localnet
   namespace: traefik
+  annotations:
+    kubernetes.io/ingress.class: traefik-localnet
 spec:
   selector:
     matchLabels:

@@ -3,6 +3,8 @@ kind: IngressRouteTCP
 metadata:
   name: torrent-tcp
   namespace: tortuga
+  annotations:
+    kubernetes.io/ingress.class: traefik-localnet
 spec:
   entryPoints:
     - torrent-tcp

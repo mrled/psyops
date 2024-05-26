@@ -3,6 +3,8 @@ kind: IngressRouteUDP
 metadata:
   name: torrent-udp
   namespace: tortuga
+  annotations:
+    kubernetes.io/ingress.class: traefik-localnet
 spec:
   entryPoints:
     - torrent-udp

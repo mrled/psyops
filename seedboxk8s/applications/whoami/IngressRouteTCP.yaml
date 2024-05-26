@@ -3,6 +3,8 @@ kind: IngressRouteTCP
 metadata:
   name: whoami-ingresstcp-route
   namespace: whoami
+  annotations:
+    kubernetes.io/ingress.class: traefik-localnet
 spec:
   entryPoints:
     - whoami-http-tcp

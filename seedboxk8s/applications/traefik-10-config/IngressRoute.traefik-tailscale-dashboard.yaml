@@ -3,6 +3,8 @@ kind: IngressRoute
 metadata:
   name: traefik-tailscale-dashboard
   namespace: traefik
+  annotations:
+    kubernetes.io/ingress.class: traefik-tailscale
 spec:
   entryPoints:
     - websecure

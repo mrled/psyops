@@ -3,6 +3,8 @@ kind: IngressRoute
 metadata:
   name: transmission-http
   namespace: tortuga
+  annotations:
+    kubernetes.io/ingress.class: traefik-tailscale
 spec:
   entryPoints:
     - websecure

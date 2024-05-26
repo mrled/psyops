@@ -3,6 +3,8 @@ kind: IngressRoute
 metadata:
   name: browser-ingress-route
   namespace: registry
+  annotations:
+    kubernetes.io/ingress.class: traefik-tailscale
 spec:
   entryPoints:
     - websecure

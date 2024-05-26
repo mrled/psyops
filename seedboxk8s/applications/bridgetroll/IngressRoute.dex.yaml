@@ -3,6 +3,8 @@ kind: IngressRoute
 metadata:
   name: dex
   namespace: bridgetroll
+  annotations:
+    kubernetes.io/ingress.class: traefik-tailscale
 spec:
   entryPoints:
     - websecure

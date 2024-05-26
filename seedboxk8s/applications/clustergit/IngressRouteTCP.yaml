@@ -3,6 +3,8 @@ kind: IngressRouteTCP
 metadata:
   name: gitserver-ssh-ingress
   namespace: clustergit
+  annotations:
+    kubernetes.io/ingress.class: traefik-localnet
 spec:
   entryPoints:
     - clustergit-ssh
