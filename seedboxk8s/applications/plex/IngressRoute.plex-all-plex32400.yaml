@@ -9,7 +9,8 @@ spec:
   entryPoints:
     - plex32400
   routes:
-    - match: Host(`*`)
+    # - match: Host(`*`)
+    - match: Path(`/`)
       kind: Rule
       services:
         - name: plex
