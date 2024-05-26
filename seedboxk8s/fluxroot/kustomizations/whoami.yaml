@@ -7,7 +7,7 @@ metadata:
   #   please: redeploy
 spec:
   interval: 15m
-  path: /seedboxk8s/applications/whoami
+  path: /seedboxk8s/applications/whoami2
   prune: true
   timeout: 2m
   sourceRef:
