@@ -23,4 +23,4 @@ RUN true \
     && true
 COPY "entrypoint.sh" "/usr/local/sbin/entrypoint.sh"
 ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
-# CMD ["/opt/Juvfcnee/Whisparr", "-nobrowser", "-data", "/config"]
+
