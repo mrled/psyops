@@ -18,7 +18,7 @@ Add data to it with a simple function like this:
 ```sh
 doimport() {
     applabel="$1"
-    namespace="$1"
+    namespace="$2"
     tarball="$3"
     container="$(kubectl get pods -n "$namespace" -l app="$applabel" -o jsonpath='{.items[*].metadata.name}')"
     if test -z "$container"; then
@@ -28,7 +28,9 @@ doimport() {
         echo "Multiple containers in namespace '$namespace' match the app label '$applabel' (maybe an old deployment?): $container"
         return 1
     else
+        echo "Copying '$tarball' to '$container'..."
         kubectl cp -n "$namespace" "$tarball" $container:/import/import.tar.gz -c import-data
+        echo "Done copying, telling '$container' to start..."
         kubectl exec -n "$namespace" $container -c import-data -- touch /import/import-data-ready
     fi
 }
