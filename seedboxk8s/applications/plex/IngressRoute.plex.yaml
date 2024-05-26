@@ -9,10 +9,8 @@ spec:
   entryPoints:
     - plex
   routes:
-    - match: HostSNI(`*`)
+    - match: Host(`*`)
       kind: Rule
       services:
         - name: plex
           port: 32400
-  tls:
-    secretName: younix-dot-us-wildcard-backing-secret
