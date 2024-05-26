@@ -4,6 +4,7 @@ metadata:
   name: plex
   namespace: tortuga
 spec:
+  # I think this serviceName must match the name of the Service in the same directory.
   serviceName: plex
   replicas: 1
   selector:

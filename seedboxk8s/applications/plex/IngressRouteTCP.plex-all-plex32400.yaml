@@ -1,5 +1,5 @@
 apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+kind: IngressRouteTCP
 metadata:
   name: plex-all-plex32400
   namespace: tortuga
@@ -9,9 +9,7 @@ spec:
   entryPoints:
     - plex32400
   routes:
-    - match: Host(`*`)
-      kind: Rule
+    - match: HostSNI(`*`)
       services:
         - name: plex
-          kind: Service
           port: 32400
