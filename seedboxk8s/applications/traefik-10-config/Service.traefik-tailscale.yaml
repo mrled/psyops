@@ -24,3 +24,7 @@ spec:
     protocol: TCP
     port: 20022
     targetPort: 20022
+  - name: plex
+    protocol: TCP
+    port: 32400
+    targetPort: 32400

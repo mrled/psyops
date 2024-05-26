@@ -9,5 +9,5 @@ spec:
   clusterIP: None
   ports:
   - port: 32400
-    name: plex-web
+    name: plex
     protocol: TCP
