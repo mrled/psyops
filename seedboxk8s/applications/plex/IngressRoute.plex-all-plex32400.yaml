@@ -4,17 +4,14 @@ metadata:
   name: plex-all-plex32400
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale,traefik-localnet
+    kubernetes.io/ingress.class: traefik-localnet
 spec:
   entryPoints:
     - plex32400
   routes:
-    # - match: Host(`*`)
-    - match: Path(`/`)
+    - match: Host(`*`)
       kind: Rule
       services:
-        - name: plex-standalone-svc
+        - name: plex
           kind: Service
           port: 32400
-  tls:
-    secretName: younix-dot-us-wildcard-backing-secret
