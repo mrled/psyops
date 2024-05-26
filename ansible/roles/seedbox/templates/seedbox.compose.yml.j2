@@ -324,8 +324,11 @@ services:
       - dernetverk
     #user: "{{ seedbox_uid }}"
     ports:
-      # This is required for clients to be able to connect to it
+      # This is required for clients to be able to connect to it. ?
       # Note that Plex also requires an HTTP connection to this port for the guide
+      # TODO: I think actually I don't need this port exposed **if Plex is on the Swarm network**.
+      # Right now Plex is deployed via a compose file and needs to access this port via localhost:8409.
+      # Verify this.
       - "8409:8409"
     labels:
       - "traefik.enable=true"
