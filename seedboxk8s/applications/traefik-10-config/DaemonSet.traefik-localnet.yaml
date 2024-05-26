@@ -25,7 +25,9 @@ spec:
           - --entrypoints.torrent-tcp.Address=:${transmissionPeerPort}
           - --entrypoints.torrent-udp.Address=:${transmissionPeerPort}/udp
           - --entrypoints.whoami-http-tcp.Address=:${whoamiHttpTcpPort}
-          - --entrypoints.plex.address=:32400
+          - --entrypoints.plex32400.address=:32400
+          - --entrypoints.plex64800.address=:64800
+
           - --providers.kubernetescrd
           - --providers.kubernetescrd.allowCrossNamespace=true
           # Only watch for Ingresses with the ingress class "traefik-localnet"
@@ -43,9 +45,13 @@ spec:
           containerPort: ${whoamiHttpTcpPort}
           hostPort: ${whoamiHttpTcpPort}
           protocol: TCP
-        - name: plex
+        - name: plex32400
           containerPort: 32400
           hostPort: 32400
+          protocol: TCP
+        - name: plex64800
+          containerPort: 64800
+          hostPort: 64800
           protocol: TCP
 
 

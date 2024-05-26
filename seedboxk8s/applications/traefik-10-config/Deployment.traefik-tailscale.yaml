@@ -26,7 +26,9 @@ spec:
           - --entrypoints.web.Address=:80
           - --entrypoints.websecure.Address=:443
           - --entrypoints.clustergit-ssh.Address=:20022
-          - --entrypoints.plex.address=:32400
+          - --entrypoints.plex32400.address=:32400
+          - --entrypoints.plex64800.address=:64800
+
           - --providers.kubernetescrd
           # Only watch for Ingresses with the ingress class "traefik-tailscale"
           - --providers.kubernetescrd.ingressclass=traefik-tailscale
@@ -45,7 +47,11 @@ spec:
           containerPort: 20022
           hostPort: 20022
           protocol: TCP
-        - name: plex
+        - name: plex32400
           containerPort: 32400
           hostPort: 32400
+          protocol: TCP
+        - name: plex64800
+          containerPort: 64800
+          hostPort: 64800
           protocol: TCP
