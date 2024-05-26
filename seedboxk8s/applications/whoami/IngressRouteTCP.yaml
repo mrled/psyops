@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - whoami-http-tcp
   routes:
-    - match: Host(`*`)
+    - match: HostSNI(`*`)
       services:
         - name: whoami-service
           port: 80
