@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plex
+  namespace: tortuga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plex
+  template:
+    metadata:
+      labels:
+        app: plex
+    spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command:
+            - sh
+            - -c
+            # BE VERY CAREFUL WITH TRAILING SEMICOLONS
+            - >
+              if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
+                for f in /config/{*,.*}; do
+                  if test "$f" = "/config/." || test "$f" = "/config/.."; then
+                    continue;
+                  fi;
+                  echo "Removing $f recursively...";
+                  rm -f "$f";
+                done;
+                rm -rf /config/*;
+              elif test -f /config/import-data-complete; then
+                exit 0;
+              fi;
+              while test ! -f /import/import-data-ready; do
+                sleep 1;
+              done;
+              echo "Extracting data...";
+              tar -xvf /import/import.tar.gz -C /config;
+              echo "Extraction complete.";
+              touch /config/import-data-complete;
+              exit 0;
+          env:
+            - name: DANGER_CLEAR_EXISTING_DATA
+              value: "false"
+          volumeMounts:
+            - name: plex-config-pvc
+              mountPath: /config
+            - name: import
+              mountPath: /import
+      containers:
+        - image: plexinc/pms-docker
+          name: plex
+          ports:
+            - containerPort: 3005
+              protocol: TCP
+            - containerPort: 8324
+              protocol: TCP
+            - containerPort: 32400
+              protocol: TCP
+            - containerPort: 32401
+              protocol: TCP
+            - containerPort: 32469
+              protocol: TCP
+            - containerPort: 1900
+              protocol: UDP
+            - containerPort: 5353
+              protocol: UDP
+            - containerPort: 32410
+              protocol: UDP
+            - containerPort: 32412
+              protocol: UDP
+            - containerPort: 32413
+              protocol: UDP
+            - containerPort: 32414
+              protocol: UDP
+          env:
+            - name: PLEX_UID
+              value: ${quote}${plexUid}${quote}
+            - name: PLEX_GID
+              value: ${quote}${plexGid}${quote}
+            - name: TZ
+              value: ${timezone}
+            - name: VERSION
+              value: docker
+            - name: UMASK_SET
+              value: "022"
+            # This should resolve to a local IP address for local clients like the AppleTV to use.
+            - name: ADVERTISE_IP
+              value: "http://${clusterLocalnetPrimaryFqdn}:32400/"
+            - name: CHANGE_CONFIG_DIR_OWNERSHIP
+              value: "false"
+          volumeMounts:
+            - mountPath: /config
+              name: plex-config-pvc
+              readOnly: false
+            - mountPath: /media
+              name: seedboxmedia-nfs
+              readOnly: false
+            - mountPath: /transcode
+              name: transcode-tmp
+              readOnly: false
+            - mountPath: /dev/dri
+              name: dev-dri
+              readOnly: false
+      volumes:
+        - name: import
+          emptyDir: {}
+        - name: plex-config-pvc
+          persistentVolumeClaim:
+            claimName: plex-config-pvc
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc
+        - name: transcode-tmp
+          emptyDir: {}
+        - name: dev-dri
+          hostPath:
+            path: /dev/dri
+            type: Directory

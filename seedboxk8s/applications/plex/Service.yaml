@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: plex
+  namespace: tortuga
+spec:
+  selector:
+    app: plex
+  # https://support.plex.tv/articles/201543147-what-network-ports-do-i-need-to-allow-through-my-firewall/
+  ports:
+  # description: for access to the Plex Media Server [required]
+  - port: 32400
+    protocol: tcp
+  # description: "https://forums.plex.tv/t/port-32401-is-listening-whats-it-used-for/83080"
+  - port: 32401
+    protocol: tcp
+  # description: for access to the Plex DLNA Server
+  - port: 1900
+    protocol: udp
+  # description: for controlling Plex Home Theater via Plex Companion
+  - port: 3005
+    protocol: tcp
+  # description: for older Bonjour/Avahi network discovery
+  - port: 5353
+    protocol: udp
+  # description: for controlling Plex for Roku via Plex Companion
+  - port: 8324
+    protocol: tcp
+  # description: for current GDM network discovery
+  - port: 32410
+    protocol: udp
+  # description: for current GDM network discovery
+  - port: 32412
+    protocol: udp
+  # description: for current GDM network discovery
+  - port: 32413
+    protocol: udp
+  # description: for current GDM network discovery
+  - port: 32414
+    protocol: udp
+  # description: for access to the Plex DLNA Server
+  - port: 32469
+    protocol: tcp

@@ -74,6 +74,9 @@ data:
   clusterPrimaryIp: "100.86.119.112"
   nodeLocalSlowStorageRoot: /seedboxmedia/seedboxk8s
 
+  # The primary DNS name for services advertized on the local network (outside of Tailscale)
+  clusterLocalnetPrimaryFqdn: tagasaw.home.micahrl.com
+
   dexClientId: SeedboxK8sDexClientAuth-younix.us
 
   timezone: America/Chicago
