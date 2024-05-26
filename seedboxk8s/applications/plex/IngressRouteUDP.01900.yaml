@@ -7,9 +7,8 @@ metadata:
     kubernetes.io/ingress.class: traefik-localnet,traefik-tailscale
 spec:
   entryPoints:
-    - plex-01900-tcp
+    - plex-01900-udp
   routes:
-    - match: Host(`*`)
-      services:
+    - services:
         - name: plex
           port: 1900

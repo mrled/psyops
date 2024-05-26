@@ -7,9 +7,8 @@ metadata:
     kubernetes.io/ingress.class: traefik-localnet,traefik-tailscale
 spec:
   entryPoints:
-    - plex-32410-tcp
+    - plex-32410-udp
   routes:
-    - match: Host(`*`)
-      services:
+    - services:
         - name: plex
           port: 32410
