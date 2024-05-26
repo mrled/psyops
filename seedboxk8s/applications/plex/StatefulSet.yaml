@@ -4,7 +4,7 @@ metadata:
   name: plex
   namespace: tortuga
 spec:
-  serviceName: plex
+  serviceName: plex-statefulset-svc
   replicas: 1
   selector:
     matchLabels:

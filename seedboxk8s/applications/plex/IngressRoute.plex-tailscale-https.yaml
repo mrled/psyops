@@ -12,7 +12,7 @@ spec:
     - match: Host(`plex.${clusterFqdn}`)
       kind: Rule
       services:
-        - name: plex
+        - name: plex-statefulset-svc
           kind: Service
           port: 32400
   tls:
