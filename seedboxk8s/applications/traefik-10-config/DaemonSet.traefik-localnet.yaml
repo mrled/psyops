@@ -26,9 +26,9 @@ spec:
           - --entrypoints.torrent-udp.Address=:${transmissionPeerPort}/udp
           - --entrypoints.whoami-http-tcp.Address=:${whoamiHttpTcpPort}
           - --entrypoints.plex32400.address=:32400
-          - --entrypoints.plex32400.transport.tcp=true
+          - --entrypoints.plex32400.transport=tcp
           - --entrypoints.plex64800.address=:64800
-          - --entrypoints.plex64800.transport.tcp=true
+          - --entrypoints.plex64800.transport=tcp
 
           - --providers.kubernetescrd
           - --providers.kubernetescrd.allowCrossNamespace=true
