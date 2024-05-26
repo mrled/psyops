@@ -6,6 +6,7 @@ metadata:
 spec:
   selector:
     app: plex
+  clusterIP: None
   ports:
   - port: 32400
     name: plex-web

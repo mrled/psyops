@@ -1,9 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: plex
   namespace: tortuga
 spec:
+  serviceName: plex
   replicas: 1
   selector:
     matchLabels:
@@ -51,7 +52,7 @@ spec:
               mountPath: /import
       containers:
         - image: plexinc/pms-docker
-          name: plex
+          name: pms
           ports:
             - containerPort: 32400
               protocol: TCP
