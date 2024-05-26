@@ -4,13 +4,15 @@ metadata:
   name: plex
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-localnet,traefik-tailscale
+    # kubernetes.io/ingress.class: traefik-localnet,traefik-tailscale
+    kubernetes.io/ingress.class: traefik-tailscale
 spec:
   entryPoints:
-    - plex
+    - websecure
   routes:
-    - match: Host(`*`)
+    - match: Host(`plex.${clusterFqdn}`)
       kind: Rule
       services:
         - name: plex
+          kind: Service  # not sure if this is needed?
           port: 32400
