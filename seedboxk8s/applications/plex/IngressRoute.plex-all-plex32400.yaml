@@ -15,3 +15,5 @@ spec:
         - name: plex
           kind: Service
           port: 32400
+  tls:
+    secretName: younix-dot-us-wildcard-backing-secret
