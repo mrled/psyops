@@ -25,19 +25,7 @@ spec:
           - --entrypoints.web.Address=:80
           - --entrypoints.websecure.Address=:443
           - --entrypoints.clustergit-ssh.Address=:20022
-
-          - --entrypoints.plex-08324-tcp.address=:8324
-          - --entrypoints.plex-03005-tcp.address=:3005
-          - --entrypoints.plex-32400-tcp.address=:32400
-          - --entrypoints.plex-32401-tcp.address=:32401
-          - --entrypoints.plex-32469-tcp.address=:32469
-          - --entrypoints.plex-01900-udp.address=:1900/udp
-          - --entrypoints.plex-05353-udp.address=:5353/udp
-          - --entrypoints.plex-32410-udp.address=:32410/udp
-          - --entrypoints.plex-32412-udp.address=:32412/udp
-          - --entrypoints.plex-32413-udp.address=:32413/udp
-          - --entrypoints.plex-32414-udp.address=:32414/udp
-
+          - --entrypoints.plex-tcp.address=:32400
           - --providers.kubernetescrd
           # Only watch for Ingresses with the ingress class "traefik-tailscale"
           - --providers.kubernetescrd.ingressclass=traefik-tailscale
