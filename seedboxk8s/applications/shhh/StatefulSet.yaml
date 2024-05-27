@@ -72,6 +72,8 @@ spec:
             - mountPath: /media
               name: seedboxmedia-nfs
               readOnly: false
+      imagePullSecrets:
+        - name: registry-k8s-dockerconfigjson
       volumes:
         - name: import
           emptyDir: {}
