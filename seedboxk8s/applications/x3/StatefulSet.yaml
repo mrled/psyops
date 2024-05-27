@@ -57,7 +57,7 @@ spec:
             runAsUser: ${plexUid}
             runAsGroup: ${plexGid}
           ports:
-            - containerPort: 6969
+            - containerPort: 9999
           env:
             # Requires also setting securityContext above
             - name: USER
