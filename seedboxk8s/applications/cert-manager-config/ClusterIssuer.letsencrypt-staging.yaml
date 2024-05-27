@@ -13,8 +13,7 @@ spec:
 
     solvers:
     - selector:
-        dnsNames:
-        - '*.younix.us'
+        dnsNames: ["*"]
       dns01:
         route53:
           region: us-east-2
