@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`tautulli.${clusterFqdn}`) || Host(`seedbox.${clusterFqdn}`)
+    - match: Host(`tautulli.${clusterFqdn}`)
       kind: Rule
       services:
         - name: tautulli
