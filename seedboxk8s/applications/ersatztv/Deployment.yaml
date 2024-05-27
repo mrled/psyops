@@ -66,6 +66,9 @@ spec:
             - mountPath: /media
               name: seedboxmedia-nfs
               readOnly: true
+            - mountPath: /dev/dri
+              name: dev-dri
+              readOnly: false
       volumes:
         - name: import
           emptyDir: {}
@@ -75,3 +78,7 @@ spec:
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc
+        - name: dev-dri
+          hostPath:
+            path: /dev/dri
+            type: Directory
