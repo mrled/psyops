@@ -17,7 +17,7 @@ spec:
       initContainers:
         - name: import-data
           image: busybox
-          command: ["sh", "-c", "/data-import-helper/import-data.sh"]
+          command: ["sh", "/data-import-helper/import-data.sh"]
           volumeMounts:
             - name: data-import-helper
               mountPath: /data-import-helper
