@@ -6,6 +6,9 @@ metadata:
 spec:
   selector:
     app: ersatztv
+  # This value will be set in Plex and apparently not changeable after setting?
+  # Also Plex can't use cluster DNS?
+  clusterIP: 10.107.118.203
   ports:
   - protocol: TCP
     port: 80
