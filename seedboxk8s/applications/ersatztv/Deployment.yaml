@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ersatztv
+  namespace: tortuga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ersatztv
+  template:
+    metadata:
+      labels:
+        app: ersatztv
+    spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command:
+            - sh
+            - -c
+            # BE VERY CAREFUL WITH TRAILING SEMICOLONS
+            - >
+              if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
+                for f in /config/{*,.*}; do
+                  if test "$f" = "/config/." || test "$f" = "/config/.."; then
+                    continue;
+                  fi;
+                  echo "Removing $f recursively...";
+                  rm -f "$f";
+                done;
+                rm -rf /config/*;
+              elif test -f /config/import-data-complete; then
+                exit 0;
+              fi;
+              while test ! -f /import/import-data-ready; do
+                sleep 1;
+              done;
+              echo "Extracting data...";
+              tar -xvf /import/import.tar.gz -C /config;
+              echo "Extraction complete.";
+              touch /config/import-data-complete;
+              exit 0;
+          env:
+            - name: DANGER_CLEAR_EXISTING_DATA
+              value: "false"
+          volumeMounts:
+            - name: ersatztv-config-pvc
+              mountPath: /config
+            - name: import
+              mountPath: /import
+      containers:
+        - image: jasongdove/ersatztv:develop
+          name: ersatztv
+          ports:
+            - containerPort: 8409
+          env:
+            - name: TZ
+              value: ${timezone}
+            - name: XDG_DATA_HOME
+              value: /config
+          volumeMounts:
+            - mountPath: /config
+              name: ersatztv-config-pvc
+              readOnly: false
+            - mountPath: /media
+              name: seedboxmedia-nfs
+              readOnly: true
+      volumes:
+        - name: import
+          emptyDir: {}
+        - name: ersatztv-config-pvc
+          persistentVolumeClaim:
+            claimName: ersatztv-config-pvc
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc
