@@ -1,17 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: sabnzbd
+  name: x3
   namespace: tortuga
 spec:
   replicas: 1
+  serviceName: x3
   selector:
     matchLabels:
-      app: sabnzbd
+      app: x3
   template:
     metadata:
       labels:
-        app: sabnzbd
+        app: x3
     spec:
       initContainers:
         - name: import-data
@@ -45,35 +46,45 @@ spec:
             - name: DANGER_CLEAR_EXISTING_DATA
               value: "false"
           volumeMounts:
-            - name: sabnzbd-config-pvc
+            - name: x3-config-pvc
               mountPath: /config
             - name: import
               mountPath: /import
       containers:
-        - image: linuxserver/sabnzbd
-          name: sabnzbd
+        - image: registry.${clusterFqdn}/tortuga/x3:latest
+          name: x3
+          securityContext:
+            runAsUser: ${plexUid}
+            runAsGroup: ${plexGid}
           ports:
-            - containerPort: 8080
+            - containerPort: 6969
           env:
-            - name: PUID
+            # Requires also setting securityContext above
+            - name: USER
               value: ${quote}${plexUid}${quote}
-            - name: PGID
-              value: ${quote}${plexGid}${quote}
-            - name: TZ
-              value: ${timezone}
+            - name: STASH_STASH
+              value: /data/stash
+            - name: STASH_GENERATED
+              value: /data/generated
+            - name: STASH_METADATA
+              value: /data/metadata
+            - name: STASH_CACHE
+              value: /data/cache
+            - name: STASH_CONFIG_FILE
+              value: /config/stash.yml
           volumeMounts:
             - mountPath: /config
-              name: sabnzbd-config-pvc
+              name: x3-config-pvc
               readOnly: false
-            - mountPath: /media
+            - mountPath: /data
               name: seedboxmedia-nfs
               readOnly: false
       volumes:
         - name: import
           emptyDir: {}
-        - name: sabnzbd-config-pvc
+        - name: x3-config-pvc
           persistentVolumeClaim:
-            claimName: sabnzbd-config-pvc
+            claimName: x3-config-pvc
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc

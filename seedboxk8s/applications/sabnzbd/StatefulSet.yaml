@@ -1,17 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: transmission
+  name: sabnzbd
   namespace: tortuga
 spec:
   replicas: 1
+  serviceName: sabnzbd
   selector:
     matchLabels:
-      app: transmission
+      app: sabnzbd
   template:
     metadata:
       labels:
-        app: transmission
+        app: sabnzbd
     spec:
       initContainers:
         - name: import-data
@@ -45,25 +46,25 @@ spec:
             - name: DANGER_CLEAR_EXISTING_DATA
               value: "false"
           volumeMounts:
-            - name: transmission-config-pvc
+            - name: sabnzbd-config-pvc
               mountPath: /config
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${clusterFqdn}/tortuga/transmission:latest
-          name: transmission
-          securityContext:
-            runAsUser: ${plexUid}
-            runAsGroup: ${plexGid}
+        - image: linuxserver/sabnzbd
+          name: sabnzbd
           ports:
-            - containerPort: 9091
-            - containerPort: ${transmissionPeerPort}
-              protocol: TCP
-            - containerPort: ${transmissionPeerPort}
-              protocol: UDP
+            - containerPort: 8080
+          env:
+            - name: PUID
+              value: ${quote}${plexUid}${quote}
+            - name: PGID
+              value: ${quote}${plexGid}${quote}
+            - name: TZ
+              value: ${timezone}
           volumeMounts:
             - mountPath: /config
-              name: transmission-config-pvc
+              name: sabnzbd-config-pvc
               readOnly: false
             - mountPath: /media
               name: seedboxmedia-nfs
@@ -71,9 +72,9 @@ spec:
       volumes:
         - name: import
           emptyDir: {}
-        - name: transmission-config-pvc
+        - name: sabnzbd-config-pvc
           persistentVolumeClaim:
-            claimName: transmission-config-pvc
+            claimName: sabnzbd-config-pvc
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc

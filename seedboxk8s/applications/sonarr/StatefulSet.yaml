@@ -1,17 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: shhh
+  name: sonarr
   namespace: tortuga
 spec:
   replicas: 1
+  serviceName: sonarr
   selector:
     matchLabels:
-      app: shhh
+      app: sonarr
   template:
     metadata:
       labels:
-        app: shhh
+        app: sonarr
     spec:
       initContainers:
         - name: import-data
@@ -45,18 +46,15 @@ spec:
             - name: DANGER_CLEAR_EXISTING_DATA
               value: "false"
           volumeMounts:
-            - name: shhh-config-pvc
+            - name: sonarr-config-pvc
               mountPath: /config
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${clusterFqdn}/tortuga/shhh:latest
-          name: shhh
-          securityContext:
-            runAsUser: ${plexUid}
-            runAsGroup: ${plexGid}
+        - image: linuxserver/sonarr
+          name: sonarr
           ports:
-            - containerPort: 6969
+            - containerPort: 8989
           env:
             - name: PUID
               value: ${quote}${plexUid}${quote}
@@ -66,7 +64,7 @@ spec:
               value: ${timezone}
           volumeMounts:
             - mountPath: /config
-              name: shhh-config-pvc
+              name: sonarr-config-pvc
               readOnly: false
             - mountPath: /media
               name: seedboxmedia-nfs
@@ -74,9 +72,9 @@ spec:
       volumes:
         - name: import
           emptyDir: {}
-        - name: shhh-config-pvc
+        - name: sonarr-config-pvc
           persistentVolumeClaim:
-            claimName: shhh-config-pvc
+            claimName: sonarr-config-pvc
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc

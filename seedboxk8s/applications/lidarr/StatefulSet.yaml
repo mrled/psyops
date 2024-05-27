@@ -1,17 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: x3
+  name: lidarr
   namespace: tortuga
 spec:
   replicas: 1
+  serviceName: lidarr
   selector:
     matchLabels:
-      app: x3
+      app: lidarr
   template:
     metadata:
       labels:
-        app: x3
+        app: lidarr
     spec:
       initContainers:
         - name: import-data
@@ -45,45 +46,35 @@ spec:
             - name: DANGER_CLEAR_EXISTING_DATA
               value: "false"
           volumeMounts:
-            - name: x3-config-pvc
+            - name: lidarr-config-pvc
               mountPath: /config
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${clusterFqdn}/tortuga/x3:latest
-          name: x3
-          securityContext:
-            runAsUser: ${plexUid}
-            runAsGroup: ${plexGid}
+        - image: linuxserver/lidarr
+          name: lidarr
           ports:
-            - containerPort: 6969
+            - containerPort: 8686
           env:
-            # Requires also setting securityContext above
-            - name: USER
+            - name: PUID
               value: ${quote}${plexUid}${quote}
-            - name: STASH_STASH
-              value: /data/stash
-            - name: STASH_GENERATED
-              value: /data/generated
-            - name: STASH_METADATA
-              value: /data/metadata
-            - name: STASH_CACHE
-              value: /data/cache
-            - name: STASH_CONFIG_FILE
-              value: /config/stash.yml
+            - name: PGID
+              value: ${quote}${plexGid}${quote}
+            - name: TZ
+              value: ${timezone}
           volumeMounts:
             - mountPath: /config
-              name: x3-config-pvc
+              name: lidarr-config-pvc
               readOnly: false
-            - mountPath: /data
+            - mountPath: /media
               name: seedboxmedia-nfs
               readOnly: false
       volumes:
         - name: import
           emptyDir: {}
-        - name: x3-config-pvc
+        - name: lidarr-config-pvc
           persistentVolumeClaim:
-            claimName: x3-config-pvc
+            claimName: lidarr-config-pvc
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc

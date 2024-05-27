@@ -1,10 +1,11 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: radarr
   namespace: tortuga
 spec:
   replicas: 1
+  serviceName: radarr
   selector:
     matchLabels:
       app: radarr

@@ -1,17 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: lidarr
+  name: shhh
   namespace: tortuga
 spec:
   replicas: 1
+  serviceName: shhh
   selector:
     matchLabels:
-      app: lidarr
+      app: shhh
   template:
     metadata:
       labels:
-        app: lidarr
+        app: shhh
     spec:
       initContainers:
         - name: import-data
@@ -45,15 +46,18 @@ spec:
             - name: DANGER_CLEAR_EXISTING_DATA
               value: "false"
           volumeMounts:
-            - name: lidarr-config-pvc
+            - name: shhh-config-pvc
               mountPath: /config
             - name: import
               mountPath: /import
       containers:
-        - image: linuxserver/lidarr
-          name: lidarr
+        - image: registry.${clusterFqdn}/tortuga/shhh:latest
+          name: shhh
+          securityContext:
+            runAsUser: ${plexUid}
+            runAsGroup: ${plexGid}
           ports:
-            - containerPort: 8686
+            - containerPort: 6969
           env:
             - name: PUID
               value: ${quote}${plexUid}${quote}
@@ -63,7 +67,7 @@ spec:
               value: ${timezone}
           volumeMounts:
             - mountPath: /config
-              name: lidarr-config-pvc
+              name: shhh-config-pvc
               readOnly: false
             - mountPath: /media
               name: seedboxmedia-nfs
@@ -71,9 +75,9 @@ spec:
       volumes:
         - name: import
           emptyDir: {}
-        - name: lidarr-config-pvc
+        - name: shhh-config-pvc
           persistentVolumeClaim:
-            claimName: lidarr-config-pvc
+            claimName: shhh-config-pvc
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc

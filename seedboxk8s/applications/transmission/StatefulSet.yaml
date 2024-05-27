@@ -1,17 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: sonarr
+  name: transmission
   namespace: tortuga
 spec:
   replicas: 1
+  serviceName: transmission
   selector:
     matchLabels:
-      app: sonarr
+      app: transmission
   template:
     metadata:
       labels:
-        app: sonarr
+        app: transmission
     spec:
       initContainers:
         - name: import-data
@@ -45,25 +46,25 @@ spec:
             - name: DANGER_CLEAR_EXISTING_DATA
               value: "false"
           volumeMounts:
-            - name: sonarr-config-pvc
+            - name: transmission-config-pvc
               mountPath: /config
             - name: import
               mountPath: /import
       containers:
-        - image: linuxserver/sonarr
-          name: sonarr
+        - image: registry.${clusterFqdn}/tortuga/transmission:latest
+          name: transmission
+          securityContext:
+            runAsUser: ${plexUid}
+            runAsGroup: ${plexGid}
           ports:
-            - containerPort: 8989
-          env:
-            - name: PUID
-              value: ${quote}${plexUid}${quote}
-            - name: PGID
-              value: ${quote}${plexGid}${quote}
-            - name: TZ
-              value: ${timezone}
+            - containerPort: 9091
+            - containerPort: ${transmissionPeerPort}
+              protocol: TCP
+            - containerPort: ${transmissionPeerPort}
+              protocol: UDP
           volumeMounts:
             - mountPath: /config
-              name: sonarr-config-pvc
+              name: transmission-config-pvc
               readOnly: false
             - mountPath: /media
               name: seedboxmedia-nfs
@@ -71,9 +72,9 @@ spec:
       volumes:
         - name: import
           emptyDir: {}
-        - name: sonarr-config-pvc
+        - name: transmission-config-pvc
           persistentVolumeClaim:
-            claimName: sonarr-config-pvc
+            claimName: transmission-config-pvc
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc
