@@ -45,6 +45,9 @@ data:
       --port 6969 \
       --volume /config \
       --entrypoint "/usr/local/sbin/entrypoint.sh" \
+      --env PUID=911 \
+      --env PGID=911 \
+      --env TZ=UTC \
       "$container"
     buildah commit "$container" "$imgname"
     buildah tag "$imgname" "$regserver/$imgns/$imgname:$imgtag"
@@ -53,12 +56,11 @@ data:
   entrypoint.sh: |+
     #!/bin/sh
     set -eux
-    PUID=${PUID:-911}
-    PGID=${PGID:-911}
-    TZ=${TZ:-UTC}
     W="$(echo Juvfcnee | tr 'A-Za-z' 'N-ZA-Mn-za-m')"
     w="$(echo juvfcnee | tr 'A-Za-z' 'N-ZA-Mn-za-m')"
-    ln -f /usr/share/zoneinfo/$TZ /etc/localtime
+    if test "$TZ" != "UTC"; then
+      ln -f /usr/share/zoneinfo/$TZ /etc/localtime
+    fi
     groupadd -g $PGID "$w"
     useradd -u $PUID -g "$w" -d /config -s /bin/sh -M "$w"
     chown -R "$w":"$w" /opt/Juvfcnee
