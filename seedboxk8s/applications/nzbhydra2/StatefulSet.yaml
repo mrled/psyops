@@ -21,6 +21,7 @@ spec:
           volumeMounts:
             - name: data-import-helper
               mountPath: /data-import-helper
+              defaultMode: 0555
             - name: nzbhydra2-config-pvc
               mountPath: /config
             - name: import
