@@ -48,7 +48,6 @@ spec:
         - name: data-import-helper
           configMap:
             name: data-import-helper
-            namespace: seedboxutil
         - name: import
           emptyDir: {}
         - name: nzbhydra2-config-pvc

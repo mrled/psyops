@@ -3,6 +3,13 @@ kind: ConfigMap
 metadata:
   name: data-import-helper
   namespace: seedboxutil
+  annotations:
+    reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+    reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: >-
+      tortuga,
+    reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+    reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: ""
+
 data:
   import-data.sh: |+
     #!/bin/sh
@@ -14,20 +21,26 @@ data:
     set -u
 
     if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
+      echo "DANGEROUS_CLEAR_EXISTING_DATA is set to true. Clearing existing data..."
       for f in "$DESTINATION_MOUNT_PATH"/{*,.*}; do
         if test "$f" = ""$DESTINATION_MOUNT_PATH"/." || test "$f" = ""$DESTINATION_MOUNT_PATH"/.."; then
-          continue;
-        fi;
-        echo "Removing $f recursively...";
-        rm -f "$f";
-      done;
-      rm -rf "$DESTINATION_MOUNT_PATH"/*;
+          continue
+        fi
+        echo "Removing $f recursively..."
+        rm -f "$f"
+      done
+      rm -rf "$DESTINATION_MOUNT_PATH"/*
+
     elif test -f "$DESTINATION_MOUNT_PATH"/import-data-complete; then
-      exit 0;
-    fi;
+      echo "Found file at $DESTINATION_MOUNT_PATH/import-data-complete, indicating data has already been imported. Exiting..."
+      exit 0
+    fi
+
+    echo "Waiting indefinitely for data to be ready; copy a tarball to $SOURCE_MOUNT_PATH/import.tar.gz and then touch $SOURCE_MOUNT_PATH/import-data-ready to signal readiness."
     while test ! -f "$SOURCE_MOUNT_PATH"/import-data-ready; do
-      sleep 1;
-    done;
+      sleep 1
+    done
+
     echo "Extracting data...";
     tar -xvf "$SOURCE_MOUNT_PATH"/import.tar.gz -C "$DESTINATION_MOUNT_PATH";
     echo "Extraction complete.";
