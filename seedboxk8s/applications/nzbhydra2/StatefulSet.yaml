@@ -1,17 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: heimdall
+  name: nzbhydra2
   namespace: tortuga
 spec:
   replicas: 1
+  serviceName: nzbhydra2
   selector:
     matchLabels:
-      app: heimdall
+      app: nzbhydra2
   template:
     metadata:
       labels:
-        app: heimdall
+        app: nzbhydra2
     spec:
       initContainers:
         - name: import-data
@@ -45,15 +46,15 @@ spec:
             - name: DANGER_CLEAR_EXISTING_DATA
               value: "false"
           volumeMounts:
-            - name: heimdall-config-pvc
+            - name: nzbhydra2-config-pvc
               mountPath: /config
             - name: import
               mountPath: /import
       containers:
-        - image: ghcr.io/linuxserver/heimdall
-          name: heimdall
+        - image: linuxserver/nzbhydra2
+          name: nzbhydra2
           ports:
-            - containerPort: 80
+            - containerPort: 5076
           env:
             - name: PUID
               value: ${quote}${plexUid}${quote}
@@ -63,11 +64,17 @@ spec:
               value: ${timezone}
           volumeMounts:
             - mountPath: /config
-              name: heimdall-config-pvc
+              name: nzbhydra2-config-pvc
+              readOnly: false
+            - mountPath: /media
+              name: seedboxmedia-nfs
               readOnly: false
       volumes:
         - name: import
           emptyDir: {}
-        - name: heimdall-config-pvc
+        - name: nzbhydra2-config-pvc
           persistentVolumeClaim:
-            claimName: heimdall-config-pvc
+            claimName: nzbhydra2-config-pvc
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc
