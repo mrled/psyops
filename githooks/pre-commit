@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import subprocess
 import sys
 from os import path
@@ -30,6 +31,11 @@ k8s_secrets = [
 for file in k8s_secrets:
     with open(file, "r") as f:
         content = f.read()
-        if "^sops:$" not in content:
+        if re.search(r"^sops:$", content, re.MULTILINE) is None:
+            if "psyops-ignore-pre-commit-secret-check" in content:
+                print(
+                    f"Warning: Secret file '{file}' is not encrypted but ignored by psyops!"
+                )
+                continue
             print(f"Error: Secret file '{file}' is not encrypted by SOPS!")
             sys.exit(1)
