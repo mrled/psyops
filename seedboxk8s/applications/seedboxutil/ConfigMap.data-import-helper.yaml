@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: data-import-helper
+  namespace: seedboxutil
+data:
+  import-data.sh: |+
+    #!/bin/sh
+    set -e
+
+    DANGER_CLEAR_EXISTING_DATA="${DANGER_CLEAR_EXISTING_DATA:-false}"
+    SOURCE_MOUNT_PATH="${SOURCE_MOUNT_PATH:-/import}"
+    DESTINATION_MOUNT_PATH="${DESTINATION_MOUNT_PATH:-/config}"
+    set -u
+
+    if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
+      for f in "$DESTINATION_MOUNT_PATH"/{*,.*}; do
+        if test "$f" = ""$DESTINATION_MOUNT_PATH"/." || test "$f" = ""$DESTINATION_MOUNT_PATH"/.."; then
+          continue;
+        fi;
+        echo "Removing $f recursively...";
+        rm -f "$f";
+      done;
+      rm -rf "$DESTINATION_MOUNT_PATH"/*;
+    elif test -f "$DESTINATION_MOUNT_PATH"/import-data-complete; then
+      exit 0;
+    fi;
+    while test ! -f "$SOURCE_MOUNT_PATH"/import-data-ready; do
+      sleep 1;
+    done;
+    echo "Extracting data...";
+    tar -xvf "$SOURCE_MOUNT_PATH"/import.tar.gz -C "$DESTINATION_MOUNT_PATH";
+    echo "Extraction complete.";
+    touch "$DESTINATION_MOUNT_PATH"/import-data-complete;
+    exit 0;
