@@ -30,6 +30,7 @@ spec:
         dnsNames:
         - "${newClusterFqdn}"
         - "*.${newClusterFqdn}"
+      dns01:
         route53:
           region: us-east-2
           hostedZoneID: ${newClusterFqdnHostedZoneId}
