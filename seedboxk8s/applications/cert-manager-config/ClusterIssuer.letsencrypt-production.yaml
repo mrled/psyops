@@ -14,11 +14,25 @@ spec:
     solvers:
     - selector:
         dnsNames:
-        - '*.younix.us'
+        - "${clusterFqdn}"
+        - "*.${clusterFqdn}"
       dns01:
         route53:
           region: us-east-2
-          hostedZoneID: Z02081123S4X7YC5EUFE5
+          hostedZoneID: ${clusterFqdnHostedZoneId}
+          accessKeyIDSecretRef:
+            name: aws-route53-credential
+            key: access-key-id
+          secretAccessKeySecretRef:
+            name: aws-route53-credential
+            key: secret-access-key
+    - selector:
+        dnsNames:
+        - "${newClusterFqdn}"
+        - "*.${newClusterFqdn}"
+        route53:
+          region: us-east-2
+          hostedZoneID: ${newClusterFqdnHostedZoneId}
           accessKeyIDSecretRef:
             name: aws-route53-credential
             key: access-key-id
