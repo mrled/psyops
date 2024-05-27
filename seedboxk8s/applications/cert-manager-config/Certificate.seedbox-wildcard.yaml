@@ -5,8 +5,8 @@ metadata:
   namespace: cert-manager
 spec:
   dnsNames:
-  - ${clusterFqdn}
-  - '*.${clusterFqdn}'
+  - ${newClusterFqdn}
+  - '*.${newClusterFqdn}'
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-staging
