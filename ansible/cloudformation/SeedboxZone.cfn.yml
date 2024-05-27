@@ -25,125 +25,17 @@ Resources:
         - Name: !Ref DomainName
           Type: A
           TTL: "300"
-          ResourceRecords: ["100.86.119.112"]
-        - Name: !Join [".", ["www", !Ref DomainName]]
+          ResourceRecords: ["100.69.221.89"]
+        - Name: !Join [".", ["*", !Ref DomainName]]
           Type: CNAME
-          TTL: "300"
+          TTL: "60"
           ResourceRecords: [!Ref DomainName]
 
-        - Name: !Join [".", ["seedbox", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["balancer", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["kibana", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["whoami", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["sonarr", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["radarr", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["lidarr", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["headphones", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["sabnzbd", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["hydra2", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["dex", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["bridgetroll", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["plex", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["tautulli", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["tentacles", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["6", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["volupta", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["transmission", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["rtorrent", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["books", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["jackett", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["prowlarr", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["ersatztv", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["shhh", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["library", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
         - Name: !Join [".", ["onion", !Ref DomainName]]
           Type: CNAME
           TTL: "60"
           ResourceRecords: [!Ref DomainName]
         - Name: !Join [".", ["*.onion", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["elastic", !Ref DomainName]]
-          Type: CNAME
-          TTL: "60"
-          ResourceRecords: [!Ref DomainName]
-        - Name: !Join [".", ["dejavu", !Ref DomainName]]
           Type: CNAME
           TTL: "60"
           ResourceRecords: [!Ref DomainName]
