@@ -13,6 +13,10 @@ spec:
     name: flux-system
   dependsOn:
     - name: fluxcfg
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   postBuild:
     substituteFrom:
       - kind: Secret
