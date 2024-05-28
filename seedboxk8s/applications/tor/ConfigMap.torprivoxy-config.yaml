@@ -53,6 +53,6 @@ data:
     #      use multiple debug lines.
 
 
-    forward-socks5 / tor:9050 .
+    forward-socks5 / torproxy:9050 .
     listen-address  0.0.0.0:8118
     accept-intercepted-requests 1
