@@ -23,8 +23,6 @@ data:
                           '$status $body_bytes_sent "$http_referer" '
                           '"$http_user_agent" "$http_x_forwarded_for"';
 
-        #access_log /var/log/nginx/access.log main;
-        #error_log /var/log/nginx/error.log warn;
         access_log /dev/stdout main;
 
         sendfile on;
@@ -35,29 +33,52 @@ data:
 
         server {
             listen 80;
-            server_name ${productionClusterFqdn};
-            location / {
-                root /html;
-                index index.html index.htm;
-            }
-        }
 
-        server {
-            listen 80;
-            server_name ~^(?<subdomain>.+)\.${productionClusterFqdn}$;
+            server_name ~^(?<onion>[a-z0-9]{16,56})\.onionproxy\.tor\.svc\.cluster\.local$;
+            server_name ~^(?<onion2>[a-z0-9]{16,56})\.onion.${productionClusterFqdn}$;
+            server_name onionproxy.tor.svc.cluster.local;
+            server_name onion.${productionClusterFqdn};
 
             location / {
-                resolver 127.0.0.11 valid=30s;  # Docker's embedded DNS resolver
+                resolver 127.0.0.11; # Default DNS resolver provided by Kubernetes
 
-                # Rewrite the hostname for proxy passing
-                #set $onion_address "$subdomain.${productionClusterFqdn}";
-                set $onion_address "$subdomain.onion";
-                # Forward requests to Tor SOCKS proxy, must match the service name in compose file
-                proxy_pass http://torprivoxy:8118;
-                proxy_set_header Host $onion_address;
-                #proxy_set_header X-Real-IP $remote_addr;
-                #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                #proxy_set_header X-Forwarded-Proto $scheme;
+                # If the request is for the base domain, serve a tiny static page
+                if ($host = "onionproxy.tor.svc.cluster.local") {
+                    root /usr/share/nginx/html;
+                    index index.html;
+                    try_files $uri $uri/ =404;
+                    break;
+                }
+                if ($host = "onion.${productionClusterFqdn}") {
+                    root /usr/share/nginx/html;
+                    index index.html;
+                    try_files $uri $uri/ =404;
+                    break;
+                }
+
+                # Otherwise, forward the request to Privoxy
+
+                # Determine the target based on the server name
+                if ($host ~* ^(?<onion_host>[a-z0-9]{16,56})\.onionproxy\.tor\.svc\.cluster\.local$) {
+                    set $target_host $onion_host.onion;
+                }
+                if ($host ~* ^(?<onion2_host>[a-z0-9]{16,56})\.${productionClusterFqdn}$) {
+                    set $target_host $onion2_host.onion;
+                }
+
+                # Forward requests to Privoxy, which forwards them to the Tor SOCKS proxy
+                proxy_pass http://torprivoxy.tor.svc.cluster.local:8118;
+                proxy_set_header Host $target_host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+
+                proxy_connect_timeout 60s;
+                proxy_read_timeout 60s;
+                proxy_send_timeout 60s;
+
+                # Additional headers for security and debugging
+                add_header X-Proxied-By "onionproxy" always;
             }
         }
     }
