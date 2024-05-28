@@ -58,9 +58,12 @@ data:
     set -eux
     W="$(echo Juvfcnee | tr 'A-Za-z' 'N-ZA-Mn-za-m')"
     w="$(echo juvfcnee | tr 'A-Za-z' 'N-ZA-Mn-za-m')"
+    ls -alF /etc/localtime
     if test "$TZ" != "UTC"; then
-      ln -f /usr/share/zoneinfo/$TZ /etc/localtime
+      rm -f /etc/localtime
+      cp /usr/share/zoneinfo/$TZ /etc/localtime
     fi
+    ls -alF /etc/localtime
     groupadd -g $PGID "$w"
     useradd -u $PUID -g "$w" -d /config -s /bin/sh -M "$w"
     chown -R "$w":"$w" /opt/Juvfcnee
