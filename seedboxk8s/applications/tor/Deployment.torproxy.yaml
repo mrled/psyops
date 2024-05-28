@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: torproxy
+  namespace: tor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: torproxy
+  template:
+    metadata:
+      labels:
+        app: torproxy
+    spec:
+      containers:
+      - name: torproxy
+        image: registry.${productionClusterFqdn}/tor/torproxy:latest
+        ports:
+          - name: torproxy
+            containerPort: 9050
+            protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/tor/torrc
+              name: torproxy-config
+              subPath: torrc
+      imagePullSecrets:
+        - name: registry-k8s-dockerconfigjson
+      volumes:
+        - name: torproxy-config
+          configMap:
+            name: torproxy-config

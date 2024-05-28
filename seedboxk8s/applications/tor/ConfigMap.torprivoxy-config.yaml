@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: torprivoxy-config
+  namespace: tor
+data:
+  config: |+
+    # -*- mode: ini -*-
+
+    user-manual /usr/share/doc/privoxy/user-manual/
+    confdir /etc/privoxy
+    logdir /var/log/privoxy
+    #actionsfile match-all.action # Actions that are applied to all sites and maybe overruled later on.
+    #actionsfile default.action   # Main actions file
+    #actionsfile user.action      # User customizations
+    #filterfile default.filter
+    #filterfile user.filter      # User customizations
+    logfile privoxy.log
+    toggle  1
+    enable-remote-toggle  0
+    enable-remote-http-toggle  0
+    enable-edit-actions 0
+    enforce-blocks 0
+    buffer-limit 4096
+    enable-proxy-authentication-forwarding 0
+    forwarded-connect-retries  0
+    accept-intercepted-requests 0
+    allow-cgi-request-crunching 0
+    split-large-forms 0
+    keep-alive-timeout 5
+    tolerate-pipelining 1
+    socket-timeout 300
+
+
+            debug     1 # Log the destination for each request. See also debug 1024.
+            debug     2 # show each connection status
+    #        debug     4 # show tagging-related messages
+    #        debug     8 # show header parsing
+    #        debug    16 # log all data written to the network
+    #        debug    32 # debug force feature
+    #        debug    64 # debug regular expression filters
+    #        debug   128 # debug redirects
+    #        debug   256 # debug GIF de-animation
+    #        debug   512 # Common Log Format
+    #        debug  1024 # Log the destination for requests Privoxy didn't let through, and the reason why.
+            debug  2048 # CGI user interface
+            debug  4096 # Startup banner and warnings.
+            debug  8192 # Non-fatal errors
+    #        debug 32768 # log all data read from the network
+    #        debug 65536 # Log the applying actions
+    #
+    #      To select multiple debug levels, you can either add them or
+    #      use multiple debug lines.
+
+
+    forward-socks5 / tor:9050 .
+    listen-address  0.0.0.0:8118
+    accept-intercepted-requests 1

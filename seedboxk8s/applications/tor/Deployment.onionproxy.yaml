@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: onionproxy
+  namespace: tor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: onionproxy
+  template:
+    metadata:
+      labels:
+        app: onionproxy
+    spec:
+      containers:
+      - name: onionproxy
+        image: nginx:latest
+        ports:
+          - name: web
+            containerPort: 80
+            protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/nginx/nginx.conf
+              name: onionproxy-config
+              subPath: nginx.conf
+            - mountPath: /html/index.html
+              name: onionproxy-config
+              subPath: index.html
+      imagePullSecrets:
+        - name: registry-k8s-dockerconfigjson
+      volumes:
+        - name: onionproxy-config
+          configMap:
+            name: onionproxy-config
+
+
+  onionproxy:
+    image: nginx:latest
+    volumes:
+      - "{{ seedbox_onionproxy_config_dir }}/nginx.conf:/etc/nginx/nginx.conf:ro"
+      - "{{ seedbox_onionproxy_config_dir }}/html:/html:ro"
+    networks:
+      - dernetverk
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ seedbox_stack_name }}_dernetverk"
+      # We listen on both HTTP and HTTPS for this service.
+      # Note that allowing HTTP ingress requires an exception in the global redirect to HTTPS
+      # on the balancer service.
+      - "traefik.http.routers.seedbox-onionproxy-http.rule=HostRegexp(`{subdomain:[a-zA-Z0-9]+}.{{ seedbox_onionproxy_domain }}`) || Host(`{{ seedbox_onionproxy_domain }}`)"
+      - "traefik.http.routers.seedbox-onionproxy-http.entrypoints=http"
+      - "traefik.http.routers.seedbox-onionproxy-http.service=seedbox-onionproxy"
+      - "traefik.http.services.seedbox-onionproxy.loadbalancer.server.port=80"
+      - "traefik.http.routers.seedbox-onionproxy-https.rule=HostRegexp(`{subdomain:[a-zA-Z0-9]+}.{{ seedbox_onionproxy_domain }}`) || Host(`{{ seedbox_onionproxy_domain }}`)"
+      - "traefik.http.routers.seedbox-onionproxy-https.entrypoints=https"
+      - "traefik.http.routers.seedbox-onionproxy-https.tls=true"
+      - "traefik.http.routers.seedbox-onionproxy-https.tls.certresolver=seedbox-resolver"
+      - "traefik.http.routers.seedbox-onionproxy-https.service=seedbox-onionproxy"
+      # Don't require auth for the onionproxy
+      # - "traefik.http.routers.seedbox-onionproxy-https.middlewares=seedbox-auth-bridgetroll-mw"

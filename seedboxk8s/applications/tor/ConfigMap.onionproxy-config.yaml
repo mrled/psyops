@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: onionproxy-config
+  namespace: tor
+data:
+  torrc |+
+    # Tor configuration file
+    SocksPort 0.0.0.0:9050
