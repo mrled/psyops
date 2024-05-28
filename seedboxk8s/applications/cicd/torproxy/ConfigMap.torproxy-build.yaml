@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: torproxy-build
+  namespace: cicd
+  # annotations:
+  #   please: runagain
+data:
+  buildah.sh: |+
+    #!/bin/sh
+    set -eu
+
+    # Get config vars
+    imgns="$CLUSTERGIT_IMAGENAMESPACE"
+    imgname="$CLUSTERGIT_IMAGENAME"
+    imgtag="$CLUSTERGIT_IMAGETAG"
+    regserver="$CLUSTERGIT_REGISTRY"
+    reguser="$CLUSTERGIT_REGISTRY_USERNAME"
+    regpass="$CLUSTERGIT_REGISTRY_PASSWORD"
+
+    # Log in first
+    echo "Logging in to $regserver as $reguser..."
+    buildah login --username "$reguser" --password "$regpass" "$regserver"
+    echo "Logged in to $regserver as $reguser."
+
+    # No more secrets at this point, show what commands we are running
+    set -x
+
+    # Build the image
+    container="$(buildah from debian:latest)"
+    buildah run "$container" -- apt-get update
+    buildah run "$container" -- apt-get install -y tor
+    buildah run "$container" -- rm -rf /var/lib/apt/lists/*
+    buildah config \
+      --user debian-tor \
+      --port 9050 \
+      --cmd '["/usr/bin/tor", "-f", "/etc/tor/torrc"]' \
+      "$container"
+    buildah commit "$container" "$imgname"
+    buildah tag "$imgname" "$regserver/$imgns/$imgname:$imgtag"
+    buildah push "$imgname" "$regserver/$imgns/$imgname:$imgtag"

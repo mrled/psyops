@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: torprivoxy-build
+  namespace: cicd
+  # annotations:
+  #   please: runagain
+data:
+  buildah.sh: |+
+    #!/bin/sh
+    set -eu
+
+    # Get config vars
+    imgns="$CLUSTERGIT_IMAGENAMESPACE"
+    imgname="$CLUSTERGIT_IMAGENAME"
+    imgtag="$CLUSTERGIT_IMAGETAG"
+    regserver="$CLUSTERGIT_REGISTRY"
+    reguser="$CLUSTERGIT_REGISTRY_USERNAME"
+    regpass="$CLUSTERGIT_REGISTRY_PASSWORD"
+
+    # Log in first
+    echo "Logging in to $regserver as $reguser..."
+    buildah login --username "$reguser" --password "$regpass" "$regserver"
+    echo "Logged in to $regserver as $reguser."
+
+    # No more secrets at this point, show what commands we are running
+    set -x
+
+    # Build the image
+    container="$(buildah from alpine:latest)"
+    buildah run "$container" -- apk add --no-cache privoxy
+    buildah run "$container" -- mv /etc/privoxy/config.new /etc/privoxy/config
+    buildah config \
+      --user privoxy \
+      --port 8118 \
+      --cmd '["privoxy", "--no-daemon", "/etc/privoxy/config"]' \
+      "$container"
+    buildah commit "$container" "$imgname"
+    buildah tag "$imgname" "$regserver/$imgns/$imgname:$imgtag"
+    buildah push "$imgname" "$regserver/$imgns/$imgname:$imgtag"
