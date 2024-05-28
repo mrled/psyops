@@ -2,9 +2,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: shhh-build
-  namespace: tortuga
-  annotations:
-    please: runagain
+  namespace: cicd
+  # annotations:
+  #   please: runagain
 data:
   buildah.sh: |+
     #!/bin/sh

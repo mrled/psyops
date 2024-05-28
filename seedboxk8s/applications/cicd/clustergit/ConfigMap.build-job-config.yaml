@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: build-job-config
-  namespace: clustergit
+  namespace: cicd
 data:
   gitserver.buildah.sh: |-
     #!/bin/sh

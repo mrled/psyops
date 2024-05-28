@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: shhh-build
-  namespace: tortuga
+  namespace: cicd
   annotations:
     kustomize.toolkit.fluxcd.io/force: enabled
     # please: runagain
@@ -32,12 +32,12 @@ spec:
           - name: CLUSTERGIT_REGISTRY_USERNAME
             valueFrom:
               secretKeyRef:
-                name: registry-user-tortugacicd
+                name: registry-user-cicd
                 key: username
           - name: CLUSTERGIT_REGISTRY_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: registry-user-tortugacicd
+                name: registry-user-cicd
                 key: password
         volumeMounts:
           - name: varlibcontainers

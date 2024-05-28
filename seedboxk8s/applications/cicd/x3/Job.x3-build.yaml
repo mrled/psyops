@@ -1,8 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: buildah-podman-job
-  namespace: clustergit
+  name: x3-build
+  namespace: cicd
   annotations:
     kustomize.toolkit.fluxcd.io/force: enabled
     # please: runagain
@@ -19,12 +19,12 @@ spec:
           privileged: true
           allowPrivilegeEscalation: true
 
-        command: ["/bin/sh", "/config/gitserver.buildah.sh"]
+        command: ["/bin/sh", "/config/buildah.sh"]
         env:
           - name: CLUSTERGIT_IMAGENAMESPACE
-            value: clustergit
+            value: tortuga
           - name: CLUSTERGIT_IMAGENAME
-            value: clustergit
+            value: x3
           - name: CLUSTERGIT_IMAGETAG
             value: latest
           - name: CLUSTERGIT_REGISTRY
@@ -50,4 +50,4 @@ spec:
           emptyDir: {}
         - name: build-job-config
           configMap:
-            name: build-job-config
+            name: x3-build
