@@ -17,5 +17,5 @@ roleRef:
   name: cluster-admin
 subjects:
 - kind: User
-  name: freeleech@${clusterFqdn}
+  name: freeleech@${testingClusterFqdn}
   apiGroup: rbac.authorization.k8s.io

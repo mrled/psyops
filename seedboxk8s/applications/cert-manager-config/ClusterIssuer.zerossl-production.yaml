@@ -24,12 +24,12 @@ spec:
     solvers:
     - selector:
         dnsNames:
-        - "${clusterFqdn}"
-        - "*.${clusterFqdn}"
+        - "${testingClusterFqdn}"
+        - "*.${testingClusterFqdn}"
       dns01:
         route53:
           region: us-east-2
-          hostedZoneID: ${clusterFqdnHostedZoneId}
+          hostedZoneID: ${testingClusterFqdnHostedZoneId}
           accessKeyIDSecretRef:
             name: aws-route53-credential
             key: access-key-id
@@ -38,12 +38,12 @@ spec:
             key: secret-access-key
     - selector:
         dnsNames:
-        - "${newClusterFqdn}"
-        - "*.${newClusterFqdn}"
+        - "${productionClusterFqdn}"
+        - "*.${productionClusterFqdn}"
       dns01:
         route53:
           region: us-east-2
-          hostedZoneID: ${newClusterFqdnHostedZoneId}
+          hostedZoneID: ${productionClusterFqdnHostedZoneId}
           accessKeyIDSecretRef:
             name: aws-route53-credential
             key: access-key-id

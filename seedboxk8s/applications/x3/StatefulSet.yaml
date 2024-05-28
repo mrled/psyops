@@ -51,7 +51,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${clusterFqdn}/tortuga/x3:latest
+        - image: registry.${testingClusterFqdn}/tortuga/x3:latest
           name: x3
           securityContext:
             runAsUser: ${plexUid}

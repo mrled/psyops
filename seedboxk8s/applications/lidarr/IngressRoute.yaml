@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`lidarr.${clusterFqdn}`)
+    - match: Host(`lidarr.${testingClusterFqdn}`)
       kind: Rule
       services:
         - name: lidarr

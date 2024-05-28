@@ -7,7 +7,7 @@ data:
   config.yaml: |+
     # This is the canonical URL that all clients MUST use to refer to dex. If a
     # path is provided, dex's HTTP service will listen at a non-root URL.
-    issuer: https://dex.${clusterFqdn}
+    issuer: https://dex.${testingClusterFqdn}
 
     # Users are defined under staticPasswords in this file,
     # but this is still needed for sessions n' tokens n' shit
@@ -41,8 +41,8 @@ data:
     # The traefik-forward-auth client used for most services
     - id: "${dexClientId}"
       redirectURIs:
-      - https://tfa.${clusterFqdn}/_oauth
-      name: "${clusterFqdn}"
+      - https://tfa.${testingClusterFqdn}/_oauth
+      name: "${testingClusterFqdn}"
       secretEnv: DEX_TFA_CLIENT_SECRET
 
     # The Kubernetes API client.
@@ -52,7 +52,7 @@ data:
     # like the Kubernetes Dashboard.
     - id: seedboxk8s-kubernetes
       redirectURIs:
-      - https://kubernetes.${clusterFqdn}/oauth2/callback
+      - https://kubernetes.${testingClusterFqdn}/oauth2/callback
       name: seedboxk8s-kubernetes
       secretEnv: DEX_K8S_API_CLIENT_SECRET
 
@@ -66,6 +66,6 @@ data:
 
     staticPasswords:
     - username: freeleech
-      email: freeleech@${clusterFqdn}
+      email: freeleech@${testingClusterFqdn}
       hashFromEnv: BCRYPTPASS_FREELEECH
       userID: freeleech

@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - match: Host(`tfa.${clusterFqdn}`)
+  - match: Host(`tfa.${testingClusterFqdn}`)
     kind: Rule
     services:
     - name: tfa

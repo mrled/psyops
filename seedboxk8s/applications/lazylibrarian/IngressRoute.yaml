@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`lazylibrarian.${clusterFqdn}`)
+    - match: Host(`lazylibrarian.${testingClusterFqdn}`)
       kind: Rule
       services:
         - name: lazylibrarian

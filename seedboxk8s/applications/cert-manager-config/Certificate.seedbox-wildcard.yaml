@@ -5,10 +5,10 @@ metadata:
   namespace: cert-manager
 spec:
   dnsNames:
-  - "${clusterFqdn}"
-  - "*.${clusterFqdn}"
-  - "${newClusterFqdn}"
-  - "*.${newClusterFqdn}"
+  - "${testingClusterFqdn}"
+  - "*.${testingClusterFqdn}"
+  - "${productionClusterFqdn}"
+  - "*.${productionClusterFqdn}"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-production

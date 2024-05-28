@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`ersatztv.${clusterFqdn}`)
+    - match: Host(`ersatztv.${testingClusterFqdn}`)
       kind: Rule
       services:
         - name: ersatztv

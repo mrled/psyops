@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`cops.${clusterFqdn}`)
+    - match: Host(`cops.${testingClusterFqdn}`)
       kind: Rule
       services:
         - name: cops

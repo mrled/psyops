@@ -23,11 +23,11 @@ spec:
             - name: REGISTRY_AUTH
               value: "token"
             - name: REGISTRY_AUTH_TOKEN_REALM
-              value: "https://registry.${clusterFqdn}/auth"
+              value: "https://registry.${testingClusterFqdn}/auth"
             # An arbitrary name we send to docker_auth;
             # its ACLs may be configured to allow or deny access to this service in auth_config.yml
             - name: REGISTRY_AUTH_TOKEN_SERVICE
-              value: "registry.${clusterFqdn}"
+              value: "registry.${testingClusterFqdn}"
             # Should match the issuer in the auth_config.yml file
             - name: REGISTRY_AUTH_TOKEN_ISSUER
               value: "Seedbox K8s Registry Auth"

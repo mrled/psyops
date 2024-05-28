@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`shhh.${clusterFqdn}`)
+    - match: Host(`shhh.${testingClusterFqdn}`)
       kind: Rule
       services:
         - name: shhh

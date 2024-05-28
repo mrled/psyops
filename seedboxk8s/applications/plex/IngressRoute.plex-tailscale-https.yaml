@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`plex.${clusterFqdn}`)
+    - match: Host(`plex.${testingClusterFqdn}`)
       kind: Rule
       services:
         - name: plex
