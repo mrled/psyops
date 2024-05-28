@@ -11,4 +11,4 @@
   because the results might include JavaScript and other resources that reference the non-onion web and could deanonymize the client.
   It's also not good for browsing because `.onion` links are not transformed to `.onion.example.com` links,
   so clicking on the links (or requesting any returned absolute URL to images or other resources) will not work.
-  Why even have this? It's basically for libgen in lazylibrarian.
+  Why even have this? It's basically for z-library in lazylibrarian.
