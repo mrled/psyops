@@ -20,29 +20,33 @@ data:
     DESTINATION_MOUNT_PATH="${DESTINATION_MOUNT_PATH:-/config}"
     set -u
 
+    importfile="$SOURCE_MOUNT_PATH/import.tar.gz"
+    readyfile="$SOURCE_MOUNT_PATH/import-data-ready"
+    completefile="$DESTINATION_MOUNT_PATH/import-data-complete"
+
     if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
       echo "DANGEROUS_CLEAR_EXISTING_DATA is set to true. Clearing existing data..."
-      for f in "$DESTINATION_MOUNT_PATH"/{*,.*}; do
-        if test "$f" = ""$DESTINATION_MOUNT_PATH"/." || test "$f" = ""$DESTINATION_MOUNT_PATH"/.."; then
-          continue
-        fi
-        echo "Removing $f recursively..."
-        rm -f "$f"
-      done
-      rm -rf "$DESTINATION_MOUNT_PATH"/*
+      rm -rf "$DESTINATION_MOUNT_PATH"/{*,.*}
 
-    elif test -f "$DESTINATION_MOUNT_PATH"/import-data-complete; then
-      echo "Found file at $DESTINATION_MOUNT_PATH/import-data-complete, indicating data has already been imported. Exiting..."
+    elif test -f $completefile; then
+      echo "Found file at $completefile, indicating data has already been imported. Exiting..."
       exit 0
     fi
 
-    echo "Waiting indefinitely for data to be ready; copy a tarball to $SOURCE_MOUNT_PATH/import.tar.gz and then touch $SOURCE_MOUNT_PATH/import-data-ready to signal readiness."
-    while test ! -f "$SOURCE_MOUNT_PATH"/import-data-ready; do
+    echo "Hello and welcome to the data import helper script."
+    echo "This script is intended to be run as an initContainer in a StatefulSet that requires manual data import in a fresh PVC. It can also be used for pods that are migrating into this cluster for the first time or being restored from a backup."
+    echo ""
+    echo "Waiting indefinitely for data to be ready; copy a tarball to $importfile and then touch $readyfile to signal readiness. Alternatively, import the data manually and touch $completefile to skip this process. You can control the source and destination paths with the SOURCE_MOUNT_PATH and DESTINATION_MOUNT_PATH environment variables.
+    while true; do
+      if test -f $readyfile; then
+        echo "Extracting data..."
+        tar -xvf "$importfile" -C "$DESTINATION_MOUNT_PATH"
+        echo "Extraction complete."
+        touch "$completefile"
+        exit 0
+      elif test -f "$completefile"; then
+        echo "Found file at $completefile, indicating data has been imported manually. Exiting..."
+        exit 0
+      fi
       sleep 1
     done
-
-    echo "Extracting data...";
-    tar -xvf "$SOURCE_MOUNT_PATH"/import.tar.gz -C "$DESTINATION_MOUNT_PATH";
-    echo "Extraction complete.";
-    touch "$DESTINATION_MOUNT_PATH"/import-data-complete;
-    exit 0;
