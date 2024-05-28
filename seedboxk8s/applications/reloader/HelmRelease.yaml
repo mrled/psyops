@@ -2,7 +2,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: reloader
-  namespace: kube-system
+  namespace: reloader
 spec:
   chart:
     spec:
@@ -16,5 +16,7 @@ spec:
   timeout: 5m
   releaseName: reloader
   values:
-    namespace: reloader
-
+    reloader:
+      watchGlobally: true
+      reloadOnCreate: true
+      syncAfterRestart: true
