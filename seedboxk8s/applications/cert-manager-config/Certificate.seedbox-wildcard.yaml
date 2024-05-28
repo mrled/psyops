@@ -21,6 +21,7 @@ spec:
         kube-system,
         kubernetes-dashboard,
         registry,
+        tor,
         tortuga,
         traefik,
         whoami,
