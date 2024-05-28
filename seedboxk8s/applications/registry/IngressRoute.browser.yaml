@@ -23,4 +23,4 @@ spec:
         - name: bridgetroll-mw
           namespace: bridgetroll
   tls:
-    secretName: younix-dot-us-wildcard-backing-secret
+    secretName: seedbox-wildcard-backing-secret

@@ -20,4 +20,4 @@ spec:
   # In this case, we are protecting a bunch of subdomains,
   # so a wildcard cert works well.
   tls:
-    secretName: younix-dot-us-wildcard-backing-secret
+    secretName: seedbox-wildcard-backing-secret

@@ -18,4 +18,4 @@ spec:
         - name: api@internal
           kind: TraefikService
   tls:
-    secretName: younix-dot-us-wildcard-backing-secret
+    secretName: seedbox-wildcard-backing-secret

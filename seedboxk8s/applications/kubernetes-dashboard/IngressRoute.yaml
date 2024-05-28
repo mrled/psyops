@@ -19,4 +19,4 @@ spec:
     - name: forward-auth-headers
       namespace: kubernetes-dashboard
   tls:
-    secretName: younix-dot-us-wildcard-backing-secret
+    secretName: seedbox-wildcard-backing-secret

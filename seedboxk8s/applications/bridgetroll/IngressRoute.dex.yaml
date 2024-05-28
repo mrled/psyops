@@ -15,4 +15,4 @@ spec:
     - name: dex
       port: 5556
   tls:
-    secretName: younix-dot-us-wildcard-backing-secret
+    secretName: seedbox-wildcard-backing-secret

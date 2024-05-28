@@ -16,4 +16,4 @@ spec:
           kind: Service
           port: 32400
   tls:
-    secretName: younix-dot-us-wildcard-backing-secret
+    secretName: seedbox-wildcard-backing-secret
