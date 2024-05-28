@@ -4,6 +4,6 @@ metadata:
   name: torproxy-config
   namespace: tor
 data:
-  torrc |+
+  torrc: |+
     # Tor configuration file
     SocksPort 0.0.0.0:9050
