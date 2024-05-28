@@ -59,7 +59,7 @@ spec:
     - fe80::d082:55ff:fee7:9b39
 
     extraArgs:
-      oidc-issuer-url: https://dex.younix.us
+      oidc-issuer-url: https://dex.{$}seedbox_domain
       oidc-client-id: seedboxk8s-kubernetes
       oidc-username-claim: email
 

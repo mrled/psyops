@@ -40,6 +40,9 @@ class Role(ProgfigurationRole):
     ca_key: str
     ca_crt: str
 
+    # Seedbox domain name
+    seedbox_domain: str
+
     # Probably need to update all of these at once
     k0s_version = "v1.30.0+k0s.0"
     k0sctl_version = "v0.17.5"
@@ -119,7 +122,9 @@ class Role(ProgfigurationRole):
         oldhash = None
         if os.path.exists("/etc/k0s/k0s.yaml") and os.path.exists("/etc/systemd/system/k0scontroller.service"):
             oldhash = hash_file_nosecurity("/etc/k0s/k0s.yaml")
-        self.localhost.cp(self.role_file("k0s.yaml"), "/etc/k0s/k0s.yaml", "root", "root", 0o640)
+        self.localhost.temple(
+            "k0s.yaml.temple", "/etc/k0s/k0s.yaml", {"seedbox_domain": self.seedbox_domain}, "root", "root", 0o640
+        )
         if oldhash:
             newhash = hash_file_nosecurity("/etc/k0s/k0s.yaml")
             changed_k0s_yaml = oldhash != newhash

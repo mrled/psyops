@@ -57,6 +57,7 @@ node = InventoryNode(
             flux_agekey=AgeSecretReference("seedboxk8s_flux_age_key"),
             ca_key=AgeSecretReference("seedboxk8s_ca_key"),
             ca_crt=seedboxk8s_ca_crt,
+            seedbox_domain=AgeSecretReference("seedbox_domain"),
         ),
     ),
 )
