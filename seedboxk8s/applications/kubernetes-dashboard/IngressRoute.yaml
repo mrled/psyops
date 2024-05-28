@@ -9,8 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-  # - match: Host(`kubernetes.${testingClusterFqdn}`)
-  - match: Host(`kubernetes.younix.us`)
+  - match: Host(`kubernetes.${testingClusterFqdn}`)
     kind: Rule
     services:
     - name: oauth2-proxy
