@@ -14,16 +14,16 @@ spec:
         app: torproxy
     spec:
       containers:
-      - name: torproxy
-        image: registry.${productionClusterFqdn}/tor/torproxy:latest
-        ports:
-          - name: torproxy
-            containerPort: 9050
-            protocol: TCP
-          volumeMounts:
-            - mountPath: /etc/tor/torrc
-              name: torproxy-config
-              subPath: torrc
+        - name: torproxy
+          image: registry.${productionClusterFqdn}/tor/torproxy:latest
+          ports:
+            - name: torproxy
+              containerPort: 9050
+              protocol: TCP
+            volumeMounts:
+              - mountPath: /etc/tor/torrc
+                name: torproxy-config
+                subPath: torrc
       imagePullSecrets:
         - name: registry-k8s-dockerconfigjson
       volumes:

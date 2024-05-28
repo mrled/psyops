@@ -14,19 +14,19 @@ spec:
         app: onionproxy
     spec:
       containers:
-      - name: onionproxy
-        image: nginx:latest
-        ports:
-          - name: web
-            containerPort: 80
-            protocol: TCP
-          volumeMounts:
-            - mountPath: /etc/nginx/nginx.conf
-              name: onionproxy-config
-              subPath: nginx.conf
-            - mountPath: /html/index.html
-              name: onionproxy-config
-              subPath: index.html
+        - name: onionproxy
+          image: nginx:latest
+          ports:
+            - name: web
+              containerPort: 80
+              protocol: TCP
+            volumeMounts:
+              - mountPath: /etc/nginx/nginx.conf
+                name: onionproxy-config
+                subPath: nginx.conf
+              - mountPath: /html/index.html
+                name: onionproxy-config
+                subPath: index.html
       imagePullSecrets:
         - name: registry-k8s-dockerconfigjson
       volumes:

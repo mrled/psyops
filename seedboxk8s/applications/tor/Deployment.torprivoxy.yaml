@@ -14,16 +14,16 @@ spec:
         app: torprivoxy
     spec:
       containers:
-      - name: torprivoxy
-        image: registry.${productionClusterFqdn}/tor/torprivoxy:latest
-        ports:
-          - name: torprivoxy
-            containerPort: 8118
-            protocol: TCP
-          volumeMounts:
-            - mountPath: /etc/privoxy/config
-              name: torprivoxy-config
-              subPath: config
+        - name: torprivoxy
+          image: registry.${productionClusterFqdn}/tor/torprivoxy:latest
+          ports:
+            - name: torprivoxy
+              containerPort: 8118
+              protocol: TCP
+            volumeMounts:
+              - mountPath: /etc/privoxy/config
+                name: torprivoxy-config
+                subPath: config
       imagePullSecrets:
         - name: registry-k8s-dockerconfigjson
       volumes:
