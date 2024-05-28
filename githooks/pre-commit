@@ -18,15 +18,12 @@ staged_files = sh(
 modified_files = sh("git ls-files --modified").splitlines()
 committing_files = set(staged_files + modified_files)
 
-for f in committing_files:
-    if not f.startswith("kubernasty") and not f.startswith("seedboxk8s"):
-        continue
-
 k8s_secrets = [
     f
     for f in committing_files
     if (f.startswith("kubernasty") or f.startswith("seedboxk8s"))
     and path.basename(f).startswith("Secret")
+    and path.exists(f)
 ]
 for file in k8s_secrets:
     with open(file, "r") as f:
