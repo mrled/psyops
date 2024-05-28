@@ -6,7 +6,9 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
 spec:
+  # LazyLibrarian keeps generating http:// URLs, so we redirect them all here.
   entryPoints:
+    - web
     - websecure
   routes:
     - match: Host(`library.${productionClusterFqdn}`)
@@ -16,6 +18,8 @@ spec:
           kind: Service
           port: 80
       middlewares:
+        - name: redirect-to-https
+          namespace: traefik
         - name: bridgetroll-mw
           namespace: bridgetroll
   tls:
