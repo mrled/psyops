@@ -479,7 +479,7 @@ services:
       - "traefik.http.services.seedbox-elastic.loadbalancer.server.port=9200"
       - "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST"
       - "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolallowheaders=*"
-      - "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolalloworiginlist=https://dejavu.subliminal.link"
+      - "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolalloworiginlist=https://{{ seedbox_dejavu_domain}}"
       - "traefik.http.middlewares.cors-elastic-mw.headers.accesscontrolallowcredentials=true"
       - "traefik.http.routers.seedbox-elastic.middlewares=cors-elastic-mw"
 
