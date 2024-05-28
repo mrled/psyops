@@ -13,7 +13,7 @@ spec:
     # so that it can use the bridgetroll auth middleware.
     # Docker clients won't support that middleware;
     # they use token based auth instead with the docker_auth deployment.
-    - match: Host(`registry-browser.${testingClusterFqdn}`)
+    - match: Host(`registry-browser.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: browser

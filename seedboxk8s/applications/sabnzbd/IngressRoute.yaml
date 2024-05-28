@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`sabnzbd.${testingClusterFqdn}`)
+    - match: Host(`sabnzbd.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: sabnzbd

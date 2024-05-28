@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`hydra2.${testingClusterFqdn}`) || Host(`nzbhydra2.${testingClusterFqdn}`)
+    - match: Host(`hydra2.${productionClusterFqdn}`) || Host(`nzbhydra2.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: hydra2

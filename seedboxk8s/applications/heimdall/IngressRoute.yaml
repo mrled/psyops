@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`heimdall.${testingClusterFqdn}`) || Host(`seedbox.${testingClusterFqdn}`)
+    - match: Host(`heimdall.${productionClusterFqdn}`) || Host(`seedbox.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: heimdall

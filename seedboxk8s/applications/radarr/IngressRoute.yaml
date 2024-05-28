@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`radarr.${testingClusterFqdn}`)
+    - match: Host(`radarr.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: radarr

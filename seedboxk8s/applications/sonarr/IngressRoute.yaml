@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`sonarr.${testingClusterFqdn}`)
+    - match: Host(`sonarr.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: sonarr

@@ -22,7 +22,7 @@ spec:
             - containerPort: 8080
           env:
             - name: DOCKER_REGISTRY_URL
-              value: https://registry.${testingClusterFqdn}
+              value: https://registry.${productionClusterFqdn}
             - name: TOKEN_AUTH_USER
               valueFrom:
                 secretKeyRef:

@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`whoami.${testingClusterFqdn}`)
+    - match: Host(`whoami.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: whoami-service

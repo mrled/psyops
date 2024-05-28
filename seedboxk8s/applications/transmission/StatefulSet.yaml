@@ -51,7 +51,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${testingClusterFqdn}/tortuga/transmission:latest
+        - image: registry.${productionClusterFqdn}/tortuga/transmission:latest
           name: transmission
           securityContext:
             runAsUser: ${plexUid}

@@ -19,3 +19,6 @@ subjects:
 - kind: User
   name: freeleech@${testingClusterFqdn}
   apiGroup: rbac.authorization.k8s.io
+- kind: User
+  name: freeleech@${productionClusterFqdn}
+  apiGroup: rbac.authorization.k8s.io

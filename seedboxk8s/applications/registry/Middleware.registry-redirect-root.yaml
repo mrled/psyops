@@ -6,5 +6,5 @@ metadata:
 spec:
   redirectRegex:
     regex: ^/$
-    replacement: https://registry-browser.${testingClusterFqdn}
+    replacement: https://registry-browser.${productionClusterFqdn}
     permanent: true
