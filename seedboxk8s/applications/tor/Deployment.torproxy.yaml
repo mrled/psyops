@@ -20,10 +20,10 @@ spec:
             - name: torproxy
               containerPort: 9050
               protocol: TCP
-            volumeMounts:
-              - mountPath: /etc/tor/torrc
-                name: torproxy-config
-                subPath: torrc
+          volumeMounts:
+            - mountPath: /etc/tor/torrc
+              name: torproxy-config
+              subPath: torrc
       imagePullSecrets:
         - name: registry-k8s-dockerconfigjson
       volumes:
