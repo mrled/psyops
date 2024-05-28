@@ -10,7 +10,7 @@ spec:
     - web
     - websecure
   routes:
-    - match: Host(`onion.${productionClusterFqdn}`) || Host(`*.onion.${productionClusterFqdn}`)
+    - match: Host(`onion.${productionClusterFqdn}`) || HostRegexp(`{subdomain:[a-z]+}.onion.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: onionproxy
