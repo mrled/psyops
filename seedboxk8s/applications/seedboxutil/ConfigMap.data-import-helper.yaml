@@ -6,18 +6,23 @@ metadata:
   annotations:
     reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
     reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: >-
+      clustergit,
+      registry,
       tortuga,
     reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
     reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: ""
 
 data:
+
+  ## WARNING: Reminder to be careful of ${var...} here (and everywhere), which is interpreted by Flux Kustomize. Escape with $${var...}.
+
   import-data.sh: |+
     #!/bin/sh
     set -e
 
-    DANGER_CLEAR_EXISTING_DATA="${DANGER_CLEAR_EXISTING_DATA:-false}"
-    SOURCE_MOUNT_PATH="${SOURCE_MOUNT_PATH:-/import}"
-    DESTINATION_MOUNT_PATH="${DESTINATION_MOUNT_PATH:-/config}"
+    DANGER_CLEAR_EXISTING_DATA="$${DANGER_CLEAR_EXISTING_DATA:-false}"
+    SOURCE_MOUNT_PATH="$${SOURCE_MOUNT_PATH:-/import}"
+    DESTINATION_MOUNT_PATH="$${DESTINATION_MOUNT_PATH:-/config}"
     set -u
 
     importfile="$SOURCE_MOUNT_PATH/import.tar.gz"
