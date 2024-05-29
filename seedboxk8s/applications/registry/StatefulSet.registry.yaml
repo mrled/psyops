@@ -29,9 +29,6 @@ spec:
               mountPath: /config
             - name: import
               mountPath: /import
-            - mountPath: "/old"
-              name: image-store-old
-              readOnly: false
       containers:
         - name: registry
           image: registry:2
@@ -79,9 +76,6 @@ spec:
         - name: image-store-lvm
           persistentVolumeClaim:
             claimName: registry-lvm-pvc
-        - name: image-store-old
-          persistentVolumeClaim:
-            claimName: registry-pvc
         - name: registry-config
           configMap:
             name: registry-config
