@@ -3,6 +3,8 @@ kind: StatefulSet
 metadata:
   name: gitserver
   namespace: clustergit
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   serviceName: gitserver
@@ -14,6 +16,21 @@ spec:
       labels:
         app: clustergit
     spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command: ["sh", "/data-import-helper/import-data.sh"]
+          volumeMounts:
+            - name: data-import-helper
+              mountPath: /data-import-helper
+              defaultMode: 0555
+            - name: clustergit-repositories
+              mountPath: /config
+            - name: import
+              mountPath: /import
+            - mountPath: "/old-repositories"
+              name: clustergit-repositories
+              readOnly: false
       containers:
         - image: registry.${productionClusterFqdn}/clustergit/clustergit:latest
           name: gitserver
@@ -26,7 +43,7 @@ spec:
               name: sshd-config
               subPath: sshd_config
             - mountPath: "/authorized_keys"
-              name: authorized-keys
+              name: authorized-key
             - mountPath: "/etc/ssh/ssh_host_ed25519_key"
               name: ssh-host-keys
               subPath: ssh_host_ed25519_key
@@ -34,11 +51,16 @@ spec:
               name: ssh-host-keys
               subPath: ssh_host_ed25519_key.pub
             - mountPath: "/home/git/repositories"
-              name: clustergit-repositories
+              name: clustergit-repositories-lvm
               readOnly: false
       imagePullSecrets:
         - name: registry-k8s-dockerconfigjson
       volumes:
+        - name: data-import-helper
+          configMap:
+            name: data-import-helper
+        - name: import
+          emptyDir: {}
         - name: sshd-config
           configMap:
             name: sshd-config
@@ -53,3 +75,6 @@ spec:
         - name: clustergit-repositories
           persistentVolumeClaim:
             claimName: clustergit-repositories-pvc
+        - name: clustergit-repositories-lvm
+          persistentVolumeClaim:
+            claimName: clustergit-repositories-lvm-pvc
