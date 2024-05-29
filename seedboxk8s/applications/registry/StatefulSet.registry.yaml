@@ -68,6 +68,11 @@ spec:
             - name: image-store-lvm
               mountPath: /var/lib/registry
       volumes:
+        - name: data-import-helper
+          configMap:
+            name: data-import-helper
+        - name: import
+          emptyDir: {}
         - name: docker-auth-cert
           secret:
             secretName: docker-auth-cert-backing-secret
