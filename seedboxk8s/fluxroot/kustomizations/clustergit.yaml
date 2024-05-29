@@ -14,7 +14,7 @@ spec:
   dependsOn:
     - name: fluxcfg
     - name: registry
-    - name: localstorage
+    - name: topolvm
   decryption:
     provider: sops
     secretRef:
