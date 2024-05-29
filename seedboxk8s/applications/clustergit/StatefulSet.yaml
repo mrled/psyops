@@ -27,9 +27,6 @@ spec:
               mountPath: /config
             - name: import
               mountPath: /import
-            - mountPath: "/old-repositories"
-              name: clustergit-repositories
-              readOnly: false
       containers:
         - image: registry.${productionClusterFqdn}/clustergit/clustergit:latest
           name: gitserver
@@ -71,9 +68,6 @@ spec:
           secret:
             secretName: ssh-host-keys
             defaultMode: 0600
-        - name: clustergit-repositories
-          persistentVolumeClaim:
-            claimName: clustergit-repositories-pvc
         - name: clustergit-repositories-lvm
           persistentVolumeClaim:
             claimName: clustergit-repositories-lvm-pvc
