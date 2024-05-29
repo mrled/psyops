@@ -16,6 +16,7 @@ spec:
         dnsNames:
         - "${testingClusterFqdn}"
         - "*.${testingClusterFqdn}"
+        - "*.onion.${testingClusterFqdn}"
       dns01:
         route53:
           region: us-east-2
@@ -30,6 +31,7 @@ spec:
         dnsNames:
         - "${productionClusterFqdn}"
         - "*.${productionClusterFqdn}"
+        - "*.onion.${productionClusterFqdn}"
       dns01:
         route53:
           region: us-east-2
