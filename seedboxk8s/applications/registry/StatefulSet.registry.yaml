@@ -5,6 +5,8 @@ metadata:
   namespace: registry
   labels:
     app: registry
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   serviceName: registry
@@ -16,6 +18,20 @@ spec:
       labels:
         app: registry
     spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command: ["sh", "/data-import-helper/import-data.sh"]
+          volumeMounts:
+            - name: data-import-helper
+              mountPath: /data-import-helper
+            - name: image-store-lvm
+              mountPath: /config
+            - name: import
+              mountPath: /import
+            - mountPath: "/old"
+              name: image-store-old
+              readOnly: false
       containers:
         - name: registry
           image: registry:2
@@ -44,20 +60,21 @@ spec:
               value: "debug"
             - name: REGISTRY_LOG_ACCESSLOG_DISABLED
               value: "false"
-
           ports:
             - containerPort: 5000
-
           volumeMounts:
             - name: docker-auth-cert
               mountPath: /etc/docker-auth-cert
-            - name: image-store
+            - name: image-store-lvm
               mountPath: /var/lib/registry
       volumes:
         - name: docker-auth-cert
           secret:
             secretName: docker-auth-cert-backing-secret
-        - name: image-store
+        - name: image-store-lvm
+          persistentVolumeClaim:
+            claimName: registry-lvm-pvc
+        - name: image-store-old
           persistentVolumeClaim:
             claimName: registry-pvc
         - name: registry-config

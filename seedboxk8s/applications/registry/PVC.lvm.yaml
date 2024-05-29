@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: registry-lvm-pvc
+  namespace: registry
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: seedbox-slow-mirror
+  resources:
+    requests:
+      storage: 10Gi
