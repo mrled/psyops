@@ -41,7 +41,7 @@ data:
     echo "Hello and welcome to the data import helper script."
     echo "This script is intended to be run as an initContainer in a StatefulSet that requires manual data import in a fresh PVC. It can also be used for pods that are migrating into this cluster for the first time or being restored from a backup."
     echo ""
-    echo "Waiting indefinitely for data to be ready; copy a tarball to $importfile and then touch $readyfile to signal readiness. Alternatively, import the data manually and touch $completefile to skip this process. You can control the source and destination paths with the SOURCE_MOUNT_PATH and DESTINATION_MOUNT_PATH environment variables.
+    echo "Waiting indefinitely for data to be ready; copy a tarball to $importfile and then touch $readyfile to signal readiness. Alternatively, import the data manually and touch $completefile to skip this process. You can control the source and destination paths with the SOURCE_MOUNT_PATH and DESTINATION_MOUNT_PATH environment variables."
     while true; do
       if test -f $readyfile; then
         echo "Extracting data..."
