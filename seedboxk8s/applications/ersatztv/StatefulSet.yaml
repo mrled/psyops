@@ -51,7 +51,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: jasongdove/ersatztv:develop
+        - image: jasongdove/ersatztv:develop-vaapi
           name: ersatztv
           ports:
             - containerPort: 8409
@@ -60,6 +60,9 @@ spec:
               value: ${timezone}
             - name: XDG_DATA_HOME
               value: /config
+          securityContext:
+            runAsUser: ${plexUid}
+            runAsGroup: ${plexGid}
           volumeMounts:
             - mountPath: /config
               name: ersatztv-config-pvc
