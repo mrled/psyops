@@ -31,39 +31,34 @@ data:
         keepalive_timeout 65;
         types_hash_max_size 2048;
 
+
+        # Requests to the bare domain should return a static page with an explanation
+        server {
+            listen 80;
+            server_name onionproxy.tor.svc.cluster.local;
+            server_name onion.${clusterFqdn};
+            location / {
+                root /html;
+                index index.html;
+            }
+        }
+
+        # Requests to the subdomains should be proxied through privoxy/tor
         server {
             listen 80;
 
-            server_name ~^(?<onion>[a-z0-9]{16,56})\.onionproxy\.tor\.svc\.cluster\.local$;
-            server_name ~^(?<onion2>[a-z0-9]{16,56})\.onion.${productionClusterFqdn}$;
-            server_name onionproxy.tor.svc.cluster.local;
-            server_name onion.${productionClusterFqdn};
+            server_name ~^(?<onion1>[^.]+)\.onionproxy\.tor\.svc\.cluster\.local$;
+            server_name ~^(?<onion2>[^.]+)\.onion.${clusterFqdn}$;
 
             location / {
                 resolver 127.0.0.11; # Default DNS resolver provided by Kubernetes
 
-                # If the request is for the base domain, serve a tiny static page
-                if ($host = "onionproxy.tor.svc.cluster.local") {
-                    root /usr/share/nginx/html;
-                    index index.html;
-                    try_files $uri $uri/ =404;
-                    break;
-                }
-                if ($host = "onion.${productionClusterFqdn}") {
-                    root /usr/share/nginx/html;
-                    index index.html;
-                    try_files $uri $uri/ =404;
-                    break;
-                }
-
-                # Otherwise, forward the request to Privoxy
-
                 # Determine the target based on the server name
-                if ($host ~* ^(?<onion_host>[a-z0-9]{16,56})\.onionproxy\.tor\.svc\.cluster\.local$) {
-                    set $target_host $onion_host.onion;
+                if ($host ~* ^(?<onion1>.*)) {
+                    set $target_host $onion1.onion;
                 }
-                if ($host ~* ^(?<onion2_host>[a-z0-9]{16,56})\.${productionClusterFqdn}$) {
-                    set $target_host $onion2_host.onion;
+                if ($host ~* ^(?<onion2>.*)) {
+                    set $target_host $onion2.onion;
                 }
 
                 # Forward requests to Privoxy, which forwards them to the Tor SOCKS proxy
