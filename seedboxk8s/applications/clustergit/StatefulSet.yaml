@@ -23,7 +23,7 @@ spec:
           volumeMounts:
             - name: data-import-helper
               mountPath: /data-import-helper
-            - name: clustergit-repositories
+            - name: clustergit-repositories-lvm
               mountPath: /config
             - name: import
               mountPath: /import
