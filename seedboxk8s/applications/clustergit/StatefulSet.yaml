@@ -23,7 +23,6 @@ spec:
           volumeMounts:
             - name: data-import-helper
               mountPath: /data-import-helper
-              defaultMode: 0555
             - name: clustergit-repositories
               mountPath: /config
             - name: import
@@ -43,7 +42,7 @@ spec:
               name: sshd-config
               subPath: sshd_config
             - mountPath: "/authorized_keys"
-              name: authorized-key
+              name: authorized-keys
             - mountPath: "/etc/ssh/ssh_host_ed25519_key"
               name: ssh-host-keys
               subPath: ssh_host_ed25519_key
