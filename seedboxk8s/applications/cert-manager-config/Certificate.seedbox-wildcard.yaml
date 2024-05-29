@@ -9,6 +9,8 @@ spec:
   - "*.${testingClusterFqdn}"
   - "${productionClusterFqdn}"
   - "*.${productionClusterFqdn}"
+  - "*.onion.${testingClusterFqdn}"
+  - "*.onion.${productionClusterFqdn}"
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-production
