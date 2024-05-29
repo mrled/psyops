@@ -11,7 +11,7 @@ spec:
     - web
     - websecure
   routes:
-    - match: Host(`library.${productionClusterFqdn}`)
+    - match: Host(`library.${productionClusterFqdn}`) || Host(`lazylibrarian.${productionClusterFqdn}`) || Host(`lazylib.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: lazylibrarian
