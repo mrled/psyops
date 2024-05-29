@@ -7,10 +7,9 @@ metadata:
     kubernetes.io/ingress.class: traefik-tailscale
 spec:
   entryPoints:
-    - web
     - websecure
   routes:
-    - match: Host(`onion.${productionClusterFqdn}`) || HostRegexp(`{subdomain:[a-zA-Z0-9]+}.onion.${productionClusterFqdn}`)
+    - match: Host(`onion.${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: onionproxy
@@ -19,5 +18,11 @@ spec:
       # middlewares:
       #   - name: bridgetroll-mw
       #     namespace: bridgetroll
+    - match: HostRegexp(`^.+\.onion\.${productionClusterFqdn}$`)
+      kind: Rule
+      services:
+        - name: onionproxy
+          kind: Service
+          port: 80
   tls:
     secretName: seedbox-wildcard-backing-secret

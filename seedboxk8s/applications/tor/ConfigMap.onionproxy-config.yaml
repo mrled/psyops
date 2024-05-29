@@ -36,7 +36,7 @@ data:
         server {
             listen 80;
             server_name onionproxy.tor.svc.cluster.local;
-            server_name onion.${clusterFqdn};
+            server_name onion.${productionClusterFqdn};
             location / {
                 root /html;
                 index index.html;
@@ -46,34 +46,21 @@ data:
         # Requests to the subdomains should be proxied through privoxy/tor
         server {
             listen 80;
-
-            server_name ~^(?<onion1>[^.]+)\.onionproxy\.tor\.svc\.cluster\.local$;
-            server_name ~^(?<onion2>[^.]+)\.onion.${clusterFqdn}$;
-
+            server_name ~^(?<onion>[^.]+)\.onion.${productionClusterFqdn}$;
             location / {
                 resolver 127.0.0.11; # Default DNS resolver provided by Kubernetes
-
-                # Determine the target based on the server name
-                if ($host ~* ^(?<onion1>.*)) {
-                    set $target_host $onion1.onion;
-                }
-                if ($host ~* ^(?<onion2>.*)) {
-                    set $target_host $onion2.onion;
-                }
+                set $onion_fqdn "$onion.onion";
 
                 # Forward requests to Privoxy, which forwards them to the Tor SOCKS proxy
                 proxy_pass http://torprivoxy.tor.svc.cluster.local:8118;
-                proxy_set_header Host $target_host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_set_header Host $onion_fqdn;
 
                 proxy_connect_timeout 60s;
                 proxy_read_timeout 60s;
                 proxy_send_timeout 60s;
 
                 # Additional headers for security and debugging
-                add_header X-Proxied-By "onionproxy" always;
+                #add_header X-Proxied-By "onionproxy" always;
             }
         }
     }
