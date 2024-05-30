@@ -19,10 +19,10 @@ spec:
         args:
           - --api.insecure=true
           - --api.dashboard=true
+          - --api.port=18080
           - --log.level=DEBUG
           - --accesslog=true
 
-          - --entrypoints.admin.Address=:18080
           - --entrypoints.torrent-tcp.Address=:${transmissionPeerPort}
           - --entrypoints.torrent-udp.Address=:${transmissionPeerPort}/udp
           - --entrypoints.whoami-http-tcp.Address=:${whoamiHttpTcpPort}
