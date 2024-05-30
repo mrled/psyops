@@ -22,9 +22,6 @@ spec:
           - --log.level=DEBUG
           - --accesslog=true
 
-          # When the 'insecure' mode is enabled, the API will be exposed on the 'traefik' entryPoint.
-          - --entrypoints.traefik.Address=:18080
-
           - --entrypoints.torrent-tcp.Address=:${transmissionPeerPort}
           - --entrypoints.torrent-udp.Address=:${transmissionPeerPort}/udp
           - --entrypoints.whoami-http-tcp.Address=:${whoamiHttpTcpPort}
@@ -59,7 +56,7 @@ spec:
         # Do not expose hostPort for this one - we just want to expose it internall for a service.
         # An IngressRoute that points to the service will require authentication.
         - name: traefik-admin
-          containerPort: 18080
+          containerPort: 8080
           protocol: TCP
 
 
