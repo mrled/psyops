@@ -23,3 +23,14 @@ This does have some DNS implications:
 * For local networking non-HTTP services, we use the node's LAN hostname;
   if we expand to more nodes in the future,
   we would need to add a load balancer like kube-vip or MetalLB and point a hostname to that.
+
+## Dashboards
+
+* Both enable the dashboard by passing `--api.dashboard=true`.
+* `traefik-tailscale` uses an IngressRoute to `api@internal`,
+  <https://traefik-tailscale.example.com>.
+* `traefik-localnet` uses a Service and an IngressRoute that points to that Service,
+  <https://traefik-localnet.example.com>.
+
+This way, the dashboard for BOTH instances are only available via `traefik-tailscale` ingress,
+and therefore require VPN access.

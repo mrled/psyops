@@ -22,6 +22,7 @@ spec:
           - --log.level=DEBUG
           - --accesslog=true
 
+          - --entrypoints.admin.Address=:18080
           - --entrypoints.torrent-tcp.Address=:${transmissionPeerPort}
           - --entrypoints.torrent-udp.Address=:${transmissionPeerPort}/udp
           - --entrypoints.whoami-http-tcp.Address=:${whoamiHttpTcpPort}
@@ -52,6 +53,10 @@ spec:
         - name: plex64800
           containerPort: 64800
           hostPort: 64800
+          protocol: TCP
+        # Do not expose hostPort for this one
+        - name: traefik-admin
+          containerPort: 18080
           protocol: TCP
 
 
