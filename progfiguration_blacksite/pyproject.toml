@@ -44,8 +44,14 @@ Homepage = "https://github.com/mrled/psyops/tree/master/blacksite"
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.package-data]
-"progfiguration_blacksite" = ["*", "**/*"]
+[tool.setuptools]
+include-package-data = true
+
+# [tool.setuptools.package-data]
+# "*" = ["*"]
+
+# [tool.setuptools.exclude-package-data]
+# "*" = ["__pycache__/*", "__pycache__/*.*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "progfiguration_blacksite.get_version" }
