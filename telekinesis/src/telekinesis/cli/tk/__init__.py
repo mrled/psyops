@@ -78,7 +78,7 @@ def CommaSeparatedStrList(cssl: str) -> list[str]:
     return cssl.split(",")
 
 
-def deploy_ostar(host, tarball, remote_path="/tmp"):
+def deploy_ostar(host: str, tarball: Path, remote_path: str = "/tmp"):
     """Deploy the ostar to a remote host
 
     This uses multiple SSH commands, so enabling SSH master mode is recommended.
@@ -102,7 +102,7 @@ def deploy_ostar(host, tarball, remote_path="/tmp"):
             "--verbose",
             "apply",
             "nonbooted",
-            "--ostar",
+            "--os-tar",
             f"{remote_path}/{tarball.name}",
         ],
         check=True,
@@ -630,7 +630,7 @@ def main_impl():
         if parsed.deploy_type == "iso":
             raise NotImplementedError("Deploying ISO images is not implemented")
         elif parsed.deploy_type == "diskimg":
-            deploy_ostar(parsed.host, tkconfig.arch_artifacts[arch.name].node_image(arch.name, None))
+            deploy_ostar(parsed.host, tkconfig.arch_artifacts[arch.name].ostar_path)
         else:
             parser.error(f"Unknown deployment type: {parsed.deploy_type}")
     elif parsed.action == "psynet":
