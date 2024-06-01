@@ -6,7 +6,6 @@ import os
 import shutil
 
 from progfiguration import logger
-from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
 
@@ -39,12 +38,3 @@ def copy_role_dir_recursively(role: ProgfigurationRole, role_dir: Traversable, d
                 shutil.rmtree(f"{dest_dir}/{item}")
             else:
                 os.unlink(f"{dest_dir}/{item}")
-
-
-def hash_file_nosecurity(path: str):
-    """Hash a file quickly, without regard to security concerns"""
-    hasher = hashlib.blake2b()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hasher.update(chunk)
-    return hasher.hexdigest()

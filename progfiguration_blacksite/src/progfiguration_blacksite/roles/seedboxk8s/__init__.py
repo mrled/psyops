@@ -11,6 +11,7 @@
 
 from dataclasses import dataclass
 import os
+from pathlib import Path
 import time
 
 from progfiguration import logger
@@ -24,7 +25,8 @@ from progfiguration_blacksite.sitelib.kubernetes.installers import (
     install_kubeseal_github_release,
     install_flux_github_release,
 )
-from progfiguration_blacksite.sitelib.role_helpers import copy_role_dir_recursively, hash_file_nosecurity
+from progfiguration_blacksite.sitelib.role_helpers import copy_role_dir_recursively
+from progfiguration_blacksite.sitelib.tracked_file_changes import TrackedFileChanges
 
 
 @dataclass(kw_only=True)
@@ -118,21 +120,16 @@ class Role(ProgfigurationRole):
         magicrun("update-ca-trust")
 
         # k0s configuration
-        changed_k0s_yaml = True
-        oldhash = None
-        if os.path.exists("/etc/k0s/k0s.yaml") and os.path.exists("/etc/systemd/system/k0scontroller.service"):
-            oldhash = hash_file_nosecurity("/etc/k0s/k0s.yaml")
-        self.localhost.temple(
-            "k0s.yaml.temple", "/etc/k0s/k0s.yaml", {"seedbox_domain": self.seedbox_domain}, "root", "root", 0o640
-        )
-        if oldhash:
-            newhash = hash_file_nosecurity("/etc/k0s/k0s.yaml")
-            changed_k0s_yaml = oldhash != newhash
+        with TrackedFileChanges(Path("/etc/k0s/k0s.yaml")) as tracker:
+            self.localhost.temple(
+                "k0s.yaml.temple", "/etc/k0s/k0s.yaml", {"seedbox_domain": self.seedbox_domain}, "root", "root", 0o640
+            )
+            k0s_yaml_didchange = tracker.changed
 
         # k0s service
         if not os.path.exists("/etc/systemd/system/k0scontroller.service"):
             magicrun("/usr/local/bin/k0s install controller --single -c /etc/k0s/k0s.yaml")
-        elif changed_k0s_yaml:
+        elif k0s_yaml_didchange:
             magicrun("systemctl restart k0scontroller")
         magicrun("systemctl start k0scontroller")
 
@@ -160,7 +157,7 @@ class Role(ProgfigurationRole):
         # Create an admin kubeconfig for use with e.g. helm
         os.makedirs("/root/.kube", mode=0o0700, exist_ok=True)
         # If we had to start/restart k0scontroller, we need to wait for it to be ready
-        if changed_k0s_yaml:
+        if k0s_yaml_didchange:
             time.sleep(3)
         magicrun("/usr/local/bin/k0s kubeconfig admin > /root/.kube/config")
         magicrun("chmod 0600 /root/.kube/config")
@@ -188,14 +185,11 @@ class Role(ProgfigurationRole):
             logger.info("Flux already bootstrapped, skipping.")
 
         # The secret filename must end with `.agekey`
-        oldkey_hash = None
-        if os.path.exists("/etc/seedboxk8s/flux.agekey"):
-            oldkey_hash = hash_file_nosecurity("/etc/seedboxk8s/flux.agekey")
-        self.localhost.set_file_contents("/etc/seedboxk8s/flux.agekey", self.flux_agekey, "root", "root", 0o600)
-        newkey_hash = hash_file_nosecurity("/etc/seedboxk8s/flux.agekey")
+        with TrackedFileChanges(Path("/etc/seedboxk8s/flux.agekey")) as tracker:
+            self.localhost.set_file_contents("/etc/seedboxk8s/flux.agekey", self.flux_agekey, "root", "root", 0o600)
+            if tracker.changed and not tracker.created:
+                raise Exception("The flux age key changed and I'm not sure what to do about it. Lol!")
         if magicrun("k0s kubectl get secret sops-age --namespace=flux-system", check=False).returncode != 0:
             magicrun(
                 "k0s kubectl create secret generic sops-age --namespace=flux-system --from-file=/etc/seedboxk8s/flux.agekey"
             )
-        elif oldkey_hash != newkey_hash:
-            raise Exception("The flux age key changed and I'n not sure what to do about it. Lol!")
