@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import re
+import shutil
 import urllib.request
 
 
 def download_github_release(
-    projectpath: str, assetregex: str, outdir: str | None = None, outfile: str | None = None, version="latest"
+    projectpath: str,
+    assetregex: str,
+    outdir: str | None = None,
+    outfile: str | None = None,
+    version="latest",
+    owner: str | None = None,
+    group: str | None = None,
+    mode: int | None = None,
 ):
     """Download a release asset from a GitHub project"""
 
@@ -34,3 +43,10 @@ def download_github_release(
         outfile = f"{outdir}/{asset['name']}"
     with open(outfile, "wb") as assfile:
         assfile.write(urllib.request.urlopen(asset["browser_download_url"]).read())
+
+    if owner or group:
+        if not owner:
+            owner = -1
+        shutil.chown(outfile, owner, group)
+    if mode is not None:
+        os.chmod(outfile, mode)

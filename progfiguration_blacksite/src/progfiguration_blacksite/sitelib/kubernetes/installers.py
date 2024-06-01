@@ -15,9 +15,10 @@ def install_k0s_github_release(version: str):
         print("Downloading k0s")
         download_github_release(
             "k0sproject/k0s",
-            f"k0s-{re.escape(version)}-amd64",
+            f"k0s-{re.escape(version)}-amd64$",
             outfile="/usr/local/bin/k0s",
             version=version,
+            mode=0o755,
         )
 
 
@@ -33,7 +34,7 @@ def install_k0sctl_github_release(version: str):
     ):
         print("Downloading k0sctl")
         download_github_release(
-            "k0sproject/k0sctl", "k0sctl-linux-amd64", outfile="/usr/local/bin/k0sctl", version=version
+            "k0sproject/k0sctl", "k0sctl-linux-x64", outfile="/usr/local/bin/k0sctl", version=version, mode=0o755
         )
 
 
@@ -88,7 +89,7 @@ def install_flux_github_release(version: str):
     """Install Flux from GitHub release"""
 
     # flux binary
-    if not os.path.exists("/usr/local/bin/flux") and not magicrun("flux --version").stdout.read().strip().endswith(
+    if not os.path.exists("/usr/local/bin/flux") or not magicrun("flux --version").stdout.read().strip().endswith(
         version
     ):
         print("Downloading flux")
@@ -97,7 +98,7 @@ def install_flux_github_release(version: str):
             download_github_release(
                 "fluxcd/flux2",
                 "flux_.*_linux_amd64",
-                outfile="/tmp/flux.tgz",
+                outfile="/tmp/flux/flux.tgz",
                 version=f"v{version}",
             )
             magicrun(["tar", "xvf", "/tmp/flux/flux.tgz", "-C", "/tmp/flux"])
