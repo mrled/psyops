@@ -19,7 +19,7 @@ from progfiguration import logger
 from progfiguration.cmd import magicrun
 from progfiguration.inventory.roles import ProgfigurationRole
 
-from progfiguration_blacksite.roles.seedboxk8s.installdeps import (
+from progfiguration_blacksite.sitelib.kubernetes.installers import (
     install_k0s_github_release,
     install_k0sctl_github_release,
     install_helm_website_release,

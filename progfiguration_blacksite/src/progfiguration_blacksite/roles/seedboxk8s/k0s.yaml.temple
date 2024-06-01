@@ -1,3 +1,4 @@
+# -*- mode: yaml -*-
 # The k0s cluster configuration file.
 #
 # Generated with `k0s config create > k0s.yaml` and modified.
