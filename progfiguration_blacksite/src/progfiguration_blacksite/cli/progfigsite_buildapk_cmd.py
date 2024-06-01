@@ -6,12 +6,10 @@ just a convenient place to put a build script.
 This script isn't available when running from a zipapp.
 """
 
-
 import argparse
 import importlib.resources
 import os
 from pathlib import Path
-import shutil
 import sys
 import tempfile
 
@@ -70,9 +68,7 @@ def parseargs():
         default="psyopsOS",
         help=f"Name of the Alpine repository where the package will be created. Defaults to '{default_abuild_repo_name}'.",
     )
-    default_pyproject_root = Path(
-        progfiguration_blacksite.__file__
-    ).parent.parent.parent
+    default_pyproject_root = Path(progfiguration_blacksite.__file__).parent.parent.parent
     parser.add_argument(
         "--pyproject-root",
         type=Path,
@@ -125,24 +121,20 @@ def main():
 
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
-        tmp_pyproj_root = (
-            tmpdir / str(parsed.abuild_repo_name) / str(parsed.pyproject_root.name)
-        )
+        tmp_pyproj_root = tmpdir / str(parsed.abuild_repo_name) / str(parsed.pyproject_root.name)
         tmp_pyproj_root.mkdir(parents=True)
 
         # Note: We don't use the injection mechanism here,
         # because we have to define injections before entering the context manager,
         # and we don't know the version until we enter the context manager.
         tmp_apkbuild_path = tmp_pyproj_root / "APKBUILD"
-        apkbuild_temple_path = importlib.resources.files(
-            progfiguration_blacksite.sitelib.buildsite
-        ).joinpath("APKBUILD.temple")
+        apkbuild_temple_path = importlib.resources.files(progfiguration_blacksite.sitelib.buildsite).joinpath(
+            "APKBUILD.temple"
+        )
         with apkbuild_temple_path.open() as f:
             apkbuild_temple = Temple(f.read())
 
-        with ProgfigsitePythonPackagePreparer(
-            progfigsite_package_root, progfiguration_blacksite.site_name
-        ) as preparer:
+        with ProgfigsitePythonPackagePreparer(progfigsite_package_root, progfiguration_blacksite.site_name) as preparer:
 
             # The preparer has dropped a version file at progfigsite/builddate/version.py
             # containing a version generated from progfigsite.mint_version().
@@ -154,9 +146,7 @@ def main():
             #
             # This means that things like 'python -m build' will find our minted version implicitly.
             # Inflate the APKBUILD template in the temporary directory
-            apkbuild_hydrated = apkbuild_temple.substitute(
-                version=preparer.minted_version
-            )
+            apkbuild_hydrated = apkbuild_temple.substitute(version=preparer.minted_version)
             with tmp_apkbuild_path.open("w") as f:
                 f.write(apkbuild_hydrated)
 
@@ -177,9 +167,7 @@ def main():
 
             abuild_env = os.environ.copy()
             progfigsite_project_root = progfigsite_package_root.parent.parent
-            abuild_env["PROGFIGURATION_BLACKSITE_PROJECT_DIR"] = str(
-                progfigsite_project_root
-            )
+            abuild_env["PROGFIGURATION_BLACKSITE_PROJECT_DIR"] = str(progfigsite_project_root)
 
             magicrun(
                 abuild_cmd,
