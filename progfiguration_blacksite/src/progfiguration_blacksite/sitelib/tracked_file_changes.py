@@ -44,6 +44,9 @@ class TrackedFileChanges:
             self.initial_hash = None
         return self
 
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
     @property
     def changed(self) -> bool:
         return self.initial_hash != hash_file_nosecurity(self.path)
