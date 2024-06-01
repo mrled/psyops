@@ -406,6 +406,22 @@ Resources:
           Type: A
           TTL: 60
           ResourceRecords: ["192.168.1.174"]
+        - Name: agassiz.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.115"]
+        - Name: jesseta.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.178"]
+        - Name: kenasus.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.133"]
+        - Name: zalas.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.14p a4"]
 
         # Management interfacess
         - Name: edison.home.micahrl.com.
@@ -422,34 +438,6 @@ Resources:
           Type: A
           TTL: 60
           ResourceRecords: ["192.168.1.50"]
-        - Name: andraia-wifi.home.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["192.168.1.51"]
-        - Name: andraia-wired.home.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["192.168.1.116"]
-        - Name: andraia.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["andraia-wired.home.micahrl.com."]
-        - Name: kalix.home.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["192.168.1.122"]
-        - Name: neurofornia-wifi.home.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["192.168.1.108"]
-        - Name: neurofornia-wired.home.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["192.168.1.133"]
-        - Name: neurofornia.home.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["neurofornia-wired.home.micahrl.com."]
         - Name: mledbettermbp-wifi.home.micahrl.com.
           Type: A
           TTL: 60
@@ -474,14 +462,6 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["haluth-wired.home.micahrl.com."]
-        - Name: petrolcider.home.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["192.168.1.158"]
-        - Name: agassiz.home.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["192.168.1.115"]
         - Name: naragua.home.micahrl.com.
           Type: A
           TTL: 60
@@ -508,18 +488,6 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["agassiz.home.micahrl.com."]
-        # - Name: files.home.micahrl.com.
-        #   Type: CNAME
-        #   TTL: 60
-        #   ResourceRecords: ["kalix.home.micahrl.com."]
-        # - Name: registry.home.micahrl.com.
-        #   Type: CNAME
-        #   TTL: 60
-        #   ResourceRecords: ["kalix.home.micahrl.com."]
-        # - Name: registryauth.home.micahrl.com.
-        #   Type: CNAME
-        #   TTL: 60
-        #   ResourceRecords: ["kalix.home.micahrl.com."]
 
   # A new group with permission to modify records in the OriginZone
   # For use with Let's Encrypt / ACME
