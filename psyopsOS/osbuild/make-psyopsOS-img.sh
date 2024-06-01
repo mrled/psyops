@@ -212,12 +212,14 @@ mkdir -p "$mntbase"/efisys
 
 # Set up the secret partition
 mkfs.ext4 -L "$label_secret" "$part_secret"
-ls -alF "$secrettarball"
 if test -n "$secrettarball"; then
+    ls -alF "$secrettarball"
     mkdir -p "$mntbase"/secret
     mount "$part_secret" "$mntbase"/secret
     tar xf "$secrettarball" -C "$mntbase"/secret
     umount "$mntbase"/secret
+else
+    echo "No secret tarball specified, leaving secret partition empty"
 fi
 
 trap - EXIT
