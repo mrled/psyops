@@ -160,13 +160,6 @@ def main():
             with tmp_apkbuild_path.open("w") as f:
                 f.write(apkbuild_hydrated)
 
-            # Add the APK build file to the package
-            apkbuild_hydrated = apkbuild_temple.substitute(
-                version=preparer.minted_version
-            )
-            with tmp_apkbuild_path.open("w") as f:
-                f.write(apkbuild_hydrated)
-
             if parsed.clean:
                 magicrun("abuild clean", cwd=tmp_pyproj_root.as_posix())
 
