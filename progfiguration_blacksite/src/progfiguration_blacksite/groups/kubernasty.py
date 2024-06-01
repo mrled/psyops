@@ -6,6 +6,7 @@ from progfiguration.localhost.disks import (
     PartitionSpec,
     WholeDiskSpec,
 )
+from progfiguration.sitehelpers.agesecrets import AgeSecretReference
 
 group = dict(
     roles=dict(
@@ -32,6 +33,10 @@ group = dict(
                     FilesystemSpec("ext4", "psyopsos_data"),
                 ),
             ],
+        },
+        kubernasty={
+            "flux_deploy_id": AgeSecretReference("flux_deploy_id"),
+            "flux_agekey": AgeSecretReference("flux_agekey"),
         },
         k3s={
             "k3s_interface": "psy0",
