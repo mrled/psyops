@@ -45,21 +45,15 @@ def abuild_blacksite(builder: AlpineDockerBuilder):
         apkrepopath = apkindexpath + "/" + tkconfig.buildcontainer.apkreponame
 
         in_container_build_cmd = [
+            # We can't use venv because Alpine packages won't build that way since they switched to gpep517.
+            # (We don't use gpep517, but before they switched, we could do this in a venv.)
             f"cd {builder.in_container_psyops_checkout}/progfiguration_blacksite",
-            # We need a venv or pip will whine about system python
-            "python3 -m venv --system-site-packages /tmp/venv",
-            "source /tmp/venv/bin/activate",
             # This installs progfiguration as editable from our local checkout.
             # It means we don't have to install it over the network,
             # and it also lets us test local changes to progfiguration.
-            f"pip install -e {builder.in_container_psyops_checkout}/submod/progfiguration",
-            # This will skip progfiguration as it is already installed.
-            "pip install -e '.[development]'",
-            # TODO: remove this once we have a new enough setuptools in the container
-            # Ran into this problem: <https://stackoverflow.com/questions/74941714/importerror-cannot-import-name-legacyversion-from-packaging-version>
-            # I'm using an older Alpine container, 3.16 at the time of this writing, because psyopsOS is still that old.
-            # When we can upgrade, we'll just use the setuptools in apk.
-            "pip install -U setuptools",
+            f"pip install --break-system-packages -e {builder.in_container_psyops_checkout}/submod/progfiguration",
+            # This will skip the progfiguration dependency as it is already installed.
+            "pip install --break-system-packages -e .",
             f"progfiguration-blacksite-buildapk --abuild-repo-name {tkconfig.buildcontainer.apkreponame} --apks-index-path {apkindexpath}",
             f"echo 'Build packages are found in {apkrepopath}/x86_64/:'",
             f"ls -larth {apkrepopath}/{builder.architecture.mkimage}/",
