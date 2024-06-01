@@ -7,6 +7,7 @@ import argparse
 import logging
 import os
 import pdb
+import platform
 import sys
 import textwrap
 import traceback
@@ -135,11 +136,13 @@ def subcommand_apply(parsed: argparse.Namespace, parser: argparse.ArgumentParser
                 os_tar = download_update(
                     parsed.repository,
                     parsed.psyopsOS_filename_format,
+                    parsed.architecture,
                     parsed.os_version,
                     parsed.update_tmpdir,
                     pubkey=parsed.pubkey,
                     verify=parsed.verify,
                 )
+                os_tar_downloaded = True
             else:
                 parser.error("Must specify --os-tar or --os-version when applying os updates")
         if updating_esp:
@@ -149,11 +152,13 @@ def subcommand_apply(parsed: argparse.Namespace, parser: argparse.ArgumentParser
                 esp_tar = download_update(
                     parsed.repository,
                     parsed.psyopsESP_filename_format,
+                    parsed.architecture,
                     parsed.esp_version,
                     parsed.update_tmpdir,
                     pubkey=parsed.pubkey,
                     verify=parsed.verify,
                 )
+                esp_tar_downloaded = True
             else:
                 parser.error("Must specify --esp-tar or --esp-version when applying efisys updates")
         apply_updates(
@@ -237,18 +242,24 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     # Repository options
     repository_group = parser.add_argument_group("Repository options")
     repository_group.add_argument(
+        "--architecture",
+        # This is whatever `uname -m` says, like x86_64.
+        default=platform.machine(),
+        help="Architecture for the update, default is whatever `uname -m` says: %(default)s. WARNING: NO VERIFICATION IS DONE TO ENSURE THIS MATCHES THE ACTUAL ARCHITECTURE OF THE UPDATE. USE WITH CAUTION.",
+    )
+    repository_group.add_argument(
         "--repository",
         default="https://psyops.micahrl.com/os",
         help="URL for the psyopsOS update repository, default: %(default)s",
     )
     repository_group.add_argument(
         "--psyopsOS-filename-format",
-        default="psyopsOS.{version}.tar",
+        default="psyopsOS.{architecture}.{version}.tar",
         help="The format string for the versioned psyopsESP tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
     repository_group.add_argument(
         "--psyopsESP-filename-format",
-        default="psyopsESP.{version}.tar",
+        default="psyopsESP.{architecture}.{version}.tar",
         help="The format string for the versioned psyopsOS tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
 
@@ -387,8 +398,12 @@ def main_implementation(*arguments):
             if target == "system":
                 metadata["system"] = get_system_versions(filesystems)
             elif target == "latest":
-                os_result = download_update_signature(parsed.repository, parsed.psyopsOS_filename_format, "latest")
-                esp_result = download_update_signature(parsed.repository, parsed.psyopsESP_filename_format, "latest")
+                os_result = download_update_signature(
+                    parsed.repository, parsed.psyopsOS_filename_format, parsed.architecture, "latest"
+                )
+                esp_result = download_update_signature(
+                    parsed.repository, parsed.psyopsESP_filename_format, parsed.architecture, "latest"
+                )
                 metadata["latest"] = {
                     os_result.url: os_result.unverified_metadata,
                     esp_result.url: esp_result.unverified_metadata,
@@ -415,6 +430,7 @@ def main_implementation(*arguments):
             download_update(
                 parsed.repository,
                 parsed.psyopsOS_filename_format,
+                parsed.architecture,
                 parsed.version,
                 output,
                 pubkey=parsed.pubkey,
@@ -424,6 +440,7 @@ def main_implementation(*arguments):
             download_update(
                 parsed.repository,
                 parsed.psyopsESP_filename_format,
+                parsed.architecture,
                 parsed.version,
                 output,
                 pubkey=parsed.pubkey,
@@ -438,6 +455,7 @@ def main_implementation(*arguments):
             parsed.repository,
             parsed.psyopsOS_filename_format,
             parsed.psyopsESP_filename_format,
+            parsed.architecture,
         )
         for fs, fsmd in checked.items():
             if fsmd["up_to_date"]:

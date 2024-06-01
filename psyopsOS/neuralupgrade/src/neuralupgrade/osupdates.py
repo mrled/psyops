@@ -347,6 +347,7 @@ def check_updates(
     repository: str,
     psyopsOS_filename_format: str,
     psyopsESP_filename_format: str,
+    architecture: str,
 ) -> dict[str, dict[str, str]]:
     """Check if the system is up to date.
 
@@ -363,10 +364,10 @@ def check_updates(
     os_version = update_version
     if update_version == "latest":
         if "a" in targets or "b" in targets or "nonbooted" in targets or "booted" in targets:
-            os_latest_sig = download_update_signature(repository, psyopsOS_filename_format, "latest")
+            os_latest_sig = download_update_signature(repository, psyopsOS_filename_format, architecture, "latest")
             os_version = os_latest_sig.unverified_metadata["version"]
         if "efisys" in targets:
-            esp_latest_sig = download_update_signature(repository, psyopsESP_filename_format, "latest")
+            esp_latest_sig = download_update_signature(repository, psyopsESP_filename_format, architecture, "latest")
             esp_version = esp_latest_sig.unverified_metadata["version"]
 
     result = {}

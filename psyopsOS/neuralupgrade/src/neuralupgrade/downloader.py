@@ -39,7 +39,9 @@ class DownloadedSignatureResult:
     unverified_metadata: dict
 
 
-def download_update_signature(repository_url: str, filename_format: str, version: str) -> DownloadedSignatureResult:
+def download_update_signature(
+    repository_url: str, filename_format: str, architecture: str, version: str
+) -> DownloadedSignatureResult:
     """Download a psyopsOS update signature
 
     The signature isn't verified here --
@@ -47,7 +49,7 @@ def download_update_signature(repository_url: str, filename_format: str, version
 
     Return a DownloadedSignatureResult.
     """
-    minisig_filename = filename_format.format(version=version) + ".minisig"
+    minisig_filename = filename_format.format(architecture=architecture, version=version) + ".minisig"
     minisig_url = f"{repository_url}/{minisig_filename}"
 
     logger.debug(f"Downloading update minisig from {minisig_url}")
@@ -62,7 +64,13 @@ def download_update_signature(repository_url: str, filename_format: str, version
 
 
 def download_update(
-    repository_url: str, filename_format: str, version: str, output: str, pubkey: str = "", verify: bool = True
+    repository_url: str,
+    filename_format: str,
+    architecture: str,
+    version: str,
+    output: str,
+    pubkey: str = "",
+    verify: bool = True,
 ):
     """Download a psyopsOS update to the specified output location.
 
@@ -74,7 +82,7 @@ def download_update(
     and finally verify that the signature matches the tarball.
     """
 
-    downloaded = download_update_signature(repository_url, filename_format, version)
+    downloaded = download_update_signature(repository_url, filename_format, architecture, version)
 
     update_filename = downloaded.unverified_metadata["filename"]
     update_url = f"{repository_url}/{update_filename}"
