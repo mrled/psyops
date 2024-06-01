@@ -20,7 +20,7 @@ Now we need to add it to the cluster as a secret:
 
 ```sh
 kubectl create namespace flux-system
-gopass -n kubernasty/sops.age |
+gopass -n kubernasty/flux.agekey |
     kubectl create secret generic sops-age --namespace flux-system --from-file=age.agekey=/dev/stdin
 ```
 

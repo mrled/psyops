@@ -36,7 +36,7 @@ These are optional, but good places to start if you're totally unfamiliar with K
 First, I had to create an `age` key for Kubernasty's `sops` encryption.
 
 ```sh
-age-keygen -o /path/to/somewhere/safe/kubernasty-sops.age
+age-keygen -o /path/to/somewhere/safe/flux.agekey
 ```
 
 Now you can use your newly created key for cluster secrets.
@@ -74,10 +74,10 @@ Here's an annotated example:
 # I keep my kubeconfig file here
 export KUBECONFIG=/secrets/psyops-secrets/kubernasty/kubeconfig.yml
 # Exporting this variable means that sops will use this public key for encryption.
-# This value comes from the kubernasty-sops.age file created above.
+# This value comes from the flux.agekey file created above.
 export SOPS_AGE_RECIPIENTS=age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9
 # Exporting this variable means that sops will find the private key at this path.
-export SOPS_AGE_KEY_FILE=/secrets/psyops-secrets/kubernasty/kubernasty-sops.age
+export SOPS_AGE_KEY_FILE=/secrets/psyops-secrets/kubernasty/flux.agekey
 ```
 
 I can dot-source that script and then use it to easily encrypt secrets and store the encrypted result in this git repo.
