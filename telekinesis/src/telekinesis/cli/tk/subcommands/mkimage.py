@@ -195,7 +195,8 @@ def make_grub_diskimg(
     # Instead, make the zipapp (outside of the Docker image) and use that.
     build_neuralupgrade_pyz()
 
-    if secrets_tarball is not None:
+    extra_scriptargs = ""
+    if secrets_tarball:
         builder.extra_volumes = [f"{secrets_tarball}:/tmp/secret.tar"]
         extra_scriptargs = "-x /tmp/secret.tar"
 

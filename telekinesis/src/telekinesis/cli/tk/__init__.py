@@ -280,7 +280,7 @@ def makeparser(prog=None):
         help="Deploy the ISO image to a psyopsOS remote host",
     )
     sub_deployos.add_argument(
-        "--type", default="diskimg", choices=["iso", "diskimg"], help="The type of image to deploy"
+        "--deploy-type", default="diskimg", choices=["iso", "diskimg"], help="The type of image to deploy"
     )
     sub_deployos.add_argument("host", help="The remote host to deploy to, assumes root@ accepts the psyops SSH key")
 
@@ -584,9 +584,9 @@ def main_impl():
                         out_filename = (
                             tkconfig.arch_artifacts[arch.name].node_image(arch.name, parsed.node_secrets).name
                         )
-                        secrets_tarball = tkconfig.noarch_artifacts.node_secrets(parsed.node_secrets)
+                        secrets_tarball = tkconfig.noarch_artifacts.node_secrets(parsed.node_secrets).as_posix()
                     with getbldcm(arch) as builder:
-                        make_grub_diskimg(out_filename, builder, secrets_tarball=secrets_tarball.as_posix())
+                        make_grub_diskimg(out_filename, builder, secrets_tarball=secrets_tarball)
         else:
             parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
     elif parsed.action == "vm":
@@ -627,12 +627,12 @@ def main_impl():
         if len(architectures) > 1:
             parser.error("Can't deploy to multiple architectures at once")
         arch = architectures[0]
-        if parsed.type == "iso":
+        if parsed.deploy_type == "iso":
             raise NotImplementedError("Deploying ISO images is not implemented")
-        elif parsed.type == "diskimg":
-            deploy_ostar(parsed.host, tkconfig.arch_artifacts[arch.name].node_image(arch.name, parsed.host))
+        elif parsed.deploy_type == "diskimg":
+            deploy_ostar(parsed.host, tkconfig.arch_artifacts[arch.name].node_image(arch.name, None))
         else:
-            parser.error(f"Unknown deployment type: {parsed.type}")
+            parser.error(f"Unknown deployment type: {parsed.deploy_type}")
     elif parsed.action == "psynet":
         if parsed.psynet_action == "run":
             if parsed.cadir:
