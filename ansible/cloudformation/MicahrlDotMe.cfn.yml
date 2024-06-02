@@ -47,6 +47,18 @@ Resources:
           TTL: 300
           ResourceRecords: [fm3.micahrl.me.dkim.fmhosted.com]
 
+        - Name: kubernasty-controlplane.micahrl.me.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["192.168.1.220"]
+        - Name: kubernasty-primary.micahrl.me.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["192.168.1.221"]
+        - Name: "*.micahrl.me."
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["kubernasty-primary.micahrl.me."]
 
   KubernastyMicahrlDotMeZoneUpdaterGroup:
     Type: AWS::IAM::Group
