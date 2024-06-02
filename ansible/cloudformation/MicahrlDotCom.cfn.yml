@@ -21,7 +21,6 @@ Resources:
     DependsOn:
       - BackchannelZone
       - HomeZone
-      - KubernastyZone
 
     Properties:
       HostedZoneId: !Ref OriginZone
@@ -180,12 +179,6 @@ Resources:
             - ns3.no-ip.com.
             - ns4.no-ip.com.
 
-        # Nameserver delegation record for the kubernasty subdomain
-        - Name: kubernasty.micahrl.com
-          Type: NS
-          TTL: 300
-          ResourceRecords: !GetAtt KubernastyZone.NameServers
-
         # psynet sub-zone
         - Name: psynet.micahrl.com.
           Type: NS
@@ -298,69 +291,6 @@ Resources:
           TTL: 60
           ResourceRecords: ["100.86.119.112"]
 
-  # Kubernasty Zone
-  # For my home k3s cluster
-  KubernastyZone:
-    Type: "AWS::Route53::HostedZone"
-    Properties:
-      Name: kubernasty.micahrl.com.
-  KubernastyRecords:
-    Type: "AWS::Route53::RecordSetGroup"
-    Properties:
-      HostedZoneId: !Ref KubernastyZone
-      RecordSets:
-        - Name: kubernasty.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["192.168.1.200"]
-        - Name: whoami-http.kubernasty.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kubernasty.micahrl.com."]
-        - Name: whoami-https-staging.kubernasty.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kubernasty.micahrl.com."]
-        - Name: whoami-https-prod.kubernasty.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kubernasty.micahrl.com."]
-        - Name: traefik.kubernasty.micahrl.com
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kubernasty.micahrl.com."]
-        - Name: dashboard.kubernasty.micahrl.com
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["kubernasty.micahrl.com."]
-  KubernastyZoneUpdaterGroup:
-    Type: AWS::IAM::Group
-    Properties:
-      Policies:
-        - PolicyName: AllowUpdatingKubernastyZonePolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - route53:GetChange
-                  - route53:ListHostedZones
-                  - route53:ListResourceRecordSets
-                Resource: "*"
-              - Effect: Allow
-                Action:
-                  - route53:ChangeResourceRecordSets
-                Resource:
-                  {
-                    "Fn::Join":
-                      [
-                        "",
-                        [
-                          "arn:aws:route53:::hostedzone/",
-                          { "Ref": "KubernastyZone" },
-                        ],
-                      ],
-                  }
   # Home Zone
   # Unifi is too dumb to set hostnames for its clients :) lol
   HomeZone:
@@ -600,9 +530,3 @@ Outputs:
   HomeZoneUpdaterGroupArn:
     Description: The ARN for a group with permission to modify records in the home zone
     Value: !GetAtt HomeZoneUpdaterGroup.Arn
-  KubernastyZoneId:
-    Description: The ID of the micahrl.com. root zone
-    Value: !Ref KubernastyZone
-  KubernastyZoneUpdaterGroupArn:
-    Description: The ARN for a group with permission to modify records in the Kubernasty zone
-    Value: !GetAtt KubernastyZoneUpdaterGroup.Arn
