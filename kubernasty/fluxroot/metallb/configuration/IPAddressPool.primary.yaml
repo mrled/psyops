@@ -1,0 +1,11 @@
+# IP address is the primary address for most HTTP/HTTPS services in the cluster.
+# DNS name is kubernasty-primary... and many other services can be CNAME records to that,
+# and the ingress controller will route to the right service via the Host header or SNI.
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: primary
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.1.221/32

@@ -1,0 +1,13 @@
+# In order for MetalLB to work on Layer 2,
+# it needs only some spare IP addresses that will not be used for other hosts,
+# and no special switch configs for BGP or whatever.
+#
+# It does require an L2Advertisement resource to be created in the metallb-system namespace.
+# The resource created here does not have an IPAddressPool selector,
+# which means it will advertise all available pools.
+
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: allpools
+  namespace: metallb-system
