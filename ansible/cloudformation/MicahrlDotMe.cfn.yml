@@ -22,11 +22,6 @@ Resources:
           TTL: 300
           ResourceRecords: ["com.micahrl.me."]
 
-        - Name: prism.micahrl.me.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["sixteen-jazzy.b-cdn.net."]
-
         # Hosted email with fastmail.com
         - Name: micahrl.me.
           Type: MX
