@@ -1,0 +1,89 @@
+apiVersion: k0sctl.k0sproject.io/v1beta1
+kind: Cluster
+metadata:
+  name: kubernasty
+spec:
+  hosts:
+  - ssh:
+      address: jesseta.home.micahrl.com
+      user: root
+      port: 22
+      keyPath: conspirator@PSYOPS_ed25519
+    role: controller+worker
+    # Do not taint the node with node-role.kubernetes.io/master:NoSchedule
+    noTaints: true
+  - ssh:
+      address: kenasus.home.micahrl.com
+      user: root
+      port: 22
+      keyPath: conspirator@PSYOPS_ed25519
+    role: controller+worker
+    noTaints: true
+  - ssh:
+      address: zalas.home.micahrl.com
+      user: root
+      port: 22
+      keyPath: conspirator@PSYOPS_ed25519
+    role: controller+worker
+    noTaints: true
+  k0s:
+    dynamicConfig: true
+    # spec.k0s.config contains the parts of the default k0s.yaml from 'k0s config create' that we want to override.
+    config:
+      apiVersion: k0s.k0sproject.io/v1beta1
+      kind: ClusterConfig
+      metadata:
+        name: kubernasty
+      spec:
+        api:
+          # If we don't specify `address` it will work but it'll pick one of the nodes as the API server
+          # and we won't have HA.
+          # Instead we use this address which is a DNS name that resolves to the VIP of the load balancer.
+          address: "192.168.1.220"
+          k0sApiPort: 9443
+          port: 6443
+          # If we don't specify sans it'll compute them for us based on names and IP addresses of all the nodes,
+          # but we also want to include name(s) and IP address(es) of the load balancers for HA.
+          sans:
+            # Load balancer(s)
+            - kubernasty-controlplane.micahrl.me
+            - 192.168.1.220
+            # Nodes
+            - jesseta.home.micahrl.com
+            - 192.168.1.178
+            - kenasus.home.micahrl.com
+            - 192.168.1.133
+            - zalas.home.micahrl.com
+            - 192.168.1.144
+            # Other
+            - 127.0.0.1
+        installConfig:
+          users:
+            etcdUser: etcd
+            kineUser: kube-apiserver
+            konnectivityUser: konnectivity-server
+            kubeAPIserverUser: kube-apiserver
+            kubeSchedulerUser: kube-scheduler
+        konnectivity:
+          adminPort: 8133
+          agentPort: 8132
+        network:
+          calico:
+            wireguard: true
+          kubeProxy:
+            disabled: false
+            mode: iptables
+          kuberouter:
+            autoMTU: true
+            mtu: 0
+            peerRouterASNs: ""
+            peerRouterIPs: ""
+          podCIDR: 10.244.0.0/16
+          provider: kuberouter
+          serviceCIDR: 10.96.0.0/12
+        podSecurityPolicy:
+          defaultPolicy: 00-k0s-privileged
+        storage:
+          type: etcd
+        telemetry:
+          enabled: false

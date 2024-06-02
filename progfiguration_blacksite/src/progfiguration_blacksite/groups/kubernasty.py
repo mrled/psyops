@@ -35,6 +35,7 @@ group = dict(
             ],
         },
         kubernasty={
+            "cluster_initialized": False,
             "flux_deploy_id": AgeSecretReference("flux_deploy_id"),
             "flux_agekey": AgeSecretReference("flux_agekey"),
         },
