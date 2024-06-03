@@ -12,27 +12,51 @@ def sh(cmd):
     ).stdout
 
 
-staged_files = sh(
-    "git --no-pager diff --cached --name-only --diff-filter=ACM"
-).splitlines()
-modified_files = sh("git ls-files --modified").splitlines()
-committing_files = set(staged_files + modified_files)
+def get_files_to_commit():
+    staged_files = sh(
+        "git --no-pager diff --cached --name-only --diff-filter=ACM"
+    ).splitlines()
+    modified_files = sh("git ls-files --modified").splitlines()
+    return set(staged_files + modified_files)
 
-k8s_secrets = [
-    f
-    for f in committing_files
-    if (f.startswith("kubernasty") or f.startswith("seedboxk8s"))
-    and path.basename(f).startswith("Secret")
-    and path.exists(f)
-]
-for file in k8s_secrets:
-    with open(file, "r") as f:
-        content = f.read()
-        if re.search(r"^sops:$", content, re.MULTILINE) is None:
-            if "psyops-ignore-pre-commit-secret-check" in content:
-                print(
-                    f"Warning: Secret file '{file}' is not encrypted but ignored by psyops!"
-                )
-                continue
-            print(f"Error: Secret file '{file}' is not encrypted by SOPS!")
-            sys.exit(1)
+
+def check_for_unencrypted_k8s_secrets(committing_files: list[str]):
+    k8s_secrets = [
+        f
+        for f in committing_files
+        if (f.startswith("kubernasty") or f.startswith("seedboxk8s"))
+        and path.basename(f).startswith("Secret")
+        and path.exists(f)
+    ]
+    for file in k8s_secrets:
+        with open(file, "r") as f:
+            content = f.read()
+            if re.search(r"^sops:$", content, re.MULTILINE) is None:
+                if "psyops-ignore-pre-commit-secret-check" in content:
+                    print(
+                        f"Warning: Secret file '{file}' is not encrypted but ignored by psyops!"
+                    )
+                    continue
+                print(f"Error: Secret file '{file}' is not encrypted by SOPS!")
+                sys.exit(1)
+
+
+def check_for_DONOTCOMMIT(committing_files: list[str]):
+    for file in committing_files:
+        # Ignore this file, which of course must contain "DONOTCOMMIT"
+        if file == "githooks/pre-commit":
+            continue
+        if not path.exists(file):
+            continue
+        with open(file, "r") as f:
+            content = f.read()
+            if "DONOTCOMMIT" in content:
+                print(f"Error: File '{file}' contains 'DONOTCOMMIT'!")
+                sys.exit(1)
+
+
+if __name__ == "__main__":
+    files_to_commit = get_files_to_commit()
+    check_for_unencrypted_k8s_secrets(files_to_commit)
+    check_for_DONOTCOMMIT(files_to_commit)
+    sys.exit(0)
