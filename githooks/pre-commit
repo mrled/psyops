@@ -43,8 +43,11 @@ def check_for_unencrypted_k8s_secrets(committing_files: list[str]):
 
 def check_for_DONOTCOMMIT(committing_files: list[str]):
     for file in committing_files:
-        # Ignore this file, which of course must contain "DONOTCOMMIT"
         if file == "githooks/pre-commit":
+            # Ignore this file, which of course must contain "DONOTCOMMIT"
+            continue
+        if path.isdir(file):
+            # Ignore directories, which can happen for submodules
             continue
         if not path.exists(file):
             continue
