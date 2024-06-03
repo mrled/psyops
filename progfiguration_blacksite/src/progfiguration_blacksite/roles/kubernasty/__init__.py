@@ -14,6 +14,8 @@ from progfiguration.inventory.roles import ProgfigurationRole
 from progfiguration.localhost.disks import is_mountpoint
 
 from progfiguration_blacksite.sitelib.kubernetes.installers import install_k0s_github_release
+from progfiguration_blacksite.sitelib.networking import get_ip_address
+from progfiguration_blacksite.sitelib.tracked_file_changes import TrackedFileChanges
 
 
 def mount_binds(binds: dict[str, str]):
@@ -37,18 +39,14 @@ class Role(ProgfigurationRole):
 
     # Expects a psy0 interface with an IPv4 address already provisioned.
 
-    cluster_initialized: bool = False
-    """If True, the cluster has been initialized and we can start k0scontroller etc.
-
-    If False, we will only install the packages and set up the configuration files
-    in preparation for running 'k0sctl apply ...'.
-    """
-
     # A GitHub deploy key for the psyops repo for the Flux deployment
     flux_deploy_id: str
 
     # An age key for Flux to use with SOPS
     flux_agekey: str
+
+    vrrp_authpass: str
+    """The VRRP authentication password for the k0s cluster."""
 
     # Probably need to update all of these at once
     k0s_version = "v1.30.1+k0s.0"
@@ -65,6 +63,12 @@ class Role(ProgfigurationRole):
 
     # Config directory, can be ephemeral
     configdir: Path = Path("/etc/kubernasty")
+
+    role_dir: Path = Path("/psyopsos-data/roles/kubernasty")
+
+    @property
+    def node_initialized_file(self):
+        return self.role_dir / "node_initialized"
 
     def apply(self):
         packages = [
@@ -94,28 +98,28 @@ class Role(ProgfigurationRole):
             }
         )
 
-        if not self.cluster_initialized:
+        if not self.node_initialized_file.exists():
+            logger.info(
+                f"MANUAL CONFIGURATION REQUIRED. Node not initialized; skipping k0s setup. Join the node to the cluster and then create the file {self.node_initialized_file.as_posix()}"
+            )
             return
 
-        # Flux GitHub deploy key for psyops repo
-        self.localhost.set_file_contents(
-            self.configdir / "flux" / "deploy_id",
-            self.flux_deploy_id,
-            "root",
-            "root",
-            0o600,
-            dirmode=0o0700,
-        )
-
-        # Flux agekey for SOPS
-        self.localhost.set_file_contents(
-            self.configdir / "flux" / "flux.agekey",
-            self.flux_agekey,
-            "root",
-            "root",
-            0o600,
-            dirmode=0o0700,
-        )
+        # Deploy k0s.yaml
+        # We generated this file with `k0sctl`,
+        # but we have to copy a templated version here because /etc/k0s is not persisted.
+        with TrackedFileChanges(Path("/etc/k0s/k0s.yaml")) as tracker:
+            self.localhost.temple(
+                self.role_file("k0s.yaml.temple"),
+                "/etc/k0s/k0s.yaml",
+                {
+                    "psy0ip": get_ip_address("psy0"),
+                    "vrrp_authpass": self.vrrp_authpass,
+                },
+                "root",
+                "root",
+                0o640,
+            )
+            k0s_yaml_didchange = tracker.changed
 
         # Set up the k0s service.
         # This is how you bring up the cluster once already joined;
@@ -128,8 +132,6 @@ class Role(ProgfigurationRole):
             magicrun("/usr/local/bin/k0s install controller --enable-worker -c /etc/k0s/k0s.yaml")
 
         # Start k0s
+        if k0s_yaml_didchange:
+            magicrun("rc-service k0scontroller restart")
         magicrun("rc-service k0scontroller start")
-
-        # Create an admin kubeconfig for use with e.g. helm
-        os.makedirs("/root/.kube", mode=0o0700, exist_ok=True)
-        magicrun("ln -s /var/lib/k0s/pki/admin.conf /root/.kube/config")

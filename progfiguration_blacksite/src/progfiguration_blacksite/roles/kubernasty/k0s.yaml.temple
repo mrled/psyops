@@ -3,15 +3,27 @@
 apiVersion: k0s.k0sproject.io/v1beta1
 kind: ClusterConfig
 metadata:
-  creationTimestamp: null
-  name: k0s
+  name: kubernasty
 spec:
   api:
     address: {$}psy0ip
     k0sApiPort: 9443
     port: 6443
+    # Note that the psy0ip must be in the sans list,
+    # but all node IP addresses are listed there underneath their hostnames already.
     sans:
-    - {$}psy0ip
+    # Load balancer
+    - kubernasty-controlplane.micahrl.me
+    - 192.168.1.220
+    # Nodes
+    - jesseta.home.micahrl.com
+    - 192.168.1.178
+    - kenasus.home.micahrl.com
+    - 192.168.1.133
+    - zalas.home.micahrl.com
+    - 192.168.1.144
+    # Other
+    - 127.0.0.1
   controllerManager: {}
   extensions:
     helm:
@@ -36,6 +48,16 @@ spec:
       wireguard: true
     clusterDomain: cluster.local
     dualStack: {}
+    controlPlaneLoadBalancing:
+      enabled: true
+      keepalived:
+        virtualServers:
+        - ipAddress: 192.168.1.220
+        vrrpInstances:
+        - authPass: {$}vrrp_authpass
+          virtualIPs:
+          - 192.168.1.220/24
+      type: Keepalived
     kubeProxy:
       iptables:
         minSyncPeriod: 0s
@@ -47,6 +69,7 @@ spec:
         tcpTimeout: 0s
         udpTimeout: 0s
       metricsBindAddress: 0.0.0.0:10249
+      disabled: false
       mode: iptables
     kuberouter:
       autoMTU: true
@@ -57,6 +80,7 @@ spec:
       peerRouterASNs: ""
       peerRouterIPs: ""
     nodeLocalLoadBalancing:
+      enabled: true
       envoyProxy:
         apiServerBindPort: 7443
         konnectivityServerBindPort: 7132
@@ -65,6 +89,8 @@ spec:
     provider: kuberouter
     serviceCIDR: 10.96.0.0/12
   scheduler: {}
+  podSecurityPolicy:
+    defaultPolicy: 00-k0s-privileged
   storage:
     etcd:
       externalCluster: null

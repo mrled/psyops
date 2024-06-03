@@ -35,9 +35,9 @@ group = dict(
             ],
         },
         kubernasty={
-            "cluster_initialized": False,
             "flux_deploy_id": AgeSecretReference("flux_deploy_id"),
             "flux_agekey": AgeSecretReference("flux_agekey"),
+            "vrrp_authpass": AgeSecretReference("kubernasty_k0s_vrrp_authpass"),
         },
         k3s={
             "k3s_interface": "psy0",
