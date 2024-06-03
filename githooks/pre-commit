@@ -52,7 +52,13 @@ def check_for_DONOTCOMMIT(committing_files: list[str]):
         if not path.exists(file):
             continue
         with open(file, "r") as f:
-            content = f.read()
+            try:
+                content = f.read()
+            except UnicodeDecodeError:
+                print(
+                    f"Error: File '{file}' is not a text file, not scanning for 'DONOTCOMMIT'"
+                )
+                continue
             if "DONOTCOMMIT" in content:
                 print(f"Error: File '{file}' contains 'DONOTCOMMIT'!")
                 sys.exit(1)
