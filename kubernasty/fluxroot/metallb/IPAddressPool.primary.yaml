@@ -1,6 +1,9 @@
 # IP address is the primary address for most HTTP/HTTPS services in the cluster.
 # DNS name is kubernasty-primary... and many other services can be CNAME records to that,
 # and the ingress controller will route to the right service via the Host header or SNI.
+# This is NOT the address for a high availability control plane,
+# which is handled by the keepalived built in to k0s itself
+# and not by MetalLB at all.
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
