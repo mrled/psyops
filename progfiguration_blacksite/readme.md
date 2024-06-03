@@ -59,9 +59,6 @@ apk add progfiguration
 * Set `PROGFIGSITE_VERSION_DEBUG`,
   and the `progfigsite.get_version()` function will print module paths and error messages.
   (See `progfiguration/__init__.py:get_version()` for more info.)
-* Set `PROGFIGSITE_APKBUILD_DEBUG`,
-  and the `APKBUILD` file will print debugging messages.
-  (See `sitelib/buildsite/APKBUILD.temple` for more info.)
 
 ## Decrypting secrets
 

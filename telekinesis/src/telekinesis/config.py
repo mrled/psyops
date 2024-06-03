@@ -81,7 +81,6 @@ class TelekinesisConfig:
             self.apkreponame = "psyopsOS"
             """The APK repo name
             When building a package with abuild, it finds this name by looking in the grandparent directory of the APKBUILD file (../../).
-            See also progfiguration_blacksite's buildapk command, which forces this with a tempdir.
             This is just called "repo=" in the abuild sh script, and is not configurable."""
             self.uri = f"https://psyops.micahrl.com/"
             """The URI that is accessible on the public Internet for the APK repository"""

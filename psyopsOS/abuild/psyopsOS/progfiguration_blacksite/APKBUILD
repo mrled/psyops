@@ -1,0 +1,27 @@
+# This file relies on telekinesis
+# first building the zipapp and dropping it into this directory as ./progfiguration-blacksite.
+#
+# As far as abuild is concerned, this is not a Python package,
+# and it just includes an opaque binary.
+
+get_version() {
+	# Run the zipapp to get the version string
+	./progfiguration-blacksite version --site
+}
+
+pkgname="progfiguration_blacksite"
+maintainer="Micah R Ledbetter <psyops@micahrl.com>"
+pkgver=$(get_version)
+pkgrel=0
+pkgdesc="Programmatic configuration of hosts"
+options="!check" # No tests, yolo
+url="https://github.com/mrled/psyops"
+arch="noarch"
+license="WTFPL"
+depends="python3 py3-requests py3-tz"
+sha512sums="SKIP"
+
+package() {
+	install -m0755 -d "$pkgdir"/usr/sbin
+	install -m0755 ./progfiguration-blacksite "$pkgdir"/usr/sbin/progfiguration-blacksite
+}

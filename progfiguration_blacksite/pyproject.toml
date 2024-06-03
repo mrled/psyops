@@ -13,7 +13,6 @@ email = "me@micahrl.com"
 
 [project.scripts]
 progfiguration-blacksite = "progfiguration_blacksite.cli.progfigsite_shim:main"
-progfiguration-blacksite-buildapk = "progfiguration_blacksite.cli.progfigsite_buildapk_cmd:main"
 progfiguration-blacksite-node = "progfiguration_blacksite.cli.progfigsite_node_cmd:main"
 
 [project.optional-dependencies]
@@ -31,7 +30,7 @@ development = [
     "build",
     "mypy",
 
-    # Used by the APK build process and/or progfiguration-blacksite-buildapk
+    # Used to build wheels (unnecessary?)
     "installer",
     "setuptools",
     "wheel",

@@ -36,27 +36,38 @@ def abuild_psyopsOS_package(
         builder.run_docker(in_container_build_cmd)
 
 
-# TODO: can the blacksite apk package be built with build_psyopsOS_apk()?
+# TODO: can the blacksite apk package be built with abuild_psyopsOS_package()?
 def abuild_blacksite(builder: AlpineDockerBuilder):
     """Build the progfiguration psyops blacksite Python package as an Alpine package. Use the mkimage docker container."""
 
     with builder:
         apkindexpath = builder.in_container_apks_repo_root + f"/v{tkconfig.alpine_version}"
-        apkrepopath = apkindexpath + "/" + tkconfig.buildcontainer.apkreponame
+        in_container_site_dir = f"{builder.in_container_psyops_checkout}/progfiguration_blacksite"
+        in_container_progfig_dir = f"{builder.in_container_psyops_checkout}/submod/progfiguration"
+        in_container_abuild_pkg_dir = (
+            f"{builder.in_container_psyops_checkout}/psyopsOS/abuild/psyopsOS/progfiguration_blacksite"
+        )
 
         in_container_build_cmd = [
-            # We can't use venv because Alpine packages won't build that way since they switched to gpep517.
+            # Create a venv for the build.
+            # Note that installing the progfigsite into this venv
+            # and then building it with setuptools will not work,
+            # ever since Alpine switched to using gpep517.
             # (We don't use gpep517, but before they switched, we could do this in a venv.)
-            f"cd {builder.in_container_psyops_checkout}/progfiguration_blacksite",
+            # However, our progfigsite package will just contain the zipapp,
+            # so using a venv here won't break anything.
+            "python3 -m venv --system-site-packages /tmp/venv",
+            "source /tmp/venv/bin/activate",
             # This installs progfiguration as editable from our local checkout.
             # It means we don't have to install it over the network,
             # and it also lets us test local changes to progfiguration.
-            f"pip install --break-system-packages -e {builder.in_container_psyops_checkout}/submod/progfiguration",
-            # This will skip the progfiguration dependency as it is already installed.
-            "pip install --break-system-packages -e .",
-            f"progfiguration-blacksite-buildapk --abuild-repo-name {tkconfig.buildcontainer.apkreponame} --apks-index-path {apkindexpath}",
-            f"echo 'Build packages are found in {apkrepopath}/x86_64/:'",
-            f"ls -larth {apkrepopath}/{builder.architecture.mkimage}/",
+            f"pip install -e {in_container_progfig_dir}",
+            # This will skip installing the progfiguration dependency as it is already installed.
+            f"pip install -e {in_container_site_dir}",
+            # Build the zipapp and the APK package.
+            f"cd {in_container_abuild_pkg_dir}",
+            "progfiguration-blacksite zipapp ./progfiguration-blacksite",
+            f"abuild -r -P {apkindexpath} -D {tkconfig.buildcontainer.apkreponame}",
         ]
 
         builder.run_docker(in_container_build_cmd)
