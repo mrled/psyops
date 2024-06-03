@@ -27,9 +27,13 @@ spec:
     role: controller+worker
     noTaints: true
   k0s:
+
+    # Enable dynamic configuration with CRs after initial cluster deployment
     dynamicConfig: true
+
     # spec.k0s.config contains the parts of the default k0s.yaml from 'k0s config create' that we want to override.
     config:
+
       apiVersion: k0s.k0sproject.io/v1beta1
       kind: ClusterConfig
       metadata:
@@ -81,6 +85,32 @@ spec:
           podCIDR: 10.244.0.0/16
           provider: kuberouter
           serviceCIDR: 10.96.0.0/12
+
+          # Enable *external* control plane load balancing,
+          # such that clients outside the cluster can talk to the cluster on a single address.
+          # <https://docs.k0sproject.io/main/cplb/>
+          # This section does not support dynamic configuration with CRs --
+          # any changes to these values has to be done by restarting the k0s controllers.
+          # (I think that means modifying the k0s.yaml on each control plane node, not this file, but I'm not sure.)
+          controlPlaneLoadBalancing:
+            enabled: true
+            type: Keepalived
+            keepalived:
+              # The address used here must be in spec.api.sans.
+              vrrpInstances:
+                - virtualIPs: ["192.168.1.220/24"]
+                  # Must be 8 chars or less
+                  # Pass this in with `K0SCTL_CONFIG_VRRP_AUTHPASS=asdf k0sctl apply -c k0sctl.yaml`
+                  authPass: ${K0SCTL_CONFIG_VRRP_AUTHPASS}
+              virtualServers:
+                - ipAddress: "192.168.1.220"
+
+          # Enable *internal* control plane load balancing,
+          # such that services in the cluster will be able to reach the control plane even if a node goes down.
+          nodeLocalLoadBalancing:
+            enabled: true
+            type: EnvoyProxy
+
         podSecurityPolicy:
           defaultPolicy: 00-k0s-privileged
         storage:

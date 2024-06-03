@@ -14,6 +14,15 @@ In progfiguration:
 Now run `k0sctl`.
 This is a one-time task that bootstraps the cluster.
 
+* Write the `kubernasty/k0sctl.yaml` file
+    * It very much helps to have a `k0s.yaml` file available for reference,
+      generate one with `k0s config create`
+    * We use [dynamic mode](https://docs.k0sproject.io/main/dynamic-configuration/)
+      so that we can subsequently configure the cluster with CRs
+      rather than changing `k0sctl.yaml` and re-runing `k0sctl apply`
+    * We need to include the DNS names and IP addresses of the nodes,
+      as well as those of any load balancers,
+      in the spec.api.sans list.
 * `k0sctl apply -c kubernasty/k0sctl.yaml`
 * Wait for all the nodes to come up
 * Get a kubeconfig with `k0sctl kubeconfig -c kubernasty/k0sctl.yaml`
@@ -43,17 +52,31 @@ In progfiguration again
 * Set `start_kubernasty` to `True` for all nodes
 * Test that reboots come up properly
 
+## Building the cluster for the first time took many tries
+
+You probably can't go from nothing to a cluster without rebuilding it a few times.
+Some thoughts:
+
+* Get a single node cluster working with a hand-built `k0s.yaml`
+  (modified from a default one from `k0s config create`).
+* Get a multi node cluster working with `k0sctl` and a `k0sctl.yaml`.
+  This creates a `k0s.yaml` on each host.
+  See one version of this in {{< repolink "kubernasty/labnotes/content/docs/core/k0sctl.yaml" >}}
+* Because we're using psyopsOS, our `k0s.yaml` doesn't persist between reboots.
+  Build a templated `k0s.yaml` that progfiguration will apply based on the above.
+  This also gives us the ability to change `k0s.yaml`,
+  which is required for some types of changes
+  even when using `k0sctl` and/or even when using k0s dynamic configuration.
+
 ## Low level stuff handled by Flux
 
 * Assuming `kubernasty/fluxroot` in the GitHub repository is empty and Flux has nothing to deploy,
   the cluster is pretty barebones at this point,
   and lacks many normal features.
-    * It has no load balancer
-    * It has no ingress
-    * There is no single highly available IP address that connects to the cluster's control plane,
-    which means that as nodes reboot you will have to change the address for the cluster
-    in `~/.kube/config` files etc
+    * It has no LoadBalancer implementation
+    * It has no Ingress implementation
+    * It has no default storage provider
 * In psyops we have manifests to address these issues with (respectively)
     * MetalLB
     * Traefik
-    * Manifests that configure the control plane and the two previous components for high availability
+    * ... tbd
