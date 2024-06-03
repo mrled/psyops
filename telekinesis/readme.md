@@ -296,7 +296,7 @@ ________________________________________________________________________
 > tk mkimage diskimg --help
 usage: tk mkimage diskimg [-h]
                           [--stages {mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} [{mkinitpatch,applyinitpatch,kernel,squashfs,efisystar,efisystar-dd,ostar,ostar-dd,sectar,diskimg} ...]]
-                          [--list-stages] [--node-secrets NODE_SECRETS]
+                          [--list-stages] [--node-secrets NODENAME]
 
 options:
   -h, --help            show this help message and exit
@@ -305,10 +305,11 @@ options:
                         'diskimg']. See --list-stages for all possible stages
                         and their descriptions.
   --list-stages         Show all possible stages and their descriptions.
-  --node-secrets NODE_SECRETS
+  --node-secrets NODENAME
                         If passed, generate a node-specific image with a
                         populated secrets volume containing secrets from
-                        'progfiguration-blacksite-node save NODENAME ...'.
+                        'progfiguration-blacksite-node save NODENAME ...' (which
+                        is run automatically by this).
 
 ________________________________________________________________________
 
@@ -335,7 +336,7 @@ options:
 ________________________________________________________________________
 
 > tk deployos --help
-usage: tk deployos [-h] [--type {iso,diskimg}] host
+usage: tk deployos [-h] [--deploy-type {iso,diskimg}] host
 
 positional arguments:
   host                  The remote host to deploy to, assumes root@ accepts the
@@ -343,7 +344,8 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --type {iso,diskimg}  The type of image to deploy
+  --deploy-type {iso,diskimg}
+                        The type of image to deploy
 
 ________________________________________________________________________
 

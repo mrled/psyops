@@ -104,7 +104,7 @@ usage: neuralupgrade [-h] [--debug] [--verbose] [--no-verify] [--pubkey PUBKEY]
                      [--a-mountpoint A_MOUNTPOINT] [--a-label A_LABEL]
                      [--b-dev B_DEV] [--b-mountpoint B_MOUNTPOINT]
                      [--b-label B_LABEL] [--update-tmpdir UPDATE_TMPDIR]
-                     [--repository REPOSITORY]
+                     [--architecture ARCHITECTURE] [--repository REPOSITORY]
                      [--psyopsOS-filename-format PSYOPSOS_FILENAME_FORMAT]
                      [--psyopsESP-filename-format PSYOPSESP_FILENAME_FORMAT]
                      {show,download,check,apply,set-default} ...
@@ -155,6 +155,11 @@ Device/mountpoint override options:
                         Temporary directory for update downloads
 
 Repository options:
+  --architecture ARCHITECTURE
+                        Architecture for the update, default is whatever `uname
+                        -m` says: arm64. WARNING: NO VERIFICATION IS DONE TO
+                        ENSURE THIS MATCHES THE ACTUAL ARCHITECTURE OF THE
+                        UPDATE. USE WITH CAUTION.
   --repository REPOSITORY
                         URL for the psyopsOS update repository, default:
                         https://psyops.micahrl.com/os
