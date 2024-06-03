@@ -346,7 +346,7 @@ Resources:
         - Name: zalas.home.micahrl.com.
           Type: A
           TTL: 60
-          ResourceRecords: ["192.168.1.14p a4"]
+          ResourceRecords: ["192.168.1.144"]
 
         # Management interfacess
         - Name: edison.home.micahrl.com.
