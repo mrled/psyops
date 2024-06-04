@@ -1,0 +1,23 @@
+apiVersion: ceph.rook.io/v1
+kind: CephFilesystem
+metadata:
+  name: cephalopodfs
+  namespace: cephalopod
+spec:
+  metadataPool:
+    replicated:
+      size: 3
+    deviceClass: nvme
+  dataPools:
+    - name: nvme-3rep
+      replicated:
+        size: 3
+      deviceClass: nvme
+    - name: nvme-2rep
+      replicated:
+        size: 2
+      deviceClass: nvme
+  preserveFilesystemOnDelete: false
+  metadataServer:
+    activeCount: 1
+    activeStandby: true

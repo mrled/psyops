@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./common-cephalopod.yaml
+  - ./CephCluster.cephalopod.yaml
+  - ./cephalopodblk/CephBlockPool.cephalopodblk-nvme-2rep.yaml
+  - ./cephalopodblk/CephBlockPool.cephalopodblk-nvme-3rep.yaml
+  - ./cephalopodblk/StorageClass.cephalopodblk-nvme-2rep.yaml
+  - ./cephalopodblk/StorageClass.cephalopodblk-nvme-3rep.yaml
+  - ./cephalopodfs/CephFilesystem.cephalopodfs.yaml
+  - ./cephalopodfs/StorageClass.cephalopodfs-nvme-2rep.yaml
+  - ./cephalopodfs/StorageClass.cephalopodfs-nvme-3rep.yaml
