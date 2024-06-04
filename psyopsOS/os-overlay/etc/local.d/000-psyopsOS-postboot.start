@@ -99,6 +99,7 @@ apk upgrade progfiguration_blacksite
 progfig_new="$(apk list -I progfiguration_blacksite)"
 echo "Version of progfigsite after running 'apk upgrade': $progfig_new"
 
+# TODO: log the entire progfigsite run to a file in /var/log
 
 echo "Starting progfiguration-blacksite asynchronously, will continue in background..."
 progfiguration-blacksite --syslog-exception apply "$PSYOPSOS_NODENAME" &
