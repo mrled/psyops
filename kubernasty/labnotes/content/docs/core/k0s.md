@@ -67,6 +67,7 @@ Some thoughts:
   This also gives us the ability to change `k0s.yaml`,
   which is required for some types of changes
   even when using `k0sctl` and/or even when using k0s dynamic configuration.
+* Check `k0s sysinfo` to see any warnings or errors
 
 ## Low level stuff handled by Flux
 

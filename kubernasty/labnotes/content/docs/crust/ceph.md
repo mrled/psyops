@@ -9,6 +9,22 @@ weight: 35
 See section below on deleting and reinstalling a cluster.
 {{< /hint >}}
 
+## Storage options
+
+* Longhorn is a little easier to get started with, and we did use it originally,
+  but it is less flexible.
+  It uses free disk spaces on an existing filesystem.
+  (Is there a performance penalty for that?)
+* Ceph is more mature, and more featureful.
+  It offers block, object, and filesystem storage.
+  It can use raw storage in various formats;
+  we use raw block devices here.
+* OpenEBS: ?
+* SeaweedFS: ?
+* Others?
+
+## Choosing Ceph
+
 We will use Ceph for block storage
 
 * `ceph` is the storage cluster software;
