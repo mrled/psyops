@@ -79,6 +79,8 @@ class Role(ProgfigurationRole):
             "wireguard-tools",
         ]
         magicrun(["apk", "add", *packages])
+        magicrun("rc-service cgroups start")
+        magicrun("rc-service containerd start")
 
         install_k0s_github_release(self.k0s_version)
 
@@ -90,6 +92,16 @@ class Role(ProgfigurationRole):
             "root",
             0o644,
         )
+
+        # Set max file descriptors per process to 65536
+        self.localhost.set_file_contents(
+            "/etc/security/limits.d/99-k0s.conf",
+            "\n".join(["root soft nofile 65536", "root hard nofile 65536", ""]),
+            "root",
+            "root",
+            0o644,
+        )
+
         # Bind mount the persistent directories
         mount_binds(
             {
@@ -103,10 +115,12 @@ class Role(ProgfigurationRole):
                 f"MANUAL CONFIGURATION REQUIRED. Node not initialized; skipping k0s setup. Join the node to the cluster and then create the file {self.node_initialized_file.as_posix()}"
             )
             return
+        logger.info("Node already initialized; continuing with k0s setup")
 
         # Deploy k0s.yaml
         # We generated this file with `k0sctl`,
         # but we have to copy a templated version here because /etc/k0s is not persisted.
+        self.localhost.makedirs("/etc/k0s", owner="root", group="root", mode=0o755)
         with TrackedFileChanges(Path("/etc/k0s/k0s.yaml")) as tracker:
             self.localhost.temple(
                 self.role_file("k0s.yaml.temple"),
