@@ -1,12 +1,17 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: cephalopodblk-nvme-2rep
-  namespace: cephalopod
+  name: cephalopodblk-nvme-1rep
 provisioner: rook-ceph.rbd.csi.ceph.com
 parameters:
-  clusterID: cephalopod
-  pool: cephalopodblk-nvme-2rep
+
+  # clusterID is a **KUBERNETES NAMESPACE**, not a cluster name
+  # If this is not the namespace where the CephCluster is running,
+  # you will get the fucking INSANE error message
+  # "missing configuration for cluster ID".
+  clusterID: rook-ceph
+
+  pool: cephalopodblk-nvme-1rep
   imageFormat: "2"
 
   # RBD image features
@@ -23,12 +28,16 @@ parameters:
   # imageFeatures: "layering"
 
   # The secrets contain Ceph admin credentials.
+  # The secrets are automatically created by the operator,
+  # but without these annotations,
+  # you'll get errors like this:
+  # I0605 21:25:22.745380       1 event.go:364] Event(v1.ObjectReference{Kind:"PersistentVolumeClaim", Namespace:"gitea", Name:"gitea-pg-cluster-1", UID:"0cb63399-ab2b-4da5-abc8-7ba2f1f55dad", APIVersion:"v1", ResourceVersion:"328315", FieldPath:""}): type: 'Warning' reason: 'ProvisioningFailed' failed to provision volume with StorageClass "cephalopodblk-nvme-1rep": rpc error: code = InvalidArgument desc = provided secret is empty
   csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
-  csi.storage.k8s.io/provisioner-secret-namespace: cephalopod
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
   csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
-  csi.storage.k8s.io/controller-expand-secret-namespace: cephalopod
+  csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
   csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
-  csi.storage.k8s.io/node-stage-secret-namespace: cephalopod
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
 
   # Specify the filesystem type of the volume. If not specified, csi-provisioner
   # will set default as `ext4`. Note that `xfs` is not recommended due to potential deadlock

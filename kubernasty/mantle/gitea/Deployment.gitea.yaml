@@ -1,0 +1,111 @@
+# Source: gitea/templates/gitea/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea
+  namespace: gitea
+  labels:
+    app: gitea
+    app.kubernetes.io/name: gitea
+    app.kubernetes.io/instance: gitea
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 100%
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gitea
+      app.kubernetes.io/instance: gitea
+  template:
+    metadata:
+      labels:
+        app: gitea
+        app.kubernetes.io/name: gitea
+        app.kubernetes.io/instance: gitea
+    spec:
+
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 60
+
+      initContainers:
+        - name: init-directories
+          image: "gitea/gitea:1.21.11-rootless"
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "/initializers/init_directory_structure.sh && /initializers/configure_gitea.sh"]
+          env:
+            - name: HOME
+              value: /data/gitea/git
+            - name: GITEA_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key:  username
+                  name: gitea-admin
+            - name: GITEA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key:  password
+                  name: gitea-admin
+          envFrom:
+            - configMapRef:
+                name: gitea-environment
+            - secretRef:
+                name: gitea-environment
+          volumeMounts:
+            - name: init
+              mountPath: /initializers
+            - name: temp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+
+      containers:
+        - name: gitea
+          image: "gitea/gitea:1.21.11-rootless"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TMPDIR
+              # Should match GITEA_TEMP in ConfigMap.gitea-environment.yaml
+              value: /tmp/gitea
+            - name: HOME
+              value: /data/gitea/git
+          ports:
+            - name: ssh
+              containerPort: 2222
+            - name: http
+              containerPort: 3000
+          livenessProbe:
+            failureThreshold: 10
+            initialDelaySeconds: 200
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: http
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: http
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: temp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+
+      volumes:
+        - name: init
+          configMap:
+            name: gitea-init
+            defaultMode: 110
+        - name: temp
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: gitea-shared-storage

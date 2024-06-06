@@ -1,0 +1,16 @@
+# Source: gitea/templates/gitea/pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: gitea-shared-storage
+  namespace: gitea
+  labels:
+    {}
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  storageClassName: "cephalopodfs-nvme-3rep"
+  resources:
+    requests:
+      storage: 50Gi

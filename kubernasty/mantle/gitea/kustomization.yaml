@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./Namespace.yaml
+  - ./Secret.gitea-pg.yaml
+  - ./PgCluster.yaml
+  - ./PVC.gitea-shared-storage.yaml
+  - ./ConfigMap.gitea-environment.yaml
+  - ./ConfigMap.gitea-init.yaml
+  - ./Secret.gitea-environment.yaml
+  - ./Secret.gitea-admin.yaml
+  - ./Deployment.gitea.yaml
+  - ./Service.gitea-http.yaml
+  - ./Service.gitea-ssh.yaml
+
+# TODO: make this highly available / HA: : : : : https://gitea.com/gitea/helm-chart/src/branch/main/docs/ha-setup.md
+# Currently the PG cluster is HA, but nothing else is.
+# Lots of issues with this currently, including:
+# * Requires OpenSearch cluster, which is annoying
+# * Requires a Redis cluster
+# * All Cron jobs are run on all replicas

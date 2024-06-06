@@ -2,7 +2,7 @@ apiVersion: ceph.rook.io/v1
 kind: CephCluster
 metadata:
   name: cephalopod
-  namespace: cephalopod
+  namespace: rook-ceph
 spec:
 
   cephVersion:
@@ -78,8 +78,10 @@ spec:
   # <https://github.com/rook/rook/blob/master/Documentation/Storage-Configuration/ceph-teardown.md#delete-the-data-on-hosts>
   cleanupPolicy:
     # To enable cluster deletion, set this to "yes-really-destroy-data".
-    # Once set, Rook will stop configuring the cluster.
+    # If set, Rook will stop configuring the cluster.
+    # If not set, Rook will not delete the data on the hosts and will block cluster deletion.
     confirmation: ""
+    # confirmation: "yes-really-destroy-data"
     # sanitizeDisks represents settings for sanitizing OSD disks on cluster deletion
     sanitizeDisks:
       # Don't securely overwrite disks
@@ -129,8 +131,8 @@ spec:
   storage:
 
     # We'll specify the individual nodes and devices for this cluster
-    useAllNodes: true
-    useAllDevices: true
+    useAllNodes: false
+    useAllDevices: false
 
     config:
       # crushRoot: "custom-root" # specify a non-default root label for the CRUSH map
@@ -138,8 +140,8 @@ spec:
       # databaseSizeMB: "1024" # uncomment if the disks are smaller than 100 GB
 
       # It would be more performant to have multiple OSDs per device, but they require a lot of CPU
-      osdsPerDevice: "1"
-      encryptedDevice: "true"
+      # osdsPerDevice: "1"
+      # encryptedDevice: "true"
 
     # Specify node storage; the 'name' field should match the 'kubernetes.io/hostname' label
     nodes:

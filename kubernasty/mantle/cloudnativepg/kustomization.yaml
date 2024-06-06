@@ -1,0 +1,11 @@
+# WARNING: CNPG requires server-side apply.
+# Flux should handle this automatically,
+# but if you are using kubectl directly, you will need to add the --server-side flag
+# e.g. 'kubectl apply --server-side -k .'
+# If you don't do this, you'll get errors like:
+# The CustomResourceDefinition "poolers.postgresql.cnpg.io" is invalid: metadata.annotations: Too long: must have at most 262144 bytes
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.23/releases/cnpg-1.23.1.yaml

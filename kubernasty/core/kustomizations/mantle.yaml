@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 15m
-  path: /kubernasty/foundation
+  path: /kubernasty/mantle
   prune: true
   timeout: 2m
   sourceRef:

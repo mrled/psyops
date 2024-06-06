@@ -2,7 +2,7 @@ apiVersion: ceph.rook.io/v1
 kind: CephBlockPool
 metadata:
   name: cephalopodblk-nvme-3rep
-  namespace: cephalopod
+  namespace: rook-ceph
 spec:
   failureDomain: host
   replicated:

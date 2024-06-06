@@ -2,7 +2,7 @@ apiVersion: ceph.rook.io/v1
 kind: CephFilesystem
 metadata:
   name: cephalopodfs
-  namespace: cephalopod
+  namespace: rook-ceph
 spec:
   metadataPool:
     replicated:

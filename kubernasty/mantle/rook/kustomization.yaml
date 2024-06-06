@@ -19,6 +19,6 @@ kind: Kustomization
 # See /kubernasty/foundation/cephalopod/common-cephalopod.yaml for that.
 
 resources:
-  - ./v1.14.5/crds.yaml
-  - ./v1.14.5/common.yaml
-  - ./v1.14.5/operator.yaml
+  - ./crds.yaml
+  - ./common.yaml
+  - ./operator.yaml

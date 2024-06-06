@@ -1,0 +1,22 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: cephalopodfs-nvme-3rep
+provisioner: rook-ceph.cephfs.csi.ceph.com
+parameters:
+  clusterID: rook-ceph
+  fsName: cephalopodfs
+  pool: cephalopodfs-nvme-3rep
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
+  csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+mountOptions:
+  # Required for clusters with encryption enabled
+  # <https://github.com/rook/rook/issues/11521#issuecomment-1737174422>
+  # <https://github.com/rook/rook/blob/faf7837/deploy/examples/operator.yaml#L479>
+  - ms_mode=secure
+reclaimPolicy: Delete
+allowVolumeExpansion: true
