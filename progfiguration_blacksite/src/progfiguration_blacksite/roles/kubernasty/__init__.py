@@ -70,12 +70,17 @@ class Role(ProgfigurationRole):
     def node_initialized_file(self):
         return self.role_dir / "node_initialized"
 
+    @property
+    def cephalopod_data_dir(self):
+        return self.role_dir / "cephalopod-data-dir"
+
     def apply(self):
         packages = [
             "containerd",
             "containerd-ctr",
             "containerd-openrc",
             "cri-tools",  # crictl
+            "sgdisk",  # useful for `sgdisk --zap-all /dev/XXX` when cleaning up and redeploying a Ceph cluster
             "wireguard-tools",
         ]
         magicrun(["apk", "add", *packages])
@@ -108,6 +113,16 @@ class Role(ProgfigurationRole):
                 "/var/lib/k0s": "/psyopsos-data/overlays/var-lib-k0s",
                 "/var/lib/containerd": "/psyopsos-data/overlays/var-lib-containerd",
             }
+        )
+
+        # Deploy the cephcleanup script
+        self.localhost.temple(
+            self.role_file("cephcleanup.sh.temple"),
+            "/usr/local/sbin/cephcleanup.sh",
+            {"rook_ceph_data_dir": self.cephalopod_data_dir.as_posix()},
+            "root",
+            "root",
+            0o755,
         )
 
         if not self.node_initialized_file.exists():
