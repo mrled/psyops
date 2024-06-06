@@ -1,5 +1,3 @@
-# WARNING: when changing this file, you must redeploy the registry service
-# because the file here is mounted as a subpath in the registry deployment.
 apiVersion: v1
 kind: ConfigMap
 metadata:
