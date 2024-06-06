@@ -241,7 +241,7 @@ and `cephalopod` for this Ceph cluster.
 
 ```sh
 rookceph_orchestrator_ns=rook-ceph
-rookceph_cluster_ns=cephalopod
+rookceph_cluster_ns=rook-ceph
 rookceph_cluster_name=cephalopod
 
 # Delete the CephCluster CRD
@@ -301,6 +301,72 @@ blkdiscard $DISK
 # Inform the OS of partition table changes
 partprobe $DISK
 ```
+
+You also have to delete the Ceph data directory specified in `dataDirHostPath`
+(`/var/lib/rook` by default).
+
+I have a more nuclear option that makes some assumptions for my environment
+and both removes the data directory and wipes the disks that Ceph used.
+
+```sh
+#!/bin/sh
+set -eu
+
+# WARNING: THIS SCRIPT WILL DELETE ALL CEPH DATA.
+# WARNING: THIS SCRIPT ASSUMES ANY DEVICE WITH A CEPH LVM ON IT CAN BE SAFELY WIPED.
+#           (Meaning it assumes that any Ceph device is not used for anything else.)
+
+# We have to take special care to remove encrypted Ceph block devices
+# If we don't do this, we can still zap/dd/etc it below and it'll work,
+# however we might have to reboot, which is annoying.
+for mappeddev in /dev/mapper/*; do
+    # A result to this command indicates that $mappeddev is an encrypted block device,
+    # and $underlyingdev is the underlying block device.
+    underlyingdev=$(cryptsetup status "$mappeddev" | grep '  device:' | awk '{print $2}')
+    if test "$underlyingdev"; then
+        case "$underlyingdev" in /dev/mapper/ceph-*)
+            # If the underlying device is a ceph LVM volume, close the encrypted device on top of it
+            cryptsetup luksClose "$mappeddev"
+            ;;
+        esac
+    fi
+done
+
+# Now look for all ceph LVM devices
+for cephdev in /dev/mapper/ceph-*; do
+    # First, find the device that contains the LVM volume
+    deps=$(dmsetup deps "$cephdev")
+    major=$(echo "$deps" | awk '{print $4}' | sed 's/(//' | sed 's/,//')
+    minor=$(echo "$deps" | awk '{print $5}' | sed 's/)//')
+    physdev=$(ls -l /dev | grep " $major, *$minor " | awk '{print $10}')
+
+    # Remove the LVM volume
+    dmsetup remove --force "$cephdev"
+
+    # Remove the LVM volume's physical device
+    sgdisk --zap-all $physdev
+    dd if=/dev/zero of="$physdev" bs=1M count=100 oflag=direct,dsync
+    blkdiscard $physdev
+    partprobe $physdev
+done
+
+# Remove the ceph data dir
+rook_ceph_data_dir="/var/lib/rook"
+if test "$rook_ceph_data_dir"; then
+    rm -rf "$rook_ceph_data_dir"
+fi
+```
+
+### Improperly deleted clusters
+
+Ceph is VERY precious about deletion,
+which might be a good thing in production but is very annoying in development.
+
+* If you fail to set `yes-really-destroy-data`, the cluster will not delete properly, and you're on your own
+* If you do not remove the ceph data dir on the host, a new cluster will not come up properly,
+  and will have to be entirely deleted and recreated
+* If you do not wipe the disk(s) that ceph used on the host, a new cluster will not come up properly,
+  and will have to be entirely deleted and recreated
 
 ## Appendix: Why not minio?
 

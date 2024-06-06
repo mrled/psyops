@@ -8,7 +8,7 @@ spec:
       address: jesseta.home.micahrl.com
       user: root
       port: 22
-      keyPath: conspirator@PSYOPS_ed25519
+      keyPath: ~/.ssh/conspirator@PSYOPS_ed25519
     role: controller+worker
     # Do not taint the node with node-role.kubernetes.io/master:NoSchedule
     noTaints: true
@@ -16,14 +16,14 @@ spec:
       address: kenasus.home.micahrl.com
       user: root
       port: 22
-      keyPath: conspirator@PSYOPS_ed25519
+      keyPath: ~/.ssh/conspirator@PSYOPS_ed25519
     role: controller+worker
     noTaints: true
   - ssh:
       address: zalas.home.micahrl.com
       user: root
       port: 22
-      keyPath: conspirator@PSYOPS_ed25519
+      keyPath: ~/.ssh/conspirator@PSYOPS_ed25519
     role: controller+worker
     noTaints: true
   k0s:

@@ -69,6 +69,25 @@ Some thoughts:
   even when using `k0sctl` and/or even when using k0s dynamic configuration.
 * Check `k0s sysinfo` to see any warnings or errors
 
+## The layers of the earth
+
+* First, we create the cluster and install Flux
+* Flux installs things in phases:
+  * Phase 1 sets the foundation for the rest of the cluster
+    * Ceph: Storage
+    * MetalLB: A load balancer
+    * Gitea: Git repository, container registry
+
+### Gitea
+
+We started with the Gitea Helm chart,
+but the default deploys dozens of resources in four thousand lines of unmaintainble YAML.
+
+We whittled it down to 2 secrets, a deployment, and a service in just a few hundred lines by:
+
+* Removing Redis, which we expect we don't need
+* Skipping the Postgres deployment, in favor of using the CNPG operator instead
+
 ## Low level stuff handled by Flux
 
 * Assuming `kubernasty/fluxroot` in the GitHub repository is empty and Flux has nothing to deploy,
