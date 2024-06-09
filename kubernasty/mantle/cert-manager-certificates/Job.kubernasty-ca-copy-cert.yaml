@@ -1,0 +1,44 @@
+# This job copies the certificate (and not the private key) from the secret to a ConfigMap.
+# It applies annotations for reflector to copy the ConfigMap to all namespaces.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kubernasty-ca-copy-cert
+  namespace: cert-manager
+spec:
+  template:
+    spec:
+      serviceAccountName: cert-worker
+      containers:
+      - name: copy-ca-cert
+        image: bitnami/kubectl:latest
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            set -eu
+
+            kubectl get secret -n cert-manager kubernasty-ca-root-backing-secret -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/ca.crt
+            echo "Got the CA certificate from the secret:"
+            cat /tmp/ca.crt
+
+            cat <<EOF > /tmp/configmap.yaml
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: kubernasty-ca-root-cert
+              namespace: cert-manager
+              annotations:
+                  # Allow any namespace to request a mirror of this ConfigMap
+                  reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+                  reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: ""
+            data:
+              ca.crt: |+
+            $(cat /tmp/ca.crt | sed 's/^/    /')
+            EOF
+            kubectl apply -f /tmp/configmap.yaml
+
+            echo "Created the ConfigMap with the CA certificate:"
+            cat /tmp/configmap.yaml
+
+            echo "Done"
+      restartPolicy: OnFailure

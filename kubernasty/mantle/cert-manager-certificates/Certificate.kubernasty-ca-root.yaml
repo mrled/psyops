@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kubernasty-ca-root
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: kubernasty-ca-root
+  secretName: kubernasty-ca-root-backing-secret
+  # duration: 8760h # 1 year
+  # renewBefore: 2160h # 90 days
+  duration: 876000h # 100 years
+  renewBefore: 120h # 5 days
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer

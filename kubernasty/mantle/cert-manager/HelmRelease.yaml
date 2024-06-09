@@ -1,0 +1,30 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+spec:
+  chart:
+    spec:
+      chart: cert-manager
+      version: v1.15
+      sourceRef:
+        kind: HelmRepository
+        name: jetstack
+        namespace: flux-system
+  interval: 15m
+  timeout: 5m
+  releaseName: cert-manager
+  values:
+    installCRDs: true
+    crds:
+      enable: true
+      # Do not uninstall CRDs when the HelmRelease is deleted.
+      # This is important bc otherwise certs that rely on them will be deleted too.
+      keep: true
+    # Required to fix errors about DNS propagation?
+    dns01RecursiveNameservers: 1.1.1.1:53
+    dns01RecursiveNameserversOnly: true
+    ingressShim:
+      defaultIssuerName: letsencrypt-staging
+      defaultIssuerKind: ClusterIssuer

@@ -1,0 +1,20 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kubernasty-wildcard
+  namespace: cert-manager
+spec:
+  dnsNames:
+  - "micahrl.me"
+  - "*.micahrl.me"
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-production
+  secretName: kubernasty-wildcard-backing-secret
+  secretTemplate:
+    annotations:
+      reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "ingress"
+      reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+      # If this value is empty, it's auto copied to all allowed namespaces
+      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: ""

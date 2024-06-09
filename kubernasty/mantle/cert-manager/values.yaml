@@ -1,0 +1,12 @@
+installCRDs: true
+crds:
+  enable: true
+  # Do not uninstall CRDs when the HelmRelease is deleted.
+  # This is important bc otherwise certs that rely on them will be deleted too.
+  keep: true
+# Required to fix errors about DNS propagation?
+dns01RecursiveNameservers: 1.1.1.1:53
+dns01RecursiveNameserversOnly: true
+ingressShim:
+  defaultIssuerName: letsencrypt-staging
+  defaultIssuerKind: ClusterIssuer

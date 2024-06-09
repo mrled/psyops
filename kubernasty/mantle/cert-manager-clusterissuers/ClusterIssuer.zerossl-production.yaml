@@ -1,0 +1,38 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: zerossl-production
+spec:
+  acme:
+    # ZeroSSL ACME server
+    server: https://acme.zerossl.com/v2/DV90
+    email: psyops@micahrl.com
+
+    # name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: zerossl-prod-private-key
+
+    # for each cert-manager new EAB credencials are required
+    externalAccountBinding:
+      keyID: Mw3AqUA-9TpLcNOBJkGpHA
+      keySecretRef:
+        name: zerossl-eab-hmac
+        key: eab-hmac
+      keyAlgorithm: HS256
+
+    # ACME DNS-01 provider configurations to verify domain
+    solvers:
+    - selector:
+        dnsNames:
+        - "micahrl.me"
+        - "*.micahrl.me"
+      dns01:
+        route53:
+          region: us-east-2
+          hostedZoneID: Z05310581X3YVCCVKG9XH
+          accessKeyIDSecretRef:
+            name: aws-route53-credential
+            key: access-key-id
+          secretAccessKeySecretRef:
+            name: aws-route53-credential
+            key: secret-access-key

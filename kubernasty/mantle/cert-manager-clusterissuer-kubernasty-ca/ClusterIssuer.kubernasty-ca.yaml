@@ -1,0 +1,7 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: kubernasty-ca
+spec:
+  ca:
+    secretName: kubernasty-ca-root-backing-secret

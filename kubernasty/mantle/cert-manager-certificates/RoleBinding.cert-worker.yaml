@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cert-worker
+  namespace: cert-manager
+subjects:
+- kind: ServiceAccount
+  name: cert-worker
+  namespace: cert-manager
+roleRef:
+  kind: Role
+  name: cert-worker
+  apiGroup: rbac.authorization.k8s.io
