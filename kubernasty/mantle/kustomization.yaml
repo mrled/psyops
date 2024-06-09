@@ -5,3 +5,9 @@ resources:
   - ./csi-external-snapshotter
   - ./rook
   - ./cephalopod
+  - ./reflector
+  - ./cert-manager
+  - ./cert-manager-clusterissuers
+  - ./cert-manager-certificates
+  - ./cert-manager-clusterissuer-kubernasty-ca
+  - ./directory
