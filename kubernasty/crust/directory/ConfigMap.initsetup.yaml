@@ -68,17 +68,11 @@ data:
       echo "Finished applying configuration script $bn"
     done
 
+    echo "We have applied all configuration scripts and are ready to accept traffic."
     touch /containeripc/startupProbe
-    # When all the configuration is applied, we're ready to accept traffic.
 
-    # Every 30 seconds, check for other deployed replicas
-    while true; do
-      echo "$(date) Reconciling cluster replicas with LDAP replication agreements..."
-      /initsetup/reconcile_replication.py || true
-      sleep 30
-    done
-
-    # We have to stay running forever or else Kubernetes will think the container has crashed.
+    echo "We're done, but we have to stay running forever or else Kubernetes will think the pod needs to be restarted."
+    while true; do sleep 86400; done
 
   initial_configure_10_backend.sh: |+
     #!/bin/sh
@@ -129,103 +123,6 @@ data:
 
     # This appears to be idempotent
     dsconf localhost replication create-manager --name rmanager --passwd "$DS_RMANAGER_PASSWORD" --suffix "$DS_SUFFIX_NAME"
-
-  reconcile_replication.py: |+
-    #!/usr/bin/env python3
-
-    import logging
-    import os
-    import socket
-    import subprocess
-
-    logging.basicConfig(
-      level=logging.DEBUG, format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
-    )
-    LOGGER = logging.getLogger(__name__)
-
-    def getreplicas():
-      """Get a list of all the other replicas in the cluster from cluster DNS.
-
-      This relies on a **headless** service called dirsrv in this namespace.
-      A headless service is a service with ClusterIP: None,
-      which is implemented as a round-robin DNS record.
-      Return a list of FQDNs of all the replicas.
-      """
-      _, _, ips = socket.gethostbyname_ex('dirsrv')
-      k8s_replicas = [socket.gethostbyaddr(ip)[0] for ip in ips]
-      LOGGER.debug(f"Found StatefulSet replicas: {k8s_replicas}")
-      return k8s_replicas
-
-    def getagreements(ds_suffix_name):
-      """Get a list of replication agreements from the LDAP server
-
-      dsconf returns a list of agreements in LDIF format.
-      The cn: lines are the agreement names; when we create them below,
-      we use the hostnames.
-      This function returns just the agreement names (DNS FQDNs) separated by newlines.
-      """
-
-      agreements_result = subprocess.run(['dsconf', '-D', 'cn=Directory Manager', 'localhost', 'repl-agmt', 'list', '--suffix', ds_suffix_name], check=True, text=True, capture_output=True)
-      agreement_fqdns = [line[4:] for line in agreements_result.stdout.splitlines() if line.startswith('cn: ')]
-      LOGGER.debug(f"Found LDAP agreements: {agreement_fqdns}")
-      return agreement_fqdns
-
-    def reconcile_deployed_instances(hostname, ds_suffix_name, ds_rmanager_password):
-      """Reconcile the list of running replicas in the StatefulSet with the list of replication agreements in the LDAP server.
-
-      TODO: Make this more robust.
-      <https://access.redhat.com/documentation/en-us/red_hat_directory_server/12/html/configuring_and_managing_replication/assembly_removing-an-instance-from-a-replication-topology_configuring-and-managing-replication#proc_removing-a-supplier-from-a-replication-topology_assembly_removing-an-instance-from-a-replication-topology>
-      """
-
-      # The dsconf command takes a few seconds, so we just run it once
-      origagreements = getagreements(ds_suffix_name)
-
-      # Make sure we have a replication agreement with every other pod.
-      new_replicas = []
-      for replica_fqdn in getreplicas():
-        replica_hostname = replica_fqdn.split('.')[0]
-        if replica_hostname == hostname:
-          # Don't try to replicate to ourselves
-          continue
-        if replica_fqdn in origagreements:
-          LOGGER.debug(f"Already replicating to {replica_fqdn}")
-          continue
-        new_replicas.append(replica_fqdn)
-
-      LOGGER.debug(f"Found {len(new_replicas)} new replicas: {new_replicas}")
-      for replica_fqdn in new_replicas:
-        LOGGER.debug(f"Setting up replication agreement with {replica_fqdn}")
-        subprocess.run(['dsconf', 'localhost', 'repl-agmt', 'create',
-                        '--suffix', ds_suffix_name,
-                        '--bind-dn', 'cn=rmanager,cn=config',
-                        '--bind-passwd', ds_rmanager_password,
-                        '--bind-method', 'SIMPLE',
-                        '--conn-protocol', 'LDAP',
-                        '--host', replica_fqdn,
-                        '--port', '3389',
-                        replica_fqdn])
-
-      # Make sure we don't have any replication agreements with pods that no longer exist.
-      stale_agreements = set(origagreements) - set(getreplicas())
-      LOGGER.debug(f"Found {len(stale_agreements)} stale agreements: {stale_agreements}")
-      for agreement in stale_agreements:
-        # All LDAP servers with an active replication agreement to the stale server must remove their agreement.
-        LOGGER.debug(f"Removing replication agreement with {agreement}")
-        subprocess.run(['dsconf', 'localhost', 'repl-agmt', 'delete', '--suffix', ds_suffix_name, agreement])
-        # Only *one* LDAP server should rmove the RUVs of the stale server.
-        # We have the first server in the StatefulSet handle this for us.
-        # TODO: What could possibly go wrong
-        # Search for RUVs for all other servers (even removed replicas) with something like:
-        # ldapsearch -H ldap://localhost:3389 -x -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password -LLL -b cn=config "(objectClass=nsds5ReplicationAgreement)" nsds50ruv
-        if socket.gethostname().endswith('-0'):
-          remove_ruv(agreement)
-          LOGGER.debug(f"Remove RUVs for {agreement}")
-          subprocess.run(['dsconf', 'localhost', 'repl-tasks', 'cleanallruv', '--suffix', ds_suffix_name, "--replica-id", replica_id])
-        else:
-          LOGGER.debug(f"Skipping RUV removal for {agreement}")
-
-    if __name__ == '__main__':
-      reconcile_deployed_instances(os.environ['HOSTNAME'], os.environ['DS_SUFFIX_NAME'], os.environ['DS_RMANAGER_PASSWORD'])
 
 
   # WARNING: be careful with LDIF files, a newline separates entries (like YAML ---)

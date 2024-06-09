@@ -6,9 +6,9 @@ metadata:
 spec:
   serviceName: dirsrv
 
-  # When scaling down, you must delete the PVCs manually --
-  # Kubernetes does not delete them for you,
-  # and they will cause problems if you try to scale back up.
+  # Adding replicas to the StatefulSet does not trigger any replication in the Directory Server.
+  # If you want to run HA custer, you have to do that yourself.
+  # <https://access.redhat.com/documentation/en-us/red_hat_directory_server/12/html/configuring_and_managing_replication/assembly_configuring-multi-supplier-replication-using-the-command-line_configuring-and-managing-replication#doc-wrapper>
   replicas: 1
 
   selector:
@@ -19,7 +19,6 @@ spec:
       labels:
         app: dirsrv
     spec:
-      # serviceAccountName: dirsrv-sa
       initContainers:
         - name: setup
           image: python:3-alpine
