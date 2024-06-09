@@ -7,7 +7,5 @@ resources:
   - ./ConfigMap.initsetup.yaml
   - ./ConfigMap.kubernasty-ca-root-cert.yaml
   - ./Secret.dirsrv-env.yaml
-  - ./Secret.dirsrv-dm-password.yaml
-  - ./Secret.dirsrv-static-users.yaml
   - ./StatefulSet.yaml
   - ./Service.dirsrv.yaml

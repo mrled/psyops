@@ -4,8 +4,13 @@ metadata:
   name: dirsrv
   namespace: directory
 spec:
-  serviceName: dirsrv-internal-svc
+  serviceName: dirsrv
+
+  # When scaling down, you must delete the PVCs manually --
+  # Kubernetes does not delete them for you,
+  # and they will cause problems if you try to scale back up.
   replicas: 1
+
   selector:
     matchLabels:
       app: dirsrv
@@ -115,7 +120,6 @@ spec:
               mountPath: /initsetup
             - name: containeripc
               mountPath: /containeripc
-
 
       volumes:
         - name: dirsrv-tls

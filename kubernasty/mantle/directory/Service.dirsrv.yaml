@@ -4,7 +4,8 @@ metadata:
   creationTimestamp: null
   labels:
     app: dirsrv
-  name: dirsrv-internal-svc
+  name: dirsrv
+  namespace: directory
 spec:
   clusterIP: None
   ports:

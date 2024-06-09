@@ -61,7 +61,7 @@ data:
       sleep 1
     done
 
-    for configscript in /initsetup/configure_*.sh; do
+    for configscript in /initsetup/initial_configure_*.sh; do
       bn=$(basename "$configscript")
       echo "Applying configuration script $bn..."
       /bin/sh "$configscript"
@@ -71,14 +71,27 @@ data:
     touch /containeripc/startupProbe
     # When all the configuration is applied, we're ready to accept traffic.
 
+    # Every 30 seconds, check for other deployed replicas
+    while true; do
+      echo "$(date) Reconciling cluster replicas with LDAP replication agreements..."
+      /initsetup/reconcile_replication.py || true
+      sleep 30
+    done
+
     # We have to stay running forever or else Kubernetes will think the container has crashed.
-    tail -f /dev/null
 
-  configure_10_backend.sh: |+
+  initial_configure_10_backend.sh: |+
     #!/bin/sh
-    set -eu
+    set -eux
 
-    dsconf localhost backend create --suffix "$DS_SUFFIX_NAME" --be-name userroot --create-suffix --create-entries
+    case $(dsconf localhost backend get-tree) in
+      *"$DS_SUFFIX_NAME"*)
+        echo "Suffix $DS_SUFFIX_NAME already exists as a backend";;
+      *)
+        echo "Creating suffix $DS_SUFFIX_NAME as a backend"
+        dsconf localhost backend create --suffix "$DS_SUFFIX_NAME" --be-name userroot --create-suffix --create-entries
+        ;;
+    esac
 
     function ldapmodify_local() {
       ldapmodify -H ldap://localhost:3389 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password
@@ -93,6 +106,211 @@ data:
     ldapmodify_local -x -c -f /initsetup/structure.ldif
     ldapmodify_local -x -c -f /initsetup/groups.ldif
     ldapmodify_local -x -c -f /tmp/users-substituted.ldif
+
+  initial_configure_20_replication.sh: |+
+    #!/bin/sh
+    set -eu
+
+    # We create a replica ID, which must be an integer between 1 and 65534.
+    # This service is deployed as a StatefulSet with ecah pod named e.g. dirsrv-0, dirsrv-1, etc,
+    # so we can use the ordinal index of the pod as the basis for the replica ID.
+    statefulset_index=$(echo "$HOSTNAME" | sed 's/.*-//')
+    # StatefulSet indices are 0-based, but replica IDs are 1-based.
+    replica_id=$((statefulset_index + 1))
+
+    case "$(dsconf localhost replication list)" in
+      *"$DS_SUFFIX_NAME"*)
+        echo "Suffix $DS_SUFFIX_NAME already has replication enabled";;
+      *)
+        echo "Enabling replication for suffix $DS_SUFFIX_NAME"
+        dsconf localhost replication enable --suffix "$DS_SUFFIX_NAME" --role=supplier --replica-id "$replica_id"
+        ;;
+    esac
+
+    # This appears to be idempotent
+    dsconf localhost replication create-manager --name rmanager --passwd "$DS_RMANAGER_PASSWORD" --suffix "$DS_SUFFIX_NAME"
+
+  reconcile_replication.py: |+
+    #!/usr/bin/env python3
+
+    import logging
+    import os
+    import socket
+    import subprocess
+
+    logging.basicConfig(
+      level=logging.DEBUG, format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
+    )
+    LOGGER = logging.getLogger(__name__)
+
+    def getreplicas():
+      """Get a list of all the other replicas in the cluster from cluster DNS.
+
+      This relies on a **headless** service called dirsrv in this namespace.
+      A headless service is a service with ClusterIP: None,
+      which is implemented as a round-robin DNS record.
+      Return a list of FQDNs of all the replicas.
+      """
+      _, _, ips = socket.gethostbyname_ex('dirsrv')
+      k8s_replicas = [socket.gethostbyaddr(ip)[0] for ip in ips]
+      LOGGER.debug(f"Found StatefulSet replicas: {k8s_replicas}")
+      return k8s_replicas
+
+    def getagreements(ds_suffix_name):
+      """Get a list of replication agreements from the LDAP server
+
+      dsconf returns a list of agreements in LDIF format.
+      The cn: lines are the agreement names; when we create them below,
+      we use the hostnames.
+      This function returns just the agreement names (DNS FQDNs) separated by newlines.
+      """
+
+      agreements_result = subprocess.run(['dsconf', '-D', 'cn=Directory Manager', 'localhost', 'repl-agmt', 'list', '--suffix', ds_suffix_name], check=True, text=True, capture_output=True)
+      agreement_fqdns = [line[4:] for line in agreements_result.stdout.splitlines() if line.startswith('cn: ')]
+      LOGGER.debug(f"Found LDAP agreements: {agreement_fqdns}")
+      return agreement_fqdns
+
+    def reconcile_deployed_instances(hostname, ds_suffix_name, ds_rmanager_password):
+      """Reconcile the list of running replicas in the StatefulSet with the list of replication agreements in the LDAP server.
+
+      TODO: Make this more robust.
+      <https://access.redhat.com/documentation/en-us/red_hat_directory_server/12/html/configuring_and_managing_replication/assembly_removing-an-instance-from-a-replication-topology_configuring-and-managing-replication#proc_removing-a-supplier-from-a-replication-topology_assembly_removing-an-instance-from-a-replication-topology>
+      """
+
+      # The dsconf command takes a few seconds, so we just run it once
+      origagreements = getagreements(ds_suffix_name)
+
+      # Make sure we have a replication agreement with every other pod.
+      new_replicas = []
+      for replica_fqdn in getreplicas():
+        replica_hostname = replica_fqdn.split('.')[0]
+        if replica_hostname == hostname:
+          # Don't try to replicate to ourselves
+          continue
+        if replica_fqdn in origagreements:
+          LOGGER.debug(f"Already replicating to {replica_fqdn}")
+          continue
+        new_replicas.append(replica_fqdn)
+
+      LOGGER.debug(f"Found {len(new_replicas)} new replicas: {new_replicas}")
+      for replica_fqdn in new_replicas:
+        LOGGER.debug(f"Setting up replication agreement with {replica_fqdn}")
+        subprocess.run(['dsconf', 'localhost', 'repl-agmt', 'create',
+                        '--suffix', ds_suffix_name,
+                        '--bind-dn', 'cn=rmanager,cn=config',
+                        '--bind-passwd', ds_rmanager_password,
+                        '--bind-method', 'SIMPLE',
+                        '--conn-protocol', 'LDAP',
+                        '--host', replica_fqdn,
+                        '--port', '3389',
+                        replica_fqdn])
+
+      # Make sure we don't have any replication agreements with pods that no longer exist.
+      stale_agreements = set(origagreements) - set(getreplicas())
+      LOGGER.debug(f"Found {len(stale_agreements)} stale agreements: {stale_agreements}")
+      for agreement in stale_agreements:
+        # All LDAP servers with an active replication agreement to the stale server must remove their agreement.
+        LOGGER.debug(f"Removing replication agreement with {agreement}")
+        subprocess.run(['dsconf', 'localhost', 'repl-agmt', 'delete', '--suffix', ds_suffix_name, agreement])
+        # Only *one* LDAP server should rmove the RUVs of the stale server.
+        # We have the first server in the StatefulSet handle this for us.
+        # TODO: What could possibly go wrong
+        # Search for RUVs for all other servers (even removed replicas) with something like:
+        # ldapsearch -H ldap://localhost:3389 -x -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password -LLL -b cn=config "(objectClass=nsds5ReplicationAgreement)" nsds50ruv
+        if socket.gethostname().endswith('-0'):
+          remove_ruv(agreement)
+          LOGGER.debug(f"Remove RUVs for {agreement}")
+          subprocess.run(['dsconf', 'localhost', 'repl-tasks', 'cleanallruv', '--suffix', ds_suffix_name, "--replica-id", replica_id])
+        else:
+          LOGGER.debug(f"Skipping RUV removal for {agreement}")
+
+    if __name__ == '__main__':
+      reconcile_deployed_instances(os.environ['HOSTNAME'], os.environ['DS_SUFFIX_NAME'], os.environ['DS_RMANAGER_PASSWORD'])
+
+  configure_replication.sh: |+
+    #!/bin/sh
+    set -eu
+
+    # This script would work fine on busybox, but the dirsrv image doesn't have fucking nslookup.
+
+    # Do a DNS reverse lookup; find the hostname for each IP address.
+    rlookup() {
+      nslookup "$1" | tail +3 | grep 'name =' | sed 's/.*name = //'
+    }
+
+    # Use DNS to find all the other replicas idempotently.
+    # This relies on a **headless** service called dirsrv in this namespace.
+    # A headless service is a service with ClusterIP: None,
+    # which is implemented as a round-robin DNS record.
+    # Return a list of FQDNs of all the replicas.
+    getreplicas() {
+      nslookup dirsrv | tail +3 | grep Address: | sed 's/Address: //'
+    }
+
+    # Return a list of replication agreements.
+    # dsconf returns a list of agreements in LDIF format.
+    # The cn: lines are the agreement names; when we create them below,
+    # we use the hostnames.
+    # This function returns just the agreement names (DNS FQDNs) separated by newlines.
+    getagreements() {
+      dsconf -D "cn=Directory Manager" localhost repl-agmt list --suffix "$DS_SUFFIX_NAME" | grep '^cn: ' | sed 's/cn: //'
+    }
+
+    # The dsconf command takes a few seconds, so we just run it once
+    origagreements=$(getagreements)
+
+    # Make sure we have a replication agreement with every other pod.
+    for addr in $(getreplicas); do
+      addr_dnsname=$(rlookup "$addr")
+      if test -z "$addr_dnsname"; then
+        echo "No DNS name found for address $addr"
+        exit 1
+      fi
+      addr_hostname=${addr_dnsname%.}
+      if test "$addr_hostname" = "$HOSTNAME"; then
+        # Don't try to replicate to ourselves
+        continue
+      fi
+
+      replicationg=
+      for agreement in $origagreements; do
+        if test "$agreement" = "$addr_hostname"; then
+          echo "Already replicating to $addr_hostname"
+          replicating=true
+          break
+        fi
+      done
+      test "$replicating" && continue
+
+      echo "Setting up replication agreement with $addr_hostname"
+      dsconf localhost repl-agmt create \
+        --suffix "$DS_SUFFIX_NAME" \
+        --bind-dn cn=rmanager,cn=config \
+        --bind-passwd "$DS_RMANAGER_PASSWORD" \
+        --bind-method SIMPLE \
+        --conn-protocol LDAP \
+        --host "$addr_dnsname" \
+        --port 3389 \
+        "$addr_dnsname"
+    done
+
+    # Make sure we don't have any replication agreements with pods that no longer exist.
+    for agreement in $origagreements; do
+      exists=
+      for addr in $(getreplicas); do
+        addr_dnsname=$(rlookup "$addr")
+        if test "$agreement" = "$addr_dnsname"; then
+          # The pod exists
+          exist=true
+          break
+        fi
+      done
+      if test -z "$exists"; then
+        echo "Removing replication agreement with $agreement"
+        dsconf localhost repl-agmt delete --suffix "$DS_SUFFIX_NAME" "$agreement"
+      fi
+    done
+
 
   # WARNING: be careful with LDIF files, a newline separates entries (like YAML ---)
 
@@ -190,7 +408,7 @@ data:
   # (I don't want to have to update this file every time I change my password,
   # and what happens when we add replication?)
   # Note that passwords are set here as environment variables
-  # and filled in from variables set in the dirsrv-static-users Secret.
+  # and filled in from variables set in the dirsrv-env Secret.
   users.ldif: |+
     #### The mrladmin user
     dn: uid=mrladmin,ou=People,dc=micahrl,dc=me
@@ -223,7 +441,7 @@ data:
     description: Hot, smart, and (most importantly) good at LDAP
     -
     add: userPassword
-    userPassword: ${mrladmin_password}
+    userPassword: ${DS_MRLADMIN_PASSWORD}
     -
     add: ou
     ou: People
@@ -242,157 +460,3 @@ data:
     -
     add: title
     title: Overanalyst
-
-  configure_20_replication.sh: |+
-    #!/bin/sh
-    set -eu
-
-    # We create a replica ID, which must be an integer between 1 and 65534.
-    # This service is deployed as a StatefulSet with ecah pod named e.g. dirsrv-0, dirsrv-1, etc,
-    # so we can use the ordinal index of the pod as the replica ID.
-    statefulset_index=$(echo "$HOSTNAME" | sed 's/.*-//')
-    # StatefulSet indices are 0-based, but replica IDs are 1-based.
-    replica_id=$((statefulset_index + 1))
-
-    dsconf localhost replication enable --suffix "$DS_SUFFIX_NAME" --role=supplier --replica-id "$replica_id"
-
-
-  sidecar_webhook_set_replication_agreements: |+
-    #!/bin/sh
-    set -eu
-
-    # Use DNS to find all the other replicas idempotently.
-    # This relies on a **headless** service called dirsrv in this namespace.
-    # A headless service is a service with ClusterIP: None,
-    # which is implemented as a round-robin DNS record.
-
-    agreements=$(dsconf -D "cn=Directory Manager" localhost repl-agmt list --suffix "$DS_SUFFIX_NAME")
-
-    for addr in $(nslookup whoami | tail +3 | grep Address: | sed 's/Address: //'); do
-      dnsname=$(nslookup "$addr" | tail +3 | grep 'name =' | sed 's/.*name = //')
-      if test -z "$dnsname"; then
-        echo "No DNS name found for address $addr"
-        exit 1
-      fi
-    done
-
-
-  sidecar_webhook_receiver.py: |+
-    #!/usr/bin/env python3
-
-    import http.server
-    import subprocess
-    import time
-    from threading import Lock, Timer
-
-    class Handler(http.server.BaseHTTPRequestHandler):
-        last_request_time = {}
-        request_queue = {}
-        lock = Lock()
-
-        routes = {
-            '/scan': '/path/to/your/script.sh',
-        }
-
-        def process_request(self, path):
-            with self.lock:
-                if self.request_queue[path]:
-                    # Process the last request in the queue
-                    subprocess.run(self.routes[path])
-                    self.request_queue[path] = []
-                    self.last_request_time[path] = time.time()
-
-        def do_POST(self):
-            if self.path in self.routes:
-                current_time = time.time()
-                with self.lock:
-                    if self.path not in self.last_request_time:
-                        self.last_request_time[self.path] = 0
-                        self.request_queue[self.path] = []
-
-                    if current_time - self.last_request_time[self.path] >= 1:
-                        # Process the request immediately
-                        self.last_request_time[self.path] = current_time
-                        subprocess.run(self.routes[path])
-                        self.send_response(200)
-                        self.end_headers()
-                        self.wfile.write(b'Script executed')
-                    else:
-                        # Queue the request
-                        self.request_queue[self.path].append(self)
-                        if len(self.request_queue[self.path]) == 1:
-                            # Schedule to process the last request in the queue after 1 second
-                            Timer(1 - (current_time - self.last_request_time[self.path]), self.process_request, [self.path]).start()
-                        self.send_response(200)
-                        self.end_headers()
-                        self.wfile.write(b'Request queued')
-            else:
-                self.send_response(404)
-                self.end_headers()
-                self.wfile.write(b'Path not found')
-
-    httpd = http.server.HTTPServer(('0.0.0.0', 8080), Handler)
-    httpd.serve_forever()
-
-  setup_replication.sh: |
-    #!/bin/sh
-
-    ldapmodify -x -H ldap://ldap-0.ldap-service -D "cn=Directory Manager" -w password <<EOF
-    dn: cn=replica,cn="dc=example,dc=com",cn=mapping tree,cn=config
-    objectClass: top
-    objectClass: nsds5replica
-    nsDS5ReplicaRoot: dc=example,dc=com
-    nsDS5ReplicaId: 1
-    nsDS5ReplicaType: 3
-    nsds5Flags: 1
-    nsds5ReplicaBindDN: cn=Replication Manager,cn=config
-    nsds5ReplicaTransportInfo: LDAP
-    nsds5ReplicaUpdateSchedule: 0000-2359 0123456
-    nsds5ReplicaReferral: ldap://ldap-1.ldap-service:389
-    nsds5ReplicaBindMethod: SIMPLE
-    nsds5ReplicaCredentials: replication_password
-    EOF
-
-    ldapmodify -x -H ldap://ldap-1.ldap-service -D "cn=Directory Manager" -w password <<EOF
-    dn: cn=replica,cn="dc=example,dc=com",cn=mapping tree,cn=config
-    objectClass: top
-    objectClass: nsds5replica
-    nsDS5ReplicaRoot: dc=example,dc=com
-    nsDS5ReplicaId: 2
-    nsDS5ReplicaType: 3
-    nsds5Flags: 1
-    nsds5ReplicaBindDN: cn=Replication Manager,cn=config
-    nsds5ReplicaTransportInfo: LDAP
-    nsds5ReplicaUpdateSchedule: 0000-2359 0123456
-    nsds5ReplicaReferral: ldap://ldap-0.ldap-service:389
-    nsds5ReplicaBindMethod: SIMPLE
-    nsds5ReplicaCredentials: replication_password
-    EOF
-
-    ldapmodify -x -H ldap://ldap-0.ldap-service -D "cn=Directory Manager" -w password <<EOF
-    dn: cn=agreement,cn=replica,cn="dc=example,dc=com",cn=mapping tree,cn=config
-    objectClass: top
-    objectClass: nsds5ReplicationAgreement
-    cn: agreement
-    nsDS5ReplicaHost: ldap-1.ldap-service
-    nsDS5ReplicaPort: 389
-    nsDS5ReplicaBindDN: cn=Replication Manager,cn=config
-    nsDS5ReplicaCredentials: replication_password
-    nsDS5ReplicaRoot: dc=example,dc=com
-    nsDS5ReplicaTransportInfo: LDAP
-    EOF
-
-    ldapmodify -x -H ldap://ldap-1.ldap-service -D "cn=Directory Manager" -w password <<EOF
-    dn: cn=agreement,cn=replica,cn="dc=example,dc=com",cn=mapping tree,cn=config
-    objectClass: top
-    objectClass: nsds5ReplicationAgreement
-    cn: agreement
-    nsDS5ReplicaHost: ldap-0.ldap-service
-    nsDS5ReplicaPort: 389
-    nsDS5ReplicaBindDN: cn=Replication Manager,cn=config
-    nsDS5ReplicaCredentials: replication_password
-    nsDS5ReplicaRoot: dc=example,dc=com
-    nsDS5ReplicaTransportInfo: LDAP
-    EOF
-
-    echo "Replication setup completed"
