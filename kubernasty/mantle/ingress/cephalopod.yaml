@@ -1,0 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cephalopod
+  namespace: ingress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`cephalopod.micahrl.me`)
+      kind: Rule
+      services:
+        - name: rook-ceph-mgr-dashboard
+          namespace: rook-ceph
+          kind: Service
+          port: 80
+      middlewares:
+        - name: redirect-to-https
+          namespace: traefik
+  tls:
+    secretName: kubernasty-wildcard-backing-secret

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-tailscale
+  namespace: traefik
+spec:
+  # This sends incoming traffic to the traefik-localnet pod.
+  selector:
+    app: traefik-localnet
+
+  # This must match the IP address in the TS_DEST_IP env var in the tailscale pod,
+  # and ofc it must be unique in the cluster.
+  clusterIP: 10.96.0.100
+
+  ports:
+  - name: web
+    protocol: TCP
+    port: 80
+    targetPort: 80
+  - name: websecure
+    protocol: TCP
+    port: 443
+    targetPort: 443
+  - name: ssh
+    protocol: TCP
+    port: 22
+    targetPort: 22

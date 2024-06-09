@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./common/traefik-v3.0-kubernetes-crd-definition-v1.yml
+  - ./common/Namespace.yaml
+  - ./common/ClusterRole.traefik.yaml
+  - ./common/ClusterRoleBinding.traefik.yaml
+  - ./common/Middleware.redirect-to-https.yaml
+  - ./common/Middleware.redirect-dashboard.yaml
+  - ./common/ServiceAccount.traefik.yaml
+  - ./localnet/Deployment.traefik-localnet.yaml
+  - ./localnet/Service.traefik-localnet.yaml
+  - ./tailscale/Pod.tailscale.yaml
+  - ./tailscale/Role.tailscale.yaml
+  - ./tailscale/RoleBinding.tailscale.yaml
+  - ./tailscale/ServiceAccount.tailscale.yaml
+

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-localnet
+  namespace: traefik
+  annotations:
+    metallb.universe.tf/address-pool: primary
+spec:
+  type: LoadBalancer
+  selector:
+    app: traefik-localnet
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      name: web
+    - protocol: TCP
+      port: 443
+      targetPort: 443
+      name: websecure
+    # - protocol: TCP
+    #   port: 8080
+    #   targetPort: 8080
+    #   name: admin
+    - protocol: TCP
+      port: 22
+      targetPort: 22
+      name: ssh
