@@ -29,12 +29,16 @@ data:
     GITEA__server__PROTOCOL: http
     # Overwrite the automatically generated public URL
     GITEA__server__ROOT_URL: https://gitea.micahrl.me
+    GITEA__server__DISABLE_SSH: "false"
+    GITEA__server__BUILTIN_SSH_SERVER_USER: git
     GITEA__server__SSH_DOMAIN: gitea.micahrl.me
     # The port number the SSH server listens on in the container (required >1024 because we use rootless images)
     GITEA__server__SSH_LISTEN_PORT: "2222"
     # The port number exposed in the clone URL
     GITEA__server__SSH_PORT: "22"
     GITEA__server__START_SSH_SERVER: "true"
+    # Disable CDN for static files, Gravatar
+    GITEA__server__OFFLINE_MODE: "true"
 
     # [database]
     GITEA__database__DB_TYPE: postgres
@@ -59,6 +63,10 @@ data:
     # [session]
     # db provider will reuse the configuration in [database]
     GITEA__session__PROVIDER: db
+
+    # [log]
+    GITEA__log__MODE: console
+    GITEA__log__LEVEL: Debug
 
     # [metrics]
     GITEA__metrics__ENABLED: "false"

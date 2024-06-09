@@ -72,6 +72,11 @@ spec:
               value: /tmp/gitea
             - name: HOME
               value: /data/gitea/git
+          envFrom:
+            - configMapRef:
+                name: gitea-environment
+            - secretRef:
+                name: gitea-environment
           ports:
             - name: ssh
               containerPort: 2222
