@@ -1,9 +1,0 @@
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: traefik-dasbhoard-redirect-mw
-  namespace: kube-system
-spec:
-  redirectRegex:
-    regex: ^https://traefik.${clusterTld}/(|dashboard)$
-    replacement: https://traefik.${clusterTld}/dashboard/
