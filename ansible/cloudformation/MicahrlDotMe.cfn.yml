@@ -51,49 +51,53 @@ Resources:
           Type: A
           TTL: 300
           ResourceRecords: ["192.168.1.220"]
-        - Name: kubernasty-primary.micahrl.me.
+        - Name: kubernasty-localnet-ingress.micahrl.me.
           Type: A
           TTL: 300
           ResourceRecords: ["192.168.1.221"]
+        - Name: kubernasty-tailscale-ingress.micahrl.me.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["100.92.92.89"]
         - Name: "*.micahrl.me."
           Type: CNAME
-          TTL: 300
-          ResourceRecords: ["kubernasty-primary.micahrl.me."]
+          TTL: 60
+          ResourceRecords: ["kubernasty-localnet-ingress.micahrl.me."]
 
-  KubernastyMicahrlDotMeZoneUpdaterGroup:
-    Type: AWS::IAM::Group
-    Properties:
-      Policies:
-        - PolicyName: KubernastyAllowUpdatingMicahrlDotMeZonePolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - route53:GetChange
-                  - route53:ListHostedZones
-                  - route53:ListResourceRecordSets
-                Resource: "*"
-              - Effect: Allow
-                Action:
-                  - route53:ChangeResourceRecordSets
-                Resource:
-                  {
-                    "Fn::Join":
-                      [
-                        "",
-                        [
-                          "arn:aws:route53:::hostedzone/",
-                          { "Ref": "MicahrlDotMeZone" },
-                        ],
-                      ],
-                  }
+  # KubernastyMicahrlDotMeZoneUpdaterGroup:
+  #   Type: AWS::IAM::Group
+  #   Properties:
+  #     Policies:
+  #       - PolicyName: KubernastyAllowUpdatingMicahrlDotMeZonePolicy
+  #         PolicyDocument:
+  #           Version: 2012-10-17
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - route53:GetChange
+  #                 - route53:ListHostedZones
+  #                 - route53:ListResourceRecordSets
+  #               Resource: "*"
+  #             - Effect: Allow
+  #               Action:
+  #                 - route53:ChangeResourceRecordSets
+  #               Resource:
+  #                 {
+  #                   "Fn::Join":
+  #                     [
+  #                       "",
+  #                       [
+  #                         "arn:aws:route53:::hostedzone/",
+  #                         { "Ref": "MicahrlDotMeZone" },
+  #                       ],
+  #                     ],
+  #                 }
 
 
 Outputs:
   OriginZoneId:
     Description: The ID of the micahrl.me. root zone
     Value: !Ref MicahrlDotMeZone
-  KubernastyMicahrlDotMeZoneUpdaterGroupArn:
-    Description: The ARN for a group for Kubernasty cluster to use to modify records in the origin zone
-    Value: !GetAtt KubernastyMicahrlDotMeZoneUpdaterGroup.Arn
+  # KubernastyMicahrlDotMeZoneUpdaterGroupArn:
+  #   Description: The ARN for a group for Kubernasty cluster to use to modify records in the origin zone
+  #   Value: !GetAtt KubernastyMicahrlDotMeZoneUpdaterGroup.Arn
