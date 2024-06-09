@@ -1,0 +1,147 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: dirsrv
+  namespace: directory
+spec:
+  serviceName: dirsrv-internal-svc
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dirsrv
+  template:
+    metadata:
+      labels:
+        app: dirsrv
+    spec:
+      # serviceAccountName: dirsrv-sa
+      initContainers:
+        - name: setup
+          image: python:3-alpine
+          command: ["sh", "/initsetup/setup.sh"]
+          envFrom:
+            - configMapRef:
+                name: dirsrv-env
+            - secretRef:
+                name: dirsrv-env
+          volumeMounts:
+            - name: initsetup
+              mountPath: /initsetup
+            - name: dirsrv-data
+              mountPath: /data
+            - name: containeripc
+              mountPath: /containeripc
+            # Don't mount these - they are read-only and the chown will fail
+            # - name: dirsrv-tls
+            #   mountPath: '/data/tls/'
+            #   readOnly: true
+            # - name: dirsrv-tls-ca
+            #   mountPath: '/data/tls/ca'
+            #   readOnly: true
+
+      containers:
+        - name: dirsrv
+          image: quay.io/389ds/dirsrv:latest # A Fedora based image
+          envFrom:
+            - configMapRef:
+                name: dirsrv-env
+            - secretRef:
+                name: dirsrv-env
+          ports:
+            - containerPort: 3389
+              protocol: TCP
+            - containerPort: 3636
+              protocol: TCP
+          securityContext:
+            runAsUser: 389
+            runAsGroup: 389
+          volumeMounts:
+            - name: dirsrv-data
+              mountPath: "/data"
+            - name: dirsrv-tls
+              mountPath: '/data/tls/'
+              readOnly: true
+            - name: dirsrv-tls-ca
+              mountPath: '/data/tls/ca'
+              readOnly: true
+            - name: initsetup
+              mountPath: /initsetup
+            - name: containeripc
+              mountPath: /containeripc
+
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "touch /containeripc/stop"]
+
+          # First, we use the startup probe.
+          # The app can take a while to start, especially the first time.
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "test -f /containeripc/startupProbe"]
+            # Allow this probe to fail 120 times 5 second apart (10 minutes total) before giving up
+            failureThreshold: 120
+            periodSeconds: 5
+          # Once that passes, the liveness probe takes over.
+          # Now that the potentially slow startup is over, we can be more sensitive.
+          livenessProbe:
+            exec:
+              command: ["/initsetup/livenessProbe.sh"]
+            # Allow this probe to fail twice 5 seconds apart (10 seconds total) before giving up
+            failureThreshold: 2
+            periodSeconds: 5
+
+        - name: configurator
+          image: quay.io/389ds/dirsrv:latest
+          command: ["sh", "/initsetup/configure.sh"]
+          securityContext:
+            runAsUser: 389
+            runAsGroup: 389
+          envFrom:
+            - configMapRef:
+                name: dirsrv-env
+            - secretRef:
+                name: dirsrv-env
+          volumeMounts:
+            - name: dirsrv-data
+              mountPath: "/data"
+            - name: dirsrv-tls
+              mountPath: '/data/tls/'
+              readOnly: true
+            - name: dirsrv-tls-ca
+              mountPath: '/data/tls/ca'
+              readOnly: true
+            - name: initsetup
+              mountPath: /initsetup
+            - name: containeripc
+              mountPath: /containeripc
+
+
+      volumes:
+        - name: dirsrv-tls
+          secret:
+            secretName: dirsrv-cert-backing-secret
+            items:
+              - key: tls.key
+                path: server.key
+              - key: tls.crt
+                path: server.crt
+        - name: dirsrv-tls-ca
+          configMap:
+            name: kubernasty-ca-root-cert
+        - name: initsetup
+          configMap:
+            name: initsetup
+            defaultMode: 0555
+        - name: containeripc
+          emptyDir:
+            medium: Memory
+  volumeClaimTemplates:
+    - metadata:
+        name: dirsrv-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: cephalopodblk-nvme-1rep
+        resources:
+          requests:
+            storage: 10Gi

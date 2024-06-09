@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dirsrv-env
+  namespace: directory
+data:
+
+  # Values used by the 389 Directory Server container upstream
+  # (may also be used by our own scripts)
+
+  DS_SUFFIX_NAME: dc=micahrl,dc=me
+  ## DS_ERRORLOG_LEVEL - set the log level for `ns-slapd`, default is 266354688
+  DS_ERRORLOG_LEVEL: "8192"
+
+  # Other values
+  # ...

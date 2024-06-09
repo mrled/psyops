@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: dirsrv-cert
+  namespace: directory
+spec:
+  commonName: dirsrv.directory.svc.cluster.local
+  secretName: dirsrv-cert-backing-secret
+  duration: 720h # 30 days
+  renewBefore: 120h # 5 days
+  issuerRef:
+    name: kubernasty-ca
+    kind: ClusterIssuer

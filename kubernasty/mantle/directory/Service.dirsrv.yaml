@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: dirsrv
+  name: dirsrv-internal-svc
+spec:
+  clusterIP: None
+  ports:
+  - name: dirsrv-nonsecure
+    port: 389
+    protocol: TCP
+    targetPort: 3389
+  - name: dirsrv-secure
+    port: 636
+    protocol: TCP
+    targetPort: 3636
+  selector:
+    app: dirsrv
+  type: ClusterIP
+status:
+  loadBalancer: {}

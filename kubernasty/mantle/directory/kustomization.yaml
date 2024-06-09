@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./Namespace.yaml
+  - ./Certificate.dirsrv.yaml
+  - ./ConfigMap.dirsrv-env.yaml
+  - ./ConfigMap.initsetup.yaml
+  - ./ConfigMap.kubernasty-ca-root-cert.yaml
+  - ./Secret.dirsrv-env.yaml
+  - ./Secret.dirsrv-dm-password.yaml
+  - ./Secret.dirsrv-static-users.yaml
+  - ./StatefulSet.yaml
+  - ./Service.dirsrv.yaml
