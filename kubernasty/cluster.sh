@@ -13,8 +13,9 @@ export SOPS_AGE_KEY_FILE=/secrets/psyops-secrets/kubernasty/flux.agekey
 # Examine certificates using openssl
 certinfo() {
     hostname="$1"
+    port="${2:-443}"
     echo "" |
-        openssl s_client -showcerts -servername "$hostname" -connect "$hostname":443 2>/dev/null |
+        openssl s_client -showcerts -servername "$hostname" -connect "$hostname":"$port" 2>/dev/null |
         openssl x509 -inform pem -noout -text
 }
 
