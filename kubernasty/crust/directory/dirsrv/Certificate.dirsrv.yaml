@@ -1,0 +1,25 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: dirsrv-cert
+  namespace: directory
+spec:
+  commonName: dirsrv.directory.svc.cluster.local
+  dnsNames:
+    - dirsrv
+    - dirsrv.directory.svc.cluster.local
+    - dirsrv-0
+    - dirsrv-0.directory.svc.cluster.local
+    - dirsrv-1
+    - dirsrv-1.directory.svc.cluster.local
+    - dirsrv-2
+    - dirsrv-2.directory.svc.cluster.local
+    # Note that ldappasswd will not work without a secure connection, even against localhost,
+    # so we need our cert to work for localhost connections.
+    - localhost
+  secretName: dirsrv-cert-backing-secret
+  duration: 720h # 30 days
+  renewBefore: 120h # 5 days
+  issuerRef:
+    name: kubernasty-ca
+    kind: ClusterIssuer

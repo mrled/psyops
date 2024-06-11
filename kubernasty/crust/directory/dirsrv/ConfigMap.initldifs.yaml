@@ -1,0 +1,167 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: initldifs
+  namespace: directory
+data:
+
+  # Don't set passwords here.
+  # Place passwords in initsecrets Secret,
+  # where a separate script will apply them after creating users/services.
+
+  # They are designed to be applied in order:
+  # * The init* LDIFs are applied when the backend is originally set up,
+  #   and may expect a certain order.
+  #   They are not saved in the ldifMarkers OU.
+  # * service*, user*, group*, and membership* LDIFs are first checked
+  #   to see if they have been applied before,
+  #   by looking for an entry in the ldifMarkers OU.
+  # * service*, user*, and group* LDIFs may be applied in any order
+  #   and do not depend on each other.
+  # * membership* LDIFs must be applied at the end,
+  #   after their corresponding groups and services/users have been created.
+  #
+  # A few notes:
+  # * We use objectClass: account for all service accounts
+  # * objectClass: inetOrgPerson requires uid/cn/sn
+  # * objectClass: posixAccount requires uidNumber/gidNumber/homeDirectory/loginShell/gecos
+  # * For an object to support a password, it needs to have an objectClass that supports this,
+  #   like inetOrgPerson/organizationalPerson/person; account is not enough.
+  #   So we make service accounts also be inetOrgPerson.
+  # * Do not put memberUid: ... in group* LDIFs; use membership* LDIFs instead
+  # * We put objectClass: top in all LDIFs, apparently this is best practice?
+  # * Be careful of blank lines; a blank line indicates a separate LDIF document in the same file.
+  # * LDAP group membership is tricky.
+  #   We use `member` for LDAP `objectClass: groupOfNames` membership,
+  #   and `memberUid` for POSIX `objectClass: posixGroup` membership.
+  #   `member` expects a full DN, while `memberUid` expects just the uid.
+  #   For a group to be used both ways, it must have both object classes applied,
+  #   and both types of membership attributes present.
+  # * Speaking of group membership, by default, there is no way to filter for group members;
+  #   we enable the MemberOf plugin to allow this.
+  #   It only works for LDAP groups, not POSIX groups.
+  #
+  # About the ldifMarkers OU:
+  # * It will contain one organizationalRole for each LDIF file that has been applied.
+  # * We use organizationalRole because it has a cn and a description,
+  #   it's standard, and doesn't require anything else.
+  #   It would be nice to have a dedicated type for this, but that requires a schema modification.
+  #   TODO: Consider using a custom objectClass for ldifMarkers.
+
+  init.ldifMarkers.ldif: |+
+    dn: ou=ldifMarkers,dc=micahrl,dc=me
+    objectClass: organizationalUnit
+    objectClass: top
+    ou: ldifMarkers
+    description: A list of all the LDIF files that have been applied.
+
+  init.removeDefaultJunk.ldif: |+
+    dn: uid=demo_user,ou=people,dc=micahrl,dc=me
+    changetype: delete
+
+    dn: cn=demo_group,ou=Groups,dc=micahrl,dc=me
+    changetype: delete
+
+  init.enableMemberOf.ldif: |+
+    dn: cn=MemberOf Plugin,cn=plugins,cn=config
+    changetype: modify
+    replace: nsslapd-pluginEnabled
+    nsslapd-pluginEnabled: on
+
+  service.authenticator.ldif: |+
+    dn: uid=authenticator,ou=services,dc=micahrl,dc=me
+    objectClass: inetOrgPerson
+    objectClass: account
+    objectClass: top
+    uid: authenticator
+    cn: Authenticator
+    sn: authrenticator
+    description: A service account for authenticating users
+
+  service.ldapAccountManager.ldif: |+
+    dn: uid=ldapAccountManager,ou=services,dc=micahrl,dc=me
+    objectClass: inetOrgPerson
+    objectClass: account
+    objectClass: top
+    uid: ldapAccountManager
+    cn: LDAP Account Manager
+    sn: ldapAccountManager
+
+  user.mrladmin.ldif: |+
+    dn: uid=mrladmin,ou=people,dc=micahrl,dc=me
+    objectClass: inetOrgPerson
+    objectClass: posixAccount
+    objectClass: top
+    uid: mrladmin
+    cn: Micah R Ledbetter (Admin)
+    sn: Ledbetter
+    uidNumber: 10420
+    gidNumber: 10100
+    homeDirectory: /home/mrladmin
+    loginShell: /bin/sh
+    gecos: Micah R Ledbetter (Admin)
+
+  user.micahrl.ldif: |+
+    dn: uid=micahrl,ou=people,dc=micahrl,dc=me
+    objectClass: inetOrgPerson
+    objectClass: posixAccount
+    objectClass: top
+    uid: micahrl
+    cn: Micah R Ledbetter
+    sn: Ledbetter
+    uidNumber: 10069
+    gidNumber: 10101
+    homeDirectory: /home/micahrl
+    loginShell: /bin/zsh
+    gecos: Micah R Ledbetter
+
+  group.patricii.ldif: |+
+    dn: cn=patricii,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: posixGroup
+    objectClass: top
+    cn: Patricii
+    gidNumber: 10100
+
+  group.proletarii.ldif: |+
+    dn: cn=proletarii,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: posixGroup
+    objectClass: top
+    cn: Proletarii
+    gidNumber: 10101
+
+  group.servi.ldif: |+
+    dn: cn=servi,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: posixGroup
+    objectClass: top
+    cn: Servi
+    gidNumber: 10102
+
+  membership.patricii.mrladmin.ldif: |+
+    dn: cn=patricii,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: memberUid
+    memberUid: mrladmin
+    -
+    add: member
+    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
+
+  membership.proletarii.micahrl.ldif: |+
+    dn: cn=proletarii,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: memberUid
+    memberUid: micahrl
+    -
+    add: member
+    member: uid=micahrl,ou=people,dc=micahrl,dc=me
+
+  membership.servi.ldapAccountManager.ldif: |+
+    dn: cn=servi,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: memberUid
+    memberUid: ldapAccountManager
+    -
+    add: member
+    member: uid=ldapAccountManager,ou=services,dc=micahrl,dc=me

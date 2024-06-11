@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lam
+  namespace: directory
+  labels:
+    app.kubernetes.io/name: ldap-account-manager
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ldap-account-manager
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ldap-account-manager
+    spec:
+      initContainers:
+        - name: configure
+          image: ghcr.io/ldapaccountmanager/lam:8.7
+          command: ["/cfg/lam-setup/configure.sh"]
+          envFrom:
+            - secretRef:
+                name: lam-setup-secrets
+          volumeMounts:
+            - name: lam-setup
+              mountPath: /cfg/lam-setup
+            - name: lam-setup-secrets
+              mountPath: /cfg/lam-setup-secrets
+            - name: dirsrv-tls-ca
+              mountPath: /cfg/dirsrv-tls-ca
+            - name: etc-ldap-account-manager
+              mountPath: /cfg/etc-ldap-account-manager
+            - name: var-lib-ldap-account-manager
+              mountPath: /cfg/var-lib-ldap-account-manager
+
+      containers:
+        - name: ldap-account-manager
+          image: "ghcr.io/ldapaccountmanager/lam:8.7"
+          imagePullPolicy: IfNotPresent
+          env:
+            # Do not do any of the variable replacement stuff from the container's start.sh.
+            # We have already done that in the init container.
+            - name: LAM_SKIP_PRECONFIGURE
+              value: "true"
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: etc-ldap-account-manager
+              mountPath: /etc/ldap-account-manager
+            - name: var-lib-ldap-account-manager
+              mountPath: /var/lib/ldap-account-manager
+
+      volumes:
+        - name: dirsrv-tls-ca
+          configMap:
+            name: kubernasty-ca-root-cert
+        - name: lam-setup
+          configMap:
+            name: lam-setup
+            defaultMode: 0555
+        - name: lam-setup-secrets
+          secret:
+            secretName: lam-setup-secrets
+            defaultMode: 0400
+        - name: etc-ldap-account-manager
+          emptyDir: {}
+        - name: var-lib-ldap-account-manager
+          emptyDir: {}

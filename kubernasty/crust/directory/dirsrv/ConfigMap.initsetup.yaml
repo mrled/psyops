@@ -1,0 +1,246 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: initsetup
+  namespace: directory
+data:
+
+  envsubst.py: |
+    #!/usr/bin/env python3
+    # Poor pythonista's envsubst
+
+    import os
+    import sys
+
+    for line in sys.stdin:
+        sys.stdout.write(os.path.expandvars(line))
+
+  setup.sh: |+
+    #!/bin/sh
+    set -eu
+
+    # Put the LDAP password somewhere on the filesystem so that we can use it securely.
+    umask 077
+    mkdir -p /containeripc/topsecret
+    # There must be no newline at the end of the password file.
+    printf '%s' "$DS_DM_PASSWORD" >/containeripc/topsecret/ds-dm-password
+    umask 022
+
+    set -x
+
+    chown -R 389:389 /containeripc
+    chown -R 389:389 /data
+
+  aliases.sh: |+
+    # Dot-source this file to have easier access to auhtenticated ldap* commands
+    # ldappasswd requires a secure connection, so we just use it for everything.
+    # The ldap* tools don't seem to work with TLS and localhost for some reason?
+    # So we use the the DNS name.
+    export LDAPTLS_CACERT=/data/tls/ca/ca.crt
+    alias ldapmodify='ldapmodify -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+    alias ldapadd='ldapadd -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+    alias ldapsearch='ldapsearch -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+    alias ldapdelete='ldapdelete -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+    alias ldappasswd='ldappasswd -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+
+  livenessProbe.sh: |+
+    #!/bin/sh
+    set -eu
+    # When this succeeds, the server is up and running,
+    # but it may not have finished applying all the configuration.
+    # We just check localhost, not the DNS name, because it might not be set up yet.
+    # We also don't check TLS.
+    ldapsearch -LLL -H ldap://localhost:3389 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password -b "" -s base "objectclass=*" >/dev/null 2>&1
+
+  configure.sh: |+
+    #!/bin/sh
+    set -eu
+    . /initsetup/aliases.sh
+
+    echo "Starting configure.sh..."
+
+    # Run configuration commands after the server is started.
+    # These commands must be idempotent,
+    # as a sidecar running this script will be started with the server.
+
+    # Wait until the LDAP server is ready to accept connections.
+    # (The stop test makes sure this script doesn't cause a container we want to stop
+    # to hang until the stop timeout is reached.)
+    while ! /initsetup/livenessProbe.sh; do
+      echo "Waiting for LDAP server to start..."
+      if test -f /containeripc/stop; then
+        echo "Stopping because the main container is stopping"
+        exit 1
+      fi
+      sleep 1
+    done
+
+    for configscript in /initsetup/initial_configure_*.sh; do
+      bn=$(basename "$configscript")
+      echo "Applying configuration script $bn..."
+      /bin/sh "$configscript"
+      echo "Finished applying configuration script $bn"
+    done
+
+    echo "We have applied all configuration scripts and are ready to accept traffic."
+    touch /containeripc/startupProbe
+
+    set +x
+    echo "We're done, but we have to stay running forever or else Kubernetes will think the pod needs to be restarted."
+    while true; do
+      if test -f /containeripc/stop; then
+        echo "Stopping because the main container is stopping"
+        exit 0
+      fi
+      sleep 5
+    done
+
+  initial_configure_10_backend.sh: |+
+    #!/bin/sh
+    set -eux
+    . /initsetup/aliases.sh
+
+    # Create the main user data backend if it doesn't already exist.
+    # Do some initial one-time setup.
+
+    case $(dsconf localhost backend get-tree) in
+      *"$DS_SUFFIX_NAME"*)
+        echo "Suffix $DS_SUFFIX_NAME already exists as a backend"
+        ;;
+      *)
+        echo "Creating suffix $DS_SUFFIX_NAME as a backend"
+
+        # The name "userroot" is used by convention for the main user data backend,
+        # but it can be anything.
+        dsconf localhost backend create --suffix "$DS_SUFFIX_NAME" --be-name userroot --create-suffix --create-entries
+
+        # Remove default junk
+        ldapmodify -f /initldifs/init.removeDefaultJunk.ldif
+
+        # Create the ldifMarkers OU
+        ldapadd -f /initldifs/init.ldifMarkers.ldif
+
+        # Configure the MemberOf plugin
+        ldapmodify -f /initldifs/init.enableMemberOf.ldif
+
+        # After enabling MemberOf, we have to reindex
+        dsconf localhost backend index reindex userroo
+        ;;
+    esac
+
+  add_marker.sh: |+
+    #!/bin/sh
+    set -eu
+    . /initsetup/aliases.sh
+
+    # Add a marker to the LDAP server to indicate that a certain LDIF file has been applied.
+    # The file should be a bare filename (not a path) and might not actually exist;
+    # it is just used as the name for the marker.
+
+    filename="$1"
+    if test -z "$filename"; then
+      echo "Usage: $0 <filename>"
+      exit 1
+    fi
+
+    ldapadd <<EOF
+    dn: cn=$filename,ou=ldifMarkers,$DS_SUFFIX_NAME
+    objectClass: top
+    objectClass: organizationalRole
+    cn: $filename
+    description: LDIF file $filename applied on $(date)
+    EOF
+
+  apply_marked_ldif.sh: |+
+    #!/bin/sh
+    set -eu
+    . /initsetup/aliases.sh
+
+    # Apply an LDIF file and mark it as applied in the LDAP server.
+
+    ldif="$1"
+    if test -z "$ldif"; then
+      echo "Usage: $0 <ldif-file>"
+      exit 1
+    fi
+
+    bn=$(basename "$ldif")
+    markerdn="cn=$bn,ou=ldifMarkers,$DS_SUFFIX_NAME"
+    if ldapsearch -b "$markerdn" >/dev/null 2>&1; then
+      echo "LDIF $bn has already been applied"
+      exit 0
+    fi
+
+    echo "Add ldifMarkers entry for $bn"
+    if ! initsetup/add_marker.sh "$bn"; then
+      echo "Failed to add marker for $bn"
+      exit 1
+    fi
+
+    echo "Applying LDIF $bn"
+    if ! ldapadd -f "$ldif"; then
+      echo "Failed to apply LDIF $bn"
+      ldapdelete "$markerdn"
+      exit 1
+    fi
+
+  initial_configure_20_apply_ldifs.sh: |+
+    #!/bin/sh
+    set -eux
+    . /initsetup/aliases.sh
+
+    # Apply all the LDIF files from the initldifs ConfigMap idempotently.
+
+    echo "Existing ldifMarkers entries:"
+    ldapsearch -LLL -b "ou=ldifMarkers,$DS_SUFFIX_NAME" dn
+
+    for svc in /initldifs/service.*.ldif; do
+      /initsetup/apply_marked_ldif.sh "$svc"
+    done
+    for user in /initldifs/user.*.ldif; do
+      /initsetup/apply_marked_ldif.sh "$user"
+    done
+    for group in /initldifs/group.*.ldif; do
+      /initsetup/apply_marked_ldif.sh "$group"
+    done
+    for membership in /initldifs/membership.*.ldif; do
+      /initsetup/apply_marked_ldif.sh "$membership"
+    done
+
+
+  initial_configure_30_set_account_passwords.sh: |+
+    #!/bin/sh
+    set -eu
+    . /initsetup/aliases.sh
+
+    # Set passwords for accounts in the LDAP server from the mounted secret.
+    # Unlike the LDIF files, this is run every time the container starts,
+    # and any changes made to the password in the Secret will overwrite whatever is in the LDAP server.
+
+    ldapmodify_setpassword() {
+      local dn="$1"
+      local password="$2"
+      echo "Setting password for $dn..."
+
+      # Sometimes (I think for service accounts) ldappasswd gives a message like
+      #   Result: Object class violation (65)
+      #   Additional info: Failed to update password
+      # So we use ldapmodify instead
+      # ldappasswd -s "$password" "$dn"
+
+      ldapmodify <<EOF
+    dn: $dn
+    changetype: modify
+    replace: userPassword
+    userPassword: $password
+    EOF
+    }
+
+    while read user password; do
+      test -z "$user" && continue
+      ldapmodify_setpassword "uid=$user,ou=people,$DS_SUFFIX_NAME" "$password"
+    done </initsecrets/user-passwords
+    while read service password; do
+      test -z "$service" && continue
+      ldapmodify_setpassword "uid=$service,ou=services,$DS_SUFFIX_NAME" "$password"
+    done </initsecrets/service-passwords

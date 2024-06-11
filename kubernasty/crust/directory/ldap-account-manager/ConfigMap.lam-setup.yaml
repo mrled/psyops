@@ -1,0 +1,302 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lam-setup
+  namespace: directory
+# <https://github.com/LDAPAccountManager/lam/blob/develop/lam-packaging/docker/.env>
+data:
+
+  configure.sh: |+
+    #!/bin/sh
+    set -eu
+
+    cp -R /var/lib/ldap-account-manager/* /cfg/var-lib-ldap-account-manager/
+    cp -R /etc/ldap-account-manager/* /cfg/etc-ldap-account-manager/
+    cp /cfg/dirsrv-tls-ca/ca.crt /cfg/var-lib-ldap-account-manager/config/serverCerts.pem
+
+    export LAM_PASSWORD_SSHA=$(/cfg/lam-setup/calculate_ssha.sh "$LAM_PASSWORD")
+
+    #cp /cfg/lam-setup/lam.conf /cfg/var-lib-ldap-account-manager/config/lam.conf
+    envsubst < /cfg/lam-setup/lam.conf > /cfg/var-lib-ldap-account-manager/config/lam.conf
+    envsubst < /cfg/lam-setup/config.cfg > /cfg/etc-ldap-account-manager/config.cfg
+
+    chown -R www-data:root /cfg/var-lib-ldap-account-manager /cfg/etc-ldap-account-manager
+    chmod -R u+wrX,g+rX,o-rwx /cfg/var-lib-ldap-account-manager /cfg/etc-ldap-account-manager
+
+    find /cfg/var-lib-ldap-account-manager
+    find /cfg/etc-ldap-account-manager
+
+  # This is how the container does it
+  # <https://github.com/LDAPAccountManager/lam/blob/develop/lam-packaging/docker/start.sh#L45>
+  calculate_ssha.sh: |+
+    #!/bin/sh
+    set -eu
+    export PLAINTEXT_PASSWORD="$1"
+    LAM_PASSWORD_SSHA=$(php -r '$password = getenv("PLAINTEXT_PASSWORD"); $rand = abs(hexdec(bin2hex(openssl_random_pseudo_bytes(5)))); $salt0 = substr(pack("h*", md5($rand)), 0, 8); $salt = substr(pack("H*", sha1($salt0 . $password)), 0, 4); print "{SSHA}" . base64_encode(pack("H*", sha1($password . $salt))) . " " . base64_encode($salt) . "\n";')
+    echo "$LAM_PASSWORD_SSHA"
+    return 0
+
+
+  # BE CAREFUL WHEN CHANGING TEMPLATED CONFIG FILES.
+  # When importing from a running LAM instance,
+  # make sure not to copy any passwords here, but use variables instead.
+  #
+  # The container has envsubst, so we just use that.
+
+  # /etc/ldap-account-manager/config.cfg
+  # This is the config file for the web application.
+  # Notes about specific fields:
+  # - password: the password for the LAM admin user --
+  #   not an LDAP user, but the admin user for the web application.
+  #   Must be SSHA-hashed in a format that looks like
+  #   {SSHA}D6AaX93kPmck9wAxNlq3GF93S7A= R7gkjQ==
+  #   (that's the password "lam" hashed with a random salt, which is in the second field).
+  #   Should match the Passwd: field in lam.conf.
+  config.cfg: |+
+    # password to add/delete/rename configuration profiles (default: lam)
+    password: $LAM_PASSWORD_SSHA
+
+    # default profile, without ".conf"
+    default: lam
+
+    # log level
+    logLevel: 4
+
+    # log destination
+    logDestination: SYSLOG
+
+    configDatabaseType: files
+    configDatabaseServer:
+    configDatabasePort:
+    configDatabaseName:
+    configDatabaseUser:
+    configDatabasePassword:
+
+    license:
+
+  # /var/lib/ldap-account-manager/config/lam.conf
+  # This is the 'lam' profile.
+  # Notes about specific fields:
+  # - Passwd: the password for the LAM admin user.
+  #   Should match the password field in config.cfg.
+  #   See above for more details.
+  # - loginSearchDN: the DN of the user that LAM uses to bind to the LDAP server
+  #   to search for users.
+  # - loginSearchPassword: The password for the bind user, always plain text.
+  lam.conf: |+
+    Passwd: $LAM_PASSWORD_SSHA
+    loginSearchPassword: $LAM_BIND_PASSWORD
+
+    ServerURL: ldap://dirsrv:3389
+    serverDisplayName:
+    useTLS: no
+    followReferrals: false
+    pagedResults: false
+    referentialIntegrityOverlay: false
+    hidePasswordPromptForExpiredPasswords: false
+    Admins: uid=lam,ou=serviceAccounts,dc=micahrl,dc=me
+    defaultLanguage: en_US.utf8
+    timeZone: Europe/London
+    scriptPath:
+    scriptServer:
+    scriptRights: 700
+    scriptUserName:
+    scriptSSHKey:
+    scriptSSHKeyPassword:
+    searchLimit: 0
+    activeTypes: user,group,user_1
+    accessLevel: 100
+    loginMethod: search
+    loginSearchSuffix: dc=micahrl,dc=me
+    loginSearchFilter: (&(uid=%USER%)(memberOf=cn=patricii,ou=groups,dc=micahrl,dc=me))
+    loginSearchDN: uid=authenticator,ou=services,dc=micahrl,dc=me
+    httpAuthentication: false
+
+    jobsBindPassword:
+    jobsBindUser:
+    jobsDatabase: SQLite
+    jobsDBHost:
+    jobsDBPort:
+    jobsDBUser:
+    jobsDBPassword:
+    jobsDBName:
+    jobToken: 8dcP1mCmTGynUs0CBZrA
+    pwdResetAllowSpecificPassword: true
+    pwdResetAllowScreenPassword: true
+    pwdResetForcePasswordChange: true
+    pwdResetDefaultPasswordOutput: 2
+    hideDnPart:
+    pwdPolicyMinLength:
+    pwdPolicyMinLowercase:
+    pwdPolicyMinUppercase:
+    pwdPolicyMinNumeric:
+    pwdPolicyMinSymbolic:
+    modules: posixGroup_group_gidGenerator: range
+    modules: posixGroup_group_minGID: 10000
+    modules: posixGroup_group_maxGID: 20000
+    modules: posixGroup_group_sambaIDPoolDN:
+    modules: posixGroup_group_windowsIDPoolDN:
+    modules: posixGroup_group_magicNumber:
+    modules: posixGroup_group_gidCheckSuffix:
+    modules: posixGroup_group_hidememberUid: false
+    modules: posixAccount_user_uidGeneratorUsers: range
+    modules: posixAccount_user_sambaIDPoolDNUsers:
+    modules: posixAccount_user_windowsIDPoolDNUsers:
+    modules: posixAccount_user_minUID: 10000
+    modules: posixAccount_user_maxUID: 30000
+    modules: posixAccount_user_magicNumberUser:
+    modules: posixAccount_user_uidCheckSuffixUser:
+    modules: posixAccount_user_userNameSuggestion: @givenname@%sn%
+    modules: posixAccount_user_hidegecos: false
+    modules: posixAccount_user_hidepassword: false
+    modules: posixAccount_user_1_uidGeneratorUsers: range
+    modules: posixAccount_user_1_sambaIDPoolDNUsers:
+    modules: posixAccount_user_1_windowsIDPoolDNUsers:
+    modules: posixAccount_user_1_minUID: 10000
+    modules: posixAccount_user_1_maxUID: 30000
+    modules: posixAccount_user_1_magicNumberUser:
+    modules: posixAccount_user_1_uidCheckSuffixUser:
+    modules: posixAccount_user_1_userNameSuggestion: @givenname@%sn%
+    modules: posixAccount_user_1_hidegecos: false
+    modules: posixAccount_user_1_hidepassword: false
+    modules: posixAccount_pwdHash: SSHA
+    modules: posixAccount_shells: /bin/bash+::+/bin/csh+::+/bin/dash+::+/bin/false+::+/bin/ksh+::+/bin/sh
+    modules: posixAccount_primaryGroupAsSecondary: false
+    modules: inetOrgPerson_hideDescription: false
+    modules: inetOrgPerson_hideStreet: false
+    modules: inetOrgPerson_hidePostOfficeBox: false
+    modules: inetOrgPerson_hidePostalCode: false
+    modules: inetOrgPerson_hideLocation: false
+    modules: inetOrgPerson_hideState: false
+    modules: inetOrgPerson_hidePostalAddress: false
+    modules: inetOrgPerson_hideRegisteredAddress: false
+    modules: inetOrgPerson_hideOfficeName: false
+    modules: inetOrgPerson_hideRoomNumber: false
+    modules: inetOrgPerson_hideTelephoneNumber: false
+    modules: inetOrgPerson_hideHomeTelephoneNumber: false
+    modules: inetOrgPerson_hideMobileNumber: false
+    modules: inetOrgPerson_hideFaxNumber: false
+    modules: inetOrgPerson_hidePager: true
+    modules: inetOrgPerson_hideEMailAddress: false
+    modules: inetOrgPerson_hideJobTitle: false
+    modules: inetOrgPerson_hideCarLicense: false
+    modules: inetOrgPerson_hideEmployeeType: false
+    modules: inetOrgPerson_hideBusinessCategory: false
+    modules: inetOrgPerson_hideDepartments: false
+    modules: inetOrgPerson_hideManager: false
+    modules: inetOrgPerson_hideOu: false
+    modules: inetOrgPerson_hideO: false
+    modules: inetOrgPerson_hideEmployeeNumber: false
+    modules: inetOrgPerson_hideInitials: false
+    modules: inetOrgPerson_hideLabeledURI: false
+    modules: inetOrgPerson_hideuserCertificate: false
+    modules: inetOrgPerson_hidejpegPhoto: false
+    modules: inetOrgPerson_hidedisplayName: true
+    modules: inetOrgPerson_addAddressbook: false
+    modules: inetOrgPerson_readOnly_businessCategory: false
+    modules: inetOrgPerson_readOnly_carLicense: false
+    modules: inetOrgPerson_readOnly_cn: false
+    modules: inetOrgPerson_readOnly_departmentNumber: false
+    modules: inetOrgPerson_readOnly_description: false
+    modules: inetOrgPerson_readOnly_mail: false
+    modules: inetOrgPerson_readOnly_employeeNumber: false
+    modules: inetOrgPerson_readOnly_employeeType: false
+    modules: inetOrgPerson_readOnly_facsimileTelephoneNumber: false
+    modules: inetOrgPerson_readOnly_givenName: false
+    modules: inetOrgPerson_readOnly_homePhone: false
+    modules: inetOrgPerson_readOnly_initials: false
+    modules: inetOrgPerson_readOnly_title: false
+    modules: inetOrgPerson_readOnly_sn: false
+    modules: inetOrgPerson_readOnly_l: false
+    modules: inetOrgPerson_readOnly_manager: false
+    modules: inetOrgPerson_readOnly_mobile: false
+    modules: inetOrgPerson_readOnly_physicalDeliveryOfficeName: false
+    modules: inetOrgPerson_readOnly_o: false
+    modules: inetOrgPerson_readOnly_ou: false
+    modules: inetOrgPerson_readOnly_pager: false
+    modules: inetOrgPerson_readOnly_userPassword: false
+    modules: inetOrgPerson_readOnly_jpegPhoto: false
+    modules: inetOrgPerson_readOnly_postOfficeBox: false
+    modules: inetOrgPerson_readOnly_postalAddress: false
+    modules: inetOrgPerson_readOnly_postalCode: false
+    modules: inetOrgPerson_readOnly_registeredAddress: false
+    modules: inetOrgPerson_readOnly_roomNumber: false
+    modules: inetOrgPerson_readOnly_st: false
+    modules: inetOrgPerson_readOnly_street: false
+    modules: inetOrgPerson_readOnly_telephoneNumber: false
+    modules: inetOrgPerson_readOnly_uid: false
+    modules: inetOrgPerson_readOnly_labeledURI: false
+    modules: inetOrgPerson_jpegPhoto_maxWidth:
+    modules: inetOrgPerson_jpegPhoto_maxHeight:
+    modules: inetOrgPerson_jpegPhoto_maxSize:
+    types: suffix_user: ou=people,dc=micahrl,dc=me
+    types: attr_user: #uid;#givenName;#sn;#uidNumber;#gidNumber
+    types: modules_user: inetOrgPerson,posixAccount,shadowAccount
+    types: suffix_group: ou=groups,dc=micahrl,dc=me
+    types: attr_group: #cn;#gidNumber;#memberUID;#description
+    types: modules_group: posixGroup
+    types: customLabel_user: People
+    types: customLabel_group: Groups
+    types: suffix_user_1: ou=services,dc=micahrl,dc=me
+    types: attr_user_1: #uid;#cn;#sn;#uidNumber;#gidNumber
+    types: customLabel_user_1: Services
+    types: attr_group_1: #cn;#gidNumber;#memberUID;#description
+    types: modules_user_1: inetOrgPerson,posixAccount
+    types: filter_user:
+    types: filter_group:
+    types: filter_user_1:
+    types: hidden_user:
+    types: hidden_group:
+    types: hidden_user_1:
+    types: suffix_group_1: ou=groups,dc=micahrl,dc=me
+    types: customLabel_group_1:
+    types: filter_group_1:
+    tools: treeViewSuffix: dc=micahrl,dc=me
+    tools: tool_hide_toolSchemaBrowser: false
+    tools: tool_hide_toolTests: false
+    tools: tool_hide_toolProfileEditor: false
+    tools: tool_hide_toolPDFEditor: false
+    tools: tool_hide_TreeViewTool: false
+    tools: tool_hide_toolMultiEdit: false
+    tools: tool_hide_toolFileUpload: false
+    tools: tool_hide_ImportExport: false
+    tools: tool_hide_toolOUEditor: false
+    tools: tool_hide_toolWebauthn: false
+    tools: tool_hide_toolServerInformation: false
+
+
+
+
+
+  #
+  # LAM setup
+  #
+  # skip LAM preconfiguration (lam.conf + config.cfg), values: (true/false)
+  # If set to true the other variables below have no effect.
+  LAM_SKIP_PRECONFIGURE: "false"
+  # domain of LDAP database root entry, will be converted to dc=...,dc=...
+  LDAP_DOMAIN: micahrl.me
+  # LDAP base DN to overwrite value generated by LDAP_DOMAIN
+  # LDAP_BASE_DN: dc=my-domain,dc=com
+  # LDAP users DN to overwrite value provided by LDAP_BASE_DN
+  LDAP_USERS_DN: ou=people,dc=micahrl,dc=me
+  # LDAP groups DN to overwrite value provided by LDAP_BASE_DN
+  LDAP_GROUPS_DN: ou=groups,dc=micahrl,dc=me
+  # LDAP server URL
+  LDAP_SERVER: "ldaps://dirsrv:3636"
+  # LDAP admin user (set as login user for LAM)
+  LDAP_USER: uid=ldapAccountManager,ou=serviceAccounts,dc=micahrl,dc=me
+  # default language, e.g. en_US, de_DE, fr_FR, ...
+  LAM_LANG: en_US
+  # LAM configuration master password and password for server profile "lam"
+  # Set in the Secret
+  # LAM_PASSWORD=lam
+
+  # configuration database (files or mysql)
+  LAM_CONFIGURATION_DATABASE: files
+
+  # LAM Pro license (line breaks can be removed)
+  LAM_LICENSE: ""
+
+  # deactivate TLS certificate checks, activate for development only
+  LAM_DISABLE_TLS_CHECK: "true"
