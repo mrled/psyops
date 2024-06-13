@@ -47,6 +47,15 @@ data:
   #   it's standard, and doesn't require anything else.
   #   It would be nice to have a dedicated type for this, but that requires a schema modification.
   #   TODO: Consider using a custom objectClass for ldifMarkers.
+  #
+  # You can add LDIFs here and apply them without restarting the directory server.
+  # * Create the LDIF here
+  # * Apply the ConfigMap to Kubernetes with `kubectl apply -f ConfigMap.initldifs.yaml`
+  # * Wait for it to be applied...
+  #   there is no good way to test this so you can just cat the file from the sidecar like
+  #   `kubectl exec -it -n directory dirsrv-0 -c configurator -- cat /initldifs/<YOUR NEW FILE>.ldif`
+  # * Run the LDIF apply script like
+  #   `kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/initial_configure_20_apply_ldifs.sh`
 
   init.ldifMarkers.ldif: |+
     dn: ou=ldifMarkers,dc=micahrl,dc=me
@@ -139,6 +148,12 @@ data:
     cn: Servi
     gidNumber: 10102
 
+  group.totalgits.ldif: |+
+    dn: cn=totalgits,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: top
+    cn: Total Gits
+
   membership.patricii.mrladmin.ldif: |+
     dn: cn=patricii,ou=groups,dc=micahrl,dc=me
     changetype: modify
@@ -165,3 +180,9 @@ data:
     -
     add: member
     member: uid=ldapAccountManager,ou=services,dc=micahrl,dc=me
+
+  membership.totalgits.micahrl.ldif: |+
+    dn: cn=totalgits,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=micahrl,ou=people,dc=micahrl,dc=me

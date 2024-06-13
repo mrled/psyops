@@ -121,6 +121,17 @@ spec:
               mountPath: /initldifs
             - name: initsetup
               mountPath: /initsetup
+
+            # Some niceties for debugging
+            # (Don't forget that subPath mounts do not update when the ConfigMap changes)
+            - name: initsetup
+              mountPath: /etc/profile.d/profile.ldap.sh
+              subPath: profile.ldap.sh
+            - name: initsetup
+              # In the dirsrv homedir
+              mountPath: /usr/share/dirsrv/.ldaprc
+              subPath: ldaprc
+
             - name: initsecrets
               mountPath: /initsecrets
             - name: containeripc

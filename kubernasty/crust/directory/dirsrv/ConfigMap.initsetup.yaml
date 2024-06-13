@@ -31,17 +31,29 @@ data:
     chown -R 389:389 /containeripc
     chown -R 389:389 /data
 
-  aliases.sh: |+
-    # Dot-source this file to have easier access to auhtenticated ldap* commands
-    # ldappasswd requires a secure connection, so we just use it for everything.
+  ldaprc: |+
+    # This file partially configures the OpenLDAP ldap* tools like ldapadd and ldapsearch.
+    # This is an ldaprc not an ldap.conf, because the latter cannot specify BINDDN;
+    # as such, it must exist in the user's home directory.
+    # ldaprc cannot specify the bind password at all (neither can ldap.conf)...
+    # OpenLDAP does not support any way of doing this.
     # The ldap* tools don't seem to work with TLS and localhost for some reason?
+    # (Even if localhost is in the subjectAltName of the certificate.)
     # So we use the the DNS name.
-    export LDAPTLS_CACERT=/data/tls/ca/ca.crt
-    alias ldapmodify='ldapmodify -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
-    alias ldapadd='ldapadd -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
-    alias ldapsearch='ldapsearch -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
-    alias ldapdelete='ldapdelete -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
-    alias ldappasswd='ldappasswd -H ldaps://dirsrv:3636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+    # While the other utilities work unencrypted, ldappasswd requires TLS,
+    # so we are forced to make TLS work even though the server is on localhost.
+    URI ldaps://dirsrv:3636
+    BINDDN cn=Directory Manager
+    TLS_CACERT /data/tls/ca/ca.crt
+
+  profile.ldap.sh: |+
+    # Relies on the URI and TLS_CACERT in ldaprc.
+    # (I can't seem to get BINDDN to work though, not sure why.)
+    alias ldapmodify='ldapmodify -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+    alias ldapadd='ldapadd -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+    alias ldapsearch='ldapsearch -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+    alias ldapdelete='ldapdelete -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+    alias ldappasswd='ldappasswd -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
 
   livenessProbe.sh: |+
     #!/bin/sh
@@ -55,7 +67,7 @@ data:
   configure.sh: |+
     #!/bin/sh
     set -eu
-    . /initsetup/aliases.sh
+    . /initsetup/profile.ldap.sh
 
     echo "Starting configure.sh..."
 
@@ -98,7 +110,7 @@ data:
   initial_configure_10_backend.sh: |+
     #!/bin/sh
     set -eux
-    . /initsetup/aliases.sh
+    . /initsetup/profile.ldap.sh
 
     # Create the main user data backend if it doesn't already exist.
     # Do some initial one-time setup.
@@ -131,7 +143,7 @@ data:
   add_marker.sh: |+
     #!/bin/sh
     set -eu
-    . /initsetup/aliases.sh
+    . /initsetup/profile.ldap.sh
 
     # Add a marker to the LDAP server to indicate that a certain LDIF file has been applied.
     # The file should be a bare filename (not a path) and might not actually exist;
@@ -154,7 +166,7 @@ data:
   apply_marked_ldif.sh: |+
     #!/bin/sh
     set -eu
-    . /initsetup/aliases.sh
+    . /initsetup/profile.ldap.sh
 
     # Apply an LDIF file and mark it as applied in the LDAP server.
 
@@ -187,7 +199,7 @@ data:
   initial_configure_20_apply_ldifs.sh: |+
     #!/bin/sh
     set -eux
-    . /initsetup/aliases.sh
+    . /initsetup/profile.ldap.sh
 
     # Apply all the LDIF files from the initldifs ConfigMap idempotently.
 
@@ -211,7 +223,7 @@ data:
   initial_configure_30_set_account_passwords.sh: |+
     #!/bin/sh
     set -eu
-    . /initsetup/aliases.sh
+    . /initsetup/profile.ldap.sh
 
     # Set passwords for accounts in the LDAP server from the mounted secret.
     # Unlike the LDIF files, this is run every time the container starts,
