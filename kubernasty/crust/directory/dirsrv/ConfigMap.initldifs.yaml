@@ -181,6 +181,12 @@ data:
     add: member
     member: uid=ldapAccountManager,ou=services,dc=micahrl,dc=me
 
+  membership.totalgits.mrladmin.ldif: |+
+    dn: cn=totalgits,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
+
   membership.totalgits.micahrl.ldif: |+
     dn: cn=totalgits,ou=groups,dc=micahrl,dc=me
     changetype: modify
