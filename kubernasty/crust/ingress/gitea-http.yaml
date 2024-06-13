@@ -10,7 +10,7 @@ spec:
     - match: Host(`gitea.micahrl.me`)
       kind: Rule
       services:
-        - name: gitea-http
+        - name: gitea
           namespace: gitea
           kind: Service
           port: 80

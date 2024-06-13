@@ -9,9 +9,8 @@ resources:
   - ./ConfigMap.gitea-init.yaml
   - ./Secret.gitea-environment.yaml
   - ./Secret.gitea-admin.yaml
-  - ./Deployment.gitea.yaml
-  - ./Service.gitea-http.yaml
-  - ./Service.gitea-ssh.yaml
+  - ./StatefulSet.gitea.yaml
+  - ./Service.gitea.yaml
 
 # TODO: make this highly available / HA: : : : : https://gitea.com/gitea/helm-chart/src/branch/main/docs/ha-setup.md
 # Currently the PG cluster is HA, but nothing else is.

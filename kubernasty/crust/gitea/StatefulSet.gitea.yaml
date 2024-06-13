@@ -1,6 +1,6 @@
 # Source: gitea/templates/gitea/deployment.yaml
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: gitea
   namespace: gitea
@@ -9,12 +9,8 @@ metadata:
     app.kubernetes.io/name: gitea
     app.kubernetes.io/instance: gitea
 spec:
+  serviceName: gitea
   replicas: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 100%
   selector:
     matchLabels:
       app.kubernetes.io/name: gitea
@@ -82,6 +78,10 @@ spec:
               containerPort: 2222
             - name: http
               containerPort: 3000
+          lifecycle:
+            preStop:
+              exec:
+                command: ["touch", "/containeripc/stop"]
           livenessProbe:
             failureThreshold: 10
             initialDelaySeconds: 200
@@ -99,16 +99,43 @@ spec:
               port: http
             timeoutSeconds: 1
           volumeMounts:
+            - name: containeripc
+              mountPath: /containeripc
             - name: temp
               mountPath: /tmp
             - name: data
               mountPath: /data
+            - name: etc-ssl-certs
+              mountPath: /etc/ssl/certs
+
+        - name: sidecar
+          image: "gitea/gitea:1.21.11"
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "/initializers/sidecar.entrypoint.sh"]
+          volumeMounts:
+            - name: containeripc
+              mountPath: /containeripc
+            - name: init
+              mountPath: /initializers
+            - name: etc-ssl-certs
+              mountPath: /etc/ssl/certs
+            - name: kubernasty-ca-root-cert
+              mountPath: /usr/local/share/ca-certificates
 
       volumes:
         - name: init
           configMap:
             name: gitea-init
             defaultMode: 110
+        - name: kubernasty-ca-root-cert
+          configMap:
+            name: kubernasty-ca-root-cert
+        - name: etc-ssl-certs
+          emptyDir:
+            medium: Memory
+        - name: containeripc
+          emptyDir:
+            medium: Memory
         - name: temp
           emptyDir: {}
         - name: data
