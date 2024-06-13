@@ -42,7 +42,7 @@ data:
     # So we use the the DNS name.
     # While the other utilities work unencrypted, ldappasswd requires TLS,
     # so we are forced to make TLS work even though the server is on localhost.
-    URI ldaps://dirsrv:3636
+    URI ldaps://dirsrv:636
     BINDDN cn=Directory Manager
     TLS_CACERT /data/tls/ca/ca.crt
 
