@@ -31,7 +31,7 @@ spec:
         - name: init-directories
           image: "gitea/gitea:1.21.11-rootless"
           imagePullPolicy: IfNotPresent
-          command: ["sh", "-c", "/initializers/init_directory_structure.sh && /initializers/configure_gitea.sh"]
+          command: ["sh", "/initializers/initialize.sh"]
           env:
             - name: HOME
               value: /data/gitea/git
@@ -57,6 +57,8 @@ spec:
               mountPath: /tmp
             - name: data
               mountPath: /data
+            - name: gitea-custom-config
+              mountPath: /gitea-custom-config
 
       containers:
         - name: gitea
@@ -130,6 +132,9 @@ spec:
         - name: kubernasty-ca-root-cert
           configMap:
             name: kubernasty-ca-root-cert
+        - name: gitea-custom-config
+          configMap:
+            name: gitea-custom
         - name: etc-ssl-certs
           emptyDir:
             medium: Memory

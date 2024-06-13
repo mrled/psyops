@@ -5,6 +5,7 @@ resources:
   - ./Secret.gitea-pg.yaml
   - ./PgCluster.yaml
   - ./PVC.gitea-shared-storage.yaml
+  - ./ConfigMap.gitea-custom.yaml
   - ./ConfigMap.gitea-environment.yaml
   - ./ConfigMap.gitea-init.yaml
   - ./Secret.gitea-environment.yaml

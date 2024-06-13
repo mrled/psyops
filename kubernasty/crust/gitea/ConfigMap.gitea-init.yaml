@@ -6,6 +6,13 @@ metadata:
 
 data:
 
+  initialize.sh: |+
+    #!/bin/sh
+    set -eu
+    /initializers/init_directory_structure.sh
+    /initializers/configure_gitea.sh
+    /initializers/gitea_custom.sh
+
   init_directory_structure.sh: |-
     #!/usr/bin/env bash
 
@@ -72,6 +79,14 @@ data:
     configure_admin_user
 
     echo '==== END GITEA CONFIGURATION ===='
+
+  gitea_custom.sh: |+
+    #!/bin/sh
+    set -eu
+    mkdir -p "$GITEA_CUSTOM"/public/assets/img
+    cp /gitea-custom-config/dollark.006400.svg "$GITEA_CUSTOM"/public/assets/img
+    ln -sf dollark.006400.svg "$GITEA_CUSTOM"/public/assets/img/favicon.svg
+    ln -sf dollark.006400.svg "$GITEA_CUSTOM"/public/assets/img/logo.svg
 
   sidecar.entrypoint.sh: |+
     #!/bin/sh
