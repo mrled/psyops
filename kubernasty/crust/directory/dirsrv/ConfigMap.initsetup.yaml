@@ -64,6 +64,14 @@ data:
     # We also don't check TLS.
     ldapsearch -LLL -H ldap://localhost:3389 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password -b "" -s base "objectclass=*" >/dev/null 2>&1
 
+  log.sh: |+
+    #!/bin/sh
+    verbose="${INITSCRIPT_LOG_VERBOSE:-}"
+    set -eu
+    if test -n "${verbose}"; then
+      echo "$@"
+    fi
+
   configure.sh: |+
     #!/bin/sh
     set -eu
@@ -87,27 +95,35 @@ data:
       sleep 1
     done
 
-    for configscript in /initsetup/initial_configure_*.sh; do
-      bn=$(basename "$configscript")
-      echo "Applying configuration script $bn..."
-      /bin/sh "$configscript"
-      echo "Finished applying configuration script $bn"
-    done
+
+    export INITSCRIPT_LOG_VERBOSE=true
+
+    /initsetup/configure_backend.sh
+
+    /initsetup/log.sh "Existing ldifMarkers entries:"
+    ldapsearch -LLL -b "ou=ldifMarkers,$DS_SUFFIX_NAME" dn
+
+    /initsetup/apply_ldifs.sh
+    /initsetup/set_account_passwords.sh
+
+    unset INITSCRIPT_LOG_VERBOSE
+
 
     echo "We have applied all configuration scripts and are ready to accept traffic."
     touch /containeripc/startupProbe
 
-    set +x
-    echo "We're done, but we have to stay running forever or else Kubernetes will think the pod needs to be restarted."
+    echo "Finished initial setup. We now loop forever to check for new ldifs/passwords to apply from the initsetup ConfigMap (and to keep the container running)."
     while true; do
       if test -f /containeripc/stop; then
         echo "Stopping because the main container is stopping"
         exit 0
       fi
+      /initsetup/apply_ldifs.sh || echo "Failed to apply LDIFs, continuing..."
+      /initsetup/set_account_passwords.sh || echo "Failed to set account passwords, continuing..."
       sleep 5
     done
 
-  initial_configure_10_backend.sh: |+
+  configure_backend.sh: |+
     #!/bin/sh
     set -eux
     . /initsetup/profile.ldap.sh
@@ -179,7 +195,7 @@ data:
     bn=$(basename "$ldif")
     markerdn="cn=$bn,ou=ldifMarkers,$DS_SUFFIX_NAME"
     if ldapsearch -b "$markerdn" >/dev/null 2>&1; then
-      echo "LDIF $bn has already been applied"
+      /initsetup/log.sh "LDIF $bn has already been applied"
       exit 0
     fi
 
@@ -196,16 +212,12 @@ data:
       exit 1
     fi
 
-  initial_configure_20_apply_ldifs.sh: |+
+  apply_ldifs.sh: |+
     #!/bin/sh
-    set -eux
+    set -eu
     . /initsetup/profile.ldap.sh
 
     # Apply all the LDIF files from the initldifs ConfigMap idempotently.
-
-    echo "Existing ldifMarkers entries:"
-    ldapsearch -LLL -b "ou=ldifMarkers,$DS_SUFFIX_NAME" dn
-
     for svc in /initldifs/service.*.ldif; do
       /initsetup/apply_marked_ldif.sh "$svc"
     done
@@ -220,7 +232,7 @@ data:
     done
 
 
-  initial_configure_30_set_account_passwords.sh: |+
+  set_account_passwords.sh: |+
     #!/bin/sh
     set -eu
     . /initsetup/profile.ldap.sh
@@ -232,7 +244,7 @@ data:
     ldapmodify_setpassword() {
       local dn="$1"
       local password="$2"
-      echo "Setting password for $dn..."
+      /initsetup/log.sh "Setting password for $dn..."
 
       # Sometimes (I think for service accounts) ldappasswd gives a message like
       #   Result: Object class violation (65)
@@ -240,12 +252,19 @@ data:
       # So we use ldapmodify instead
       # ldappasswd -s "$password" "$dn"
 
-      ldapmodify <<EOF
+      cat >/tmp/ldapmodify <<EOF
     dn: $dn
     changetype: modify
     replace: userPassword
     userPassword: $password
     EOF
+
+      result=$(ldapmodify -f /tmp/ldapmodify 2>&1)
+      if test $? -ne 0; then
+        /initsetup/log.sh "Failed to set password for $dn"
+        echo "$result"
+        return 1
+      fi
     }
 
     while read user password; do
