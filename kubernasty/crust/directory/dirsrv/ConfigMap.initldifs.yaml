@@ -103,7 +103,9 @@ data:
     objectClass: top
     uid: mrladmin
     cn: Micah R Ledbetter (Admin)
+    givenName: Micah
     sn: Ledbetter
+    mail: mrladmin@micahrl.me
     uidNumber: 10420
     gidNumber: 10100
     homeDirectory: /home/mrladmin
@@ -117,7 +119,9 @@ data:
     objectClass: top
     uid: micahrl
     cn: Micah R Ledbetter
+    givenName: Micah
     sn: Ledbetter
+    mail: me@micahrl.com
     uidNumber: 10069
     gidNumber: 10101
     homeDirectory: /home/micahrl
