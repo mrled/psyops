@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: runner
+  namespace: gitea
+  labels:
+    app: runner
+    app.kubernetes.io/name: runner
+    app.kubernetes.io/instance: runner
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: runner
+      app.kubernetes.io/instance: runner
+  template:
+    metadata:
+      labels:
+        app: runner
+        app.kubernetes.io/name: runner
+        app.kubernetes.io/instance: runner
+    spec:
+
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 60
+
+      # Prevent more than one runner from running on the same node
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - runner
+            topologyKey: "kubernetes.io/hostname"
+
+      initContainers:
+      - name: init
+        image: busybox
+        # This has to run the first time the container starts with the persistent storage attached
+        # to make sure the docker directory is mounted on a path with the right permissions.
+        # (I guess this might be done in the Dockerfile,
+        # but the fact that we're persisting the rest of the homedir means we have to do it here too?)
+        command: ["/bin/sh", "-c", "chown 1000:1000 /home/rootless/.local/share/docker"]
+        volumeMounts:
+        - mountPath: /home/rootless
+          name: runner-home
+        - mountPath: /home/rootless/.local/share/docker
+          name: runner-docker
+
+      containers:
+      - name: runner
+        # dind means it's running its own Docker daemon inside the container
+        image: gitea/act_runner:nightly-dind-rootless
+        imagePullPolicy: Always
+
+        # Required for DinD
+        securityContext:
+          privileged: true
+
+        env:
+          - name: GITEA_INSTANCE_URL
+            value: "http://gitea:3000"
+          - name: CONFIG_FILE
+            value: "/etc/gitea-runner/config.yaml"
+          - name: DOCKER_HOST
+            value: unix:///run/user/1000/docker.sock
+        envFrom:
+          - secretRef:
+              name: runner-env
+
+        volumeMounts:
+
+        # The runner config file
+        - mountPath: /etc/gitea-runner
+          name: runner-config
+
+        # We mount the home volume to /data because act_runner
+        # expects to be able to find its .runner config file there.
+        # If this isn't persistent, the runner will re-register itself every time it starts.
+        - mountPath: /data
+          name: runner-home
+          # name: runner-data
+
+        # We mount the home volume so that it gets the .cache directory,
+        # which is used for act_runner caching of actions,
+        # which I don't understand very well yet.
+        # If this isn't persisted, some small-ish cache data will be lost on restart.
+        - mountPath: /home/rootless
+          name: runner-home
+
+        # We mount a separate data volume to this path because it is declared as a VOLUME
+        # in the docker:dind-rootless container that is used by the gitea act_runner container.
+        # <https://github.com/docker-library/docker/blob/master/Dockerfile-dind-rootless.template#L45>.
+        # This means that a volume mounted at /home/rootless
+        # will not persist data found in /home/rootless/.local/share/docker.
+        # Furthermore, I can't seem to make it work if I mount the home volume to this path,
+        # so we just make it a separate volume entirely.
+        # If this isn't persisted, large Docker images will be re-downloaded on every restart.
+        # (The official Gitea runner image for ubuntu-latest is 1.7GB,
+        # so it's worth caching them.)
+        - mountPath: /home/rootless/.local/share/docker
+          name: runner-docker
+
+      volumes:
+      - name: runner-config
+        configMap:
+          name: runner-config
+
+  volumeClaimTemplates:
+    - metadata:
+        name: runner-home
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        # No redundancy because it's just cache data
+        storageClassName: cephalopodblk-nvme-1rep
+        resources:
+          requests:
+            # It just has config data on it, it isn't used for builds
+            storage: 10Gi
+    - metadata:
+        name: runner-docker
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        # No redundancy because it's just cache data
+        storageClassName: cephalopodblk-nvme-1rep
+        resources:
+          requests:
+            # Docker images are pretty big
+            storage: 25Gi

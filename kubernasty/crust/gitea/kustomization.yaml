@@ -2,8 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./Namespace.yaml
+
   - ./Secret.gitea-pg.yaml
   - ./PgCluster.yaml
+
   - ./PVC.gitea-shared-storage.yaml
   - ./ConfigMap.gitea-custom.yaml
   - ./ConfigMap.gitea-environment.yaml
@@ -12,6 +14,10 @@ resources:
   - ./Secret.gitea-admin.yaml
   - ./StatefulSet.gitea.yaml
   - ./Service.gitea.yaml
+
+  - ./ConfigMap.runner-config.yaml
+  - ./Secret.runner-env.yaml
+  - ./Statefulset.runner.yaml
 
 # TODO: make this highly available / HA: : : : : https://gitea.com/gitea/helm-chart/src/branch/main/docs/ha-setup.md
 # Currently the PG cluster is HA, but nothing else is.
