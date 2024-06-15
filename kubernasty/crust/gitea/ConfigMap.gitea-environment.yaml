@@ -50,6 +50,7 @@ data:
 
     # [repository]
     GITEA__repository__ROOT: /data/git/gitea-repositories
+    GITEA__repository__DEFAULT_BRANCH: master
 
     # [indexer]
     GITEA__indexer__ISSUE_INDEXER_TYPE: db
