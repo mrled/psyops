@@ -20,6 +20,20 @@ def get_files_to_commit():
     return set(staged_files + modified_files)
 
 
+def check_sops_clean():
+    """Check if the git filter for sops is set up correctly.
+
+    We have the sops filter set up in .gitattributes,
+    but if the filter hasn't been configured in this repository,
+    git will just silently ignore it. Lol
+    """
+    try:
+        sh("git config --get filter.sops.clean")
+        return True
+    except BaseException:
+        return False
+
+
 def check_for_unencrypted_k8s_secrets(committing_files: list[str]):
     k8s_secrets = [
         f
@@ -65,7 +79,14 @@ def check_for_DONOTCOMMIT(committing_files: list[str]):
 
 
 if __name__ == "__main__":
+
     files_to_commit = get_files_to_commit()
-    check_for_unencrypted_k8s_secrets(files_to_commit)
+
+    # Only check for unencrypted k8s secrets if the sops filter is not installed.
+    # If the filter is installed, then the clean filter will encrypt the files before they are committed.
+    if not check_sops_clean():
+        check_for_unencrypted_k8s_secrets(files_to_commit)
+
     check_for_DONOTCOMMIT(files_to_commit)
+
     sys.exit(0)
