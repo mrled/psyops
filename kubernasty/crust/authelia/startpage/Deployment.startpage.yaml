@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: startpage
+  namespace: authelia
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: startpage
+  template:
+    metadata:
+      labels:
+        app: startpage
+    spec:
+      containers:
+      - name: startpage
+        image: nginx:latest
+        volumeMounts:
+        - name: startpage-html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: startpage-html
+        configMap:
+          name: startpage-html

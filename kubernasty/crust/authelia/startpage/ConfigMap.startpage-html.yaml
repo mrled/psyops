@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: startpage-html
+  namespace: authelia
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Welcome to Kubernasty!</title>
+    </head>
+    <body>
+      <h1>Kubernasty: The nastiest Kubernetes cluster in the 'Verse</h1>
+      <p>If you're seeing this page, it means you logged in successfully!</p>
+    </body>
+    </html>

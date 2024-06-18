@@ -30,6 +30,9 @@ data:
       endpoints:
         enable_expvars: false
         enable_pprof: false
+        authz:
+          forward-auth:
+            implementation: 'ForwardAuth'
     log:
       level: debug
       format: text
@@ -101,6 +104,7 @@ data:
       cookies:
         - domain: 'micahrl.me'
           authelia_url: 'https://auth.micahrl.me'
+          default_redirection_url: 'https://kubernasty.micahrl.me'
       redis:
         host: redict
         port: 6379
@@ -133,4 +137,9 @@ data:
         disable_starttls: false
     access_control:
       default_policy: two_factor
+      rules:
+        - domain: "*.micahrl.me"
+          policy: two_factor
+    portal:
+      url: https://auth.micahrl.me
     ...

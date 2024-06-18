@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - ./common/Namespace.yaml
   - ./common/ConfigMap.kubernasty-ca-root-cert.yaml
+  - ./common/Middleware.authelia.yaml
   - ./postgres/Secret.authelia-pg.yaml
   - ./postgres/PgCluster.yaml
   - ./redict/ConfigMap.redict-config.yaml
@@ -14,3 +15,6 @@ resources:
   - ./authelia/Secret.authelia.yaml
   - ./authelia/Service.authelia.yaml
   - ./authelia/DaemonSet.authelia.yaml
+  - ./startpage/ConfigMap.startpage-html.yaml
+  - ./startpage/Service.startpage.yaml
+  - ./startpage/Deployment.startpage.yaml

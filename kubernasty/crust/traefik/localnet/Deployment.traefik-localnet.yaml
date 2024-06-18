@@ -36,5 +36,9 @@ spec:
             # - --providers.kubernetescrd.ingressclass=traefik-localnet
 
             - --entrypoints.web.address=:80
+            # - --entryPoints.web.forwardedHeaders.insecure=false
+            # - --entryPoints.web.proxyProtocol.insecure=false
             - --entrypoints.websecure.address=:443
+            # - --entryPoints.websecure.forwardedHeaders.insecure=false
+            # - --entryPoints.websecure.proxyProtocol.insecure=false
             - --entrypoints.ssh.address=:22

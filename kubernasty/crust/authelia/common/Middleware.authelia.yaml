@@ -1,0 +1,11 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: authelia
+  namespace: authelia
+spec:
+  forwardAuth:
+    address: "http://authelia.authelia.svc.cluster.local/api/verify?rd=https://auth.micahrl.me/#/?rd={uri}"
+    trustForwardHeader: true
+    authResponseHeaders:
+      - "X-Forwarded-User"
