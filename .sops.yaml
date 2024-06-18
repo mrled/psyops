@@ -1,0 +1,8 @@
+creation_rules:
+  - path_regex: kubernasty/.*.yaml
+    encrypted_regex: ^(data|stringData)$
+    age: age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9
+  - path_regex: seedboxk8s/.*.yaml
+    encrypted_regex: ^(data|stringData)$
+    age: age105qzkfymzzt63ytzmfkcw0k5g82cewepnuz4plcgqy9n9hwz5yqs7k3ku5
+
