@@ -1,2 +1,2 @@
-Secret.*.yaml filter=sops diff=sops
+Secret.*.yaml filter=sops diff=sopsdiffer
 
