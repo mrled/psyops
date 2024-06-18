@@ -95,19 +95,14 @@ data:
       sleep 1
     done
 
-
+    # Log initial setup verbosely because it just happens when the container starts.
     export INITSCRIPT_LOG_VERBOSE=true
-
     /initsetup/configure_backend.sh
-
     /initsetup/log.sh "Existing ldifMarkers entries:"
-    ldapsearch -LLL -b "ou=ldifMarkers,$DS_SUFFIX_NAME" dn
-
+    /initsetup/get_marked_ldifs.sh
     /initsetup/apply_ldifs.sh
     /initsetup/set_account_passwords.sh
-
     unset INITSCRIPT_LOG_VERBOSE
-
 
     echo "We have applied all configuration scripts and are ready to accept traffic."
     touch /containeripc/startupProbe
@@ -179,6 +174,15 @@ data:
     description: LDIF file $filename applied on $(date)
     EOF
 
+  get_marked_ldifs.sh: |+
+    #!/bin/sh
+    set -eu
+    . /initsetup/profile.ldap.sh
+    # Get a list of LDIF files that have been marked as applied in the LDAP server.
+    # Print the DN of the entry. Each line formatted like:
+    #     cn=FILENAME.ldif,ou=ldifMarkers,dc=micahrl,dc=me'
+    ldapsearch -H ldaps://dirsrv:636 -LLL -b "ou=ldifMarkers,$DS_SUFFIX_NAME" dn | grep '^dn:' | sed 's/^dn: //'
+
   apply_marked_ldif.sh: |+
     #!/bin/sh
     set -eu
@@ -186,50 +190,62 @@ data:
 
     # Apply an LDIF file and mark it as applied in the LDAP server.
 
-    ldif="$1"
-    if test -z "$ldif"; then
-      echo "Usage: $0 <ldif-file>"
+    usage() {
+      echo "Usage: $0 <LDIF-FILE> [LDIF-FILE,...]"
+    }
+
+    if test "$#" -lt 1; then
+      usage
       exit 1
     fi
 
-    bn=$(basename "$ldif")
-    markerdn="cn=$bn,ou=ldifMarkers,$DS_SUFFIX_NAME"
-    if ldapsearch -b "$markerdn" >/dev/null 2>&1; then
-      /initsetup/log.sh "LDIF $bn has already been applied"
-      exit 0
-    fi
+    # Check for help, and exit early if any LDIF files are missing.
+    for ldif in "$@"; do
+      case "$ldif" in
+        -h|--help) usage; exit 0;;
+      esac
+      if ! test -f "$ldif"; then
+        echo "File not found: $ldif"
+        exit 1
+      fi
+    done
 
-    echo "Add ldifMarkers entry for $bn"
-    if ! initsetup/add_marker.sh "$bn"; then
-      echo "Failed to add marker for $bn"
-      exit 1
-    fi
+    appliedLdifs="$(/initsetup/get_marked_ldifs.sh)"
 
-    echo "Applying LDIF $bn"
-    if ! ldapadd -f "$ldif"; then
-      echo "Failed to apply LDIF $bn"
-      ldapdelete "$markerdn"
-      exit 1
-    fi
+    for ldif in "$@"; do
+      bn=$(basename "$ldif")
+      markerdn="cn=$bn,ou=ldifMarkers,$DS_SUFFIX_NAME"
+
+      case "$appliedLdifs" in
+        *"$markerdn"*)
+          /initsetup/log.sh "LDIF $bn has already been applied"
+          continue
+          ;;
+      esac
+
+      echo "Add ldifMarkers entry for $bn"
+      if ! initsetup/add_marker.sh "$bn"; then
+        echo "Failed to add marker for $bn"
+        exit 1
+      fi
+
+      echo "Applying LDIF $bn"
+      if ! ldapadd -f "$ldif"; then
+        echo "Failed to apply LDIF $bn"
+        ldapdelete "$markerdn"
+        exit 1
+      fi
+    done
 
   apply_ldifs.sh: |+
     #!/bin/sh
     set -eu
-    . /initsetup/profile.ldap.sh
-
-    # Apply all the LDIF files from the initldifs ConfigMap idempotently.
-    for svc in /initldifs/service.*.ldif; do
-      /initsetup/apply_marked_ldif.sh "$svc"
-    done
-    for user in /initldifs/user.*.ldif; do
-      /initsetup/apply_marked_ldif.sh "$user"
-    done
-    for group in /initldifs/group.*.ldif; do
-      /initsetup/apply_marked_ldif.sh "$group"
-    done
-    for membership in /initldifs/membership.*.ldif; do
-      /initsetup/apply_marked_ldif.sh "$membership"
-    done
+    /initsetup/apply_marked_ldif.sh \
+       /initldifs/config.*.ldif \
+        /initldifs/service.*.ldif \
+        /initldifs/user.*.ldif \
+        /initldifs/group.*.ldif \
+        /initldifs/membership.*.ldif
 
 
   set_account_passwords.sh: |+
@@ -275,3 +291,16 @@ data:
       test -z "$service" && continue
       ldapmodify_setpassword "uid=$service,ou=services,$DS_SUFFIX_NAME" "$password"
     done </initsecrets/service-passwords
+
+  tail_access_log.sh: |+
+    #!/bin/sh
+    set -eu
+    # -F will follow the file even if it is rotated
+    tail -F /var/log/dirsrv/access.log &
+    while true; do
+      if test -f /containeripc/stop; then
+        echo "Stopping because the main container is stopping"
+        exit 0
+      fi
+      sleep 5
+    done

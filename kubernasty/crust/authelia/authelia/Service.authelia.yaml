@@ -1,0 +1,18 @@
+# Source: authelia/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: authelia
+  namespace: authelia
+  labels:
+    app.kubernetes.io/name: authelia
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app.kubernetes.io/name: authelia
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http

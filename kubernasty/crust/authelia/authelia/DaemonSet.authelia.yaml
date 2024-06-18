@@ -1,0 +1,118 @@
+# It seems a little weird to deploy this as a DaemonSet,
+# but that is what the Helm chart does,
+# and it doesn't use any storage, so sure.
+
+# Source: authelia/templates/deployment.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: authelia
+  namespace: authelia
+  labels:
+    app.kubernetes.io/name: authelia
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authelia
+  revisionHistoryLimit: 5
+  minReadySeconds: 0
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 34%
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authelia
+    spec:
+      hostNetwork: false
+      hostPID: false
+      hostIPC: false
+      enableServiceLinks: false
+      containers:
+      - name: authelia
+        image: ghcr.io/authelia/authelia:4
+        imagePullPolicy: IfNotPresent
+        command: ["authelia"]
+        args:
+        - --config=/configuration.yaml
+        resources:
+          limits: {}
+          requests: {}
+        env:
+        - name: AUTHELIA_SERVER_DISABLE_HEALTHCHECK
+          value: "true"
+        - name: AUTHELIA_JWT_SECRET_FILE
+          value: /secrets/JWT_TOKEN
+        - name: AUTHELIA_SESSION_SECRET_FILE
+          value: /secrets/SESSION_ENCRYPTION_KEY
+        - name: AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE
+          value: /secrets/LDAP_PASSWORD
+        - name: AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE
+          value: /secrets/STORAGE_ENCRYPTION_KEY
+        - name: AUTHELIA_STORAGE_POSTGRES_PASSWORD_FILE
+          value: /secrets/STORAGE_PASSWORD
+        - name: AUTHELIA_SESSION_REDIS_PASSWORD_FILE
+          value: /secrets/REDIS_PASSWORD
+        - name: AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE
+          value: /secrets/SMTP_PASSWORD
+        startupProbe:
+          failureThreshold: 6
+          httpGet:
+            path: /api/health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /api/health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 0
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 5
+        readinessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /api/health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        ports:
+        - name: http
+          containerPort: 9091
+          protocol: TCP
+
+        volumeMounts:
+        - mountPath: /configuration.yaml
+          name: config
+          readOnly: true
+          subPath: configuration.yaml
+        - mountPath: /secrets
+          name: secrets
+          readOnly: true
+        - mountPath: /certificates
+          name: kubernasty-ca-root-cert
+          readOnly: true
+
+      volumes:
+      - name: config
+        configMap:
+          name: authelia
+          items:
+          - key: configuration.yaml
+            path: configuration.yaml
+      - name: secrets
+        secret:
+          secretName: authelia
+      - name: kubernasty-ca-root-cert
+        configMap:
+          name: kubernasty-ca-root-cert

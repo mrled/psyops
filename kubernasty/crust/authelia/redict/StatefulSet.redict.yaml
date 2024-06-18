@@ -1,0 +1,75 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: redict
+  namespace: authelia
+spec:
+  serviceName: redict-headless
+
+  # This is just for a single Redict instance --
+  # Redict has clustering modes but they are more complex than simplyi adding replicas.
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redict
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redict
+    spec:
+
+      # Don't run more than one instance per node.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - redict
+            topologyKey: "kubernetes.io/hostname"
+
+      containers:
+        - name: redict
+          image: registry.redict.io/redict:7
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          command: ["redict-server", "/redict-config/redict.conf"]
+          ports:
+            - name: redict
+              containerPort: 6379
+              protocol: TCP
+          volumeMounts:
+            - name: redict-data
+              mountPath: "/data"
+            - name: redict-secret
+              mountPath: "/redict-secret"
+            - name: redict-config
+              mountPath: "/redict-config"
+
+      volumes:
+        - name: redict-secret
+          secret:
+            secretName: redict-secret
+        - name: redict-config
+          configMap:
+            name: redict-config
+        - name: containeripc
+          emptyDir:
+            medium: Memory
+
+  volumeClaimTemplates:
+    - metadata:
+        name: redict-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        # Just a single replication of the data;
+        # as this Redict instance is just used for Authelia sessions,
+        # if this dies, users will have to log in again, that's it.
+        storageClassName: cephalopodblk-nvme-1rep
+        resources:
+          requests:
+            storage: 10Gi

@@ -74,6 +74,8 @@ spec:
               mountPath: /initsetup
             - name: containeripc
               mountPath: /containeripc
+            - name: logs
+              mountPath: /var/log/dirsrv
 
           lifecycle:
             preStop:
@@ -119,6 +121,7 @@ spec:
               readOnly: true
             - name: initldifs
               mountPath: /initldifs
+
             - name: initsetup
               mountPath: /initsetup
 
@@ -136,6 +139,18 @@ spec:
               mountPath: /initsecrets
             - name: containeripc
               mountPath: /containeripc
+
+        - name: accesslogger
+          image: busybox
+          # -F will follow the file even if it is rotated
+          command: ["sh", "/initsetup/tail_access_log.sh"]
+          volumeMounts:
+            - name: initsetup
+              mountPath: /initsetup
+            - name: containeripc
+              mountPath: /containeripc
+            - name: logs
+              mountPath: /var/log/dirsrv
 
       volumes:
         - name: dirsrv-tls
@@ -164,6 +179,10 @@ spec:
         - name: containeripc
           emptyDir:
             medium: Memory
+        - name: logs
+          emptyDir:
+            medium: Memory
+
   volumeClaimTemplates:
     - metadata:
         name: dirsrv-data

@@ -1,0 +1,17 @@
+# Source: authelia/templates/configMap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redict-config
+  namespace: authelia
+  labels:
+    app.kubernetes.io/name: redict
+data:
+
+  redict.conf: |+
+    # https://codeberg.org/redict/redict/src/branch/main/redict.conf
+    #bind * -::*
+    port 6379
+    protected-mode no
+    aclfile /redict-secret/users.acl
+    loglevel verbose

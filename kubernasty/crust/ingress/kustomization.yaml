@@ -7,3 +7,4 @@ resources:
   - ./cephalopod.yaml
   - ./gitea-http.yaml
   - ./gitea-ssh.yaml
+  - ./authelia.yaml

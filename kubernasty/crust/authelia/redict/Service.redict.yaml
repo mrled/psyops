@@ -1,0 +1,18 @@
+# Source: authelia/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: redict
+  namespace: authelia
+  labels:
+    app.kubernetes.io/name: redict
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  selector:
+    app.kubernetes.io/name: redict
+  ports:
+    - name: redict
+      protocol: TCP
+      port: 6379
+      targetPort: 6379

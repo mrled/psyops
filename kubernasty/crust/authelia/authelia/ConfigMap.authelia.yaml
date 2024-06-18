@@ -1,0 +1,136 @@
+# Source: authelia/templates/configMap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authelia
+  namespace: authelia
+  labels:
+    app.kubernetes.io/name: authelia
+data:
+  configuration.yaml: |
+    ---
+    theme: auto
+    certificates_directory: /certificates
+    # default_redirection_url: kubernasty.micahrl.me
+    default_2fa_method: 'webauthn'
+    server:
+      address: tcp://0.0.0.0:9091
+      # host: 0.0.0.0
+      # port: 9091
+      asset_path: ''
+      headers:
+        csp_template: ''
+      buffers:
+        read: 4096
+        write: 4096
+      timeouts:
+        read: 6s
+        write: 6s
+        idle: 30s
+      endpoints:
+        enable_expvars: false
+        enable_pprof: false
+    log:
+      level: debug
+      format: text
+      file_path: ''
+      keep_stdout: true
+    totp:
+      disable: false
+      issuer: micahrl.me
+      algorithm: sha1
+      digits: 6
+      period: 30
+      skew: 1
+      secret_size: 32
+    webauthn:
+      disable: false
+      display_name: micahrl.me
+      attestation_conveyance_preference: indirect
+      user_verification: preferred
+      timeout: 60s
+    ntp:
+      address: time.cloudflare.com:123
+      version: 4
+      max_desync: 3s
+      disable_startup_check: false
+      disable_failure: false
+    authentication_backend:
+      # password_reset:
+      #   disable: false
+      #   custom_url: ''
+      ldap:
+        # implementation: activedirectory
+        address: ldaps://dirsrv.directory.svc.cluster.local
+        timeout: 5s
+        start_tls: false
+        base_dn: dc=micahrl,dc=me
+        additional_users_dn: ou=people
+        additional_groups_dn: ou=groups
+        permit_referrals: false
+        permit_unauthenticated_bind: false
+        permit_feature_detection_failure: false
+        user: uid=authelia,ou=services,dc=micahrl,dc=me
+        # https://www.authelia.com/reference/guides/ldap/#attribute-defaults
+        users_filter: (&(|({username_attribute}={input})({mail_attribute}={input}))(|(objectClass=inetOrgPerson)(objectClass=organizationalPerson))(!(pwdReset=TRUE)))
+        groups_filter: (&(|(member={dn})(uniqueMember={dn}))(|(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfMembers)))
+        attributes:
+          username: uid
+          mail: mail
+          display_name: cn
+          member_of: memberOf
+          group_name: cn
+    password_policy:
+      standard:
+        enabled: false
+        min_length: 8
+        max_length: 0
+        require_uppercase: true
+        require_lowercase: true
+        require_number: true
+        require_special: true
+      zxcvbn:
+        enabled: false
+        min_score: 0
+    session:
+      name: 'authelia_session'
+      same_site: 'lax'
+      expiration: 1h
+      inactivity: 5m
+      remember_me: 1y
+      cookies:
+        - domain: 'micahrl.me'
+          authelia_url: 'https://auth.micahrl.me'
+      redis:
+        host: redict
+        port: 6379
+        username: authelia
+    regulation:
+      ban_time: 5m
+      find_time: 2m
+      max_retries: 3
+    storage:
+      postgres:
+        address: tcp://autheliapg-rw:5432
+        database: authelia
+        schema: public
+        username: authelia
+        timeout: 5s
+    notifier:
+      disable_startup_check: false
+      smtp:
+        address: submissions://smtp.fastmail.com:465
+        # host: smtp.fastmail.com
+        # port: 465
+        timeout: 5s
+        username: mrled@fastmail.com
+        sender: authelia@micahrl.me
+        identifier: authelia
+        subject: '[Authelia] {title}'
+        startup_check_address: test@authelia.com
+        disable_html_emails: false
+        disable_require_tls: false
+        disable_starttls: false
+    access_control:
+      default_policy: two_factor
+    ...
