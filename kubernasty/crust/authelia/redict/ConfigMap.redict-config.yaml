@@ -15,3 +15,11 @@ data:
     protected-mode no
     aclfile /redict-secret/users.acl
     loglevel verbose
+    dir /data
+
+    # This enables persistence
+    # We use the "append-only file" method, which is durable but slower.
+    # (In production, we might prefer to snapshot with RDB instead,
+    # but we will not have performance problems on this small scale.)
+    appendonly yes
+    appendfilename "appendonly.aof"
