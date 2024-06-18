@@ -14,4 +14,4 @@ repopath="$reponame"/"$chartname"
 yq '.spec.values' "$scriptdir"/HelmRelease.yaml > "$scriptdir"/values.yaml
 helm template $chartname --namespace $namespace --version $version $repopath --values "$scriptdir"/values.yaml > "$scriptdir"/helm-templated.yaml
 kubectl apply -f "$scriptdir"/helm-templated.yaml
-# rm "$scriptdir"/values.yaml "$scriptdir"/helm-templated.yaml
+rm "$scriptdir"/values.yaml "$scriptdir"/helm-templated.yaml
