@@ -64,6 +64,14 @@ data:
     # We also don't check TLS.
     ldapsearch -LLL -H ldap://localhost:3389 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password -b "" -s base "objectclass=*" >/dev/null 2>&1
 
+  livenessProbeLdaps.sh: |+
+    #!/bin/sh
+    set -eu
+    # When this succeeds, the kubernetes Service is responding to secure LDAPS requests.
+    # I'm not sure why, but if this command is run early on, it fails.
+    # So we wait un a loop until it succeeds, and we use nettimeout=5 to check every 5 seconds (the default is much longer).
+    /bin/ldapsearch -LLL -o nettimeout=5 -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password -b "" -s base "objectclass=*" >/dev/null 2>&1
+
   log.sh: |+
     #!/bin/sh
     verbose="${INITSCRIPT_LOG_VERBOSE:-}"
@@ -86,7 +94,7 @@ data:
     # Wait until the LDAP server is ready to accept connections.
     # (The stop test makes sure this script doesn't cause a container we want to stop
     # to hang until the stop timeout is reached.)
-    while ! /initsetup/livenessProbe.sh; do
+    while ! /initsetup/livenessProbeLdaps.sh; do
       echo "Waiting for LDAP server to start..."
       if test -f /containeripc/stop; then
         echo "Stopping because the main container is stopping"
@@ -181,7 +189,14 @@ data:
     # Get a list of LDIF files that have been marked as applied in the LDAP server.
     # Print the DN of the entry. Each line formatted like:
     #     cn=FILENAME.ldif,ou=ldifMarkers,dc=micahrl,dc=me'
-    ldapsearch -H ldaps://dirsrv:636 -LLL -b "ou=ldifMarkers,$DS_SUFFIX_NAME" dn | grep '^dn:' | sed 's/^dn: //'
+    # The ldif_wrap=no option prevents line wrapping in the middle of the output,
+    # which would break the grep/sed below,
+    # and more importantly would mean that callers couldn't rely on grepping for a filename.
+    dns=$(ldapsearch -o ldif_wrap=no -H ldaps://dirsrv:636 -LLL -b "ou=ldifMarkers,$DS_SUFFIX_NAME" dn)
+    # Print just the DN part
+    # (... don't do this as a pipe from the ldapsearch command above,
+    # because if that fails we want the script to exit with an error code.)
+    echo "$dns" | grep '^dn:' | sed 's/^dn: //' | sort
 
   apply_marked_ldif.sh: |+
     #!/bin/sh

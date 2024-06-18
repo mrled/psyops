@@ -4,7 +4,7 @@ metadata:
   name: dirsrv
   namespace: directory
 spec:
-  serviceName: dirsrv
+  serviceName: dirsrv-headless
 
   # Adding replicas to the StatefulSet does not trigger any replication in the Directory Server.
   # If you want to run HA custer, you have to do that yourself.

@@ -10,8 +10,9 @@ resources:
   - ./dirsrv/ConfigMap.initldifs.yaml
   - ./dirsrv/Secret.initsecrets.yaml
   - ./dirsrv/Secret.dirsrv-env.yaml
-  - ./dirsrv/StatefulSet.dirsrv.yaml
+  - ./dirsrv/Service.dirsrv-headless.yaml
   - ./dirsrv/Service.dirsrv.yaml
+  - ./dirsrv/StatefulSet.dirsrv.yaml
 
   - ./ldap-account-manager/ConfigMap.lam-setup.yaml
   - ./ldap-account-manager/Secret.lam-setup-secrets.yaml
