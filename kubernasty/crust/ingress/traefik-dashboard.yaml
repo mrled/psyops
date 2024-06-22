@@ -17,6 +17,8 @@ spec:
         - name: api@internal
           kind: TraefikService
       middlewares:
+        - name: authelia
+          namespace: authelia
         - name: redirect-to-https
           namespace: traefik
         - name: redirect-dashboard

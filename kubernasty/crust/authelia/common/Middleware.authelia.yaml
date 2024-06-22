@@ -5,7 +5,19 @@ metadata:
   namespace: authelia
 spec:
   forwardAuth:
-    address: "http://authelia.authelia.svc.cluster.local/api/verify?rd=https://auth.micahrl.me/#/?rd={uri}"
+    # address: "http://authelia.authelia.svc.cluster.local/api/verify?rd=https://auth.micahrl.me/#/?rd={uri}"
+    address: 'http://authelia.authelia.svc.cluster.local/api/authz/forward-auth'
     trustForwardHeader: true
+
+    # The easiest way to test these is to deploy a whoami container,
+    # which prints all the headers it receives for any request.
     authResponseHeaders:
-      - "X-Forwarded-User"
+
+      # X-Forwarded-* and Remote-* convey the same information; the X- version is more standard
+      - X-Forwarded-User
+      - X-Forwarded-Groups
+      - X-Forwarded-Email
+      - Remote-User
+      - Remote-Groups
+      - Remote-Email
+      - Remote-Name

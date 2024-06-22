@@ -1,17 +1,17 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: directory
+  name: whoami-unauthenticated
   namespace: ingress
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`directory.micahrl.me`)
+    - match: Host(`whoami-unauthenticated.micahrl.me`)
       kind: Rule
       services:
-        - name: ldap-account-manager
-          namespace: directory
+        - name: whoami-unauthenticated
+          namespace: authelia
           kind: Service
           port: 80
       middlewares:

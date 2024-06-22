@@ -18,3 +18,6 @@ resources:
   - ./startpage/ConfigMap.startpage-html.yaml
   - ./startpage/Service.startpage.yaml
   - ./startpage/Deployment.startpage.yaml
+  - ./whoami/Deployment.whoami.yaml
+  - ./whoami/Service.whoami-unauthenticated.yaml
+  - ./whoami/Service.whoami-authenticated.yaml

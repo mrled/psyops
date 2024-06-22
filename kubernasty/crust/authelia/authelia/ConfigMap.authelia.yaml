@@ -135,11 +135,40 @@ data:
         disable_html_emails: false
         disable_require_tls: false
         disable_starttls: false
+
+    # Access control for domains (and paths).
+    # *** REQUIRES THE INGRESS/ROUTE USING THE AUTHELIA MIDDLEWARE ***
+    # These rules do not magically apply to all ingress/route resources.
     access_control:
-      default_policy: two_factor
+      # Any domain not listed here will be denied by default.
+      # AGAIN, THIS WILL DO NOTHING UNLESS THE INGRESS/ROUTE USES THE AUTHELIA MIDDLEWARE.
+      default_policy: deny
+      # Rules are applied in order - an early match means later rules are not evaluated.
+      # Note that for each rule, the policy is what to do, and *everything else* is the criteria for the policy.
+      # In particular, setting a subject means that the policy only applies to that subject --
+      # NOT that the domains/paths are only allowed for that subject.
       rules:
-        - domain: "*.micahrl.me"
+        # Require 2FA and Patricii membership for these domains.
+        - domain:
+            - traefik.micahrl.me
+            - kubernetes.micahrl.me
+            - cephalopod.micahrl.me
+            - directory.micahrl.me
           policy: two_factor
-    portal:
-      url: https://auth.micahrl.me
+          subject:
+            - "group:Patricii"
+        # Require 2FA and any login for these domains.
+        - domain:
+            - gitea.micahrl.me
+            - startpage.micahrl.me
+            - whoami-authenticated.micahrl.me
+          policy: two_factor
+        # Do not require login for these domains.
+        # (Kind of useless, might as well just not protect them at all.)
+        - domain:
+            - whoami-unauthenticated.micahrl.me
+          policy: bypass
+
+    # portal:
+    #   url: https://auth.micahrl.me
     ...
