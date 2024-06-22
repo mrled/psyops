@@ -1,0 +1,32 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  chart:
+    spec:
+      chart: kubernetes-dashboard
+      version: 7.5.0
+      sourceRef:
+        kind: HelmRepository
+        name: kubernetes-dashboard
+        namespace: flux-system
+  interval: 15m
+  timeout: 5m
+  values:
+    app:
+      settings:
+        global:
+          clusterName: kubernasty
+          itemsPerPage: 100
+    api:
+      args:
+        - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS."
+    web:
+      args:
+        - --system-banner="THE KUBERNETES DASBHOARD. RUINING ATTENTION, RAZING AWARENESS."
+    kong:
+      proxy:
+        http:
+          enabled: true

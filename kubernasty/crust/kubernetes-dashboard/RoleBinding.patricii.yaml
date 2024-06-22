@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: full-access-binding
+  namespace: kubernetes-dashboard
+subjects:
+- kind: Group
+  name: Patricii
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: dashboard-admin
+  apiGroup: rbac.authorization.k8s.io
