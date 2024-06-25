@@ -13,5 +13,6 @@ data:
     <body>
       <h1>Kubernasty: The nastiest Kubernetes cluster in the 'Verse</h1>
       <p>If you're seeing this page, it means you logged in successfully!</p>
+      <p>Visit <a href="https://auth.micahrl.me">Authelia</a> to log out.</p>
     </body>
     </html>

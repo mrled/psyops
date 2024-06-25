@@ -40,8 +40,13 @@ spec:
           limits: {}
           requests: {}
         env:
+        # This is required to enable Go template filters in the config file
+        - name: X_AUTHELIA_CONFIG_FILTERS
+          value: "template"
+        # Not sure why this is here
         - name: AUTHELIA_SERVER_DISABLE_HEALTHCHECK
           value: "true"
+        # A bunch of secret files -- these take the place of values in the config file
         - name: AUTHELIA_JWT_SECRET_FILE
           value: /secrets/JWT_TOKEN
         - name: AUTHELIA_SESSION_SECRET_FILE
@@ -56,6 +61,8 @@ spec:
           value: /secrets/REDIS_PASSWORD
         - name: AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE
           value: /secrets/SMTP_PASSWORD
+        - name: AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE
+          value: /secrets/OIDC_HMAC_SECRET
         startupProbe:
           failureThreshold: 6
           httpGet:

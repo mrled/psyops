@@ -11,7 +11,6 @@ data:
     ---
     theme: auto
     certificates_directory: /certificates
-    # default_redirection_url: kubernasty.micahrl.me
     default_2fa_method: 'webauthn'
     server:
       address: tcp://0.0.0.0:9091
@@ -159,15 +158,37 @@ data:
             - "group:Patricii"
         # Require 2FA and any login for these domains.
         - domain:
-            - gitea.micahrl.me
-            - startpage.micahrl.me
+            - kubernasty.micahrl.me
             - whoami-authenticated.micahrl.me
           policy: two_factor
+        # Require specific group membership for these domains
+        - domain:
+            - gitea.micahrl.me
+          policy: two_factor
+          subject;
+            - "group:Total Gits"
         # Do not require login for these domains.
         # (Kind of useless, might as well just not protect them at all.)
         - domain:
             - whoami-unauthenticated.micahrl.me
           policy: bypass
+
+    identity_providers:
+      oidc:
+        # hmac_secret: see OIDC_HMAC_SECRET
+        jwks:
+          - key: {{ secret "/secrets/JWKS_PRIMARY_RSA_PRIVATE_KEY" | mindent 10 "|" | msquote }}
+        clients:
+          - client_name: Gitea
+            client_id: ka2aiDilaineezaT7oob5eej
+            client_secret: {{ secret "/secrets/OIDIC_CLIENT_SECRET_GITEA" }}
+            redirect_uris:
+              - https://gitea.micahrl.me/user/oauth2/authelia/callback
+            scopes:
+              - openid
+              - email
+              - profile
+            authorization_policy: two_factor
 
     # portal:
     #   url: https://auth.micahrl.me

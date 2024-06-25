@@ -13,11 +13,26 @@ spec:
     # which prints all the headers it receives for any request.
     authResponseHeaders:
 
-      # X-Forwarded-* and Remote-* convey the same information; the X- version is more standard
-      - X-Forwarded-User
-      - X-Forwarded-Groups
-      - X-Forwarded-Email
+      # # X-Forwarded-* is the most standard way to convey the user, groups, email, and (full) name.
+      # # However, they don't seem to actually be forwarded. ??
+      # - X-Forwarded-User
+      # - X-Forwarded-Groups
+      # - X-Forwarded-Email
+      # - X-Forwarded-Name
+
+      # Remote-* headers convey the same information, and are not unusual but less standard.
+      # However they seem to actually be forwarded.
       - Remote-User
       - Remote-Groups
       - Remote-Email
       - Remote-Name
+
+      # The proxy IP address is sent in this header to the backend services
+      # Backends must be configured to trust the IP address sent in this header
+      # The value is the IP address of the proxy server --
+      # I think this means the LoadBalancer IP address
+      - X-Forwarded-For
+
+      # Forwards the JWT token issued by Authelia
+      # Required for kubernetes-dashboard at least
+      - Authorization

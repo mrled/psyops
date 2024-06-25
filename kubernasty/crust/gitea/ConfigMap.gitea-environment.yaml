@@ -47,6 +47,15 @@ data:
 
     # [security]
     GITEA__security__INSTALL_LOCK: "true"
+    # Allow the authelia middleware to pass these headers and log users in automatically
+    GITEA__security__REVERSE_PROXY_AUTHENTICATION_USER: "Remote-User"
+    GITEA__security__REVERSE_PROXY_AUTHENTICATION_EMAIL: "Remote-Email"
+    GITEA__security__REVERSE_PROXY_AUTHENTICATION_FULL_NAME: "Remote-Name"
+    # This should be the proxy server's network IP address,
+    # which is the load balancer's IP address.
+    GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES: "192.168.1.201/32"
+    # Gitea cannot check group membership for reverse proxy users,
+    # so make sure Authelia denies access to Gitea for unauthorized users.
 
     # [repository]
     GITEA__repository__ROOT: /data/git/gitea-repositories
@@ -71,3 +80,19 @@ data:
 
     # [metrics]
     GITEA__metrics__ENABLED: "false"
+
+    # [openid]
+    # This would allow users to log in with OpenID Connect,
+    # but does not require it, doesn't auto link to LDAP,
+    # and isn't SSO meaning users have to go to Authelia and confirm even if they're already logged in to Authelia.
+    # GITEA__openid__ENABLE_OPENID_SIGNIN: "true"
+    # GITEA__openid__ENABLE_OPENID_SIGNUP: "false"
+    # GITEA__openid__WHITELISTED_URIS: "https://auth.micahrl.me"
+
+    # [service]
+    GITEA__service__DISABLE_REGISTRATION: "true"
+    GITEA__service__SHOW_REGISTRATION_BUTTON: "false"
+    GITEA__service__ENABLE_REVERSE_PROXY_AUTHENTICATION: "true"
+    GITEA__service__ENABLE_REVERSE_PROXY_AUTO_REGISTRATION: "true"
+    GITEA__service__ENABLE_REVERSE_PROXY_FULL_NAME: "true"
+    GITEA__service__ENABLE_REVERSE_PROXY_EMAIL: "true"
