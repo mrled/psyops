@@ -14,8 +14,6 @@ data:
     default_2fa_method: 'webauthn'
     server:
       address: tcp://0.0.0.0:9091
-      # host: 0.0.0.0
-      # port: 9091
       asset_path: ''
       headers:
         csp_template: ''
@@ -32,11 +30,15 @@ data:
         authz:
           forward-auth:
             implementation: 'ForwardAuth'
+
     log:
+      # authelia recommends not using trace in production
       level: debug
+      # level: trace
       format: text
       file_path: ''
       keep_stdout: true
+
     totp:
       disable: false
       issuer: micahrl.me
@@ -57,12 +59,9 @@ data:
       max_desync: 3s
       disable_startup_check: false
       disable_failure: false
+
     authentication_backend:
-      # password_reset:
-      #   disable: false
-      #   custom_url: ''
       ldap:
-        # implementation: activedirectory
         address: ldaps://dirsrv.directory.svc.cluster.local
         timeout: 5s
         start_tls: false
@@ -82,6 +81,7 @@ data:
           display_name: cn
           member_of: memberOf
           group_name: cn
+
     password_policy:
       standard:
         enabled: false
@@ -123,8 +123,6 @@ data:
       disable_startup_check: false
       smtp:
         address: submissions://smtp.fastmail.com:465
-        # host: smtp.fastmail.com
-        # port: 465
         timeout: 5s
         username: mrled@fastmail.com
         sender: authelia@micahrl.me
@@ -147,7 +145,7 @@ data:
       # In particular, setting a subject means that the policy only applies to that subject --
       # NOT that the domains/paths are only allowed for that subject.
       rules:
-        # Require 2FA and Patricii membership for these domains.
+        # Require 2FA and patricii membership for these domains.
         - domain:
             - traefik.micahrl.me
             - kubernetes.micahrl.me
@@ -155,7 +153,7 @@ data:
             - directory.micahrl.me
           policy: two_factor
           subject:
-            - "group:Patricii"
+            - "group:patricii"
         # Require 2FA and any login for these domains.
         - domain:
             - kubernasty.micahrl.me
@@ -165,8 +163,8 @@ data:
         - domain:
             - gitea.micahrl.me
           policy: two_factor
-          subject;
-            - "group:Total Gits"
+          subject:
+            - "group:totalgits"
         # Do not require login for these domains.
         # (Kind of useless, might as well just not protect them at all.)
         - domain:
@@ -174,11 +172,21 @@ data:
           policy: bypass
 
     identity_providers:
+
       oidc:
         # hmac_secret: see OIDC_HMAC_SECRET
         jwks:
           - key: {{ secret "/secrets/JWKS_PRIMARY_RSA_PRIVATE_KEY" | mindent 10 "|" | msquote }}
+        authorization_policies:
+          patricii:
+            # Require membership in the patricii group.
+            default_policy: deny
+            rules:
+              - policy: two_factor
+                subject: "group:patricii"
+
         clients:
+
           - client_name: Gitea
             client_id: ka2aiDilaineezaT7oob5eej
             client_secret: {{ secret "/secrets/OIDIC_CLIENT_SECRET_GITEA" }}
@@ -189,6 +197,24 @@ data:
               - email
               - profile
             authorization_policy: two_factor
+
+          - client_name: Kubernetes
+            client_id: kubernasty-controlplane
+            client_secret: {{ secret "/secrets/OIDIC_CLIENT_SECRET_KUBERNASTY" }}
+            redirect_uris:
+              # I am not sure what to do here - I think I need a URI for OIDC, but k0s isn't hosting a website.
+              - https://kubernasty-controlplane.micahrl.me/oauth2/callback
+              # This is required to work with `kubectl oidc-login` from <https://github.com/int128/kubelogin>
+              - http://localhost:8000
+              # Used when debugging with oauth2-proxy
+              - http://localhost:8000/oauth2/callback
+            scopes:
+              - openid
+              - email
+              - profile
+              - groups
+              - offline_access
+            authorization_policy: patricii
 
     # portal:
     #   url: https://auth.micahrl.me

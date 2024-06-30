@@ -9,6 +9,11 @@ spec:
     address: {$}psy0ip
     k0sApiPort: 9443
     port: 6443
+    extraArgs:
+      oidc-issuer-url: https://auth.micahrl.me
+      oidc-client-id: kubernasty-controlplane
+      oidc-username-claim: email
+      oidc-groups-claim: groups
     # Note that the psy0ip must be in the sans list,
     # but all node IP addresses are listed there underneath their hostnames already.
     sans:

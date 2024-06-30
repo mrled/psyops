@@ -5,7 +5,7 @@ metadata:
   namespace: kubernetes-dashboard
 subjects:
 - kind: Group
-  name: Patricii
+  name: patricii
   apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: Role

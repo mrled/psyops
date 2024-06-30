@@ -5,6 +5,7 @@ resources:
   - ./common/ConfigMap.kubernasty-ca-root-cert.yaml
   - ./common/Middleware.authelia.yaml
   - ./postgres/Secret.authelia-pg.yaml
+  - ./common/ClusterRoleBinding.patricii.yaml
   - ./postgres/PgCluster.yaml
   - ./redict/ConfigMap.redict-config.yaml
   - ./redict/Secret.redict-secret.yaml
