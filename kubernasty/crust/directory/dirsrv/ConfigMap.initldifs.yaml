@@ -40,6 +40,12 @@ data:
   # * Speaking of group membership, by default, there is no way to filter for group members;
   #   we enable the MemberOf plugin to allow this.
   #   It only works for LDAP groups, not POSIX groups.
+  # * When defining groups, we use cn= for the Relative Distinguished Name
+  #   (the first component of the DN),
+  #   and the same value must also be provided as a cn attribute.
+  #   User entries specify a user's full name in the cn attribute,
+  #   which is different from the uid RDN, but groups don't work this way
+  #   because the cn is the RDN.
   #
   # About the ldifMarkers OU:
   # * It will contain one organizationalRole for each LDIF file that has been applied.
@@ -71,6 +77,10 @@ data:
     dn: cn=demo_group,ou=Groups,dc=micahrl,dc=me
     changetype: delete
 
+  # Automatically add a memberOf attribute to each user entry for each group they are a member of.
+  # Without this, you can't search for users by group membership. (lol)
+  # This is done only for LDAP `member` attributes, not POSIX `memberUid` attributes.
+  # (If necessary, make users both `member: ...` and `memberUid: ...` of the same group.)
   init.enableMemberOf.ldif: |+
     dn: cn=MemberOf Plugin,cn=plugins,cn=config
     changetype: modify
@@ -174,7 +184,8 @@ data:
     objectClass: groupOfNames
     objectClass: posixGroup
     objectClass: top
-    cn: Patricii
+    cn: patricii
+    description: Accounts with administrative privileges
     gidNumber: 10100
 
   group.proletarii.ldif: |+
@@ -182,7 +193,8 @@ data:
     objectClass: groupOfNames
     objectClass: posixGroup
     objectClass: top
-    cn: Proletarii
+    cn: proletarii
+    description: Regular user accounts
     gidNumber: 10101
 
   group.servi.ldif: |+
@@ -190,14 +202,16 @@ data:
     objectClass: groupOfNames
     objectClass: posixGroup
     objectClass: top
-    cn: Servi
+    cn: servi
+    description: Service accounts
     gidNumber: 10102
 
   group.totalgits.ldif: |+
     dn: cn=totalgits,ou=groups,dc=micahrl,dc=me
     objectClass: groupOfNames
     objectClass: top
-    cn: Total Gits
+    cn: totalgits
+    description: Users that can log in to the Git server
 
   membership.patricii.mrladmin.ldif: |+
     dn: cn=patricii,ou=groups,dc=micahrl,dc=me
