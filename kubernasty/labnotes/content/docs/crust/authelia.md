@@ -7,6 +7,8 @@ TODO: talk about the rest of the authelia config, how to deploy and connect to L
 
 TODO: make a doc about how I'm using 389 Directory Server but instead recommend LLDAP
 
+TODO: consider <https://github.com/milas/authelia-oidc-operator>
+
 Authelia can talk to an LDAP server and provide
 
 * middleware for traefik that requires cookie auth
@@ -121,3 +123,9 @@ To use this, configure the Kubernetes servers with extra arguments:
 ```
 
 Note that the server doesn't need the client secret.
+
+At this point, you can authenticate via OIDC, but you aren't authorized for anything.
+To do that, bind LDAP groups to cluster roles with `ClusterRoleBinding` resources,
+e.g. {{< repolink "kubernasty/crust/authelia/common/ClusterRoleBinding.patricii.yaml" >}}.
+The `cluster-admin` role is present by default in Kubernetes,
+or you can define your own more limited `Role` and `ClusterRole` resources as appropriate.
