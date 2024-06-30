@@ -88,3 +88,11 @@ helm_pull_from_flux() {
         done
     helm repo update
 }
+
+# Some convenience aliases for talking to the LDAP server
+# They're all the same arguments except for ldapsearch which also passes -LLL
+kldapsearch='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapsearch -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password -LLL'
+kldapmodify='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapmodify -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+kldapadd='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapadd -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+kldapdelete='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapdelete -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+kldappasswd='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldappasswd -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
