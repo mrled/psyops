@@ -10,13 +10,13 @@ spec:
     - match: Host(`kubernetes.micahrl.me`)
       kind: Rule
       services:
-        - name: kubernetes-dashboard-kong-proxy
+        - name: oauth2-proxy
           namespace: kubernetes-dashboard
           kind: Service
           port: 80
       middlewares:
-        - name: authelia
-          namespace: authelia
+        # - name: authelia
+        #   namespace: authelia
         - name: redirect-to-https
           namespace: traefik
   tls:

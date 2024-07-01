@@ -202,12 +202,12 @@ data:
             client_id: kubernasty-controlplane
             client_secret: {{ secret "/secrets/OIDIC_CLIENT_SECRET_KUBERNASTY" }}
             redirect_uris:
-              # I am not sure what to do here - I think I need a URI for OIDC, but k0s isn't hosting a website.
-              - https://kubernasty-controlplane.micahrl.me/oauth2/callback
               # This is required to work with `kubectl oidc-login` from <https://github.com/int128/kubelogin>
               - http://localhost:8000
               # Used when debugging with oauth2-proxy
               - http://localhost:8000/oauth2/callback
+              # Used for the kubernetes dashboard
+              - https://kubernetes.micahrl.me/oauth2/callback
             scopes:
               - openid
               - email
