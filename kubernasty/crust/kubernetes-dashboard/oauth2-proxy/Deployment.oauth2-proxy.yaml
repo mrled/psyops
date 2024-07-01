@@ -48,12 +48,6 @@ spec:
         - --cookie-secure=true
         - --cookie-httponly=true
         - --cookie-refresh=15m
-        # # Add the Authorization header
-        # - --set-authorization-header=true
-        # # pass OAuth access_token to upstream via X-Forwarded-Access-Token header
-        # - --pass-access-token=true
-        # # set X-Auth-Request-User, X-Auth-Request-Groups, X-Auth-Request-Email and X-Auth-Request-Preferred-Username response headers (useful in Nginx auth_request mode). When used with --pass-access-token, X-Auth-Request-Access-Token is added to response headers.
-        # - --set-xauthrequest=true
         # pass OIDC IDToken to upstream via Authorization Bearer header
         - --pass-authorization-header=true
 
