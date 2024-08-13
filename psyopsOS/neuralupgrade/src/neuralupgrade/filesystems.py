@@ -50,7 +50,7 @@ def umount_retry(mountpoint: str, attempts: int = 2, sleepbetween: int = 1) -> N
 
 
 class Mount:
-    """A context manager for mounting filesystesm"""
+    """A context manager for mounting filesystems"""
 
     def __init__(self, device: str, mountpoint: str, writable: bool = False):
         self.device = device
@@ -132,8 +132,16 @@ class Mount:
             if exc_type:
                 raise MultiError(cleanup_err_msg, cleanup_errs) from exc_value
             raise MultiError(cleanup_err_msg, cleanup_errs)
+
+        # If there was an exception in the block,
+        # return False to indicate that we want the exception to be raised.
+        # We're not supposed to 'raise' such an exception ourselves here)
+        #
+        # <https://docs.python.org/3/reference/datamodel.html#object.__exit__>
+        # "Note that __exit__() methods should not reraise the passed-in exception; this is the caller’s responsibility."
+        # If I understand correctly, the "caller" is just Python itself.
         if exc_type:
-            raise exc_value
+            return False
 
     def get_existing_mountpoints(self):
         """Return a list of mountpoints where the device is mounted"""

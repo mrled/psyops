@@ -199,6 +199,8 @@ def apply_updates(
     Properly ensures filesystems are mounted at most once,
     and at the end tries to return them to their original state.
     (See the Mount context manager for more details on how this works.)
+
+    TODO: Rewrite this to use contextlib.ExitStack to manage the mounts.
     """
 
     mounts: dict[str, tuple[str, Mount]] = {}
