@@ -259,9 +259,10 @@ setup_initramfs_root
 
 # Copy required files from initramfs filesystem to output directory
 # This must run after setup_initramfs_root which installs these files
+ls -alF "$bootdir"
 cp "$bootdir"/vmlinuz-$kflavor "$outdir"/kernel
-cp "$bootdir"/config-$kflavor "$outdir"/config
-cp "$bootdir"/System.map-$kflavor "$outdir"/System.map
+cp "$bootdir"/config-*-$kflavor "$outdir"/config
+cp "$bootdir"/System.map-*-$kflavor "$outdir"/System.map
 
 # Find the kernel version
 kvers=$(basename $(ls -d $initramroot/lib/modules/*"$kflavor"))
