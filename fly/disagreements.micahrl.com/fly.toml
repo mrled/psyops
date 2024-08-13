@@ -13,16 +13,23 @@ REMARK_URL = "https://disagreements.micahrl.com"
 DEBUG = "true"
 # Must match site in the client config
 SITE = "me.micahrl.com"
-# SMTP is only used for admin notifications for now
-SMTP_HOST = "smtp.fastmail.com"
+SMTP_HOST = "smtp.mailgun.org"
 SMTP_PORT = "587"
 SMTP_TLS = "false"
 SMTP_STARTTLS = "true"
-SMTP_USERNAME = "mrled@fastmail.com"
+SMTP_USERNAME = "postmaster@disagreements.micahrl.com"
 SMTP_TIMEOUT = "10s"
+# Notify admins of new comments via email
 NOTIFY_ADMINS = "email"
-NOTIFY_EMAIL_FROM = "me@micahrl.com"
-ADMIN_SHARED_EMAIL = "me@micahrl.com"
+ADMIN_SHARED_EMAIL = "admin@disagreements.micahrl.com"
+# Allow authenticating via email
+AUTH_EMAIL_ENABLE = "true"
+AUTH_EMAIL_FROM = "admin@disagreements.micahrl.com"
+AUTH_EMAIL_SUBJ = "Please log in to disagree"
+# Notify users of replies via email, I think?
+NOTIFY_USERS = "email"
+NOTIFY_EMAIL_FROM = "admin@disagreements.micahrl.com"
+NOTIFY_EMAIL_VERIFICATION_SUBJ = "Please verify your email address to disagree"
 # You have to get this value by first logging in as the user you want to be admin, and then finding the value in the UI and pasting here.
 ADMIN_SHARED_ID = "github_4622c3baa1e2d1bd137187c27103b0e6d1d48931"
 BACKUP_DIR = "/srv/var/backups"

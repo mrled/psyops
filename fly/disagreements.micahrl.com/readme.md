@@ -31,8 +31,9 @@ flyctl secrets set \
     AWS_ACCESS_KEY_ID=XXX \
     AWS_SECRET_ACCESS_KEY=YYY \
     SECRET=ZZZ \
-    AUTH_GITHUB_CID= \
-    AUTH_GITHUB_CSEC=
+    AUTH_GITHUB_CID=QWER \
+    AUTH_GITHUB_CSEC=ASDF \
+    SMTP_PASSWORD=ZXCV
 
 # Edit fly.toml as appropriate
 # At least set the URL to something like com-micahrl-disagreements.fly.dev
