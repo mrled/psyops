@@ -248,10 +248,42 @@ Resources:
           TTL: 300
           ResourceRecords: ["com-micahrl-wiki.fly.dev"]
 
+        # We must use A for the disagreementsd subdomain because we need TXT and MX records for email,
+        # and apparently you can't have a CNAME and other record types at the same time.
+        # When we do A we must also provide AAAA for fly.io reasons.
+        # - Name: disagreements.micahrl.com.
+        #   TTL: 300
+        #   Type: CNAME
+        #   ResourceRecords: ["com-micahrl-disagreements.fly.dev"]
         - Name: disagreements.micahrl.com.
+          TTL: 60
+          Type: A
+          ResourceRecords: ["66.241.125.108"]
+        # Required for tracking clicks/opens/unsubs
+        - Name: email.disagreements.micahrl.com
           Type: CNAME
           TTL: 300
-          ResourceRecords: ["com-micahrl-disagreements.fly.dev"]
+          ResourceRecords: ["mailgun.org."]
+        - Name: disagreements.micahrl.com.
+          TTL: 60
+          Type: AAAA
+          ResourceRecords: ["2a09:8280:1::1c:53de"]
+        - Name: disagreements.micahrl.com.
+          Type: TXT
+          TTL: 60
+          ResourceRecords:
+            - '"v=spf1 include:mailgun.org ~all"'
+        - Name: krs._domainkey.disagreements.micahrl.com.
+          Type: TXT
+          TTL: 60
+          ResourceRecords:
+            - '"v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDC+0iNgn/YJj27atKIzavt/kWWBX2r9Q9/L8Y19hxRaMmreMndgoVRZOQeJUfNvzm543zzMrTHMP4lh+E51AyFW4W7/N7RIeuXs7WCk1tkZ+p6kL02b0Dwl0vfVaGgViIp32iuUUExKlHlsTxI2E+jeC4iJwF6Y11E7Al7lVILtQIDAQAB"'
+        - Name: disagreements.micahrl.com.
+          Type: MX
+          TTL: 60
+          ResourceRecords:
+            - 10 mxa.mailgun.org.
+            - 10 mxb.mailgun.org.
 
         - Name: psyops.micahrl.com.
           Type: CNAME
