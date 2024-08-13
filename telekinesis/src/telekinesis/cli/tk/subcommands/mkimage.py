@@ -78,6 +78,7 @@ def generate_apk_repositories_files(alpine_version: str) -> tuple[Path, Path]:
         {psyopsOS_repo}
         """
     ).strip()
+    os.makedirs(tkconfig.noarch_artifacts.noarchroot, exist_ok=True)
     all_repos = tkconfig.noarch_artifacts.noarchroot / "psyopsOS.repositories.all"
     psyopsOS_only_repo = tkconfig.noarch_artifacts.noarchroot / "psyopsOS.repositories.psyopsOSonly"
     with all_repos.open("w") as f:
