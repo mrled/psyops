@@ -30,6 +30,7 @@ data:
 
     # Build the image
     container="$(buildah from docker.io/$x3app/$x3:latest)"
+    buildah run "$container" -- apk add --no-cache sqlite libnotify
     buildah run "$container" -- python3 -m pip install --break-system-packages youtube_dl configparse pathlib
     buildah commit "$container" "$imgname"
     buildah tag "$imgname" "$regserver/$imgns/$imgname:$imgtag"
