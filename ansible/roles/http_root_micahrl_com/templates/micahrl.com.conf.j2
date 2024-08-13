@@ -44,13 +44,6 @@
         Header always set Strict-Transport-Security "max-age=31536000"
         Header always set Content-Security-Policy upgrade-insecure-requests
 
-        SSLProxyEngine On
-
-        # Reverse-proxy the Matrix .well-known paths to the real Matrix server
-        <Location /.well-known/matrix>
-            ProxyPass "https://{{ http_root_micahrl_com_matrix_fqdn }}/.well-known/matrix"
-        </Location>
-
         # Redirects defined in group vars
 {% for redir in http_root_micahrl_com_redirect_matches %}
         RedirectMatch {{ redir.old }} {{ redir.new }}

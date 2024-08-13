@@ -26,7 +26,6 @@ http_root_micahrl_com_certbot_domain_list: "{{ [http_root_micahrl_com_root_site_
 #### Other config
 
 http_root_micahrl_com_redirect_real_webserver: https://me.micahrl.com/
-http_root_micahrl_com_matrix_fqdn: matrix.micahrl.com
 
 # Note that redirects work for ALL domains
 # So I want to redirect toys.micahrl.com/biblemunger => biblemunger.micahrl.com
