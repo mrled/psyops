@@ -18,11 +18,11 @@ Resources:
         - Name: younix.us.
           Type: A
           TTL: 300
-          ResourceRecords: ["167.71.20.245"]
+          ResourceRecords: ["5.161.64.176"]
         - Name: younix.us.
           Type: AAAA
           TTL: 300
-          ResourceRecords: ["2604:a880:400:d0::2100:1001"]
+          ResourceRecords: ["2a01:4ff:f0:a310::0"]
         - Name: www.younix.us.
           Type: CNAME
           TTL: 300

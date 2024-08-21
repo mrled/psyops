@@ -9,6 +9,22 @@
     state: latest
     update_cache: yes
 
+- name: Check for lets encrypt config file
+  stat:
+    path: /etc/letsencrypt/options-ssl-apache.conf
+  register: letsencrypt_config
+
+# If we don't do this, apache2 will not validate the config file (apachectl configtest),
+# which is required for enabling modules.
+- name: Create empty letsencrypt config file if it doesn't exist
+  copy:
+    content: ""
+    dest: /etc/letsencrypt/options-ssl-apache.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: letsencrypt_config.stat.exists == False
+
 - name: Enable Apache modules
   apache2_module:
     state: present
@@ -58,6 +74,7 @@
   register: http_root_micahrl_com_enable_site
   tags: apache_conf
 
+# Will need to temp disable this when deploying on a new server that doesn't have cert yet
 - name: Test config file
   command: apachectl configtest
   changed_when: false

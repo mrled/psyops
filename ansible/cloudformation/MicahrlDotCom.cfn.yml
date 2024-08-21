@@ -26,46 +26,51 @@ Resources:
       HostedZoneId: !Ref OriginZone
       RecordSets:
         # Apex domain
-        - Name: abraxas.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["167.71.20.245"]
-        - Name: abraxas.micahrl.com.
-          Type: AAAA
-          TTL: 300
-          ResourceRecords: ["2604:a880:400:d0::2100:1001"]
         - Name: micahrl.com.
           Type: A
           TTL: 300
-          ResourceRecords: ["167.71.20.245"]
+          ResourceRecords: ["5.161.64.176"]
         - Name: micahrl.com.
           Type: AAAA
           TTL: 300
-          ResourceRecords: ["2604:a880:400:d0::2100:1001"]
+          ResourceRecords: ["2a01:4ff:f0:a310::0"]
         - Name: www.micahrl.com.
           Type: CNAME
           TTL: 300
-          ResourceRecords: ["abraxas.micahrl.com."]
+          ResourceRecords: ["apsylania.micahrl.com."]
 
-        # Useful for testing Apache
-        - Name: abraxas2.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["abraxas.micahrl.com."]
+        # Primary app server for the web site
+        - Name: apsylania.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["5.161.64.176"]
+        - Name: apsylania.micahrl.com
+          Type: AAAA
+          TTL: 60
+          ResourceRecords: ["2a01:4ff:f0:a310::0"]
+
         # IndieWeb stuff like IndieAuth, etc
         - Name: interpersonal.micahrl.com.
           Type: CNAME
           TTL: 300
-          ResourceRecords: ["abraxas.micahrl.com."]
+          ResourceRecords: ["apsylania.micahrl.com."]
         # Old server that hosted biblemunger
         # Biblemunger app is now hosted on Vercel with the canonical url biblemunger.micahrl.com
         # toys.micahrl.com exists to redirect toys.micahrl.com/biblemunger/* -> biblemunger.micahrl.com/*
         - Name: toys.micahrl.com.
           Type: CNAME
           TTL: 300
-          ResourceRecords: ["abraxas.micahrl.com."]
+          ResourceRecords: ["apsylania.micahrl.com."]
 
         # Old apex server
+        - Name: abraxas.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["167.71.20.245"]
+        - Name: abraxas.micahrl.com.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2604:a880:400:d0::2100:1001"]
         - Name: nullyork.micahrl.com.
           Type: A
           TTL: 300

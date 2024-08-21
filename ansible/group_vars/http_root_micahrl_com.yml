@@ -5,9 +5,8 @@ http_root_micahrl_com_email: psyops@micahrl.com
 #### Domains
 
 # Domains that all share the same Apache site configuration with the $ORIGIN site
-http_root_micahrl_com_root_site_primary_domain: abraxas.micahrl.com
+http_root_micahrl_com_root_site_primary_domain: apsylania.micahrl.com
 http_root_micahrl_com_root_site_alias_domains:
-  - abraxas2.micahrl.com
   - toys.micahrl.com
   - www.micahrl.com
   - micahrl.com
