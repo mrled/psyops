@@ -193,11 +193,6 @@ Resources:
           TTL: 300
           ResourceRecords: ["silly-kangaroo-242f44.netlify.app."]
 
-        - Name: wiki.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["com-micahrl-wiki.fly.dev"]
-
         # We must use A for the disagreementsd subdomain because we need TXT and MX records for email,
         # and apparently you can't have a CNAME and other record types at the same time.
         # When we do A we must also provide AAAA for fly.io reasons.
