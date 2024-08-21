@@ -71,10 +71,6 @@ Resources:
           Type: AAAA
           TTL: 300
           ResourceRecords: ["2604:a880:400:d0::2100:1001"]
-        - Name: nullyork.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["18.216.135.175"]
 
         # GitHub Pages
         # (Documentation for my projects is at pages.micahrl.com)
@@ -88,48 +84,6 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["clever-kepler-458884.netlify.com."]
-
-        # Matrix server
-        - Name: remington.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["45.55.45.47"]
-        - Name: matrix.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["remington.micahrl.com."]
-        - Name: riot.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["matrix.micahrl.com."]
-        - Name: element.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["matrix.micahrl.com."]
-        - Name: jitsi.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["matrix.micahrl.com."]
-        - Name: dimension.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["matrix.micahrl.com."]
-        - Name: etherpad.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["matrix.micahrl.com."]
-        - Name: stats.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["matrix.micahrl.com."]
-        - Name: goneb.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["matrix.micahrl.com."]
-        - Name: _matrix-identity._tcp.micahrl.com.
-          Type: SRV
-          TTL: 300
-          ResourceRecords: ["10 0 443 matrix.micahrl.com"]
 
         # Hosted email with fastmail.com
         - Name: micahrl.com.
@@ -229,19 +183,10 @@ Resources:
           TTL: 300
           ResourceRecords: ["trusting-visvesvaraya-791291.netlify.app."]
 
-        - Name: qualia.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["suspicious-bell-3797fb.netlify.app."]
         - Name: disquisition.micahrl.com.
           Type: CNAME
           TTL: 300
           ResourceRecords: ["suspicious-bell-3797fb.netlify.app."]
-
-        - Name: nyx.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["nyxmicahrl.fly.dev"]
 
         - Name: tweets.micahrl.com.
           Type: CNAME
