@@ -11,4 +11,10 @@ else
     echo "CANNOT FIND .vault-passphrase.gpg FROM PWD $(pwd)"
     exit 1
 fi
-gpg --quiet --decrypt "$vp"
+if command -v op 2>&1 >/dev/null; then
+    # retrieve from 1password, works on the mac
+    op item get gmjopfnukc2p355jmnkasofory --fields password
+else
+    # retrieve from gpg-encrypted file stored in repo, works in psyops container
+    gpg --quiet --decrypt "$vp"
+fi
