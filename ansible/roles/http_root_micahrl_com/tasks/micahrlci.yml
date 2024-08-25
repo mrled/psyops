@@ -1,0 +1,128 @@
+---
+
+# The website's Git repo is stored on this server.
+# My "sidecar" app runs on this server too.
+# The static site is built and deployed to Netlify.
+# A post-commit hook will run the build and deploy it to Netlify.
+
+- name: Ensure git is installed
+  package:
+    name:
+      - age
+      - git
+      - git-annex
+      - golang
+      - make
+      - podman
+      - slirp4netns # for rootless Podman
+      - rootlesskit # for rootless Podman
+    state: present
+
+- name: Create micahrlci user
+  user:
+    name: micahrlci
+    comment: CI user for micahrl.com
+    shell: /bin/bash
+    home: /home/micahrlci
+    create_home: yes
+
+- name: Configure micahrlci ulimit
+  copy:
+    content: |
+      micahrlci soft nofile 65536
+      micahrlci hard nofile 65536
+    dest: /etc/security/limits.d/micahrlci.conf
+
+# Without this, systemd will not allow services to run independently of login sessions.
+# I don't understand this in detail,
+# because some processes can run like receiving a git push,
+# but others can't like Podman.
+# wtf???
+- name: Enable lingering
+  command: loginctl enable-linger micahrlci
+
+- name: Set up SSH directory for micahrlci user
+  file:
+    path: /home/micahrlci/.ssh
+    state: directory
+    owner: micahrlci
+    group: micahrlci
+    mode: '0700'
+
+- name: Create authorized_keys file
+  copy:
+    content: |
+      # THIS FILE WILL BE OVERWRITTEN BY ANSIBLE
+      {% for key in http_root_micahrl_com_ci_authorized_keys %}
+      {{ key }}
+      {% endfor %}
+    dest: /home/micahrlci/.ssh/authorized_keys
+    owner: micahrlci
+    group: micahrlci
+    mode: '0600'
+
+# - name: Add git-only SSH keys to authorized_keys
+#   blockinfile:
+#     path: /home/micahrlci/.ssh/authorized_keys
+#     block: |
+#       {% for key in http_root_micahrl_com_ci_git_only_authorized_keys %}
+#       command="/usr/bin/git-shell -c '$SSH_ORIGINAL_COMMAND'",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty {{ key }}
+#       {% endfor %}
+#     marker: "# {mark} ANSIBLE MANAGED BLOCK FOR GIT-ONLY KEYS"
+
+- name: Create bin directory for micahrlci user
+  file:
+    path: /home/micahrlci/bin
+    state: directory
+    owner: micahrlci
+    group: micahrlci
+    mode: '0700'
+
+- name: Install micahrlci script
+  copy:
+    src: micahrlci.py
+    dest: "{{ http_root_micahrl_com_micahrlci_script }}"
+    owner: micahrlci
+    group: micahrlci
+    mode: '0700'
+  tags: micahrlci.py
+
+- name: Create repo root
+  file:
+    path: "{{ http_root_micahrl_com_micahrlci_reporoot }}"
+    state: directory
+    owner: micahrlci
+    group: micahrlci
+    mode: '0700'
+
+- name: Create bare Git repository
+  command:
+    cmd: git init --bare "{{ http_root_micahrl_com_micahrlci_micahrlrepo}}"
+    creates: "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
+  become: yes
+  become_user: micahrlci
+
+- name: Create secrets root
+  file:
+    state: directory
+    path: /home/micahrlci/micahrlci/secrets
+    owner: micahrlci
+    group: micahrlci
+    mode: '0700'
+
+- name: Install secret key
+  copy:
+    content: "{{ http_root_micahrl_com_ci_age_private_key }}"
+    dest: /home/micahrlci/micahrlci/secrets/secret.age
+    owner: micahrlci
+    group: micahrlci
+    mode: '0600'
+
+- name: Set up post-receive hook
+  template:
+    src: micahrlci-post-receive.sh.j2
+    dest: "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}/hooks/post-receive"
+    owner: micahrlci
+    group: micahrlci
+    mode: '0755'
+  tags: micahrlci.py

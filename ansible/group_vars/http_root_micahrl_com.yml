@@ -47,3 +47,10 @@ http_root_micahrl_com_interpersonal_app_private_key: "{{ vault_http_root_micahrl
 http_root_micahrl_com_interpersonal_app_id: 153329
 
 http_root_micahrl_com_nostr_hex_pub_key: 322d0b38fab7056406cdf1a2303178a15cbf619a42ce73daf947122bb304cb64
+
+http_root_micahrl_com_ci_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMN/4Rdkz4vlGaQRvhmhLhkaH0CfhNnoggGBBknz17+u mrled@haluth
+
+# Jobs can encrypt data for this key and commit to git or whatever
+# Public key: age1lwmq9e45wt3hrg3cc0kz78ht030w5rxhna5d99n5rj2d4qnx8e8q6p5deu
+http_root_micahrl_com_ci_age_private_key: "{{ vault_http_root_micahrl_com_ci_age_private_key }}"
