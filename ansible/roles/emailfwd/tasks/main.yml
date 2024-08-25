@@ -2,12 +2,12 @@
 
 # ssmtp is no longer maintained
 # I also couldn't get it to work with Fastmail.
-- name: Remove packagges
-  package:
-    name:
-      - ssmtp
-    state: absent
-    update_cache: yes
+# - name: Remove packages
+#   package:
+#     name:
+#       - ssmtp
+#     state: absent
+#     update_cache: yes
 
 - name: Install packages (.deb)
   package:
@@ -27,6 +27,8 @@
     update_cache: yes
   when: ansible_distribution in ["CentOS", "Fedora", "Rocky"]
 
+# TODO: Find a way for users to send email without being able to read the msmtp config file.
+# For users to be able to send mail, they have to be able to read this file, which contains a credential.
 - name: Copy msmtp config
   vars:
     group: "{{ 'msmtp' if ansible_distribution in ['Debian', 'Ubuntu'] else 'mail' }}"
@@ -35,7 +37,7 @@
     dest: /etc/msmtprc
     owner: root
     group: "{{ group }}"
-    mode: "0640"
+    mode: "0644"
 
 - name: Configure aliases to send all mail to a single address
   copy:
