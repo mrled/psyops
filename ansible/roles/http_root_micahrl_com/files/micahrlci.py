@@ -488,6 +488,11 @@ def process_commit(
     - keep_checkout: Whether to keep the checkout directory after completion/failure
     """
 
+    if keep_checkout:
+        logger.warning(
+            f"Keeping checkout directory {checkout_path} after completion. THIS LEAVES ANY DECRYPTED SECRETS ON DISK."
+        )
+
     # Register our signal handler
     for sig in [
         signal.SIGHUP,
@@ -659,9 +664,6 @@ def main() -> None:
 
     if args.debug:
         sys.excepthook = idb_excepthook
-
-    if args.action != "all":
-        args.keep_checkout = True
 
     buildroot = Path(args.buildroot)
     queue_dir = buildroot / "queue"
