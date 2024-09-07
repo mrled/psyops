@@ -202,17 +202,6 @@ def magicrun(
     return magic_process
 
 
-def signal_handler(signum, frame):
-    """Handle signal a signal.
-
-    atexit.register(...) does not handle signals UNLESS the signal is caught by a handler.
-    So we need to a define a handler that just logs and calls sys.exit(),
-    and let atexit do any cleanup.
-    """
-    logger.warning(f"Received signal {signum}, cleaning up and exiting.")
-    sys.exit(128 + signum)
-
-
 def send_email(
     subject: str,
     body: str,
@@ -342,6 +331,11 @@ def acquire_lock_or_wait(
         time.sleep(1)
 
 
+# TODO: This should be in a script that is in .micahrlci/ of the repo.
+# We could have a default version that checks out the commit,
+# or maybe we do that and then look for a script in .micahrlci/ to run after that...
+# but all this gunk about git-annex is specific to this repo,
+# and other repos may have different concerns like git-lfs or submodules.
 def checkout_repo(repo_path: str, commit_hash: str, checkout_path: Path):
     """Check out the repository at the given commit hash.
 
@@ -693,6 +687,9 @@ def main() -> None:
     #   fatal: not a git repository: '.'
     # even when doing something like
     #   subprocess.run(["git", "status"], cwd="/definitely/a/valid/repo/path")
+    #
+    # TODO: should do the equivalent of unset $(git rev-parse --local-env-vars)
+    # <https://me.micahrl.com/til/post-commit-hook-git-dir/>5
     if "GIT_DIR" in os.environ:
         logger.warning(f"GIT_DIR is set to {os.environ['GIT_DIR']}, unsetting it.")
         os.environ.pop("GIT_DIR")
