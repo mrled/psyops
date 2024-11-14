@@ -6,9 +6,8 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
 spec:
-  # LazyLibrarian keeps generating http:// URLs, so we have to create a separate IngressRoute to redirect them to https.
   entryPoints:
-    - web
+    - web # LazyLibrarian keeps generating http:// URLs, so we have to create a separate IngressRoute to redirect them to https.
   routes:
     - match: Host(`library.${productionClusterFqdn}`) || Host(`lazylibrarian.${productionClusterFqdn}`) || Host(`lazylib.${productionClusterFqdn}`)
       kind: Rule
@@ -19,5 +18,3 @@ spec:
       middlewares:
         - name: redirect-to-https
           namespace: traefik
-  tls:
-    secretName: seedbox-wildcard-backing-secret
