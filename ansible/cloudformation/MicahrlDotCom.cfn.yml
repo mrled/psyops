@@ -367,7 +367,7 @@ Resources:
         - Name: naragua.home.micahrl.com.
           Type: A
           TTL: 60
-          ResourceRecords: ["192.168.1.118"]
+          ResourceRecords: ["192.168.1.139"]
 
         # Services
         - Name: syslog.home.micahrl.com.
