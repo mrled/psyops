@@ -63,15 +63,15 @@ spec:
             - name: USER
               value: ${quote}${plexUid}${quote}
             - name: STASH_STASH
-              value: /data/stash
+              value: /data/Trix/stash
             - name: STASH_GENERATED
-              value: /data/generated
+              value: /data/Trix/generated
             - name: STASH_METADATA
-              value: /data/metadata
+              value: /data/Trix/metadata
             - name: STASH_CACHE
-              value: /data/cache
+              value: /data/Trix/cache
             - name: STASH_CONFIG_FILE
-              value: /config/stash.yml
+              value: /data/seedboxconf/stash/stash.yml
           volumeMounts:
             - mountPath: /config
               name: x3-config-pvc
