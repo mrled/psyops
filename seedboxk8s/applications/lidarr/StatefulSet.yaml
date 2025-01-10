@@ -51,7 +51,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: linuxserver/lidarr
+        - image: linuxserver/lidarr:2.8.2
           name: lidarr
           ports:
             - containerPort: 8686

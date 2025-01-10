@@ -27,7 +27,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ghcr.io/linuxserver/lazylibrarian
+        - image: ghcr.io/linuxserver/lazylibrarian:version-b8c0b72f
           name: lazylibrarian
           ports:
             - containerPort: 5299
