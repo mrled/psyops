@@ -5,7 +5,7 @@ metadata:
   namespace: cicd
   annotations:
     kustomize.toolkit.fluxcd.io/force: enabled
-    # please: runagain
+    please: runagain
 spec:
   template:
     spec:
