@@ -82,7 +82,7 @@ export GITHUB_TOKEN="<the personal access token created previously>"
 flux bootstrap github \
     --owner=mrled \
     --repository=psyops \
-    --path=kubernasty/manifests/mantle/flux \
+    --path=kubernasty/mantle/flux \
     --branch=master \
     --personal
 ```
