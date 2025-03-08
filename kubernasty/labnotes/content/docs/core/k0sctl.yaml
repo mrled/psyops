@@ -27,13 +27,11 @@ spec:
     role: controller+worker
     noTaints: true
   k0s:
-
     # Enable dynamic configuration with CRs after initial cluster deployment
     dynamicConfig: true
 
     # spec.k0s.config contains the parts of the default k0s.yaml from 'k0s config create' that we want to override.
     config:
-
       apiVersion: k0s.k0sproject.io/v1beta1
       kind: ClusterConfig
       metadata:
@@ -102,8 +100,17 @@ spec:
                   # Must be 8 chars or less
                   # Pass this in with `K0SCTL_CONFIG_VRRP_AUTHPASS=asdf k0sctl apply -c k0sctl.yaml`
                   authPass: ${K0SCTL_CONFIG_VRRP_AUTHPASS}
-              virtualServers:
-                - ipAddress: "192.168.1.220"
+
+              # Don't use virtualServers
+              # https://docs.k0sproject.io/stable/cplb/#keepalived-virtual-servers-load-balancing
+              #   The Keepalived virtual servers Load Balancing is more performant
+              #   than the userspace reverse proxy load balancer.
+              #   However, it's not recommended because it has some drawbacks:
+              #     1. It's incompatible with controller+worker.
+              #     2. May not work on every infrastructure.
+              #     3. Troubleshooting is significantly more complex.
+              # virtualServers:
+              #   - ipAddress: "192.168.1.220"
 
           # Enable *internal* control plane load balancing,
           # such that services in the cluster will be able to reach the control plane even if a node goes down.
