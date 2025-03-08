@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - ./Namespace.yaml
   - ./authelia.yaml
+  - ./authentik.yaml
   - ./startpage.yaml
   - ./whoami-unauthenticated.yaml
   - ./whoami-authenticated.yaml

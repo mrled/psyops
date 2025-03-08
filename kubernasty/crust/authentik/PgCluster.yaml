@@ -1,0 +1,18 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: authentik-pg-cluster
+  namespace: authentik
+spec:
+  instances: 3
+  bootstrap:
+    initdb:
+      database: authentik
+      owner: authentik
+      secret:
+        name: authentik-pg
+  storage:
+    size: 10Gi
+    # Do not use storage replication at the Ceph level (1rep means no replication),
+    # because we are doing data replication at the Postgres level (instances: 3)
+    storageClass: cephalopodblk-nvme-1rep
