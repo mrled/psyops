@@ -16,7 +16,7 @@ Special tasks must be performed one time on the first node only.
 
 ### Configure kube-vip
 
-Official documentation: <https://kube-vip.chipzoller.dev/docs/usage/k3s/>
+Official documentation: <https://kube-vip.io/docs/usage/k3s/>
 
 We use kube-vip to float an IP address between the nodes.
 (Technically, between control plane servers; in our cluster all servers do double duty as both control plane and worker.)
