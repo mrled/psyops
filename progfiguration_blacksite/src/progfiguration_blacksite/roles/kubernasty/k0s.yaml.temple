@@ -6,7 +6,7 @@ metadata:
   name: kubernasty
 spec:
   api:
-    address: {$}psy0ip
+    address: "{$}psy0ip"
     k0sApiPort: 9443
     port: 6443
     extraArgs:
@@ -59,7 +59,7 @@ spec:
         virtualServers:
         - ipAddress: 192.168.1.220
         vrrpInstances:
-        - authPass: {$}vrrp_authpass
+        - authPass: "{$}vrrp_authpass"
           virtualIPs:
           - 192.168.1.220/24
           interface: psy0
@@ -101,7 +101,7 @@ spec:
   storage:
     etcd:
       externalCluster: null
-      peerAddress: {$}psy0ip
+      peerAddress: "{$}psy0ip"
     type: etcd
   telemetry:
     enabled: false
