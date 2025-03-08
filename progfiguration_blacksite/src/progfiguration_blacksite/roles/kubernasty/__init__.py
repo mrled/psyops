@@ -70,6 +70,7 @@ class Role(ProgfigurationRole):
             "containerd-ctr",
             "containerd-openrc",
             "cri-tools",  # crictl
+            "logrotate",
             "sgdisk",  # useful for `sgdisk --zap-all /dev/XXX` when cleaning up and redeploying a Ceph cluster
             "wireguard-tools",
         ]
