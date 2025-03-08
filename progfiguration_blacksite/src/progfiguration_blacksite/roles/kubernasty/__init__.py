@@ -48,18 +48,8 @@ class Role(ProgfigurationRole):
     vrrp_authpass: str
     """The VRRP authentication password for the k0s cluster."""
 
-    # Probably need to update all of these at once
-    k0s_version = "v1.30.1+k0s.0"
-    k0sctl_version = "v0.17.5"
-
-    # This must match the containerd version on the system
-    # Better to use system packages for this,
-    # except that I think my Rocky Linux 8.x is too old or something.
-    crictl_version = "1.6.31"
-
-    helm_version = "v3.14.4"
-    kubeseal_version = "0.26.0"
-    flux_version = "2.2.3"
+    # https://github.com/k0sproject/k0s/releases
+    k0s_version = "v1.32.2+k0s.0"
 
     # Config directory, can be ephemeral
     configdir: Path = Path("/etc/kubernasty")
@@ -87,6 +77,8 @@ class Role(ProgfigurationRole):
         magicrun("rc-service cgroups start")
         magicrun("rc-service containerd start")
 
+        if magicrun("rc-service k0scontroller status", check=False).returncode == 0:
+            magicrun("rc-service k0scontroller stop")
         install_k0s_github_release(self.k0s_version)
 
         # profile.d setup
@@ -102,6 +94,15 @@ class Role(ProgfigurationRole):
         self.localhost.set_file_contents(
             "/etc/security/limits.d/99-k0s.conf",
             "\n".join(["root soft nofile 65536", "root hard nofile 65536", ""]),
+            "root",
+            "root",
+            0o644,
+        )
+
+        # Install k0s logrotate configuration
+        self.localhost.cp(
+            self.role_file("logrotate.k0s.conf"),
+            "/etc/logrotate.d/k0s",
             "root",
             "root",
             0o644,
