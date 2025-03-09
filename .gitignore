@@ -4,3 +4,5 @@ __pycache__
 **/*venv*
 artifacts/
 
+.aider*
+.env
