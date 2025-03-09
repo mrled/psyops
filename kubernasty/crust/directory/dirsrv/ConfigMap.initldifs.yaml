@@ -258,6 +258,16 @@ data:
 
   #### datadump
   #
+  service.datadumpadmin.ldif: |+
+    dn: uid=datadumpadmin,ou=services,dc=micahrl,dc=me
+    objectClass: inetOrgPerson
+    objectClass: account
+    objectClass: top
+    uid: datadumpadmin
+    cn: Datadump Admin
+    sn: datadumpadmin
+    description: A service account for administering the datadump database
+
   group.datadump-connect.ldif: |+
     dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
     objectClass: groupOfNames
@@ -285,6 +295,18 @@ data:
     objectClass: top
     cn: datadump-admin
     description: Users that can administer the entire datadump database on the datadump database server
+
+  membership.datadump-connect.datadumpadmin.ldif: |+
+    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=datadumpadmin,ou=services,dc=micahrl,dc=me
+
+  membership.datadump-admin.datadumpadmin.ldif: |+
+    dn: cn=datadump-admin,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=datadumpadmin,ou=services,dc=micahrl,dc=me
 
   membership.datadump-connect.mrladmin.ldif: |+
     dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me

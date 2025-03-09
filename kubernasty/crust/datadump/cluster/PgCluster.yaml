@@ -8,8 +8,12 @@ spec:
   bootstrap:
     initdb:
       database: datadump
-      # A superuser that we can use to set permissions in the dbinit job
-      owner: datadump
+      # A superuser that we can use to set permissions in the dbinit job.
+      # It should be in the datadump-pg secret,
+      # and it must be in the LDAP server in the datadump-connect group too.
+      # This is because the ldap configuration in cloudnative-pg
+      # will fail the whole auth attempt over TCP if the user is not in LDAP.
+      owner: datadumpadmin
       secret:
         name: datadump-pg
   storage:
