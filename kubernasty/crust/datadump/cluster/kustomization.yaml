@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./Namespace.yaml
+  - ./Secret.authenticator.yaml
+  - ./Secret.datadump-pg.yaml
+  - ./PgCluster.yaml

@@ -250,3 +250,57 @@ data:
     changetype: modify
     add: member
     member: uid=micahrl,ou=people,dc=micahrl,dc=me
+
+  #### datadump
+  #
+  group.datadump-connect.ldif: |+
+    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: top
+    cn: datadump-connect
+    description: Users that can connect to the datadump database server
+
+  group.datadump-read.ldif: |+
+    dn: cn=datadump-read,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: top
+    cn: datadump-read
+    description: Users that can read from the entire datadump database on the datadump database server
+
+  group.datadump-write.ldif: |+
+    dn: cn=datadump-write,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: top
+    cn: datadump-write
+    description: Users that can write to the entire datadump database on the datadump database server
+
+  group.datadump-admin.ldif: |+
+    dn: cn=datadump-admin,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: top
+    cn: datadump-admin
+    description: Users that can administer the entire datadump database on the datadump database server
+
+  membership.datadump-connect.mrladmin.ldif: |+
+    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
+
+  membership.datadump-admin.mrladmin.ldif: |+
+    dn: cn=datadump-admin,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
+
+  membership.datadump-connect.micahrl.ldif: |+
+    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=micahrl,ou=people,dc=micahrl,dc=me
+
+  membership.datadump-read.micahrl.ldif: |+
+    dn: cn=datadump-read,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=micahrl,ou=people,dc=micahrl,dc=me

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbinit
+  namespace: datadump
+data:
+  initialize.sql: |+
+    -- Global roles for the entire database
+    CREATE ROLE "datadump-read" NOLOGIN;
+    CREATE ROLE "datadump-write" NOLOGIN;
+    CREATE ROLE "datadump-admin" NOLOGIN;
+
+    GRANT CONNECT ON DATABASE datadump TO "datadump-read", "datadump-write", "datadump-admin";
+
+    GRANT USAGE ON SCHEMA public TO "datadump-read", "datadump-write", "datadump-admin";
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO "datadump-read";
+    GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "datadump-write";
+    GRANT ALL ON ALL TABLES IN SCHEMA public TO "datadump-admin";
+
+    -- Ensure new tables get the same privileges
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public
+        GRANT SELECT ON TABLES TO "datadump-read";
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public
+        GRANT INSERT, UPDATE, DELETE ON TABLES TO "datadump-write";
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public
+        GRANT ALL ON TABLES TO "datadump-admin";
