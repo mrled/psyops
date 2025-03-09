@@ -110,7 +110,8 @@ kldif_delete_marker() {
     kldapdelete "cn=$filename,ou=ldifMarkers,dc=micahrl,dc=me"
 }
 alias kldif_list_files='kubectl exec -it -n directory dirsrv-0 -c configurator -- sh -c "ls -a1 /initldifs/*.ldif"'
-alias kldif_apply='kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/apply_ldifs.sh'
+alias kldif_apply_ldifs='kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/apply_ldifs.sh'
+alias kldif_set_passwords='kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/set_account_passwords.sh'
 kldif_cat() {
     filename="$1"
     kubectl exec -it -n directory dirsrv-0 -c configurator -- cat "/initldifs/$filename"
