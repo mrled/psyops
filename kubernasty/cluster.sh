@@ -8,7 +8,8 @@ if test -e "$PSYOPS_KCONF"; then
 fi
 
 export SOPS_AGE_RECIPIENTS=age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9
-export SOPS_AGE_KEY_FILE=/secrets/psyops-secrets/kubernasty/flux.agekey
+# op item get o76jbsaf4aj5tdl77tupssi2xu --field=notesPlain --format json | jq -r .value > flux.agekey
+export SOPS_AGE_KEY="$(op item get o76jbsaf4aj5tdl77tupssi2xu --field=notesPlain --format json | jq -r .value)"
 
 # Examine certificates using openssl
 certinfo() {
@@ -90,9 +91,27 @@ helm_pull_from_flux() {
 }
 
 # Some convenience aliases for talking to the LDAP server
-# They're all the same arguments except for ldapsearch which also passes -LLL
-kldapsearch='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapsearch -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password -LLL'
-kldapmodify='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapmodify -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
-kldapadd='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapadd -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
-kldapdelete='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapdelete -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
-kldappasswd='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldappasswd -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+# Include auth for each command,
+# and set some options where appropriate.
+alias kldapsearch='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapsearch -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password -LLL -o ldif-wrap=no'
+alias kldapmodify='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapmodify -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+alias kldapadd='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapadd -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+alias kldapdelete='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldapdelete -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+alias kldappasswd='kubectl exec -itn directory dirsrv-0 -c configurator -- /bin/ldappasswd -H ldaps://dirsrv:636 -D "cn=Directory Manager" -y /containeripc/topsecret/ds-dm-password'
+
+# Convenience commands for dealing with the LDAP markers (migrations)
+kldif_list_markers() {
+    kldapsearch -s one -b "ou=ldifMarkers,dc=micahrl,dc=me" "(objectClass=*)" dn |
+        grep -v '^\s*$' |
+        sort
+}
+kldif_delete_marker() {
+    filename="$1"
+    kldapdelete "cn=$filename,ou=ldifMarkers,dc=micahrl,dc=me"
+}
+alias kldif_list_files='kubectl exec -it -n directory dirsrv-0 -c configurator -- sh -c "ls -a1 /initldifs/*.ldif"'
+alias kldif_apply='kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/apply_ldifs.sh'
+kldif_cat() {
+    filename="$1"
+    kubectl exec -it -n directory dirsrv-0 -c configurator -- cat "/initldifs/$filename"
+}
