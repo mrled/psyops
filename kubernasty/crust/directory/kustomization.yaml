@@ -13,6 +13,7 @@ resources:
   - ./dirsrv/Service.dirsrv-headless.yaml
   - ./dirsrv/Service.dirsrv.yaml
   - ./dirsrv/StatefulSet.dirsrv.yaml
+  - ./dirsrv/Secret.authenticator.yaml
 
   - ./ldap-account-manager/ConfigMap.lam-setup.yaml
   - ./ldap-account-manager/Secret.lam-setup-secrets.yaml
