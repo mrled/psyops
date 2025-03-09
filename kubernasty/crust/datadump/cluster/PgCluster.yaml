@@ -18,23 +18,31 @@ spec:
     # because we are doing data replication at the Postgres level (instances: 3)
     storageClass: cephalopodblk-nvme-1rep
 
+  # Mount the Kubernasty CA cert, which has signed the LDAP server cert.
+  # https://github.com/cloudnative-pg/cloudnative-pg/discussions/583
+
+  projectedVolumeTemplate:
+    sources:
+      - configMap:
+          name: kubernasty-ca-root-cert
+          items:
+            - key: ca.crt
+              path: kubernasty-ca.crt
+
+  env:
+    - name: LDAPTLS_CACERT
+      value: /projected/kubernasty-ca.crt
+
   postgresql:
     ldap:
       server: dirsrv.directory.svc.cluster.local
       port: 636
       scheme: ldaps
+      # tls: true
       bindSearchAuth:
         baseDN: dc=micahrl,dc=me
         bindDN: uid=authenticator,ou=services,dc=micahrl,dc=me
         bindPassword:
           name: authenticator
           key: password
-        searchFilter: (&(objectClass=inetOrgPerson)(memberOf=cn=datadump-connect,ou=groups,dc=micahrl,dc=me)(uid=%u))
-
-    # pg_hba:
-    #   # Allow the postgres superuser to connect locally with peer authentication
-    #   - host all postgres all trust
-    #   # Allow the datadumpadmin user to connect with md5 authentication
-    #   - host datadump datadumpadmin all md5
-    #   # Allow other users to authenticate with LDAP
-    #   - host all all all ldap ldapserver=dirsrv.directory.svc.cluster.local ldapport=636 ldaptls=1 ldapbinddn="uid=authenticator,ou=services,dc=micahrl,dc=me" ldapbindpasswd=authenticator-password ldapsearchattribute=uid ldapbasedn="dc=micahrl,dc=me" ldapsearchfilter="(&(objectClass=inetOrgPerson)(memberOf=cn=datadump-connect,ou=groups,dc=micahrl,dc=me))"
+        searchFilter: (&(objectClass=inetOrgPerson)(memberOf=cn=datadump-connect,ou=groups,dc=micahrl,dc=me)(uid=$username))
