@@ -117,6 +117,11 @@ data:
     add: aci
     aci: (targetattr="*")(version 3.0; acl "Allow read access to authelia"; allow (read, search, compare) userdn="ldap:///uid=authelia,ou=services,dc=micahrl,dc=me";)
 
+  config.authenticatorReadAllObjectsAci.ldif: |+
+    dn: dc=micahrl,dc=me
+    changetype: modify
+    add: aci
+    aci: (targetattr="*")(version 3.0; acl "Allow read access to all objects for the authenticator"; allow (read, search, compare) userdn = "ldap:///uid=authenticator,ou=services,dc=micahrl,dc=me";)
 
   service.authenticator.ldif: |+
     dn: uid=authenticator,ou=services,dc=micahrl,dc=me
