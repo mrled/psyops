@@ -4,7 +4,6 @@ metadata:
   name: initldifs
   namespace: directory
 data:
-
   # Don't set passwords here.
   # Place passwords in initsecrets Secret,
   # where a separate script will apply them after creating users/services.
@@ -61,7 +60,7 @@ data:
   #   there is no good way to test this so you can just cat the file from the sidecar like
   #   `kubectl exec -it -n directory dirsrv-0 -c configurator -- cat /initldifs/<YOUR NEW FILE>.ldif`
   # * Run the LDIF apply script like
-  #   `kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/initial_configure_20_apply_ldifs.sh`
+  #   `kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/apply_ldifs.sh`
 
   init.ldifMarkers.ldif: |+
     dn: ou=ldifMarkers,dc=micahrl,dc=me
