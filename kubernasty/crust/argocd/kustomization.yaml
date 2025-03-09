@@ -1,0 +1,18 @@
+# WARNING: Requires server-side apply.
+# Flux should handle this automatically,
+# but if you are using kubectl directly, you will need to add the --server-side flag
+# e.g. 'kubectl apply --server-side -k .'
+#
+# See versions at https://github.com/argoproj/argo-workflows/releases
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Create the namespace first
+  - ./Namespace.yaml
+
+  # Apply the release kustomization
+  - https://github.com/argoproj/argo-workflows/releases/download/v3.6.4/install.yaml
+
+# Must match what's in Namespace.yaml
+namespace: argo

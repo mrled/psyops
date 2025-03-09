@@ -12,6 +12,9 @@ resources:
   - ./dragonfly-operator
   - ./cloudnativepg
 
+  # Argo
+  - ./argocd
+
   # Storage
   - ./cephalopod
 
