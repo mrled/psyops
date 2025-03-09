@@ -97,7 +97,7 @@ RUN true \
         emacs-nox emacs-doc \
         file file-doc \
         # Used for kubenrasty
-        flux@edgetesting flux-bash-completion@edgetesting flux-zsh-completion@edgetesting \
+        #flux@edgetesting flux-bash-completion@edgetesting flux-zsh-completion@edgetesting \
         gcc \
         git git-doc \
         gopass gopass-doc gopass-bash-completion gopass-zsh-completion \
