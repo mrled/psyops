@@ -4,6 +4,7 @@ metadata:
   name: initialize
   namespace: datadump
 spec:
+  backoffLimit: 0
   template:
     spec:
       containers:
