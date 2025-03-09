@@ -14,5 +14,9 @@ resources:
   # Apply the release kustomization
   - https://github.com/argoproj/argo-workflows/releases/download/v3.6.4/install.yaml
 
+patches:
+  # Apply patches to configure
+  - path: ./Patch.Deployment.argo-server.yaml
+
 # Must match what's in Namespace.yaml
 namespace: argo

@@ -1,0 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argo-workflows
+  namespace: ingress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`workflows.micahrl.me`)
+      kind: Rule
+      services:
+        - name: argo-server
+          namespace: argo
+          kind: Service
+          port: 2746
+      middlewares:
+        - name: redirect-to-https
+          namespace: traefik
+  tls:
+    secretName: kubernasty-wildcard-backing-secret
