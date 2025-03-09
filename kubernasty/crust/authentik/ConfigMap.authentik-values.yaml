@@ -6,6 +6,11 @@ metadata:
 data:
   values.yaml: |-
     authentik:
+      error_reporting:
+        enabled: false
+      disable_update_check: true
+      disable_startup_analytics: true
+
       # Override in a secret
       #secret_key: "PleaseGenerateA50CharKey"
 
