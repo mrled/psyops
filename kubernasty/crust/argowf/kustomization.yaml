@@ -7,6 +7,10 @@
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+# Must match what's in Namespace.yaml
+namespace: argowf
+
 resources:
   # Create the namespace first
   - ./Namespace.yaml
@@ -17,6 +21,3 @@ resources:
 patches:
   # Apply patches to configure
   - path: ./Patch.Deployment.argo-server.yaml
-
-# Must match what's in Namespace.yaml
-namespace: argo

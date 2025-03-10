@@ -13,4 +13,4 @@ resources:
   - ./gitea-http.yaml
   - ./gitea-ssh.yaml
   - ./kubernetes.yaml
-  - ./argo-workflows.yaml
+  - ./argowf.yaml

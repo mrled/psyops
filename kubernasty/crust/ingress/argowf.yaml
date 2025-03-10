@@ -1,13 +1,13 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: argo-workflows
+  name: argowf
   namespace: ingress
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`workflows.micahrl.me`)
+    - match: Host(`argowf.micahrl.me`)
       kind: Rule
       services:
         - name: argo-server

@@ -13,7 +13,7 @@ resources:
   - ./cloudnativepg
 
   # Argo
-  - ./argo-workflows
+  - ./argowf
 
   # Storage
   - ./cephalopod
