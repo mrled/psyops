@@ -18,6 +18,12 @@ patches:
   - path: ./Patch.Deployment.argocd-server.yaml
     target:
       kind: Deployment
-      # name: argocd-server
-      # namespace: argocd
       labelSelector: "app.kubernetes.io/name=argocd-server"
+  - path: ./Patch.Secret.argocd-secret.yaml
+    target:
+      kind: Secret
+      labelSelector: "app.kubernetes.io/name=argocd-secret"
+  - path: ./Patch.ConfigMap.argocd-cm.yaml
+    target:
+      kind: ConfigMap
+      labelSelector: "app.kubernetes.io/name=argocd-cm"

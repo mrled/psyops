@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd
+  namespace: argocd
+data:
+  url: https://argocd.micahrl.me
+
+  oidc.config: |
+    name: 'Authelia'
+    issuer: 'https://auth.micahrl.me'
+    clientID: 'argocd'
+    clientSecret: $oidc.authelia.clientSecret
+    cliClientID: 'argocd-cli'
+    requestedScopes:
+      - 'openid'
+      - 'profile'
+      - 'email'
+      - 'groups'

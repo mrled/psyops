@@ -216,6 +216,33 @@ data:
               - offline_access
             authorization_policy: patricii
 
+          - client_name: Argo CD
+            client_id: argocd
+            client_secret: {{ secret "/secrets/OIDC_CLIENT_SECRET_ARGOCD" }}
+            public: false
+            authorization_policy: two_factor
+            redirect_uris:
+              - https://argocd.micahrl.me/auth/callback
+            scopes:
+              - openid
+              - email
+              - profile
+              - groups
+            userinfo_signed_response_alg: none
+          - client_name: Argo CD cli
+            client_id: argocd-cli
+            public: true
+            authorization_policy: two_factor
+            redirect_uris:
+              - http://localhost:8085/auth/callback
+            scopes:
+              - openid
+              - email
+              - profile
+              - groups
+              - offline_access
+            userinfo_signed_response_alg: none
+
     # portal:
     #   url: https://auth.micahrl.me
     ...

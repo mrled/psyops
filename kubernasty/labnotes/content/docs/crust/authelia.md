@@ -129,3 +129,11 @@ To do that, bind LDAP groups to cluster roles with `ClusterRoleBinding` resource
 e.g. {{< repolink "kubernasty/crust/authelia/common/ClusterRoleBinding.patricii.yaml" >}}.
 The `cluster-admin` role is present by default in Kubernetes,
 or you can define your own more limited `Role` and `ClusterRole` resources as appropriate.
+
+## Config changes
+
+When configuring a new client, you have to redeploy the daemons.
+
+```sh
+k delete pods -l app.kubernetes.io/name=authelia -n authelia
+```
