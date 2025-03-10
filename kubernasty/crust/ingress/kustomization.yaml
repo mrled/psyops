@@ -14,3 +14,4 @@ resources:
   - ./gitea-ssh.yaml
   - ./kubernetes.yaml
   - ./argowf.yaml
+  - ./argocd.yaml

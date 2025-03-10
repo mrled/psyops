@@ -1,0 +1,30 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argocd
+  namespace: ingress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`argocd.micahrl.me`)
+      kind: Rule
+      priority: 10
+      services:
+        - name: argocd-server
+          namespace: argocd
+          kind: Service
+          port: 80
+      middlewares:
+        - name: redirect-to-https
+          namespace: traefik
+    - match: Host(`argocd.micahrl.me`) && Header(`Content-Type`, `application/grpc`)
+      kind: Rule
+      priority: 11
+      services:
+        - name: argocd-server
+          namespace: argocd
+          port: 80
+          scheme: h2c
+  tls:
+    secretName: kubernasty-wildcard-backing-secret

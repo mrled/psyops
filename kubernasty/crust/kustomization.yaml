@@ -14,6 +14,7 @@ resources:
 
   # Argo
   - ./argowf
+  - ./argocd
 
   # Storage
   - ./cephalopod
