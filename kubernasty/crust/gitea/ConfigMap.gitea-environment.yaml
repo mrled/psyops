@@ -5,94 +5,95 @@ metadata:
   namespace: gitea
 
 data:
+  # Regular environment variables that control Gitea's behavior,
+  # and some that apply to the init containers.
 
-    # Regular environment variables that control Gitea's behavior,
-    # and some that apply to the init containers.
+  GITEA_APP_INI: /data/gitea/conf/app.ini
+  GITEA_CUSTOM: /data/gitea
+  GITEA_WORK_DIR: /data
+  GITEA_TEMP: /tmp/gitea
 
-    GITEA_APP_INI: /data/gitea/conf/app.ini
-    GITEA_CUSTOM: /data/gitea
-    GITEA_WORK_DIR: /data
-    GITEA_TEMP: /tmp/gitea
+  # The following are all environment variables that correspond to app.ini values
 
-    # The following are all environment variables that correspond to app.ini values
+  GITEA____APP_NAME: "Kubernasty Gitea: The Nastiest Git Service In The 'Verse"
 
-    GITEA____APP_NAME: "Kubernasty Gitea: The Nastiest Git Service In The 'Verse"
+  # NOTE: gitea needs its own IP address from the load balancer in order to listen on port 22
 
-    # NOTE: gitea needs its own IP address from the load balancer in order to listen on port 22
+  # [server]
+  GITEA__server__APP_DATA_PATH: /data
+  GITEA__server__DOMAIN: gitea.micahrl.me
+  GITEA__server__ENABLE_PPROF: "false"
+  GITEA__server__HTTP_PORT: "3000"
+  # The protocol the server listens on
+  GITEA__server__PROTOCOL: http
+  # Overwrite the automatically generated public URL
+  GITEA__server__ROOT_URL: https://gitea.micahrl.me
+  GITEA__server__DISABLE_SSH: "false"
+  GITEA__server__BUILTIN_SSH_SERVER_USER: git
+  GITEA__server__SSH_DOMAIN: gitea.micahrl.me
+  # The port number the SSH server listens on in the container (required >1024 because we use rootless images)
+  GITEA__server__SSH_LISTEN_PORT: "2222"
+  # The port number exposed in the clone URL
+  GITEA__server__SSH_PORT: "22"
+  GITEA__server__START_SSH_SERVER: "true"
+  # Disable CDN for static files, Gravatar
+  GITEA__server__OFFLINE_MODE: "true"
+  # You have to list each host key here; it does not auto discover them
+  GITEA__server__SSH_SERVER_HOST_KEYS: ssh/gitea.ed25519
 
-    # [server]
-    GITEA__server__APP_DATA_PATH: /data
-    GITEA__server__DOMAIN: gitea.micahrl.me
-    GITEA__server__ENABLE_PPROF: "false"
-    GITEA__server__HTTP_PORT: "3000"
-    # The protocol the server listens on
-    GITEA__server__PROTOCOL: http
-    # Overwrite the automatically generated public URL
-    GITEA__server__ROOT_URL: https://gitea.micahrl.me
-    GITEA__server__DISABLE_SSH: "false"
-    GITEA__server__BUILTIN_SSH_SERVER_USER: git
-    GITEA__server__SSH_DOMAIN: gitea.micahrl.me
-    # The port number the SSH server listens on in the container (required >1024 because we use rootless images)
-    GITEA__server__SSH_LISTEN_PORT: "2222"
-    # The port number exposed in the clone URL
-    GITEA__server__SSH_PORT: "22"
-    GITEA__server__START_SSH_SERVER: "true"
-    # Disable CDN for static files, Gravatar
-    GITEA__server__OFFLINE_MODE: "true"
+  # [database]
+  GITEA__database__DB_TYPE: postgres
+  GITEA__database__HOST: gitea-pg-cluster-rw
+  GITEA__database__NAME: gitea
 
-    # [database]
-    GITEA__database__DB_TYPE: postgres
-    GITEA__database__HOST: gitea-pg-cluster-rw
-    GITEA__database__NAME: gitea
+  # [security]
+  GITEA__security__INSTALL_LOCK: "true"
+  # Allow the authelia middleware to pass these headers and log users in automatically
+  GITEA__security__REVERSE_PROXY_AUTHENTICATION_USER: "Remote-User"
+  GITEA__security__REVERSE_PROXY_AUTHENTICATION_EMAIL: "Remote-Email"
+  GITEA__security__REVERSE_PROXY_AUTHENTICATION_FULL_NAME: "Remote-Name"
+  # This should be the proxy server's network IP address,
+  # which is the load balancer's IP address.
+  GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES: "192.168.1.201/32"
+  # Gitea cannot check group membership for reverse proxy users,
+  # so make sure Authelia denies access to Gitea for unauthorized users.
 
-    # [security]
-    GITEA__security__INSTALL_LOCK: "true"
-    # Allow the authelia middleware to pass these headers and log users in automatically
-    GITEA__security__REVERSE_PROXY_AUTHENTICATION_USER: "Remote-User"
-    GITEA__security__REVERSE_PROXY_AUTHENTICATION_EMAIL: "Remote-Email"
-    GITEA__security__REVERSE_PROXY_AUTHENTICATION_FULL_NAME: "Remote-Name"
-    # This should be the proxy server's network IP address,
-    # which is the load balancer's IP address.
-    GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES: "192.168.1.201/32"
-    # Gitea cannot check group membership for reverse proxy users,
-    # so make sure Authelia denies access to Gitea for unauthorized users.
+  # [repository]
+  GITEA__repository__ROOT: /data/git/gitea-repositories
+  GITEA__repository__DEFAULT_BRANCH: master
 
-    # [repository]
-    GITEA__repository__ROOT: /data/git/gitea-repositories
-    GITEA__repository__DEFAULT_BRANCH: master
+  # [indexer]
+  GITEA__indexer__ISSUE_INDEXER_TYPE: db
 
-    # [indexer]
-    GITEA__indexer__ISSUE_INDEXER_TYPE: db
+  # [queue]
+  GITEA__queue__TYPE: level
 
-    # [queue]
-    GITEA__queue__TYPE: level
+  # [cache]
+  GITEA__cache__ADAPTER: memory
 
-    # [cache]
-    GITEA__cache__ADAPTER: memory
+  # [session]
+  # db provider will reuse the configuration in [database]
+  GITEA__session__PROVIDER: db
 
-    # [session]
-    # db provider will reuse the configuration in [database]
-    GITEA__session__PROVIDER: db
+  # [log]
+  GITEA__log__MODE: console
+  GITEA__log__LEVEL: Debug
 
-    # [log]
-    GITEA__log__MODE: console
-    GITEA__log__LEVEL: Debug
+  # [metrics]
+  GITEA__metrics__ENABLED: "false"
 
-    # [metrics]
-    GITEA__metrics__ENABLED: "false"
+  # [openid]
+  # This would allow users to log in with OpenID Connect,
+  # but does not require it, doesn't auto link to LDAP,
+  # and isn't SSO meaning users have to go to Authelia and confirm even if they're already logged in to Authelia.
+  # GITEA__openid__ENABLE_OPENID_SIGNIN: "true"
+  # GITEA__openid__ENABLE_OPENID_SIGNUP: "false"
+  # GITEA__openid__WHITELISTED_URIS: "https://auth.micahrl.me"
 
-    # [openid]
-    # This would allow users to log in with OpenID Connect,
-    # but does not require it, doesn't auto link to LDAP,
-    # and isn't SSO meaning users have to go to Authelia and confirm even if they're already logged in to Authelia.
-    # GITEA__openid__ENABLE_OPENID_SIGNIN: "true"
-    # GITEA__openid__ENABLE_OPENID_SIGNUP: "false"
-    # GITEA__openid__WHITELISTED_URIS: "https://auth.micahrl.me"
-
-    # [service]
-    GITEA__service__DISABLE_REGISTRATION: "true"
-    GITEA__service__SHOW_REGISTRATION_BUTTON: "false"
-    GITEA__service__ENABLE_REVERSE_PROXY_AUTHENTICATION: "true"
-    GITEA__service__ENABLE_REVERSE_PROXY_AUTO_REGISTRATION: "true"
-    GITEA__service__ENABLE_REVERSE_PROXY_FULL_NAME: "true"
-    GITEA__service__ENABLE_REVERSE_PROXY_EMAIL: "true"
+  # [service]
+  GITEA__service__DISABLE_REGISTRATION: "true"
+  GITEA__service__SHOW_REGISTRATION_BUTTON: "false"
+  GITEA__service__ENABLE_REVERSE_PROXY_AUTHENTICATION: "true"
+  GITEA__service__ENABLE_REVERSE_PROXY_AUTO_REGISTRATION: "true"
+  GITEA__service__ENABLE_REVERSE_PROXY_FULL_NAME: "true"
+  GITEA__service__ENABLE_REVERSE_PROXY_EMAIL: "true"

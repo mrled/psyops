@@ -5,7 +5,6 @@ metadata:
   namespace: gitea
 
 data:
-
   initialize.sh: |+
     #!/bin/sh
     set -eu
@@ -91,13 +90,27 @@ data:
   sidecar.entrypoint.sh: |+
     #!/bin/sh
     set -eu
+
     echo "Creating update-ca-certificates cron job..."
     echo "update-ca-certificates" > /etc/periodic/daily/update-ca-certificates
     chmod 755 /etc/periodic/daily/update-ca-certificates
+
     echo "Updating ca-certificates once..."
     /etc/periodic/daily/update-ca-certificates
+
     echo "Starting crond..."
     crond
+
+    echo "Copying ssh host keys..."
+    cp /gitea-ssh-host-keys/* /data/ssh/
+    for hostkey in $(find /data/ssh -type f ! -name '*.pub'); do
+      chmod 600 "$hostkey"
+      ssh-keygen -y -f "$hostkey" > "$hostkey.pub"
+      chown 1000:1000 "$hostkey" "$hostkey.pub"
+      chmod 644 "$hostkey.pub"
+    done
+    ls -alFn /data/ssh
+
     echo "Monitoring /containeripc/stop forever..."
     while true; do
       if test -f /containeripc/stop; then

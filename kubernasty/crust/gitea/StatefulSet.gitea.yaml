@@ -22,7 +22,6 @@ spec:
         app.kubernetes.io/name: gitea
         app.kubernetes.io/instance: gitea
     spec:
-
       securityContext:
         fsGroup: 1000
       terminationGracePeriodSeconds: 60
@@ -38,12 +37,12 @@ spec:
             - name: GITEA_ADMIN_USERNAME
               valueFrom:
                 secretKeyRef:
-                  key:  username
+                  key: username
                   name: gitea-admin
             - name: GITEA_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key:  password
+                  key: password
                   name: gitea-admin
           envFrom:
             - configMapRef:
@@ -109,6 +108,8 @@ spec:
               mountPath: /data
             - name: etc-ssl-certs
               mountPath: /etc/ssl/certs
+            - name: data-ssh
+              mountPath: /data/ssh
 
         - name: sidecar
           image: "gitea/gitea:1.21.11"
@@ -123,6 +124,10 @@ spec:
               mountPath: /etc/ssl/certs
             - name: kubernasty-ca-root-cert
               mountPath: /usr/local/share/ca-certificates
+            - name: gitea-ssh-host-keys
+              mountPath: /gitea-ssh-host-keys
+            - name: data-ssh
+              mountPath: /data/ssh
 
       volumes:
         - name: init
@@ -135,7 +140,13 @@ spec:
         - name: gitea-custom-config
           configMap:
             name: gitea-custom
+        - name: gitea-ssh-host-keys
+          secret:
+            secretName: gitea-ssh-host-keys
         - name: etc-ssl-certs
+          emptyDir:
+            medium: Memory
+        - name: data-ssh
           emptyDir:
             medium: Memory
         - name: containeripc
