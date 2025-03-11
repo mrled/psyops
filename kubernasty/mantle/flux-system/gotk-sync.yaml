@@ -20,7 +20,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
-  path: ./kubernasty/mantle/flux
+  path: ./kubernasty/mantle
   prune: true
   sourceRef:
     kind: GitRepository
