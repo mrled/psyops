@@ -1,8 +1,0 @@
----
-ansible_ssh_user: admin
-ansible_ssh_pass: "{{ vault_ansible_ssh_pass }}"
-ansible_become_pass: "{{ vault_ansible_ssh_pass }}"
-acmedns_remote_host_fix_homedir_permissions: true
-acmedns_remote_host_allow_passwordless_sudo: true
-acmedns_remote_host_user: "{{ ansible_ssh_user }}"
-

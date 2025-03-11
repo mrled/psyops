@@ -1,6 +1,0 @@
----
-
-- name: Deploy syslog server
-  hosts: syslogserver
-  roles:
-    - { name: sysloghost, tags: ["sysloghost"] }

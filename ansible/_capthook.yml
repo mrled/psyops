@@ -1,5 +1,0 @@
----
-- name: Configure capthook
-  hosts: capthook
-  roles:
-    - { name: capthook, tags: ["capthook"] }

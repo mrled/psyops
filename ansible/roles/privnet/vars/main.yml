@@ -1,6 +1,0 @@
----
-
-privnet_archivebox_domain_blacklist_all: "{{ privnet_archivebox_domain_blacklist + privnet_archivebox_domain_blacklist_append }}"
-privnet_adbl: "{{ privnet_archivebox_domain_blacklist_all }}"
-privnet_archivebox_url_blacklist: >-
-  ^http(s)?:\/\/(.+\.)?({{ privnet_adbl | join(')|(') }})\/.*$

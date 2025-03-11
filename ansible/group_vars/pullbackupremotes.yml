@@ -1,3 +1,0 @@
----
-backup_remote_host_user: "{{ ansible_ssh_user }}"
-backup_remote_host_ssh_client_pubkey: "{{ global_backup_ssh_client_pubkey }}"

@@ -1,5 +1,0 @@
----
-- name: restart znc
-  systemd:
-    name: znc.docker
-    state: restarted

@@ -1,3 +1,0 @@
----
-acmedns_remote_host_user: "{{ ansible_ssh_user }}"
-acmedns_remote_host_ssh_client_pubkey: "{{ global_acmedns_ssh_client_pubkey }}"

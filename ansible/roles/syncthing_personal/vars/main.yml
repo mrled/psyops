@@ -1,4 +1,0 @@
----
-syncthing_personal_service: syncthing@{{ syncthing_personal_user }}
-syncthing_personal_config_dir: "{{ syncthing_personal_home }}/.config/syncthing"
-syncthing_personal_config_xml: "{{ syncthing_personal_config_dir }}/config.xml"

@@ -1,4 +1,0 @@
----
-dependencies:
-  - role: backup_base
-  - role: capthook

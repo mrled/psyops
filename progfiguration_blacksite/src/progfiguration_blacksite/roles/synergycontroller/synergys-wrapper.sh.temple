@@ -1,5 +1,0 @@
-#!/bin/sh
-
-user="{$}user"
-
-/usr/bin/flatpak run --filesystem=/home/$user/.synergy --filesystem=/home/$user/synergy.conf --command=synergys com.symless.Synergy --enable-crypto --no-daemon --config /home/$user/synergy.conf
