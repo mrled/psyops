@@ -94,7 +94,9 @@ This is easier to get started with.
   * Gitea side
     * `https://gitea.micahrl.me/kubernasty/cluster/settings/hooks`
     * Add Webhook -> Gitea
-    * Target URL: `http://webhook-receiver.flux-system.svc.cluster.local`
+    * Target URL: `http://notification-controller.flux-system.svc.cluster.local`,
+      using empty port specifier to get default port 80.
+      Do not set to `http://webhook-receiver...` even though there is such a service.
     * HTTP Method: `POST`
     * Secret: same secret as is stored in Flux
     * Trigger On: Push Events
