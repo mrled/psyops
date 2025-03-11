@@ -97,3 +97,8 @@ data:
   GITEA__service__ENABLE_REVERSE_PROXY_AUTO_REGISTRATION: "true"
   GITEA__service__ENABLE_REVERSE_PROXY_FULL_NAME: "true"
   GITEA__service__ENABLE_REVERSE_PROXY_EMAIL: "true"
+
+  # [webhook]
+  # Allow webhooks to call any host.
+  # A service that allowed open registration probably doesn't want this but it's fine for us.
+  GITEA__webhook__ALLOWED_HOST_LIST: "*"

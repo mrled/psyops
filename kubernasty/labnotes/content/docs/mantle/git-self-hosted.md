@@ -99,3 +99,4 @@ This is easier to get started with.
     * Secret: same secret as is stored in Flux
     * Trigger On: Push Events
     * Branch filter: master
+    * Also requires configuring `ALLOWED_HOST_LIST` in Gitea configuration
