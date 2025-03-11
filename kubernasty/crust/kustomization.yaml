@@ -7,7 +7,6 @@ resources:
   - ./ingress
 
   # Operators and CRDs
-  - ./csi-external-snapshotter
   - ./rook
   - ./dragonfly-operator
   - ./cloudnativepg

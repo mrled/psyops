@@ -22,3 +22,4 @@ resources:
   - ./crds.yaml
   - ./common.yaml
   - ./operator.yaml
+  - ./csi-external-snapshotter
