@@ -32,3 +32,5 @@ resources:
   - ./kubernetes-dashboard
   - ./gitea
   - ./datadump
+
+  - ./TEST.whoami.yaml
