@@ -1,0 +1,9 @@
+# Flux configuration that gets applied by Flux itself.
+# Requires a working Flux already.
+# Allows applying SOPS-encrypted secrets.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./Secret.kubernasty-repo-token.yaml
+  - ./Receiver.kubernasty-repo.yaml

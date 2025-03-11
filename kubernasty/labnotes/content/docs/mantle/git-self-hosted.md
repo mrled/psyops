@@ -83,3 +83,10 @@ This is easier to get started with.
     flux resume kustomization -n flux-system --all
     ```
 * Migrate to locally hosted gitea once you're happy with ingress, certs, etc
+
+## Post bootstrap tasks
+
+* Add a webhook
+  * This makes pushes instantly start a flux reconciliation; flux doesn't have to poll
+  * This can all be done by Flux itself
+  * See `kubernasty/crust/flux-config`
