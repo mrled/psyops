@@ -12,6 +12,8 @@ spec:
             - server
             # Disable serving HTTPS (traefik will handle TLS termination instead)
             - --secure=false
+            # Enable OIDC
+            - --auth-mode=sso
           readinessProbe:
             httpGet:
               # Now that HTTPS is disabled, don't try to use it for the readiness probe

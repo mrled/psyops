@@ -1,0 +1,64 @@
+# See the argowf-admin.yaml file for more comments.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argowf-user
+  namespace: argowf
+  annotations:
+    workflows.argoproj.io/rbac-rule: "'argowf-users' in groups"
+    workflows.argoproj.io/rbac-rule-precedence: "50"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argowf-user.service-account-token
+  namespace: argowf
+  annotations:
+    kubernetes.io/service-account.name: argowf-user
+type: kubernetes.io/service-account-token
+
+---
+# Users should only be able to modify specific resources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argowf-user
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources:
+      - workflows
+      - workflowtemplates
+      - cronworkflows
+      - workflowtasksets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  # The "" apiGroup is fore core k8s resources.
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argowf-user-binding
+subjects:
+  - kind: ServiceAccount
+    name: argowf-user
+    namespace: argowf
+roleRef:
+  kind: ClusterRole
+  name: argowf-user
+  apiGroup: rbac.authorization.k8s.io

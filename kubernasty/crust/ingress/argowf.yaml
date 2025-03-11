@@ -11,7 +11,7 @@ spec:
       kind: Rule
       services:
         - name: argo-server
-          namespace: argo
+          namespace: argowf
           kind: Service
           port: 2746
       middlewares:

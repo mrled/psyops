@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-controller-configmap
+  namespace: argowf
+data:
+  sso: |
+    issuer: https://auth.micahrl.me
+
+    # 4320h = 180d
+    sessionExpiry: 4320h
+
+    # This is name of the secret and the key in it that contain OIDC client
+    # ID issued to the application by the provider (required).
+    clientId:
+      name: argowf-oidc
+      key: clientId
+
+    # This is name of the secret and the key in it that contain OIDC client
+    # secret issued to the application by the provider (required).
+    clientSecret:
+      name: argowf-oidc
+      key: clientSecret
+
+    # This is the redirect URL supplied to the provider (optional). It must
+    # be in the form <argo-server-root-url>/oauth2/callback. It must be
+    # browser-accessible. If omitted, will be automatically generated.
+    redirectUrl: https://argowf.micahrl.me/oauth2/callback
+
+    # Additional scopes to request. Typically needed for SSO RBAC.
+    scopes:
+     - groups
+     - email
+     - profile
+
+    # RBAC Config
+    # https://argo-workflows.readthedocs.io/en/latest/argo-server-sso/#sso-rbac
+    rbac:
+      enabled: true
+
+    insecureSkipVerify: false

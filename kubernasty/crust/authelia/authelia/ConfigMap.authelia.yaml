@@ -243,6 +243,21 @@ data:
               - offline_access
             userinfo_signed_response_alg: none
 
+          # https://argo-workflows.readthedocs.io/en/latest/argo-server-sso/
+          - client_name: Argo Workflows
+            client_id: argowf
+            client_secret: {{ secret "/secrets/OIDC_CLIENT_SECRET_ARGOWF" }}
+            public: false
+            authorization_policy: two_factor
+            redirect_uris:
+              - https://argowf.micahrl.me/oauth2/callback
+            scopes:
+              - openid
+              - email
+              - profile
+              - groups
+            userinfo_signed_response_alg: none
+
     # portal:
     #   url: https://auth.micahrl.me
     ...

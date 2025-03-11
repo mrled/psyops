@@ -331,3 +331,31 @@ data:
     changetype: modify
     add: member
     member: uid=micahrl,ou=people,dc=micahrl,dc=me
+
+  #### Argo Workflows
+  #
+  group.argowf-users.ldif: |+
+    dn: cn=argowf-users,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: top
+    cn: argowf-users
+    description: Users that can log in to the Argo Workflows server
+
+  group.argowf-admins.ldif: |+
+    dn: cn=argowf-admins,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: top
+    cn: argowf-admins
+    description: Users that can administer the Argo Workflows server
+
+  membership.argowf-users.micahrl.ldif: |+
+    dn: cn=argowf-users,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=micahrl,ou=people,dc=micahrl,dc=me
+
+  membership.argowf-admins.mrladmin.ldif: |+
+    dn: cn=argowf-admins,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=mrladmin,ou=people,dc=micahrl,dc=me

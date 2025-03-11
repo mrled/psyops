@@ -15,9 +15,21 @@ resources:
   # Create the namespace first
   - ./Namespace.yaml
 
+  # Other resources
+  - ./Secret.argowf-oidc.yaml
+  - ./rbac/argowf-admin.yaml
+  - ./rbac/argowf-user.yaml
+
   # Apply the release kustomization
   - https://github.com/argoproj/argo-workflows/releases/download/v3.6.4/install.yaml
 
 patches:
   # Apply patches to configure
   - path: ./Patch.Deployment.argo-server.yaml
+    target:
+      kind: Deployment
+      name: argo-server
+  - path: ./Patch.ConfigMap.workflow-controller-configmap.yaml
+    target:
+      kind: ConfigMap
+      name: workflow-controller-configmap

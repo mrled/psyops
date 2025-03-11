@@ -1,0 +1,65 @@
+# Tie SSO users to RBAC roles.
+# https://argo-workflows.readthedocs.io/en/latest/argo-server-sso/#sso-rbac
+#
+# Adding RBAC to SSO allows giving different users different access levels.
+
+---
+# SSO users are mapped to Kubernetes ServiceAccount objects like this one,
+# via the `workflows.argoproj.io/rbac-rule` annotation.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argowf-admin
+  namespace: argowf
+  annotations:
+    # Check for group membership.
+    # Groups are passed via SSO (OIDC).
+    workflows.argoproj.io/rbac-rule: "'argowf-admins' in groups"
+
+    # Higher precedence is processed first.
+    # First match wins.
+    workflows.argoproj.io/rbac-rule-precedence: "100"
+
+---
+# We have to create one of these for every service account.
+# https://argo-workflows.readthedocs.io/en/latest/service-account-secrets/
+# We don't need to set any secret data, just create the bare secret.
+apiVersion: v1
+kind: Secret
+metadata:
+  # This name is special, and makes the secret discoverable and associates it with the argowf-admin ServiceAccount.
+  name: argowf-admin.service-account-token
+  namespace: argowf
+  annotations:
+    # We must repeat the ServiceAccount name here.
+    kubernetes.io/service-account.name: argowf-admin
+type: kubernetes.io/service-account-token
+
+---
+# We make a ClusterRole that defines the role's permissions.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argowf-admin
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["*"]
+
+---
+# Bind the ClusterRole to the ServiceAccount.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argowf-admin-binding
+subjects:
+  - kind: ServiceAccount
+    name: argowf-admin
+    namespace: argowf
+roleRef:
+  kind: ClusterRole
+  name: argowf-admin
+  apiGroup: rbac.authorization.k8s.io
