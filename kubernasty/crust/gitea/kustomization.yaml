@@ -20,7 +20,7 @@ resources:
 
   - ./ConfigMap.runner-config.yaml
   - ./Secret.runner-env.yaml
-  - ./Statefulset.runner.yaml
+  - ./StatefulSet.runner.yaml
 # TODO: make this highly available / HA: : : : : https://gitea.com/gitea/helm-chart/src/branch/main/docs/ha-setup.md
 # Currently the PG cluster is HA, but nothing else is.
 # Lots of issues with this currently, including:
