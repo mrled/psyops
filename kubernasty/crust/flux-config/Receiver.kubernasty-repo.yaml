@@ -7,7 +7,8 @@ metadata:
   name: kubernasty-repo
   namespace: flux-system
 spec:
-  type: gitea
+  # The github receiver type works for gitea
+  type: github
   events:
     - "push"
   secretRef:

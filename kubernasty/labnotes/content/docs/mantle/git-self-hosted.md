@@ -88,5 +88,14 @@ This is easier to get started with.
 
 * Add a webhook
   * This makes pushes instantly start a flux reconciliation; flux doesn't have to poll
-  * This can all be done by Flux itself
-  * See `kubernasty/crust/flux-config`
+  * Flux side
+    * This can all be done by Flux itself
+    * See `kubernasty/crust/flux-config`
+  * Gitea side
+    * `https://gitea.micahrl.me/kubernasty/cluster/settings/hooks`
+    * Add Webhook -> Gitea
+    * Target URL: `http://webhook-receiver.flux-system.svc.cluster.local`
+    * HTTP Method: `POST`
+    * Secret: same secret as is stored in Flux
+    * Trigger On: Push Events
+    * Branch filter: master
