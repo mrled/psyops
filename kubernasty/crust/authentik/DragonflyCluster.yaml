@@ -21,7 +21,7 @@ spec:
     persistentVolumeClaimSpec:
       accessModes:
         - ReadWriteOnce
-      storageClassName: cephalopodblk-nvme-1rep
+      storageClassName: cephalopodblk-nvme-2rep
       resources:
         requests:
           storage: 1Gi
