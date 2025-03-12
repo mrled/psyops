@@ -177,3 +177,17 @@ it's a useful way to:
 * Apply (sigh) "kustomizations" to a given deployment so that the manifests are reusable in multiple environments
 
 See also the [Flux Kustomize questions](https://fluxcd.io/flux/faq/#kustomize-questions).
+
+## Suspending Flux reconciliation
+
+Sometimes you need to make changes to the cluster without Flux reverting them.
+
+```sh
+kubectl annotate kustomization -n flux-system flux-system reconciler.fluxcd.io/pause=true
+```
+
+To undo this, set the value to false.
+
+```sh
+kubectl annotate kustomization -n flux-system flux-system reconciler.fluxcd.io/pause=false
+```
