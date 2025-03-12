@@ -1,0 +1,16 @@
+apiVersion: ceph.rook.io/v1
+kind: CephObjectStore
+metadata:
+  name: cephalopodobj-nvme-3rep
+  namespace: rook-ceph
+spec:
+  metadataPool:
+    replicated:
+      size: 3
+  dataPool:
+    replicated:
+      size: 3
+  preservePoolsOnDelete: false
+  gateway: # RADOS Gateway / RGW, sort of like a load balancer for Ceph's S3 API
+    port: 80
+    instances: 2

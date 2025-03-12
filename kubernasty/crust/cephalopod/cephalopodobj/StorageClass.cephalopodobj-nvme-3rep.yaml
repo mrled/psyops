@@ -1,0 +1,13 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: cephalopodobj-nvme-3rep
+  namespace: rook-ceph
+
+# The rook-ceph prefix must match the Rook operator namespace
+provisioner: rook-ceph.ceph.rook.io/bucket
+
+parameters:
+  objectStoreName: cephalopodobj-nvme-3rep
+  objectStoreNamespace: rook-ceph
+  region: under-the-sea

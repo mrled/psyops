@@ -10,4 +10,6 @@ resources:
   - ./cephalopodblk/StorageClass.cephalopodblk-nvme-3rep.yaml
   - ./cephalopodfs/CephFilesystem.cephalopodfs.yaml
   - ./cephalopodfs/StorageClass.cephalopodfs-nvme-3rep.yaml
+  - ./cephalopodobj/CephObjectStore.cephalopodobj-nvme-3rep.yaml
+  - ./cephalopodobj/StorageClass.cephalopodobj-nvme-3rep.yaml
   - ./Deployment.toolbox.yaml

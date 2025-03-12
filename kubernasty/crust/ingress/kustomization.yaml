@@ -10,6 +10,7 @@ resources:
   - ./directory.yaml
   - ./traefik-dashboard.yaml
   - ./cephalopod.yaml
+  - ./objects.yaml
   - ./gitea-http.yaml
   - ./gitea-ssh.yaml
   - ./kubernetes.yaml
