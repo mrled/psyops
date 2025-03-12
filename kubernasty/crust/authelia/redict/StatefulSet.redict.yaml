@@ -77,7 +77,7 @@ spec:
         # Just a single replication of the data;
         # as this Redict instance is just used for Authelia sessions,
         # if this dies, users will have to log in again, that's it.
-        storageClassName: cephalopodblk-nvme-1rep
+        storageClassName: cephalopodblk-nvme-2rep
         resources:
           requests:
             storage: 10Gi
