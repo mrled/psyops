@@ -65,10 +65,10 @@ spec:
             - name: dirsrv-data
               mountPath: "/data"
             - name: dirsrv-tls
-              mountPath: '/data/tls/'
+              mountPath: "/data/tls/"
               readOnly: true
             - name: dirsrv-tls-ca
-              mountPath: '/data/tls/ca'
+              mountPath: "/data/tls/ca"
               readOnly: true
             - name: initsetup
               mountPath: /initsetup
@@ -114,10 +114,10 @@ spec:
             - name: dirsrv-data
               mountPath: "/data"
             - name: dirsrv-tls
-              mountPath: '/data/tls/'
+              mountPath: "/data/tls/"
               readOnly: true
             - name: dirsrv-tls-ca
-              mountPath: '/data/tls/ca'
+              mountPath: "/data/tls/ca"
               readOnly: true
             - name: initldifs
               mountPath: /initldifs
@@ -187,8 +187,8 @@ spec:
     - metadata:
         name: dirsrv-data
       spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: cephalopodblk-nvme-1rep
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: cephalopodblk-nvme-3rep
         resources:
           requests:
             storage: 10Gi
