@@ -103,13 +103,6 @@ From a recent install:
 * 4 hours after the 3rd `mon` pod started, all the other pods started.
   When I woke up the next day I could log in to the web UI.
 
-
-If you recently deployed, note that a complete deployment (across 3 nodes with just one osd per disk)
-looks something like this:
-
-```text
-```
-
 If you're just looking at a small number of pods with `kubectl get pods -n cephalopod`,
 the deployment is not finished.
 Read logs and/or just wait.
@@ -123,6 +116,76 @@ kubectl -n cephalopod get secret rook-ceph-dashboard-password -o jsonpath="{['da
 ```
 
 The username is `admin`.
+
+## Migrating data between storage classes and volumes
+
+After deploying StatefulSet or other resources with PVCs,
+you may need to migrate the data between storage classes.
+This requires creating a new volume,
+moving the data,
+attaching the new volume to the PVC,
+and deleting the old volume.
+
+1. Suspend Flux reconciliation
+2. Scale down the StatefulSet:
+  ```sh
+  kubectl scale statefulset NAME -n NAMESPACE --replicas=0
+  ```
+  When a StatefulSet is scaled down, its PVCs remain.
+3. Take a snapshot of each PVC
+  ```sh
+  apiVersion: snapshot.storage.k8s.io/v1
+  kind: VolumeSnapshot
+  metadata:
+    name: dirsrv-data-dirsrv-0-20250312
+    namespace: directory
+  spec:
+    # Important to use a volume snapshot class that retains data after the PVC is deleted,
+    # because we are about to delete and recreate the PVC
+    volumeSnapshotClassName: cephalopodblk-retain-snapclass
+    source:
+      persistentVolumeClaimName: dirsrv-data-dirsrv-0
+  ```
+  You'll need to do this for all the replicas in the StatefulSet, -0, -1, -2, etc.
+  Wait until `k get volumesnapshot NAME -n NAMESPACE`
+  shows `ReadyToUse: true` for each.
+4. Delete all of the original PVCs from the StatefulSet
+  ```sh
+  namespace="default"
+  pvcname="<volume-claim-template-name>-<statefulset-name>-0"
+  k patch pvc -n $namespace $pvcname --type=json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
+  k delete pvc -n $namespace $pvcname
+  ```
+  Again, you must do this for all replicas in the StatefulSet.
+  We have to remove finalizers because by default there will be a `kubernetes.io/pvc-protection` finalizer
+  that prevents the PVC from being deleted.
+  You can check this with `k describe pvc ...`.
+5. Restore PVCs from snapshots, matching the original naming scheme,
+  and using the new storage class.
+  ```yaml
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: <volume-claim-template-name>-<statefulset-name>-0
+    namespace: <namespace>
+  spec:
+    storageClassName: <new-storage-class>
+    dataSource:
+      name: my-pvc-snapshot-0
+      kind: VolumeSnapshot
+      apiGroup: snapshot.storage.k8s.io
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+  ```
+  Again, for all replicas in the StatefulSet.
+6. Modify the StatefulSet to specify the new `storageClassName`.
+7. Scale the StatefulSet back to its original number of replicas
+  ```sh
+  k scale statefulset NAME -n NAMESPACE --replicas=COUNT
+  ```
 
 ## Troubleshooting
 
