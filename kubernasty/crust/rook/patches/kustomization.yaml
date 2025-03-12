@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Must match the namespace deployed by rook-ceph
+namespace: rook-ceph
+
+patches:
+  # Apply patches to configure
+  - path: ./Patch.ConfigMap.rook-ceph-operator-config.yaml
+    target:
+      kind: ConfigMap
+      name: rook-ceph-operator-config

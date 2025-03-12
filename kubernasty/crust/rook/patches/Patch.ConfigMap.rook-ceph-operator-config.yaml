@@ -1,0 +1,15 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: rook-ceph-operator-config
+  # should be in the namespace of the operator
+  namespace: rook-ceph
+data:
+  ROOK_LOG_LEVEL: "INFO"
+
+  # TODO: I think I want to enable this? Not sure why it wasn't before.
+  # CSI_ENABLE_ENCRYPTION: "true"
+
+  CSI_LOG_LEVEL: "3"
+  CSI_SIDECAR_LOG_LEVEL: "3"
+  ROOK_CSI_KUBELET_DIR_PATH: "/var/lib/k0s/kubelet"
