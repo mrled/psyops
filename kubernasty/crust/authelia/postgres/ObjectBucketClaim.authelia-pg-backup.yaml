@@ -1,0 +1,8 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: authelia-pg-backup
+  namespace: authelia
+spec:
+  bucketName: authelia-pg-backup
+  storageClassName: cephalopodobj-nvme-3rep

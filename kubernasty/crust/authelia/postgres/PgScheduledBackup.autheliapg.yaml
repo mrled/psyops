@@ -1,0 +1,18 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: autheliapg
+  namespace: authelia
+spec:
+  # Daily at 2am
+  schedule: "0 0 2 * * *"
+  backupOwnerReference: self
+
+  # Back up to the same S3 bucket as the WAL archiving (defined in the Cluster)
+  method: barmanObjectStore
+
+  # Back up when this ScheduledBackup is first created
+  immediate: true
+
+  cluster:
+    name: autheliapg

@@ -3,16 +3,38 @@ kind: Cluster
 metadata:
   name: autheliapg
   namespace: authelia
+
 spec:
   instances: 3
+
   bootstrap:
     initdb:
       database: authelia
       owner: authelia
       secret:
         name: authelia-pg
+
   storage:
     size: 10Gi
-    # Do not use storage replication at the Ceph level (1rep means no replication),
+    # Use minimal replication (2rep means 2 replicas),
     # because we are doing data replication at the Postgres level (instances: 3)
+    # storageClass: cephalopodblk-nvme-2rep
     storageClass: cephalopodblk-nvme-1rep
+
+  # This just sets up WAL archiving, not full backups.
+  backup:
+    retentionPolicy: "7d"
+    barmanObjectStore:
+      endpointURL: "https://objects.micahrl.me"
+      destinationPath: "s3://authelia-pg-backup"
+      serverName: "autheliapg"
+      s3Credentials:
+        # This authelia-pg-backup secret is created automatically by the ObjectBucketClaim
+        accessKeyId:
+          name: authelia-pg-backup
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: authelia-pg-backup
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip # Compress WAL files
