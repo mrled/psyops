@@ -8,6 +8,7 @@ resources:
   - ./postgres/Secret.authelia-pg.yaml
   - ./postgres/ObjectBucketClaim.authelia-pg-backup.yaml
   - ./postgres/PgCluster.yaml
+  - ./postgres/PgScheduledBackup.autheliapg.yaml
   - ./redict/ConfigMap.redict-config.yaml
   - ./redict/Secret.redict-secret.yaml
   - ./redict/StatefulSet.redict.yaml
