@@ -4,7 +4,9 @@ resources:
   - ./Namespace.yaml
 
   - ./Secret.gitea-pg.yaml
+  - ./ObjectBucketClaim.gitea-pg-backup.yaml
   - ./PgCluster.yaml
+  - ./PgScheduledBackup.yaml
 
   - ./Secret.gitea-ssh-host-keys.yaml
   - ./ConfigMap.gitea-ssh-host-keys-pub.yaml
