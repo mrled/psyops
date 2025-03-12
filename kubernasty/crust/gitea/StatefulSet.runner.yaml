@@ -115,8 +115,8 @@ spec:
         name: runner-home
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        # No redundancy because it's just cache data
-        storageClassName: cephalopodblk-nvme-1rep
+        # Minimal redundancy because it's just cache data
+        storageClassName: cephalopodblk-nvme-2rep
         resources:
           requests:
             # It just has config data on it, it isn't used for builds
@@ -125,8 +125,8 @@ spec:
         name: runner-docker
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        # No redundancy because it's just cache data
-        storageClassName: cephalopodblk-nvme-1rep
+        # Minimal redundancy because it's just cache data
+        storageClassName: cephalopodblk-nvme-2rep
         resources:
           requests:
             # Docker images are pretty big
