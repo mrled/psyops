@@ -102,3 +102,5 @@ This is easier to get started with.
     * Trigger On: Push Events
     * Branch filter: master
     * Also requires configuring `ALLOWED_HOST_LIST` in Gitea configuration
+  * Note that webhooks are rate limited
+    * <https://github.com/fluxcd/flux2/discussions/3571>
