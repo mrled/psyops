@@ -7,6 +7,8 @@ resources:
   - ./ObjectBucketClaim.gitea-pg-backup.yaml
   - ./PgCluster.yaml
   - ./PgScheduledBackup.yaml
+  - ./PgCluster.giteapg.yaml
+  - ./PgScheduledBackup.giteapg.yaml
 
   - ./Secret.gitea-ssh-host-keys.yaml
   - ./ConfigMap.gitea-ssh-host-keys-pub.yaml

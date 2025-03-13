@@ -43,7 +43,7 @@ data:
 
   # [database]
   GITEA__database__DB_TYPE: postgres
-  GITEA__database__HOST: gitea-pg-cluster-rw
+  GITEA__database__HOST: giteapg-rw
   GITEA__database__NAME: gitea
 
   # [security]

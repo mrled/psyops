@@ -1,23 +1,25 @@
-# The old cluster which has each Postgres replica on 1rep storage
+# The new cluster which has each Postgres replica on 2rep storage
 
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: gitea-pg-cluster
+  name: giteapg
   namespace: gitea
 spec:
   instances: 3
+
+  # Must specify Postgres 16 because the backup is from a Postgres 16 cluster
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+
   bootstrap:
-    initdb:
-      database: gitea
-      owner: gitea
-      secret:
-        name: gitea-pg
+    recovery:
+      backup:
+        name: gitea-backup-transition-3rep
   storage:
-    size: 10Gi
-    # Do not use storage replication at the Ceph level (1rep means no replication),
+    size: 50Gi
+    # Use minimal replication (2rep means 2 replicas),
     # because we are doing data replication at the Postgres level (instances: 3)
-    storageClass: cephalopodblk-nvme-1rep
+    storageClass: cephalopodblk-nvme-2rep
 
   # This just sets up WAL archiving, not full backups.
   backup:
@@ -25,7 +27,7 @@ spec:
     barmanObjectStore:
       endpointURL: "https://objects.micahrl.me"
       destinationPath: "s3://gitea-pg-backup"
-      serverName: "gitea-pg-cluster"
+      serverName: "giteapg"
       s3Credentials:
         # This gitea-pg-backup secret is created automatically by the ObjectBucketClaim
         accessKeyId:
