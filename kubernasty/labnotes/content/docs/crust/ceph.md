@@ -58,36 +58,58 @@ this one will be the main/system cluster.
 
 ## Storage classes
 
-Currently, I have 3 nodes, each with a fresh 1TB nvme drive,
-which has 256GB dedicated to the /psyopsos-data volume (including Longhorn storage)
-and the rest intended for Ceph.
-Ceph will use the LVM volume at `/dev/psyopsos_datadiskvg/cephalopodlv`.
+Currently, I have 3 nodes, each with a fresh 1TB nvme drive intended for Ceph.
+They also have SSDs which are dedicated to the /psyopsos-data volume.
+Ceph cannot encrypt disks unless it owns the entire disk :(.
 
 ```text
 jesseta:~# lsblk
-NAME                             MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
-loop0                              7:0    0 122.5M  1 loop /.modloop
-sda                                8:0    1   956M  0 disk /mnt/psyops-secret/mount
-sdb                                8:16   1   7.5G  0 disk /media/sdb
-├─sdb1                             8:17   1   706M  0 part
-└─sdb2                             8:18   1   1.4M  0 part
-nvme0n1                          259:0    0 931.5G  0 disk
-├─psyopsos_datadiskvg-datadisklv 253:0    0   256G  0 lvm  /etc/rancher
-│                                                          /var/lib/containerd
-│                                                          /var/lib/rancher/k3s
-│                                                          /psyopsos-data
-└─psyopsos_datadiskvg-cephalopodlv 253:1    0 675.5G  0 lvm
+NAME                                 MAJ:MIN RM   SIZE RO TYPE  MOUNTPOINTS
+loop0                                  7:0    0   537M  1 loop  /media/root-ro
+loop1                                  7:1    0   151M  1 loop  /.modloop
+sda                                    8:0    0 238.5G  0 disk
+└─sda1                                 8:1    0 238.5G  0 part
+  └─psyopsosdata                     253:0    0 238.5G  0 crypt
+    └─psyopsos_datadiskvg-datadisklv 253:1    0 238.5G  0 lvm   /var/lib/k0s/kubelet/pods/ab22338a-2ca6-45ef-94c8-f1f1eade25d0/volume-subpaths/initsetup/configurator/6
+                                                                /var/lib/k0s/kubelet/pods/ab22338a-2ca6-45ef-94c8-f1f1eade25d0/volume-subpaths/initsetup/configurator/5
+                                                                /var/lib/k0s/kubelet/pods/e92a7724-4a38-433d-bab1-b264faca7bda/volume-subpaths/config/authelia/0
+                                                                /var/lib/k0s/kubelet
+                                                                /var/lib/containerd
+                                                                /var/lib/k0s
+                                                                /psyopsos-data
+sdb                                    8:16   1  28.7G  0 disk
+├─sdb1                                 8:17   1   128M  0 part
+├─sdb2                                 8:18   1   128M  0 part  /mnt/psyops-secret/mount
+├─sdb3                                 8:19   1   1.5G  0 part
+└─sdb4                                 8:20   1   1.5G  0 part  /mnt/psyopsOS/b
+nvme0n1                              259:0    0 931.5G  0 disk
 ```
 
 It's worth using the software (Ceph) or the cluster name (cephalopod) or both
 in the name of the storage class,
-as we are already using [Longhorn]({{< ref "longhorn" >}}) too.
+in case we add other storage classes like [Longhorn]({{< ref "longhorn" >}}),
+per-node ephemeral storage, etc.
 
-I also think the disk class should be in the name.
-These hosts can all take a second internal SATA 2.5" disk,
-and it is possible we will use it in the future for more storage.
+I also think the disk class should be in the name,
+like nvme, ssd, hdd, etc.
 
-* `cephalopod-nvme-3rep`: a class with 3 replicas
+## Ceph supported storage types
+
+1. Block storage pools: a block device (basically a virtual disk) that can be attached to only one pod at a time
+2. CephFS: a RWX/Read-Write-Many filesystem that can be mounted to multiple pods for writing at once
+3. Object storage: S3 compatible API
+
+It can also do other stuff, like NFS and iSCSI, but I don't need any of that right now.
+
+Ceph issues warnings for any storage pool that is not redundant via replicas or erasure coding.
+You can create single-replica pools,
+but Ceph will warn you about this constantly,
+and it won't allow itself to do regular maintenance that requires stopping its storage daemons ("OSDs"),
+because when the daemon is stopped the pool will be completely unavailable.
+**For this reason, you probably want at least 2 replicas for any storage pool you create.**
+This is true even if there is redundancy at another level,
+like hardware RAID,
+or database clustering.
 
 ## Deployment
 
@@ -186,6 +208,28 @@ and deleting the old volume.
   ```sh
   k scale statefulset NAME -n NAMESPACE --replicas=COUNT
   ```
+
+## Ceph object storage
+
+### Create object bucket claim
+
+Create `ObjectBucketClaim` resources to create a bucket and key pair automatically.
+This will create an associated Secret resource with the same name
+with `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` properties.
+These keys automatically have read/write access t othe bucket.
+
+See also the `cluster.sh` function `ks3api_bucketclaim`.
+
+### Create object storage users
+
+Create `CephObjectStoreUser` resources to get an S3 user with permissions to talk to a bucket.
+This will create an associated Secret resource with `AccessKey` and `SecretKey` properties.
+The secrets will be named `rook-ceph-object-user-$objStoreName-$userName`,
+so a user created for the `myObjects` object store is called `bob`
+the secret will be `rook-ceph-object-user-myObjects-bob`.
+You will then need to apply a policy to a bucket in order for the user to have access to anything.
+
+See also the `cluster.sh` function `ks3api_cephuser`.
 
 ## Troubleshooting
 

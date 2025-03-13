@@ -116,3 +116,33 @@ kldif_cat() {
     filename="$1"
     kubectl exec -it -n directory dirsrv-0 -c configurator -- cat "/initldifs/$filename"
 }
+
+# Talk to the object store with credentials from a CephObjectStoreUser
+# Requires the AWS CLI (uv tool install awscli)
+ks3api_cephuser() {
+    local namespace="$1"
+    local user="$2"
+    shift 2
+    local objstore=cephalopodobj-nvme-3rep
+    local secname="rook-ceph-object-user-$objstore-$user"
+    local endpoint="https://objects.micahrl.me"
+    local secret=$(kubectl get secret -n $namespace $secname -o json)
+    local keyid=$(echo "$secret" | jq -r '.data.AccessKey | @base64d')
+    local secretkey=$(echo "$secret" | jq -r '.data.SecretKey | @base64d')
+    AWS_ACCESS_KEY_ID="$keyid" AWS_SECRET_ACCESS_KEY="$secretkey" aws s3api --endpoint-url "$endpoint" "$@"
+}
+
+# Talk to the object store with credentials created by an ObjectBucketClaim
+# Requires the AWS CLI (uv tool install awscli)
+# Example:
+#   ks3api_bucketclaim authelia authelia-pg-backup list-buckets
+ks3api_bucketclaim() {
+    local namespace="$1"
+    local claim="$2"
+    shift 2
+    local endpoint="https://objects.micahrl.me"
+    local secret=$(kubectl get secret -n $namespace $claim -o json)
+    local keyid=$(echo "$secret" | jq -r '.data.AWS_ACCESS_KEY_ID | @base64d')
+    local secretkey=$(echo "$secret" | jq -r '.data.AWS_SECRET_ACCESS_KEY | @base64d')
+    AWS_ACCESS_KEY_ID="$keyid" AWS_SECRET_ACCESS_KEY="$secretkey" aws s3api --endpoint-url "$endpoint" "$@"
+}
