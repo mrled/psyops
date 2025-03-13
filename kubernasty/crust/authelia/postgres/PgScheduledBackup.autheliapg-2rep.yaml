@@ -1,7 +1,7 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
-  name: autheliapg
+  name: autheliapg-2rep
   namespace: authelia
 spec:
   # Daily at 2am
@@ -15,4 +15,4 @@ spec:
   immediate: true
 
   cluster:
-    name: autheliapg
+    name: autheliapg-2rep

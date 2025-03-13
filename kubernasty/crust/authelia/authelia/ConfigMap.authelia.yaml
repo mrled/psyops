@@ -114,7 +114,7 @@ data:
       max_retries: 3
     storage:
       postgres:
-        address: tcp://autheliapg-rw:5432
+        address: tcp://autheliapg-2rep-rw:5432
         database: authelia
         schema: public
         username: authelia

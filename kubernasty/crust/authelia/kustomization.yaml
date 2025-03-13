@@ -5,22 +5,27 @@ resources:
   - ./common/ConfigMap.kubernasty-ca-root-cert.yaml
   - ./common/Middleware.authelia.yaml
   - ./common/ClusterRoleBinding.patricii.yaml
+
   - ./postgres/Secret.authelia-pg.yaml
   - ./postgres/ObjectBucketClaim.authelia-pg-backup.yaml
-  - ./postgres/PgCluster.yaml
-  - ./postgres/PgScheduledBackup.autheliapg.yaml
+  - ./postgres/PgCluster.autheliapg-2rep.yaml
+  - ./postgres/PgScheduledBackup.autheliapg-2rep.yaml
+
   - ./redict/ConfigMap.redict-config.yaml
   - ./redict/Secret.redict-secret.yaml
   - ./redict/StatefulSet.redict.yaml
   - ./redict/Service.redict.yaml
   - ./redict/Service.redict-headless.yaml
+
   - ./authelia/ConfigMap.authelia.yaml
   - ./authelia/Secret.authelia.yaml
   - ./authelia/Service.authelia.yaml
   - ./authelia/DaemonSet.authelia.yaml
+
   - ./startpage/ConfigMap.startpage-html.yaml
   - ./startpage/Service.startpage.yaml
   - ./startpage/Deployment.startpage.yaml
+
   - ./whoami/Deployment.whoami.yaml
   - ./whoami/Service.whoami-unauthenticated.yaml
   - ./whoami/Service.whoami-authenticated.yaml
