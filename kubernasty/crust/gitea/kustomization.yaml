@@ -5,8 +5,6 @@ resources:
 
   - ./Secret.gitea-pg.yaml
   - ./ObjectBucketClaim.gitea-pg-backup.yaml
-  - ./PgCluster.yaml
-  - ./PgScheduledBackup.yaml
   - ./PgCluster.giteapg.yaml
   - ./PgScheduledBackup.giteapg.yaml
 
