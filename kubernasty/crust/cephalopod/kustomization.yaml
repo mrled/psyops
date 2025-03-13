@@ -3,10 +3,8 @@ kind: Kustomization
 resources:
   - ./CephCluster.cephalopod.yaml
 
-  - ./cephalopodblk/CephBlockPool.cephalopodblk-nvme-1rep.yaml
   - ./cephalopodblk/CephBlockPool.cephalopodblk-nvme-2rep.yaml
   - ./cephalopodblk/CephBlockPool.cephalopodblk-nvme-3rep.yaml
-  - ./cephalopodblk/StorageClass.cephalopodblk-nvme-1rep.yaml
   - ./cephalopodblk/StorageClass.cephalopodblk-nvme-2rep.yaml
   - ./cephalopodblk/StorageClass.cephalopodblk-nvme-3rep.yaml
   - ./cephalopodblk/VolumeSnapshotClass.cephalopodblk-retain-snapclass.yaml
