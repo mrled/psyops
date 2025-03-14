@@ -7,6 +7,7 @@ import argparse
 
 from knpl_macrofactor.processing import check_file_processed, mark_file_processed
 from knpl_macrofactor.dataimport import import_xlsx
+import os
 
 
 def idb_excepthook(exc_type, exc_value, tb):
@@ -38,11 +39,11 @@ def main():
     )
 
     # Common database arguments
-    parser.add_argument("--host", default="localhost", help="Database host")
-    parser.add_argument("--port", default="5432", help="Database port")
-    parser.add_argument("--user", default="postgres", help="Database user")
-    parser.add_argument("--password", default="postgres", help="Database password")
-    parser.add_argument("--dbname", default="postgres", help="Database name")
+    parser.add_argument("--host", help="Database host")
+    parser.add_argument("--port", help="Database port")
+    parser.add_argument("--user", help="Database user")
+    parser.add_argument("--password", help="Database password")
+    parser.add_argument("--dbname", help="Database name")
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -72,6 +73,17 @@ def main():
 
     args = parser.parse_args()
 
+    if not args.host:
+        args.host = os.getenv("PGHOST", "localhost")
+    if not args.port:
+        args.port = os.getenv("PGPORT", "5432")
+    if not args.user:
+        args.user = os.getenv("PGUSER", "postgres")
+    if not args.password:
+        args.password = os.getenv("PGPASSWORD", "postgres")
+    if not args.dbname:
+        args.dbname = os.getenv("PGDATABASE", "postgres")
+
     # Configure logging
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -85,10 +97,7 @@ def main():
     try:
         if args.command == "check-processed":
             processed = check_file_processed(args)
-            if processed:
-                print("processed")
-            else:
-                print("not processed")
+            print(str(processed))
 
         elif args.command == "mark-processed":
             mark_file_processed(args)
@@ -102,7 +111,3 @@ def main():
         logging.exception("An error occurred.")
         print(f"error: {e}")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

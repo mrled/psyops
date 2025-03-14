@@ -11,6 +11,9 @@ dependencies = [
     "types-psycopg2>=2.9.21.20250121",
 ]
 
+[project.scripts]
+knpl_macrofactor = "knpl_macrofactor.cli:main"
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
