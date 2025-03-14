@@ -1,0 +1,22 @@
+[project]
+name = "knpl_macrofactor"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas-stubs>=2.2.3.250308",
+    "pandas>=2.2.3",
+    "psycopg2-binary>=2.9.10",
+    "types-psycopg2>=2.9.21.20250121",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["knpl_macrofactor"]
+
+[tool.setuptools.package-dir]
+"" = "src" # Uses the "src" layout
