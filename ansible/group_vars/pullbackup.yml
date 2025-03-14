@@ -1,0 +1,43 @@
+---
+# For pulling remote data onto the NAS
+# Don't allow other systems to push here without thinking through security implications
+
+backup_base_user: pullbackup
+backup_base_group: pullbackup
+backup_base_mount_share_pass: "{{ vault_backup_base_mount_share_pass }}"
+backup_base_destination_root: /netmount/chenoska/pullbackup
+backup_base_mountpoints:
+  - path: "{{ backup_base_destination_root }}"
+    src: //chenoska/pullbackup
+    credsfile: /etc/chenoska_pullbackup.credentials
+    username: pullbackup
+    password: "{{ backup_base_mount_share_pass }}"
+    fstype: cifs
+    mountowner: "{{ backup_base_user }}"
+    mountgroup: "{{ backup_base_group }}"
+
+backup_unifi_controller_hostname: "{{ global_cloudkey_hostname }}"
+backup_unifi_controller_user: "{{ global_cloudkey_user }}"
+backup_unifi_controller_hostkey: "{{ global_cloudkey_ssh_host_key }}"
+backup_unifi_user: "{{ backup_base_user }}"
+backup_unifi_group: "{{ backup_base_group }}"
+backup_unifi_dest: "{{ backup_base_destination_root }}/unifi"
+backup_base_pubkey: "{{ global_backup_ssh_client_pubkey }}"
+backup_base_privkey: "{{ vault_backup_base_privkey }}"
+
+# TODO: move to using the backup_base stuff in the future
+mailbackup_share_user: mailbackup
+mailbackup_share_pass: "{{ vault_mailbackup_share_pass }}"
+mailbackup_report_email: psyops@micahrl.com
+mailbackup_share_mountpoint: /netmount/chenoska/mailbackup
+mailbackup_me_micahrl_com_password: "{{ vault_mailbackup_me_micahrl_com_password }}"
+
+mailbackup_mountpoints:
+  - path: "{{ mailbackup_share_mountpoint }}"
+    src: //chenoska.home.micahrl.com/mailbackup2
+    credsfile: /etc/chenoska_mailbackup.credentials
+    opts: ""
+    username: "{{ mailbackup_share_user }}"
+    password: "{{ mailbackup_share_pass }}"
+    fstype: cifs
+    mountowner: "{{ mailbackup_username }}"

@@ -1,0 +1,17 @@
+input {
+    beat {
+        port => {{ seedbox_logstash_container_logs_port }}
+    }
+}
+
+output {
+    elasticsearch {
+        hosts => ["http://elastic:9200"]
+        user => "{{ seedbox_logstash_ingestion_user }}"
+        password => "{{ seedbox_logstash_ingestion_password }}"
+        data_stream => true
+        data_stream_type => "logs"
+        data_stream_dataset => "filebeat"
+        data_stream_namespace => "container-logfiles"
+    }
+}

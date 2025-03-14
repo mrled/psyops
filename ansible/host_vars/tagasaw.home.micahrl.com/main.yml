@@ -1,0 +1,8 @@
+---
+ansible_python_interpreter: /usr/bin/python3
+base_fucking_broadcom_wifi: yes
+docker_standalone_swarm_advertise_addr: 192.168.1.124
+
+seedbox_backup_gpg_pub_key: "{{ vault_seedbox_backup_gpg_pub_key }}"
+seedbox_backup_gpg_priv_key: "{{ vault_seedbox_backup_gpg_priv_key }}"
+seedbox_backup_gpg_key_id: FC826CE92A203366357263B66AD2194300A45165

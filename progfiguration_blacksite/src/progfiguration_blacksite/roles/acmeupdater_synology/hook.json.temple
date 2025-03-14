@@ -1,0 +1,12 @@
+{
+    "id": "{$}job_name",
+    "execute-command": "/usr/bin/env",
+    "pass-arguments-to-command": [
+      {"source": "string", "name": "sudo"},
+      {"source": "string", "name": "-u"},
+      {"source": "string", "name": "{$}job_user"},
+      {"source": "string", "name": "{$}updater_script"}
+    ],
+    "include-command-output-in-response": true,
+    "include-command-output-in-response-on-error": true
+}

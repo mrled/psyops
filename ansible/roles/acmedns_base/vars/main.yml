@@ -1,0 +1,10 @@
+---
+acmedns_base_home: /home/{{ acmedns_base_user }}
+
+acmedns_base_lego_version: 3.7.0
+acmedns_base_lego_dir: lego_v{{ acmedns_base_lego_version }}_linux_{{ acmedns_base_lego_arch }}
+acmedns_base_lego_archive: "{{ acmedns_base_lego_dir }}.tar.gz"
+acmedns_base_lego_uri: https://github.com/go-acme/lego/releases/download/v{{ acmedns_base_lego_version }}/{{ acmedns_base_lego_archive }} 
+acmedns_base_lego_parent: /usr/local/src
+acmedns_base_lego_archive_path: "{{ acmedns_base_lego_parent }}/{{ acmedns_base_lego_archive }}"
+acmedns_base_lego_extracted_path: "{{ acmedns_base_lego_parent }}/{{ acmedns_base_lego_dir }}"

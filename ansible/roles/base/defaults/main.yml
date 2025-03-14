@@ -1,0 +1,7 @@
+---
+base_fucking_broadcom_wifi: false
+base_rpi: false
+base_rpi_poe_hat: false
+base_set_system_hostname_to_inventory_hostname: false
+base_log_rpi_temperature_temporal: false
+base_log_rpi_temperature_temporal_jobname: log_rpi_temperature_temporal_syslog

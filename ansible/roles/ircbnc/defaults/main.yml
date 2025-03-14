@@ -1,0 +1,8 @@
+---
+
+ircbnc_znc_user: znc
+# TODO: this is lazy and might not work everywhere
+ircbnc_znc_group: "{{ ircbnc_znc_user }}"
+ircbnc_znc_port: 10666
+
+ircbnc_acmedns_updater_runonce: yes

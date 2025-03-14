@@ -1,0 +1,16 @@
+---
+# Plays for my various Linux machines
+# A lot of these will end up on the same box
+
+- import_playbook: _base.yml
+- import_playbook: _capthook.yml
+#- import_playbook: _emailfwd.yml
+- import_playbook: _interactive.yml
+- import_playbook: _syncthing.yml
+- import_playbook: _wireguard.yml
+- import_playbook: _pullbackup.yml
+- import_playbook: _syslogserver.yml
+- import_playbook: _acmednsupdaters.yml
+- import_playbook: _seedbox.yml
+- import_playbook: _plex.yml
+- import_playbook: _afaarit.yml

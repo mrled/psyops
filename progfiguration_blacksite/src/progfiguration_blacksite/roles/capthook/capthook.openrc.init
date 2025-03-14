@@ -1,0 +1,12 @@
+#!/sbin/openrc-run
+
+# Force the command into the background (the service does not background itself)
+command_background=true
+
+command="/usr/bin/webhook 2>&1"
+command_args="-hotreload -port $CAPTHOOK_PORT -verbose -header 'X-Avast=Matey' -header 'X-Yarr=ItsDrivingMeNuts' -hooks '$CATPHOOK_HOOKS_JSON'"
+pidfile=/run/${RC_SVCNAME}.pid
+
+start_pre() {
+    sudo -u "$USERNAME" "$CAPTHOOK_HOOKBUILDER" "$CAPTHOOK_HOOKS_DIR" "$CATPHOOK_HOOKS_JSON"
+}

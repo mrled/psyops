@@ -1,0 +1,6 @@
+{
+    "id": "whoami",
+    "execute-command": "/usr/bin/env",
+    "pass-arguments-to-command": [{"source": "string", "name": "true"}],
+    "response-message": "I'm Captain Fucking Hook\n"
+}

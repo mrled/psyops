@@ -1,0 +1,125 @@
+# -*- mode: yaml -*-
+# The k0s cluster configuration file.
+#
+# Generated with `k0s config create > k0s.yaml` and modified.
+
+apiVersion: k0s.k0sproject.io/v1beta1
+kind: ClusterConfig
+metadata:
+  creationTimestamp: null
+  name: k0s
+spec:
+  api:
+    address: 192.168.1.25
+    k0sApiPort: 9443
+    port: 6443
+    sans:
+    - 192.168.1.25
+    - 100.86.119.112
+    - 172.17.0.1
+    - 172.18.0.1
+    - 10.244.0.1
+    - fdbb:f3e9:77cd:b540:638c:14a7:52e9:62d8
+    - fe80::6805:b28b:b705:d1bd
+    - fd7a:115c:a1e0:ab12:4843:cd96:6256:7770
+    - fe80::4287:5cd7:226e:f558
+    - fe80::42:74ff:fee1:9b3d
+    - fe80::dcc6:ffff:fef4:a239
+    - fe80::42:5dff:fe82:74f4
+    - fe80::b0d2:afff:fe98:741c
+    - fe80::a0b9:c8ff:fe04:f9ea
+    - fe80::4cd:f5ff:fe86:1333
+    - fe80::280e:30ff:feeb:aa5b
+    - fe80::b8c9:f6ff:fe23:c425
+    - fe80::cc2d:3aff:fe05:da20
+    - fe80::35:43ff:feb2:f176
+    - fe80::d023:3aff:fe22:a2b9
+    - fe80::c020:1bff:fe0d:440f
+    - fe80::484:6dff:febb:ae76
+    - fe80::44dc:85ff:fe24:f18c
+    - fe80::1405:3bff:fea5:50e3
+    - fe80::f0ca:dbff:fe5a:6826
+    - fe80::d821:1aff:fe8c:83ca
+    - fe80::7444:d6ff:fe8f:62ae
+    - fe80::1c1b:19ff:fe85:a39a
+    - fe80::50e8:e9ff:fe90:8a30
+    - fe80::c453:74ff:fe17:b671
+    - fe80::a8ba:1bff:feaa:5012
+    - fe80::c85a:49ff:fe4c:7587
+    - fe80::24ba:afff:febf:465f
+    - fe80::a8ce:2bff:fecc:819e
+    - fe80::48e0:58ff:fe2f:c59
+    - fe80::542c:45ff:fea3:9f98
+    - fe80::6426:1eff:fef9:b788
+    - fe80::6417:bbff:fec4:e68c
+    - fe80::6063:7eff:feb8:891c
+    - fe80::b025:8eff:fe22:fbcb
+    - fe80::471:24ff:fe00:a47c
+    - fe80::6c27:daff:feb1:3625
+    - fe80::9825:9aff:fe82:3e4f
+    - fe80::d082:55ff:fee7:9b39
+
+    extraArgs:
+      oidc-issuer-url: https://dex.{$}seedbox_domain
+      oidc-client-id: seedboxk8s-kubernetes
+      oidc-username-claim: email
+
+  controllerManager: {}
+
+  # These extensions 1. are k0s specific and 2. contain our own customizations
+  extensions:
+
+    storage:
+      create_default_storage_class: false
+      type: external_storage
+
+  installConfig:
+    users:
+      etcdUser: etcd
+      kineUser: kube-apiserver
+      konnectivityUser: konnectivity-server
+      kubeAPIserverUser: kube-apiserver
+      kubeSchedulerUser: kube-scheduler
+  konnectivity:
+    adminPort: 8133
+    agentPort: 8132
+  network:
+    calico: null
+    clusterDomain: cluster.local
+    dualStack: {}
+    kubeProxy:
+      iptables:
+        minSyncPeriod: 0s
+        syncPeriod: 0s
+      ipvs:
+        minSyncPeriod: 0s
+        syncPeriod: 0s
+        tcpFinTimeout: 0s
+        tcpTimeout: 0s
+        udpTimeout: 0s
+      metricsBindAddress: 0.0.0.0:10249
+      mode: iptables
+    kuberouter:
+      autoMTU: true
+      hairpin: Enabled
+      ipMasq: false
+      metricsPort: 8080
+      mtu: 0
+      peerRouterASNs: ""
+      peerRouterIPs: ""
+    nodeLocalLoadBalancing:
+      envoyProxy:
+        apiServerBindPort: 7443
+        konnectivityServerBindPort: 7132
+      type: EnvoyProxy
+    podCIDR: 10.244.0.0/16
+    provider: kuberouter
+    serviceCIDR: 10.96.0.0/12
+  scheduler: {}
+  storage:
+    etcd:
+      externalCluster: null
+      peerAddress: 192.168.1.25
+    type: etcd
+  telemetry:
+    enabled: false

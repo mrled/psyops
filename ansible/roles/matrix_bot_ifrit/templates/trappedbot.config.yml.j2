@@ -1,0 +1,101 @@
+---
+
+matrix:
+  user_id: "@ifrit:micahrl.com"
+  user_password: "{{ matrix_bot_ifrit_matrix_password }}"
+  # Provide this and remove the password
+  # access_token: "PutYourLongAccessTokenHere"
+
+  homeserver_url: https://matrix.micahrl.com
+  device_id: TESTDEVICE
+  device_name: eno
+  trust_own_devices: true
+  change_device_name: true
+
+bot:
+  command_prefix: "!ifrit"
+  trusted_users:
+    - "@me:micahrl.com"
+
+storage:
+  database_filepath: "{{ matrix_bot_ifrit_trappedbot_db_path }}"
+  store_filepath: "{{ matrix_bot_ifrit_trappedbot_store_path }}"
+
+logging:
+  level: DEBUG
+
+events:
+  botstartup:
+    notify:
+      # room: "#MicahrlTestingUnencrypted:micahrl.com"
+      room: "!inOikASSDvbpBlkeTf:micahrl.com"
+      message: "ifrit just (re)started"
+
+extension: {}
+
+commands:
+
+  echo:                         # The name of this _command_ is 'echo'
+                                # Type the command prefix, then 'echo', then text you want to echo
+    builtin: echo               # The 'echo' command will execute a builtin task also named 'echo'
+    help: Echoes back input     # Some help that the bot can give you interactively
+    allow_untrusted: yes        # [Optional, default false] Allow any user to run this command?
+    allow_homeservers:          # [Optional, default empty] Allow any user from the list of homeservers to run this command
+      - example.org
+      - example.net
+    allow_users:                # [Optional, default empty] Allow any user in this list to run this command
+      - "@admin:example.com"
+
+  # Note that the command name (dict key) can be different from the internal task name of the builtin command
+  debug_echo:                   # This is the command name - you will type this to your bot
+    builtin: dbgecho            # This is the task name - the bot will run a builtin task called this.
+                                # (Users will not need to know this.)
+    help: Echoes back input with some other debugging info
+    allow_untrusted: yes
+  version:
+    builtin: version
+    help: Returns bot version
+    allow_untrusted: yes
+  platinfo:
+    builtin: platinfo
+    help: Shows platform info
+    allow_untrusted: yes
+
+  uptime:                       # The name of the _command_ is uptime
+                                # Type the command prefix, then 'uptime'
+    systemcmd: uptime           # The 'uptime' command will execute the 'uptime' binary in your $PATH
+                                # You can also provide an absolute path to the systemcmd
+    help: Shows uptime for the server running the bot
+    allow_untrusted: yes
+  whoami:
+    systemcmd: whoami
+    help: Shows the Unix user that the bot is running under
+    allow_untrusted: yes
+  hostname:
+    systemcmd: hostname
+    help: Shows the hostname for the server where the bot is running
+    allow_untrusted: yes
+  date:
+    systemcmd: date
+    help: Shows the date according to the server where the bot is running
+    allow_untrusted: yes
+
+  external_echo:
+    modulepath: "{{ matrix_bot_ifrit_trappedbot_clone_path }}/support/example_external_task.py"
+    help: An example external Python task
+    allow_untrusted: yes
+
+responses:
+
+  # Tell a dad joke
+  # Whenever a the exact string 'im hungry' is posted to the channel,
+  # let em know who's their daddy.
+  - regex: "^im hungry$"
+    ignorecase: true
+    response: "Hi hungry, I'm dad!"
+
+  # Our lordt & savior, trappedbot
+  # Respond to "jesus christ", "jesus h christ", etc, with "Yes, my son?"
+  - regex: "^jesus +([a-zA-Z-\\.]* +)?christ[\\.\\!\\?]*$"
+    ignorecase: true
+    response: "Yes, my son?"

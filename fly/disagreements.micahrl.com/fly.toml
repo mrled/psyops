@@ -1,0 +1,51 @@
+# fly.toml app configuration file generated for com-micahrl-disagreements on 2023-08-10T16:57:05-05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "com-micahrl-disagreements"
+primary_region = "dfw"
+
+[build]
+
+[env]
+REMARK_URL = "https://disagreements.micahrl.com"
+DEBUG = "true"
+# Must match site in the client config
+SITE = "me.micahrl.com"
+SMTP_HOST = "smtp.mailgun.org"
+SMTP_PORT = "587"
+SMTP_TLS = "false"
+SMTP_STARTTLS = "true"
+SMTP_USERNAME = "postmaster@disagreements.micahrl.com"
+SMTP_TIMEOUT = "10s"
+# Notify admins of new comments via email
+NOTIFY_ADMINS = "email"
+ADMIN_SHARED_EMAIL = "admin@disagreements.micahrl.com"
+# Allow authenticating via email
+AUTH_EMAIL_ENABLE = "true"
+AUTH_EMAIL_FROM = "admin@disagreements.micahrl.com"
+AUTH_EMAIL_SUBJ = "Please log in to disagree"
+# Notify users of replies via email, I think?
+NOTIFY_USERS = "email"
+NOTIFY_EMAIL_FROM = "admin@disagreements.micahrl.com"
+NOTIFY_EMAIL_VERIFICATION_SUBJ = "Please verify your email address to disagree"
+# You have to get this value by first logging in as the user you want to be admin, and then finding the value in the UI and pasting here.
+ADMIN_SHARED_ID = "github_4622c3baa1e2d1bd137187c27103b0e6d1d48931"
+BACKUP_DIR = "/srv/var/backups"
+BACKUP_S3_BUCKET_NAME = "com-micahrl-disagreements-litestream"
+BACKUP_S3_ENDPOINT_URL = "https://s3.us-central-1.wasabisys.com"
+# url = "https://com-micahrl-disagreements.fly.dev"
+url = "https://disagreements.micahrl.com"
+
+[[mounts]]
+source = "data"
+destination = "/srv/var"
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = false
+auto_start_machines = false
+min_machines_running = 0
+processes = ["app"]

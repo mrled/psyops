@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+
+remote="{{ backup_unifi_controller_user }}@{{ backup_unifi_controller_hostname }}"
+dest="{{ backup_unifi_dest }}"
+
+scp -r "${remote}:/srv/unifi/data/backup/autobackup" "${dest}/unifi-controller"
+scp -r "${remote}:/etc/unifi-protect/backups" "${dest}/unifi-protect"

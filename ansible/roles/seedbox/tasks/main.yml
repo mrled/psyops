@@ -1,0 +1,521 @@
+---
+- name: Install EPEL
+  dnf:
+    name:
+      - epel-release
+    state: latest
+    update_cache: yes
+
+# rpmfusion is required for ffmpeg at least
+# ffmpeg is useful for, among other things, youtube-dl --
+# if it is installed, it'll auto fix audio codec issues.
+# - name: Install rpmfusion
+#   block:
+#     - set_fact:
+#         rpmfusion_free: rpmfusion-free-release-{{ ansible_distribution_version }}.noarch.rpm
+#         rpmfusion_nonfree: rpmfusion-nonfree-release-{{ ansible_distribution_version }}.noarch.rpm
+
+#     - name: Get rpmfusion
+#       get_url: url={{ item }} dest=/usr/local/src
+#       with_items:
+#         - https://download1.rpmfusion.org/free/fedora/{{ rpmfusion_free }}
+#         - https://download1.rpmfusion.org/nonfree/fedora/{{ rpmfusion_nonfree }}
+
+#     - name: Install rpmfusion
+#       dnf:
+#         name:
+#           - /usr/local/src/{{ rpmfusion_free }}
+#           - /usr/local/src/{{ rpmfusion_nonfree }}
+#         state: present
+
+- name: Install RPMs
+  dnf:
+    name:
+      - ffmpeg
+      - ffmpeg-devel
+      - gnupg2
+      - python3-cryptography
+      - python3-lxml
+      - python3-pip
+      - samba
+      - samba-client
+    state: latest
+    update_cache: yes
+
+- name: Install pip packages
+  pip:
+    name:
+      - docker-compose
+      - passlib
+    state: latest
+
+- name: Configure Docker
+  template:
+    src: docker.daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: "0644"
+  register: docker_daemon_json_result
+
+- name: Restart Docker
+  systemd:
+    name: docker
+    state: restarted
+  when: docker_daemon_json_result.changed
+
+- name: Configure seedbox backups
+  import_tasks: backups.yml
+  tags: seedbox_backups
+
+- name: Add seedbox group
+  group:
+    name: "{{ seedbox_group }}"
+    system: yes
+
+- name: Add seedbox user
+  user:
+    name: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    system: yes
+    create_home: yes
+
+- name: getent seedbox
+  getent:
+    database: passwd
+    key: "{{ seedbox_user }}"
+  register: seedbox_getent
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
+  - seedbox_plex
+
+- name: Set UID/GID facts
+  set_fact:
+    seedbox_uid: "{{ getent_passwd[seedbox_user][1] }}"
+    seedbox_gid: "{{ getent_passwd[seedbox_user][2] }}"
+    seedbox_homedir: "{{ getent_passwd[seedbox_user][4] }}"
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
+  - seedbox_plex
+
+- import_tasks: samba.yml
+  tags: samba
+
+- name: Create seedbox config dirs (0750 seedbox)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0750"
+  with_items:
+    - "{{ seedbox_config_dir }}"
+    - "{{ seedbox_traefik_config_dir }}"
+    - "{{ seedbox_sabnzbd_config_dir }}"
+    - "{{ seedbox_lidarr_config_dir }}"
+    - "{{ seedbox_headphones_config_dir }}"
+    - "{{ seedbox_sonarr_config_dir }}"
+    - "{{ seedbox_radarr_config_dir }}"
+    - "{{ seedbox_hydra2_config_dir }}"
+    - "{{ seedbox_cops_config_dir }}"
+    - "{{ seedbox_transmission_config_dir }}"
+    - "{{ seedbox_tentacles_config_dir }}"
+    - "{{ seedbox_jackett_config_dir }}"
+    - "{{ seedbox_heimdall_config_dir }}"
+    - "{{ seedbox_tautulli_config_dir }}"
+    - "{{ seedbox_rtorrent_config_dir }}"
+    - "{{ seedbox_prowlarr_config_dir }}"
+    - "{{ seedbox_stash_config_dir }}"
+    - "{{ seedbox_media.trix }}/stash"
+    - "{{ seedbox_media.trix }}/generated"
+    - "{{ seedbox_media.trix }}/metadata"
+    - "{{ seedbox_media.trix }}/cache"
+    - "{{ seedbox_ersatztv_config_dir }}/roothome"
+    - "{{ seedbox_ersatztv_config_dir }}/xdg_data_home/ersatztv"
+    - "{{ seedbox_shhh_config_dir}}"
+    - "{{ seedbox_lazylibrarian_config_dir}}"
+    - "{{ seedbox_onionproxy_config_dir}}"
+    - "{{ seedbox_tor_config_dir}}"
+    - "{{ seedbox_torprivoxy_config_dir }}"
+
+- name: Make seedbox media subdirs
+  file:
+    path: "{{ item.value }}"
+    state: directory
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0770"
+  with_dict: "{{ seedbox_media }}"
+
+- name: Make more seedbox mount subdirs
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0770"
+  with_items:
+    - "{{ seedbox_usenet_completes_dir }}"
+    - "{{ seedbox_usenet_incompletes_dir }}"
+    - "{{ seedbox_usenet_watch_dir }}"
+    - "{{ seedbox_torrent_downloads_dir }}"
+    - "{{ seedbox_jackett_blackhole_dir }}"
+
+- name: Configure ports in the trusted zone
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    zone: trusted
+    state: enabled
+    immediate: yes
+  with_items:
+    - "80/tcp"
+    - "443/tcp"
+    - "{{ seedbox_transmission_peer_port }}/tcp"
+    - "{{ seedbox_transmission_peer_port }}/udp"
+    - "{{ seedbox_rtorrent_dht_port }}/tcp"
+    - "{{ seedbox_rtorrent_dht_port }}/udp"
+    - "{{ seedbox_rtorrent_peer_port }}/tcp"
+    - "{{ seedbox_rtorrent_peer_port }}/udp"
+
+- name: Configure ports in the default zone
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  with_items:
+    - "80/tcp"
+    - "443/tcp"
+    - "{{ seedbox_transmission_peer_port }}/tcp"
+    - "{{ seedbox_transmission_peer_port }}/udp"
+    - "{{ seedbox_rtorrent_dht_port }}/tcp"
+    - "{{ seedbox_rtorrent_dht_port }}/udp"
+    - "{{ seedbox_rtorrent_peer_port }}/tcp"
+    - "{{ seedbox_rtorrent_peer_port }}/udp"
+
+- name: Upload transmission image source
+  copy:
+    src: transmission-docker/
+    dest: "{{ seedbox_transmission_docker_build_dir }}"
+    owner: root
+    group: root
+    directory_mode: 0700
+    mode: 0600
+  register: seedbox_transmission_docker_copy
+
+- name: Build transmission image
+  docker_image:
+    build:
+      pull: yes
+      path: "{{ seedbox_transmission_docker_build_dir }}"
+    name: local/transmission
+    tag: ansibuilt
+    force_tag: yes
+    force_source: "{{ seedbox_transmission_docker_copy.changed or seedbox_transmission_docker_force_build }}"
+    source: build
+  # notify: seedbox stack redeploy
+
+- name: Upload x3 image source
+  copy:
+    src: x3-docker/
+    dest: "{{ seedbox_x3_docker_build_dir }}"
+    owner: root
+    group: root
+    directory_mode: 0700
+    mode: 0600
+  register: seedbox_x3_docker_copy
+  tags:
+  - seedbox_docker_build_x3
+
+- name: Build x3 image
+  docker_image:
+    build:
+      pull: yes
+      path: "{{ seedbox_x3_docker_build_dir }}"
+    name: local/x3
+    tag: ansibuilt
+    force_tag: yes
+    force_source: "{{ seedbox_x3_docker_copy.changed or seedbox_x3_docker_force_build }}"
+    source: build
+  tags:
+  - seedbox_docker_build_x3
+
+- name: Upload shhh image source
+  copy:
+    src: shhh-docker/
+    dest: "{{ seedbox_shhh_docker_build_dir }}/{{ item }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+    directory_mode: 0700
+  with_items:
+  - path: entrypoint.sh
+    mode: "0700"
+  - path: Dockerfile
+    mode: "0600"
+  register: seedbox_shhh_docker_copy
+  tags:
+  - seedbox_docker_build_shhh
+
+- name: Build shhh image
+  docker_image:
+    build:
+      pull: yes
+      path: "{{ seedbox_shhh_docker_build_dir }}"
+    name: local/shhh
+    tag: ansibuilt
+    force_tag: yes
+    force_source: "{{ seedbox_shhh_docker_copy.changed or seedbox_shhh_docker_force_build }}"
+    source: build
+  tags:
+  - seedbox_docker_build_shhh
+
+- name: Upload tor image source
+  copy:
+    src: torproxy-docker/
+    dest: "{{ seedbox_tor_docker_build_dir }}"
+    owner: root
+    group: root
+    directory_mode: 0700
+    mode: 0600
+  register: seedbox_tor_docker_copy
+  tags:
+  - seedbox_docker_build_tor
+
+- name: Build tor image
+  docker_image:
+    build:
+      pull: yes
+      path: "{{ seedbox_tor_docker_build_dir }}"
+    name: local/tor
+    tag: ansibuilt
+    force_tag: yes
+    force_source: "{{ seedbox_tor_docker_copy.changed or seedbox_tor_docker_force_build }}"
+    source: build
+  tags:
+  - seedbox_docker_build_tor
+
+- name: Upload torprivoxy image source
+  copy:
+    src: torprivoxy-docker/
+    dest: "{{ seedbox_torprivoxy_docker_build_dir }}"
+    owner: root
+    group: root
+    directory_mode: 0700
+    mode: 0600
+  register: seedbox_torprivoxy_docker_copy
+  tags:
+  - seedbox_docker_build_torprivoxy
+
+- name: Build privoxy image
+  docker_image:
+    build:
+      pull: yes
+      path: "{{ seedbox_torprivoxy_docker_build_dir }}"
+    name: local/privoxy
+    tag: ansibuilt
+    force_tag: yes
+    force_source: "{{ seedbox_torprivoxy_docker_copy.changed or seedbox_torprivoxy_docker_force_build }}"
+    source: build
+  tags:
+  - seedbox_docker_build_torprivoxy
+
+- name: Upload tor config file
+  copy:
+    src: torproxy/torrc
+    dest: "{{ seedbox_tor_config_dir }}"
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+  - seedbox_docker_deploy
+
+- name: Upload onionproxy config file
+  template:
+    src: onionproxy.nginx.conf.j2
+    dest: "{{ seedbox_onionproxy_config_dir }}/nginx.conf"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Upload onionproxy root site
+  copy:
+    src: onionproxy/html/
+    dest: "{{ seedbox_onionproxy_config_dir }}/html"
+    owner: root
+    group: root
+    mode: 0644
+    directory_mode: 0755
+
+- name: Upload torprivoxy config file
+  copy:
+    src: torprivoxy/config
+    dest: "{{ seedbox_torprivoxy_config_dir }}/config"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Create Dex config directory
+  file:
+    state: directory
+    path: "{{ seedbox_dex_config_dir }}"
+    owner: "{{ seedbox_uid }}"
+    group: "{{ seedbox_gid }}"
+    mode: "0700"
+  tags: seedbox_dex
+
+# This must be the same UID as the user running dex inside its container
+# ... sigh
+- name: Create Dex db directory
+  file:
+    state: directory
+    path: "{{ seedbox_dex_config_dir }}/db"
+    owner: "1001"
+    group: "1001"
+    mode: "0700"
+  tags: seedbox_dex
+
+- name: Install Dex config
+  template:
+    src: dex.config.yml.j2
+    dest: "{{ seedbox_dex_config_dir }}/config.yml"
+    owner: "{{ seedbox_uid }}"
+    group: "{{ seedbox_gid }}"
+    mode: "0600"
+  tags: seedbox_dex
+
+- name: Stat Dex config
+  stat:
+    path: "{{ seedbox_dex_config_dir }}/config.yml"
+  register: seedbox_dex_config_stat_result
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
+
+- name: Copy Dex theme directory
+  copy:
+    src: dex-theme-mindcontrol/
+    dest: "{{ seedbox_dex_config_dir }}/mindcontrol"
+    mode: "0755"
+    owner: root
+    group: root
+  tags: seedbox_dex
+
+# We need this so that we can set the config's name to be based on its file contents in the compose file
+# docker-compose won't allow the config to change value with the same name,
+# so we make sure the name changes every time the config file's contents change.
+- name: Set Dex config hash
+  set_fact:
+    seedbox_dex_config_hash: "{{ seedbox_dex_config_stat_result.stat.checksum }}"
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
+
+- name: Install traefik config
+  template:
+    src: traefik.yml.j2
+    dest: "{{ seedbox_traefik_config_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: seedbox stack redeploy
+  tags: seedbox_docker_deploy
+
+- name: Install traefik AWS credentials
+  template:
+    src: aws_credentials.j2
+    dest: "{{ seedbox_traefik_aws_creds_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: seedbox stack redeploy
+  tags: seedbox_docker_deploy
+
+- name: Ensure acme.json exists
+  # Create an empty file if one isn't present
+  # Do nothing if it already exists
+  copy:
+    content: ""
+    dest: "{{ seedbox_traefik_acme_json }}"
+    force: no
+    owner: root
+    group: root
+    mode: "0600"
+  notify: seedbox stack redeploy
+  tags: seedbox_docker_deploy
+
+- name: Apply ELK configuration
+  import_tasks: elk.yml
+  tags:
+  - seedbox_elk
+
+- name: Install seedbox compose file
+  template:
+    src: seedbox.compose.yml.j2
+    dest: "{{ seedbox_compose_path }}"
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0640"
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
+
+- name: Remove the Docker stack
+  block:
+    - name: Remove the Docker stack
+      docker_stack:
+        state: absent
+        name: "{{ seedbox_stack_name }}"
+        compose:
+          - "{{ seedbox_compose_path }}"
+    - name: Pause so the network gets deleted too
+      pause:
+        seconds: 15
+  tags: seedbox_docker_deploy
+  when: seedbox_docker_greenfield_deploy
+
+- name: Deploy the Docker stack
+  docker_stack:
+    state: present
+    name: "{{ seedbox_stack_name }}"
+    prune: yes
+    compose:
+      - "{{ seedbox_compose_path }}"
+  tags:
+  - seedbox_docker_deploy
+  - seedbox_dex
+  - seedbox_elk
+
+- name: Apply Elastic configuration (may fail if stack is still coming up)
+  command: "{{ seedbox_elastic_config_dir }}/configure-elastic.py rundocker"
+  tags:
+  - seedbox_elk
+  - seedbox_configure_elastic
+
+- name: Run Plex tasks
+  import_tasks: plex.yml
+  tags:
+    - seedbox_plex
+
+#
+# Light configuration of our apps
+# At least for now, we expect that these configs need to be backed up,
+# because we will do lots of manual configuration as well.
+# This just gets the basics.
+#
+
+# https://sabnzbd.org/wiki/extra/hostname-check.html
+# https://groups.google.com/forum/#!msg/ansible-project/JvHfchsgRaU/Vw_CzBbvadgJ
+- name: Fix sabnzbd host verification check
+  lineinfile:
+    path: "{{ seedbox_sabnzbd_config_dir }}/sabnzbd.ini"
+    insertafter: '^\[misc\]$'
+    regexp: "^host_whitelist ="
+    line: "host_whitelist = sabnzbd, {{ ansible_fqdn }}, {{ seedbox_sabnzbd_domain }}, "
+  notify: seedbox stack redeploy
+
+# TODO: fix fucking *arr apps most fuckyou ever mandatory authentication requirment
+# <https://wiki.servarr.com/prowlarr/faq#can-i-disable-forced-authentication>

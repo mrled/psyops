@@ -1,0 +1,19 @@
+[general]
+accounts = me@micahrl.com
+
+
+[Account me@micahrl.com]
+localrepository = me@micahrl.com-local
+remoterepository = me@micahrl.com-remote
+
+[Repository me@micahrl.com-remote]
+type = IMAP
+remotehost = mail.messagingengine.com
+remoteuser = mrled@fastmail.com
+remotepass = {{ mailbackup_me_micahrl_com_password }}
+ssl = yes
+sslcacertfile = /etc/ssl/certs/ca-certificates.crt
+
+[Repository me@micahrl.com-local]
+type = Maildir
+localfolders = {{ mailbackup_share_mountpoint }}/Maildirs/me@micahrl.com

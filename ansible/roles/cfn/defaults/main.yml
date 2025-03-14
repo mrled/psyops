@@ -1,0 +1,6 @@
+---
+cloudformation_template_params: {}
+cloudformation_tags: {}
+cloudformation_capabilities: []
+cloudformation_on_create_failure: ROLLBACK
+

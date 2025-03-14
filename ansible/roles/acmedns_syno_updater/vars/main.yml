@@ -1,0 +1,6 @@
+---
+acmedns_syno_updater_cron_file: "acmedns_update_{{ acmedns_syno_updater_job_name }}"
+acmedns_syno_updater_certificate_dir: "{{ acmedns_syno_updater_cert_base }}/{{ acmedns_syno_updater_job_name }}"
+acmedns_syno_updater_renew_days: 20
+acmedns_syno_updater_script_path: /usr/local/bin/acmedns_update_{{ acmedns_syno_updater_job_name }}.sh
+

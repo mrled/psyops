@@ -1,0 +1,6 @@
+---
+
+- name: Deploy seedbox
+  hosts: seedboxes
+  roles:
+    - { name: seedbox, tags: ["seedbox"] }

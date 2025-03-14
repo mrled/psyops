@@ -1,0 +1,56 @@
+user nginx;
+worker_processes auto;
+pid /run/nginx.pid;
+
+error_log /dev/stderr warn;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    #access_log /var/log/nginx/access.log main;
+    #error_log /var/log/nginx/error.log warn;
+    access_log /dev/stdout main;
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+
+    server {
+        listen 80;
+        server_name {{ seedbox_onionproxy_domain }};
+        location / {
+            root /html;
+            index index.html index.htm;
+        }
+    }
+
+    server {
+        listen 80;
+        server_name ~^(?<subdomain>.+)\.{{ seedbox_onionproxy_domain }}$;
+
+        location / {
+            resolver 127.0.0.11 valid=30s;  # Docker's embedded DNS resolver
+
+            # Rewrite the hostname for proxy passing
+            #set $onion_address "$subdomain.{{ seedbox_onionproxy_domain }}";
+            set $onion_address "$subdomain.onion";
+            # Forward requests to Tor SOCKS proxy, must match the service name in compose file
+            proxy_pass http://torprivoxy:8118;
+            proxy_set_header Host $onion_address;
+            #proxy_set_header X-Real-IP $remote_addr;
+            #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            #proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+}

@@ -1,0 +1,17 @@
+# Synergy Server OpenRC service configuration
+
+command_user="{$}user:{$}group"
+
+HOMEDIR="{$}homedir"
+SYNERGY_DEBUG="DEBUG"
+logfile="/var/log/synergys.log"
+
+export DISPLAY=:0.0
+
+# Send stdout to syslog
+# (stderr is redirected to stdout for this service)
+output_logger="logger -p daemon.info -t ${RC_SVCNAME}.stdout >/dev/null 2>&1"
+error_logger="logger -p daemon.warn -t ${RC_SVCNAME}.stderr >/dev/null 2>&1"
+
+# Required when setting output_logger/error_logger
+supervisor=supervise-daemon

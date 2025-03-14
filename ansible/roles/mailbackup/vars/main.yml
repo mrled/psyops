@@ -1,0 +1,4 @@
+---
+mailbackup_cron_file: mailbackup-offlineimap
+mailbackup_hook_name: mailbackup-offlineimap
+mailbackup_script_path: /usr/local/bin/offlineimap_wrapper.sh

@@ -1,0 +1,25 @@
+input {
+    udp {
+        port => {{ seedbox_logstash_docker_port }}
+    }
+}
+
+filter {
+    grok {
+        # Parse Docker tags, assuming format {%raw%}{{.ImageName}}/{{.Name}}/{{.ID}}{%endraw%}.
+        # Set these in daemon.json.
+            match => { "message" => "%{GREEDYDATA}/%{GREEDYDATA:service}/%{GREEDYDATA:container_id}" }
+    }
+}
+
+output {
+    elasticsearch {
+        hosts => ["http://elastic:9200"]
+        user => "{{ seedbox_logstash_ingestion_user }}"
+        password => "{{ seedbox_logstash_ingestion_password }}"
+        data_stream => true
+        data_stream_type => "logs"
+        data_stream_dataset => "logstash"
+        data_stream_namespace => "dockerdaemon"
+    }
+}

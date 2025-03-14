@@ -1,0 +1,47 @@
+---
+
+privnet_stack_needs_redeploy: false
+
+privnet_stack_name: privnet
+privnet_docker_greenfield_deploy: false
+privnet_config_dir: /var/privnet
+privnet_compose_path: "{{ privnet_config_dir }}/privnet.compose.yml"
+privnet_traefik_config_dir: "{{ privnet_config_dir }}/traefik"
+privnet_traefik_config_file: "{{ privnet_traefik_config_dir }}/traefik.yml"
+privnet_traefik_acme_json: "{{ privnet_traefik_config_dir }}/acme.json"
+privnet_traefik_aws_creds_file: "{{ privnet_traefik_config_dir }}/aws_credentials"
+privnet_traefik_api_users_file: "{{ privnet_traefik_config_dir }}/traefik-users.htpasswd"
+
+privnet_acme_staging: false
+
+privnet_drone_replica_count: 8
+
+privnet_archivebox_user: archivebox
+privnet_archivebox_group: archivebox
+privnet_archivebox_data_dir: /var/archivebox
+privnet_archivebox_venv: "{{ privnet_archivebox_homedir }}/archivebox.venv"
+privnet_archivebox_home_bin: "{{ privnet_archivebox_homedir }}/bin"
+privnet_archivebox_script: "{{ privnet_archivebox_homedir }}/archivebox.sh"
+
+# Keys that are allowed to ssh to the archivebox user and run the archivebox.sh.j2 script.
+# Note that the archivebox python program might permit escaping the SSH command= restriction.
+privnet_archivebox_allow_ssh_keys: []
+
+privnet_fileshttp_config_file: "{{ privnet_config_dir }}/fileshttp.nginx.conf"
+# privnet_docker_registry_htpasswd_file: "{{ privnet_config_dir }}/docker-registry.htpasswd"
+privnet_docker_registry_auth_service_name: "registry-token-service"
+privnet_docker_registry_config_dir: "{{ privnet_config_dir }}/docker-registry"
+privnet_docker_registry_config:
+  auth_config: "{{ privnet_docker_registry_config_dir }}/docker-registry-auth.config.yml"
+  cert_csr: "{{ privnet_docker_registry_config_dir }}/tokencert.csr"
+  cert_key: "{{ privnet_docker_registry_config_dir }}/tokencert.key"
+  cert_pem: "{{ privnet_docker_registry_config_dir }}/tokencert.pem"
+privnet_docker_registry_auth_config_file: "{{ privnet_docker_registry_config_dir }}/docker-registry-auth.config.yml"
+
+privnet_ldap_config_dir: "{{ privnet_config_dir }}/ldap"
+privnet_ldap_config:
+  lam_profile_staging: "{{ privnet_ldap_config_dir }}/lam.profile.privnet.ansiblestaging.cfg"
+  lam_profile: "{{ privnet_ldap_config_dir }}/lam.profile.privnet.cfg"
+  lam_config: "{{ privnet_ldap_config_dir }}/lam.config.cfg"
+  openldap_admin_passwd_file: "{{ privnet_ldap_config_dir }}/openldap.admin.passwd.txt"
+  openldap_slapd_d: "{{ privnet_ldap_config_dir }}/openldap.slapd.d"

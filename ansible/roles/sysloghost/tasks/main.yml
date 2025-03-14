@@ -1,0 +1,129 @@
+---
+
+- name: Install packages (Fedora)
+  block:
+  - name: Uninstall rsyslog
+    dnf:
+      name: rsyslog
+      state: absent
+  - name: Install syslog-ng and other packages
+    dnf:
+      name:
+        - logrotate
+        - policycoreutils-python-utils
+        - syslog-ng
+      state: latest
+      update_cache: yes
+  when: ansible_distribution == "Fedora"
+
+- name: Install packages (Ubuntu)
+  block:
+    - name: Install syslog-ng etc
+      apt:
+        name:
+          - logrotate
+          - syslog-ng
+        state: latest
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
+- name: Configure firewall (Fedora)
+  block:
+  - name: Configure syslog UDP ports in the trusted zone (Fedora)
+    firewalld: port={{ item }}/udp permanent=yes zone=trusted state=enabled immediate=yes
+    with_items: "{{ sysloghost_all_ports }}"
+  - name: Configure syslog TCP ports in the trusted zone (Fedora)
+    firewalld: port={{ item }}/tcp permanent=yes zone=trusted state=enabled immediate=yes
+    with_items: "{{ sysloghost_all_ports }}"
+  - name: Configure syslog UDP ports in the default zone (Fedora)
+    firewalld: port={{ item }}/udp permanent=yes state=enabled immediate=yes
+    with_items: "{{ sysloghost_all_ports }}"
+  - name: Configure syslog TCP ports in the default zone (Fedora)
+    firewalld: port={{ item }}/tcp permanent=yes state=enabled immediate=yes
+    with_items: "{{ sysloghost_all_ports }}"
+  when: ansible_distribution == "Fedora"
+
+- name: Configure firewall (Ubuntu)
+  block:
+  - name: Configure syslog UDP ports (Ubuntu)
+    ufw: port={{ item }} proto=udp rule=allow
+    with_items: "{{ sysloghost_all_ports }}"
+  - name: Configure syslog TCP ports (Ubuntu)
+    ufw: port={{ item }} proto=tcp rule=allow
+    with_items: "{{ sysloghost_all_ports }}"
+  when: ansible_distribution == "Ubuntu"
+
+- name: Create sysloghost mountpoints
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  with_items: "{{ sysloghost_mountpoints }}"
+
+- name: Configure sysloghost mount files
+  copy:
+    content: |+
+      username={{ item.username }}
+      password={{ item.password }}
+    dest: "{{ item.credsfile }}"
+    owner: root
+    group: root
+    mode: "0600"
+  with_items: "{{ sysloghost_mountpoints }}"
+
+- name: Mount sysloghost mounts
+  vars:
+    sysloghost_mount_args:
+      - credentials={{ item.credsfile }}
+      - uid=root
+      - gid=root
+      - x-systemd.automount
+      - x-systemd.requires=network-online.target
+      - vers=3
+  mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ sysloghost_mount_args | join(',') }}"
+    state: mounted
+  with_items: "{{ sysloghost_mountpoints }}"
+  notify: restart syslog-ng
+  tags: netmount
+
+- name: Apply syslog-ng configuration
+  template:
+    src: syslog-ng.conf.j2
+    dest: /etc/syslog-ng/syslog-ng.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart syslog-ng
+
+
+- name: Handle SELinux on Fedora
+  block:
+  - name: Copy SELinux type enforcement file (Fedora)
+    template:
+      src: sysloghost_syslogng.te.j2
+      dest: /etc/selinux/sysloghost_syslogng
+    register: sysloghost_copytefile
+  - name: Compile SELinux module file (Fedora)
+    command: checkmodule -M -m -o /etc/selinux/sysloghost_syslogng.mod /etc/selinux/sysloghost_syslogng
+    when: sysloghost_copytefile.changed
+  - name: Build SELinux policy package (Fedora)
+    command: semodule_package -o /etc/selinux/sysloghost_syslogng.pp -m /etc/selinux/sysloghost_syslogng.mod
+    when: sysloghost_copytefile.changed
+  - name: Load SELinux policy package (Fedora)
+    command: semodule -i /etc/selinux/sysloghost_syslogng.pp
+    when: sysloghost_copytefile.changed
+    notify: restart syslog-ng
+  when: ansible_distribution == "Fedora"
+
+
+- name: Start syslog-ng
+  service:
+    name: syslog-ng
+    state: started
+
+

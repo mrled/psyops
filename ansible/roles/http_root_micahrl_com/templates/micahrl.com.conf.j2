@@ -1,0 +1,53 @@
+<VirtualHost *:80>
+    ServerAdmin {{ http_root_micahrl_com_email }}
+    ServerName {{ http_root_micahrl_com_root_site_primary_domain }}
+{% for domain in http_root_micahrl_com_root_site_alias_domains %}
+    ServerAlias {{ domain }}
+{% endfor %}
+
+    ErrorLog ${APACHE_LOG_DIR}/http.micahrl.com_error.log
+    CustomLog ${APACHE_LOG_DIR}/http.micahrl.com_access.log combined
+
+    DocumentRoot /var/www/html
+
+    RewriteEngine on
+
+    # Skip HTTPS redirect for Let's Encrypt challenges
+    RewriteRule ^/.well-known/acme-challenge/ - [L]
+
+    # Redirect all to HTTPS
+{% for domain in http_root_micahrl_com_root_site_alias_domains %}
+    RewriteCond %{SERVER_NAME} ={{ domain }} [OR]
+{% endfor %}
+    RewriteCond %{SERVER_NAME} ={{ http_root_micahrl_com_root_site_primary_domain }}
+    RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+    <VirtualHost *:443>
+        ServerAdmin {{ http_root_micahrl_com_email }}
+        ServerName {{ http_root_micahrl_com_root_site_primary_domain }}
+{% for domain in http_root_micahrl_com_root_site_alias_domains %}
+        ServerAlias {{ domain }}
+{% endfor %}
+
+        ErrorLog ${APACHE_LOG_DIR}/https.micahrl.com_error.log
+        CustomLog ${APACHE_LOG_DIR}/https.micahrl.com_access.log combined
+
+        DocumentRoot /var/www/html
+
+        SSLCertificateFile /etc/letsencrypt/live/{{ http_root_micahrl_com_certname }}/fullchain.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/{{ http_root_micahrl_com_certname }}/privkey.pem
+
+        Include /etc/letsencrypt/options-ssl-apache.conf
+        Header always set Strict-Transport-Security "max-age=31536000"
+        Header always set Content-Security-Policy upgrade-insecure-requests
+
+        # Redirects defined in group vars
+{% for redir in http_root_micahrl_com_redirect_matches %}
+        RedirectMatch {{ redir.old }} {{ redir.new }}
+{% endfor %}
+
+    </VirtualHost>
+</IfModule>

@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+
+export AWS_ACCESS_KEY_ID="{{ seedbox_SeedboxBackupUser_wasabi_access_key }}"
+export AWS_SECRET_ACCESS_KEY="{{ vault_seedbox_SeedboxBackupUser_wasabi_secret_key }}"
+
+s3_uri="{{ seedbox_backup_s3_uri }}"
+s3_endpoint="{{ seedbox_backup_s3_endpoint }}"
+backup_key="{{ seedbox_backup_gpg_key_id }}"
+exclude_file="{{ seedbox_backup_exclude_file }}"
+archive_dir="{{ seedbox_backup_duplicity_archive_dir }}"
+seedbox_config_dir="{{ seedbox_config_dir }}"
+
+duplicity \
+    --encrypt-key $backup_key \
+    --exclude-filelist "$exclude_file" \
+    --verbosity 4 \
+    --archive-dir="$archive_dir" \
+    --full-if-older-than 6M \
+    --remove-all-but-n-full 2\
+    --s3-endpoint-url "$s3_endpoint" \
+    "$seedbox_config_dir" \
+    "$s3_uri/data"

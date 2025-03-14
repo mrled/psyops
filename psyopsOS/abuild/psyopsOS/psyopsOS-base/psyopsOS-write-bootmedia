@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+
+
+import argparse
+import json
+import os
+import pdb
+import re
+import subprocess
+import sys
+import time
+import traceback
+from collections.abc import Callable
+from typing import List
+
+
+def idb_excepthook(type, value, tb):
+    """Call an interactive debugger in post-mortem mode
+
+    If you do "sys.excepthook = idb_excepthook", then an interactive debugger
+    will be spawned at an unhandled exception
+    """
+    if hasattr(sys, "ps1") or not sys.stderr.isatty():
+        sys.__excepthook__(type, value, tb)
+    else:
+        traceback.print_exception(type, value, tb)
+        print
+        pdb.pm()
+
+
+def broken_pipe_handler(func: Callable[[List[str]], int], *arguments: List[str]) -> int:
+    """Handler for broken pipes
+
+    Wrap the main() function in this to properly handle broken pipes
+    without a giant nastsy backtrace.
+    The EPIPE signal is sent if you run e.g. `script.py | head`.
+    Wrapping the main function with this one exits cleanly if that happens.
+
+    See <https://docs.python.org/3/library/signal.html#note-on-sigpipe>
+    """
+    try:
+        returncode = func(*arguments)
+        sys.stdout.flush()
+    except BrokenPipeError:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        # Convention is 128 + whatever the return code would otherwise be
+        returncode = 128 + 1
+        sys.exit(returncode)
+    return returncode
+
+
+class UmountError(Exception):
+    pass
+
+
+def umount_retry(mountpoint: str, attempts: int = 2, sleepbetween: int = 1) -> None:
+    """Unmount a mountpoint, retrying if it fails."""
+    for attempt in range(attempts):
+        if not subprocess.run(["mountpoint", "-q", mountpoint]).returncode == 0:
+            return
+        subprocess.run(["umount", "-l", mountpoint])
+        if not subprocess.run(["mountpoint", "-q", mountpoint]).returncode == 0:
+            return
+        time.sleep(sleepbetween)
+    raise UmountError(f"Could not umount {mountpoint} after {attempts} attempts")
+
+
+def main(*arguments):
+    parser = argparse.ArgumentParser("Update psyopsOS boot media")
+    parser.add_argument(
+        "--debug", help="Drop into pdb on exception", action="store_true"
+    )
+    parser.add_argument(
+        "--no-progress",
+        help="By default, it shows progress, which requires coreutils dd. With this flag, BusyBox dd will work instead, but you will get no progress as the file is written.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "isopath", help="The path to a new ISO image containing psyopsOS"
+    )
+    parsed = parser.parse_args(arguments[1:])
+
+    if parsed.debug:
+        sys.excepthook = idb_excepthook
+
+    lsblk_proc = subprocess.run(
+        ["lsblk", "--output", "PATH,LABEL,MOUNTPOINT", "--json"],
+        check=True,
+        capture_output=True,
+    )
+    lsblk = json.loads(lsblk_proc.stdout)
+
+    def label_is_psyopsos_boot(label: str) -> bool:
+        """Return True if the label is a psyopsOS boot media label.
+
+        Check for old and current labels.
+        """
+        boot_media_label_fragments = [
+            "psyopsos-boot",  # Old 2023
+            "psyboot",  # New 2023
+        ]
+        for fragment in boot_media_label_fragments:
+            if fragment in label:
+                return True
+        return False
+
+    bootmedia = None
+    for device in lsblk["blockdevices"]:
+        # We must use `device.get("label") or ""` not device.get("label", "")`
+        # because the latter will return `None` if the key is not found
+        # and we need strings.
+        devlabel = device.get("label") or ""
+        # Look for the iso9660 volume ID that is tagged with our label.
+        # An example: 'partition-name: alpine-std psyopsos-boot x86_64'.
+        # See the `alpinelabel` argument in tasks.py.
+        if not label_is_psyopsos_boot(devlabel):
+            continue
+
+        # Make sure we find the main device, not a partition.
+        # If the USB drive is /dev/sdq, then lsblk will see that both /dev/sdq and /dev/sdq1 have our volume ID.
+        devpath = device.get("path", "") or ""
+        if not devpath or not re.match(f"^/dev/[a-zA-Z]+$", devpath):
+            continue
+
+        bootmedia = device
+
+    if not bootmedia:
+        raise Exception(f"Could not find boot media, maybe it isn't mounted?")
+
+    umount_retry("/.modloop")
+    umount_retry(bootmedia["mountpoint"])
+
+    ddcmd = ["dd", f"if={parsed.isopath}", f"of={bootmedia['path']}"]
+    if not parsed.no_progress:
+        ddcmd += ["status=progress"]
+    subprocess.run(ddcmd, check=True)
+
+
+if __name__ == "__main__":
+    broken_pipe_handler(main, *sys.argv)

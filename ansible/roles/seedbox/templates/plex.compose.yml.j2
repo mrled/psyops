@@ -1,0 +1,29 @@
+version: "3.7"
+
+services:
+
+  plex:
+    # Warning: options differ for Plex Inc vs LinuxServer.io Plex containers, e.g. PUID/PLEX_UID
+    image: plexinc/pms-docker
+    restart: always
+    environment:
+      PLEX_UID: "{{ seedbox_uid }}"
+      PLEX_GID: "{{ seedbox_gid }}"
+      TZ: "{{ seedbox_timezone }}"
+      VERSION: docker
+      UMASK_SET: "022"
+      #PLEX_CLAIM: #optional
+      ADVERTISE_IP: "http://{{ seedbox_plex_domain }}:32400/"
+      CHANGE_CONFIG_DIR_OWNERSHIP: "false"
+    volumes:
+      - "{{ seedbox_plex_config_dir }}:/config"
+      - "{{ seedbox_media_dir }}:/media"
+      - "{{ seedbox_plex_transcode_tmp }}:/transcode"
+    devices:
+      - /dev/dri:/dev/dri
+    network_mode: bridge
+    ports:
+    # Note that traefik isn't used for these ports - we're just exposing them directly
+{% for port in seedbox_plex_ports %}
+      - "{{ port.port }}:{{ port.port }}/{{ port.protocol }}"
+{% endfor %}

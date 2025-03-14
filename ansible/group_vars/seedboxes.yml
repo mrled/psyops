@@ -1,0 +1,103 @@
+---
+# Seedbox settings
+
+# TODO: This isn't ideal, because it keeps the media in the same directory as the configs.
+# Would be better to separate them for sharing purposes.
+seedbox_config_dir: /seedboxmedia/seedboxconf
+
+seedbox_user: seedbox
+seedbox_group: seedbox
+seedbox_user_samba_passwd_ro: "{{ vault_seedbox_user_samba_passwd_ro }}"
+seedbox_timezone: "{{ global_timezone.zoneinfo_cityname }}"
+
+# Assume this is already created with a mounted filesystem.
+# It may be a symlink.
+# Filesystem mounting/creation is not handled in Ansible because it's not that helpful -
+# it only happens once, and we have to build the mdadm array as well.
+# And replacing the old volume with a new one is much easier to do manually
+# than to try to automate, and automation has no upside.
+seedbox_media_root: /seedboxmedia
+
+seedbox_usenet_completes_dir: "{{ seedbox_media_root }}/usenet/completes"
+seedbox_usenet_incompletes_dir: "{{ seedbox_media_root }}/usenet/incompletes"
+seedbox_usenet_watch_dir: "{{ seedbox_media_root }}/usenet/watch"
+seedbox_torrent_downloads_dir: "{{ seedbox_media_root }}/torrent/incoming"
+seedbox_jackett_blackhole_dir: "{{ seedbox_media_root }}/torrent/jacket-blackhole"
+
+seedbox_media_dir: "{{ seedbox_media_root }}"
+seedbox_media:
+  tv: "{{ seedbox_media_root }}/TV"
+  music: "{{ seedbox_media_root }}/Music"
+  movies: "{{ seedbox_media_root }}/Movies"
+  books: "{{ seedbox_media_root }}/Books"
+  itunes: "{{ seedbox_media_root }}/iTunes"
+  trix: "{{ seedbox_media_root }}/Trix"
+seedbox_media_selinux_enable:
+- /mnt/seedboxmedia
+
+seedbox_root_domain: "{{ global_seedbox_domain }}"
+seedbox_misc_domain: "seedbox.{{ seedbox_root_domain }}"
+seedbox_tentacles_domain: tentacles.{{ seedbox_root_domain }}
+seedbox_transmission_domain: transmission.{{ seedbox_root_domain }}
+seedbox_rtorrent_domain: rtorrent.{{ seedbox_root_domain }}
+seedbox_cops_domain: books.{{ seedbox_root_domain }}
+seedbox_jackett_domain: jackett.{{ seedbox_root_domain }}
+seedbox_prowlarr_domain: prowlarr.{{ seedbox_root_domain }}
+seedbox_plex_domain: plex.{{ seedbox_root_domain }}
+seedbox_sonarr_domain: sonarr.{{ seedbox_root_domain }}
+seedbox_radarr_domain: radarr.{{ seedbox_root_domain }}
+seedbox_lidarr_domain: lidarr.{{ seedbox_root_domain }}
+seedbox_headphones_domain: headphones.{{ seedbox_root_domain }}
+seedbox_sabnzbd_domain: sabnzbd.{{ seedbox_root_domain }}
+seedbox_hydra2_domain: hydra2.{{ seedbox_root_domain }}
+seedbox_whoami_domain: whoami.{{ seedbox_root_domain }}
+seedbox_balancer_domain: balancer.{{ seedbox_root_domain }}
+seedbox_tautulli_domain: tautulli.{{ seedbox_root_domain }}
+seedbox_kibana_domain: kibana.{{ seedbox_root_domain }}
+seedbox_stash_domain: 6.{{ seedbox_root_domain }}
+seedbox_ersatztv_domain: ersatztv.{{ seedbox_root_domain }}
+seedbox_shhh_domain: shhh.{{ seedbox_root_domain }}
+seedbox_lazylibrarian_domain: library.{{ seedbox_root_domain }}
+seedbox_onionproxy_domain: onion.{{ seedbox_root_domain }}
+seedbox_elastic_domain: elastic.{{ seedbox_root_domain }}
+seedbox_dejavu_domain: dejavu.{{ seedbox_root_domain }}
+
+seedbox_acme_email: psyops@micahrl.com
+seedbox_acme_aws_region: "{{ global_home_zone_updater_region }}"
+seedbox_acme_aws_access_key: "{{ vault_seedbox_zone_updater_access_key }}"
+seedbox_acme_aws_secret_key: "{{ vault_seedbox_zone_updater_secret_key }}"
+seedbox_acme_aws_zone: Z10276202TLC17I3UZTK3
+
+# These should be the same for all services
+# Note that some services might require manual configuration
+# The traefik dashboard is at least configured with this
+seedbox_web_admin_user: freeleech
+seedbox_web_admin_pass: "{{ vault_seedbox_web_admin_pass }}"
+seedbox_web_admin_pass_bcrypt: "{{ vault_seedbox_web_admin_pass_bcrypt }}"
+
+# Authentication stuff
+seedbox_dex_domain: dex.{{ seedbox_root_domain }}
+seedbox_dex_client_id: SeedboxDexClientAuth-{{ seedbox_root_domain }}
+seedbox_dex_client_secret: "{{ vault_seedbox_dex_client_secret }}"
+seedbox_tfa_domain: bridgetroll.{{ seedbox_root_domain }}
+seedbox_tfa_secret: "{{ vault_seedbox_tfa_secret }}"
+
+# Backups
+seedbox_SeedboxBackupUser_wasabi_access_key: "{{ vault_seedbox_SeedboxBackupUser_wasabi_access_key }}"
+seedbox_SeedboxBackupUser_wasabi_secret_key: "{{ vault_seedbox_SeedboxBackupUser_wasabi_secret_key }}"
+seedbox_backup_s3_uri: boto3+s3://mrled-seedbox-backup
+seedbox_backup_s3_endpoint: https://s3.us-west-1.wasabisys.com
+
+# ELK shit
+seedbox_elastic_password: "{{ vault_seedbox_elastic_password }}"
+seedbox_kibana_user: kibana_system
+seedbox_kibana_password: "{{ vault_seedbox_kibana_password }}"
+# NOTE: logstash_system is some built in user that is not designed for log ingestion,#
+# but that we do need to create a password for ...
+# and we have to create our own user for ingestion too.
+seedbox_logstash_ingestion_user: logstash_ingestion
+seedbox_logstash_ingestion_password: "{{ vault_seedbox_logstash_ingestion_password }}"
+seedbox_logstash_system_password: "{{ vault_seedbox_logstash_system_password }}"
+
+# The IP address for Traefik to be exposed on
+seedbox_ingress_ipaddr: 100.86.119.112

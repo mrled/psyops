@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import os
+import re
+import sys
+import urllib.request
+
+
+def main(*args, **kwargs):
+    parser = argparse.ArgumentParser(
+        description="Download the latest release of the doctl cli tool")
+    parser.add_argument(
+        "--outdir", "-o", default=os.getcwd(),
+        help="Directory to save output file to. Defaults to PWD.")
+    parser.add_argument(
+        "projectpath",
+        help="Project path, like 'mrled/dhd' for https://github.com/mrled/dhd.")
+    parser.add_argument(
+        "assetregex", default=".*linux.*amd64.*",
+        help="A regular expression to uniquely identify the asset for a given release.")
+    
+    parsed = parser.parse_args()
+
+    latesturi = f"https://api.github.com/repos/{parsed.projectpath}/releases/latest"
+    outdir = parsed.outdir
+
+    jbody = json.loads(urllib.request.urlopen(latesturi).read().decode())
+    assets = [asset for asset in jbody['assets'] if re.search(parsed.assetregex, asset['name'])]
+
+    if len(assets) == 0:
+        raise Exception(f"Regular expression '{parsed.assetregex}' could not identify any assets")
+    elif len(assets) > 1:
+        assnames = [ass['name'] for ass in assets]
+        raise Exception(
+            f"Regular expression '{parsed.assetregex}' found {len(assets)} assets with names: {assnames}")
+
+    asset = assets[0]
+    with open(f"{outdir}/{asset['name']}", 'wb') as assfile:
+        assfile.write(urllib.request.urlopen(asset['browser_download_url']).read())
+
+
+if __name__ == '__main__':
+    sys.exit(main(*sys.argv))

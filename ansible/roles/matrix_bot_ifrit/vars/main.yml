@@ -1,0 +1,7 @@
+---
+
+matrix_bot_ifrit_venv_path: "{{ matrix_bot_ifrit_dir }}/venv"
+matrix_bot_ifrit_trappedbot_clone_path: "{{ matrix_bot_ifrit_dir }}/trappedbot"
+matrix_bot_ifrit_trappedbot_db_path: "{{ matrix_bot_ifrit_dir }}/bot.db"
+matrix_bot_ifrit_trappedbot_store_path: "{{ matrix_bot_ifrit_dir }}/store"
+matrix_bot_ifrit_trappedbot_config_path: "{{ matrix_bot_ifrit_dir }}/trappedbot.ifrit.conf.yml"

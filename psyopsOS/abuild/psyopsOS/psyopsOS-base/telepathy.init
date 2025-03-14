@@ -1,0 +1,12 @@
+#!/sbin/openrc-run
+
+depend() {
+    need net
+}
+
+# Force the command into the background (the service does not background itself)
+command_background=true
+
+command=/usr/sbin/telepathy
+command_args=
+pidfile=/run/${RC_SVCNAME}.pid

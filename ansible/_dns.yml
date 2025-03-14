@@ -1,0 +1,34 @@
+---
+- name: Configure DNS
+  hosts: localhost
+  connection: local
+  become: no
+  gather_facts: no
+  roles:
+    - name: cfn
+      cloudformation_stack_name: MicahrlDotCom
+      cloudformation_template_path: cloudformation/MicahrlDotCom.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      tags: micahrl.com
+    - name: cfn
+      cloudformation_stack_name: PsynetDotMicahrlDotCom
+      cloudformation_template_path: cloudformation/PsynetZone.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      tags: psynet.micahrl.com
+    - name: cfn
+      cloudformation_stack_name: MicahrlDotMe
+      cloudformation_template_path: cloudformation/MicahrlDotMe.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      tags: micahrl.me
+    - name: cfn
+      cloudformation_stack_name: YounixDotUs
+      cloudformation_template_path: cloudformation/YounixDotUs.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      tags: younix.us
+    - name: cfn
+      cloudformation_stack_name: SeedboxZone
+      cloudformation_template_path: cloudformation/SeedboxZone.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_template_params:
+        DomainName: "{{ global_seedbox_domain }}"
+      tags: seedbox

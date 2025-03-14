@@ -1,0 +1,133 @@
+---
+- name: Add group
+  group:
+    name: "{{ capthook_group }}"
+    system: yes
+
+- name: Add user
+  user:
+    name: "{{ capthook_user }}"
+    group: "{{ capthook_group }}"
+    system: yes
+    create_home: yes
+
+- name: Getent for home
+  getent:
+    database: passwd
+    key: "{{ capthook_user }}"
+
+- name: Set home fact
+  set_fact:
+    capthook_home: "{{ getent_passwd[capthook_user][4] }}"
+
+# Use the command module so we can do creates here because of
+# https://github.com/ansible/ansible/pull/65739
+- name: Get webhook
+  command:
+    cmd: curl -L -o "{{ capthook_webhook_archive_path }}" "{{ capthook_webhook_dl_uri }}"
+    creates: "{{ capthook_webhook_archive_path }}"
+    warn: false
+  become: yes
+  become_user: "{{ capthook_user }}"
+
+- name: Extract webhook
+  unarchive:
+    src: "{{ capthook_webhook_archive_path }}"
+    dest: "{{ capthook_home }}"
+    remote_src: yes
+    owner: "{{ capthook_user }}"
+    group: "{{ capthook_group }}"
+
+- name: Make webhook dir
+  file:
+    state: directory
+    path: "{{ capthook_webhooks_dir }}"
+    owner: "{{ capthook_user }}"
+    group: "{{ capthook_group }}"
+    mode: "0755"
+
+- name: Install whoami webhook
+  template:
+    src: whoami.hook.json.j2
+    dest: "{{ capthook_webhooks_dir }}/whoami.hook.json"
+    owner: "{{ capthook_user }}"
+    group: "{{ capthook_group }}"
+    mode: "0644"
+- name: Install list webhook
+  template:
+    src: showmeurhooks.hook.json.j2
+    dest: "{{ capthook_webhooks_dir }}/showmeurhooks.hook.json"
+    owner: "{{ capthook_user }}"
+    group: "{{ capthook_group }}"
+    mode: "0644"
+
+- name: Install hooks.build.py
+  copy:
+    src: hooks.build.py
+    dest: "{{ capthook_webhooks_dir }}/hooks.build.py"
+    owner: "{{ capthook_user }}"
+    group: "{{ capthook_group }}"
+    mode: "0755"
+
+- name: Install webhook unit
+  template:
+    src: capthook.service.j2
+    dest: /etc/systemd/system/capthook.service
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Configure firewall (RH)
+  block:
+    - name: Configure port in the trusted zone
+      firewalld: port={{ capthook_port }}/tcp permanent=yes zone=trusted state=enabled immediate=yes
+    - name: Configure port in the default zone
+      firewalld: port={{ capthook_port }}/tcp permanent=yes state=enabled immediate=yes
+  when: ansible_distribution in ["CentOS", "Fedora"]
+
+- name: Configure firewall (Ubuntu)
+  ufw: port={{ capthook_port }} proto=tcp rule=allow
+  when: ansible_distribution == "Ubuntu"
+
+- name: Configure SELinux (RH)
+  block:
+    - name: Copy SELinux type enforcement file for buildpy
+      template:
+        src: capthook_buildpy.te.j2
+        dest: /etc/selinux/capthook_buildpy.te
+      register: capthook_buildpy_copytefile
+    - name: Compile SELinux module file for buildpy
+      command: checkmodule -M -m -o /etc/selinux/capthook_buildpy.mod /etc/selinux/capthook_buildpy.te
+      when: capthook_buildpy_copytefile.changed
+    - name: Build SELinux policy package for buildpy
+      command: semodule_package -o /etc/selinux/capthook_buildpy.pp -m /etc/selinux/capthook_buildpy.mod
+      when: capthook_buildpy_copytefile.changed
+    - name: Load SELinux policy package for buildpy
+      command: semodule -i /etc/selinux/capthook_buildpy.pp
+      when: capthook_buildpy_copytefile.changed
+      notify: restart capthook
+
+    - name: Copy SELinux type enforcement file for webhook
+      template:
+        src: capthook_webhook.te.j2
+        dest: /etc/selinux/capthook_webhook.te
+      register: capthook_webhook_copytefile
+    - name: Compile SELinux module file for webhook
+      command: checkmodule -M -m -o /etc/selinux/capthook_webhook.mod /etc/selinux/capthook_webhook.te
+      when: capthook_webhook_copytefile.changed
+    - name: Build SELinux policy package for webhook
+      command: semodule_package -o /etc/selinux/capthook_webhook.pp -m /etc/selinux/capthook_webhook.mod
+      when: capthook_webhook_copytefile.changed
+    - name: Load SELinux policy package for webhook
+      command: semodule -i /etc/selinux/capthook_webhook.pp
+      when: capthook_webhook_copytefile.changed
+      notify: restart capthook
+
+  when: ansible_distribution in ["Fedora", "CentOS"]
+
+- name: Start service
+  systemd:
+    name: capthook
+    state: started
+    enabled: yes
+    daemon_reload: yes

@@ -1,0 +1,4 @@
+---
+# Specify the IP address so we can do this before DNS is all up etc
+ansible_host: 192.168.1.1
+ansible_user: deviceadmin

@@ -1,0 +1,10 @@
+---
+ansible_python_interpreter: /usr/bin/python3
+ansible_user: ubuntu
+capthook_arch: arm64
+acmedns_base_lego_arch: arm64
+base_rpi: true
+# base_rpi_poe_hat: true
+# base_rpi_boot_mount: /boot/firmware
+base_set_system_hostname_to_inventory_hostname: true
+# base_log_rpi_temperature_temporal: true

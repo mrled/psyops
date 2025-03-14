@@ -1,0 +1,84 @@
+---
+- name: Fix fucking Broadcom wifi on Fedora
+  import_tasks: fucking_broadcom_wifi.yml
+  when: base_fucking_broadcom_wifi
+
+- name: Import raspberry pi tasks
+  import_tasks: rpi.yml
+  when: base_rpi
+
+# The base CentOS install is very minimal
+- name: Install base packages (CentOS)
+  package:
+    name:
+      - checkpolicy
+      - setools-console
+      - tar
+  when: ansible_distribution == "CentOS"
+
+- name: Install base packages (Ubuntu)
+  apt:
+    name:
+      - cifs-utils # allow mounting CIFS network filesystems
+      - net-tools # netstat etc
+      - python3
+      - python3-venv # fuck this lol
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install base packages (Debian)
+  apt:
+    name:
+      - ntp
+
+- name: Set system hostname to inventory_hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+  register: base_hostname_result
+  when: base_set_system_hostname_to_inventory_hostname
+  tags: hostname
+
+- name: Re-gather facts when hostname changes
+  action: setup
+  when: base_hostname_result.changed
+  tags: hostname
+
+# Note that if a machine cannot resolve its short hostname, sudo can be very slow
+# https://devtidbits.com/2018/07/26/way-too-slow-sudo/
+- name: Add hostname to /etc/hosts
+  lineinfile:
+    # NOTE:
+    # ansible_hostname is a single hostname like 'asdf01' as discovered by ansible
+    #    (possibly just set in previous step)
+    # ansible_fqdn is the fqdn like 'asdf01.example.com' as discovered by ansible
+    # inventory_hostname is the hostname used in the inventory
+    # we use ansible_hostname and ansible_fqdn here because these should ALWAYS be resolvable
+    # and if base_set_hostname_to_inventory_hostname is set to true
+    # these values will be based on whatever inventory_hostname is
+    # this means I can set DNS, then run ansible, and the host will have its name configured properly
+    line: "127.0.0.254 {{ ansible_hostname }} {{ ansible_fqdn }}"
+    regex: '^127\.0\.0\.254.'
+    backup: yes
+    path: /etc/hosts
+  tags: hostname
+
+- name: Set timezone
+  timezone:
+    name: "{{ base_timezone }}"
+  register: base_set_timezone
+  when: base_timezone is defined
+
+- name: Restart cron if timezone changed
+  block:
+    - name: Restart cron (Ubuntu)
+      systemd:
+        name: cron
+        state: restarted
+      when: ansible_distribution == "Ubuntu"
+    - name: Restart cron (Red Hat)
+      systemd:
+        name: crond
+        state: restarted
+      when: ansible_distribution == "CentOS"
+  when: base_set_timezone.changed

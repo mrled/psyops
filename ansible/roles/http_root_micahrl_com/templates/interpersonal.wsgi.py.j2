@@ -1,0 +1,5 @@
+"""The Interpersonal WSGI file"""
+
+from interpersonal import create_app
+configpath = "{{ http_root_micahrl_com_interpersonal_config }}"
+application = create_app(configpath=configpath)

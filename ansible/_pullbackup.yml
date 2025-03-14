@@ -1,0 +1,7 @@
+---
+
+- name: Deploy pullbackup
+  hosts: pullbackup
+  roles:
+    - { name: mailbackup, tags: ["mailbackup"] }
+    - { name: backup_unifi, tags: ["backup_unifi"] }

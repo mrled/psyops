@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: younix.us. Zone
+
+Resources:
+  YounixDotUsZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      Name: younix.us.
+
+  YounixDotUsRecords:
+    Type: "AWS::Route53::RecordSetGroup"
+
+    Properties:
+      HostedZoneId: !Ref YounixDotUsZone
+      RecordSets:
+
+        # Redirect everything to the micahrl.com root HTTP server
+        - Name: younix.us.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["5.161.64.176"]
+        - Name: younix.us.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2a01:4ff:f0:a310::0"]
+        - Name: www.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["younix.us."]
+        - Name: toys.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["younix.us."]
+
+        # Hosted email with fastmail.com
+        - Name: younix.us.
+          Type: MX
+          TTL: 300
+          ResourceRecords:
+            - 10 in1-smtp.messagingengine.com.
+            - 20 in2-smtp.messagingengine.com.
+        - Name: fm1._domainkey.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["fm1.younix.us.dkim.fmhosted.com"]
+        - Name: fm2._domainkey.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["fm2.younix.us.dkim.fmhosted.com"]
+        - Name: fm3._domainkey.younix.us.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["fm3.younix.us.dkim.fmhosted.com"]
+
+        # TXT records for various services
+        - Name: younix.us.
+          Type: TXT
+          TTL: 300
+          ResourceRecords:
+            # Keybase verification
+            - '"v=spf1 include:spf.messagingengine.com ?all"'
+
+        # Seedboxk8s staging host
+        - Name: seedboxk8s.younix.us.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["100.69.221.89"]
+        - Name: "*.younix.us."
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["seedboxk8s.younix.us."]
+
+  Seedboxk8sYounixDotUsZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+        - PolicyName: Seedboxk8sAllowUpdatingYounixDotUsZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZones
+                  - route53:ListResourceRecordSets
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                Resource:
+                  "Fn::Join": ["", ["arn:aws:route53:::hostedzone/", { "Ref": "YounixDotUsZone" }]]
+
+Outputs:
+  OriginZoneId:
+    Description: The ID of the younix.us. root zone
+    Value: !Ref YounixDotUsZone

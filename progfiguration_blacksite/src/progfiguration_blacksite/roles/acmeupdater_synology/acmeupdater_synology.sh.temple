@@ -1,0 +1,72 @@
+#!/bin/sh
+# -*- mode: sh -*-
+
+set -eu
+
+export AWS_REGION="{$}aws_region"
+export AWS_ACCESS_KEY_ID="{$}aws_access_key_id"
+export AWS_SECRET_ACCESS_KEY="{$}aws_secret_access_key"
+export AWS_HOSTED_ZONE_ID="{$}aws_zone"
+
+updaterscript="{$}syno_tls_update_script"
+legodir="{$}legodir"
+email="{$}acmedns_email"
+domain="{$}domain"
+synouser="{$}synology_user"
+synohost="{$}synology_host"
+sshidname="{$}ssh_id_name"
+
+date="$(date +%Y%m%d)"
+sshhost="$synouser"@"$synohost"
+tmppath="/tmp/${date}-acme-update"
+tmpcrt="$tmppath/$domain.crt"
+tmpkey="$tmppath/$domain.key"
+tmpupdater="$tmppath/syno-tls-update.py"
+sshid="$HOME/.ssh/$sshidname"
+
+echoexec() { echo "Running: $*"; $*; }
+
+echoexec /usr/local/bin/acmeupdater_wraplego.py \
+    --verbose \
+    --legodir "$legodir" \
+    --email "$email" \
+    --domain "$domain" \
+    --authenticator "route53"
+
+crt="$(cat "$legodir"/certificates/"$domain".crt | base64)"
+key="$(cat "$legodir"/certificates/"$domain".key | base64)"
+updater="$(cat "$updaterscript" | base64)"
+
+echo "$(cat <<ENDSSH
+
+echo "$(cat <<ENDSUDO
+
+mkdir -p "$tmppath"
+chown root:root "$tmppath"
+chmod 700 "$tmppath"
+
+cat > "$tmpcrt.b64" <<ENDCRT
+$crt
+ENDCRT
+cat > "$tmpkey.b64" <<ENDKEY
+$key
+ENDKEY
+cat > "$tmpupdater.b64" <<ENDUPDATERSCRIPT
+$updater
+ENDUPDATERSCRIPT
+
+base64 -d "$tmpcrt.b64" > "$tmpcrt"
+base64 -d "$tmpkey.b64" > "$tmpkey"
+base64 -d "$tmpupdater.b64" > "$tmpupdater"
+
+python3 "$tmpupdater" "$tmpkey" "$tmpcrt"
+echo 'Removing temp dir...'
+rm -rf $tmppath
+
+echo 'Done'
+
+ENDSUDO
+)" | sudo su -
+
+ENDSSH
+)" | ssh -i "$sshid" $sshhost

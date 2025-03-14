@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+
+"""Set the kibana password in Elastic
+
+This script must be run manually once after the stack is deployed for the first time.
+
+Inspired by the setup service in
+<https://github.com/elastic/elasticsearch/blob/8.13/docs/reference/setup/install/docker/docker-compose.yml>
+"""
+
+import os
+import subprocess
+import sys
+
+scriptpath = os.path.realpath(__file__)
+elasticpw = "{{ seedbox_elastic_password }}"
+kibanauser = "{{ seedbox_kibana_user }}"
+kibanapw = "{{ seedbox_kibana_password }}"
+logstashuser = "{{ seedbox_logstash_ingestion_user }}"
+logstashpw = "{{ seedbox_logstash_ingestion_password }}"
+logstashrole = "logstash_writer"
+logstash_system_pw = "{{ seedbox_logstash_system_password }}"
+dockernet = "dernetverk"
+swarmname = "{{ seedbox_stack_name }}"
+# Should be the host inside the Docker network
+elastic_host = "elastic"
+elastic_port = "9200"
+
+
+def elasticapi(verb, path, headers, formdata):
+    import requests
+    url = f"http://{elastic_host}:{elastic_port}/{path}"
+    resp = requests.request(method=verb, url=url, auth=('elastic', elasticpw), headers=headers, json=formdata)
+    if "Content-Type" not in resp.headers:
+        headers["Content-Type"] = "application/json"
+    if resp.status_code != 200:
+        print(f"Error {resp.status_code}")
+        print(resp.text)
+    else:
+        print(f"Success")
+        print(resp.text)
+    return resp
+
+
+def set_accounts():
+    responses = []
+
+    print(f"Set kibana password {kibanauser}...")
+    responses.append(
+        elasticapi("POST", f"_security/user/{kibanauser}/_password", {}, {"password": kibanapw})
+    )
+
+    print(f"Set logstash_system password")
+    responses.append(
+        elasticapi("POST", f"_security/user/logstash_system/_password", {}, {"password": logstash_system_pw})
+    )
+
+    print(f"Creating logstash role {logstashrole}...")
+    responses.append(
+        elasticapi("POST", f"_security/role/{logstashrole}", {}, {
+            "cluster": ["manage_index_templates", "monitor", "manage_ilm"],
+            "indices": [{"names": [ "*" ],"privileges": ["all"]}]
+        })
+    )
+
+    print(f"Creating logstash user {logstashuser}...")
+    responses.append(
+        elasticapi("PUT", f"_security/user/{logstashuser}", {}, {"roles": [logstashrole], "password": logstashpw})
+    )
+
+    print(f"Create ILM policy seedbox-logs-policy")
+    responses.append(
+        elasticapi("PUT", f"_ilm/policy/seedbox-logs-policy", {}, {
+            "policy": {
+                "phases": {
+                    "hot": {
+                        "min_age": "0ms",
+                        "actions": {
+                            "rollover": {
+                                "max_size": "50GB",
+                                "max_age": "30d"
+                            }
+                        }
+                    },
+                    "delete": {
+                        "min_age": "180d",
+                        "actions": {
+                            "delete": {
+                                # options can be added here
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    )
+
+    print(f"Create seedbox-logs-template index template")
+    responses.append(
+        elasticapi("PUT", "_index_template/seedbox-logs-template", {}, {
+            "index_patterns": ["logs-*-*"],
+            # This must be a higher priority than anything that ships by default from Elastic
+            # <https://www.elastic.co/guide/en/elasticsearch/reference/current/index-templates.html>
+            "priority": 500,
+            "data_stream": {},
+            "template": {
+                "settings": {
+                    "index.lifecycle.name": "seedbox-logs-policy",
+                }
+            }
+        })
+    )
+
+    for resp in responses:
+        if resp.status_code != 200:
+            sys.exit(1)
+
+
+def run_docker():
+    # We have to use the ancient check_output because our Docker host is (for now)
+    # a similarly ancient RHEL 8.x derivative.
+    result = subprocess.check_output(["docker", "ps", "--filter", f"name={swarmname}_{elastic_host}", "--format", "{%raw%}{{.ID}}{%endraw%}"])
+    if not result:
+        print("Elasticsearch container not found")
+        sys.exit(1)
+    cmd = "&&".join([
+        "apk add --no-cache python3 py3-requests",
+        "/set-kibana-pw.py setpw"
+    ])
+    subprocess.run(['docker', 'run', '--rm', '--network', f"{swarmname}_{dockernet}", "-v", f"{scriptpath}:/set-kibana-pw.py", 'alpine:latest', '/bin/sh', '-c', cmd], check=True)
+
+
+if len(sys.argv) != 2:
+    print(f'Usage: {sys.argv[0]} rundocker|setpw')
+    sys.exit(1)
+if sys.argv[1] == 'rundocker':
+    run_docker()
+elif sys.argv[1] == 'setpw':
+    set_accounts()
+else:
+    print(f'Invalid argument: {sys.argv[1]}')
+    sys.exit(1)

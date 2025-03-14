@@ -1,0 +1,9 @@
+---
+
+# Note: generate an auth key and pass it with
+# ansible-playbook -e tailscale_auth_key=xxxx
+
+- name: Configure Tailscale endpoints
+  hosts: tailscale
+  roles:
+    - { name: tailscale, tags: ["tailscale"] }

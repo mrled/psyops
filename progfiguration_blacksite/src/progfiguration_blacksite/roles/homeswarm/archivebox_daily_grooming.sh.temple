@@ -1,0 +1,75 @@
+#!/bin/sh
+set -eu
+
+# This script runs on the host (not in the archivebox container)
+
+# Template variables
+user={$}user
+stackname={$}stackname
+archive_dir={$}archive_dir
+
+# Script variables
+incoming_dir="$archive_dir/incoming"
+
+# Nuke core files - Chrome generates these too much
+for core in "$archive_dir"/*/core; do
+    test -e "$core" || continue
+    echo "Removing core file $core..."
+    rm "$core"
+done
+
+# Find the container ID
+servicename="${stackname}_archivebox"
+containerid="$(docker ps -q -f name="$servicename")"
+if ! test "$containerid"; then
+    echo "Could not find container ID!"
+    exit 1
+fi
+echo "Found archivebox container: $containerid"
+
+# If there are more than 40 chrome processes, kill the container
+chromcnt="$(ps aux | grep chrom | wc -l)"
+if test "$chromcnt" -gt 40; then
+    echo "Killing container because there are too many chrome processes ($chromcnt))"
+    ps aux | grep chrom
+    docker kill "$containerid"
+    # Wait for the container to be restarted
+    sleep 30
+fi
+
+
+# Kill any previous invocation of this script.
+# archivebox doesn't support multiple instances,
+# it should resume just fine with ONLY_NEW=False below,
+# and it has a tendency to get stuck sometimes.
+script="$(basename "$0")"
+while pgrep -u "$user" "$script" >/dev/null; do
+    echo "ERROR: Another copy of $script is already running under user '$user'. We're going to kill it first."
+    pkill -u "$user" "$script"
+    sleep 10
+done
+
+# Loop over all the files in the incoming directly and add them to the archive.
+# ONLY_NEW=False will retry any extractors that don't have outputs,
+# even if the index already contains the URL,
+# but it won't retry successful extractors.
+# This means if you're missing e.g. SingleFile but have WARC for a given URL,
+# it will retry SingleFile but will not replace WARC for that URL.
+if test -e "$incoming_dir"; then
+    for file in "$incoming_dir"/*; do
+        echo "Adding file: $file"
+        docker exec \
+            --interactive \
+            --user "$user" \
+            "$containerid" \
+            archivebox add < "$file"
+        rm "$file"
+        echo "Finished adding file: $file"
+    done
+fi
+
+# Update any links that have had an extractor fail previously.
+docker exec \
+    --user "$user" \
+    "$containerid" \
+    archivebox update

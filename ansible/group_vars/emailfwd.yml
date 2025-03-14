@@ -1,0 +1,7 @@
+---
+mailfwd_smtp_host: smtps-proxy.messagingengine.com
+mailfwd_smtp_port: "443"
+mailfwd_default_destination_address: psyops@micahrl.com
+mailfwd_smtp_user: mrled@fastmail.com
+mailfwd_smtp_pass: "{{ vault_mailfwd_smtp_pass }}"
+mailfwd_from_address: "psyops@micahrl.com"

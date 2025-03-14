@@ -1,0 +1,509 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: micahrl.com. Zone
+
+# NOTES:
+# - TXT records have to be wrapped with double quotes in the string
+#   NO:  `ResourceRecords: ["v=spf1 include:spf.example.com ?all"]`
+#   YES: `ResourceRecords: ["\"v=spf1 include:spf.example.com ?all\""]`
+
+Resources:
+  # Origin zone, for most subdomains of micahrl.com.
+  OriginZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      Name: micahrl.com.
+
+  # Records in the origin zone
+  OriginRecords:
+    Type: "AWS::Route53::RecordSetGroup"
+
+    # Required because of the delegation record for backchannel.micahrl.com.
+    DependsOn:
+      - BackchannelZone
+      - HomeZone
+
+    Properties:
+      HostedZoneId: !Ref OriginZone
+      RecordSets:
+        # Apex domain
+        - Name: micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["5.161.64.176"]
+        - Name: micahrl.com.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2a01:4ff:f0:a310::0"]
+        - Name: www.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["apsylania.micahrl.com."]
+
+        # Primary app server for the web site
+        - Name: apsylania.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["5.161.64.176"]
+        - Name: apsylania.micahrl.com
+          Type: AAAA
+          TTL: 60
+          ResourceRecords: ["2a01:4ff:f0:a310::0"]
+
+        # IndieWeb stuff like IndieAuth, etc
+        - Name: interpersonal.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["apsylania.micahrl.com."]
+        # Old server that hosted biblemunger
+        # Biblemunger app is now hosted on Vercel with the canonical url biblemunger.micahrl.com
+        # toys.micahrl.com exists to redirect toys.micahrl.com/biblemunger/* -> biblemunger.micahrl.com/*
+        - Name: toys.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["apsylania.micahrl.com."]
+
+        # Old apex server
+        - Name: abraxas.micahrl.com.
+          Type: A
+          TTL: 300
+          ResourceRecords: ["167.71.20.245"]
+        - Name: abraxas.micahrl.com.
+          Type: AAAA
+          TTL: 300
+          ResourceRecords: ["2604:a880:400:d0::2100:1001"]
+
+        # GitHub Pages
+        # (Documentation for my projects is at pages.micahrl.com)
+        - Name: pages.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["mrled.github.io."]
+
+        # Webserver
+        - Name: me.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["clever-kepler-458884.netlify.com."]
+
+        # Hosted email with fastmail.com
+        - Name: micahrl.com.
+          Type: MX
+          TTL: 300
+          ResourceRecords:
+            - 10 in1-smtp.messagingengine.com.
+            - 20 in2-smtp.messagingengine.com.
+        - Name: fm1._domainkey.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["fm1.micahrl.com.dkim.fmhosted.com"]
+        - Name: fm2._domainkey.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["fm2.micahrl.com.dkim.fmhosted.com"]
+        - Name: fm3._domainkey.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["fm3.micahrl.com.dkim.fmhosted.com"]
+
+        # TXT records for various services
+        - Name: micahrl.com.
+          Type: TXT
+          TTL: 300
+          ResourceRecords:
+            # Keybase verification
+            - '"keybase-site-verification=Z8Ro6BPCbOvBtJOG9CYDkdseYa0EgGBm6Z475VKMzWc"'
+            # SPF for Fastmail
+            - '"v=spf1 include:spf.messagingengine.com ?all"'
+
+        # Nameserver delegation record for the backchannel subdomain
+        # This necessitates `DependsOn: ["BackchannelZone"]`
+        - Name: backchannel.micahrl.com.
+          Type: NS
+          TTL: 300
+          ResourceRecords: !GetAtt BackchannelZone.NameServers
+
+        # Nameserver delegation record for the home subdomain
+        - Name: home.micahrl.com.
+          Type: NS
+          TTL: 300
+          ResourceRecords: !GetAtt HomeZone.NameServers
+
+        # Dynamic DNS delegation to noip
+        - Name: homeward.micahrl.com.
+          Type: NS
+          TTL: 300
+          ResourceRecords:
+            - ns1.no-ip.com.
+            - ns2.no-ip.com.
+            - ns3.no-ip.com.
+            - ns4.no-ip.com.
+
+        # psynet sub-zone
+        - Name: psynet.micahrl.com.
+          Type: NS
+          TTL: 60
+          ResourceRecords:
+            - ns-1300.awsdns-34.org.
+            - ns-243.awsdns-30.com.
+            - ns-678.awsdns-20.net.
+            - ns-1666.awsdns-16.co.uk.
+
+        - Name: cistercian.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - cname.vercel-dns.com
+
+        - Name: biblemunger.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - cname.vercel-dns.com
+
+        - Name: ogimage.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - cname.vercel-dns.com
+
+        - Name: ansible-extension-cookbook.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - zen-yonath-3c05e2.netlify.app
+
+        - Name: kubernasty-labnotes.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - serene-crumble-86e5be.netlify.app
+
+        - Name: unfortunate.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["trusting-visvesvaraya-791291.netlify.app."]
+
+        - Name: disquisition.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["suspicious-bell-3797fb.netlify.app."]
+
+        - Name: tweets.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["silly-kangaroo-242f44.netlify.app."]
+
+        # We must use A for the disagreementsd subdomain because we need TXT and MX records for email,
+        # and apparently you can't have a CNAME and other record types at the same time.
+        # When we do A we must also provide AAAA for fly.io reasons.
+        # - Name: disagreements.micahrl.com.
+        #   TTL: 300
+        #   Type: CNAME
+        #   ResourceRecords: ["com-micahrl-disagreements.fly.dev"]
+        - Name: disagreements.micahrl.com.
+          TTL: 60
+          Type: A
+          ResourceRecords: ["66.241.125.108"]
+        # Required for tracking clicks/opens/unsubs
+        - Name: email.disagreements.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["mailgun.org."]
+        - Name: disagreements.micahrl.com.
+          TTL: 60
+          Type: AAAA
+          ResourceRecords: ["2a09:8280:1::1c:53de"]
+        - Name: disagreements.micahrl.com.
+          Type: TXT
+          TTL: 60
+          ResourceRecords:
+            - '"v=spf1 include:mailgun.org ~all"'
+        - Name: krs._domainkey.disagreements.micahrl.com.
+          Type: TXT
+          TTL: 60
+          ResourceRecords:
+            - '"v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDC+0iNgn/YJj27atKIzavt/kWWBX2r9Q9/L8Y19hxRaMmreMndgoVRZOQeJUfNvzm543zzMrTHMP4lh+E51AyFW4W7/N7RIeuXs7WCk1tkZ+p6kL02b0Dwl0vfVaGgViIp32iuUUExKlHlsTxI2E+jeC4iJwF6Y11E7Al7lVILtQIDAQAB"'
+        - Name: disagreements.micahrl.com.
+          Type: MX
+          TTL: 60
+          ResourceRecords:
+            - 10 mxa.mailgun.org.
+            - 10 mxb.mailgun.org.
+
+        - Name: psyops.micahrl.com.
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["df9oxkpvyda4s.cloudfront.net"]
+
+        - Name: whispers.micahrl.com
+          Type: CNAME
+          TTL: 300
+          ResourceRecords: ["micahrl.micro.blog"]
+
+  # Backchannel zone - for VPN clients
+  BackchannelZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      Name: backchannel.micahrl.com.
+
+  BackchannelRecords:
+    Type: "AWS::Route53::RecordSetGroup"
+    Properties:
+      HostedZoneId: !Ref BackchannelZone
+      RecordSets:
+        - Name: haluth.backchannel.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.108.197.65"]
+        - Name: naragua.backchannel.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.74.227.113"]
+        - Name: copland.backchannel.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.116.66.78"]
+        - Name: tagasaw.backchannel.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.86.119.112"]
+
+  # Home Zone
+  # Unifi is too dumb to set hostnames for its clients :) lol
+  HomeZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      Name: home.micahrl.com.
+
+  # Records in the home zone
+  HomeRecords:
+    Type: "AWS::Route53::RecordSetGroup"
+    Properties:
+      HostedZoneId: !Ref HomeZone
+      RecordSets:
+        # Network gear
+        - Name: gateway.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.1"]
+        - Name: cloudkey.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.2"]
+        - Name: switch01.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.3"]
+
+        # Servers
+        - Name: tagasaw.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.25"]
+        - Name: chenoska.home.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.27"]
+        - Name: newjutland.home.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.174"]
+        - Name: agassiz.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.115"]
+        - Name: jesseta.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.178"]
+        - Name: kenasus.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.133"]
+        - Name: zalas.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.144"]
+
+        # Management interfacess
+        - Name: edison.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.143"]
+        - Name: yalda.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.171"]
+
+        # Clients
+        - Name: glitch.home.micahrl.com
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.50"]
+        - Name: mledbettermbp-wifi.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.114"]
+        - Name: mledbettermbp-wired.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.117"]
+        - Name: mledbettermbp.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["mledbettermbp-wired.home.micahrl.com."]
+        - Name: haluth-wifi.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.134"]
+        - Name: haluth-wired.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.135"]
+        - Name: haluth.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["haluth-wired.home.micahrl.com."]
+        - Name: naragua.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.139"]
+
+        # Services
+        - Name: syslog.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["agassiz.home.micahrl.com."]
+        - Name: archivebox.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["agassiz.home.micahrl.com."]
+        - Name: homeswarm-whoami.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["agassiz.home.micahrl.com."]
+        - Name: homeswarm-traefik.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["agassiz.home.micahrl.com."]
+        - Name: homeswarm-pihole.home.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["agassiz.home.micahrl.com."]
+
+  # A new group with permission to modify records in the OriginZone
+  # For use with Let's Encrypt / ACME
+  OriginZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+        - PolicyName: AllowUpdatingOriginZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZonesByName
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetHostedZone
+                  - route53:ListResourceRecordSets
+                Resource:
+                  {
+                    "Fn::Join":
+                      [
+                        "",
+                        [
+                          "arn:aws:route53:::hostedzone/",
+                          { "Ref": "OriginZone" },
+                        ],
+                      ],
+                  }
+
+  # A new group with permission to modify records in the BackchannelZone
+  # Required permissions: https://github.com/xenolf/lego#aws-route-53
+  BackchannelZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+        - PolicyName: AllowUpdatingBackchannelZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZonesByName
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetHostedZone
+                  - route53:ListResourceRecordSets
+                Resource:
+                  {
+                    "Fn::Join":
+                      [
+                        "",
+                        [
+                          "arn:aws:route53:::hostedzone/",
+                          { "Ref": "BackchannelZone" },
+                        ],
+                      ],
+                  }
+
+  # A new group with permission to modify records in the HomeZone
+  # For use with Let's Encrypt / ACME
+  HomeZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+        - PolicyName: AllowUpdatingHomeZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZonesByName
+                  - route53:ListHostedZones
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetHostedZone
+                  - route53:ListResourceRecordSets
+                Resource:
+                  {
+                    "Fn::Join":
+                      [
+                        "",
+                        [
+                          "arn:aws:route53:::hostedzone/",
+                          { "Ref": "HomeZone" },
+                        ],
+                      ],
+                  }
+
+Outputs:
+  OriginZoneId:
+    Description: The ID of the micahrl.com. root zone
+    Value: !Ref OriginZone
+  OriginZoneUpdaterGroupArn:
+    Description: The ARN for a group with permission to modify records in the origin zone
+    Value: !GetAtt OriginZoneUpdaterGroup.Arn
+  BackchannelZoneId:
+    Description: The ID of the backchannel.micahrl.com. zone
+    Value: !Ref BackchannelZone
+  BackchannelZoneUpdaterGroupArn:
+    Description: The ARN for a group with permission to modify records in the backchannel zone
+    Value: !GetAtt BackchannelZoneUpdaterGroup.Arn
+  HomeZoneId:
+    Description: The ID of the home.micahrl.com. zone
+    Value: !Ref HomeZone
+  HomeZoneUpdaterGroupArn:
+    Description: The ARN for a group with permission to modify records in the home zone
+    Value: !GetAtt HomeZoneUpdaterGroup.Arn

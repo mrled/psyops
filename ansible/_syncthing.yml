@@ -1,0 +1,6 @@
+---
+
+- name: Configure personal syncthing
+  hosts: syncthing_personal
+  roles:
+    - { name: syncthing_personal, tags: ["syncthing_personal"] }
