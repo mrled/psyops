@@ -97,9 +97,12 @@ data:
     session:
       name: 'authelia_session'
       same_site: 'lax'
-      expiration: 1h
-      inactivity: 5m
-      remember_me: 1y
+      # How long the user can be inactive before the session is invalidated.
+      inactivity: 48h
+      # How long before an active session is invalidated, when the remember me box is NOT checked
+      expiration: 24h
+      # How long before an active session is invalidated, when the remember me box IS checked
+      remember_me: 6mo
       cookies:
         - domain: 'micahrl.me'
           authelia_url: 'https://auth.micahrl.me'
