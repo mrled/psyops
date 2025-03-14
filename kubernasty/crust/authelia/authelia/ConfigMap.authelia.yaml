@@ -102,7 +102,7 @@ data:
       # How long before an active session is invalidated, when the remember me box is NOT checked
       expiration: 24h
       # How long before an active session is invalidated, when the remember me box IS checked
-      remember_me: 6mo
+      remember_me: 180d
       cookies:
         - domain: 'micahrl.me'
           authelia_url: 'https://auth.micahrl.me'
