@@ -119,30 +119,45 @@ kldif_cat() {
 
 # Talk to the object store with credentials from a CephObjectStoreUser
 # Requires the AWS CLI (uv tool install awscli)
-ks3api_cephuser() {
+#
+# AWS_REQUEST_CHECKSUM_CALCULATION and AWS_RESPONSE_CHECKSUM_VALIDATION
+# must be set to disable some newer AWS S3 validation that Ceph doesn't support.
+# <https://github.com/aws/aws-cli/issues/9214>
+kaws_cephuser() {
     local namespace="$1"
     local user="$2"
     shift 2
     local objstore=cephalopodobj-nvme-3rep
     local secname="rook-ceph-object-user-$objstore-$user"
-    local endpoint="https://objects.micahrl.me"
     local secret=$(kubectl get secret -n $namespace $secname -o json)
-    local keyid=$(echo "$secret" | jq -r '.data.AccessKey | @base64d')
-    local secretkey=$(echo "$secret" | jq -r '.data.SecretKey | @base64d')
-    AWS_ACCESS_KEY_ID="$keyid" AWS_SECRET_ACCESS_KEY="$secretkey" aws s3api --endpoint-url "$endpoint" "$@"
+    AWS_ACCESS_KEY_ID="$(echo "$secret" | jq -r '.data.AccessKey | @base64d')" \
+        AWS_SECRET_ACCESS_KEY="$(echo "$secret" | jq -r '.data.SecretKey | @base64d')" \
+        AWS_ENDPOINT_URL_S3="https://objects.micahrl.me" \
+        AWS_REQUEST_CHECKSUM_CALCULATION=when_required \
+        AWS_RESPONSE_CHECKSUM_VALIDATION=when_required \
+        aws "$@"
 }
 
 # Talk to the object store with credentials created by an ObjectBucketClaim
 # Requires the AWS CLI (uv tool install awscli)
 # Example:
 #   ks3api_bucketclaim authelia authelia-pg-backup list-buckets
-ks3api_bucketclaim() {
+kaws_bucketclaim() {
     local namespace="$1"
     local claim="$2"
     shift 2
-    local endpoint="https://objects.micahrl.me"
     local secret=$(kubectl get secret -n $namespace $claim -o json)
-    local keyid=$(echo "$secret" | jq -r '.data.AWS_ACCESS_KEY_ID | @base64d')
-    local secretkey=$(echo "$secret" | jq -r '.data.AWS_SECRET_ACCESS_KEY | @base64d')
-    AWS_ACCESS_KEY_ID="$keyid" AWS_SECRET_ACCESS_KEY="$secretkey" aws s3api --endpoint-url "$endpoint" "$@"
+    AWS_ACCESS_KEY_ID="$(echo "$secret" | jq -r '.data.AWS_ACCESS_KEY_ID | @base64d')" \
+        AWS_SECRET_ACCESS_KEY="$(echo "$secret" | jq -r '.data.AWS_SECRET_ACCESS_KEY | @base64d')" \
+        AWS_ENDPOINT_URL_S3="https://objects.micahrl.me" \
+        AWS_REQUEST_CHECKSUM_CALCULATION=when_required \
+        AWS_RESPONSE_CHECKSUM_VALIDATION=when_required \
+        aws "$@"
+}
+
+kaws_dd_pipeline_cp() {
+    local filepath="$1"
+    local dest="$2"
+    shift
+    kaws_bucketclaim datadump datadump-pipeline-manual-input s3 cp "$filepath" s3://datadump-pipeline-manual-input/"$dest"
 }
