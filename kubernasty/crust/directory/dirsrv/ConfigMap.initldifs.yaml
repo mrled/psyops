@@ -123,6 +123,15 @@ data:
     add: aci
     aci: (targetattr="*")(version 3.0; acl "Allow read access to all objects for the authenticator"; allow (read, search, compare) userdn = "ldap:///uid=authenticator,ou=services,dc=micahrl,dc=me";)
 
+  config.managedObject.ldif: |+
+    dn: cn=schema
+    changetype: modify
+    add: objectClasses
+    objectClasses: ( 1.2.840.113556.1.8000.999999.42069 NAME 'managedObject' DESC 'Auxiliary class for tagging objects' SUP top AUXILIARY )
+
+  add: objectClasses
+  objectClasses: ( 1.2.840.113556.1.8000.999999.3 NAME 'customTag' DESC 'Auxiliary class for tagging objects' SUP top AUXILIARY MAY ( customTagAttribute ) )
+
   service.authenticator.ldif: |+
     dn: uid=authenticator,ou=services,dc=micahrl,dc=me
     objectClass: inetOrgPerson
@@ -359,3 +368,33 @@ data:
     changetype: modify
     add: member
     member: uid=mrladmin,ou=people,dc=micahrl,dc=me
+
+  #### Datadump pipeline users
+  #
+  service.workflowexec.ldif: |+
+    dn: uid=workflowexec,ou=services,dc=micahrl,dc=me
+    objectClass: inetOrgPerson
+    objectClass: account
+    objectClass: top
+    uid: workflowexec
+    cn: Workflow Executor
+    sn: workflowexec
+    description: A service account for executing workflows
+
+  membership.servi.workflowexec.ldif: |+
+    dn: cn=servi,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=workflowexec,ou=services,dc=micahrl,dc=me
+
+  membership.datadump-connect.workflowexec.ldif: |+
+    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=workflowexec,ou=services,dc=micahrl,dc=me
+
+  membership.datadump-write.ldif: |+
+    dn: cn=datadump-write,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=workflowexec,ou=services,dc=micahrl,dc=me
