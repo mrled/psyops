@@ -1,0 +1,302 @@
+# For testing, you can set this to a Workflow and use a generateName in metadata
+# That will start the pipeline with a generated name immediately on `k create -f ...`
+# The Template creates the object in the cluster but doesn't start it;
+# it relies on the Sensor to start a copy of the Workflow.
+
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+# kind: Workflow
+metadata:
+  name: macrofactor
+  # generateName: macrofactor-pipeline-
+  namespace: datadump
+spec:
+  serviceAccountName: workflow-executor
+  entrypoint: main
+  ttlStrategy:
+    secondsAfterSuccess: 3600 # 1h
+    secondsAfterFailure: 86400 # 24h
+  templates:
+    - name: main
+      dag:
+        tasks:
+          - name: checkout-repo
+            template: checkout-repo
+
+          - name: install-knpl-macrofactor
+            dependencies: [checkout-repo]
+            template: install-knpl-macrofactor
+
+          - name: find-latest-file
+            template: find-latest-file
+
+          - name: check-file-processed
+            dependencies: [install-knpl-macrofactor, find-latest-file]
+            template: check-file-processed
+            arguments:
+              parameters:
+                - name: latestkey
+                  value: "{{tasks.find-latest-file.outputs.parameters.latestkey}}"
+
+          # The next tasks only run if check-file-processed indicates that the file is not yet processed.
+          - name: download-file
+            dependencies: [check-file-processed]
+            when: "{{tasks.check-file-processed.outputs.parameters.already-processed}} == False"
+            template: download-file
+            arguments:
+              parameters:
+                - name: latestkey
+                  value: "{{tasks.find-latest-file.outputs.parameters.latestkey}}"
+
+          - name: process-file
+            dependencies: [download-file]
+            template: process-file
+
+          - name: mark-file-processed
+            dependencies: [process-file]
+            template: mark-file-processed
+            arguments:
+              parameters:
+                - name: latestkey
+                  value: "{{tasks.find-latest-file.outputs.parameters.latestkey}}"
+
+    # Check out the repo
+    - name: checkout-repo
+      container:
+        image: alpine/git
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            set -eux
+            mkdir -p ~/.ssh
+            echo "gitea.micahrl.me $(cat /gitea-ssh-host-keys-pub/gitea.ed25519.pub)" > ~/.ssh/known_hosts
+            cp /ssh/identity ~/.ssh/identity
+            chmod 0600 ~/.ssh/identity
+            git clone git@gitea.micahrl.me:kubernasty/psyops.git /workdir/psyops
+        env:
+          - name: GIT_SSH_COMMAND
+            value: "ssh -i $HOME/.ssh/identity -o StrictHostKeyChecking=yes"
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
+          - name: datadump-pipelines-ssh
+            mountPath: /ssh
+          - name: gitea-ssh-host-keys-pub
+            mountPath: /gitea-ssh-host-keys-pub
+
+    # Install package
+    - name: install-knpl-macrofactor
+      container:
+        # Use the Debian image instead of Alpine even though it's much bigger
+        # because psycopg2-binary package doesn't work on Alpine
+        image: ghcr.io/astral-sh/uv:debian
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            set -eux
+            cd /workdir/psyops/pipelines/macrofactor
+            uv venv
+            uv pip install -e .
+            uv run knpl_macrofactor --help
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
+
+    # Find the latest file stored in the S3 bucket
+    - name: find-latest-file
+      script:
+        image: amazon/aws-cli:2.12.6
+        command: [bash]
+        volumeMounts:
+          - name: aws-credentials
+            mountPath: /secret-aws-keys
+            readOnly: true
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: datadump-pipeline-manual-input
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: datadump-pipeline-manual-input
+                key: AWS_SECRET_ACCESS_KEY
+          # # Adjust region if needed
+          # - name: AWS_DEFAULT_REGION
+          #   value: "us-east-1"
+        source: |
+          set -eux
+
+          # Lists all objects under MacroFactor/ prefix, sorted by date/time,
+          # then picks the last line as the newest
+          LATEST_KEY=$(aws s3 ls --endpoint-url "https://objects.micahrl.me" s3://datadump-pipeline-manual-input/MacroFactor/ \
+              | sort \
+              | tail -n 1 \
+              | awk '{print $4}')
+
+          echo "Found latest key: $LATEST_KEY"
+          echo -n "$LATEST_KEY" > /tmp/latest_key.txt
+      outputs:
+        parameters:
+          - name: latestkey
+            valueFrom:
+              path: /tmp/latest_key.txt
+
+    # Determine if the latest file has been processed
+    - name: check-file-processed
+      inputs:
+        parameters:
+          - name: latestkey
+      script:
+        image: ghcr.io/astral-sh/uv:debian
+        command: [sh]
+        source: |
+          set -eux
+          cd /workdir/psyops/pipelines/macrofactor
+          uv run knpl_macrofactor check-processed --file-key "$LATEST_KEY" > /tmp/already_processed.txt
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
+        env:
+          - name: PGHOST
+            value: "datadump-pg-cluster-rw"
+          - name: PGDATABASE
+            value: "datadump"
+          - name: PGPORT
+            value: "5432"
+          - name: PGUSER
+            valueFrom:
+              secretKeyRef:
+                name: workflowexec-ldap
+                key: username
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: workflowexec-ldap
+                key: password
+          - name: LATEST_KEY
+            value: "{{inputs.parameters.latestkey}}"
+      outputs:
+        parameters:
+          - name: already-processed
+            valueFrom:
+              path: /tmp/already_processed.txt
+
+    # Get the latest file from the S3 bucket
+    - name: download-file
+      inputs:
+        parameters:
+          - name: latestkey
+      container:
+        image: amazon/aws-cli:2.12.6
+        command: ["/bin/sh", "-c"]
+        volumeMounts:
+          - name: aws-credentials
+            mountPath: /secret-aws-keys
+            readOnly: true
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: datadump-pipeline-manual-input
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: datadump-pipeline-manual-input
+                key: AWS_SECRET_ACCESS_KEY
+          - name: AWS_DEFAULT_REGION
+            value: "us-east-1"
+        args:
+          - |
+            set -eux
+            echo "Downloading s3://datadump-pipeline-manual-input/MacroFactor/$latestkey..."
+            aws s3 cp \
+              --endpoint-url "https://objects.micahrl.me" \
+              "s3://datadump-pipeline-manual-input/MacroFactor/$latestkey" \
+              /tmp/macrofactor.xlsx
+      outputs:
+        artifacts:
+          - name: macrofactor-file
+            path: /tmp/macrofactor.xlsx
+
+    # Process the XLSX file
+    - name: process-file
+      script:
+        image: ghcr.io/astral-sh/uv:debian
+        command: [sh]
+        env:
+          - name: PGHOST
+            value: "datadump-pg-cluster-rw"
+          - name: PGDATABASE
+            value: "datadump"
+          - name: PGPORT
+            value: "5432"
+          - name: PGUSER
+            valueFrom:
+              secretKeyRef:
+                name: workflowexec-ldap
+                key: username
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: workflowexec-ldap
+                key: password
+        source: |
+          set -eux
+          cd /workdir/psyops/pipelines/macrofactor
+          uv run knpl_macrofactor check-processed import-xlsx --xlsx-file /tmp/macrofactor.xlsx
+
+    # Mark as processed
+    - name: mark-file-processed
+      inputs:
+        parameters:
+          - name: latestkey
+      script:
+        image: ghcr.io/astral-sh/uv:debian
+        command: [bash]
+        env:
+          - name: PGHOST
+            value: "datadump-pg-cluster-rw"
+          - name: PGDATABASE
+            value: "datadump"
+          - name: PGPORT
+            value: "5432"
+          - name: PGUSER
+            valueFrom:
+              secretKeyRef:
+                name: workflowexec-ldap
+                key: username
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: workflowexec-ldap
+                key: password
+          - name: LATEST_KEY
+            value: "{{inputs.parameters.latestkey}}"
+        source: |
+          set -eux
+          cd /workdir/psyops/pipelines/macrofactor
+          uv run knpl_macrofactor check-processed import-xlsx mark-processed --file-key "$LATEST_KEY"
+
+  volumeClaimTemplates:
+    - metadata:
+        name: workdir
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: cephalopodblk-nvme-2rep
+
+  volumes:
+    - name: aws-credentials
+      secret:
+        secretName: datadump-pipeline-manual-input
+    - name: datadump-pipelines-ssh
+      secret:
+        secretName: datadump-pipelines-ssh
+    - name: gitea-ssh-host-keys-pub
+      configMap:
+        name: gitea-ssh-host-keys-pub

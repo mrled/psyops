@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: macrofactor
+  namespace: datadump
+spec:
+  dependencies:
+    - name: macrofactor-webhook-dep
+      eventSourceName: macrofactor
+      eventName: macrofactor-webhook
+  triggers:
+    - template:
+        name: argo-workflow-trigger
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: macrofactor-pipeline-
+                namespace: datadump
+              spec:
+                workflowTemplateRef:
+                  name: macrofactor

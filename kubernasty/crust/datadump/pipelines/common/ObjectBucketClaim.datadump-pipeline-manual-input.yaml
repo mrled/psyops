@@ -1,0 +1,8 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: datadump-pipeline-manual-input
+  namespace: datadump
+spec:
+  bucketName: datadump-pipeline-manual-input
+  storageClassName: cephalopodobj-nvme-3rep
