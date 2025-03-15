@@ -3,6 +3,9 @@ kind: ConfigMap
 metadata:
   name: gitea-ssh-host-keys-pub
   namespace: gitea
+  annotations:
+    reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+    reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: ""
 data:
   gitea.ed25519.pub: |+
     ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILZDuV4BEou3sta1CktTp0Ra+BgG3+0LltuuPx0+Yoi7
