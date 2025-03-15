@@ -111,11 +111,15 @@ kldif_delete_marker() {
 }
 alias kldif_list_files='kubectl exec -it -n directory dirsrv-0 -c configurator -- sh -c "ls -a1 /initldifs/*.ldif"'
 alias kldif_apply_ldifs='kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/apply_ldifs.sh'
+alias kldif_passwd='kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/set_account_passwords.sh'
 alias kldif_set_passwords='kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/set_account_passwords.sh'
 kldif_cat() {
     filename="$1"
     kubectl exec -it -n directory dirsrv-0 -c configurator -- cat "/initldifs/$filename"
 }
+
+# This one is for testing usernames/passwords
+alias kldapwhoami='kubectl exec -it -n directory dirsrv-0 -c configurator -- ldapwhoami -H ldaps://dirsrv:636'
 
 # Talk to the object store with credentials from a CephObjectStoreUser
 # Requires the AWS CLI (uv tool install awscli)
