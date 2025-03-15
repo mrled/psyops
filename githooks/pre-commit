@@ -12,12 +12,12 @@ def sh(cmd):
     ).stdout
 
 
-def get_files_to_commit():
+def get_files_to_commit() -> list[str]:
     staged_files = sh(
         "git --no-pager diff --cached --name-only --diff-filter=ACM"
     ).splitlines()
     modified_files = sh("git ls-files --modified").splitlines()
-    return set(staged_files + modified_files)
+    return list(set(staged_files + modified_files))
 
 
 def check_sops_clean():
