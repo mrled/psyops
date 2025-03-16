@@ -4,13 +4,17 @@ metadata:
   name: dirsrv-env
   namespace: directory
 data:
-
   # Values used by the 389 Directory Server container upstream
   # (may also be used by our own scripts)
 
   DS_SUFFIX_NAME: dc=micahrl,dc=me
-  ## DS_ERRORLOG_LEVEL - set the log level for `ns-slapd`, default is 266354688
+
+  # DS_ERRORLOG_LEVEL - set the log level for `ns-slapd`, default is 266354688
+  # https://docs.redhat.com/en/documentation/red_hat_directory_server/11/html-single/configuration_command_and_file_reference/index
   DS_ERRORLOG_LEVEL: "8192"
 
-  # Other values
-  # ...
+  # Set the startup timeout seconds
+  # Default is 60, which sometimes is too short for some reason
+  # ... maybe especially when verbose debugging is turned on?
+  # <https://github.com/389ds/389-ds-base/pull/4941>
+  DS_STARTUP_TIMEOUT: "300"
