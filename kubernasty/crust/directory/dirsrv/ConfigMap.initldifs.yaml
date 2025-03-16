@@ -123,15 +123,6 @@ data:
     add: aci
     aci: (targetattr="*")(version 3.0; acl "Allow read access to all objects for the authenticator"; allow (read, search, compare) userdn = "ldap:///uid=authenticator,ou=services,dc=micahrl,dc=me";)
 
-  config.managedObject.ldif: |+
-    dn: cn=schema
-    changetype: modify
-    add: objectClasses
-    objectClasses: ( 1.2.840.113556.1.8000.999999.42069 NAME 'managedObject' DESC 'Auxiliary class for tagging objects' SUP top AUXILIARY )
-
-  add: objectClasses
-  objectClasses: ( 1.2.840.113556.1.8000.999999.3 NAME 'customTag' DESC 'Auxiliary class for tagging objects' SUP top AUXILIARY MAY ( customTagAttribute ) )
-
   service.authenticator.ldif: |+
     dn: uid=authenticator,ou=services,dc=micahrl,dc=me
     objectClass: inetOrgPerson
@@ -265,82 +256,6 @@ data:
     add: member
     member: uid=micahrl,ou=people,dc=micahrl,dc=me
 
-  #### datadump
-  #
-  service.datadumpadmin.ldif: |+
-    dn: uid=datadumpadmin,ou=services,dc=micahrl,dc=me
-    objectClass: inetOrgPerson
-    objectClass: account
-    objectClass: top
-    uid: datadumpadmin
-    cn: Datadump Admin
-    sn: datadumpadmin
-    description: A service account for administering the datadump database
-
-  group.datadump-connect.ldif: |+
-    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: top
-    cn: datadump-connect
-    description: Users that can connect to the datadump database server
-
-  group.datadump-read.ldif: |+
-    dn: cn=datadump-read,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: top
-    cn: datadump-read
-    description: Users that can read from the entire datadump database on the datadump database server
-
-  group.datadump-write.ldif: |+
-    dn: cn=datadump-write,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: top
-    cn: datadump-write
-    description: Users that can write to the entire datadump database on the datadump database server
-
-  group.datadump-admin.ldif: |+
-    dn: cn=datadump-admin,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: top
-    cn: datadump-admin
-    description: Users that can administer the entire datadump database on the datadump database server
-
-  membership.datadump-connect.datadumpadmin.ldif: |+
-    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=datadumpadmin,ou=services,dc=micahrl,dc=me
-
-  membership.datadump-admin.datadumpadmin.ldif: |+
-    dn: cn=datadump-admin,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=datadumpadmin,ou=services,dc=micahrl,dc=me
-
-  membership.datadump-connect.mrladmin.ldif: |+
-    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
-
-  membership.datadump-admin.mrladmin.ldif: |+
-    dn: cn=datadump-admin,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
-
-  membership.datadump-connect.micahrl.ldif: |+
-    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=micahrl,ou=people,dc=micahrl,dc=me
-
-  membership.datadump-read.micahrl.ldif: |+
-    dn: cn=datadump-read,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=micahrl,ou=people,dc=micahrl,dc=me
-
   #### Argo Workflows
   #
   group.argowf-users.ldif: |+
@@ -368,33 +283,3 @@ data:
     changetype: modify
     add: member
     member: uid=mrladmin,ou=people,dc=micahrl,dc=me
-
-  #### Datadump pipeline users
-  #
-  service.workflowexec.ldif: |+
-    dn: uid=workflowexec,ou=services,dc=micahrl,dc=me
-    objectClass: inetOrgPerson
-    objectClass: account
-    objectClass: top
-    uid: workflowexec
-    cn: Workflow Executor
-    sn: workflowexec
-    description: A service account for executing workflows
-
-  membership.servi.workflowexec.ldif: |+
-    dn: cn=servi,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=workflowexec,ou=services,dc=micahrl,dc=me
-
-  membership.datadump-connect.workflowexec.ldif: |+
-    dn: cn=datadump-connect,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=workflowexec,ou=services,dc=micahrl,dc=me
-
-  membership.datadump-write.ldif: |+
-    dn: cn=datadump-write,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=workflowexec,ou=services,dc=micahrl,dc=me
