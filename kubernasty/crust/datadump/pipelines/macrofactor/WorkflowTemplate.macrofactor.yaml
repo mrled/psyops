@@ -160,7 +160,7 @@ spec:
             mountPath: /workdir
         env:
           - name: PGHOST
-            value: "datadump-pg-cluster-rw"
+            value: "datadumppg-rw"
           - name: PGDATABASE
             value: "datadump"
           - name: PGPORT
@@ -228,7 +228,7 @@ spec:
         command: [sh]
         env:
           - name: PGHOST
-            value: "datadump-pg-cluster-rw"
+            value: "datadumppg-rw"
           - name: PGDATABASE
             value: "datadump"
           - name: PGPORT
@@ -258,7 +258,7 @@ spec:
         command: [bash]
         env:
           - name: PGHOST
-            value: "datadump-pg-cluster-rw"
+            value: "datadumppg-rw"
           - name: PGDATABASE
             value: "datadump"
           - name: PGPORT

@@ -2,7 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./cluster
-  - ./dbinit
 
   # Generic pipeline resources
   - ./pipelines/common/ConfigMap.gitea-ssh-host-keys-pub.yaml
@@ -10,7 +9,6 @@ resources:
   - ./pipelines/common/Role.workflow-executor.yaml
   - ./pipelines/common/RoleBinding.workflow-executor.yaml
   - ./pipelines/common/Secret.datadump-pipelines-ssh.yaml
-  - ./pipelines/common/Secret.workflowexec-ldap
   - ./pipelines/common/ServiceAccount.workflow-executor.yaml
 
   # The MacroFactor pipeline
