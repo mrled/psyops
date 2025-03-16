@@ -10,6 +10,11 @@ However, this only works for _users that are separately created in Postgres_.
 It will use LDAP to check the password of a user added to the database server;
 it will not allow a user that exists in LDAP to connect unless it has been added to the database server separately.
 
+An aside, it took me a while to figure out how to do TLS to the LDAP server.
+You have to use [projected volumes](https://github.com/cloudnative-pg/cloudnative-pg/discussions/583)
+to mount the LDAP's TLS root CA cert
+and then set the `LDAPTLS_CACERT` variable to the projected path.
+
 I spent some time trying to make this work with `map` directives in `pg_hba.conf`,
 only to discover far too late that it doesn't support these with `ldap`.
 It does support them with `gssapi`, that is, Kerberos,
