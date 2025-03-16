@@ -165,3 +165,15 @@ kaws_dd_pipeline_cp() {
     shift
     kaws_bucketclaim datadump datadump-pipeline-manual-input s3 cp "$filepath" s3://datadump-pipeline-manual-input/"$dest"
 }
+
+# Open a psql client to a cluster that follows our normal conventions
+kpsql() {
+    local namespace="$1"
+    local user="$2"
+    local cluster="$3"
+    shift 3
+    local PGUSER="$(kubectl get secret -n "$namespace" "user-$user" -ojson | jq -r '.data.username | @base64d')"
+    local PGPASSWORD="$(kubectl get secret -n "$namespace" "user-$user" -ojson | jq -r '.data.password | @base64d')"
+    local PGDATABASE="$(kubectl get cluster -n "$namespace" "$cluster" -ojson | jq -r '.spec.bootstrap.initdb.database')"
+    kubectl run -n "$namespace" psql-client --rm --env=PGUSER="$PGUSER" --env=PGPASSWORD="$PGPASSWORD" --env=PGDATABASE="$PGDATABASE" -it --image=postgres -- psql -h "${cluster}-rw" "$@"
+}
