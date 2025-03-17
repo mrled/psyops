@@ -8,6 +8,19 @@ spec:
     - name: macrofactor-webhook-dep
       eventSourceName: macrofactor
       eventName: macrofactor-webhook
+      filters:
+        dataLogicalOperator: "or"
+        data:
+          # Gitea's paylots list modified files as relative paths
+          # Technically for this we don't need two because they both contain "pipelines/macrofactor"
+          - path: body.commits.*.modified
+            type: contains
+            value:
+              - "pipelines/macrofactor"
+          - path: body.commits.*.modified
+            type: contains
+            value:
+              - "datadump/pipelines/macrofactor"
   triggers:
     - template:
         name: argo-workflow-trigger
