@@ -11,16 +11,15 @@ spec:
       filters:
         dataLogicalOperator: "or"
         data:
-          # Gitea's paylots list modified files as relative paths
-          # Technically for this we don't need two because they both contain "pipelines/macrofactor"
-          - path: body.commits.*.modified
-            type: contains
+          # Gitea's payloads list modified files as relative paths
+          - path: "[body.commits.#.modified.@flatten,body.commits.#.added.@flatten,body.commits.#.removed.@flatten].@flatten.@flatten"
+            type: string
             value:
-              - "pipelines/macrofactor"
-          - path: body.commits.*.modified
-            type: contains
+              - ^pipelines\/macrofactor\/.*
+          - path: "[body.commits.#.modified.@flatten,body.commits.#.added.@flatten,body.commits.#.removed.@flatten].@flatten.@flatten"
+            type: string
             value:
-              - "datadump/pipelines/macrofactor"
+              - ^datadump\/pipelines\/macrofactor\/.*
   triggers:
     - template:
         name: argo-workflow-trigger
