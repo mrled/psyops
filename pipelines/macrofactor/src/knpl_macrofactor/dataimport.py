@@ -119,7 +119,6 @@ SHEET_TO_TABLE = {
     "Steps": "steps",
 }
 
-
 def ensure_table_and_columns(cursor, table_name, columns_map):
     """
     Creates the table if it doesn't exist, sets up the primary key,
@@ -152,13 +151,13 @@ def ensure_table_and_columns(cursor, table_name, columns_map):
 
 def import_xlsx(args):
     """
-    Reads an Excel file from args.xlsx_file, ensures the relevant tables
-    exist, and upserts the data into them.
+    Reads an Excel file from args.xlsx_file, creates tables if needed
+    for each recognized sheet, and upserts the data.
     """
     logging.debug("Importing Excel file '%s'.", args.xlsx_file)
     with get_connection(args) as conn:
         with conn.cursor() as cursor:
-            # Make sure macrofactor_files table exists (as in the original)
+            # Make sure macrofactor_files table exists
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS macrofactor_files (
@@ -168,43 +167,47 @@ def import_xlsx(args):
             """
             )
 
-            # Create or update schema for each table
-            for table_name, cols in SCHEMA_MAP.items():
-                ensure_table_and_columns(cursor, table_name, cols)
-
-            # Parse and import data
             xls = pd.ExcelFile(args.xlsx_file)
+
+            # For each sheet->table mapping, if that sheet is present, create/update table and import data
             for sheet_name, table_name in SHEET_TO_TABLE.items():
                 if sheet_name not in xls.sheet_names:
                     logging.warning("Sheet '%s' not found; skipping.", sheet_name)
                     continue
 
+                if table_name not in SCHEMA_MAP:
+                    logging.warning("No schema defined for table '%s'; skipping.", table_name)
+                    continue
+
+                # Load the sheet
                 df = xls.parse(sheet_name)
 
-                # Minimal column normalization
+                # Normalize columns
                 def normalize(col):
                     return (
                         col.strip()
-                        .replace(" ", "_")
-                        .replace(",", "")
-                        .replace("(", "")
-                        .replace(")", "")
-                        .replace("__", "_")  # unify repeated underscores
-                        .replace("_g", "__g")  # keep measure suffix consistent
-                        .replace("_in", "__in")
-                        .replace("_lbs", "__lbs")
-                        .replace("_mcg", "__mcg")
-                        .replace("_mg", "__mg")
+                           .replace(" ", "_")
+                           .replace(",", "")
+                           .replace("(", "")
+                           .replace(")", "")
+                           .replace("__", "_")  # unify repeated underscores
+                           .replace("_g", "__g")
+                           .replace("_in", "__in")
+                           .replace("_lbs", "__lbs")
+                           .replace("_mcg", "__mcg")
+                           .replace("_mg", "__mg")
                     )
 
                 df.columns = [normalize(c) for c in df.columns]
 
+                # Ensure the table and columns
+                ensure_table_and_columns(cursor, table_name, SCHEMA_MAP[table_name])
+
+                # Prepare upsert statement
                 cols = list(df.columns)
                 placeholders = ", ".join(["%s"] * len(cols))
                 col_list = ", ".join(cols)
-                update_clause = ", ".join(
-                    [f"{c} = EXCLUDED.{c}" for c in cols if c != "Date"]
-                )
+                update_clause = ", ".join([f"{c} = EXCLUDED.{c}" for c in cols if c != "Date"])
 
                 upsert_sql = sql.SQL(
                     f"""
@@ -221,9 +224,7 @@ def import_xlsx(args):
                     cursor.execute(upsert_sql, row_vals)
                     row_count += 1
 
-                logging.info(
-                    "Imported/updated %d rows into '%s'.", row_count, table_name
-                )
+                logging.info("Imported/updated %d rows into '%s'.", row_count, table_name)
 
         conn.commit()
     logging.debug("Finished importing '%s'.", args.xlsx_file)
