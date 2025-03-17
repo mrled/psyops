@@ -12,6 +12,6 @@ resources:
   - ./pipelines/common/ServiceAccount.workflow-executor.yaml
 
   # The MacroFactor pipeline
-  - ./pipelines/macrofactor/Workflow.macrofactor.yaml
+  - ./pipelines/macrofactor/WorkflowTemplate.macrofactor.yaml
   - ./pipelines/macrofactor/EventSource.macrofactor.yaml
   - ./pipelines/macrofactor/Sensor.macrofactor.yaml
