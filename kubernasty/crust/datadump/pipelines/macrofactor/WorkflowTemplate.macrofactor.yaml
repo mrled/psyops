@@ -4,11 +4,11 @@
 # it relies on the Sensor to start a copy of the Workflow.
 
 apiVersion: argoproj.io/v1alpha1
-# kind: WorkflowTemplate
-kind: Workflow
+kind: WorkflowTemplate
+# kind: Workflow
 metadata:
-  # name: macrofactor
-  generateName: macrofactor-pipeline-
+  name: macrofactor
+  # generateName: macrofactor-pipeline-
   namespace: datadump
 spec:
   serviceAccountName: workflow-executor
