@@ -216,11 +216,18 @@ and deleting the old volume.
 Create `ObjectBucketClaim` resources to create a bucket and key pair automatically.
 This will create an associated Secret resource with the same name
 with `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` properties.
-These keys automatically have read/write access t othe bucket.
+These keys automatically have read/write access to the bucket.
 
-See also the `cluster.sh` function `ks3api_bucketclaim`.
+These are easier to automate, because you get a bucket and credentials right away.
+The secret is created in the same namespace as the OBC.
+I think there is supposed to be a way to create multiple OBCs (and credentials) for the same bucket,
+but I haven't been able to make that work;
+my workaround is to create a Job to annotate the credentials secret with reflector properties,
+see {{ repolink "kubernasty/crust/argowf/Job.reflect-argowf-artifacts-secret.yaml }}.
 
-### Create object storage users
+See also the `cluster.sh` function `kaws_bucketclaim`.
+
+### Create object storage users directly
 
 Create `CephObjectStoreUser` resources to get an S3 user with permissions to talk to a bucket.
 This will create an associated Secret resource with `AccessKey` and `SecretKey` properties.
@@ -228,8 +235,9 @@ The secrets will be named `rook-ceph-object-user-$objStoreName-$userName`,
 so a user created for the `myObjects` object store is called `bob`
 the secret will be `rook-ceph-object-user-myObjects-bob`.
 You will then need to apply a policy to a bucket in order for the user to have access to anything.
+Because of this, these are harder to automate.
 
-See also the `cluster.sh` function `ks3api_cephuser`.
+See also the `cluster.sh` function `kaws_cephuser`.
 
 ## Troubleshooting
 
