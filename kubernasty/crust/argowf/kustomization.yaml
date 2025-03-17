@@ -17,8 +17,11 @@ resources:
 
   # Other resources
   - ./Secret.argowf-oidc.yaml
+  - ./ObjectBucketClaim.argowf-artifacts.yaml
   - ./rbac/argowf-admin.yaml
   - ./rbac/argowf-user.yaml
+  - ./reflect-argowf-artifacts-secret.yaml
+  - ./Job.reflect-argowf-artifacts-secret.yaml
 
   # Apply the release kustomization
   - https://github.com/argoproj/argo-workflows/releases/download/v3.6.4/install.yaml

@@ -4,11 +4,11 @@
 # it relies on the Sensor to start a copy of the Workflow.
 
 apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
-# kind: Workflow
+# kind: WorkflowTemplate
+kind: Workflow
 metadata:
-  name: macrofactor
-  # generateName: macrofactor-pipeline-
+  # name: macrofactor
+  generateName: macrofactor-pipeline-
   namespace: datadump
 spec:
   serviceAccountName: workflow-executor
@@ -51,6 +51,10 @@ spec:
           - name: process-file
             dependencies: [download-file]
             template: process-file
+            arguments:
+              artifacts:
+                - name: macrofactor-file
+                  from: "{{tasks.download-file.outputs.artifacts.macrofactor-file}}"
 
           - name: mark-file-processed
             dependencies: [process-file]
@@ -208,13 +212,15 @@ spec:
                 key: AWS_SECRET_ACCESS_KEY
           - name: AWS_DEFAULT_REGION
             value: "us-east-1"
+          - name: LATEST_KEY
+            value: "{{inputs.parameters.latestkey}}"
         args:
           - |
             set -eux
-            echo "Downloading s3://datadump-pipeline-manual-input/MacroFactor/$latestkey..."
+            echo "Downloading s3://datadump-pipeline-manual-input/MacroFactor/$LATEST_KEY..."
             aws s3 cp \
               --endpoint-url "https://objects.micahrl.me" \
-              "s3://datadump-pipeline-manual-input/MacroFactor/$latestkey" \
+              "s3://datadump-pipeline-manual-input/MacroFactor/$LATEST_KEY" \
               /tmp/macrofactor.xlsx
       outputs:
         artifacts:
@@ -223,9 +229,15 @@ spec:
 
     # Process the XLSX file
     - name: process-file
+      inputs:
+        artifacts:
+          - name: macrofactor-file
+            path: /tmp/macrofactor.xlsx
       script:
         image: ghcr.io/astral-sh/uv:debian
-        command: [sh]
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
         env:
           - name: PGHOST
             value: "datadumppg-rw"
@@ -243,10 +255,11 @@ spec:
               secretKeyRef:
                 name: workflowexec-ldap
                 key: password
+        command: [sh]
         source: |
           set -eux
           cd /workdir/psyops/pipelines/macrofactor
-          uv run knpl_macrofactor check-processed import-xlsx --xlsx-file /tmp/macrofactor.xlsx
+          uv run knpl_macrofactor import-xlsx --xlsx-file /tmp/macrofactor.xlsx
 
     # Mark as processed
     - name: mark-file-processed
@@ -255,7 +268,9 @@ spec:
           - name: latestkey
       script:
         image: ghcr.io/astral-sh/uv:debian
-        command: [bash]
+        volumeMounts:
+          - name: workdir
+            mountPath: /workdir
         env:
           - name: PGHOST
             value: "datadumppg-rw"
@@ -275,10 +290,11 @@ spec:
                 key: password
           - name: LATEST_KEY
             value: "{{inputs.parameters.latestkey}}"
+        command: [bash]
         source: |
           set -eux
           cd /workdir/psyops/pipelines/macrofactor
-          uv run knpl_macrofactor check-processed import-xlsx mark-processed --file-key "$LATEST_KEY"
+          uv run knpl_macrofactor mark-processed --file-key "$LATEST_KEY"
 
   volumeClaimTemplates:
     - metadata:

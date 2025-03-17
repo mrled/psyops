@@ -39,3 +39,25 @@ data:
       enabled: true
 
     insecureSkipVerify: false
+
+  # https://argo-workflows.readthedocs.io/en/latest/configure-artifact-repository/#configure-the-default-artifact-repository
+  # This will be the default bucket for sharing artifacts between workflows.
+  # I think in a more typical production environment,
+  # I would either have a single namespace that all workflows run in with this default bucket,
+  # or each namespace that runs workflows would have their own default bucket.
+  # In my case, I'm running workflows in a bunch of namespaces,
+  # but using a single default bucket for all of them.
+  # This has the downside that I have to copy bucket credentials to all the namespaces that want to use it,
+  # see the reflect-argowf-artifacts-secret job.
+  # TODO: Consider changing this plan to either be more combined/easier or more separate/isolated.
+  artifactRepository: |
+    s3:
+      bucket: argo-workflow-artifacts
+      endpoint: objects.micahrl.me
+      insecure: false
+      accessKeySecret:
+        name: argowf-artifacts
+        key: AWS_ACCESS_KEY_ID
+      secretKeySecret:
+        name: argowf-artifacts
+        key: AWS_SECRET_ACCESS_KEY

@@ -1,0 +1,10 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: argowf-artifacts
+  namespace: argowf
+spec:
+  bucketName: argowf-artifacts
+  storageClassName: cephalopodobj-nvme-3rep
+  additionalConfig:
+    maxSize: 30G
