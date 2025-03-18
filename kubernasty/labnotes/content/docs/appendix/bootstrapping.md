@@ -2,6 +2,8 @@
 title: Bootstrapping
 ---
 
+(See also [git-self-hosted]({{< ref "git-self-hosted" >}}))
+
 Bootstrapping a Kubernetes cluster can be difficult,
 depending on what you want the cluster to handle.
 

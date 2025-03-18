@@ -3,6 +3,14 @@ title: Self-hosted git
 weight: 80
 ---
 
+(See also [bootstrapping]({{< ref "bootstrapping" >}}))
+
+[Kubefirst](https://kubefirst.io/) has a cool idea --
+using your cluster to host the Git repository that the CI/CD tool uses.
+They can deploy Gitlab for you in AWS as part of the install process.
+
+Can we do that ourselves?
+
 ## Bootstrap from nothing
 
 I haven't done this yet, but what I want to do is self-host a git server and bootstrap flux off of that.
@@ -31,6 +39,50 @@ I haven't done this yet, but what I want to do is self-host a git server and boo
 * Now the user can interact with flux via the `flux` command, and push to the repo. Success!
 * Next steps probably involve some kind of load balancing and ingress so that the NodePort is not necessary.
   * The NodePort can then be removed
+
+### Bootstrapping Gitea
+
+If Gitea were the initial cluster server, here's how we could bootstrap on it.
+
+* Deploy Gitea, using a RWX filesystem option like CephFS for /data
+* Create a Job that runs the same Gitea container and mounts /data (and can talk to the Gitea database)
+  * Looks for a Kubernetes secret with a name like `gitea-admin-access-token`
+    * Ensure a service account exists.
+      Can just run the create command, it will exit with code 1 if the account already exists.
+      ```text
+      21:01:11 E1 Naragua kubernasty ∴ k exec -itn gitea gitea-0 -- gitea admin user create --username testea  --email testea@example.com --admin --random-password --random-password-length 24
+      Defaulted container "gitea" out of: gitea, sidecar, init-directories (init)
+      generated random password is 'yIpIFq2HiE6mpgj5xaJuraLz'
+      New user 'testea' has been successfully created!
+
+      21:02:09 E0 Naragua kubernasty ∴ k exec -itn gitea gitea-0 -- gitea admin user create --username testea  --email testea@example.com --admin --random-password --random-password-length 24
+      Defaulted container "gitea" out of: gitea, sidecar, init-directories (init)
+      generated random password is 'Vs5EY0297I6j9ksl2m49zS42'
+      Command error: CreateUser: user already exists [name: testea]
+      command terminated with exit code 1
+      ```
+    * Adds an access token with `gitea admin user generate-access-token --username USERNAME --raw`
+      and saves the result to `gitea-admin-access-token` Secret
+      ```text
+      21:05:19 E1 Naragua kubernasty ∴ k exec -itn gitea gitea-0 -- gitea admin user generate-access-token --username testea --raw  --token-name test2
+      Defaulted container "gitea" out of: gitea, sidecar, init-directories (init)
+      e02abc19ec0901a1dc22db4e7717cd2d83ebb5b3
+      ```
+      ... might consider giving it a unique name every time with `--token-name` because there is no way to delete or overwrite an existing token
+* Create a Job that reads the secret and does initial configuration
+  * (btw, Gitea endpoints can be explored with the `/api/swagger` URI on any Gitea server as long as its enabled, which it is by default)
+  * All of these actions could be first checked so the script is idempotent
+  * With the admin user's token
+    * Create a service account for pulling code, pushing code, and pushing artifacts, with with `POST /admin/users`
+      (these could be separate for better separation of concerns)
+    * Create an org with `POST /orgs` for the cluster
+    * Find the newly-created org's Owners team ID with `GET /orgs/{org}/teams/search`
+    * Place the service account in the owner team for the cluster org with `PUT /teams/{id}/members/{username}`
+    * Create the cluster git repo with `POST /orgs/{org}/repos`
+    * Create a webhook that notifies Flux with `POST /repos/{owner}/{repo}/hooks`
+    * Set an access token for the service account with `POST /users/{user}/tokens`
+  * With the service account's token
+    * Set an SSH key with `POST /user/keys`
 
 ## Bootstrap from Github
 
