@@ -36,7 +36,7 @@ spec:
             type: string
             value:
               - >-
-                (^pipelines/macrofactor/|^kubernasty/crust/argowf/workflows/python/knpl_macrofactor/*)
+                (^pipelines/macrofactor/.*|^kubernasty/crust/argowf/workflows/python/knpl_macrofactor/.*)
 
   triggers:
     - template:
