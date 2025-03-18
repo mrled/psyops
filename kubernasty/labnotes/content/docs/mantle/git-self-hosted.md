@@ -138,7 +138,7 @@ This is easier to get started with.
 
 ## Post bootstrap tasks
 
-* Add a webhook
+* Add a webhook for flux
   * This makes pushes instantly start a flux reconciliation; flux doesn't have to poll
   * Flux side
     * This can all be done by Flux itself
@@ -156,3 +156,10 @@ This is easier to get started with.
     * Also requires configuring `ALLOWED_HOST_LIST` in Gitea configuration
   * Note that webhooks are rate limited
     * <https://github.com/fluxcd/flux2/discussions/3571>
+* Add a webhook for Argo Workflows
+  * Argo Workflows side, see `kubernasty/crust/argowf/workflows/common/EventSource.webhook.yaml`
+  * Gitea side
+    * Target URL: `http://webhook-eventsource-svc.argowf.svc.cluster.local:12000/gitea`
+    * HTTP Method: `POST`
+    * Secret: empty
+    * TODO: use a webhook secret for security? not sure this matters
