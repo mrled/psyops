@@ -86,12 +86,12 @@ spec:
         env:
           - name: UV_PUBLISH_INDEX
             value: https://gitea.micahrl.me/api/packages/kubernasty/pypi/simple
-          - name: UV_PYPI_USERNAME
+          - name: UV_PUBLISH_USERNAME
             valueFrom:
               secretKeyRef:
                 name: gitea-workflowexec-user
                 key: username
-          - name: UV_PYPI_PASSWORD
+          - name: UV_PUBLISH_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: gitea-workflowexec-user
