@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./RBAC.argowf-executor.yaml
+  - ./RBAC.argowf-sensor.yaml
   - ./ConfigMap.gitea-ssh-host-keys-pub.yaml
   - ./Secret.argowf-ssh.yaml
   - ./Secret.gitea-workflowexec-token.yaml

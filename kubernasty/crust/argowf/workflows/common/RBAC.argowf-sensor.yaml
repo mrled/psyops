@@ -1,0 +1,47 @@
+# The Kubernetes service account that will run Argo Workflows in this namespace
+#
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argowf-sensor
+  namespace: argowf
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argowf-sensor
+  namespace: argowf
+rules:
+  - apiGroups:
+      - argoproj.io
+    verbs:
+      - "*"
+    resources:
+      - workflows
+      - workflowtemplates
+      - cronworkflows
+      - clusterworkflowtemplates
+  - apiGroups:
+      - ""
+    resources:
+      - events
+      - pods
+    verbs:
+      - get
+      - watch
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argowf-sensor
+  namespace: argowf
+subjects:
+  - kind: ServiceAccount
+    name: argowf-sensor
+    namespace: argowf
+roleRef:
+  kind: Role
+  name: argowf-sensor
+  apiGroup: rbac.authorization.k8s.io
