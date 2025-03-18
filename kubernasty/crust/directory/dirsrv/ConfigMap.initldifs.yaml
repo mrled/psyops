@@ -97,17 +97,59 @@ data:
     nsslapd-accesslog-logging-enabled: on
     -
     replace: nsslapd-accesslog
-    nsslapd-accesslog: /var/log/dirsrv/access.log
+    nsslapd-accesslog: /data/logs/access
     -
     replace: nsslapd-accesslog-maxlogsize
     # It is rotated if it reaches this size in MB
     nsslapd-accesslog-maxlogsize: 10
     -
     replace: nsslapd-accesslog-maxlogsperdir
-    nsslapd-accesslog-maxlogsperdir: 2
+    nsslapd-accesslog-maxlogsperdir: 5
     -
     replace: nsslapd-accesslog-logbuffering
     nsslapd-accesslog-logbuffering: off
+
+  config.errorLog.ldif: |+
+    dn: cn=config
+    changetype: modify
+    replace: nsslapd-errorlog-level
+    nsslapd-errorlog-level: 8192
+    -
+    replace: nsslapd-errorlog-logging-enabled
+    nsslapd-errorlog-logging-enabled: on
+    -
+    replace: nsslapd-errorlog
+    nsslapd-errorlog: /data/logs/errors
+    -
+    replace: nsslapd-errorlog-maxlogsize
+    nsslapd-errorlog-maxlogsize: 10
+    -
+    replace: nsslapd-errorlog-maxlogsperdir
+    nsslapd-errorlog-maxlogsperdir: 5
+    -
+    replace: nsslapd-errorlog-logbuffering
+    nsslapd-errorlog-logbuffering: off
+
+  config.securityLog.ldif: |+
+    dn: cn=config
+    changetype: modify
+    replace: nsslapd-securitylog-level
+    nsslapd-security-log-level: 256
+    -
+    replace: nsslapd-securitylog-logging-enabled
+    nsslapd-security-log-logging-enabled: on
+    -
+    replace: nsslapd-securitylog
+    nsslapd-security-log: /data/logs/security
+    -
+    replace: nsslapd-securitylog-maxlogsize
+    nsslapd-security-log-maxlogsize: 10
+    -
+    replace: nsslapd-securitylog-maxlogsperdir
+    nsslapd-security-log-maxlogsperdir: 5
+    -
+    replace: nsslapd-securitylog-logbuffering
+    nsslapd-security-log-logbuffering: on
 
   # TODO: arguably the permissions should be set at the group level
   # Note that the userdn specified here does not need to exist yet
