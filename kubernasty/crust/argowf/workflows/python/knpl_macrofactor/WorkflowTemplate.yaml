@@ -69,6 +69,7 @@ spec:
           - |
             set -eux
             cd /workspace/psyops/pipelines/macrofactor
+            export KNPL_MACROFACTOR_BUILD_VERSION="$(uv run ./buildver.py)"
             uv build
             ls -alF dist/
         volumeMounts:
