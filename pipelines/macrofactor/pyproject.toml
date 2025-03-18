@@ -1,7 +1,7 @@
 [project]
 name = "knpl_macrofactor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Ingest MacroFactor data exports into a PostgreSQL database"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
