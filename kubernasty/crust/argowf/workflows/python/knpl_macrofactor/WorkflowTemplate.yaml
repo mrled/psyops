@@ -67,7 +67,8 @@ spec:
         command: ["sh", "-c"]
         args:
           - |
-            cd /workspace/psyops
+            set -eux
+            cd /workspace/psyops/pipelines/macrofactor
             uv build
             ls -alF dist/
         volumeMounts:
@@ -81,7 +82,8 @@ spec:
         command: ["sh", "-c"]
         args:
           - |
-            cd /workspace/psyops
+            set -eux
+            cd /workspace/psyops/pipelines/macrofactor
             ls -alF dist/
             uv publish dist/*.whl
         env:
