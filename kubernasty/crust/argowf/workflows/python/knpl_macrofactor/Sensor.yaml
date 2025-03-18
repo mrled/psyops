@@ -4,9 +4,8 @@ metadata:
   name: python-knpl-macrofactor
   namespace: argowf
 spec:
-  serviceAccount: argowf-sensor
-
   template:
+    serviceAccount: argowf-sensor
     container:
       env:
         - name: LOG_LEVEL
