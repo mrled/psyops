@@ -1,6 +1,5 @@
 [project]
 name = "knpl_macrofactor"
-version = "0.1.0"
 description = "Ingest MacroFactor data exports into a PostgreSQL database"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -11,6 +10,7 @@ dependencies = [
     "types-psycopg2>=2.9.21.20250121",
     "openpyxl>=3.1.5",
 ]
+dynamic = ["version"]
 
 [project.scripts]
 knpl_macrofactor = "knpl_macrofactor.cli:main"
@@ -21,6 +21,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["knpl_macrofactor"]
+
+[too.setuptools.dynamic]
+version = {attr = "knpl_macrofactor.version.__version__"}
 
 [tool.setuptools.package-dir]
 "" = "src" # Uses the "src" layout
