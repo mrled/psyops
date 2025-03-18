@@ -40,13 +40,13 @@ spec:
             echo "gitea.micahrl.me $(cat /gitea-ssh-host-keys-pub/gitea.ed25519.pub)" > ~/.ssh/known_hosts
             cp /ssh/identity ~/.ssh/identity
             chmod 0600 ~/.ssh/identity
-            git clone git@gitea.micahrl.me:kubernasty/psyops.git /workdir/psyops
+            git clone git@gitea.micahrl.me:kubernasty/psyops.git /workspace/psyops
         env:
           - name: GIT_SSH_COMMAND
             value: "ssh -i $HOME/.ssh/identity -o StrictHostKeyChecking=yes"
         volumeMounts:
-          - name: workdir
-            mountPath: /workdir
+          - name: workspace
+            mountPath: /workspace
           - name: argowf-ssh
             mountPath: /ssh
           - name: gitea-ssh-host-keys-pub
