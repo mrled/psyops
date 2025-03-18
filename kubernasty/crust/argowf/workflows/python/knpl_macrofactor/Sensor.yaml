@@ -4,8 +4,14 @@ metadata:
   name: python-knpl-macrofactor
   namespace: argowf
 spec:
+  template:
+    container:
+      env:
+        - name: LOG_LEVEL
+          value: "debug"
+
   dependencies:
-    - name: macrofactor-webhook-dep
+    - name: gitea-webhook-dep
       eventSourceName: webhook
       eventName: gitea-webhook
       filters:
