@@ -5,7 +5,7 @@ metadata:
   namespace: argowf
 spec:
   template:
-    serviceAccount: argowf-sensor
+    serviceAccountName: argowf-sensor
     container:
       env:
         - name: LOG_LEVEL
