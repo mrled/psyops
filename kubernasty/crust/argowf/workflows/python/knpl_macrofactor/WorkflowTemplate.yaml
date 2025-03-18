@@ -88,7 +88,7 @@ spec:
             uv publish dist/*.whl
         env:
           - name: UV_PUBLISH_URL
-            value: http://gitea.gitea.svc.cluster.local/api/packages/kubernasty/pypi
+            value: http://gitea.gitea.svc.cluster.local:3000/api/packages/kubernasty/pypi
           - name: UV_PUBLISH_USERNAME
             valueFrom:
               secretKeyRef:
