@@ -15,6 +15,7 @@ spec:
         resources:
           requests:
             storage: 1Gi
+        storageClassName: cephalopodblk-nvme-2rep
 
   templates:
     - name: build-and-push-python
