@@ -22,7 +22,7 @@ spec:
         # https://github.com/argoproj/argo-events/issues/1127
         data:
           # Match on kubernasty/psyops repo
-          - path: .body.repository.full_name
+          - path: body.repository.full_name
             type: string
             value:
               - "kubernasty/psyops"
