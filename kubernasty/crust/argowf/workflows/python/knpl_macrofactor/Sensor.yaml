@@ -30,13 +30,11 @@ spec:
               - "kubernasty/psyops"
 
           # At least one of the modified/created/deleted files
-          # has to be in /pipelines/macrofactor/ or
-          # /kubernasty/crust/argowf/workflows/python/knpl_macrofactor/
+          # has to be in /pipelines/macrofactor/
           - path: "[body.commits.#.modified.@flatten,body.commits.#.added.@flatten,body.commits.#.removed.@flatten].@flatten.@flatten"
             type: string
             value:
-              - >-
-                (^pipelines/macrofactor/.*|^kubernasty/crust/argowf/workflows/python/knpl_macrofactor/.*)
+              - ^pipelines/macrofactor/.*
 
   triggers:
     - template:
