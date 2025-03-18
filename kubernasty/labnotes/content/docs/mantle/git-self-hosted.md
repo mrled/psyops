@@ -163,3 +163,6 @@ This is easier to get started with.
     * HTTP Method: `POST`
     * Secret: empty
     * TODO: use a webhook secret for security? not sure this matters
+* Configure LDAP organization maps if relevant
+  * Not currently possible via CLI or API
+    <https://github.com/go-gitea/gitea/issues/20716>
