@@ -53,7 +53,7 @@ spec:
             mountPath: /gitea-ssh-host-keys-pub
 
     # Step 2: Build the Python package with 'uv'
-    - name: build-push-package
+    - name: build-package
       container:
         image: ghcr.io/astral-sh/uv:debian
         command: ["sh", "-c"]
