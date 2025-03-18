@@ -82,10 +82,11 @@ spec:
         args:
           - |
             cd /workspace
+            ls -alF dist/
             uv publish dist/*.whl
         env:
-          - name: UV_PUBLISH_INDEX
-            value: https://gitea.micahrl.me/api/packages/kubernasty/pypi/simple
+          - name: UV_PUBLISH_URL
+            value: https://gitea.micahrl.me/api/packages/kubernasty/pypi
           - name: UV_PUBLISH_USERNAME
             valueFrom:
               secretKeyRef:
