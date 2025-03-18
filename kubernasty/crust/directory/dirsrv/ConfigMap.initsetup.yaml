@@ -4,7 +4,6 @@ metadata:
   name: initsetup
   namespace: directory
 data:
-
   envsubst.py: |
     #!/usr/bin/env python3
     # Poor pythonista's envsubst
@@ -108,7 +107,7 @@ data:
     /initsetup/configure_backend.sh
     /initsetup/log.sh "Existing ldifMarkers entries:"
     /initsetup/get_marked_ldifs.sh
-    /initsetup/apply_ldifs.sh
+    /initsetup/apply_ldifs.sh || echo "Failed to apply LDIFs during initialization, continuing..."
     /initsetup/set_account_passwords.sh
     unset INITSCRIPT_LOG_VERBOSE
 
