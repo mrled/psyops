@@ -52,7 +52,7 @@ spec:
               apiVersion: argoproj.io/v1alpha1
               kind: Workflow
               metadata:
-                generateName: macrofactor-pipeline-
+                generateName: build-python-knpl-macrofactor-
                 namespace: argowf
               spec:
                 workflowTemplateRef:
