@@ -30,13 +30,26 @@ spec:
     - name: checkout-repo
       container:
         image: alpine/git
-        command: ["sh", "-c"]
+        command: ["/bin/sh", "-c"]
         args:
           - |
-            git clone https://gitea.micahrl.me/kubernasty/psyops.git /workspace
+            set -eux
+            whoami
+            mkdir -p ~/.ssh
+            echo "gitea.micahrl.me $(cat /gitea-ssh-host-keys-pub/gitea.ed25519.pub)" > ~/.ssh/known_hosts
+            cp /ssh/identity ~/.ssh/identity
+            chmod 0600 ~/.ssh/identity
+            git clone git@gitea.micahrl.me:kubernasty/psyops.git /workdir/psyops
+        env:
+          - name: GIT_SSH_COMMAND
+            value: "ssh -i $HOME/.ssh/identity -o StrictHostKeyChecking=yes"
         volumeMounts:
-          - name: workspace
-            mountPath: /workspace
+          - name: workdir
+            mountPath: /workdir
+          - name: argowf-ssh
+            mountPath: /ssh
+          - name: gitea-ssh-host-keys-pub
+            mountPath: /gitea-ssh-host-keys-pub
 
     # Step 2: Build the Python package with 'uv'
     - name: build-push-package
@@ -67,12 +80,12 @@ spec:
           - name: UV_PYPI_USERNAME
             valueFrom:
               secretKeyRef:
-                name: pypi-creds
+                name: gitea-workflowexec-user
                 key: username
           - name: UV_PYPI_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: pypi-creds
+                name: gitea-workflowexec-user
                 key: password
         volumeMounts:
           - name: workspace

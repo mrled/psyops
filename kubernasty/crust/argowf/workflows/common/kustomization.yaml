@@ -4,5 +4,7 @@ resources:
   - ./RBAC.argowf-executor.yaml
   - ./ConfigMap.gitea-ssh-host-keys-pub.yaml
   - ./Secret.argowf-ssh.yaml
+  - ./Secret.gitea-workflowexec-token.yaml
+  - ./Secret.gitea-workflowexec-user.yaml
   - ./EventBus.yaml
   - ./EventSource.webhook.yaml
