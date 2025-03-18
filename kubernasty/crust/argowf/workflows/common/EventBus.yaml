@@ -1,0 +1,19 @@
+# https://github.com/argoproj/argo-events/blob/master/examples/eventbus/native.yaml
+
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: default
+  namespace: argowf
+spec:
+  nats:
+    native:
+      replicas: 3
+
+      # Optional, authen strategy, "none" or "token", defaults to "none"
+      # auth: token
+
+      persistence:
+        storageClassName: cephalopodfs-nvme-3rep
+        accessMode: ReadWriteOnce
+        volumeSize: 10Gi

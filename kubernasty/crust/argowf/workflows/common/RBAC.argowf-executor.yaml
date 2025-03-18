@@ -1,0 +1,33 @@
+# The Kubernetes service account that will run Argo Workflows in this namespace
+#
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argowf-executor
+  namespace: argowf
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argowf-executor
+  namespace: argowf
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflowtaskresults"]
+    verbs: ["create", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argowf-executor
+  namespace: argowf
+subjects:
+  - kind: ServiceAccount
+    name: argowf-executor
+    namespace: argowf
+roleRef:
+  kind: Role
+  name: argowf-executor
+  apiGroup: rbac.authorization.k8s.io

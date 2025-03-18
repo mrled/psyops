@@ -1,0 +1,16 @@
+# See versions at https://github.com/argoproj/argo-events/releases
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Must match what's in Namespace.yaml
+namespace: argoev
+
+resources:
+  # Create the namespace first
+  - ./Namespace.yaml
+
+  # Install Argo Events
+  # install.yaml provides cluster-wide RBAC, meaning ClusterRole/etc
+  - https://github.com/argoproj/argo-events/releases/download/v1.9.5/install.yaml
+  - https://github.com/argoproj/argo-events/releases/download/v1.9.5/install-validating-webhook.yaml

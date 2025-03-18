@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: webhook
+  namespace: argowf
+spec:
+  replicas: 2
+  service:
+    ports:
+      - name: http
+        port: 12000
+        targetPort: 12000
+  webhook:
+    gitea-webhook:
+      endpoint: /gitea
+      method: POST
+      port: "12000" # Has to be a string because lol

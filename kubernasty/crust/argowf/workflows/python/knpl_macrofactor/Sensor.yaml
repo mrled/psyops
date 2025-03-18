@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: python-knpl-macrofactor
+  namespace: argowf
+spec:
+  dependencies:
+    - name: macrofactor-webhook-dep
+      eventSourceName: webhook
+      eventName: gitea-webhook
+      filters:
+        # All of the data filters must match
+        dataLogicalOperator: "and"
+
+        # The data syntax is insane and basically undocumented.
+        # https://github.com/argoproj/argo-events/issues/1127
+        data:
+          # Match on kubernasty/psyops repo
+          - path: body.repository.full_name
+            type: string
+            value:
+              - "kubernasty/psyops"
+
+          # At least one of the modified/created/deleted files
+          # has to be in /pipelines/macrofactor/ or
+          # /kubernasty/crust/argowf/workflows/python/knpl_macrofactor/
+          - path: >-
+              [
+                body.commits.#.modified.@flatten,
+                body.commits.#.added.@flatten,
+                body.commits.#.removed.@flatten
+              ].@flatten.@flatten
+            type: string
+            value:
+              - ^pipelines\/macrofactor\/.*
+              - ^kubernasty\/crust\/argowf\/workflows\/python\/knpl_macrofactor\/.*
+
+  triggers:
+    - template:
+        name: argo-workflow-trigger
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: macrofactor-pipeline-
+                namespace: argowf
+              spec:
+                workflowTemplateRef:
+                  name: python-knpl-macrofactor

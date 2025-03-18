@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: python-knpl-macrofactor
+  namespace: argowf
+spec:
+  entrypoint: build-and-push-python
+  serviceAccountName: argowf-executor
+
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+
+  templates:
+    - name: build-and-push-python
+      steps:
+        - - name: checkout
+            template: checkout-repo
+          - name: build
+            template: build-package
+          - name: push
+            template: push-package
+
+    # Step 1: Checkout from Gitea
+    - name: checkout-repo
+      container:
+        image: alpine/git
+        command: ["sh", "-c"]
+        args:
+          - |
+            git clone https://gitea.micahrl.me/kubernasty/psyops.git /workspace
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+
+    # Step 2: Build the Python package with 'uv'
+    - name: build-push-package
+      container:
+        image: ghcr.io/astral-sh/uv:debian
+        command: ["sh", "-c"]
+        args:
+          - |
+            cd /workspace
+            uv build
+            ls -alF dist/
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+
+    # Step 3: Publish the package to Gitea PyPI
+    - name: push-package
+      container:
+        image: ghcr.io/astral-sh/uv:debian
+        command: ["sh", "-c"]
+        args:
+          - |
+            cd /workspace
+            uv publish dist/*.whl
+        env:
+          - name: UV_PUBLISH_INDEX
+            value: https://gitea.micahrl.me/api/packages/kubernasty/pypi/simple
+          - name: UV_PYPI_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: pypi-creds
+                key: username
+          - name: UV_PYPI_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: pypi-creds
+                key: password
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
