@@ -30,9 +30,9 @@ spec:
       steps:
         - - name: checkout
             template: checkout-repo
-          - name: build
+        - - name: build
             template: build-package
-          - name: push
+        - - name: push
             template: push-package
 
     # Step 1: Checkout from Gitea
