@@ -17,6 +17,14 @@ spec:
             storage: 1Gi
         storageClassName: cephalopodblk-nvme-2rep
 
+  volumes:
+    - name: argowf-ssh
+      secret:
+        secretName: argowf-ssh
+    - name: gitea-ssh-host-keys-pub
+      configMap:
+        name: gitea-ssh-host-keys-pub
+
   templates:
     - name: build-and-push-python
       steps:
