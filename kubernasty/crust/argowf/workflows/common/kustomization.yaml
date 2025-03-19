@@ -7,5 +7,6 @@ resources:
   - ./Secret.argowf-ssh.yaml
   - ./Secret.gitea-workflowexec-token.yaml
   - ./Secret.gitea-workflowexec-user.yaml
+  - ./Secret.gitea-registry-creds-workflowexec.yaml
   - ./EventBus.yaml
   - ./EventSource.webhook.yaml

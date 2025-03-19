@@ -27,15 +27,15 @@ spec:
 
   templates:
     - name: build-and-push-python
-      steps:
-        - - name: checkout
+      dag:
+        tasks:
+          - name: checkout
             template: checkout-repo
-        - - name: build
-            template: build-package
-        - - name: push
-            template: push-package
+          - name: build-push-docker
+            template: build-push-docker
+            dependencies: [version]
 
-    # Step 1: Checkout from Gitea
+    # Checkout from Gitea
     - name: checkout-repo
       container:
         image: alpine/git
@@ -60,47 +60,22 @@ spec:
           - name: gitea-ssh-host-keys-pub
             mountPath: /gitea-ssh-host-keys-pub
 
-    # Step 2: Build the Python package with 'uv'
-    - name: build-package
+    # Build the Docker image
+    - name: build-push-docker
       container:
-        image: ghcr.io/astral-sh/uv:debian
-        command: ["sh", "-c"]
+        image: gcr.io/kaniko-project/executor:latest
         args:
-          - |
-            set -eux
-            cd /workspace/psyops/pipelines/macrofactor
-            export KNPL_MACROFACTOR_BUILD_VERSION="$(uv run ./buildver.py)"
-            uv build
-            ls -alF dist/
-        volumeMounts:
-          - name: workspace
-            mountPath: /workspace
-
-    # Step 3: Publish the package to Gitea PyPI
-    - name: push-package
-      container:
-        image: ghcr.io/astral-sh/uv:debian
-        command: ["sh", "-c"]
-        args:
-          - |
-            set -eux
-            cd /workspace/psyops/pipelines/macrofactor
-            ls -alF dist/
-            uv publish dist/*.whl
+          - "--dockerfile=/workspace/Dockerfile"
+          - "--context=/workspace"
+          - "--destination=gitea.gitea.svc.cluster.local:3000/kubernasty/knpl-macrofactor:latest"
+          - "--insecure=true"
+          - "--skip-tls-verify=true"
         env:
-          - name: UV_PUBLISH_URL
-            # The gitea service is headless so we have to use the pod's listening port
-            value: http://gitea.gitea.svc.cluster.local:3000/api/packages/kubernasty/pypi
-          - name: UV_PUBLISH_USERNAME
+          - name: DOCKER_AUTH_CONFIG
             valueFrom:
               secretKeyRef:
-                name: gitea-workflowexec-user
-                key: username
-          - name: UV_PUBLISH_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: gitea-workflowexec-user
-                key: password
+                name: gitea-registry-creds-workflowexec
+                key: .dockerconfigjson
         volumeMounts:
           - name: workspace
             mountPath: /workspace
