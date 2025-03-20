@@ -18,7 +18,7 @@ spec:
       owner: datadump
       # Secret must have a username that matches the owner above.
       secret:
-        name: user-datadump
+        name: pg-user-datadump
 
       # Create roles that cannot log in but can be granted to other roles
       postInitApplicationSQL:
@@ -55,7 +55,7 @@ spec:
       - name: workflowexec
         login: true
         passwordSecret:
-          name: user-workflowexec
+          name: pg-user-workflowexec
         inherit: true # inherit permissions from the roles that it's a member of
         inRoles:
           - datadump_manage

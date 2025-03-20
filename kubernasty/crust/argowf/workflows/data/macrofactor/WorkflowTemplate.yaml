@@ -105,12 +105,12 @@ spec:
           - name: PGUSER
             valueFrom:
               secretKeyRef:
-                name: ldap-workflowexec-user
+                name: pg-user-workflowexec
                 key: username
           - name: PGPASSWORD
             valueFrom:
               secretKeyRef:
-                name: ldap-workflowexec-user
+                name: pg-user-workflowexec
                 key: password
 
     # Get the latest file from the S3 bucket
@@ -174,10 +174,10 @@ spec:
           - name: PGUSER
             valueFrom:
               secretKeyRef:
-                name: ldap-workflowexec-user
+                name: pg-user-workflowexec
                 key: username
           - name: PGPASSWORD
             valueFrom:
               secretKeyRef:
-                name: ldap-workflowexec-user
+                name: pg-user-workflowexec
                 key: password

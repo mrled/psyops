@@ -172,8 +172,8 @@ kpsql() {
     local user="$2"
     local cluster="$3"
     shift 3
-    local PGUSER="$(kubectl get secret -n "$namespace" "user-$user" -ojson | jq -r '.data.username | @base64d')"
-    local PGPASSWORD="$(kubectl get secret -n "$namespace" "user-$user" -ojson | jq -r '.data.password | @base64d')"
+    local PGUSER="$(kubectl get secret -n "$namespace" "pg-user-$user" -ojson | jq -r '.data.username | @base64d')"
+    local PGPASSWORD="$(kubectl get secret -n "$namespace" "pg-user-$user" -ojson | jq -r '.data.password | @base64d')"
     local PGDATABASE="$(kubectl get cluster -n "$namespace" "$cluster" -ojson | jq -r '.spec.bootstrap.initdb.database')"
     kubectl run -n "$namespace" psql-client --rm --env=PGUSER="$PGUSER" --env=PGPASSWORD="$PGPASSWORD" --env=PGDATABASE="$PGDATABASE" -it --image=postgres -- psql -h "${cluster}-rw" "$@"
 }
