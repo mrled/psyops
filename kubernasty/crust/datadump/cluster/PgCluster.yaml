@@ -9,6 +9,8 @@ metadata:
 spec:
   instances: 3
 
+  enableSuperuserAccess: true
+
   # https://cloudnative-pg.io/documentation/1.25/bootstrap
   # This is ONLY run when the cluster is created.
   bootstrap:
@@ -59,3 +61,10 @@ spec:
         inherit: true # inherit permissions from the roles that it's a member of
         inRoles:
           - datadump_manage
+      - name: pgbouncer
+        login: true
+        passwordSecret:
+          name: pg-user-pgbouncer
+        inherit: true
+        inRoles:
+          - pgbouncer_auth
