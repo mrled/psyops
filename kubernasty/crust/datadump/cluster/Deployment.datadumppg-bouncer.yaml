@@ -23,14 +23,14 @@ spec:
         - name: pgbouncer
           image: bitnami/pgbouncer:latest
           ports:
-            - containerPort: 543211
+            - containerPort: 54321
               name: wildcard-tls
           env:
-            # Listen externally on port 543211 with TLS
+            # Listen externally on port 54321 with TLS
             - name: PGBOUNCER_LISTEN_ADDRESS
               value: "0.0.0.0"
             - name: PGBOUNCER_LISTEN_PORT
-              value: "543211"
+              value: "54321"
 
             # Require that incoming connections to PgBouncer use TLS
             - name: PGBOUNCER_CLIENT_TLS_SSLMODE

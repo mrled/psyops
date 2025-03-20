@@ -11,4 +11,4 @@ spec:
       services:
         - name: datadumppg-bouncer
           namespace: datadump
-          port: 543211
+          port: 54321

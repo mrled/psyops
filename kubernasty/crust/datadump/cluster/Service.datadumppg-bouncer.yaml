@@ -9,5 +9,5 @@ spec:
     app: datadumppg-bouncer
   ports:
     - protocol: TCP
-      port: 543211
-      targetPort: 543211
+      port: 54321
+      targetPort: 54321
