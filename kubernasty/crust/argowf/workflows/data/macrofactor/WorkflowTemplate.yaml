@@ -1,0 +1,183 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: data-macrofactor
+  namespace: argowf
+spec:
+  serviceAccountName: argowf-executor
+  entrypoint: main
+  ttlStrategy:
+    secondsAfterSuccess: 3600 # 1h
+    secondsAfterFailure: 86400 # 24h
+
+  templates:
+    - name: main
+      dag:
+        tasks:
+          - name: find-latest-file
+            template: find-latest-file
+
+          - name: check-file-processed
+            dependencies: [find-latest-file]
+            template: check-file-processed
+            arguments:
+              parameters:
+                - name: latestkey
+                  value: "{{tasks.find-latest-file.outputs.parameters.latestkey}}"
+
+          # The next tasks only run if check-file-processed indicates that the file is not yet processed.
+          - name: download-file
+            dependencies: [check-file-processed]
+            when: "{{tasks.check-file-processed.outputs.result}} == False"
+            template: download-file
+            arguments:
+              parameters:
+                - name: latestkey
+                  value: "{{tasks.find-latest-file.outputs.parameters.latestkey}}"
+
+          - name: process-file
+            dependencies: [download-file]
+            template: process-file
+            arguments:
+              parameters:
+                - name: latestkey
+                  value: "{{tasks.find-latest-file.outputs.parameters.latestkey}}"
+              artifacts:
+                - name: macrofactor-file
+                  from: "{{tasks.download-file.outputs.artifacts.macrofactor-file}}"
+
+    # Find the latest file stored in the S3 bucket
+    - name: find-latest-file
+      script:
+        image: amazon/aws-cli:2.12.6
+        command: [bash]
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: data-pipeline-manual-input
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: data-pipeline-manual-input
+                key: AWS_SECRET_ACCESS_KEY
+          # # Adjust region if needed
+          # - name: AWS_DEFAULT_REGION
+          #   value: "us-east-1"
+        source: |
+          set -eux
+
+          # Lists all objects under MacroFactor/ prefix, sorted by date/time,
+          # then picks the last line as the newest
+          LATEST_KEY=$(aws s3 ls --endpoint-url "https://objects.micahrl.me" s3://data-pipeline-manual-input/MacroFactor/ \
+              | sort \
+              | tail -n 1 \
+              | awk '{print $4}')
+
+          echo "Found latest key: $LATEST_KEY"
+          echo -n "$LATEST_KEY" > /tmp/latest_key.txt
+      outputs:
+        parameters:
+          - name: latestkey
+            valueFrom:
+              path: /tmp/latest_key.txt
+
+    # Determine if the latest file has been processed
+    - name: check-file-processed
+      inputs:
+        parameters:
+          - name: latestkey
+      container:
+        image: gitea.micahrl.me/kubernasty/knpl-macrofactor:latest
+        command:
+          - "/usr/bin/knpl_macrofactor"
+          - "check-processed"
+          - "--file-key"
+          - "{{inputs.parameters.latestkey}}"
+        env:
+          - name: PGHOST
+            value: "datadumppg-rw.datadump.svc.cluster.local"
+          - name: PGDATABASE
+            value: "datadump"
+          - name: PGPORT
+            value: "5432"
+          - name: PGUSER
+            valueFrom:
+              secretKeyRef:
+                name: ldap-workflowexec-user
+                key: username
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ldap-workflowexec-user
+                key: password
+
+    # Get the latest file from the S3 bucket
+    - name: download-file
+      inputs:
+        parameters:
+          - name: latestkey
+      container:
+        image: amazon/aws-cli:2.12.6
+        command: ["/bin/sh", "-c"]
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: data-pipeline-manual-input
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: data-pipeline-manual-input
+                key: AWS_SECRET_ACCESS_KEY
+          - name: AWS_DEFAULT_REGION
+            value: "us-east-1"
+          - name: LATEST_KEY
+            value: "{{inputs.parameters.latestkey}}"
+        args:
+          - |
+            set -eux
+            echo "Downloading s3://data-pipeline-manual-input/MacroFactor/$LATEST_KEY..."
+            aws s3 cp \
+              --endpoint-url "https://objects.micahrl.me" \
+              "s3://data-pipeline-manual-input/MacroFactor/$LATEST_KEY" \
+              /tmp/macrofactor.xlsx
+      outputs:
+        artifacts:
+          - name: macrofactor-file
+            path: /tmp/macrofactor.xlsx
+
+    # Process the XLSX file
+    - name: process-file
+      inputs:
+        parameters:
+          - name: latestkey
+        artifacts:
+          - name: macrofactor-file
+            path: /tmp/macrofactor.xlsx
+      script:
+        image: gitea.micahrl.me/kubernasty/knpl-macrofactor:latest
+        command: [sh]
+        source: |
+          set -eux
+          /usr/bin/knpl_macrofactor import-xlsx --xlsx-file /tmp/macrofactor.xlsx
+          /usr/bin/knpl_macrofactor mark-processed --file-key "{{inputs.parameters.latestkey}}"
+        env:
+          - name: PGHOST
+            value: "datadumppg-rw.datadump.svc.cluster.local"
+          - name: PGDATABASE
+            value: "datadump"
+          - name: PGPORT
+            value: "5432"
+          - name: PGUSER
+            valueFrom:
+              secretKeyRef:
+                name: ldap-workflowexec-user
+                key: username
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ldap-workflowexec-user
+                key: password

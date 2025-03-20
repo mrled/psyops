@@ -4,9 +4,11 @@ resources:
   - ./RBAC.argowf-executor.yaml
   - ./RBAC.argowf-sensor.yaml
   - ./ConfigMap.gitea-ssh-host-keys-pub.yaml
+  - ./ObjectBucketClaim.data-pipeline-manual-input.yaml
   - ./Secret.argowf-ssh.yaml
   - ./Secret.gitea-workflowexec-token.yaml
   - ./Secret.gitea-workflowexec-user.yaml
   - ./Secret.gitea-registry-creds-workflowexec.yaml
+  - ./Secret.ldap-workflowexec-user.yaml
   - ./EventBus.yaml
   - ./EventSource.webhook.yaml

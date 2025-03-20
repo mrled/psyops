@@ -1,0 +1,18 @@
+# A bucket for manually uploading data to a pipeline
+#
+# E.g. Apple Health data cannot be automatically downloaded,
+# so I have to manually upload it to this bucket.
+#
+# Use the kaws_bucketclaim function in cluster.sh to make this a little easier.
+# It will pull the key/secert from Kubernetes and upload it to the bucket.
+# For example:
+#   kaws_bucketclaim argowf data-pipeline-manual-input s3 cp /Volumes/DataDisk/mrldata/Syncthing/HoradricCube/HoradricDownloads/MacroFactor-20250309142936.xlsx  s3://data-pipeline-manual-input/MacroFactor/
+
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: data-pipeline-manual-input
+  namespace: argowf
+spec:
+  bucketName: data-pipeline-manual-input
+  storageClassName: cephalopodobj-nvme-3rep
