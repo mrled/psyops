@@ -9,6 +9,6 @@ spec:
   routes:
     - match: HostSNI(`*`)
       services:
-        - name: datadumppg-rw
+        - name: datadumppg-bouncer
           namespace: datadump
-          port: 5432
+          port: 543211

@@ -40,6 +40,21 @@ spec:
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO datadump_write;
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO datadump_manage;
 
+        # Create a role for pgbouncer that allows it to authenticate users
+        - CREATE ROLE pgbouncer_auth;
+        - CREATE SCHEMA pgbouncer AUTHORIZATION pgbouncer_auth;
+        - GRANT CONNECT ON DATABASE datadump TO pgbouncer_auth;
+        - GRANT SELECT ON pg_shadow TO pgbouncer_auth;
+        - |+
+          CREATE FUNCTION pgbouncer.get_auth(username TEXT)
+          RETURNS TABLE(username TEXT, password TEXT) AS
+          $$
+          SELECT usename::TEXT, passwd::TEXT FROM pg_shadow WHERE usename = username;
+          $$
+          LANGUAGE sql SECURITY DEFINER;
+        # - CREATE VIEW pgbouncer.auth AS SELECT * FROM pgbouncer.get_auth('');
+        - GRANT SELECT ON pgbouncer.auth TO pgbouncer_auth;
+
   storage:
     size: 50Gi
     # Use minimal replication for the block storage (2rep means 2 replicas)

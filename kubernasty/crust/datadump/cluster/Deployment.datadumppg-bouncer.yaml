@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datadumppg-bouncer
+  cluster: datadump
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: datadumppg-bouncer
+  template:
+    metadata:
+      labels:
+        app: datadumppg-bouncer
+
+    spec:
+      volumes:
+        - name: wildcard-tls
+          secret:
+            secretName: kubernasty-wildcard-backing-secret # <-- A Secret containing tls.crt, tls.key, ca.crt
+
+      containers:
+        - name: pgbouncer
+          image: bitnami/pgbouncer:latest
+          ports:
+            - containerPort: 543211
+              name: wildcard-tls
+          env:
+            # Listen externally on port 543211 with TLS
+            - name: PGBOUNCER_LISTEN_ADDRESS
+              value: "0.0.0.0"
+            - name: PGBOUNCER_LISTEN_PORT
+              value: "543211"
+
+            # Require that incoming connections to PgBouncer use TLS
+            - name: PGBOUNCER_CLIENT_TLS_SSLMODE
+              value: require
+            - name: PGBOUNCER_SERVER_TLS_CERT_FILE
+              value: "/etc/pgbouncer/tls/tls.crt"
+            - name: PGBOUNCER_SERVER_TLS_KEY_FILE
+              value: "/etc/pgbouncer/tls/tls.key"
+            - name: PGBOUNCER_SERVER_TLS_CA_FILE
+              value: "/etc/pgbouncer/tls/ca.crt"
+
+            # Allow PgBouncer to connect to the remote DB using TLS or not
+            - name: PGBOUNCER_SERVER_TLS_SSLMODE
+              value: prefer
+
+            - name: PGBOUNCER_AUTH_TYPE
+              value: "scram-sha-256"
+
+            - name: POSTGRESQL_HOST
+              value: "datadumppg.datadump.svc.cluster.local"
+            - name: POSTGRESQL_PORT
+              value: "5432"
+            - name: POSTGRESQL_DATABASE
+              value: "datadump"
+
+            # For dynamic user auth, define the special user & auth query
+            - name: PGBOUNCER_AUTH_USER
+              value: "pgbouncer"
+            - name: PGBOUNCER_AUTH_QUERY
+              value: "SELECT usename, passwd FROM pgbouncer.get_auth($1)"
+
+            # This is PgBouncer's own default connection user/password
+            # Must match the 'pgbouncer' role you created (inheriting from pgbouncer_auth).
+            - name: POSTGRESQL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: pg-user-pgbouncer
+                  key: username
+            - name: POSTGRESSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pg-user-pgbouncer
+                  key: password
+
+          volumeMounts:
+            - name: wildcard-tls
+              mountPath: /etc/pgbouncer/tls
+              readOnly: true

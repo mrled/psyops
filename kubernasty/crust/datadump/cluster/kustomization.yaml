@@ -5,5 +5,9 @@ resources:
   - ./ConfigMap.kubernasty-ca-root-cert.yaml
   - ./Secret.authenticator.yaml
   - ./Secret.pg-user-datadump.yaml
+  - ./Secret.pg-user-pgbouncer.yaml
   - ./Secret.pg-user-workflowexec.yaml
   - ./PgCluster.yaml
+
+  - ./Deployment.datadumppg-bouncer.yaml
+  - ./Service.datadumppg-bouncer.yaml
