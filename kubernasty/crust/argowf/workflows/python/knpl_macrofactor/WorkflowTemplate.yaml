@@ -24,6 +24,9 @@ spec:
     - name: gitea-ssh-host-keys-pub
       configMap:
         name: gitea-ssh-host-keys-pub
+    - name: gitea-registry-creds-workflowexec
+      secret:
+        secretName: gitea-registry-creds-workflowexec
 
   templates:
     - name: build-and-push-python
@@ -33,7 +36,7 @@ spec:
             template: checkout-repo
           - name: build-push-docker
             template: build-push-docker
-            dependencies: [version]
+            dependencies: [checkout]
 
     # Checkout from Gitea
     - name: checkout-repo
@@ -65,17 +68,14 @@ spec:
       container:
         image: gcr.io/kaniko-project/executor:latest
         args:
-          - "--dockerfile=/workspace/Dockerfile"
-          - "--context=/workspace"
-          - "--destination=gitea.gitea.svc.cluster.local:3000/kubernasty/knpl-macrofactor:latest"
-          - "--insecure=true"
-          - "--skip-tls-verify=true"
-        env:
-          - name: DOCKER_AUTH_CONFIG
-            valueFrom:
-              secretKeyRef:
-                name: gitea-registry-creds-workflowexec
-                key: .dockerconfigjson
+          - "--dockerfile=/workspace/psyops/pipelines/macrofactor/Dockerfile"
+          - "--context=/workspace/psyops/pipelines/macrofactor"
+          - "--destination=gitea.micahrl.me/kubernasty/knpl-macrofactor:latest"
+          # - "--insecure=true"
+          # - "--skip-tls-verify=true"
         volumeMounts:
           - name: workspace
             mountPath: /workspace
+          - name: gitea-registry-creds-workflowexec
+            subPath: .dockerconfigjson
+            mountPath: /kaniko/.docker/config.json
