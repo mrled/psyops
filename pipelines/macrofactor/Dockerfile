@@ -1,35 +1,31 @@
-FROM ghcr.io/astral-sh/uv:debian
+# A small docker container that contains knpl_macrofactor code.
+#
+# * Installing psycopg2-binary requires debian (doesn't work on musl)
+# * Installing psycopg2 from source requiers a build environment etc
+# * debian UV image was like 1.5GB? How is that possible
+# * py3-pip would be 18MB, we sidestep that with the zipapp
+# * Ensure .dockerignore keeps out everything
+# * py3-pandas is huge, but we can remove 20MB (!!) of included tests
+#   (as of py3-pandas-2.2.3-r0)
+# * py3-openpyxl and py3-numpy are also big
+
+FROM alpine:latest
 LABEL maintainer "me@micahrl.com"
 
 WORKDIR /app
 
-# Enable bytecode compilation
-ENV UV_COMPILE_BYTECODE=1
-
-# Copy from the cache instead of linking since it's a mounted volume
-ENV UV_LINK_MODE=copy
-
-# Install the project's dependencies using the lockfile and settings
-ADD ["uv.lock", "pyproject.toml", "./"]
+# Install (and cache) the deps first
 RUN true \
-    && pwd \
-    && ls -alF \
-    && uv sync --frozen --no-install-project --no-dev \
-    && rm -rf /root/.cache/uv \
+    && apk add --no-cache python3 py3-psycopg2 py3-pandas py3-openpyxl \
+    && rm -rf /usr/lib/python3.12/site-pacakges/pandas/tests \
     && true
 
-# Then, add the rest of the project source code and install it
-# Installing separately from its dependencies allows optimal layer caching
+# Install the app itself
 ADD . /app
 RUN true \
-    && pwd \
-    && ls -alF \
-    && uv sync --frozen --no-dev \
-    && rm -rf /root/.cache/uv \
+    && find . \
+    && python3 -m zipapp src -o /usr/bin/knpl_macrofactor -m "knpl_macrofactor.cli:main" -p "/usr/bin/env python3" \
     && true
 
-# Place executables in the environment at the front of the path
-ENV PATH="/app/.venv/bin:$PATH"
-
 # Reset the entrypoint, don't invoke `uv`
-ENTRYPOINT ["/app/.venv/bin/knpl_macrofactor"]
+ENTRYPOINT ["/usr/bin/knpl_macrofactor"]

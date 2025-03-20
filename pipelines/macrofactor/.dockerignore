@@ -1,1 +1,6 @@
 .venv
+**/*.pyc
+**/*.egg-info
+**/__pycache__
+dist
+**/*.pyz
