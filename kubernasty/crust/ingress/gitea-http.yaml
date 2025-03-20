@@ -15,8 +15,8 @@ spec:
           kind: Service
           port: 80
       middlewares:
-        - name: authelia
-          namespace: authelia
+        # - name: authelia
+        #   namespace: authelia
         - name: redirect-to-https
           namespace: traefik
   tls:
