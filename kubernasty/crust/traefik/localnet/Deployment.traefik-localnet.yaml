@@ -26,6 +26,8 @@ spec:
               containerPort: 8080
             - name: ssh
               containerPort: 22
+            - name: postgres
+              containerPort: 5432
           args:
             - --api.insecure=true
             - --log.level=DEBUG
@@ -42,3 +44,4 @@ spec:
             # - --entryPoints.websecure.forwardedHeaders.insecure=false
             # - --entryPoints.websecure.proxyProtocol.insecure=false
             - --entrypoints.ssh.address=:22
+            - --entrypoints.postgres.address=:5432

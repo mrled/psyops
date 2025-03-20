@@ -16,3 +16,4 @@ resources:
   - ./kubernetes.yaml
   - ./argowf.yaml
   - ./argocd.yaml
+  - ./datadump-postgres.yaml
