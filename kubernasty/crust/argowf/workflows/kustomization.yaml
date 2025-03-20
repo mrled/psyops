@@ -4,5 +4,5 @@ resources:
   # Common resources across workflows
   - ./common
 
+  - ./build/knpl_macrofactor
   - ./data/macrofactor
-  - ./python/knpl_macrofactor
