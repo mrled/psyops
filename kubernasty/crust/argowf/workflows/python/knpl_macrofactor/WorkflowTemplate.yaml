@@ -1,11 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: python-knpl-macrofactor
+  name: build-knpl-macrofactor
   namespace: argowf
 spec:
-  entrypoint: build-and-push-python
   serviceAccountName: argowf-executor
+  entrypoint: main
+  ttlStrategy:
+    secondsAfterSuccess: 3600 # 1h
+    secondsAfterFailure: 86400 # 24h
 
   volumeClaimTemplates:
     - metadata:
@@ -29,7 +32,7 @@ spec:
         secretName: gitea-registry-creds-workflowexec
 
   templates:
-    - name: build-and-push-python
+    - name: main
       dag:
         tasks:
           - name: checkout
@@ -64,6 +67,8 @@ spec:
             mountPath: /gitea-ssh-host-keys-pub
 
     # Build the Docker image
+    # This always pushes the latest, which is fine for this container,
+    # and has the upside of not needing a cleanup policy.
     - name: build-push-docker
       container:
         image: gcr.io/kaniko-project/executor:latest
@@ -71,8 +76,6 @@ spec:
           - "--dockerfile=/workspace/psyops/pipelines/macrofactor/Dockerfile"
           - "--context=/workspace/psyops/pipelines/macrofactor"
           - "--destination=gitea.micahrl.me/kubernasty/knpl-macrofactor:latest"
-          # - "--insecure=true"
-          # - "--skip-tls-verify=true"
         volumeMounts:
           - name: workspace
             mountPath: /workspace

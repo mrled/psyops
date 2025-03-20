@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
-  name: python-knpl-macrofactor
+  name: sensor-build-knpl-macrofactor
   namespace: argowf
 spec:
   template:
@@ -83,8 +83,8 @@ spec:
               apiVersion: argoproj.io/v1alpha1
               kind: Workflow
               metadata:
-                generateName: build-python-knpl-macrofactor-
+                generateName: wf-build-knpl-macrofactor
                 namespace: argowf
               spec:
                 workflowTemplateRef:
-                  name: python-knpl-macrofactor
+                  name: build-knpl-macrofactor
