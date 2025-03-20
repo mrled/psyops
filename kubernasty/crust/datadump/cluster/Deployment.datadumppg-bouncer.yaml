@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: datadumppg-bouncer
-  cluster: datadump
+  namespace: datadump
 spec:
   replicas: 1
   selector:
