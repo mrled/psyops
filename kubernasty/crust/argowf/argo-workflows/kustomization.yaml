@@ -20,7 +20,7 @@ resources:
   - ./ObjectBucketClaim.argowf-artifacts.yaml
   - ./rbac/argowf-admin.yaml
   - ./rbac/argowf-user.yaml
-  - ./reflect-argowf-artifacts-secret.yaml
+  - ./rbac/reflect-argowf-artifacts-secret.yaml
   - ./Job.reflect-argowf-artifacts-secret.yaml
 
   # Apply the release kustomization

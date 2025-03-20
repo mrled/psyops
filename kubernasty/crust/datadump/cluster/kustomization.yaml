@@ -4,6 +4,6 @@ resources:
   - ./Namespace.yaml
   - ./ConfigMap.kubernasty-ca-root-cert.yaml
   - ./Secret.authenticator.yaml
-  - ./Secret.user-datadump.yaml
-  - ./Secret.user-workflowexec.yaml
+  - ./Secret.pg-user-datadump.yaml
+  - ./Secret.pg-user-workflowexec.yaml
   - ./PgCluster.yaml
