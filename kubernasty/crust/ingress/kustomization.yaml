@@ -4,6 +4,7 @@ resources:
   - ./Namespace.yaml
   - ./authelia.yaml
   - ./grafana.yaml
+  - ./labnotes.yaml
   - ./startpage.yaml
   - ./whoami-unauthenticated.yaml
   - ./whoami-authenticated.yaml

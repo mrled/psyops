@@ -1,0 +1,90 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: sensor-build-labnotes
+  namespace: argowf
+spec:
+  template:
+    serviceAccountName: argowf-sensor
+    container:
+      env:
+        - name: LOG_LEVEL
+          value: "debug"
+
+  dependencies:
+    - name: gitea-webhook-dep
+      eventSourceName: webhook
+      eventName: gitea-webhook
+      filters:
+        # All of the data filters must match
+        dataLogicalOperator: "and"
+
+        # The data syntax is insane and basically undocumented.
+        data:
+          # Match on kubernasty/psyops repo
+          - path: body.repository.full_name
+            type: string
+            value:
+              - "kubernasty/psyops"
+
+          # At least one of the modified/created/deleted files
+          # has to be in /kubernasty/labnotes/
+          # https://github.com/argoproj/argo-events/issues/1127
+          # https://github.com/argoproj/argo-events/issues/1097
+          #
+          # Original docs on this syntax:
+          # https://github.com/argoproj/argo-events/pull/1130/files
+          # That seems to have been lost from the current docs?
+          # Made an issue to suggest that:
+          # https://github.com/argoproj/argo-events/issues/3525
+          #
+          # The path attribute is using GJSON Path Syntax
+          # https://github.com/tidwall/gjson/blob/master/SYNTAX.md#multipaths
+          #
+          # The value attribute should be a single value (?) using Go regexp syntax
+          # https://pkg.go.dev/regexp/syntax
+          #
+          # The Gitea webhook mostly is GitHub compatible.
+          # Both send a rather large JSON payload, including a list of commits
+          # and a list of files modified/added/removed in each.
+          # So our GJSON path value will parse a payload like this one (heavily truncated):
+          # {
+          #   "body": {
+          #     "commits": [
+          #       {
+          #         "modified": [
+          #           "kubernasty/labnotes/README.md",
+          #          ]
+          #       }
+          #     ]
+          #   }
+          # }
+          # into a JSON list of all the files modified/added/removed, like this:
+          # ["kubernasty/labnotes/README.md"]
+          #
+          # The Go regexp then acts on THAT RESULT.
+          #
+          # With that in mind, we can write regexps that assume a double-quote
+          # marks the beginning and end of a filename.
+          # I do not bother trying to be robust enough to handle filenames with double quotes in them,
+          # if your repo has that GFYS.
+          - path: "[body.commits.#.modified.@flatten,body.commits.#.added.@flatten,body.commits.#.removed.@flatten].@flatten.@flatten"
+            type: string
+            value:
+              - '"kubernasty/labnotes/.*"'
+
+  triggers:
+    - template:
+        name: argo-workflow-trigger
+        argoWorkflow:
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: wf-build-labnotes-
+                namespace: argowf
+              spec:
+                workflowTemplateRef:
+                  name: build-labnotes

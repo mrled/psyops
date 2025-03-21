@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: labnotes
+  namespace: labnotes
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: labnotes
+  template:
+    metadata:
+      labels:
+        app: labnotes
+    spec:
+      containers:
+        - name: labnotes
+          image: gitea.micahrl.me/kubernasty/labnotes:latest
+          ports:
+            - containerPort: 80

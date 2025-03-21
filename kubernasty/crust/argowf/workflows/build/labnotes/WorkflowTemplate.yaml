@@ -1,0 +1,103 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: build-labnotes
+  namespace: argowf
+spec:
+  serviceAccountName: argowf-executor
+  entrypoint: main
+  ttlStrategy:
+    secondsAfterSuccess: 3600 # 1h
+    secondsAfterFailure: 86400 # 24h
+
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: cephalopodblk-nvme-2rep
+
+  volumes:
+    - name: argowf-ssh
+      secret:
+        secretName: argowf-ssh
+    - name: gitea-ssh-host-keys-pub
+      configMap:
+        name: gitea-ssh-host-keys-pub
+    - name: gitea-registry-creds-workflowexec
+      secret:
+        secretName: gitea-registry-creds-workflowexec
+
+  templates:
+    - name: main
+      dag:
+        tasks:
+          - name: checkout
+            template: checkout
+          - name: build-hugo
+            template: build-hugo
+            dependencies: [checkout]
+
+    # Checkout from Gitea
+    - name: checkout
+      container:
+        image: alpine/git
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            set -eux
+            whoami
+            mkdir -p ~/.ssh
+            echo "gitea.micahrl.me $(cat /gitea-ssh-host-keys-pub/gitea.ed25519.pub)" > ~/.ssh/known_hosts
+            cp /ssh/identity ~/.ssh/identity
+            chmod 0600 ~/.ssh/identity
+            git clone git@gitea.micahrl.me:kubernasty/psyops.git /workspace/psyops
+        env:
+          - name: GIT_SSH_COMMAND
+            value: "ssh -i $HOME/.ssh/identity -o StrictHostKeyChecking=yes"
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+          - name: argowf-ssh
+            mountPath: /ssh
+          - name: gitea-ssh-host-keys-pub
+            mountPath: /gitea-ssh-host-keys-pub
+
+    # Build the site with Hugo
+    - name: build-hugo
+      container:
+        image: hugomods/hugo:ci-non-root
+        args: [build, --environment, kubernasty]
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+
+    # Build the Docker image
+    # This always pushes the latest, which is fine for this container,
+    # and has the upside of not needing a cleanup policy.
+    - name: build-push-docker
+      container:
+        image: gcr.io/kaniko-project/executor:latest
+        args:
+          - "--dockerfile=/workspace/psyops/kubernasty/labnotes/Dockerfile"
+          - "--context=/workspace/psyops/kubernasty/labnotes"
+          - "--destination=gitea.micahrl.me/kubernasty/labnotes:latest"
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+          - name: gitea-registry-creds-workflowexec
+            subPath: .dockerconfigjson
+            mountPath: /kaniko/.docker/config.json
+
+    # Redeploy the labnotes service
+    - name: deploy-pods
+      container:
+        image: bitnami/kubectl:latest
+        command: [/bin/sh, -c]
+        args:
+          - |+
+            set -eux
+            kubectl rollout restart deployment labnotes -n labnotes
