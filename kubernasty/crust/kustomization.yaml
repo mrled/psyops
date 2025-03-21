@@ -35,3 +35,4 @@ resources:
   - ./gitea
   - ./datadump
   - ./grafana
+  - ./labnotes
