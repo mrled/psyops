@@ -73,7 +73,8 @@ spec:
         args: [build, --environment, kubernasty]
         volumeMounts:
           - name: workspace
-            mountPath: /workspace
+            # /src is the default PWD for this Hugo image
+            mountPath: /src
 
     # Build the Docker image
     # This always pushes the latest, which is fine for this container,
