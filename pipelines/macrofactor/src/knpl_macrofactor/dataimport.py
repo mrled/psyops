@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import pandas as pd
 from psycopg2 import sql
 
@@ -41,12 +42,12 @@ SCHEMA_MAP = {
         "Saturated_Fat__g": "FLOAT",
         "Trans_Fat__g": "FLOAT",
         "Vitamin_A__mcg": "FLOAT",
-        "B1__Thiamine__mg": "FLOAT",
-        "B2__Riboflavin__mg": "FLOAT",
-        "B3__Niacin__mg": "FLOAT",
-        "B5__Pantothenic_Acid__mg": "FLOAT",
-        "B6__Pyridoxine__mg": "FLOAT",
-        "B12__Cobalamin__mcg": "FLOAT",
+        "B1_Thiamine__mg": "FLOAT",
+        "B2_Riboflavin__mg": "FLOAT",
+        "B3_Niacin__mg": "FLOAT",
+        "B5_Pantothenic_Acid__mg": "FLOAT",
+        "B6_Pyridoxine__mg": "FLOAT",
+        "B12_Cobalamin__mcg": "FLOAT",
         "Folate__mcg": "FLOAT",
         "Vitamin_C__mg": "FLOAT",
         "Vitamin_D__mcg": "FLOAT",
@@ -112,7 +113,7 @@ SCHEMA_MAP = {
 SHEET_TO_TABLE = {
     "Calories & Macros": "calories_macros",
     "Micronutrients": "micronutrients",
-    "Scale weight": "scale_weight",
+    "Scale Weight": "scale_weight",
     "Body Metrics": "body_metrics",
     "Weight Trend": "weight_trend",
     "Expenditure": "expenditure",
@@ -127,26 +128,44 @@ def ensure_table_and_columns(cursor, table_name, columns_map):
     pk_cols = [col for col, dtype in columns_map.items() if "PRIMARY KEY" in dtype]
     col_defs = []
     for col, dtype in columns_map.items():
-        base_type = dtype.replace("PRIMARY KEY", "").strip()
-        col_defs.append(f"{col} {base_type}")
-    pk_clause = f", PRIMARY KEY ({', '.join(pk_cols)})" if pk_cols else ""
-    create_sql = (
-        f"CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(col_defs)}{pk_clause});"
-    )
-    logging.debug(
-        "Ensuring table '%s' exists with columns: %s",
-        table_name,
-        list(columns_map.keys()),
-    )
+        # base_type = dtype.replace("PRIMARY KEY", "").strip()
+        base_type = dtype
+        col_defs.append(f"{quote(col)} {base_type}")
+    # pk_clause = f", PRIMARY KEY ({', '.join(pk_cols)})" if pk_cols else ""
+    # create_sql = (
+    #     f"CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(col_defs)}{pk_clause});"
+    # )
+    create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({', '.join(col_defs)});"
+    logging.debug(f"Ensuring table '{table_name}' exists: {create_sql}")
     cursor.execute(create_sql)
 
     # Add columns that might be missing
     for col, dtype in columns_map.items():
         base_type = dtype.replace("PRIMARY KEY", "").strip()
+        # base_type = dtype
         alter_sql = (
-            f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {col} {base_type};"
+            f'ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS "{col}" {base_type};'
         )
+
+        logging.info(f"Ensuring column '{col}' exists: {alter_sql}")
         cursor.execute(alter_sql)
+
+
+def quote(identifier):
+    """Returns the identifier quoted for use in SQL."""
+    return f'"{identifier}"'
+
+
+def coerce(val):
+    """Coerce row values into what the database needs"""
+    if pd.isna(val):
+        return None
+    # The database can't handle numpy dates, so convert to Python dates
+    if isinstance(val, np.datetime64):
+        return pd.to_datetime(val).date()  # or .to_pydatetime() if datetime
+    if isinstance(val, pd.Timestamp):
+        return val.date()  # or val.to_pydatetime()
+    return val
 
 
 def import_xlsx(args):
@@ -188,6 +207,7 @@ def import_xlsx(args):
                         col.strip()
                            .replace(" ", "_")
                            .replace(",", "")
+                           .replace("-", "_")
                            .replace("(", "")
                            .replace(")", "")
                            .replace("__", "_")  # unify repeated underscores
@@ -196,6 +216,7 @@ def import_xlsx(args):
                            .replace("_lbs", "__lbs")
                            .replace("_mcg", "__mcg")
                            .replace("_mg", "__mg")
+                           .replace("_kcal", "__kcal")
                     )
 
                 df.columns = [normalize(c) for c in df.columns]
@@ -204,23 +225,25 @@ def import_xlsx(args):
                 ensure_table_and_columns(cursor, table_name, SCHEMA_MAP[table_name])
 
                 # Prepare upsert statement
+                # Note: Postgres will automatically lower case any unquoted identifiers like column names (ayfkm)
                 cols = list(df.columns)
                 placeholders = ", ".join(["%s"] * len(cols))
-                col_list = ", ".join(cols)
-                update_clause = ", ".join([f"{c} = EXCLUDED.{c}" for c in cols if c != "Date"])
+                col_list = ", ".join([quote(c) for c in cols])
+                update_clause = ", ".join([f"{quote(c)} = EXCLUDED.{quote(c)}" for c in cols if c != "Date"])
 
                 upsert_sql = sql.SQL(
                     f"""
-                    INSERT INTO {table_name} ({col_list})
+                    INSERT INTO {quote(table_name)} ({col_list})
                     VALUES ({placeholders})
-                    ON CONFLICT (Date)
+                    ON CONFLICT ({quote('Date')})
                     DO UPDATE SET {update_clause};
-                """
+                    """
                 )
 
                 row_count = 0
                 for _, row_data in df.iterrows():
-                    row_vals = [None if pd.isna(x) else x for x in row_data.values]
+                    row_vals = [coerce(x) for x in row_data.values]
+                    logging.debug(f"Upserting row: {row_vals}")
                     cursor.execute(upsert_sql, row_vals)
                     row_count += 1
 
