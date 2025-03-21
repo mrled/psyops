@@ -127,23 +127,23 @@ data:
     replace: nsslapd-errorlog-maxlogsperdir
     nsslapd-errorlog-maxlogsperdir: 5
 
-  config.securityLog.ldif: |+
-    dn: cn=config
-    changetype: modify
-    replace: nsslapd-securitylog-level
-    nsslapd-security-log-level: 256
-    -
-    replace: nsslapd-securitylog-logging-enabled
-    nsslapd-security-log-logging-enabled: on
-    -
-    replace: nsslapd-securitylog
-    nsslapd-security-log: /data/logs/security
-    -
-    replace: nsslapd-securitylog-maxlogsize
-    nsslapd-security-log-maxlogsize: 10
-    -
-    replace: nsslapd-securitylog-maxlogsperdir
-    nsslapd-security-log-maxlogsperdir: 5
+  # config.securityLog.ldif: |+
+  #   dn: cn=config
+  #   changetype: modify
+  #   replace: nsslapd-securitylog-level
+  #   nsslapd-security-log-level: 256
+  #   -
+  #   replace: nsslapd-securitylog-logging-enabled
+  #   nsslapd-security-log-logging-enabled: on
+  #   -
+  #   replace: nsslapd-securitylog
+  #   nsslapd-security-log: /data/logs/security
+  #   -
+  #   replace: nsslapd-securitylog-maxlogsize
+  #   nsslapd-security-log-maxlogsize: 10
+  #   -
+  #   replace: nsslapd-securitylog-maxlogsperdir
+  #   nsslapd-security-log-maxlogsperdir: 5
 
   # TODO: arguably the permissions should be set at the group level
   # Note that the userdn specified here does not need to exist yet
