@@ -126,9 +126,6 @@ data:
     -
     replace: nsslapd-errorlog-maxlogsperdir
     nsslapd-errorlog-maxlogsperdir: 5
-    -
-    replace: nsslapd-errorlog-logbuffering
-    nsslapd-errorlog-logbuffering: off
 
   config.securityLog.ldif: |+
     dn: cn=config
@@ -147,9 +144,6 @@ data:
     -
     replace: nsslapd-securitylog-maxlogsperdir
     nsslapd-security-log-maxlogsperdir: 5
-    -
-    replace: nsslapd-securitylog-logbuffering
-    nsslapd-security-log-logbuffering: on
 
   # TODO: arguably the permissions should be set at the group level
   # Note that the userdn specified here does not need to exist yet
