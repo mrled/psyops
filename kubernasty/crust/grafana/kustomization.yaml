@@ -6,6 +6,7 @@ resources:
   - ./ConfigMap.grafana-values.yaml
   - ./ConfigMap.grafana-ldap.yaml
   - ./Secret.grafana-admin-creds.yaml
+  - ./ConfigMap.kubernasty-ca-root-cert.yaml
   - ./Secret.authenticator.yaml
 
   - ./datasources/ConfigMap.source-datadump.yaml

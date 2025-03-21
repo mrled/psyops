@@ -4,19 +4,22 @@ metadata:
   name: grafana-ldap
   namespace: grafana
 data:
+  # REMINDER: this is a toml file, you have to quote all strings
   ldap.toml: |+
 
     [[servers]]
-    host = dirsrv.directory.svc.cluster.local
+    host = "dirsrv.directory.svc.cluster.local"
     port = 636
     use_ssl = true
     start_tls = false
     ssl_skip_verify = false
 
+    root_ca_cert = "/etc/kubernasty-ca/ca.crt"
+
     bind_dn = "uid=authenticator,ou=services,dc=micahrl,dc=me"
     bind_password = "${LDAP_BIND_PASSWORD}"
 
-    search_filter = (&(objectClass=inetOrgPerson)(memberOf=cn=grafana-users,ou=groups,dc=micahrl,dc=me)(uid=%s))
+    search_filter = "(&(objectClass=inetOrgPerson)(memberOf=cn=grafana-users,ou=groups,dc=micahrl,dc=me)(uid=%s))"
     search_base_dns = ["dc=micahrl,dc=me"]
 
     group_search_filter = "(&(objectClass=groupOfNames)(|(member=uid=%s,ou=people,dc=micahrl,dc=me)(member=uid=%s,ou=services,dc=micahrl,dc=me)))"

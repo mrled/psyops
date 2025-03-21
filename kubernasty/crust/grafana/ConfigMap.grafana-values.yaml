@@ -45,11 +45,16 @@ data:
       - name: ldap-toml
         configMap:
           name: grafana-ldap
+      - name: kubernasty-ca-root-cert
+        configMap:
+          name: kubernasty-ca-root-cert
 
     extraVolumeMounts:
       - name: ldap-toml
         mountPath: /etc/grafana/ldap.toml
         subPath: ldap.toml
+      - name: kubernasty-ca-root-cert
+        mountPath: /etc/kubernasty-ca
 
     sidecar:
       dashboards:
