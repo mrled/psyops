@@ -83,3 +83,10 @@ spec:
         inherit: true
         inRoles:
           - pgbouncer_auth
+      - name: grafana
+        login: true
+        passwordSecret:
+          name: pg-user-grafana
+        inherit: true
+        inRoles:
+          - datadump_read
