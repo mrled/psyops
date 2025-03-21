@@ -15,6 +15,7 @@ resources:
   - ./cloudnativepg
 
   # Argo
+  - ./argoev
   - ./argowf
   - ./argocd
 
