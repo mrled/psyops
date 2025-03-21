@@ -4,7 +4,9 @@ resources:
   - ./Namespace.yaml
 
   - ./ConfigMap.grafana-values.yaml
+  - ./ConfigMap.grafana-ldap.yaml
   - ./Secret.grafana-admin-creds.yaml
+  - ./Secret.authenticator.yaml
 
   - ./datasources/ConfigMap.source-datadump.yaml
 
