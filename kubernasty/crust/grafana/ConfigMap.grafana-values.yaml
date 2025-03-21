@@ -27,7 +27,7 @@ data:
         config_file: /etc/grafana/ldap.toml
         auto_sign_up: true
 
-        # WARNING: It blindly trusts all proxies when this is enabled, no way to restrict to a certain IP address.
+      # WARNING: It blindly trusts all proxies when this is enabled, no way to restrict to a certain IP address.
       auth.proxy:
         enabled: true
         header_name: Remote-User
