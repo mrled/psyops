@@ -15,31 +15,40 @@ data:
 
     grafana.ini:
       analytics:
-        check_for_updates: valse
+        check_for_updates: false
       log:
         filters: "ldap:debug"
       server:
         domain: grafana.micahrl.me
         root_url: https://grafana.micahrl.me
 
-      auth:
-        ldap:
-          enabled: true
-          config_file: /etc/grafana/ldap.toml
-          auto_sign_up: true
+      auth.ldap:
+        enabled: true
+        config_file: /etc/grafana/ldap.toml
+        auto_sign_up: true
 
         # WARNING: It blindly trusts all proxies when this is enabled, no way to restrict to a certain IP address.
-        proxy:
-          enabled: true
-          header_name: Remote-User
-          header_property: username
-          # auto_sign_up: true
+      auth.proxy:
+        enabled: true
+        header_name: Remote-User
+        header_property: username
+        # auto_sign_up: true
 
     envValueFrom:
       LDAP_BIND_PASSWORD:
         secretKeyRef:
           name: authenticator
           key: password
+
+    extraVolumes:
+      - name: ldap-toml
+        configMap:
+          name: grafana-ldap
+
+    extraVolumeMounts:
+      - name: ldap-toml
+        mountPath: /etc/grafana/ldap.toml
+        subPath: ldap.toml
 
     sidecar:
       dashboards:

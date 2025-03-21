@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: source-datadump
   namespace: grafana
+  labels:
+    grafana_datasource: "yes"
 data:
   datadump.yaml: |+
     apiVersion: 1
