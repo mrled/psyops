@@ -1,5 +1,7 @@
 # The Kubernetes service account that will run Argo Workflows in this namespace
 #
+# We give it cluster access to resources like deployments so that it can do deployments in other namespaces.
+#
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -8,10 +10,10 @@ metadata:
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: argowf-executor
-  namespace: argowf
+  # namespace: argowf
 rules:
   - apiGroups: ["argoproj.io"]
     resources: ["workflowtaskresults"]
@@ -24,15 +26,15 @@ rules:
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: argowf-executor
-  namespace: argowf
+  # namespace: argowf
 subjects:
   - kind: ServiceAccount
     name: argowf-executor
     namespace: argowf
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: argowf-executor
   apiGroup: rbac.authorization.k8s.io

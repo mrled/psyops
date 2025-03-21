@@ -40,6 +40,12 @@ spec:
           - name: build-hugo
             template: build-hugo
             dependencies: [checkout]
+          - name: build-push-docker
+            template: build-push-docker
+            dependencies: [build-hugo]
+          - name: deploy-pods
+            template: deploy-pods
+            dependencies: [build-push-docker]
 
     # Checkout from Gitea
     - name: checkout
@@ -70,11 +76,15 @@ spec:
     - name: build-hugo
       container:
         image: hugomods/hugo:ci-non-root
-        args: [build, --environment, kubernasty]
+        args:
+          - build
+          - --source
+          - /workspace/psyops/kubernasty/labnotes
+          - --environment
+          - kubernasty
         volumeMounts:
           - name: workspace
-            # /src is the default PWD for this Hugo image
-            mountPath: /src
+            mountPath: /workspace
 
     # Build the Docker image
     # This always pushes the latest, which is fine for this container,
@@ -83,8 +93,8 @@ spec:
       container:
         image: gcr.io/kaniko-project/executor:latest
         args:
-          - "--dockerfile=/workspace/psyops/kubernasty/labnotes/Dockerfile"
-          - "--context=/workspace/psyops/kubernasty/labnotes"
+          - "--dockerfile=/workspace/psyops/kubernasty/labnotes/public/Dockerfile"
+          - "--context=/workspace/psyops/kubernasty/labnotes/public"
           - "--destination=gitea.micahrl.me/kubernasty/labnotes:latest"
         volumeMounts:
           - name: workspace
