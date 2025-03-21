@@ -20,16 +20,18 @@ data:
     bind_password = "${LDAP_BIND_PASSWORD}"
 
     # The %s is replaced with just USERNAME
-    search_filter = "(&(objectClass=inetOrgPerson)(memberOf=cn=grafana-users,ou=groups,dc=micahrl,dc=me)(uid=%s))"
+    search_filter = "(&(objectClass=inetOrgPerson)(uid=%s))"
 
     search_base_dns = ["dc=micahrl,dc=me"]
 
-    # The %s is replaced with "uid=USERNAME", like "uid=micah"
-    group_search_filter = "(&(objectClass=groupOfNames)(|(member=%s,ou=people,dc=micahrl,dc=me)(member=%s,ou=services,dc=micahrl,dc=me)))"
+    # The %s is replaced with the WHOLE DN, like uid=USERNAME,ou=people,dc=micahrl,dc=me
+    group_search_filter = "(&(objectClass=groupOfNames)(member=%s))"
     group_search_filter_user_attribute = "dn"
     group_search_base_dns = ["ou=groups,dc=micahrl,dc=me"]
 
     [servers.attributes]
+    username = "uid"
+    name = "cn"
     member_of = "memberOf"
     email =  "mail"
 
@@ -37,3 +39,8 @@ data:
     group_dn = "cn=grafana-admins,ou=groups,dc=micahrl,dc=me"
     org_role = "Admin"
     grafana_admin = true
+
+    [[servers.group_mappings]]
+    group_dn = "cn=grafana-users,ou=groups,dc=micahrl,dc=me"
+    org_role = "Editor"
+    grafana_admin = false

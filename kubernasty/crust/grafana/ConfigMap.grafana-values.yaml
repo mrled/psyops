@@ -18,6 +18,7 @@ data:
         check_for_updates: false
       log:
         filters: "ldap:debug"
+        # level: debug
       server:
         domain: grafana.micahrl.me
         root_url: https://grafana.micahrl.me
@@ -26,6 +27,7 @@ data:
         enabled: true
         config_file: /etc/grafana/ldap.toml
         auto_sign_up: true
+        log_queries: true
 
       # WARNING: It blindly trusts all proxies when this is enabled, no way to restrict to a certain IP address.
       auth.proxy:
