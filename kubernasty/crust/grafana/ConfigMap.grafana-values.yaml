@@ -31,8 +31,7 @@ data:
 
       # WARNING: It blindly trusts all proxies when this is enabled, no way to restrict to a certain IP address.
       auth.proxy:
-        # enabled: true
-        enabled: false
+        enabled: true
         header_name: Remote-User
         header_property: username
         # auto_sign_up: true
