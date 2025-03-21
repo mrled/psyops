@@ -93,21 +93,19 @@ def main():
     if args.debug:
         sys.excepthook = idb_excepthook
 
-    # Route to the appropriate function, printing only the final structured output to stdout.
-    try:
-        if args.command == "check-processed":
+    if args.command == "check-processed":
+        try:
             processed = check_file_processed(args)
             print(str(processed))
+        except Exception as e:
+            logging.exception("An error occurred.")
+            print(f"error: {e}")
+            sys.exit(1)
 
-        elif args.command == "mark-processed":
-            mark_file_processed(args)
-            print("ok")
+    elif args.command == "mark-processed":
+        mark_file_processed(args)
+        print("ok")
 
-        elif args.command == "import-xlsx":
-            import_xlsx(args)
-            print("ok")
-
-    except Exception as e:
-        logging.exception("An error occurred.")
-        print(f"error: {e}")
-        sys.exit(1)
+    elif args.command == "import-xlsx":
+        import_xlsx(args)
+        print("ok")
