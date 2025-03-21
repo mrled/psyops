@@ -325,3 +325,31 @@ data:
     changetype: modify
     add: member
     member: uid=mrladmin,ou=people,dc=micahrl,dc=me
+
+  #### Grafana
+  #
+  group.grafana-users.ldif: |+
+    dn: cn=grafana-users,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: top
+    cn: grafana-users
+    description: Users that can log in to the Grafana server
+
+  group.grafana-admins.ldif: |+
+    dn: cn=grafana-admins,ou=groups,dc=micahrl,dc=me
+    objectClass: groupOfNames
+    objectClass: top
+    cn: grafana-admins
+    description: Users that can administer the Grafana server
+
+  membership.grafana-users.micahrl.ldif: |+
+    dn: cn=grafana-users,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=micahrl,ou=people,dc=micahrl,dc=me
+
+  membership.grafana-admins.mrladmin.ldif: |+
+    dn: cn=grafana-admins,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
