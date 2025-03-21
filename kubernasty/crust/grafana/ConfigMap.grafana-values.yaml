@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-valuse
+  namespace: grafana
+data:
+  values.yaml: |+
+    persistence:
+      enabled: true
+      storageClassName: cephalopodblk-nvme-3rep
+      size: 20Gi
+
+    admin:
+      existingSecret: grafana-admin-creds
+
+    grafana.ini:
+      analytics:
+        check_for_updates: valse
+      server:
+        domain: grafana.micahrl.me
+        root_url: https://grafana.micahrl.me
+
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+      datasources:
+        enabled: true
+        label: grafana_datasource
+        envValueFrom:
+          DATADUMP_GRAFANA_USERNAME:
+            secretKeyRef:
+              name: pg-user-grafana
+              key: username
+          DATADUMP_GRAFANA_PASSWORD:
+            secretKeyRef:
+              name: pg-user-grafana
+              key: password
