@@ -20,29 +20,5 @@ spec:
 
   valuesFrom:
     - kind: ConfigMap
-      name: authentik-values
+      name: grafana-values
       valuesKey: values.yaml
-
-    # Set the authentik secret key from the authentik-app secret.
-    # Used for cookie signing and unique UIDs;
-    # cannot be changed after first deployment.
-    - kind: Secret
-      name: authentik-app
-      valuesKey: authentik-secret-key
-      targetPath: authentik.secret_key
-
-    # Set Postgres username/password from the authentik-pg secret
-    - kind: Secret
-      name: authentik-pg
-      valuesKey: username
-      targetPath: authentik.postgresql.username
-    - kind: Secret
-      name: authentik-pg
-      valuesKey: password
-      targetPath: authentik.postgresql.password
-
-    # Set Dragonfly password from the authentik-dragonfly-creds secret
-    - kind: Secret
-      name: authentik-dragonfly-creds
-      valuesKey: password
-      targetPath: authentik.redis.password
