@@ -342,6 +342,12 @@ data:
     add: member
     member: uid=micahrl,ou=people,dc=micahrl,dc=me
 
+  membership.grafana-users.mrladmin.ldif: |+
+    dn: cn=grafana-users,ou=groups,dc=micahrl,dc=me
+    changetype: modify
+    add: member
+    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
+
   membership.grafana-admins.mrladmin.ldif: |+
     dn: cn=grafana-admins,ou=groups,dc=micahrl,dc=me
     changetype: modify

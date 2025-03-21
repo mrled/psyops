@@ -25,7 +25,7 @@ data:
 
     [servers.attributes]
     member_of = "memberOf"
-    email =  "email"
+    email =  "mail"
 
     [[servers.group_mappings]]
     group_dn = "cn=grafana-admins,ou=groups,dc=micahrl,dc=me"
