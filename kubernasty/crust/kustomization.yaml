@@ -29,7 +29,6 @@ resources:
   # Authentication
   - ./directory
   - ./authelia
-  - ./authentik # experimental
 
   # Apps
   - ./kubernetes-dashboard
