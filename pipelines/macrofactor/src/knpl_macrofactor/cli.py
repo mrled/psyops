@@ -24,6 +24,20 @@ def idb_excepthook(exc_type, exc_value, tb):
         pdb.pm()
 
 
+class ColorFormatter(logging.Formatter):
+    COLORS = {
+        logging.WARNING: "\033[33m",  # yellow
+        logging.ERROR: "\033[31m",    # red
+        logging.CRITICAL: "\033[1;31m",  # bold red
+    }
+    RESET = "\033[0m"
+
+    def format(self, record):
+        msg = super().format(record)
+        color = self.COLORS.get(record.levelno, "")
+        return f"{color}{msg}{self.RESET if color else ''}"
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="CLI for Macrofactor data pipeline operations."
@@ -85,9 +99,12 @@ def main():
         args.dbname = os.getenv("PGDATABASE", "postgres")
 
     # Configure logging
+    logging.root.handlers.clear()
+    handler = logging.StreamHandler()
+    handler.setFormatter(ColorFormatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        handlers=[handler],
     )
 
     if args.debug:
