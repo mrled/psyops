@@ -10,4 +10,4 @@ spec:
   ports:
     - protocol: TCP
       port: 5432
-      targetPort: 54321
+      targetPort: 6432

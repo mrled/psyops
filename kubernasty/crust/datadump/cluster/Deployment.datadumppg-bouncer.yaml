@@ -23,38 +23,45 @@ spec:
         - name: pgbouncer
           image: bitnami/pgbouncer:latest
           ports:
-            - containerPort: 54321
+            - containerPort: 6432
               name: wildcard-tls
           env:
-            # Listen externally on port 54321 with TLS
             - name: PGBOUNCER_LISTEN_ADDRESS
               value: "0.0.0.0"
+            # This is the default pgbouncer port
             - name: PGBOUNCER_LISTEN_PORT
-              value: "54321"
+              value: "6432"
 
             # Require that incoming connections to PgBouncer use TLS
             - name: PGBOUNCER_CLIENT_TLS_SSLMODE
               value: require
-            - name: PGBOUNCER_SERVER_TLS_CERT_FILE
+            - name: PGBOUNCER_CLIENT_TLS_CERT_FILE
               value: "/etc/pgbouncer/tls/tls.crt"
-            - name: PGBOUNCER_SERVER_TLS_KEY_FILE
+            - name: PGBOUNCER_CLIENT_TLS_KEY_FILE
               value: "/etc/pgbouncer/tls/tls.key"
-            - name: PGBOUNCER_SERVER_TLS_CA_FILE
-              value: "/etc/pgbouncer/tls/ca.crt"
 
-            # Allow PgBouncer to connect to the remote DB using TLS or not
+            # Do not attempt to connect to the upstream server using TLS
+            # (Setting this to allow or prefer results in an error as the CA cannot be verified)
             - name: PGBOUNCER_SERVER_TLS_SSLMODE
-              value: prefer
+              value: disable
 
             - name: PGBOUNCER_AUTH_TYPE
               value: "scram-sha-256"
 
+            # For the default database, values to connect to
             - name: POSTGRESQL_HOST
-              value: "datadumppg.datadump.svc.cluster.local"
+              value: "datadumppg-rw.datadump.svc.cluster.local"
             - name: POSTGRESQL_PORT
               value: "5432"
             - name: POSTGRESQL_DATABASE
               value: "datadump"
+
+            # The name of the default pgbouncer database
+            - name: PGBOUNCER_DATABASE
+              value: "datadump"
+
+            # The scripts build a config file with a [database] entry like this:
+            # $PGBOUNCER_DATABASE=host=$POSTGRESQL_HOST port=$POSTGRESQL_PORT dbname=$POSTGRESQL_DATABASE auth_user=$PGBOUNCER_AUTH_USER
 
             # For dynamic user auth, define the special user & auth query
             - name: PGBOUNCER_AUTH_USER
@@ -69,7 +76,7 @@ spec:
                 secretKeyRef:
                   name: pg-user-pgbouncer
                   key: username
-            - name: POSTGRESSQL_PASSWORD
+            - name: POSTGRESQL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: pg-user-pgbouncer
