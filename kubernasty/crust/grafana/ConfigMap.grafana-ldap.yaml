@@ -19,10 +19,13 @@ data:
     bind_dn = "uid=authenticator,ou=services,dc=micahrl,dc=me"
     bind_password = "${LDAP_BIND_PASSWORD}"
 
+    # The %s is replaced with just USERNAME
     search_filter = "(&(objectClass=inetOrgPerson)(memberOf=cn=grafana-users,ou=groups,dc=micahrl,dc=me)(uid=%s))"
+
     search_base_dns = ["dc=micahrl,dc=me"]
 
-    group_search_filter = "(&(objectClass=groupOfNames)(|(member=uid=%s,ou=people,dc=micahrl,dc=me)(member=uid=%s,ou=services,dc=micahrl,dc=me)))"
+    # The %s is replaced with "uid=USERNAME", like "uid=micah"
+    group_search_filter = "(&(objectClass=groupOfNames)(|(member=%s,ou=people,dc=micahrl,dc=me)(member=%s,ou=services,dc=micahrl,dc=me)))"
     group_search_filter_user_attribute = "dn"
     group_search_base_dns = ["ou=groups,dc=micahrl,dc=me"]
 

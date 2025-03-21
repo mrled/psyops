@@ -11,7 +11,7 @@ data:
     datasources:
     - name: "Postgres"
       type: "postgres"
-      url: "datadumppg-rw.datadump.svc.local:5432"
+      url: "datadumppg-rw.datadump.svc.cluster.local:5432"
       database: "datadump"
       user: "$__env{DATADUMP_GRAFANA_USERNAME}"
       secureJsonData:
