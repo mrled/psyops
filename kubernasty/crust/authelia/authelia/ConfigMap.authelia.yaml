@@ -159,15 +159,16 @@ data:
             - "group:patricii"
         # Require 2FA and any login for these domains.
         - domain:
+            - grafana.micahrl.me
             - kubernasty.micahrl.me
             - whoami-authenticated.micahrl.me
           policy: two_factor
         # Require specific group membership for these domains
-        - domain:
-            - gitea.micahrl.me
-          policy: two_factor
-          subject:
-            - "group:totalgits"
+        # - domain:
+        #     - gitea.micahrl.me
+        #   policy: two_factor
+        #   subject:
+        #     - "group:totalgits"
         # Do not require login for these domains.
         # (Kind of useless, might as well just not protect them at all.)
         - domain:
