@@ -6,6 +6,7 @@ metadata:
   labels:
     grafana_datasource: "yes"
 data:
+  # See also https://grafana.com/docs/grafana/latest/datasources/postgres/configure/#provision-the-data-source
   datadump.yaml: |+
     apiVersion: 1
     datasources:
