@@ -150,10 +150,11 @@ data:
       rules:
         # Require 2FA and patricii membership for these domains.
         - domain:
-            - traefik.micahrl.me
-            - kubernetes.micahrl.me
+            - capacitor.micahrl.me
             - cephalopod.micahrl.me
             - directory.micahrl.me
+            - kubernetes.micahrl.me
+            - traefik.micahrl.me
           policy: two_factor
           subject:
             - "group:patricii"

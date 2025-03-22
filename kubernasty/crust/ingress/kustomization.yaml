@@ -5,6 +5,7 @@ resources:
   - ./argocd.yaml
   - ./argowf.yaml
   - ./authelia.yaml
+  - ./capacitor.yaml
   - ./cephalopod.yaml
   - ./datadump-postgres.yaml
   - ./directory.yaml
