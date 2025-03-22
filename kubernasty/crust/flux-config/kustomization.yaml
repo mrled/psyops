@@ -7,3 +7,4 @@ kind: Kustomization
 resources:
   - ./Secret.kubernasty-repo-token.yaml
   - ./Receiver.kubernasty-repo.yaml
+  - ./NetworkPolicy.capacitor-ingress.yaml
