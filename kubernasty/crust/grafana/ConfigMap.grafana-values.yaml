@@ -42,6 +42,16 @@ data:
           name: authenticator
           key: password
 
+      # Variables used for data sources
+      DATADUMP_GRAFANA_USERNAME:
+        secretKeyRef:
+          name: pg-user-grafana
+          key: username
+      DATADUMP_GRAFANA_PASSWORD:
+        secretKeyRef:
+          name: pg-user-grafana
+          key: password
+
     extraVolumes:
       - name: ldap-toml
         configMap:
@@ -64,12 +74,3 @@ data:
       datasources:
         enabled: true
         label: grafana_datasource
-        envValueFrom:
-          DATADUMP_GRAFANA_USERNAME:
-            secretKeyRef:
-              name: pg-user-grafana
-              key: username
-          DATADUMP_GRAFANA_PASSWORD:
-            secretKeyRef:
-              name: pg-user-grafana
-              key: password
