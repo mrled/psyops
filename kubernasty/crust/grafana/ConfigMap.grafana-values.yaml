@@ -28,7 +28,7 @@ data:
         root_url: https://grafana.micahrl.me
 
       database:
-        type: psotgres
+        type: postgres
         host: grafanapg-rw.grafana.svc.cluster.local
         name: grafana
         user: grafanaapp
