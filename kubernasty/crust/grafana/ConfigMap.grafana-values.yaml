@@ -5,9 +5,13 @@ metadata:
   namespace: grafana
 data:
   values.yaml: |+
+    replicas: 2
+
     persistence:
       enabled: true
-      storageClassName: cephalopodblk-nvme-3rep
+      storageClassName: cephalopodfs-nvme-3rep
+      accessModes:
+        - ReadWriteMany
       size: 20Gi
 
     admin:
