@@ -27,6 +27,14 @@ data:
         domain: grafana.micahrl.me
         root_url: https://grafana.micahrl.me
 
+      database:
+        type: psotgres
+        host: grafanapg-rw.grafana.svc.cluster.local
+        name: grafana
+        user: grafanaapp
+        password: "$__env{PG_GRAFANAAPP_PASSWORD}"
+        ssl_mode: disable
+
       auth.ldap:
         enabled: true
         config_file: /etc/grafana/ldap.toml
@@ -44,6 +52,12 @@ data:
       LDAP_BIND_PASSWORD:
         secretKeyRef:
           name: authenticator
+          key: password
+
+      # THe application database
+      PG_GRAFANAAPP_PASSWORD:
+        secretKeyRef:
+          name: pg-user-grafanaapp
           key: password
 
       # Variables used for data sources

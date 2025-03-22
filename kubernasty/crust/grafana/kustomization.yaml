@@ -3,6 +3,8 @@ kind: Kustomization
 resources:
   - ./Namespace.yaml
 
+  - ./PgCluster.grafanapg.yaml
+
   - ./ConfigMap.grafana-values.yaml
   - ./ConfigMap.grafana-ldap.yaml
   - ./Secret.grafana-admin-creds.yaml

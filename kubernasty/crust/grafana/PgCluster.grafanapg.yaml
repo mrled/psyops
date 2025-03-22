@@ -1,0 +1,31 @@
+# The Grafana database for its own application data.
+
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: grafanapg
+  namespace: grafana
+  labels:
+    # Auto reload the postgres instances (no restart required) when the config here changes
+    cnpg.io/reload: "true"
+spec:
+  instances: 3
+
+  enableSuperuserAccess: true
+
+  # https://cloudnative-pg.io/documentation/1.25/bootstrap
+  # This is ONLY run when the cluster is created.
+  bootstrap:
+    initdb:
+      database: grafana
+      # The database owner.
+      owner: grafanaapp
+      # Secret must have a username that matches the owner above.
+      secret:
+        name: pg-user-grafanaapp
+
+  storage:
+    size: 10Gi
+    # Use minimal replication for the block storage (2rep means 2 replicas)
+    # because we are doing data replication at the Postgres level (instances: 3)
+    storageClass: cephalopodblk-nvme-2rep
