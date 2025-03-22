@@ -2,19 +2,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./Namespace.yaml
+  - ./argocd.yaml
+  - ./argowf.yaml
   - ./authelia.yaml
+  - ./cephalopod.yaml
+  - ./datadump-postgres.yaml
+  - ./directory.yaml
+  - ./gitea-http.yaml
+  - ./gitea-ssh.yaml
   - ./grafana.yaml
+  - ./kubernetes.yaml
   - ./labnotes.yaml
+  - ./objects.yaml
   - ./startpage.yaml
   - ./whoami-unauthenticated.yaml
   - ./whoami-authenticated.yaml
-  - ./directory.yaml
   - ./traefik-dashboard.yaml
-  - ./cephalopod.yaml
-  - ./objects.yaml
-  - ./gitea-http.yaml
-  - ./gitea-ssh.yaml
-  - ./kubernetes.yaml
-  - ./argowf.yaml
-  - ./argocd.yaml
-  - ./datadump-postgres.yaml
