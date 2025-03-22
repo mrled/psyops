@@ -1,0 +1,18 @@
+# WARNING: Requires server-side apply for large resources.
+# Flux should handle this automatically,
+# or use --server-side with kubectl apply.
+
+# See versions at https://github.com/prometheus-operator/prometheus-operator/releases
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Must match what's in Namespace.yaml
+namespace: prometheus-operator
+
+resources:
+  # Create the namespace first
+  - ./Namespace.yaml
+
+  # Apply the release kustomization
+  - https://github.com/prometheus-operator/prometheus-operator/releases/download/v0.81.0/bundle.yaml

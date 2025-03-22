@@ -14,6 +14,7 @@ resources:
   - ./rook
   - ./dragonfly-operator
   - ./cloudnativepg
+  - ./prometheus-operator
 
   # Argo
   - ./argoev
