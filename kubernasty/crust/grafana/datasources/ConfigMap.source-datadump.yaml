@@ -9,12 +9,13 @@ data:
   datadump.yaml: |+
     apiVersion: 1
     datasources:
-    - name: "Postgres"
+    - name: "datadump"
       type: "postgres"
       url: "datadumppg-rw.datadump.svc.cluster.local:5432"
-      database: "datadump"
       user: "$__env{DATADUMP_GRAFANA_USERNAME}"
       secureJsonData:
         password: "$__env{DATADUMP_GRAFANA_PASSWORD}"
       jsonData:
+        postgresVersion: 1704
         sslmode: "disable"
+        database: datadump
