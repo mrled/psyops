@@ -67,7 +67,7 @@ spec:
             - name: PGBOUNCER_AUTH_USER
               value: "pgbouncer"
             - name: PGBOUNCER_AUTH_QUERY
-              value: "SELECT username, passwd FROM pgbouncer.get_auth($1)"
+              value: "SELECT username, password FROM pgbouncer.get_auth($1)"
 
             # This is PgBouncer's own default connection user/password
             # Must match the 'pgbouncer' role you created (inheriting from pgbouncer_auth).
