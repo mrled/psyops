@@ -70,6 +70,7 @@ spec:
     # but we can place them in existing roles via inRoles.
     roles:
       - name: workflowexec
+        ensure: present
         login: true
         passwordSecret:
           name: pg-user-workflowexec
@@ -85,6 +86,7 @@ spec:
         inRoles:
           - pgbouncer_auth
       - name: grafana
+        ensure: present
         login: true
         passwordSecret:
           name: pg-user-grafana
