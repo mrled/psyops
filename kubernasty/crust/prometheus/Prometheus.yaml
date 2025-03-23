@@ -36,4 +36,4 @@ spec:
   thanos:
     objectStorageConfig:
       name: thanos-objstore-config
-      key: objstore.yml
+      key: objstore.yaml
