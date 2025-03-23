@@ -1,0 +1,51 @@
+# This job copies the credentials from the Secret created automatically by the ObjectBucketClaim
+# into the format that the Prometheus Operator expects for spec.thanos.objectStoreConfig.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: make-thanos-objstore-config
+  namespace: prometheus
+spec:
+  template:
+    spec:
+      serviceAccountName: make-thanos-objstore-config
+      containers:
+        - name: copy-ca-cert
+          image: bitnami/kubectl:latest
+          env:
+            - name: BUCKET_NAME
+              value: thanos-prometheus-ha-storage
+            - name: S3_ENDPOINT
+              value: objects.micahrl.me
+            - name: THIS_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          envFrom:
+            # This secret is created automatically by an ObjectBucketClaim of the same name
+            # and has AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY fields.
+            - secretRef:
+                name: thanos-prometheus-ha-storage
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              cat > /tmp/Secret.objstore.yaml <<EOF
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: thanos-objstore-config
+                namespace: "${THIS_NAMESPACE}"
+              type: Opaque
+              stringData:
+                objstore.yaml: |
+                  type: S3
+                  config:
+                    bucket: "${BUCKET_NAME}"
+                    endpoint: "${S3_ENDPOINT}"
+                    access_key: "${AWS_ACCESS_KEY_ID}"
+                    secret_key: "${AWS_SECRET_ACCESS_KEY}"
+              EOF
+              kubectl apply -f /tmp/Secret.objstore.yaml
+              echo "Done"
+      restartPolicy: OnFailure

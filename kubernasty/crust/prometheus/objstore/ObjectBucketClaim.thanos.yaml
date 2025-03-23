@@ -1,0 +1,10 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: thanos-prometheus-ha-storage
+  namespace: prometheus
+spec:
+  bucketName: thanos-prometheus-ha-storage
+  storageClassName: cephalopodobj-nvme-3rep
+  additionalConfig:
+    maxSize: 30G

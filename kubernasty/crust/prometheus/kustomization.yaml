@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./Namespace.yaml
+
+  - ./objstore/ObjectBucketClaim.thanos.yaml
+  - ./objstore/RBAC.make-thanos-objstore-config.yaml
+  - ./objstore/Job.make-thanos-objstore-config.yaml
+
+  - ./thanos-compactor/CronJob.yaml
+
+  - ./thanos-querier/Deployment.yaml
+  - ./thanos-querier/Service.yaml
+
+  - ./thanos-store/Deployment.yaml
+  - ./thanos-store/Service.yaml
+
+  - ./Prometheus.yaml

@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: thanos-compactor
+  namespace: prometheus
+spec:
+  schedule: "0 */6 * * *" # runs every 6 hours
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: thanos-compactor
+              image: thanosio/thanos:v0.29.0
+              args:
+                - "compact"
+                - "--objstore.config-file=/etc/thanos/objstore.yaml"
+                - "--data-dir=/var/thanos/compact"
+              volumeMounts:
+                - name: thanos-objstore
+                  mountPath: /etc/thanos
+                - name: thanos-data
+                  mountPath: /var/thanos/compact
+          volumes:
+            - name: thanos-objstore
+              secret:
+                secretName: thanos-objstore-config
+            # Temporary storage for compaction
+            - name: thanos-data
+              emptyDir: {}

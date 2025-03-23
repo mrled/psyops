@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: make-thanos-objstore-config
+  namespace: prometheus
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: make-thanos-objstore-config
+  namespace: prometheus
+rules:
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["get", "create", "update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: make-thanos-objstore-config
+  namespace: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: make-thanos-objstore-config
+    namespace: prometheus
+roleRef:
+  kind: Role
+  name: make-thanos-objstore-config
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,39 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus
+  namespace: prometheus
+spec:
+  replicas: 2
+  serviceAccountName: prometheus
+
+  retention: 30d
+
+  serviceMonitorSelector: {}
+  serviceMonitorNamespaceSelector: {}
+  podMonitorSelector: {}
+  podMonitorNamespaceSelector: {}
+  probeSelector: {}
+  probeNamespaceSelector: {}
+  scrapeConfigSelector: {}
+  scrapeConfigNamespaceSelector: {}
+  ruleSelector: {}
+  ruleNamespaceSelector: {}
+
+  resources:
+    requests:
+      memory: 400Mi
+
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: cephalopodblk-nvme-2rep
+        resources:
+          requests:
+            storage: 20Gi
+
+  thanos:
+    objectStorageConfig:
+      name: thanos-objstore-config
+      key: objstore.yml
