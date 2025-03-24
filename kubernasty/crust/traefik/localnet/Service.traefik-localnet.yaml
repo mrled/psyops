@@ -30,3 +30,7 @@ spec:
       port: 5432
       targetPort: 5432
       name: postgres
+    - protocol: TCP
+      port: 636
+      targetPort: 636
+      name: ldaps

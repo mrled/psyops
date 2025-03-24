@@ -17,6 +17,8 @@ spec:
     # Note that ldappasswd will not work without a secure connection, even against localhost,
     # so we need our cert to work for localhost connections.
     - localhost
+    # For outside the cluster
+    - directory.micahrl.me
   secretName: dirsrv-cert-backing-secret
   duration: 720h # 30 days
   renewBefore: 120h # 5 days

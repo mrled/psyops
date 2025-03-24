@@ -9,6 +9,7 @@ resources:
   - ./cephalopod.yaml
   - ./datadump-postgres.yaml
   - ./directory.yaml
+  - ./directory-ldaps.yaml
   - ./gitea-http.yaml
   - ./gitea-ssh.yaml
   - ./grafana.yaml

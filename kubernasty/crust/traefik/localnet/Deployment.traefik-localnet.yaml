@@ -28,6 +28,8 @@ spec:
               containerPort: 22
             - name: postgres
               containerPort: 5432
+            - name: ldaps
+              containerPort: 636
           args:
             - --api.insecure=true
             - --log.level=DEBUG
@@ -45,3 +47,4 @@ spec:
             # - --entryPoints.websecure.proxyProtocol.insecure=false
             - --entrypoints.ssh.address=:22
             - --entrypoints.postgres.address=:5432
+            - --entrypoints.ldaps.address=:636
