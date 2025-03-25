@@ -150,6 +150,9 @@ spec:
               mountPath: /containeripc
             - name: dirsrv-tls-ca
               mountPath: "/data/tls/ca"
+          securityContext:
+            runAsUser: 389
+            runAsGroup: 389
 
         - name: accesslogger
           image: busybox
