@@ -263,27 +263,27 @@ data:
     # we check for this to see if any files match.
     set -- /initldifs/config.*.ldif
     if test "$1" != "/initldifs/config.*.ldif"; then
-      /initsetup/apply_marked_ldif.sh
+      /initsetup/apply_marked_ldif.sh /initldifs/config.*.ldif
     fi
 
     set -- /initldifs/service.*.ldif
     if test "$1" != "/initldifs/service.*.ldif"; then
-      /initsetup/apply_marked_ldif.sh
+      /initsetup/apply_marked_ldif.sh /initldifs/service.*.ldif
     fi
 
     set -- /initldifs/user.*.ldif
     if test "$1" != "/initldifs/user.*.ldif"; then
-      /initsetup/apply_marked_ldif.sh
+      /initsetup/apply_marked_ldif.sh /initldifs/user.*.ldif
     fi
 
     set -- /initldifs/group.*.ldif
     if test "$1" != "/initldifs/group.*.ldif"; then
-      /initsetup/apply_marked_ldif.sh
+      /initsetup/apply_marked_ldif.sh /initldifs/group.*.ldif
     fi
 
     set -- /initldifs/membership.*.ldif
     if test "$1" != "/initldifs/membership.*.ldif"; then
-      /initsetup/apply_marked_ldif.sh
+      /initsetup/apply_marked_ldif.sh /initldifs/membership.*.ldif
     fi
 
 
