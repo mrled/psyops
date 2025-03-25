@@ -7,7 +7,10 @@ data:
   ldapenforcer.toml: |+
     [ldapenforcer]
     # LDAP Connection Settings
-    uri = "ldaps://127.0.0.1:3636"
+    # TODO: not sure why I can't connect to localhost here?
+    # It's running in a sidecar, and that does work for other sidecars,
+    # maybe a problem with ldapenforcer?
+    uri = "ldaps://dirsrv:3636"
     bind_dn = "cn=Directory Manager"
     password_file = "/containeripc/topsecret/ds-dm-password"
     ca_cert_file = "/data/tls/ca/ca.crt"
@@ -25,6 +28,11 @@ data:
       "people.toml",
       "groups.toml",
     ]
+
+    [ldapenforcer.logging]
+    level = "DEBUG"
+    [ldapenforcer.logging.ldap]
+    level = "DEBUG"
 
   svcaccts.toml: |+
     [ldapenforcer.svcacct.authenticator]

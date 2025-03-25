@@ -142,7 +142,18 @@ spec:
 
         - name: enforcer
           image: ghcr.io/mrled/ldapenforcer:latest
-          args: ["sync", "--config", "/etc/ldapenforcer/ldapenforcer.toml"]
+          args:
+            [
+              "--config",
+              "/etc/ldapenforcer/ldapenforcer.toml",
+              "sync",
+              "--config-poll-interval",
+              "5",
+              "--log-level",
+              "DEBUG",
+              "--ldap-log-level",
+              "DEBUG",
+            ]
           volumeMounts:
             - name: ldapenforcer
               mountPath: /etc/ldapenforcer
