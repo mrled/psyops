@@ -7,7 +7,7 @@ data:
   ldapenforcer.toml: |+
     [ldapenforcer]
     # LDAP Connection Settings
-    uri = "ldaps://127.0.0.1"
+    uri = "ldaps://127.0.0.1:3636"
     bind_dn = "cn=Directory Manager"
     password_file = "/containeripc/topsecret/ds-dm-password"
     ca_cert_file = "/data/tls/ca/ca.crt"
