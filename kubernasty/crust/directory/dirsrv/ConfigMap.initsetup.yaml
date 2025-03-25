@@ -329,6 +329,10 @@ data:
     set_passwords_from_file() {
       local file="$1"
       local base_dn="$2"
+      if ! test -f "$file"; then
+        /initsetup/log.sh "No password file found: $file"
+        return
+      fi
       while read -r uid password; do
         test -z "$uid" && continue
         local dn="uid=$uid,$base_dn"
