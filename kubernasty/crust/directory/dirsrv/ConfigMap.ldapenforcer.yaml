@@ -48,14 +48,14 @@ data:
     description = "A service account for Authelia"
 
   people.toml: |+
-    [ldapenforcer.people.mrladmin]
+    [ldapenforcer.person.mrladmin]
     cn = "Micah R Ledbetter (Admin)"
     givenName = "Micah"
     sn = "Ledbetter"
     mail = "mrladmin@micahrl.me"
     posix = [10420, 10100]
 
-    [ldapenforcer.people.micahrl]
+    [ldapenforcer.person.micahrl]
     cn = "Micah R Ledbetter"
     givenName = "Micah"
     sn = "Ledbetter"

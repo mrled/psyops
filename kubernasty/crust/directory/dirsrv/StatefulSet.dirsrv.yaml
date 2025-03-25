@@ -148,7 +148,7 @@ spec:
               "/etc/ldapenforcer/ldapenforcer.toml",
               "sync",
               "--config-poll-interval",
-              "5",
+              "10",
               "--log-level",
               "DEBUG",
               "--ldap-log-level",
