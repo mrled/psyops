@@ -141,14 +141,12 @@ spec:
               mountPath: /containeripc
 
         - name: enforcer
-          image: ghcr.io/mrled/ldapenforcer:latest
+          image: ghcr.io/mrled/ldapenforcer:0.1.2
           args:
             [
               "--config",
               "/etc/ldapenforcer/ldapenforcer.toml",
               "sync",
-              "--config-poll-interval",
-              "10",
               "--log-level",
               "DEBUG",
               "--ldap-log-level",

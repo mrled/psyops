@@ -29,10 +29,8 @@ data:
       "groups.toml",
     ]
 
-    [ldapenforcer.logging]
-    level = "DEBUG"
-    [ldapenforcer.logging.ldap]
-    level = "DEBUG"
+    main_log_level = "DEBUG"
+    ldap_log_level = "DEBUG"
 
   svcaccts.toml: |+
     [ldapenforcer.svcacct.authenticator]
