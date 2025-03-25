@@ -45,6 +45,8 @@ data:
   #   User entries specify a user's full name in the cn attribute,
   #   which is different from the uid RDN, but groups don't work this way
   #   because the cn is the RDN.
+  # * An empty groupOfNames is INVALID, and the LDAP server will refuse to create it.
+  #   You must create a group with at least one member.
   #
   # About the ldifMarkers OU:
   # * It will contain one organizationalRole for each LDIF file that has been applied.
@@ -148,18 +150,6 @@ data:
   # TODO: arguably the permissions should be set at the group level
   # Note that the userdn specified here does not need to exist yet
 
-  # OLD configuration, for users created outside of ldapenforcer.
-  # config.autheliaReadAllObjectsAci.ldif: |+
-  #   dn: dc=micahrl,dc=me
-  #   changetype: modify
-  #   add: aci
-  #   aci: (targetattr="*")(version 3.0; acl "Allow read access to authelia"; allow (read, search, compare) userdn="ldap:///uid=authelia,ou=services,dc=micahrl,dc=me";)
-  # config.authenticatorReadAllObjectsAci.ldif: |+
-  #   dn: dc=micahrl,dc=me
-  #   changetype: modify
-  #   add: aci
-  #   aci: (targetattr="*")(version 3.0; acl "Allow read access to all objects for the authenticator"; allow (read, search, compare) userdn = "ldap:///uid=authenticator,ou=services,dc=micahrl,dc=me";)
-
   config.autheliaEnforcedReadAllObjectsAci.ldif: |+
     dn: dc=micahrl,dc=me
     changetype: modify
@@ -171,164 +161,3 @@ data:
     changetype: modify
     add: aci
     aci: (targetattr="*")(version 3.0; acl "Allow read access to all objects for the authenticator"; allow (read, search, compare) userdn = "ldap:///uid=authenticator,ou=enforced,ou=services,dc=micahrl,dc=me";)
-
-  user.mrladmin.ldif: |+
-    dn: uid=mrladmin,ou=people,dc=micahrl,dc=me
-    objectClass: inetOrgPerson
-    objectClass: posixAccount
-    objectClass: top
-    uid: mrladmin
-    cn: Micah R Ledbetter (Admin)
-    givenName: Micah
-    sn: Ledbetter
-    mail: mrladmin@micahrl.me
-    uidNumber: 10420
-    gidNumber: 10100
-    homeDirectory: /home/mrladmin
-    loginShell: /bin/sh
-    gecos: Micah R Ledbetter (Admin)
-
-  user.micahrl.ldif: |+
-    dn: uid=micahrl,ou=people,dc=micahrl,dc=me
-    objectClass: inetOrgPerson
-    objectClass: posixAccount
-    objectClass: top
-    uid: micahrl
-    cn: Micah R Ledbetter
-    givenName: Micah
-    sn: Ledbetter
-    mail: me@micahrl.com
-    uidNumber: 10069
-    gidNumber: 10101
-    homeDirectory: /home/micahrl
-    loginShell: /bin/zsh
-    gecos: Micah R Ledbetter
-
-  group.patricii.ldif: |+
-    dn: cn=patricii,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: posixGroup
-    objectClass: top
-    cn: patricii
-    description: Accounts with administrative privileges
-    gidNumber: 10100
-
-  group.proletarii.ldif: |+
-    dn: cn=proletarii,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: posixGroup
-    objectClass: top
-    cn: proletarii
-    description: Regular user accounts
-    gidNumber: 10101
-
-  group.servi.ldif: |+
-    dn: cn=servi,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: posixGroup
-    objectClass: top
-    cn: servi
-    description: Service accounts
-    gidNumber: 10102
-
-  group.totalgits.ldif: |+
-    dn: cn=totalgits,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: top
-    cn: totalgits
-    description: Users that can log in to the Git server
-
-  membership.patricii.mrladmin.ldif: |+
-    dn: cn=patricii,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: memberUid
-    memberUid: mrladmin
-    -
-    add: member
-    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
-
-  membership.proletarii.micahrl.ldif: |+
-    dn: cn=proletarii,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: memberUid
-    memberUid: micahrl
-    -
-    add: member
-    member: uid=micahrl,ou=people,dc=micahrl,dc=me
-
-  membership.servi.ldapAccountManager.ldif: |+
-    dn: cn=servi,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: memberUid
-    memberUid: ldapAccountManager
-    -
-    add: member
-    member: uid=ldapAccountManager,ou=services,dc=micahrl,dc=me
-
-  membership.totalgits.mrladmin.ldif: |+
-    dn: cn=totalgits,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
-
-  membership.totalgits.micahrl.ldif: |+
-    dn: cn=totalgits,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=micahrl,ou=people,dc=micahrl,dc=me
-
-  #### Argo Workflows
-  #
-  group.argowf-users.ldif: |+
-    dn: cn=argowf-users,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: top
-    cn: argowf-users
-    description: Users that can log in to the Argo Workflows server
-
-  group.argowf-admins.ldif: |+
-    dn: cn=argowf-admins,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: top
-    cn: argowf-admins
-    description: Users that can administer the Argo Workflows server
-
-  membership.argowf-users.micahrl.ldif: |+
-    dn: cn=argowf-users,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=micahrl,ou=people,dc=micahrl,dc=me
-
-  membership.argowf-admins.mrladmin.ldif: |+
-    dn: cn=argowf-admins,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
-
-  #### Grafana
-  #
-  group.grafana-users.ldif: |+
-    dn: cn=grafana-users,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: top
-    cn: grafana-users
-    description: Users that can log in to the Grafana server
-
-  group.grafana-admins.ldif: |+
-    dn: cn=grafana-admins,ou=groups,dc=micahrl,dc=me
-    objectClass: groupOfNames
-    objectClass: top
-    cn: grafana-admins
-    description: Users that can administer the Grafana server
-
-  membership.grafana-users.micahrl.ldif: |+
-    dn: cn=grafana-users,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=micahrl,ou=people,dc=micahrl,dc=me
-
-  membership.grafana-admins.mrladmin.ldif: |+
-    dn: cn=grafana-admins,ou=groups,dc=micahrl,dc=me
-    changetype: modify
-    add: member
-    member: uid=mrladmin,ou=people,dc=micahrl,dc=me
