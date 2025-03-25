@@ -159,34 +159,6 @@ data:
     add: aci
     aci: (targetattr="*")(version 3.0; acl "Allow read access to all objects for the authenticator"; allow (read, search, compare) userdn = "ldap:///uid=authenticator,ou=services,dc=micahrl,dc=me";)
 
-  service.authenticator.ldif: |+
-    dn: uid=authenticator,ou=services,dc=micahrl,dc=me
-    objectClass: inetOrgPerson
-    objectClass: account
-    objectClass: top
-    uid: authenticator
-    cn: Authenticator
-    sn: authrenticator
-    description: A service account for authenticating users
-
-  service.ldapAccountManager.ldif: |+
-    dn: uid=ldapAccountManager,ou=services,dc=micahrl,dc=me
-    objectClass: inetOrgPerson
-    objectClass: account
-    objectClass: top
-    uid: ldapAccountManager
-    cn: LDAP Account Manager
-    sn: ldapAccountManager
-
-  service.authelia.ldif: |+
-    dn: uid=authelia,ou=services,dc=micahrl,dc=me
-    objectClass: inetOrgPerson
-    objectClass: account
-    objectClass: top
-    uid: authelia
-    cn: Authelia
-    sn: authelia
-
   user.mrladmin.ldif: |+
     dn: uid=mrladmin,ou=people,dc=micahrl,dc=me
     objectClass: inetOrgPerson

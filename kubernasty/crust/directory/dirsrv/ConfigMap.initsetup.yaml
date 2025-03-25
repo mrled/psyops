@@ -293,18 +293,28 @@ data:
       if test $? -ne 0; then
         /initsetup/log.sh "Failed to set password for $dn"
         echo "$result"
-        return 1
+        # Don't fail the whole script; allow this to be retried, maybe users will get created later
+        # return 1
       fi
     }
 
-    while read user password; do
-      test -z "$user" && continue
-      ldapmodify_setpassword "uid=$user,ou=people,$DS_SUFFIX_NAME" "$password"
-    done </initsecrets/user-passwords
-    while read service password; do
-      test -z "$service" && continue
-      ldapmodify_setpassword "uid=$service,ou=services,$DS_SUFFIX_NAME" "$password"
-    done </initsecrets/service-passwords
+    set_passwords_from_file() {
+      local file="$1"
+      local base_dn="$2"
+      while uid password; do
+        test -z "$uid" && continue
+        local dn="uid=$uid,$base_dn"
+        ldapmodify_setpassword "$dn" "$password"
+      done <"$file"
+    }
+
+    # Set passwords for regular users and service accounts
+    set_passwords_from_file /initsecrets/user-passwords "ou=people,$DS_SUFFIX_NAME"
+    set_passwords_from_file /initsecrets/service-passwords "ou=services,$DS_SUFFIX_NAME"
+
+    # Set passwords for enforced users and service accounts
+    set_passwords_from_file /initsecrets/enforced-user-passwords "ou=enforced,ou=people,$DS_SUFFIX_NAME"
+    set_passwords_from_file /initsecrets/enforced-service-passwords "ou=enforced,ou=services,$DS_SUFFIX_NAME"
 
   tail_access_log.sh: |+
     #!/bin/sh

@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ldapenforcer
+  namespace: directory
+data:
+  ldapenforcer.toml: |+
+    [ldapenforcer]
+    # LDAP Connection Settings
+    uri = "ldaps://127.0.0.1"
+    bind_dn = "cn=Directory Manager"
+    password_file = "/containeripc/topsecret/ds-dm-password"
+    ca_cert_file = "/data/tls/ca/ca.crt"
+
+    # Directory Structure
+    enforced_people_ou = "ou=enforced,ou=people,dc=micahrl,dc=me"
+    enforced_svcacct_ou = "ou=enforced,ou=services,dc=micahrl,dc=me"
+    enforced_group_ou = "ou=enforced,ou=groups,dc=micahrl,dc=me"
+
+    # Poll interval for re-reading configuration files
+    config_poll_interval = 5
+
+    includes = [
+      "svcaccts.toml",
+      "people.toml",
+      "groups.toml",
+    ]
+
+  svcaccts.toml: |+
+    [ldapenforcer.svcacct.authenticator]
+    cn = "Authenticator"
+    description = "A service account for authenticating users"
+
+    [ldapenforcer.svcacct.ldapAccountManager]
+    cn = "LDAP Account Manager"
+    description = "A service account for managing LDAP accounts"
+
+    [ldapenforcer.svcacct.authelia]
+    cn = "Authelia"
+    description = "A service account for Authelia"
+
+  people.toml: |+
+    [ldapenforcer.people.mrladmin]
+    cn = "Micah R Ledbetter (Admin)"
+    givenName = "Micah"
+    sn = "Ledbetter"
+    mail = "mrladmin@micahrl.me"
+    posix = [10420, 10100]
+
+    [ldapenforcer.people.micahrl]
+    cn = "Micah R Ledbetter"
+    givenName = "Micah"
+    sn = "Ledbetter"
+    mail = "me@micahrl.com"
+    posix = [10069, 10101]
+
+  groups.toml: |+
+    [ldapenforcer.group.patricii]
+    description = "Accounts with administrative privileges"
+    posixGidNumber = 10100
+    people = ["mrladmin"]
+
+    [ldapenforcer.group.proletarii]
+    description = "Regular user accounts"
+    posixGidNumber = 10101
+    people = ["micahrl"]
+
+    [ldapenforcer.group.servi]
+    description = "Service accounts"
+    posixGidNumber = 10102
+    svcaccts = ["authelia", "authenticator", "ldapAccountManager"]
+
+    [ldapenforcer.group.totalgits]
+    description = "Users that can log in to the Git server"
+    people = ["mrladmin", "micahrl"]
+
+    [ldapenforcer.group.argowf-users]
+    description = "Users that can log in to the Argo Workflows server"
+    groups = ["proletarii"]
+
+    [ldapenforcer.group.argowf-admins]
+    description = "Users that can administer the Argo Workflows server"
+    groups = ["patricii"]
+
+    [ldapenforcer.group.grafana-users]
+    description = "Users that can log in to the Grafana server"
+    groups = ["proletarii"]
+
+    [ldapenforcer.group.grafana-admins]
+    description = "Users that can administer the Grafana server"
+    groups = ["patricii"]

@@ -8,6 +8,7 @@ resources:
   - ./dirsrv/ConfigMap.dirsrv-env.yaml
   - ./dirsrv/ConfigMap.initsetup.yaml
   - ./dirsrv/ConfigMap.initldifs.yaml
+  - ./dirsrv/ConfigMap.ldapenforcer.yaml
   - ./dirsrv/Secret.initsecrets.yaml
   - ./dirsrv/Secret.dirsrv-env.yaml
   - ./dirsrv/Service.dirsrv-headless.yaml
