@@ -151,6 +151,8 @@ spec:
               "DEBUG",
               "--ldap-log-level",
               "DEBUG",
+              "--config-poll-interval",
+              "10",
             ]
           volumeMounts:
             - name: ldapenforcer
