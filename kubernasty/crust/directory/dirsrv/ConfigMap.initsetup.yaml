@@ -314,10 +314,13 @@ data:
     userPassword: $password
     EOF
 
-      result=$(ldapmodify -f /tmp/ldapmodify 2>&1)
-      if test $? -ne 0; then
-        /initsetup/log.sh "Failed to set password for $dn"
-        echo "$result"
+      set -e
+      ldapmodify_stdout=$(ldapmodify -f /tmp/ldapmodify 2>&1)
+      ldapmodify_exit=$?
+      set +e
+      if test "$ldapmodify_exit" -ne 0; then
+        echo "Failed to set password for $dn"
+        echo "$ldapmodify_stdout"
         # Don't fail the whole script; allow this to be retried, maybe users will get created later
         # return 1
       fi
