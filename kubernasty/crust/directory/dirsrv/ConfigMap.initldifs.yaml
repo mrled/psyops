@@ -147,17 +147,30 @@ data:
 
   # TODO: arguably the permissions should be set at the group level
   # Note that the userdn specified here does not need to exist yet
-  config.autheliaReadAllObjectsAci.ldif: |+
-    dn: dc=micahrl,dc=me
-    changetype: modify
-    add: aci
-    aci: (targetattr="*")(version 3.0; acl "Allow read access to authelia"; allow (read, search, compare) userdn="ldap:///uid=authelia,ou=services,dc=micahrl,dc=me";)
 
-  config.authenticatorReadAllObjectsAci.ldif: |+
+  # OLD configuration, for users created outside of ldapenforcer.
+  # config.autheliaReadAllObjectsAci.ldif: |+
+  #   dn: dc=micahrl,dc=me
+  #   changetype: modify
+  #   add: aci
+  #   aci: (targetattr="*")(version 3.0; acl "Allow read access to authelia"; allow (read, search, compare) userdn="ldap:///uid=authelia,ou=services,dc=micahrl,dc=me";)
+  # config.authenticatorReadAllObjectsAci.ldif: |+
+  #   dn: dc=micahrl,dc=me
+  #   changetype: modify
+  #   add: aci
+  #   aci: (targetattr="*")(version 3.0; acl "Allow read access to all objects for the authenticator"; allow (read, search, compare) userdn = "ldap:///uid=authenticator,ou=services,dc=micahrl,dc=me";)
+
+  config.autheliaEnforcedReadAllObjectsAci.ldif: |+
     dn: dc=micahrl,dc=me
     changetype: modify
     add: aci
-    aci: (targetattr="*")(version 3.0; acl "Allow read access to all objects for the authenticator"; allow (read, search, compare) userdn = "ldap:///uid=authenticator,ou=services,dc=micahrl,dc=me";)
+    aci: (targetattr="*")(version 3.0; acl "Allow read access to authelia"; allow (read, search, compare) userdn="ldap:///uid=authelia,ou=enforced,ou=services,dc=micahrl,dc=me";)
+
+  config.authenticatorEnforcedReadAllObjectsAci.ldif: |+
+    dn: dc=micahrl,dc=me
+    changetype: modify
+    add: aci
+    aci: (targetattr="*")(version 3.0; acl "Allow read access to all objects for the authenticator"; allow (read, search, compare) userdn = "ldap:///uid=authenticator,ou=enforced,ou=services,dc=micahrl,dc=me";)
 
   user.mrladmin.ldif: |+
     dn: uid=mrladmin,ou=people,dc=micahrl,dc=me
