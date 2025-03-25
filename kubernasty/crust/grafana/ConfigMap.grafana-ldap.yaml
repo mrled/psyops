@@ -16,7 +16,7 @@ data:
 
     root_ca_cert = "/etc/kubernasty-ca/ca.crt"
 
-    bind_dn = "uid=authenticator,ou=services,dc=micahrl,dc=me"
+    bind_dn = "uid=authenticator,ou=enforced,ou=services,dc=micahrl,dc=me"
     bind_password = "${LDAP_BIND_PASSWORD}"
 
     # The %s is replaced with just USERNAME
@@ -36,11 +36,11 @@ data:
     email =  "mail"
 
     [[servers.group_mappings]]
-    group_dn = "cn=grafana-admins,ou=groups,dc=micahrl,dc=me"
+    group_dn = "cn=grafana-admins,ou=enforced,ou=groups,dc=micahrl,dc=me"
     org_role = "Admin"
     grafana_admin = true
 
     [[servers.group_mappings]]
-    group_dn = "cn=grafana-users,ou=groups,dc=micahrl,dc=me"
+    group_dn = "cn=grafana-users,ou=enforced,ou=groups,dc=micahrl,dc=me"
     org_role = "Editor"
     grafana_admin = false

@@ -71,7 +71,7 @@ data:
         permit_referrals: false
         permit_unauthenticated_bind: false
         permit_feature_detection_failure: false
-        user: uid=authelia,ou=services,dc=micahrl,dc=me
+        user: uid=authelia,ou=enforced,ou=services,dc=micahrl,dc=me
         # https://www.authelia.com/reference/guides/ldap/#attribute-defaults
         users_filter: (&(|({username_attribute}={input})({mail_attribute}={input}))(|(objectClass=inetOrgPerson)(objectClass=organizationalPerson))(!(pwdReset=TRUE)))
         groups_filter: (&(|(member={dn})(uniqueMember={dn}))(|(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfMembers)))
