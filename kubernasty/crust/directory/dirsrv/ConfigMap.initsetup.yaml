@@ -253,13 +253,38 @@ data:
 
   apply_ldifs.sh: |+
     #!/bin/sh
-    set -eu
-    /initsetup/apply_marked_ldif.sh \
-       /initldifs/config.*.ldif \
-        /initldifs/service.*.ldif \
-        /initldifs/user.*.ldif \
-        /initldifs/group.*.ldif \
-        /initldifs/membership.*.ldif
+    set -e
+
+    # Check each type of LDIF file in the correct order.
+    # If there are any files of that type, apply them.
+    # Order: config files, services, users, groups, memberships.
+
+    # Unquoted globs that don't match any files are left unchanged;
+    # we check for this to see if any files match.
+    set -- /initldifs/config.*.ldif
+    if test "$1" != "/initldifs/config.*.ldif"; then
+      /initsetup/apply_marked_ldif.sh
+    fi
+
+    set -- /initldifs/service.*.ldif
+    if test "$1" != "/initldifs/service.*.ldif"; then
+      /initsetup/apply_marked_ldif.sh
+    fi
+
+    set -- /initldifs/user.*.ldif
+    if test "$1" != "/initldifs/user.*.ldif"; then
+      /initsetup/apply_marked_ldif.sh
+    fi
+
+    set -- /initldifs/group.*.ldif
+    if test "$1" != "/initldifs/group.*.ldif"; then
+      /initsetup/apply_marked_ldif.sh
+    fi
+
+    set -- /initldifs/membership.*.ldif
+    if test "$1" != "/initldifs/membership.*.ldif"; then
+      /initsetup/apply_marked_ldif.sh
+    fi
 
 
   set_account_passwords.sh: |+
