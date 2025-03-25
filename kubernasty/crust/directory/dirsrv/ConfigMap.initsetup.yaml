@@ -301,7 +301,7 @@ data:
     set_passwords_from_file() {
       local file="$1"
       local base_dn="$2"
-      while uid password; do
+      while read -r uid password; do
         test -z "$uid" && continue
         local dn="uid=$uid,$base_dn"
         ldapmodify_setpassword "$dn" "$password"
