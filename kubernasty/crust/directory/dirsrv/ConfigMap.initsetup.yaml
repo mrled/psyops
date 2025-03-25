@@ -314,10 +314,10 @@ data:
     userPassword: $password
     EOF
 
-      set -e
+      set +e
       ldapmodify_stdout=$(ldapmodify -f /tmp/ldapmodify 2>&1)
       ldapmodify_exit=$?
-      set +e
+      set -e
       if test "$ldapmodify_exit" -ne 0; then
         echo "Failed to set password for $dn"
         echo "$ldapmodify_stdout"
