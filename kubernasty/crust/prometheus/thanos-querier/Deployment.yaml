@@ -21,6 +21,11 @@ spec:
             - "--http-address=0.0.0.0:9090"
             - "--grpc-address=0.0.0.0:9091"
             - "--store=thanos-store.monitoring.svc.cluster.local:10901"
+            - "--store=prometheus-0.prometheus-operated.svc.cluster.local:10901"
+            - "--store=prometheus-1.prometheus-operated.svc.cluster.local:10901"
+            - "--query.replica-label=prometheus_replica"
+            - "--query.auto-downsampling"
+            - "--query.partial-response"
           ports:
             - containerPort: 9090
               name: http

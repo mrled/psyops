@@ -10,7 +10,7 @@ spec:
     - match: Host(`prometheus.micahrl.me`)
       kind: Rule
       services:
-        - name: prometheus-operated
+        - name: thanos-querier
           namespace: prometheus
           kind: Service
           port: 9090
