@@ -6,16 +6,11 @@ metadata:
 data:
   ldapenforcer.toml: |+
     [ldapenforcer]
-    # LDAP Connection Settings
-    # TODO: not sure why I can't connect over ldaps:// here?
-    # It's running in a sidecar, and that does work for other sidecars,
-    # maybe a problem with ldapenforcer?
-    uri = "ldaps://dirsrv.directory.svc.cluster.local:3636"
+    uri = "ldaps://dirsrv.directory.svc.cluster.local:636"
     bind_dn = "cn=Directory Manager"
     password_file = "/etc/dirsrv/env-secret/DS_DM_PASSWORD"
     ca_cert_file = "/data/tls/ca/ca.crt"
 
-    # Directory Structure
     enforced_people_ou = "ou=enforced,ou=people,dc=micahrl,dc=me"
     enforced_svcacct_ou = "ou=enforced,ou=services,dc=micahrl,dc=me"
     enforced_group_ou = "ou=enforced,ou=groups,dc=micahrl,dc=me"
@@ -23,7 +18,7 @@ data:
     poll_config_interval = "10s"
     poll_ldap_interval = "1h"
 
-    main_log_level = "DEBUG"
+    log_level = "DEBUG"
     ldap_log_level = "DEBUG"
 
     includes = [

@@ -21,6 +21,10 @@ spec:
             - "/etc/ldapenforcer/ldapenforcer.toml"
             - "sync"
             - "--poll"
+            - "--log-level"
+            - "DEBUG"
+            - "--ldap-log-level"
+            - "DEBUG"
           volumeMounts:
             - name: ldapenforcer-cm
               mountPath: /etc/ldapenforcer
