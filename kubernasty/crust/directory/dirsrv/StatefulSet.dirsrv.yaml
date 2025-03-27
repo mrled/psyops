@@ -140,31 +140,6 @@ spec:
             - name: containeripc
               mountPath: /containeripc
 
-        - name: enforcer
-          image: ghcr.io/mrled/ldapenforcer:0.1.2
-          args:
-            [
-              "--config",
-              "/etc/ldapenforcer/ldapenforcer.toml",
-              "sync",
-              "--log-level",
-              "DEBUG",
-              "--ldap-log-level",
-              "DEBUG",
-              "--config-poll-interval",
-              "10",
-            ]
-          volumeMounts:
-            - name: ldapenforcer
-              mountPath: /etc/ldapenforcer
-            - name: containeripc
-              mountPath: /containeripc
-            - name: dirsrv-tls-ca
-              mountPath: "/data/tls/ca"
-          securityContext:
-            runAsUser: 389
-            runAsGroup: 389
-
         - name: accesslogger
           image: busybox
           # -F will follow the file even if it is rotated
@@ -207,9 +182,6 @@ spec:
         - name: logs
           emptyDir:
             medium: Memory
-        - name: ldapenforcer
-          configMap:
-            name: ldapenforcer
 
   volumeClaimTemplates:
     - metadata:

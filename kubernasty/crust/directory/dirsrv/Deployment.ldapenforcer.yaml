@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ldapenforcer
+  namespace: directory
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ldapenforcer
+  template:
+    metadata:
+      labels:
+        app: ldapenforcer
+    spec:
+      containers:
+        - name: enforcer
+          image: ghcr.io/mrled/ldapenforcer:0.1.3
+          args:
+            - "--config"
+            - "/etc/ldapenforcer/ldapenforcer.toml"
+            - "sync"
+            - "--poll"
+          volumeMounts:
+            - name: ldapenforcer-cm
+              mountPath: /etc/ldapenforcer
+            - name: containeripc
+              mountPath: /containeripc
+            - name: dirsrv-tls-ca
+              mountPath: "/data/tls/ca"
+            - name: dirsrv-env-secret
+              mountPath: /etc/dirsrv/env-secret
+          securityContext:
+            runAsUser: 389
+            runAsGroup: 389
+
+      volumes:
+        - name: dirsrv-tls-ca
+          configMap:
+            name: kubernasty-ca-root-cert
+        - name: dirsrv-env
+          secret:
+            secretName: dirsrv-env-secret
+        - name: ldapenforcer-cm
+          configMap:
+            name: ldapenforcer
