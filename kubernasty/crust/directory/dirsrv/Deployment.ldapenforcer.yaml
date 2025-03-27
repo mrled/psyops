@@ -24,8 +24,6 @@ spec:
           volumeMounts:
             - name: ldapenforcer-cm
               mountPath: /etc/ldapenforcer
-            - name: containeripc
-              mountPath: /containeripc
             - name: dirsrv-tls-ca
               mountPath: "/data/tls/ca"
             - name: dirsrv-env-secret
