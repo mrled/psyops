@@ -20,8 +20,8 @@ data:
     enforced_svcacct_ou = "ou=enforced,ou=services,dc=micahrl,dc=me"
     enforced_group_ou = "ou=enforced,ou=groups,dc=micahrl,dc=me"
 
-    poll_config_interval = 10s
-    poll_ldap_interval = 1h
+    poll_config_interval = "10s"
+    poll_ldap_interval = "1h"
 
     main_log_level = "DEBUG"
     ldap_log_level = "DEBUG"
