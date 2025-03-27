@@ -7,6 +7,10 @@ spec:
   replicas: 2
   serviceAccountName: prometheus
 
+  # Configure the pods to provision storage for the primary GID of the user in the prometheus container
+  securityContext:
+    fsGroup: 65534
+
   retention: 30d
 
   serviceMonitorSelector: {}

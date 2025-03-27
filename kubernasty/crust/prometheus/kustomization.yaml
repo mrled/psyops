@@ -15,4 +15,5 @@ resources:
   - ./thanos-store/Deployment.yaml
   - ./thanos-store/Service.yaml
 
-  - ./Prometheus.yaml
+  - ./prometheus/RBAC.prometheus.yaml
+  - ./prometheus/Prometheus.yaml

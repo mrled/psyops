@@ -154,6 +154,7 @@ data:
             - cephalopod.micahrl.me
             - directory.micahrl.me
             - kubernetes.micahrl.me
+            - prometheus.micahrl.me
             - traefik.micahrl.me
           policy: two_factor
           subject:

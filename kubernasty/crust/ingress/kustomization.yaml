@@ -17,6 +17,7 @@ resources:
   - ./kubernetes.yaml
   - ./labnotes.yaml
   - ./objects.yaml
+  - ./prometheus.yaml
   - ./startpage.yaml
   - ./traefik-dashboard.yaml
   - ./whoami-unauthenticated.yaml
