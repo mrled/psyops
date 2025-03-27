@@ -8,8 +8,11 @@ if test -e "$PSYOPS_KCONF"; then
 fi
 
 export SOPS_AGE_RECIPIENTS=age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9
-# op item get o76jbsaf4aj5tdl77tupssi2xu --field=notesPlain --format json | jq -r .value > flux.agekey
-export SOPS_AGE_KEY="$(op item get o76jbsaf4aj5tdl77tupssi2xu --field=notesPlain --format json | jq -r .value)"
+# Only set the key if it's not already set
+# (means we only require authentication to 1p the first time we source this file)
+if test -z "$SOPS_AGE_KEY"; then
+    export SOPS_AGE_KEY="$(op item get o76jbsaf4aj5tdl77tupssi2xu --field=notesPlain --format json | jq -r .value)"
+fi
 
 # Examine certificates using openssl
 certinfo() {
@@ -108,6 +111,16 @@ kldif_list_markers() {
 kldif_delete_marker() {
     filename="$1"
     kldapdelete "cn=$filename,ou=ldifMarkers,dc=micahrl,dc=me"
+}
+kldif_add_marker() {
+    filename="$1"
+    kldapadd <<EOF
+dn: cn=$filename,ou=ldifMarkers,dc=micahrl,dc=me
+objectClass: top
+objectClass: organizationalRole
+cn: $filename
+description: LDIF file $filename applied on $(date)
+EOF
 }
 alias kldif_list_files='kubectl exec -it -n directory dirsrv-0 -c configurator -- sh -c "ls -a1 /initldifs/*.ldif"'
 alias kldif_apply_ldifs='kubectl exec -it -n directory dirsrv-0 -c configurator -- /initsetup/apply_ldifs.sh'
