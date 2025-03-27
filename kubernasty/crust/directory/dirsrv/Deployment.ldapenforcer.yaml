@@ -38,9 +38,9 @@ spec:
         - name: dirsrv-tls-ca
           configMap:
             name: kubernasty-ca-root-cert
-        - name: dirsrv-env
+        - name: dirsrv-env-secret
           secret:
-            secretName: dirsrv-env-secret
+            secretName: dirsrv-env
         - name: ldapenforcer-cm
           configMap:
             name: ldapenforcer
