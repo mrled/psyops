@@ -1,5 +1,5 @@
 ---
-name: CloudNativePG
+title: CloudNativePG
 weight: 40
 ---
 

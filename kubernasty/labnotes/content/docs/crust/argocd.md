@@ -1,5 +1,5 @@
 ---
-name: Argo CD
+title: Argo CD
 weight: 90
 ---
 
