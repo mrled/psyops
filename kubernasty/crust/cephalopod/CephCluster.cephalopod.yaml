@@ -4,7 +4,6 @@ metadata:
   name: cephalopod
   namespace: rook-ceph
 spec:
-
   cephVersion:
     # Container used to launch all the Ceph daemon pods.
     # Use a specific version tag to ensure the same version is used across all pods.
@@ -47,12 +46,9 @@ spec:
     # Whether SSL should be verified if the Prometheus server is using https
     # prometheusEndpointSSLVerify: false
 
-  # enable prometheus alerting for cluster - requires Prometheus to be pre-installed
-  # TODO: deploy Prometheus and enable monitoring
   monitoring:
-    enabled: false
-    # Disable metrics altogether (since we aren't using them anyway)
-    metricsDisabled: true
+    enabled: true
+    metricsDisabled: false
 
   network:
     connections:
@@ -129,7 +125,6 @@ spec:
 
   # Actually configure where the storage comes from
   storage:
-
     # We'll specify the individual nodes and devices for this cluster
     useAllNodes: false
     useAllDevices: false
