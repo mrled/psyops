@@ -5,6 +5,8 @@ metadata:
   namespace: traefik
   annotations:
     metallb.universe.tf/address-pool: primary
+  labels:
+    app: traefik-localnet
 spec:
   type: LoadBalancer
   selector:
@@ -34,3 +36,7 @@ spec:
       port: 636
       targetPort: 636
       name: ldaps
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082
+      name: metrics

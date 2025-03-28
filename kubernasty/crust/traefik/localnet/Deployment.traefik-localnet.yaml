@@ -22,6 +22,8 @@ spec:
               containerPort: 80
             - name: websecure
               containerPort: 443
+            - name: metrics
+              containerPort: 8082
             - name: admin
               containerPort: 8080
             - name: ssh
@@ -48,3 +50,6 @@ spec:
             - --entrypoints.ssh.address=:22
             - --entrypoints.postgres.address=:5432
             - --entrypoints.ldaps.address=:636
+
+            - --metrics.prometheus=true
+            - --entrypoints.metrics.address=:8082

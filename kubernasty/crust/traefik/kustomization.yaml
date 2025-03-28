@@ -8,10 +8,12 @@ resources:
   - ./common/Middleware.redirect-to-https.yaml
   - ./common/Middleware.redirect-dashboard.yaml
   - ./common/ServiceAccount.traefik.yaml
+
   - ./localnet/Deployment.traefik-localnet.yaml
   - ./localnet/Service.traefik-localnet.yaml
+  - ./localhost/ServiceMonitor.yaml
+
   - ./tailscale/Pod.tailscale.yaml
   - ./tailscale/Role.tailscale.yaml
   - ./tailscale/RoleBinding.tailscale.yaml
   - ./tailscale/ServiceAccount.tailscale.yaml
-
