@@ -1,0 +1,18 @@
+# rook-ceph-exporter Prometheus metrics:
+# - Deployed as a separate pod
+# - Exposes high level cluster-wide health and usage
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: rook-ceph-exporter
+  namespace: rook-ceph
+spec:
+  selector:
+    matchLabels:
+      app: rook-ceph-exporter
+  endpoints:
+    - port: ceph-exporter-http-metrics # Must match the endpoint name in the rook-ceph-exporter Service
+      interval: 15s
+  namespaceSelector:
+    matchNames:
+      - rook-ceph

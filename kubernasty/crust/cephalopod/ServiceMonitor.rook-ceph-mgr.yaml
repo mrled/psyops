@@ -1,0 +1,20 @@
+# rook-ceph-mgr Prometheus metrics:
+# - Exposed by the ceph-mgr daemon
+# - Exposes detailed metrics about the Ceph cluster
+# - Includes per-OSD, per-pool, perPG stats, IO operations, etc
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: rook-ceph-mgr
+  namespace: rook-ceph
+spec:
+  selector:
+    matchLabels:
+      app: rook-ceph-mgr
+  namespaceSelector:
+    matchNames:
+      - rook-ceph
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 15s

@@ -3,6 +3,9 @@ kind: Kustomization
 resources:
   - ./CephCluster.cephalopod.yaml
 
+  - ./ServiceMonitor.rook-ceph-mgr.yaml
+  - ./ServiceMonitor.rook-ceph-exporter.yaml
+
   - ./cephalopodblk/CephBlockPool.cephalopodblk-nvme-2rep.yaml
   - ./cephalopodblk/CephBlockPool.cephalopodblk-nvme-3rep.yaml
   - ./cephalopodblk/StorageClass.cephalopodblk-nvme-2rep.yaml

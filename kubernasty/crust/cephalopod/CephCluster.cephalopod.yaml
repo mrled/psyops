@@ -46,6 +46,9 @@ spec:
     # Whether SSL should be verified if the Prometheus server is using https
     # prometheusEndpointSSLVerify: false
 
+  # After deploying this and subsequently enabling monitoring, I also had to run
+  #   ceph mgr module enable prometheus
+  # from the rook-ceph-tools pod.
   monitoring:
     enabled: true
     metricsDisabled: false
