@@ -17,3 +17,9 @@ resources:
 
   - ./prometheus/RBAC.prometheus.yaml
   - ./prometheus/Prometheus.yaml
+
+  - ./node-exporter/RBAC.yaml
+  - ./node-exporter/DaemonSet.yaml
+  - ./node-exporter/Service.yaml
+  - ./node-exporter/ServiceMonitor.yaml
+  - ./node-exporter/NetworkPolicy.yaml

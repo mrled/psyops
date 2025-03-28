@@ -27,6 +27,16 @@ rules:
     resources: ["configmaps"]
     verbs: ["get"]
 
+  # Required for the node-exporter to be able to access the metrics.
+  # Prometheus will send a token in the Authorization header to
+  # kube-rbac-proxy in the node-exporter DaemonSet
+  # that indicates that the prometheus ServiceAccount (defined above).
+  # kube-rbac-proxy will validate that the prometheus ServiceAccount
+  # has access to /metrics.
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
