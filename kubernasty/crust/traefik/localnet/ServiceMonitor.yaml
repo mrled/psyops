@@ -1,7 +1,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: traefik-localhost
+  name: traefik-localnet
   namespace: traefik
 spec:
   selector:
@@ -9,4 +9,4 @@ spec:
       app: traefik-localnet
   endpoints:
     - port: metrics
-      path: /metrics
+      path: /metrics/traefik

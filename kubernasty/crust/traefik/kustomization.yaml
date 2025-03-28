@@ -11,7 +11,7 @@ resources:
 
   - ./localnet/Deployment.traefik-localnet.yaml
   - ./localnet/Service.traefik-localnet.yaml
-  - ./localhost/ServiceMonitor.yaml
+  - ./localnet/ServiceMonitor.yaml
 
   - ./tailscale/Pod.tailscale.yaml
   - ./tailscale/Role.tailscale.yaml
