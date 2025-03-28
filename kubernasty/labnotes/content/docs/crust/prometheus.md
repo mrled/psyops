@@ -49,6 +49,13 @@ When dedupe is enabled, I wee one line per node.
 When its disabled, I see two lines per node,
 which correlates to the two Prometheus instances I am running.
 
+## Adding more services
+
+* You can add `ServiceMonitor` resources that point Prometheus to `Service` resources that can be scraped on a given port
+* <https://prometheus.micahrl.me/service-discovery> shows all the service monitors its aware of
+* <https://prometheus.micahrl.me/targets> will show any errors trying to connect to any of the scraper endpoints
+* After adding a new one, you need to wait a while, sometimes a few minutes, before Prometheus can see it on the Service Discovery page
+
 ## Alerting
 
 Prometheus alerting with HA is a little hacky because Thanos doesn't dedupe alerts.
@@ -67,6 +74,11 @@ but Prometheus documentation [says](https://prometheus.io/docs/visualization/bro
 Grafana is easier to start with.
 Console templates let you define consoles in the hated Go template language and store them in source control.
 
-TODO: Graph Prometheus metrics in Grafana.
+Instead of making these yourself,
+often there are great ones in the [Grafana Dashboards site](https://grafana.com/grafana/dashboards/).
 
-TODO: Learn Prometheus [console templateing](https://prometheus.io/docs/visualization/consoles/)
+* [Linked](https://rook.io/docs/rook/latest-release/Storage-Configuration/Monitoring/ceph-monitoring/#grafana-dashboards) from the Rook Ceph documentation
+  * [Ceph - Cluster](https://grafana.com/grafana/dashboards/2842)
+  * [Ceph - OSD](https://grafana.com/grafana/dashboards/5336)
+  * [Ceph - Pools](https://grafana.com/grafana/dashboards/5342)
+* [Traefik Official Kubernetes Dashboard](https://grafana.com/grafana/dashboards/17347-traefik-official-kubernetes-dashboard/)
