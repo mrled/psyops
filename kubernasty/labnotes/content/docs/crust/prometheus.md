@@ -34,6 +34,9 @@ title: Prometheus
 
 ### Verifying that deduplication is working
 
+To verify this, make sure that the thanos-query Deployment has **not** passed the `--deduplication` flag.
+(Just comment it out, restart the Deployment, run this test, then uncomment it and restart the Deployment again.)
+
 I used a query
 
 ```promql
