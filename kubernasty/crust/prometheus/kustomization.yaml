@@ -23,3 +23,8 @@ resources:
   - ./node-exporter/Service.yaml
   - ./node-exporter/ServiceMonitor.yaml
   - ./node-exporter/NetworkPolicy.yaml
+
+  - ./kube-state-metrics/RBAC.yaml
+  - ./kube-state-metrics/Deployment.yaml
+  - ./kube-state-metrics/Service.yaml
+  - ./kube-state-metrics/ServiceMonitor.yaml
