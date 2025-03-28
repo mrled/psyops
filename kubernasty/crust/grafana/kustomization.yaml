@@ -13,5 +13,6 @@ resources:
   - ./Secret.authenticator.yaml
 
   - ./datasources/ConfigMap.source-datadump.yaml
+  - ./datasources/ConfigMap.source-prometheus.yaml
 
   - ./HelmRelease.yaml
