@@ -28,3 +28,5 @@ resources:
   - ./kube-state-metrics/Deployment.yaml
   - ./kube-state-metrics/Service.yaml
   - ./kube-state-metrics/ServiceMonitor.yaml
+
+  - ./kubelet/ServiceMonitor.yaml

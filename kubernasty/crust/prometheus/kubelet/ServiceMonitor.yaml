@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kubelet-cadvisor
+  namespace: prometheus
+  labels:
+    release: prometheus # <- match your Prometheus release name
+spec:
+  jobLabel: kubelet
+  endpoints:
+    - port: https-metrics # <- must match the port name in the kubelet svc in kube-system
+      scheme: https
+      path: /metrics/cadvisor
+      interval: 15s
+      tlsConfig:
+        insecureSkipVerify: true
+
+      # Standard Kubernetes path where every pod automatically mounts its service account token
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  selector:
+    matchLabels:
+      k8s-app: kubelet
+  namespaceSelector:
+    matchNames:
+      - kube-system

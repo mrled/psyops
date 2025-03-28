@@ -23,9 +23,11 @@ rules:
   - apiGroups: ["discovery.k8s.io"]
     resources: ["endpointslices"]
     verbs: ["get", "list", "watch"]
+
+  # nodes/proxy get,list,watch: required for scraping /metrics/cadvisor on port 10250
   - apiGroups: [""]
-    resources: ["configmaps"]
-    verbs: ["get"]
+    resources: ["configmaps", "nodes/proxy"]
+    verbs: ["get", "list", "watch"]
 
   # Required for the node-exporter to be able to access the metrics.
   # Prometheus will send a token in the Authorization header to
