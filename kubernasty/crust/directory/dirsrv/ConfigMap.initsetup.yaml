@@ -115,15 +115,50 @@ data:
     touch /containeripc/startupProbe
 
     echo "Finished initial setup. We now loop forever to check for new ldifs/passwords to apply from the initsetup ConfigMap (and to keep the container running)."
+
+    # Keep track of the most recently modified LDIF/secret file
+    lastapplied=0
+    latest=0
+
     while true; do
       if test -f /containeripc/stop; then
         echo "Stopping because the main container is stopping"
         exit 0
       fi
-      /initsetup/apply_ldifs.sh || echo "Failed to apply LDIFs, continuing..."
-      /initsetup/set_account_passwords.sh || echo "Failed to set account passwords, continuing..."
+
+      # If ANY file is more recent, re-run ALL the LDIFs and password files.
+      # (This is just simpler.)
+      latest=$(/initsetup/get_latest_mtime.sh /initldifs/*.ldif /initsecrets/*.txt)
+      if test "$latset" -eq 0 || test "$latest" -gt "$lastapplied"; then
+        echo "Last applied: $lastapplied, latest: $latest, reapplying..."
+        /initsetup/apply_ldifs.sh || echo "Failed to apply LDIFs, continuing..."
+        /initsetup/set_account_passwords.sh || echo "Failed to set account passwords, continuing..."
+        lastapplied="$latest"
+      fi
       sleep 5
     done
+
+  get_latest_mtime.sh: |+
+    #!/bin/sh
+    set -eu
+    # Get the latest modification time of the most recently updated file in a list.
+    # Print the mtime in seconds since the epoch.
+    # Usage: get_latest_mtime.sh FILE [FILE...]
+    # Example: get_latest_mtime.sh /etc/hosts /etc/resolv.conf
+    # Example: get_latest_mtime.sh /etc/hosts /etc/resolv.conf | sort -n | tail -n 1
+
+    latest=0
+
+    for file in "$@"; do
+      # readlink is not POSIX, but our configurator does have it
+      real=$(readlink -f "$file")
+      if test -f "$real"; then
+        mtime="$(stat -c %Y "$real")"
+        test "$mtime" -gt "$latest" && latest="$mtime"
+      fi
+    done
+
+    echo "$latest"
 
   configure_backend.sh: |+
     #!/bin/sh
@@ -326,27 +361,20 @@ data:
       fi
     }
 
-    set_passwords_from_file() {
-      local file="$1"
-      local base_dn="$2"
-      if ! test -f "$file"; then
-        /initsetup/log.sh "No password file found: $file"
-        return
-      fi
-      while read -r uid password; do
-        test -z "$uid" && continue
-        local dn="uid=$uid,$base_dn"
+    idx=0
+    grep -vE '^\s*(#|$)' /initsecrets/passwords.txt |
+      while IFS= read -r dn && IFS= read -r password && IFS= read -r sep; do
+        # xargs strips leading/trailing whitespace
+        dn="$(echo "$dn" | xargs)"
+        password="$(echo "$password" | xargs)"
+        if ! test "$dn" = "uid=*" || test -z "$password" || ! test "$sep" = "-"; then
+          echo "Invalid DN, password, or separator on entry $idx"
+          exit 1
+        fi
+        echo "Setting password for $dn..."
         ldapmodify_setpassword "$dn" "$password"
-      done <"$file"
-    }
-
-    # Set passwords for regular users and service accounts
-    set_passwords_from_file /initsecrets/user-passwords "ou=people,$DS_SUFFIX_NAME"
-    set_passwords_from_file /initsecrets/service-passwords "ou=services,$DS_SUFFIX_NAME"
-
-    # Set passwords for enforced users and service accounts
-    set_passwords_from_file /initsecrets/enforced-user-passwords "ou=enforced,ou=people,$DS_SUFFIX_NAME"
-    set_passwords_from_file /initsecrets/enforced-service-passwords "ou=enforced,ou=services,$DS_SUFFIX_NAME"
+        idx=$((idx + 1))
+      done
 
   tail_access_log.sh: |+
     #!/bin/sh
