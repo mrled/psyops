@@ -5,5 +5,8 @@ resources:
   - ./Certificate.clusterlogs-admin-tls.yaml
   - ./Certificate.clusterlogs-tls.yaml
   - ./ConfigMap.kubernasty-root-ca-cert.yaml
+  - ./Secret.security-config.yaml
   - ./Secret.authenticator.yaml
+  - ./Secret.clusterlogs-admin-creds.yaml
+  - ./Secret.clusterlogs-dashboards-creds.yaml
   - ./OpenSearchCluster.yaml

@@ -12,9 +12,17 @@ spec:
     # https://github.com/opensearch-project/opensearch-k8s-operator/blob/main/docs/userguide/main.md#deal-with-max-virtual-memory-areas-vmmax_map_count-errors
     setVMMaxMapCount: true
 
+    # Set options in opensearch.yml for all nodes
+    additionalConfig:
+      # Must be exactly 16 chars, and set the same for all nodes
+      plugins.security.compliance.salt: voo4Bu2cah5ahwei
+
     additionalVolumes:
       - name: kubernasty-ca-root-cert
-        path: /etc/kubernasty-ca
+        # This MUST be mounted inside /usr/share/opensearch,
+        # otherwise some security policy will prevent OpenSearch from reading it,
+        # could be JVM security manager or some shit, idk.
+        path: /usr/share/opensearch/config/kubernasty-ca
         configMap:
           name: kubernasty-ca-root-cert
 
@@ -23,11 +31,7 @@ spec:
     version: 2.3.0
     replicas: 2
 
-    env:
-      - name: LDAP_AUTHENTICATOR_USERNAME
-        valueFrom: { secretKeyRef: { name: authenticator, key: username } }
-      - name: LDAP_AUTHENTICATOR_PASSWORD
-        valueFrom: { secretKeyRef: { name: authenticator, key: password } }
+    opensearchCredentialsSecret: { name: clusterlogs-dashboards-creds }
 
     resources:
       requests:
@@ -38,105 +42,9 @@ spec:
         cpu: "2000m"
 
     additionalConfig:
-      opensearch_security.auth.type: proxy
       opensearch.requestHeadersWhitelist: |
         ["x-forwarded-for","remote-user","remote-groups","remote-email","remote-name"]
-
-      http:
-        xff:
-          enabled: true
-          # This is the IP of the Authelia reverse proxy, assigned by metallb IPAddressPool. ?
-          internalProxies: "192.168.1.221"
-          remoteIpHeader: "x-forwarded-for"
-
-      authc:
-        # We must enable internal auth bc OpenSearch Dashboards connects to OpenSearch using the `kibanaserver` internal user
-        internal_auth:
-          order: 0
-          description: "HTTP basic authentication using the internal user database"
-          http_enabled: true
-          transport_enabled: true
-          http_authenticator:
-            type: basic
-            challenge: false
-          authentication_backend:
-            type: internal
-
-        proxy_auth_domain:
-          order: 1
-          description: "Authenticate via Authelia reverse proxy"
-          http_enabled: true
-          transport_enabled: true
-          http_authenticator:
-            type: proxy
-            config:
-              user_header: "Remote-User"
-              email_header: "Remote-Email"
-              name_header: "Remote-Name"
-              roles_header: "Remote-Groups"
-              challenge: false
-          authentication_backend:
-            type: noop
-
-        # <https://opensearch.org/docs/latest/security/authentication-backends/ldap>
-        ldap:
-          http_enabled: true
-          transport_enabled: true
-          order: 2
-          http_authenticator:
-            type: basic
-            challenge: false
-          authentication_backend:
-            type: ldap
-            config:
-              hosts:
-                - dirsrv.directory.svc.cluster.local:3636
-              enable_ssl: true
-              enable_start_tls: false
-              enable_ssl_client_auth: false
-              verify_hostnames: true
-              pemtrustedcas_filepath: "/etc/kubernasty-ca/ca.crt"
-
-              bind_dn: "${LDAP_AUTHENTICATOR_USERNAME}"
-              password: "${LDAP_AUTHENTICATOR_PASSWORD}"
-
-              # In usersearch, {0} is the username
-              usersearch: "(&(uid={0})(objectClass=inetOrgPerson))"
-              userbase: "ou=people,dc=micahrl,dc=me"
-              username_attribute: "uid"
-
-      authz:
-        # <https://opensearch.org/docs/latest/security/authentication-backends/ldap>
-        # Most of the configuration is identical to authc.ldap above; this is apparently required.
-        ldap:
-          http_enabled: true
-          transport_enabled: true
-          authorization_backend:
-            type: ldap
-            config:
-              hosts:
-                - dirsrv.directory.svc.cluster.local:3636
-              enable_ssl: true
-              enable_start_tls: false
-              enable_ssl_client_auth: false
-              verify_hostnames: true
-              pemtrustedcas_filepath: "/etc/kubernasty-ca/ca.crt"
-
-              bind_dn: "${LDAP_AUTHENTICATOR_USERNAME}"
-              password: "${LDAP_AUTHENTICATOR_PASSWORD}"
-
-              # In usersearch, {0} is the username
-              usersearch: "(&(uid={0})(objectClass=inetOrgPerson))"
-              userbase: "ou=people,dc=micahrl,dc=me"
-              username_attribute: "uid"
-
-              # In role search, {0} is the DN of the user
-              rolesearch: "(&(member={0})(objectClass=groupOfUniqueNames))"
-              rolebase: "ou=groups,dc=micahrl,dc=me"
-              # We don't need to resolve nested roles because LDAPEnforcer flattens them
-              # (only for enforced users/groups, but that's all we care about)
-              resolve_nested_roles: false
-              rolename: cn
+      opensearch_security.auth.type: proxy
 
   # On node roles: <https://opensearch.org/docs/latest/tuning-your-cluster/#nodes>
   nodePools:
@@ -201,6 +109,22 @@ spec:
               topologyKey: "kubernetes.io/hostname"
 
   security:
+    config:
+      # Contains a security.yml configuration file
+      # Is automatically applied by a *-securityconfig-update job
+      # which picks up changes and reruns within a few minutes of the Secret being changed
+      # See its logs if you have issues
+      securityConfigSecret: { name: security-config }
+
+      # Contains a cert signed by the same CA as the transport cert
+      # for the operator to use for managing the cluster
+      # Required because we are providing our own transport cert
+      adminSecret: { name: clusterlogs-admin-tls-secret }
+
+      # Contains username/password for admin access
+      # Required if securityConfigSecret is set
+      adminCredentialsSecret: { name: clusterlogs-admin-creds }
+
     tls:
       transport:
         generate: false
@@ -216,10 +140,8 @@ spec:
           - "CN=clusterlogs-master-*.clusterlogs.logging.svc.cluster.local"
           - "CN=clusterlogs-data-*.clusterlogs.logging.svc.cluster.local"
 
-        adminSecret:
-          name: clusterlogs-admin-tls-secret
-
         # The DN is set by Cert Manager to be `CN=common-name`
+        # This must be the DN in clusterlogs-admin-tls-secret
         adminDn:
           - "CN=clusterlogs-admin.logging.svc.cluster.local"
 

@@ -15,6 +15,14 @@ spec:
   duration: 175200h # 20 years
   renewBefore: 8600h # 1 year
 
+  # This fucking piece of shit can only read RSA keys
+  # https://github.com/opensearch-project/helm-charts/issues/180#issuecomment-2266308172
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    encoding: PKCS8
+    rotationPolicy: Always
+
   # The common name is required as it makes up the DN, which is used in the OpenSearchCluster spec
   commonName: clusterlogs.logging.svc.cluster.local
   dnsNames:
@@ -33,5 +41,5 @@ spec:
     - clusterlogs-data-1.clusterlogs.logging.svc.cluster.local
     - clusterlogs-data-2.clusterlogs.logging.svc.cluster.local
   issuerRef:
-    name: cluster-ca-issuer
+    name: kubernasty-ca
     kind: ClusterIssuer
