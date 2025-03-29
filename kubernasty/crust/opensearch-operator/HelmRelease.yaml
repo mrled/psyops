@@ -1,0 +1,19 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opensearch-operator
+  namespace: opensearch-operator
+spec:
+  interval: 10m
+  timeout: 5m
+  chart:
+    spec:
+      chart: opensearch-operator
+      # https://github.com/opensearch-project/opensearch-k8s-operator/releases
+      version: "2.7.0"
+      sourceRef:
+        kind: HelmRepository
+        name: opensearch-operator
+        namespace: flux-system
+      interval: 15m
+  releaseName: opensearch-operator
