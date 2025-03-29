@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./Namespace.yaml
+  - ./Certificate.clusterlogs-admin-tls.yaml
+  - ./Certificate.clusterlogs-tls.yaml
+  - ./ConfigMap.kubernasty-root-ca-cert.yaml
+  - ./Secret.authenticator.yaml
+  - ./OpenSearchCluster.yaml

@@ -15,6 +15,7 @@ resources:
   - ./dragonfly-operator
   - ./cloudnativepg
   - ./prometheus-operator
+  - ./opensearch-operator
 
   # Argo
   - ./argoev
@@ -39,3 +40,4 @@ resources:
   - ./grafana
   - ./labnotes
   - ./prometheus
+  - ./logging

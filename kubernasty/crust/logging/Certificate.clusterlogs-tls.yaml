@@ -1,0 +1,37 @@
+# Currently, cert management for the Operator is pretty inconvenient.
+# - It can generate certs itself, but they expire after 1 year and renewing them is completely manual
+# - It cannot integrate with Cert Manager
+# - Cert rollover requires downtime, a full restart of each node
+# So we just get a cert for ~forever from the cert manager.
+#
+# This certificate is used for BOTH transport and https.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: clusterlogs-tls
+  namespace: logging
+spec:
+  secretName: clusterlogs-tls-secret
+  duration: 175200h # 20 years
+  renewBefore: 8600h # 1 year
+
+  # The common name is required as it makes up the DN, which is used in the OpenSearchCluster spec
+  commonName: clusterlogs.logging.svc.cluster.local
+  dnsNames:
+    - clusterlogs.logging.svc.cluster.local
+    # These are all required for https
+    - clusterlogs
+    - clusterlogs.logging
+    - clusterlogs.logging.svc
+    - clusterlogs.logging.svc.cluster.local
+    # These are required for transport
+    # All nodes need to be present here
+    - clusterlogs-master-0.clusterlogs.logging.svc.cluster.local
+    - clusterlogs-master-1.clusterlogs.logging.svc.cluster.local
+    - clusterlogs-master-2.clusterlogs.logging.svc.cluster.local
+    - clusterlogs-data-0.clusterlogs.logging.svc.cluster.local
+    - clusterlogs-data-1.clusterlogs.logging.svc.cluster.local
+    - clusterlogs-data-2.clusterlogs.logging.svc.cluster.local
+  issuerRef:
+    name: cluster-ca-issuer
+    kind: ClusterIssuer

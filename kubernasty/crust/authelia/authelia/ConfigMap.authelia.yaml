@@ -152,6 +152,7 @@ data:
         - domain:
             - capacitor.micahrl.me
             - cephalopod.micahrl.me
+            - clusterlogs.micahrl.me
             - directory.micahrl.me
             - kubernetes.micahrl.me
             - prometheus.micahrl.me
