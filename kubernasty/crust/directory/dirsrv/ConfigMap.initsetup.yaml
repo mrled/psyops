@@ -129,7 +129,7 @@ data:
       # If ANY file is more recent, re-run ALL the LDIFs and password files.
       # (This is just simpler.)
       latest=$(/initsetup/get_latest_mtime.sh /initldifs/*.ldif /initsecrets/*.txt)
-      if test "$latset" -eq 0 || test "$latest" -gt "$lastapplied"; then
+      if test "$latest" -eq 0 || test "$latest" -gt "$lastapplied"; then
         echo "Last applied: $lastapplied, latest: $latest, reapplying..."
         /initsetup/apply_ldifs.sh || echo "Failed to apply LDIFs, continuing..."
         /initsetup/set_account_passwords.sh || echo "Failed to set account passwords, continuing..."
@@ -367,14 +367,24 @@ data:
         # xargs strips leading/trailing whitespace
         dn="$(echo "$dn" | xargs)"
         password="$(echo "$password" | xargs)"
-        if ! test "$dn" = "uid=*" || test -z "$password" || ! test "$sep" = "-"; then
-          echo "Invalid DN, password, or separator on entry $idx"
+        case "$dn" in
+          uid=*) ;;
+          *) echo "Invalid DN on entry $idx"; exit 1;;
+        esac
+        if test -z "$password"; then
+          echo "Invalid password on entry $idx"
           exit 1
         fi
-        echo "Setting password for $dn..."
+        if ! test "$sep" = "-"; then
+          echo "Invalid separator on entry $idx"
+          exit 1
+        fi
+        echo "Setting password for $dn... (entry $idx)"
         ldapmodify_setpassword "$dn" "$password"
         idx=$((idx + 1))
       done
+
+    echo "Finished setting account passwords."
 
   tail_access_log.sh: |+
     #!/bin/sh
