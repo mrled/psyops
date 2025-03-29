@@ -40,6 +40,17 @@ data:
     cn = "Authelia"
     description = "A service account for Authelia"
 
+    #### Clusterlogs
+
+    [ldapenforcer.svcacct.clusterlogs-admin]
+    cn = "Clusterlogs Admin"
+    description = "A service account for the clusterlogs OpenSearch cluster"
+
+    # This is a SERVICE ACCOUNT used by the Dashboards to access the OpenSearch cluster
+    [ldapenforcer.svcacct.clusterlogs-dashboards]
+    cn = "Clusterlogs Dashboards"
+    description = "A service account for the Dashboards to access the OpenSearch cluster"
+
   people.toml: |+
     [ldapenforcer.person.mrladmin]
     cn = "Micah R Ledbetter (Admin)"
@@ -75,6 +86,8 @@ data:
     description = "Users that can log in to the Git server"
     people = ["mrladmin", "micahrl"]
 
+    #### Argo Workflows
+
     [ldapenforcer.group.argowf-users]
     description = "Users that can log in to the Argo Workflows server"
     groups = ["proletarii"]
@@ -83,6 +96,8 @@ data:
     description = "Users that can administer the Argo Workflows server"
     groups = ["patricii"]
 
+    #### Grafana
+
     [ldapenforcer.group.grafana-users]
     description = "Users that can log in to the Grafana server"
     groups = ["proletarii"]
@@ -90,3 +105,18 @@ data:
     [ldapenforcer.group.grafana-admins]
     description = "Users that can administer the Grafana server"
     groups = ["patricii"]
+
+    #### clusterlogs OpenSearch cluster
+
+    [ldapenforcer.group.clusterlogs-admins]
+    description = "Users that can administer the OpenSearch cluster"
+    groups = ["patricii"]
+    svcaccts = ["clusterlogs-admin"]
+
+    [ldapenforcer.group.clusterlogs-dashboards-access]
+    description = "Users that can log in to the clusterlogs OpenSearch cluster dashboards web UI"
+    groups = ["proletarii", "patricii"]
+
+    [ldapenforcer.group.clusterlogs-readall]
+    description = "Grant read access to all indicies in clusterlogs OpenSearch cluster"
+    groups = ["proletarii", "patricii"]
