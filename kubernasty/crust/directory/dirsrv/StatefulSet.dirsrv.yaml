@@ -74,8 +74,6 @@ spec:
               mountPath: /initsetup
             - name: containeripc
               mountPath: /containeripc
-            - name: logs
-              mountPath: /var/log/dirsrv
 
           lifecycle:
             preStop:
@@ -140,17 +138,38 @@ spec:
             - name: containeripc
               mountPath: /containeripc
 
-        - name: accesslogger
+        - name: logger-access
           image: busybox
-          # -F will follow the file even if it is rotated
-          command: ["sh", "/initsetup/tail_access_log.sh"]
+          command: ["sh", "/initsetup/tail_log.sh", "/data/logs/access"]
           volumeMounts:
             - name: initsetup
               mountPath: /initsetup
             - name: containeripc
               mountPath: /containeripc
-            - name: logs
-              mountPath: /var/log/dirsrv
+            - name: dirsrv-data
+              mountPath: "/data"
+
+        - name: logger-errors
+          image: busybox
+          command: ["sh", "/initsetup/tail_log.sh", "/data/logs/errors"]
+          volumeMounts:
+            - name: initsetup
+              mountPath: /initsetup
+            - name: containeripc
+              mountPath: /containeripc
+            - name: dirsrv-data
+              mountPath: "/data"
+
+        - name: logger-security
+          image: busybox
+          command: ["sh", "/initsetup/tail_log.sh", "/data/logs/security"]
+          volumeMounts:
+            - name: initsetup
+              mountPath: /initsetup
+            - name: containeripc
+              mountPath: /containeripc
+            - name: dirsrv-data
+              mountPath: "/data"
 
       volumes:
         - name: dirsrv-tls
@@ -177,9 +196,6 @@ spec:
             secretName: initsecrets
             defaultMode: 0440
         - name: containeripc
-          emptyDir:
-            medium: Memory
-        - name: logs
           emptyDir:
             medium: Memory
 

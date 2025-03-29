@@ -386,11 +386,12 @@ data:
 
     echo "Finished setting account passwords."
 
-  tail_access_log.sh: |+
+  tail_log.sh: |+
     #!/bin/sh
     set -eu
+    logfile="$1"
     # -F will follow the file even if it is rotated
-    tail -F /var/log/dirsrv/access.log &
+    tail -F "$logfile" &
     while true; do
       if test -f /containeripc/stop; then
         echo "Stopping because the main container is stopping"
