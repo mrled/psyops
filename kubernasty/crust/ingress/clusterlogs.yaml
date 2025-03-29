@@ -10,10 +10,10 @@ spec:
     - match: Host(`clusterlogs.micahrl.me`)
       kind: Rule
       services:
-        - name: ldap-account-manager
-          namespace: directory
+        - name: clusterlogs-dashboards
+          namespace: logging
           kind: Service
-          port: 80
+          port: 5601
       middlewares:
         - name: authelia
           namespace: authelia
