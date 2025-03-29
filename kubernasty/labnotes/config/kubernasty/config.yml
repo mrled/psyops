@@ -1,1 +1,4 @@
 baseURL: https://labnotes.micahrl.me
+
+params:
+  repobase: https://gitea.micahrl.me/kubernasty/psyops/src/branch/master

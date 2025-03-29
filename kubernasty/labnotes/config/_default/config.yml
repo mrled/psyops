@@ -6,3 +6,6 @@ title: Kubernasty
 module:
   imports:
     path: github.com/alex-shpak/hugo-book
+
+params:
+  repobase: https://gitea.micahrl.me/kubernasty/psyops/src/branch/master

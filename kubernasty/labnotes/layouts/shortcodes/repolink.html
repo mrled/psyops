@@ -1,5 +1,5 @@
 {{- $path := .Get 0 }}
-{{- $uri := printf "https://github.com/mrled/psyops/tree/master/%s" $path }}
+{{- $uri := printf "%s/%s" .Site.Params.repobase $path }}
 <a href="{{ $uri }}">
   <span class="psyops-symbol">♘</span>&nbsp;<code>{{ $path }}</code>
 </a>

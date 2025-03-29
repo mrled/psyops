@@ -1,1 +1,4 @@
 baseURL: https://kubernasty-labnotes.micahrl.com
+
+params:
+  repobase: https://github.com/mrled/psyops/blob/master
