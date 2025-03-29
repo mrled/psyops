@@ -41,10 +41,10 @@ spec:
         memory: "512Mi"
         cpu: "2000m"
 
-    additionalConfig:
-      opensearch.requestHeadersWhitelist: |
-        ["x-forwarded-for","remote-user","remote-groups","remote-email","remote-name"]
-      opensearch_security.auth.type: proxy
+    # additionalConfig:
+    #   opensearch.requestHeadersWhitelist: |
+    #     ["x-forwarded-for","remote-user","remote-groups","remote-email","remote-name"]
+    #   opensearch_security.auth.type: proxy
 
   # On node roles: <https://opensearch.org/docs/latest/tuning-your-cluster/#nodes>
   nodePools:
