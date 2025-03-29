@@ -152,7 +152,6 @@ data:
         - domain:
             - capacitor.micahrl.me
             - cephalopod.micahrl.me
-            - clusterlogs.micahrl.me
             - directory.micahrl.me
             - kubernetes.micahrl.me
             - prometheus.micahrl.me
@@ -162,6 +161,7 @@ data:
             - "group:patricii"
         # Require 2FA and any login for these domains.
         - domain:
+            - clusterlogs.micahrl.me
             - grafana.micahrl.me
             - kubernasty.micahrl.me
             - whoami-authenticated.micahrl.me
