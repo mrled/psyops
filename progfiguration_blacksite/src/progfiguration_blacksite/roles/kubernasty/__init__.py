@@ -100,6 +100,11 @@ class Role(ProgfigurationRole):
             0o644,
         )
 
+        # Allow higher max_user_watches / max_user_instances
+        # Without this sometimes inotify watches run out and "kubectl logs -f" fails
+        magicrun("sysctl -w fs.inotify.max_user_watches=524288")
+        magicrun("sysctl -w fs.inotify.max_user_instances=1024")
+
         # Install k0s logrotate configuration
         self.localhost.cp(
             self.role_file("logrotate.k0s.conf"),
