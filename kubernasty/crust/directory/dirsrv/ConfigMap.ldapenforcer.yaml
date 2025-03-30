@@ -51,6 +51,10 @@ data:
     cn = "Clusterlogs Dashboards"
     description = "A service account for the Dashboards to access the OpenSearch cluster"
 
+    [ldapenforcer.svcacct.clusterlogs-kubernasty-collector]
+    cn = "Clusterlogs Kubernasty Collector"
+    description = "A service account for collecting logs from the Kubernasty cluster"
+
   people.toml: |+
     [ldapenforcer.person.mrladmin]
     cn = "Micah R Ledbetter (Admin)"
@@ -120,3 +124,7 @@ data:
     [ldapenforcer.group.clusterlogs-readall]
     description = "Grant read access to all indicies in clusterlogs OpenSearch cluster"
     groups = ["proletarii", "patricii"]
+
+    [ldapenforcer.group.clusterlogs-kubernasty-collectors]
+    description = "Group for collecting logs from the Kubernasty cluster"
+    svcaccts = ["clusterlogs-kubernasty-collector"]
