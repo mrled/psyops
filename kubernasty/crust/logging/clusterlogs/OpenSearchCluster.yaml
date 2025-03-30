@@ -58,11 +58,11 @@ spec:
       diskSize: "5Gi"
       resources:
         requests:
-          memory: "2Gi"
+          memory: "4Gi"
           cpu: "500m"
         limits:
-          memory: "2Gi"
-          cpu: "2000m"
+          memory: "4Gi"
+          cpu: "4000m"
       roles:
         - "cluster_manager"
       persistence:
@@ -86,11 +86,11 @@ spec:
       diskSize: "5Gi"
       resources:
         requests:
-          memory: "2Gi"
+          memory: "4Gi"
           cpu: "500m"
         limits:
-          memory: "2Gi"
-          cpu: "2000m"
+          memory: "4Gi"
+          cpu: "4000m"
       roles:
         - "data"
       persistence:
