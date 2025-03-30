@@ -41,10 +41,14 @@ spec:
         memory: "512Mi"
         cpu: "2000m"
 
-    # additionalConfig:
-    #   opensearch.requestHeadersWhitelist: |
-    #     ["x-forwarded-for","remote-user","remote-groups","remote-email","remote-name"]
-    #   opensearch_security.auth.type: proxy
+    # Settings here get added in dashboards containers to
+    # /usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
+    additionalConfig:
+      opensearch.requestHeadersWhitelist: |-
+        ["x-forwarded-for","remote-user","remote-groups","remote-email","remote-name"]
+      opensearch_security.auth.type: proxy
+      opensearch_security.proxycache.user_header: "remote-user"
+      opensearch_security.proxycache.roles_header: "remote-groups"
 
   # On node roles: <https://opensearch.org/docs/latest/tuning-your-cluster/#nodes>
   nodePools:
