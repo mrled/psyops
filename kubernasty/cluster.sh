@@ -190,3 +190,39 @@ kpsql() {
     local PGDATABASE="$(kubectl get cluster -n "$namespace" "$cluster" -ojson | jq -r '.spec.bootstrap.initdb.database')"
     kubectl run -n "$namespace" psql-client --rm --env=PGUSER="$PGUSER" --env=PGPASSWORD="$PGPASSWORD" --env=PGDATABASE="$PGDATABASE" -it --image=postgres -- psql -h "${cluster}-rw" "$@"
 }
+
+# Run a curl command with clusterlogs-adin credentials
+clusterlogs_admin() {
+    username="$(kubectl get secret -n logging clusterlogs-admin-creds -o go-template='{{ index .data "username" | base64decode}}')"
+    password="$(kubectl get secret -n logging clusterlogs-admin-creds -o go-template='{{ index .data "password" | base64decode}}')"
+    suffix="$(date +%s)"
+    containername="clusterlogs-admin-curl-$suffix"
+    image="curlimages/curl"
+    overrides="$(jq -r -c . <<EOF
+    {
+        "spec": {
+            "volumes": [
+                {"name": "kubernasty-ca-root-cert", "configMap": {"name": "kubernasty-ca-root-cert"}}
+            ],
+            "containers": [
+                {
+                    "name": "$containername",
+                    "image": "$image",
+                    "command": ["sh", "-c"],
+                    "args": ["curl --user \"$username:$password\" --cacert /etc/kubernasty/ca/ca.crt --silent $@; echo ''"],
+                    "volumeMounts": [{"mountPath": "/etc/kubernasty/ca", "name": "kubernasty-ca-root-cert"}]
+                }
+            ]
+        }
+    }
+EOF
+)"
+    # kubectl run "$containername" -itn logging --rm --restart=Never --overrides="$overrides" --image="$image" -- -u "$username:$password" --cacert /etc/kubernasty/ca/ca.crt  "$@"
+    kubectl run "$containername" \
+        --stdin --tty --rm \
+        --namespace logging \
+        --restart=Never \
+        --overrides="$overrides" \
+        --image="$image" |
+            grep -v 'pod .* deleted'
+}
