@@ -1,0 +1,24 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: fluent-bit
+  namespace: logging
+spec:
+  interval: 10m
+  timeout: 5m
+  chart:
+    spec:
+      chart: fluent-bit
+      # https://github.com/fluent/helm-charts/releases
+      version: "0.48.9"
+      sourceRef:
+        kind: HelmRepository
+        name: fluent
+        namespace: flux-system
+      interval: 15m
+  releaseName: fluent-bit
+
+  valuesFrom:
+    - kind: ConfigMap
+      name: fluent-bit-values
+      valuesKey: values.yaml

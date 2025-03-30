@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-values
+  namespace: logging
+data:
+  values.yaml: |+
+    serviceMonitor:
+      enabled: true
+      namespace: prometheus
+      selector:
+        prometheus: prometheus
+
+    envFrom:
+      - secretRef:
+          name: fluent-bit-secret-values
+
+
+    config:
+      inputs: |+
+        [INPUT]
+            Name tail
+            Path /var/log/containers/*.log
+            multiline.parser docker, cri
+            Tag kube.*
+            Mem_Buf_Limit 5MB
+            Skip_Long_Lines On
+
+        [INPUT]
+            Name tail
+            Path /var/log/messages
+            Parser alpine-syslog
+            Tag host.messages
+
+        [INPUT]
+            Name tail
+            Path /var/log/postboot.*
+            Parser raw
+            Tag host.postboot
+            Mem_Buf_Limit 5MB
+            Skip_Long_Lines On
+
+        [INPUT]
+            Name    tail
+            Path    k0s.*
+            Parser  k0s-logs
+            Tag     host.k0s
+
+
+      customParsers: |+
+        [PARSER]
+            Name        alpine-syslog
+            Format      regex
+            Regex       ^(?<time>\w{3} \d{1,2} \d{2}:\d{2}:\d{2}) (?<host>\S+) (?<facility>\S+)\s(?<message>.+)$
+            Time_Key    time
+            Time_Format %b %d %H:%M:%S
+
+        [PARSER]
+            Name        k0s-logs
+            Format      regex
+            Regex       ^time="(?<time>[^"]+)" level=(?<level>\w+) msg="(?<msg>([^"\\]|\\.)*)" component=(?<component>\S+)( stream=(?<stream>\S+))?
+            Time_Key    time
+            Time_Format %Y-%m-%d %H:%M:%S
+
+      filters: |+
+        [FILTER]
+            Name                kubernetes
+            Match               kube.*
+            Kube_URL            https://kubernetes.default.svc:443
+            Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+            Merge_Log           On
+            Keep_Log            Off
+
+        # Expand JSON string in msg field, only when the field is present and is valid JSON
+        # ... actually apparently json_parse is either hallucinated or maybe needs a plugin, TODO figure this out
+        # [FILTER]
+        #     Name          modify
+        #     Match         *
+        #     Condition     Key_Value_Present msg
+        #     JSON_Parse    msg
+
+      # https://docs.fluentbit.io/manual/pipeline/outputs/opensearch
+      outputs: |+
+        # [OUTPUT]
+        #     Name            stdout
+        #     Match           *
+        #     Format          json_lines
+
+        [OUTPUT]
+            Name            opensearch
+            Match           kube.*
+            Host            clusterlogs.logging.svc.cluster.local
+            Port            9200
+            HTTP_User       clusterlogs-kubernasty-collector
+            HTTP_Passwd     ${KUBERNASTY_COLLECTOR_PASSWORD}
+            tls             On
+            tls.verify      On
+            tls.ca_file     /fluent-bit/secrets/kubernasty-ca-root-cert/ca.crt
+            Trace_Error     On
+            Logstash_Format On
+            LogStash_Prefix kubernasty-container-logs
+            Suppress_Type_Name On
+            Generate_ID     On
+            # Includes a tag for which source generated the log
+            Include_Tag_Key On
+            # You want this unless you're using logs that are specifically written for ES/OS
+            Replace_Dots    On
+
+        [OUTPUT]
+            Name            opensearch
+            Match           host.*
+            Host            clusterlogs.logging.svc.cluster.local
+            Port            9200
+            HTTP_User       clusterlogs-kubernasty-collector
+            HTTP_Passwd     ${KUBERNASTY_COLLECTOR_PASSWORD}
+            tls             On
+            tls.verify      On
+            tls.ca_file     /fluent-bit/secrets/kubernasty-ca-root-cert/ca.crt
+            Trace_Error     On
+            Logstash_Format On
+            LogStash_Prefix kubernasty-node-logs
+            Suppress_Type_Name On
+            Generate_ID     On
+            Include_Tag_Key On
+            Replace_Dots    On
+
+    daemonSetVolumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: kubernasty-ca-root-cert
+        configMap:
+          name: kubernasty-ca-root-cert
+
+    daemonSetVolumeMounts:
+      - name: varlog
+        mountPath: /var/log
+      - name: kubernasty-ca-root-cert
+        mountPath: /fluent-bit/secrets/kubernasty-ca-root-cert
+        readOnly: true
+
+    hotReload:
+      enabled: true
