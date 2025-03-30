@@ -52,7 +52,6 @@ spec:
     - component: master
       replicas: 3
       diskSize: "5Gi"
-      nodeSelector:
       resources:
         requests:
           memory: "2Gi"
@@ -72,17 +71,15 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchExpressions:
-                  - key: "opensearch.opster.io/component"
+                  - key: "opster.io/opensearch-nodepool"
                     operator: In
-                    values:
-                      - master
+                    values: [master]
               topologyKey: "kubernetes.io/hostname"
 
     # Data storage and search roles
     - component: data
       replicas: 3
       diskSize: "5Gi"
-      nodeSelector:
       resources:
         requests:
           memory: "2Gi"
@@ -102,10 +99,9 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchExpressions:
-                  - key: "opensearch.opster.io/component"
+                  - key: "opster.io/opensearch-nodepool"
                     operator: In
-                    values:
-                      - master
+                    values: [data]
               topologyKey: "kubernetes.io/hostname"
 
   security:
