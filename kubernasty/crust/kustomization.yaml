@@ -16,6 +16,7 @@ resources:
   - ./cloudnativepg
   - ./prometheus-operator
   - ./opensearch-operator
+  - ./mongo-operator
 
   # Argo
   - ./argoev
