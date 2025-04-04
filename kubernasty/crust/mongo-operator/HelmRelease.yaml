@@ -19,5 +19,7 @@ spec:
       interval: 15m
   releaseName: community-operator
 
+  # https://github.com/mongodb/helm-charts/blob/main/charts/community-operator/values.yaml
   values:
-    watchNamespace: "*"
+    operator:
+      watchNamespace: "*"
