@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: meilisearch
+  namespace: librechat
+spec:
+  volumeClaimTemplates:
+    # No need to back up the data volume; it can be regenerated.
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: cephalopodblk-nvme-2rep
+        resources:
+          requests:
+            storage: 5Gi
+  template:
+    spec:
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+      containers:
+        - name: meilisearch
+          envFrom:
+            - configMapRef:
+                name: meilisearch-environment
+            - secretRef:
+                name: meilisearch-environment

@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: librechat
+resources:
+  - ./Secret.meilisearch-environment.yaml
+  - https://raw.githubusercontent.com/meilisearch/meilisearch-kubernetes/refs/heads/main/manifests/meilisearch.yaml
+patches:
+  - path: ./Patch.ConfigMap.meilisearch-environment.yaml
+    target:
+      kind: ConfigMap
+      name: meilisearch-environment
+  - path: ./Patch.StatefulSet.meilisearch.yaml
+    target:
+      kind: StatefulSet
+      name: meilisearch

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: meilisearch-environment
+  namespace: librechat
+data:
+  # https://www.meilisearch.com/docs/learn/self_hosted/configure_meilisearch_at_launch
+  MEILI_ENV: "production"
+  MEILI_NO_ANALYTICS: "true"
+  MEILI_LOG_LEVEL: "DEBUG"

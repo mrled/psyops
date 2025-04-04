@@ -1,0 +1,66 @@
+---
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: librechat-mongo
+  namespace: librechat
+spec:
+  # Members are full Mongo replicas; arbiters can vote in elections but do not store data.
+  # lol, if you change this CRD and redeploy, it'll kill a member AND an arbiter at the same time to redploy it.
+  members: 2
+  arbiters: 1
+  type: ReplicaSet
+  # https://github.com/mongodb/mongo/tags
+  version: 8.0.4
+  agent:
+    logFile: /dev/stdout
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: librechat
+      db: admin
+      passwordSecretRef:
+        name: mongo-user-librechat
+      roles:
+        - name: clusterAdmin
+          db: admin
+        - name: userAdminAnyDatabase
+          db: admin
+      scramCredentialsSecretName: librechat # this gets prepended with "scram-credentials"
+  statefulSet:
+    spec:
+      template:
+        spec:
+          containers:
+            # Cannot adjust arbiter's limits separately from cluster nodes
+            # https://github.com/mongodb/mongodb-kubernetes-operator/issues/962
+            - name: mongod
+              resources:
+                requests:
+                  cpu: 100m
+            - name: mongodb-agent
+              resources:
+                requests:
+                  cpu: 100m
+      volumeClaimtemplates:
+        # "data-volume" overrides the default data volume created by the operator
+        - metadata:
+            name: data-volume
+          spec:
+            storageClassName: cephalopodblk-nvme-2rep
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 10Gi
+        # "logs-volume" overrides the default logs volume created by the operator
+        - metadata:
+            name: logs-volume
+          spec:
+            storageClassName: cephalopodblk-nvme-2rep
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 1Gi
+  additionalMongodConfig:
+    storage.wiredTiger.engineConfig.journalCompressor: zlib
