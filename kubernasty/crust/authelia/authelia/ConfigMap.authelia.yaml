@@ -164,6 +164,7 @@ data:
             - clusterlogs.micahrl.me
             - grafana.micahrl.me
             - kubernasty.micahrl.me
+            - librechat.micahrl.me
             - whoami-authenticated.micahrl.me
           policy: two_factor
         # Require specific group membership for these domains

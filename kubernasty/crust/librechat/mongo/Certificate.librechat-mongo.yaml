@@ -1,0 +1,33 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: librechat-mongo
+  namespace: librechat
+spec:
+  commonName: librechat-mongo-svc.librechat.svc.cluster.local
+  dnsNames:
+    - librechat-mongo-svc.librechat.svc.cluster.local
+    - librechat-mongo-svc
+    - librechat-mongo-svc.librechat
+    - librechat-mongo-0
+    - librechat-mongo-0.librechat-mongo-svc.librechat.svc.cluster.local
+    - librechat-mongo-1
+    - librechat-mongo-1.librechat-mongo-svc.librechat.svc.cluster.local
+    - librechat-mongo-2
+    - librechat-mongo-2.librechat-mongo-svc.librechat.svc.cluster.local
+    - librechat-mongo-3
+    - librechat-mongo-3.librechat-mongo-svc.librechat.svc.cluster.local
+    - librechat-mongo-4
+    - librechat-mongo-4.librechat-mongo-svc.librechat.svc.cluster.local
+    - librechat-mongo-arb-0
+    - librechat-mongo-arb-0.librechat-mongo-svc.librechat.svc.cluster.local
+    - librechat-mongo-arb-1
+    - librechat-mongo-arb-1.librechat-mongo-svc.librechat.svc.cluster.local
+    - librechat-mongo-arb-2
+    - librechat-mongo-arb-2.librechat-mongo-svc.librechat.svc.cluster.local
+  secretName: librechat-mongo-tls
+  duration: 720h # 30 days
+  renewBefore: 120h # 5 days
+  issuerRef:
+    name: kubernasty-ca
+    kind: ClusterIssuer

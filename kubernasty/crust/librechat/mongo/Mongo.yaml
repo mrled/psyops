@@ -16,18 +16,30 @@ spec:
     logFile: /dev/stdout
   security:
     authentication:
-      modes: ["SCRAM"]
+      modes: ["SCRAM-SHA-256", "SCRAM-SHA-1"]
+    tls:
+      enabled: true
+      caConfigMapRef: { name: kubernasty-ca-root-cert }
+      certificateKeySecretRef: { name: librechat-mongo-tls }
   users:
-    - name: librechat
+    - name: mongoadmin
       db: admin
       passwordSecretRef:
-        name: mongo-user-librechat
+        name: mongo-user-mongoadmin
       roles:
         - name: clusterAdmin
           db: admin
         - name: userAdminAnyDatabase
           db: admin
-      scramCredentialsSecretName: librechat # this gets prepended with "scram-credentials"
+      scramCredentialsSecretName: user-mongoadmin # this gets appended with "-scram-credentials"
+    - name: librechat
+      db: LibreChat
+      passwordSecretRef:
+        name: mongo-user-librechat
+      roles:
+        - name: readWrite
+          db: LibreChat
+      scramCredentialsSecretName: user-librechat # this gets appended with "-scram-credentials"
   statefulSet:
     spec:
       template:

@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: librechat-env
+  namespace: librechat
+data:
+  DEBUG_LOGGING: "true"
+  DEBUG_CONSOLE: "true"
+
+  DEBUG_PLUGINS: "true"
+
+  TRUST_PROXY: "true"
+
+  DOMAIN_CLIENT: https://librechat.micahrl.me
+  DOMAIN_SERVER: https://librechat.micahrl.me
+
+  # https://github.com/danny-avila/LibreChat/pull/927
+  # These are in miliseconds
+  SESSION_EXPIRY: "864000000" # one day
+  REFRESH_TOKEN_EXPIRY: "15778476000" # 6 months
+
+  # Don't enable any moderation
+  BAN_VIOLATIONS: "false"
+
+  ALLOW_EMAIL_LOGIN: "true"
+  ALLOW_REGISTRATION: "false"
+  ALLOW_SOCIAL_LOGIN: "false"
+  ALLOW_SOCIAL_REGISTRATION: "false"
+
+  EMAIL_ALLOW_SELFSIGNED: "true"
+
+  SEARCH: "true"
+  MEILI_HOST: http://meilisearch.librechat.svc.cluster.local:7700
+  MEILI_NO_SYNC: "true"
+
+  LDAP_URL: ldaps://dirsrv.directory.svc.cluster.local
+  LDAP_STARTTLS: "false"
+  LDAP_CA_CERT_PATH: /etc/kubernasty-ca/ca.crt
+  LDAP_TLS_REJECT_UNAUTHORIZED: "true"
+  LDAP_BIND_DN: uid=authenticator,ou=enforced,ou=services,dc=micahrl,dc=me
+  LDAP_USER_SEARCH_BASE: ou=people,dc=micahrl,dc=me
+  LDAP_SEARCH_FILTER: (&(objectClass=inetOrgPerson)(mail={{username}})(memberOf=cn=cyberneticists,ou=enforced,ou=groups,dc=micahrl,dc=me))
+  LDAP_ID: uid
+  LDAP_USERNAME: uid
+  LDAP_EMAIL: mail
+  LDAP_FULL_NAME: cn

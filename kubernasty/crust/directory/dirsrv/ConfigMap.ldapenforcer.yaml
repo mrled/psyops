@@ -128,3 +128,8 @@ data:
     [ldapenforcer.group.clusterlogs-kubernasty-collectors]
     description = "Group for collecting logs from the Kubernasty cluster"
     svcaccts = ["clusterlogs-kubernasty-collector"]
+
+    #### Enable logging in to AI services
+    [ldapenforcer.group.cyberneticists]
+    description = "Enable use of AI services"
+    groups = ["proletarii", "patricii"]

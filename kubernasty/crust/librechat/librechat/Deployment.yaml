@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: librechat
+  namespace: librechat
+  labels:
+    app: librechat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: librechat
+  template:
+    metadata:
+      labels:
+        app: librechat
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: librechat
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 1000
+          image: ghcr.io/danny-avila/librechat
+          ports:
+            - name: http
+              containerPort: 3080
+              protocol: TCP
+          volumeMounts:
+            - name: kubernasty-ca-root-cert
+              mountPath: "/etc/kubernasty-ca"
+              readOnly: true
+            - name: librechat-config
+              mountPath: "/app/librechat.yaml"
+              subPath: "librechat.yaml"
+              readOnly: true
+            - name: librechat-images
+              mountPath: "/app/client/public/images"
+          envFrom:
+            - configMapRef:
+                name: librechat-env
+            - secretRef:
+                name: librechat-env
+      volumes:
+        - name: kubernasty-ca-root-cert
+          configMap:
+            name: kubernasty-ca-root-cert
+        - name: librechat-config
+          configMap:
+            name: librechat-config
+        - name: librechat-images
+          persistentVolumeClaim:
+            claimName: librechat-images

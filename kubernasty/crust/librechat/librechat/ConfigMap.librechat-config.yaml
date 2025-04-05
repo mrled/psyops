@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: librechat-config
+  namespace: librechat
+data:
+  librechat.yaml: |+
+    ---
+    version: 1.2.1
+
+    interface:
+      customWelcome: "WELCOME, CYBERNETICISTS"
+
+    endpoints:
+      custom:
+        - name: "Deepseek"
+          apiKey: "${DEEPSEEK_API_KEY}"
+          baseURL: "https://api.deepseek.com/v1"
+          models:
+            default: ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"]
+            fetch: false
+          titleConvo: true
+          titleModel: "deepseek-chat"
+          modelDisplayLabel: "Deepseek"
+    speech:
+      stt:
+        openai:
+          apiKey: '${OPENAI_API_KEY}'
+          model: 'whisper-1'
+      tts:
+        openai:
+          apiKey: '${OPENAI_API_KEY}'
+          model: 'tts-1'
+          voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']

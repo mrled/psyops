@@ -16,6 +16,7 @@ resources:
   - ./grafana.yaml
   - ./kubernetes.yaml
   - ./labnotes.yaml
+  - ./librechat.yaml
   - ./objects.yaml
   - ./prometheus.yaml
   - ./startpage.yaml

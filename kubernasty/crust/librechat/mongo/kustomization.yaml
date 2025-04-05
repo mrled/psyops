@@ -2,5 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./RBAC.mongo.yaml
+  - ./Certificate.librechat-mongo.yaml
+  - ./Secret.mongo-user-mongoadmin.yaml
   - ./Secret.mongo-user-librechat.yaml
   - ./Mongo.yaml

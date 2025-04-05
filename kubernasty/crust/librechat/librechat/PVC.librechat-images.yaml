@@ -1,0 +1,14 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: librechat-images
+  namespace: librechat
+  labels: {}
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  storageClassName: "cephalopodfs-nvme-3rep"
+  resources:
+    requests:
+      storage: 10Gi
