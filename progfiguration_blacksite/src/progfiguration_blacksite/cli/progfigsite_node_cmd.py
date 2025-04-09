@@ -161,7 +161,8 @@ class NodeSecrets:
         magicrun(["ssh-keygen", "-q", "-f", nodefiles.sshhostkey, "-N", "", "-t", "ed25519"])
         ssh_host_pubkey = secroot / "ssh_host_ed25519_key.pub"
         with ssh_host_pubkey.open("r") as f:
-            nodefiles._sshhostprint = f.read().strip()
+            # The private key must end with a newline
+            nodefiles._sshhostprint = f.read() + "\n"
         # No need to keep this around, we regenerate it on boot
         ssh_host_pubkey.unlink()
         tksecrets.gopass_set(nodefiles.sshhostkey, f"psyopsOS/sshhostkeys/{nodename}")
