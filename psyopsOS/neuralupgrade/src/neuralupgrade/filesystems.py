@@ -81,7 +81,7 @@ class Mount:
             logger.debug(
                 f"Filesystem on {self.device} is mounted at {existing_mountpoints[0]['target']} which is not the specified location, unmounting and will not remount"
             )
-            umount_retry(mountpoint[0]["target"])
+            umount_retry(existing_mountpoints[0]["target"])
         else:
             options = existing_mountpoints[0]["options"].split(",")
             if "ro" in options:
