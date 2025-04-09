@@ -93,3 +93,40 @@ dieselgrove:~# lsusb -t
 00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection I219-V (rev 21)
 01:00.0 Network controller: Intel Corporation Wireless 8260 (rev 3a)
 ```
+
+## Raspberry Pi 4B
+
+### Serial console
+
+* <https://www.raspberrypi.com/documentation/computers/config_txt.html>
+* <https://pinout.xyz/>
+* <https://www.jeffgeerling.com/blog/2021/attaching-raspberry-pis-serial-console-uart-debugging>
+
+In `config.txt`, at the very end:
+
+```text
+# Disable bluetooth, which uses the serial UART (?)
+dtoverlay=disable-bt
+# Enable the UART in the GPIO pins
+enable_uart=1
+# Enable debug logging to the UART during boot, show early boot messages over serial
+uart_2ndstage=1
+```
+
+In `cmdline.txt`:
+
+*   It should look something like this (will have a unique `PARTUUID`):
+
+    ```text
+    console=serial0,115200 root=PARTUUID=442e675f-02 rootfstype=ext4 fsck.repair=yes rootwait loglevel=7
+    ```
+
+* Make sure there is only one `console=` argument
+* Make sure to **delete** an argument like `plymouth.ignore-serial-consoles`
+
+On the client:
+
+* In the past I've had better luck with `minicom` than `screen`...
+* But in 2025 I have had `minicom` on macOS simply refuse to work, but `screen` works fine.
+* Minicom: `minicom -b 115200 -o -D /dev/tty.usbserial-312220`
+* Screen: `/dev/tty.usbserial-312220 115200`
