@@ -61,5 +61,12 @@ apk add \
 # but we don't need it to actually work on the Docker system, so we skip these.
 apk add grub-efi --no-scripts
 
-# Install syslinux if it's available (it's not available on aarch64).
-apk add syslinux || true
+# Install architecture specific packages
+case $(uname -m) in
+    aarch64)
+        apk add u-boot-raspberrypi
+        ;;
+    x86_64)
+        apk add syslinux
+        ;;
+esac
