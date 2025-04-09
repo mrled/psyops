@@ -35,21 +35,27 @@ build() {
 	# (We don't use gpep517, but before they switched, we could do this in a venv.)
 	# However, our progfigsite package will just contain the zipapp,
 	# so using a venv here won't break anything.
+	echo "progfiguration_blacksite APKBUILD: Making venv..."
 	python3 -m venv --system-site-packages "$builddir"/venv
 	source "$builddir"/venv/bin/activate
 
 	# This installs progfiguration as editable from our local checkout.
 	# It means we don't have to install it over the network,
 	# and it also lets us test local changes to progfiguration.
+	echo "progfiguration_blacksite APKBUILD: Installing progfiguration with -e..."
 	pip install -e ../../../../submod/progfiguration
 
 	# Now install the site package,
 	# which will skip its only dependency, progfiguration,
 	# because it is already installed.
+	echo "progfiguration_blacksite APKBUILD: Installing blacksite with -e..."
 	pip install -e ../../../../progfiguration_blacksite
 
 	# Build the zipapp
+	echo "progfiguration_blacksite APKBUILD: Building zipapp..."
 	progfiguration-blacksite zipapp "$builddir"/progfiguration-blacksite
+
+	echo "progfiguration_blacksite APKBUILD: Build complete."
 }
 
 package() {
