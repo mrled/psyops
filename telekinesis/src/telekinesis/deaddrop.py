@@ -3,6 +3,7 @@
 import hashlib
 import os
 from pathlib import Path
+from typing import Union
 
 import boto3
 
@@ -222,7 +223,9 @@ def s3_forcepush_directory(session: boto3.Session, bucket_name: str, local_direc
                 tklogger.debug(f"Skipping {relative_path} because it is already up to date.")
             else:
                 tklogger.debug(f"Uploading {relative_path}...")
-                extra_args = {"Metadata": {"md5": local_checksum}}
+                extra_args: dict[str, Union[str, dict[str, str]]] = {}
+
+                extra_args["Metadata"] = {"md5": local_checksum}
 
                 # If you don't do this, browsing to these files will download them without displaying them.
                 # We mostly just care about this for the index/error html files.

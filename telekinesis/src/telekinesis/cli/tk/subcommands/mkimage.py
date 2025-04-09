@@ -108,14 +108,14 @@ def make_kernel(builder: AlpineDockerBuilder):
         in_container_osdir = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.osdir_path.name)
         in_container_build_cmd = [
             "set -x",
-            f"sudo apk update",
+            "sudo apk update",
             # Now cache the packages we need to build the image.
             # This copies them to /var/cache/apk in the container.
             # It's a little inefficient to copy them,
             # but it's worrth it so we can mount /var/cache/apk inside the initramfs chroot later.
             # We rely on the host's artifacts/deaddrop/apk being added to /etc/apk/repositories by the Dockerfile
             # so that this cache step can see apks built locally.
-            f"sudo apk cache download alpine-base linux-lts linux-firmware",
+            "sudo apk cache download alpine-base linux-lts linux-firmware",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
             f"sudo -E {make_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {in_container_osdir}",

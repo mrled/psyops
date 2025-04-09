@@ -142,13 +142,13 @@ def makeparser(prog=None):
     subparsers = parser.add_subparsers(dest="action", required=True)
 
     # The showconfig subcommand
-    sub_showconfig = subparsers.add_parser(
+    subparsers.add_parser(
         "showconfig",
         help="Show the current configuration",
     )
 
     # The cog subcommand
-    sub_cog = subparsers.add_parser(
+    subparsers.add_parser(
         "cog",
         help="Run cog on all relevant files",
     )
@@ -156,18 +156,18 @@ def makeparser(prog=None):
     # The deaddrop subcommand
     sub_deaddrop = subparsers.add_parser(
         "deaddrop",
-        help=f"Manage the S3 bucket used for psyopsOS, called deaddrop, or its local replica",
+        help="Manage the S3 bucket used for psyopsOS, called deaddrop, or its local replica",
     )
     sub_deaddrop_subparsers = sub_deaddrop.add_subparsers(dest="deaddrop_action", required=True)
-    sub_deaddrop_sub_ls = sub_deaddrop_subparsers.add_parser(
+    sub_deaddrop_subparsers.add_parser(
         "ls",
         help="List the files in the bucket",
     )
-    sub_deaddrop_sub_forcepull = sub_deaddrop_subparsers.add_parser(
+    sub_deaddrop_subparsers.add_parser(
         "forcepull",
         help="Pull files from the bucket into the local replica and delete any local files that are not in the bucket... we don't do a nicer sync operation because APKINDEX files can't be managed that way.",
     )
-    sub_deaddrop_sub_forcepush = sub_deaddrop_subparsers.add_parser(
+    sub_deaddrop_subparsers.add_parser(
         "forcepush",
         help="Push files from the local replica to the bucket and delete any bucket files that are not in the local replica.",
     )
@@ -193,7 +193,7 @@ def makeparser(prog=None):
         help="Actions related to the psyopsOS Docker container that is used for making Alpine packages and ISO images",
     )
     sub_builder_subparsers = sub_builder.add_subparsers(dest="builder_action", required=True)
-    sub_builder_sub_build = sub_builder_subparsers.add_parser(
+    sub_builder_subparsers.add_parser(
         "build",
         parents=[buildcontainer_opts],
         help="Build the psyopsOS Docker container",
@@ -217,7 +217,7 @@ def makeparser(prog=None):
     )
     sub_mkimage.add_argument("--skip-build-apks", action="store_true", help="Don't build APKs before building ISO")
     sub_mkimage_subparsers = sub_mkimage.add_subparsers(dest="mkimage_action", required=True)
-    sub_mkimage_sub_iso = sub_mkimage_subparsers.add_parser(
+    sub_mkimage_subparsers.add_parser(
         "iso",
         help="Build an ISO image using mkimage.sh and the psyopsOScd profile",
     )
@@ -304,7 +304,7 @@ def makeparser(prog=None):
         default="00:00:00:00:00:00",
         help="The MAC address to use for the VM, defaults to %(default)s",
     )
-    sub_vm_sub_osdir = sub_vm_subparsers.add_parser(
+    sub_vm_subparsers.add_parser(
         "osdir",
         help="Run the kernel/initramfs from the osdir in qemu without building a disk image with EFI and A/B partitions",
     )
@@ -445,7 +445,7 @@ def main_impl():
         # Make sure we have an up-to-date Docker builder
         build_container(
             tkconfig.buildcontainer.build_container_tag(architecture),
-            tkconfig.repopaths.buildcontainer,
+            tkconfig.repopaths.buildcontainer.as_posix(),
             f"linux/{builder.architecture.docker}",
             rebuild=parsed.rebuild,
         )
@@ -501,7 +501,7 @@ def main_impl():
                 platform = f"linux/{arch.docker}"
                 build_container(
                     tkconfig.buildcontainer.build_container_tag(arch),
-                    tkconfig.repopaths.buildcontainer,
+                    tkconfig.repopaths.buildcontainer.as_posix(),
                     platform,
                     rebuild=parsed.rebuild,
                 )
@@ -516,7 +516,7 @@ def main_impl():
             for arch in architectures:
                 mkimage_prepare(arch)
                 with getbldcm(arch) as builder:
-                    mkimage_iso(builder)
+                    mkimage_iso(arch, builder)
         elif parsed.mkimage_action == "diskimg":
             initdir = tkconfig.repopaths.root / "psyopsOS" / "osbuild" / "initramfs-init"
             init_patch = initdir / "initramfs-init.patch"
@@ -599,13 +599,14 @@ def main_impl():
             diskimg = parsed.disk_image
             if not diskimg:
                 diskimg = tkconfig.arch_artifacts[arch.name].node_image(arch.name)
-            vm_diskimg(diskimg, parsed.macaddr)
+            vm_diskimg(arch, diskimg, parsed.macaddr)
         elif parsed.vm_action == "osdir":
-            vm_osdir()
+            vm_osdir(arch)
         elif parsed.vm_action == "profile":
             if parsed.profile == "qreamsqueen":
                 get_x64_ovmf()
-                vm_diskimg(tkconfig.arch_artifacts[arch.name].node_image(arch.name, "qreamsqueen"), "ac:ed:de:ad:be:ef")
+                img_path = tkconfig.arch_artifacts[arch.name].node_image(arch.name, "qreamsqueen")
+                vm_diskimg(arch, img_path, "ac:ed:de:ad:be:ef")
             else:
                 parser.error(f"Unknown profile: {parsed.profile}")
         else:

@@ -49,7 +49,8 @@ class MungedInterrupts:
 
     def __exit__(self, exc_type, exc_value, traceback):
         # Restore the terminal settings to what they were before
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
+        if self.old_settings is not None:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
         print("Ctrl+C and Ctrl+Z restored to normal behavior")
 
 

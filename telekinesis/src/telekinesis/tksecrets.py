@@ -65,6 +65,8 @@ def psynetca(directory: Path | None = None):
     and the crt/key are deleted when the context manager exits.
     """
     tempdir = None
+    crtpath = None
+    keypath = None
     try:
         if directory is None:
             tempdir = Path(tempfile.mkdtemp())
@@ -79,7 +81,9 @@ def psynetca(directory: Path | None = None):
             f.write(key)
         yield directory
     finally:
-        crtpath.unlink()
-        keypath.unlink()
+        if crtpath is not None:
+            crtpath.unlink()
+        if keypath is not None:
+            keypath.unlink()
         if tempdir is not None:
             shutil.rmtree(tempdir)

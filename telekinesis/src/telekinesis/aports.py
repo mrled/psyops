@@ -8,11 +8,14 @@ def validate_alpine_version(docker_builder_dir: Path, aportsdir: Path, alpine_ve
     """Validate that the alpine version matches what we check out in aports and what is in build/Dockerfile."""
 
     dockerfile = docker_builder_dir / "Dockerfile"
+    dockerfile_alpine_version = None
     with dockerfile.open("r") as f:
         for line in f.readlines():
             if line.startswith("FROM alpine:"):
                 dockerfile_alpine_version = line.split(":")[1]
                 break
+    if dockerfile_alpine_version is None:
+        raise Exception(f"Could not find alpine version in Dockerfile: {dockerfile}")
 
     cmd = ["git", "name-rev", "--name-only", "HEAD"]
     gitresult = subprocess.run(cmd, cwd=aportsdir.as_posix(), capture_output=True)
@@ -20,10 +23,7 @@ def validate_alpine_version(docker_builder_dir: Path, aportsdir: Path, alpine_ve
         cmdstr = " ".join(cmd)
         err = f"Trying to get version of aports repository at {aportsdir}, with '{cmdstr}' but got an error: {gitresult.stderr.decode('utf-8')}"
         raise Exception(err)
-
-    aports_alpine_version = ""
-    if gitresult.returncode == 0:
-        aports_alpine_version = gitresult.stdout.decode("utf-8").strip()
+    aports_alpine_version = gitresult.stdout.decode("utf-8").strip()
 
     errors = []
 
