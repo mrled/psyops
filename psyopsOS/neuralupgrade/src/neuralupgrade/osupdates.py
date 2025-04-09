@@ -286,6 +286,7 @@ def apply_updates(
                 ) from exc
 
         # Handle actions
+        updated = None
         if "nonbooted" in targets:
             targets.remove("nonbooted")
             updated = datetime.datetime.now()

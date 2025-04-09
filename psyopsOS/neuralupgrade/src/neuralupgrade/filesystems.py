@@ -147,7 +147,6 @@ class Mount:
         """Return a list of mountpoints where the device is mounted"""
         findmnt_json = subprocess.run(["findmnt", self.device, "--json"], capture_output=True)
         logger.debug(f"findmnt --json {self.device} -> {findmnt_json.stdout.decode('utf-8')}")
-        filesystems = []
         if findmnt_json.returncode == 0:
             return json.loads(findmnt_json.stdout)["filesystems"]
 

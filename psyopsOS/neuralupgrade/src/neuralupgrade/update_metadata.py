@@ -50,6 +50,9 @@ def parse_trusted_comment(
 
     Note that we do NOT verify the signature! This is just a parser.
     """
+    if comment is None:
+        comment = ""
+
     trusted_comment_prefix = "trusted comment: "
     argcount = sum([1 for x in [comment, sigcontents, sigfile] if x])
     if argcount != 1:
@@ -90,6 +93,9 @@ def parse_psyopsOS_grub_info_comment(comment: Optional[str] = None, file: Option
 
     Can accept either just the "# neuralupgrade-info: " line, or a path to the grub.cfg file.
     """
+    if comment is None:
+        comment = ""
+
     argcount = sum([1 for x in [comment, file] if x])
     if argcount != 1:
         raise ValueError("Must specify exactly one of comment or file; got {comment}, {file}")

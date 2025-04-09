@@ -59,7 +59,7 @@ def idb_excepthook(type, value, tb):
         sys.__excepthook__(type, value, tb)
     else:
         traceback.print_exception(type, value, tb)
-        print
+        print("")
         pdb.pm()
 
 
@@ -117,14 +117,45 @@ def get_argparse_help_string(name: str, parser: argparse.ArgumentParser, wrap: i
     return docstring
 
 
-def subcommand_apply(parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems) -> int:
+def subcommand_show(parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems):
+    metadata = {}
+    for target in parsed.target:
+        if target == "system":
+            metadata["system"] = get_system_versions(filesystems)
+        elif target == "latest":
+            os_result = download_update_signature(
+                parsed.repository, parsed.psyopsOS_filename_format, parsed.architecture, "latest"
+            )
+            esp_result = download_update_signature(
+                parsed.repository, parsed.psyopsESP_filename_format, parsed.architecture, "latest"
+            )
+            metadata["latest"] = {
+                os_result.url: os_result.unverified_metadata,
+                esp_result.url: esp_result.unverified_metadata,
+            }
+        else:
+            if not target.endswith(".minisig"):
+                target += ".minisig"
+            if os.path.exists(target):
+                target_path = os.path.abspath(target)
+                metadata[target_path] = parse_trusted_comment(sigfile=target_path)
+            else:
+                try:
+                    target_sig = download_repository_file(parsed.repository, target)
+                    metadata[target] = parse_trusted_comment(sigcontents=target_sig)
+                except Exception:
+                    parser.error(f"Target {target} does not exist")
+    display_dict(metadata)
+
+
+def subcommand_apply(parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems):
     # Check for invalid combinations
     if "nonbooted" in parsed.target and ("a" in parsed.target or "b" in parsed.target):
         parser.error("Cannot specify 'nonbooted' and 'a' or 'b' at the same time")
     updating_os = "a" in parsed.target or "b" in parsed.target or "nonbooted" in parsed.target
     updating_esp = "efisys" in parsed.target
-    os_tar = None
-    esp_tar = None
+    os_tar = ""
+    esp_tar = ""
     os_tar_downloaded = False
     esp_tar_downloaded = False
     update_err = None
@@ -195,7 +226,51 @@ def subcommand_apply(parsed: argparse.Namespace, parser: argparse.ArgumentParser
             raise update_err
 
 
-def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
+def subcommand_download(parsed: argparse.Namespace, parser: argparse.ArgumentParser):
+    output: str = parsed.output
+    if len(parsed.type) > 1 and not output.endswith("/"):
+        output += "/"
+    if "psyopsOS" in parsed.type:
+        download_update(
+            parsed.repository,
+            parsed.psyopsOS_filename_format,
+            parsed.architecture,
+            parsed.version,
+            output,
+            pubkey=parsed.pubkey,
+            verify=parsed.verify,
+        )
+    if "psyopsESP" in parsed.type:
+        download_update(
+            parsed.repository,
+            parsed.psyopsESP_filename_format,
+            parsed.architecture,
+            parsed.version,
+            output,
+            pubkey=parsed.pubkey,
+            verify=parsed.verify,
+        )
+
+
+def subcommand_check(parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems):
+    checked = check_updates(
+        filesystems,
+        parsed.target,
+        parsed.version,
+        parsed.repository,
+        parsed.psyopsOS_filename_format,
+        parsed.psyopsESP_filename_format,
+        parsed.architecture,
+    )
+    for fs, fsmd in checked.items():
+        if fsmd["up_to_date"]:
+            print(f"{fs}: {fsmd['label']} is version {fsmd['compared_to']}")
+        else:
+            print(
+                f"{fs}: {fsmd['label']} is currently version {fsmd['current_version']}, not version {fsmd['compared_to']}"
+            )
+
+def getparser(prog=None) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog=prog, description="Update psyopsOS boot media")
     parser.add_argument("--debug", "-d", help="Drop into pdb on exception", action="store_true")
     parser.add_argument("--verbose", "-v", help="Verbose logging", action="store_true")
@@ -367,7 +442,7 @@ def getparser(prog=None) -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     return parser
 
 
-def main_implementation(*arguments):
+def main_implementation(arguments: list[str]) -> int:
     parser = getparser()
     parsed = parser.parse_args(arguments[1:])
 
@@ -393,88 +468,21 @@ def main_implementation(*arguments):
         parsed.update_tmpdir += "/"
 
     if parsed.subcommand == "show":
-        metadata = {}
-        for target in parsed.target:
-            if target == "system":
-                metadata["system"] = get_system_versions(filesystems)
-            elif target == "latest":
-                os_result = download_update_signature(
-                    parsed.repository, parsed.psyopsOS_filename_format, parsed.architecture, "latest"
-                )
-                esp_result = download_update_signature(
-                    parsed.repository, parsed.psyopsESP_filename_format, parsed.architecture, "latest"
-                )
-                metadata["latest"] = {
-                    os_result.url: os_result.unverified_metadata,
-                    esp_result.url: esp_result.unverified_metadata,
-                }
-            else:
-                if not target.endswith(".minisig"):
-                    target += ".minisig"
-                if os.path.exists(target):
-                    target_path = os.path.abspath(target)
-                    metadata[target_path] = parse_trusted_comment(sigfile=target_path)
-                else:
-                    try:
-                        target_sig = download_repository_file(parsed.repository, target)
-                        metadata[target] = parse_trusted_comment(sigcontents=target_sig)
-                    except Exception:
-                        parser.error(f"Target {target} does not exist")
-        display_dict(metadata)
-
+        subcommand_show(parsed, parser, filesystems)
     elif parsed.subcommand == "download":
-        output: str = parsed.output
-        if len(parsed.type) > 1 and not output.endswith("/"):
-            output += "/"
-        if "psyopsOS" in parsed.type:
-            download_update(
-                parsed.repository,
-                parsed.psyopsOS_filename_format,
-                parsed.architecture,
-                parsed.version,
-                output,
-                pubkey=parsed.pubkey,
-                verify=parsed.verify,
-            )
-        if "psyopsESP" in parsed.type:
-            download_update(
-                parsed.repository,
-                parsed.psyopsESP_filename_format,
-                parsed.architecture,
-                parsed.version,
-                output,
-                pubkey=parsed.pubkey,
-                verify=parsed.verify,
-            )
-
+        subcommand_download(parsed, parser)
     elif parsed.subcommand == "check":
-        checked = check_updates(
-            filesystems,
-            parsed.target,
-            parsed.version,
-            parsed.repository,
-            parsed.psyopsOS_filename_format,
-            parsed.psyopsESP_filename_format,
-            parsed.architecture,
-        )
-        for fs, fsmd in checked.items():
-            if fsmd["up_to_date"]:
-                print(f"{fs}: {fsmd['label']} is version {fsmd['compared_to']}")
-            else:
-                print(
-                    f"{fs}: {fsmd['label']} is currently version {fsmd['current_version']}, not version {fsmd['compared_to']}"
-                )
-
+        subcommand_check(parsed, parser, filesystems)
     elif parsed.subcommand == "apply":
         subcommand_apply(parsed, parser, filesystems)
-
     elif parsed.subcommand == "set-default":
         with filesystems.efisys.mount(writable=True):
             write_grub_cfg_carefully(filesystems, filesystems.efisys.mountpoint, parsed.label)
-
     else:
         parser.error(f"Unknown subcommand {parsed.subcommand}")
 
+    return 0
+
 
 def main():
-    return broken_pipe_handler(main_implementation, *sys.argv)
+    return broken_pipe_handler(main_implementation, sys.argv)
