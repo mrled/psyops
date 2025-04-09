@@ -183,6 +183,24 @@ def configure_efisys(
     logger.debug("Done configuring efisys")
 
 
+def read_default_boot_label(efisys_mountpoint: str) -> str:
+    """Read the default bootlabel from a grub.cfg file"""
+
+    try:
+        grub_cfg_info = parse_psyopsOS_grub_info_comment(
+            file=os.path.join(efisys_mountpoint, "grub", "grub.cfg")
+        )
+        return grub_cfg_info["default_boot_label"]
+    except FileNotFoundError as exc:
+        raise Exception(
+            f"--default-boot-label not passed and no existing GRUB configuration found at {efisys_mountpoint}/grub/grub.cfg file; if the ESP is empty, you need to pass --default-boot-label"
+        ) from exc
+    except Exception as exc:
+        raise Exception(
+            f"Could not find default boot label from existing {efisys_mountpoint}/grub/grub.cfg file"
+        ) from exc
+
+
 def apply_updates(
     filesystems: Filesystems,
     targets: list[str],
@@ -269,21 +287,7 @@ def apply_updates(
             # We mount as writable because we might need to write a new grub.cfg file later,
             # but we can't know that until we check whether what's there matches the new value.
             efisys_mountpoint, _ = idempotently_mount("efisys", filesystems.efisys, writable=True)
-            if not os.path.exists(os.path.join(efisys_mountpoint, "grub", "grub.cfg")):
-                raise Exception(
-                    f"--default-boot-label not passed and no existing GRUB configuration found at {efisys_mountpoint}/grub/grub.cfg file; if the ESP is empty, you need to pass --default-boot-label"
-                )
-            try:
-                grub_cfg_info = parse_psyopsOS_grub_info_comment(
-                    file=os.path.join(efisys_mountpoint, "grub", "grub.cfg")
-                )
-                default_boot_label = grub_cfg_info["default_boot_label"]
-            except FileNotFoundError:
-                default_boot_label = filesystems.a.label
-            except Exception as exc:
-                raise Exception(
-                    f"Could not find default boot label from existing {efisys_mountpoint}/grub/grub.cfg file"
-                ) from exc
+            default_boot_label = read_default_boot_label(efisys_mountpoint)
 
         # Handle actions
         updated = None
