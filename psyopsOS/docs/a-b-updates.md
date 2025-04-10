@@ -87,3 +87,73 @@ This prevents a race condition between uploading a new tarball and a client tryi
 And because the first thing we pull is the signature,
 which is validated by a public key on each client,
 the update process is secured.
+
+## Contents of the `PSYOPSOSEFI` partition on x86_64
+
+TODO
+
+## Contents of the Raspberry Pi boot partition
+
+### Example: Stock Alpine Linux boot partition
+
+Here's what you get after flashing Alpine via the Raspberry Pi Imager.
+
+```text
+apks/         # Alpine package cache
+*.dtb         # Device Tree Blog files for various Raspberry Pi models
+boot/
+  System.map-6.12.13-0-rpi*
+  config-6.12.13-0-rpi*
+  initramfs-rpi*
+  modloop-rpi*
+  vmlinuz-rpi*
+bootcode.bin*
+cmdline.txt*
+config.txt*
+fixup.dat*
+fixup4.dat*
+overlays/
+  *.dtbo      # Fragments of device tree data applied on top of base .dtb to support various related hardware
+start.elf*
+start4.elf*
+```
+
+Contents of `cmdline.txt`:
+
+```text
+modules=loop,squashfs,sd-mod,usb-storage quiet console=tty1
+```
+
+Contents of `config.txt`:
+
+```text
+kernel=boot/vmlinuz-rpi
+initramfs boot/initramfs-rpi
+arm_64bit=1
+include usercfg.txt
+```
+
+### Using UEFI on Raspberry Pi
+
+We don't do this, but it's worth noting that it is possible to install UEFI on the Pi
+and then use GRUB to boot any EFI program.
+
+<https://github.com/pftf/RPi4>
+
+Currently this isn't a great solution because it has a hard 3GB RAM limit,
+and the only way to get access to more RAM
+is to set a variable in the UEFI configuration at boot,
+and it cannot be set in a config file or over serial.
+<https://github.com/pftf/RPi4/issues/138>
+
+### Adapting the psyopsOS EFISYS partition to the Raspberry Pi environment
+
+Using `config.txt` and `cmdline.txt` we can get most of the way there,
+but this doesn't allow boot time selection.
+
+#### U-Boot
+
+U-Boot can be configured to allow operating system selection like GRUB does.
+
+The U-Boot project doesn't release official binaries,
+but we can get one via the Alpine `u-boot-raspberrypi` package.
