@@ -24,7 +24,7 @@ def minisign_verify(file: str, pubkey: Optional[str] = None) -> None:
 
 def parse_trusted_comment(
     comment: Optional[str] = None, sigcontents: Optional[str] = None, sigfile: Optional[str] = None
-) -> dict:
+) -> dict[str, str]:
     """Parse a trusted comment from a psyopsOS minisig.
 
     Can provide just the comment,

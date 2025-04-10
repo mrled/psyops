@@ -114,7 +114,6 @@ def download_update(
     logger.debug(f"Update downloaded to {update_local_path}")
 
     if verify:
-        verified_metadata = minisign_verify(update_local_path, pubkey)
-        logger.debug(f"Update verified with minisign pubkey {pubkey}, VERIFIED metadata: {verified_metadata}")
+        minisign_verify(update_local_path, pubkey)
 
     return update_local_path

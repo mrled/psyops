@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import threading
 import traceback
-from typing import Optional
+from typing import Any, Optional
 
 from neuralupgrade import logger
 from neuralupgrade.coginitivedefects import MultiError
@@ -22,7 +22,7 @@ def get_system_versions(filesystems: Filesystems) -> dict:
     """
     booted, nonbooted = sides(filesystems)
 
-    result = {
+    result: dict[str, Any] = {
         booted: {
             "mountpoint": filesystems.bylabel(booted).mountpoint,
             "running": True,
