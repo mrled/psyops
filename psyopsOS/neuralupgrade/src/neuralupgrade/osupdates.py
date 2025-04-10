@@ -269,16 +269,7 @@ def apply_updates(
     # or passed explicitly.
     # When updating a or b, it will be omitted unless passed explicitly.
     # If it is passed explicitly, it must be one of the A/B labels (taking into account any overrides).
-    detect_existing_default_boot_label = False
-    if default_boot_label:
-        if default_boot_label not in [filesystems.a.label, filesystems.b.label]:
-            # If default_boot_label is passed, it has to be one of theaA/B labels
-            raise Exception(
-                f"Invalid default boot label '{default_boot_label}', must be one of the A/B labels '{filesystems.a.label}'/'{filesystems.b.label}'"
-            )
-    else:
-        if "efisys" in targets and "nonbooted" not in targets:
-            detect_existing_default_boot_label = True
+    detect_existing_default_boot_label = not default_boot_label and  "efisys" in targets and "nonbooted" not in targets
 
     apply_err = None
     try:
@@ -288,6 +279,11 @@ def apply_updates(
             # but we can't know that until we check whether what's there matches the new value.
             efisys_mountpoint, _ = idempotently_mount("efisys", filesystems.efisys, writable=True)
             default_boot_label = read_default_boot_label(efisys_mountpoint)
+            # Sanity check the default boot label: it must be one of the A/B labels.
+            if default_boot_label not in [filesystems.a.label, filesystems.b.label]:
+                raise Exception(
+                    f"Invalid default boot label '{default_boot_label}', must be one of the A/B labels '{filesystems.a.label}'/'{filesystems.b.label}'"
+                )
 
         # Handle actions
         updated = None
