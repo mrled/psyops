@@ -9,9 +9,8 @@ import traceback
 from typing import Any, Optional
 
 from neuralupgrade import logger
-from neuralupgrade.coginitivedefects import MultiError
 from neuralupgrade.downloader import download_update_signature
-from neuralupgrade.filesystems import Filesystem, Filesystems, Mount, sides
+from neuralupgrade.filesystems import Filesystem, Filesystems, sides
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
 from neuralupgrade.update_metadata import minisign_verify, parse_trusted_comment, parse_psyopsOS_grub_info_comment
 
