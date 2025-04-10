@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import os
 import platform
@@ -217,49 +218,7 @@ def apply_updates(
     Properly ensures filesystems are mounted at most once,
     and at the end tries to return them to their original state.
     (See the Mount context manager for more details on how this works.)
-
-    TODO: Rewrite this to use contextlib.ExitStack to manage the mounts.
     """
-
-    mounts: dict[str, tuple[str, Mount]] = {}
-    """A dictionary of name: (mountpoints, Mount).
-
-    The name is a string like "a", "b", "nonbooted", or "efisys".
-    The mountpoint is a string path.
-    The Mount object is a context manager.
-
-    About our use of the Mount context managers:
-    Each Filesystem has a .mount() which returns a Mount context manager,
-    which mounts the filesystem on entry and unmounts it on exit.
-    We call the __enter__ and __exit__ methods of the Mount context manager manually
-    and keep track of which are mounted in this dict
-    so that we can mount what we need when we need,
-    never mount the same filesystem more than once to avoid slowdowns,
-    and unmount everything at the end.
-    """
-
-    def idempotently_mount(name: str, fs: Filesystem, writable: bool = False):
-        if name not in mounts:
-            mount = fs.mount(writable=writable)
-            mountpoint = mount.__enter__()
-            mounts[name] = (mountpoint, mount)
-        return mounts[name]
-
-    def idempotently_umount(name: str):
-        if name in mounts:
-            _, mount = mounts.pop(name)
-            mount.__exit__(None, None, None)
-
-    def unmount_all_returning_exceptions():
-        exceptions = []
-        # Make sure we aren't mutating the dict while iterating over it
-        mount_names = list(mounts.keys())
-        for name in mount_names:
-            try:
-                idempotently_umount(name)
-            except Exception as exc:
-                exceptions.append(exc)
-        return exceptions
 
     # The default boot label is the partition label to use the next time the system boots (A or B).
     # When updating nonbooted, it is assumed to be the nonbooted side and cannot be passed explicitly,
@@ -269,78 +228,90 @@ def apply_updates(
     # or passed explicitly.
     # When updating a or b, it will be omitted unless passed explicitly.
     # If it is passed explicitly, it must be one of the A/B labels (taking into account any overrides).
-    detect_existing_default_boot_label = not default_boot_label and  "efisys" in targets and "nonbooted" not in targets
+    detect_existing_default_boot_label = not default_boot_label and "efisys" in targets and "nonbooted" not in targets
 
     apply_err = None
-    try:
-        if detect_existing_default_boot_label:
-            # We need to get the default boot label from the existing grub.cfg file.
-            # We mount as writable because we might need to write a new grub.cfg file later,
-            # but we can't know that until we check whether what's there matches the new value.
-            efisys_mountpoint, _ = idempotently_mount("efisys", filesystems.efisys, writable=True)
-            default_boot_label = read_default_boot_label(efisys_mountpoint)
-            # Sanity check the default boot label: it must be one of the A/B labels.
-            if default_boot_label not in [filesystems.a.label, filesystems.b.label]:
-                raise Exception(
-                    f"Invalid default boot label '{default_boot_label}', must be one of the A/B labels '{filesystems.a.label}'/'{filesystems.b.label}'"
-                )
+    with contextlib.ExitStack() as stack:
 
-        # Handle actions
-        updated = None
-        if "nonbooted" in targets:
-            targets.remove("nonbooted")
-            updated = datetime.datetime.now()
-            booted, nonbooted = sides(filesystems)
-            nonbooted_mountpoint, _ = idempotently_mount("nonbooted", filesystems.bylabel(nonbooted), writable=True)
-            apply_ostar(ostar, nonbooted_mountpoint, verify=verify, verify_pubkey=pubkey)
-            subprocess.run(["sync"], check=True)
-            idempotently_umount("nonbooted")
-            logger.info(f"Updated nonbooted side {nonbooted} with {ostar} at {nonbooted_mountpoint}")
-            if not no_update_default_boot_label:
-                default_boot_label = nonbooted
+        # Keep track of mounted filesystems using label -> Filesystem mapping
+        mounted_points: dict[str, Filesystem] = {}
 
-        for side in ["a", "b"]:
-            if side in targets:
-                targets.remove(side)
-                this_ab_mountpoint, _ = idempotently_mount(side, filesystems[side], writable=True)
-                apply_ostar(ostar, this_ab_mountpoint, verify=verify, verify_pubkey=pubkey)
+        def idempotently_mount(fs: Filesystem, writable: bool = False):
+            """Use a filesystem's mount context manager to mount it.
+
+            Register the Mount context manager with the ExitStack to ensure it gets unmounted at the end.
+            """
+            if fs.label not in mounted_points:
+                mountctx = fs.mount(writable=writable)
+                stack.enter_context(mountctx)
+                mounted_points[fs.label] = fs
+            return mounted_points[fs.label]
+
+        try:
+            if detect_existing_default_boot_label:
+                # We need to get the default boot label from the existing grub.cfg file.
+                # We mount as writable because we might need to write a new grub.cfg file later,
+                # but we can't know that until we check whether what's there matches the new value.
+                idempotently_mount(filesystems.efisys, writable=True)
+                default_boot_label = read_default_boot_label(filesystems.efisys.mountpoint)
+                # Sanity check the default boot label: it must be one of the A/B labels.
+                if default_boot_label not in [filesystems.a.label, filesystems.b.label]:
+                    raise Exception(
+                        f"Invalid default boot label '{default_boot_label}', must be one of the A/B labels '{filesystems.a.label}'/'{filesystems.b.label}'"
+                    )
+
+            # Handle actions
+            updated = None
+            if "nonbooted" in targets:
+                targets.remove("nonbooted")
+                updated = datetime.datetime.now()
+                booted, nonbooted = sides(filesystems)
+                nonbooted_fs = idempotently_mount(filesystems.bylabel(nonbooted), writable=True)
+                apply_ostar(ostar, nonbooted_fs.mountpoint, verify=verify, verify_pubkey=pubkey)
                 subprocess.run(["sync"], check=True)
-                idempotently_umount(side)
-                logger.info(f"Updated {side} side with {ostar} at {this_ab_mountpoint}")
+                logger.info(f"Updated nonbooted side {nonbooted} with {ostar} at {nonbooted_fs}")
+                if not no_update_default_boot_label:
+                    default_boot_label = nonbooted
 
-        if "efisys" in targets:
-            targets.remove("efisys")
-            efisys_mountpoint, _ = idempotently_mount("efisys", filesystems.efisys, writable=True)
-            # This handles any updates to the default_boot_label in grub.cfg.
-            configure_efisys(
-                filesystems, efisys_mountpoint, default_boot_label, tarball=esptar, verify=verify, verify_pubkey=pubkey
-            )
-            subprocess.run(["sync"], check=True)
-            logger.info(f"Updated efisys with {esptar} at {efisys_mountpoint}")
-        elif default_boot_label:
-            # If we didn't handle updates to default_boot_label in grub.cfg above, do so here.
-            efisys_mountpoint, _ = idempotently_mount("efisys", filesystems.efisys, writable=True)
-            write_grub_cfg_carefully(filesystems, efisys_mountpoint, default_boot_label, updated=updated)
-            subprocess.run(["sync"], check=True)
-            logger.info(f"Updated GRUB default boot label to {default_boot_label} at {efisys_mountpoint}")
+                # If we specified "nonbooted" AND "a", and a is the nonbooted side,
+                # remove "a" from the targets list since we just updated it.
+                if nonbooted in targets:
+                    targets.remove(nonbooted)
 
-        if targets:
-            raise Exception(f"Unknown targets argument(s): {targets}")
+            for side in ["a", "b"]:
+                if side in targets:
+                    targets.remove(side)
+                    this_fs = idempotently_mount(filesystems[side], writable=True)
+                    apply_ostar(ostar, this_fs.mountpoint, verify=verify, verify_pubkey=pubkey)
+                    subprocess.run(["sync"], check=True)
+                    logger.info(f"Updated {side} side with {ostar} at {this_fs.mountpoint}")
 
-    except Exception as exc:
-        apply_err = exc
+            if "efisys" in targets:
+                targets.remove("efisys")
+                efisys_fs = idempotently_mount(filesystems.efisys, writable=True)
+                # This handles any updates to the default_boot_label in grub.cfg.
+                configure_efisys(
+                    filesystems, efisys_fs.mountpoint, default_boot_label, tarball=esptar, verify=verify, verify_pubkey=pubkey
+                )
+                subprocess.run(["sync"], check=True)
+                logger.info(f"Updated efisys with {esptar} at {efisys_fs}")
+            elif default_boot_label:
+                # If we didn't handle updates to default_boot_label in grub.cfg above, do so here.
+                efisys_fs = idempotently_mount(filesystems.efisys, writable=True)
+                write_grub_cfg_carefully(filesystems, efisys_fs.mountpoint, default_boot_label, updated=updated)
+                subprocess.run(["sync"], check=True)
+                logger.info(f"Updated GRUB default boot label to {default_boot_label} at {efisys_fs}")
 
-    finally:
-        umount_errs = unmount_all_returning_exceptions()
-        if umount_errs:
-            multierr_msg = (
-                f"Encountered error(s) exiting mount context managers for {filesystems} with targets {targets}"
-            )
-            if apply_err:
-                raise MultiError(multierr_msg, umount_errs) from apply_err
-            raise MultiError(multierr_msg, umount_errs)
-        elif apply_err:
-            raise apply_err
+            if targets:
+                raise Exception(f"Unknown targets argument(s): {targets}")
+
+        except Exception as exc:
+            apply_err = exc
+
+    # After the ExitStack exits, all mounts will have been unmounted
+    # If we had an error during the update process, re-raise it
+    if apply_err:
+        raise apply_err
 
 
 def check_updates(
