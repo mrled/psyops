@@ -50,7 +50,19 @@ def umount_retry(mountpoint: str, attempts: int = 2, sleepbetween: int = 1) -> N
 
 
 class Mount:
-    """A context manager for mounting filesystems"""
+    """A context manager for mounting filesystems.
+
+    When the context manager is entered, it will mount the filesystem at the specified mountpoint
+    with the specified ro/rw option.
+
+    When the context manager is exited, it will try to return it to the original state:
+    unmounted, mounted ro, etc.
+
+    When the device is mounted in more than one place,
+    or not on the fstab mountpoint,
+    we have to unmount it from all mountpoints and remount it to the fstab mountpoint,
+    and then unmount it when the context manager is exited.
+    """
 
     def __init__(self, device: str, mountpoint: str, writable: bool = False):
         self.device = device
