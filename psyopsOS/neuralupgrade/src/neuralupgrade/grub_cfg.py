@@ -1,15 +1,13 @@
 """The grub.cfg file for psyopsOS."""
 
 import datetime
-import glob
 import json
 import os
-import shutil
-import subprocess
 from typing import Optional
 
 from neuralupgrade import logger
 from neuralupgrade.filesystems import Filesystems
+from neuralupgrade.filewriter import write_file_carefully
 
 
 # These are format strings -- literal { and } must be escaped as {{ and }}
@@ -148,57 +146,12 @@ def write_grub_cfg_carefully(
     mountpoint: str,
     default_boot_label: str,
     updated: Optional[datetime.datetime] = None,
-    # The following are not meant to be changed normally
-    max_old_files: int = 10,
-    max_old_days: int = 30,
 ):
-    """Write a new grub.cfg file
-
-    - Retrieve the extra_programs from the manifest.json file
-    - Write it to a temporary file
-    - Move the old one to a backup location
-    - Move the new one into place
-    - Keep backups, but remove more than max_old_files backups that are older than max_old_days days
-
-    We create backup files with a timestamp in the filename,
-    but when we remove them we only look at the modification time.
-    On FAT32, the modification time is only accurate to 2 seconds.
-    Whatever.
-    """
+    """Write a new grub.cfg file carefully, and keep old versions"""
     manifest = read_efisys_manifest(mountpoint)
     logger.debug(f"Using manifest.json from {mountpoint}: {manifest}")
     extra_programs = manifest.get("extra_programs", {})
-    stampfmt = "%Y%m%d-%H%M%S.%f"
-    nowstamp = datetime.datetime.now().strftime(stampfmt)
-    tmpfile = os.path.join(mountpoint, "grub", f"grub.cfg.new.{nowstamp}")
+
     grubcfg = os.path.join(mountpoint, "grub", "grub.cfg")
-    grubcfg_backup = os.path.join(mountpoint, "grub", f"grub.cfg.old.{nowstamp}")
-
-    logger.debug(f"Writing new grub.cfg to {tmpfile}")
-    with open(tmpfile, "w") as f:
-        f.write(grub_cfg(filesystems, default_boot_label, extra_programs, updated))
-
-    if os.path.exists(grubcfg):
-        logger.debug(f"Backing up old {grubcfg} to {grubcfg_backup}")
-        shutil.copy(grubcfg, grubcfg_backup)
-        subprocess.run(["sync"], check=True)
-    else:
-        logger.debug(f"No old {grubcfg} to back up")
-    logger.debug(f"Moving new {tmpfile} to {grubcfg}")
-    shutil.move(tmpfile, grubcfg)
-    subprocess.run(["sync"], check=True)
-
-    oldfiles = glob.glob(os.path.join(mountpoint, "grub", "grub.cfg.old.*"))
-    for idx, oldfile in enumerate(oldfiles):
-        if idx < max_old_files:
-            logger.debug(f"Keeping {oldfile} because it's one of the {max_old_files} most recent")
-            continue
-        olddate = datetime.datetime.fromtimestamp(os.path.getmtime(oldfile))
-        if (datetime.datetime.now() - olddate).days > max_old_days:
-            logger.debug(
-                f"Removing {oldfile} because it's older than {max_old_days} days and there are more than {max_old_files} backups"
-            )
-            os.remove(oldfile)
-        else:
-            logger.debug(f"Keeping {oldfile} because it's newer than {max_old_days} days")
-    subprocess.run(["sync"], check=True)
+    grubcfg_contents = grub_cfg(filesystems, default_boot_label, extra_programs, updated)
+    write_file_carefully(grubcfg, grubcfg_contents)
