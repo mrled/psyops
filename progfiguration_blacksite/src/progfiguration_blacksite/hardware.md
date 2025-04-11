@@ -106,6 +106,13 @@ It can simultaneously display over HDMI if it's been built with support for it.
 
 U-Boot ignores the `cmdline.txt` file that is common for booting a regular Linux system on the Pi.
 
+### Other important settings
+
+```config.txt
+# As as little RAM for the GPU as possible; requires raspberrypi-bootloader-cutdown alpine package
+gpu_mem=16
+```
+
 ### Default values
 
 A record of default values for config files from stock OSes.
@@ -125,6 +132,8 @@ console=serial0,115200 console=tty1 root=PARTUUID=442e675f-02 rootfstype=ext4 fs
 ```
 
 `config.txt`:
+
+```ini
 # For more options and information see
 # http://rptl.io/configtxt
 # Some settings may impact device functionality. See link above for details
@@ -176,7 +185,6 @@ otg_mode=1
 dtoverlay=dwc2,dr_mode=host
 
 [all]
-```ini
 ```
 
 #### Raspberry Pi 4B, Alpine Linux (64bit), written by Raspberry Pi Imager
@@ -197,6 +205,29 @@ kernel=boot/vmlinuz-rpi
 initramfs boot/initramfs-rpi
 arm_64bit=1
 include usercfg.txt
+```
+
+### Alpine with serial console
+
+In testing, I write an Alpine image to the card, and then use these file contents.
+
+`cmdline.txt`:
+
+```text
+modules=loop,squashfs,sd-mod,usb-storage console=serial0,115200 console=tty1 loglevel=7
+```
+
+`config.txt`:
+
+```ini
+kernel=boot/vmlinuz-rpi
+initramfs boot/initramfs-rpi
+arm_64bit=1
+arm_boost=1
+gpu_mem=16
+dtoverlay=disable-bt
+enable_uart=1
+uart_2ndstage=1
 ```
 
 ### Serial console

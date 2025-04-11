@@ -153,6 +153,9 @@ _rpi_config_txt = """\
 arm_64bit=1
 arm_boost=1
 
+# Use as little memory as possible for the GPU (requires raspberrypi-bootloader-cutdown package)
+gpu_mem=16
+
 # Disable bluetooth, which uses the serial UART (?)
 dtoverlay=disable-bt
 # Enable the UART in the GPIO pins
