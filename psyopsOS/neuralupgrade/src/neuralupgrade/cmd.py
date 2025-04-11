@@ -270,6 +270,7 @@ def subcommand_check(parsed: argparse.Namespace, parser: argparse.ArgumentParser
                 f"{fs}: {fsmd['label']} is currently version {fsmd['current_version']}, not version {fsmd['compared_to']}"
             )
 
+
 def getparser(prog=None) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog=prog, description="Update psyopsOS boot media")
     parser.add_argument("--debug", "-d", help="Drop into pdb on exception", action="store_true")

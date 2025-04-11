@@ -12,7 +12,11 @@ from neuralupgrade import logger
 from neuralupgrade.downloader import download_update_signature
 from neuralupgrade.filesystems import Filesystem, Filesystems, sides
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
-from neuralupgrade.update_metadata import minisign_verify, parse_trusted_comment, parse_psyopsOS_neuralupgrade_info_comment
+from neuralupgrade.update_metadata import (
+    minisign_verify,
+    parse_trusted_comment,
+    parse_psyopsOS_neuralupgrade_info_comment,
+)
 
 
 def get_system_versions(filesystems: Filesystems) -> dict:
@@ -290,7 +294,12 @@ def apply_updates(
                 efisys_fs = idempotently_mount(filesystems.efisys, writable=True)
                 # This handles any updates to the default_boot_label in grub.cfg.
                 configure_efisys(
-                    filesystems, efisys_fs.mountpoint, default_boot_label, tarball=esptar, verify=verify, verify_pubkey=pubkey
+                    filesystems,
+                    efisys_fs.mountpoint,
+                    default_boot_label,
+                    tarball=esptar,
+                    verify=verify,
+                    verify_pubkey=pubkey,
                 )
                 subprocess.run(["sync"], check=True)
                 logger.info(f"Updated efisys with {esptar} at {efisys_fs}")

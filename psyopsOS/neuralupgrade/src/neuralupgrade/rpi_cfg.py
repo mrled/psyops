@@ -225,17 +225,14 @@ def rpi_boot_scr(boot_cmd: str, boot_scr: str):
         ["mkimage", "-A", "arm", "-T", "script", "-C", "none", "-n", "psyopsOS Boot Script", "-d", boot_cmd, boot_scr],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True
+        text=True,
     )
     if result.returncode != 0:
         logger.error(f"mkimage failed with return code {result.returncode}")
         logger.error(f"stdout: {result.stdout}")
         logger.error(f"stderr: {result.stderr}")
         raise subprocess.CalledProcessError(
-            returncode=result.returncode,
-            cmd=result.args,
-            output=result.stdout,
-            stderr=result.stderr
+            returncode=result.returncode, cmd=result.args, output=result.stdout, stderr=result.stderr
         )
     logger.info(f"stdout: {result.stdout}")
     logger.info(f"stderr: {result.stderr}")
