@@ -3,13 +3,16 @@ import glob
 import os
 import shutil
 import subprocess
+from typing import Union
 
 from neuralupgrade import logger
 
 
 def write_file_carefully(
     filepath: str,
-    contents: str,
+    contents: Union[str, bytes],
+    updated: datetime.datetime,
+    binary: bool = False,
     max_old_files: int = 10,
     max_old_days: int = 30,
 ):
@@ -26,12 +29,21 @@ def write_file_carefully(
     Whatever.
     """
     stampfmt = "%Y%m%d-%H%M%S.%f"
-    nowstamp = datetime.datetime.now().strftime(stampfmt)
+    nowstamp = updated.strftime(stampfmt)
     filepath_tmp = f"{filepath}.new.{nowstamp}"
     this_backup = f"{filepath}.old.{nowstamp}"
 
+    readmode = "rb" if binary else "r"
+    writemode = "wb" if binary else "w"
+
+    with open(filepath, readmode) as f:
+        existing_contents = f.read()
+        if existing_contents == contents:
+            logger.debug(f"File {filepath} already has the same contents, not writing")
+            return
+
     logger.debug(f"Writing new file contents to {filepath_tmp}")
-    with open(filepath_tmp, "w") as f:
+    with open(filepath_tmp, writemode) as f:
         f.write(contents)
 
     if os.path.exists(filepath):

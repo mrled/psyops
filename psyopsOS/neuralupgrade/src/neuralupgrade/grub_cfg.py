@@ -148,10 +148,13 @@ def write_grub_cfg_carefully(
     updated: Optional[datetime.datetime] = None,
 ):
     """Write a new grub.cfg file carefully, and keep old versions"""
+    if not updated:
+        updated = datetime.datetime.now()
+
     manifest = read_efisys_manifest(mountpoint)
     logger.debug(f"Using manifest.json from {mountpoint}: {manifest}")
     extra_programs = manifest.get("extra_programs", {})
 
     grubcfg = os.path.join(mountpoint, "grub", "grub.cfg")
     grubcfg_contents = grub_cfg(filesystems, default_boot_label, extra_programs, updated)
-    write_file_carefully(grubcfg, grubcfg_contents)
+    write_file_carefully(grubcfg, grubcfg_contents, updated)
