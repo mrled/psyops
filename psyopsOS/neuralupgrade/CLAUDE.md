@@ -1,11 +1,14 @@
 # CLAUDE.md - Coding Guidelines for Neural Upgrade
 
 ## Commands
+- Make sure a venv exists at `./.venv`;
+  if it doesn't exist create it with `uv venv .venv`,
+  and once it does exist enter it and use the following commands from inside the venv
 - Install for development: `pip install -e .`
 - Format code: `black .` (line length 120)
 - Type check: `mypy .` (add `types-requests` for development)
 - Build zipapp: `python3 -m zipapp --main neuralupgrade.cmd:main --output neuralupgrade.pyz --python "/usr/bin/env python3" src`
-- Run cog for docs: `tk cog` (updates readme.md with latest command help)
+- Run cog for docs: `cog` (updates readme.md with latest command help)
 
 ## Code Style
 - Use Black formatter with 120 character line limit

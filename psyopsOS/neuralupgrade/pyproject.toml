@@ -15,7 +15,7 @@ email = "me@micahrl.com"
 neuralupgrade = "neuralupgrade.cmd:main"
 
 [project.optional-dependencies]
-development = ["black", "mypy", "pytest", "types-requests"]
+development = ["black", "cogapp", "mypy", "pytest", "types-requests"]
 
 [project.urls]
 Homepage = "https://github.com/mrled/psyops/tree/master/psyopsOS/neuralupgrade"

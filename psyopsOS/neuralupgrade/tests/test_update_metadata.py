@@ -4,8 +4,14 @@ import os
 import tempfile
 import textwrap
 import unittest
+from pathlib import Path
 
 from neuralupgrade.update_metadata import parse_trusted_comment, parse_psyopsOS_neuralupgrade_info_comment
+
+# Path to test scenario directories
+TESTS_DIR = Path(__file__).parent
+SCENARIOS_DIR = TESTS_DIR / "data" / "scenarios"
+SCENARIO_AB_SAME = SCENARIOS_DIR / "ab_same"
 
 
 class TestParseTrustedComment(unittest.TestCase):
@@ -21,21 +27,14 @@ class TestParseTrustedComment(unittest.TestCase):
         self.assertEqual(result["kernel"], "6.1.75-0-lts")
         self.assertEqual(result["alpine"], "3.18")
 
-    def test_parse_sigcontents(self):
+    def test_parse_sigfile(self):
         """Test parsing a trusted comment from signature contents."""
-        sigcontents = textwrap.dedent(
-            """\
-            untrusted comment: signature from minisign secret key
-            RURFlbvwaqbpRv1RGZk6b0TkCUmJZvNRKVqfyveYOicg3g1FR6EUmvwkPGwB8yFJ+m9l/Al6sixSOAUVQDwwsfs23Coa9xEHBwI=
-            trusted comment: type=psyopsOS filename=psyopsOS.20240129-155151.tar version=20240129-155151 kernel=6.1.75-0-lts alpine=3.18
-            nISvkyfCnUI6Xjgr0vz+g4VbymHJh8rvPAHKncAm5sXVT9HMyQV5+HhgvMP3NLaRKSCng6VAYkIufXYkCmobCQ=="""
-        )
-        result = parse_trusted_comment(sigcontents=sigcontents)
+        result = parse_trusted_comment(sigfile=SCENARIO_AB_SAME / "a" / "psyopsOS.tar.minisig")
         self.assertEqual(result["type"], "psyopsOS")
-        self.assertEqual(result["filename"], "psyopsOS.20240129-155151.tar")
-        self.assertEqual(result["version"], "20240129-155151")
-        self.assertEqual(result["kernel"], "6.1.75-0-lts")
-        self.assertEqual(result["alpine"], "3.18")
+        self.assertEqual(result["filename"], "psyopsOS.x86_64.20240705-173840.tar")
+        self.assertEqual(result["version"], "20240705-173840")
+        self.assertEqual(result["kernel"], "6.6.36-0-lts")
+        self.assertEqual(result["alpine"], "3.20")
 
     def test_invalid_input(self):
         """Test handling of invalid input combinations."""
@@ -63,25 +62,14 @@ class TestParseTrustedComment(unittest.TestCase):
         self.assertEqual(result, {})  # Should return empty dict for no key-value pairs
 
     def test_with_sigfile(self):
-        """Test with sigfile parameter using a mock."""
-        # Create a temporary file with test content
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(
-                textwrap.dedent(
-                    """\
-                    antrusted comment: signature from minisign secret key
-                    RURFlbvwaqbpRv1RGZk6b0TkCUmJZvNRKVqfyveYOicg3g1FR6EUmvwkPGwB8yFJ+m9l/Al6sixSOAUVQDwwsfs23Coa9xEHBwI=
-                    trusted comment: type=psyopsOS filename=test.tar version=20240101 kernel=6.1.75 alpine=3.18
-                    nISvkyfCnUI6Xjgr0vz+g4VbymHJh8rvPAHKncAm5sXVT9HMyQV5+HhgvMP3NLaRKSCng6VAYkIufXYkCmobCQ=="""
-                ).encode("utf-8")
-            )
-            tmp.seek(0)
-            result = parse_trusted_comment(sigfile=tmp.name)
-            self.assertEqual(result["type"], "psyopsOS")
-            self.assertEqual(result["filename"], "test.tar")
-            self.assertEqual(result["version"], "20240101")
-            self.assertEqual(result["kernel"], "6.1.75")
-            self.assertEqual(result["alpine"], "3.18")
+        """Test with sigfile parameter using the test scenario."""
+        sigfile = SCENARIO_AB_SAME / "a" / "psyopsOS.tar.minisig"
+        result = parse_trusted_comment(sigfile=sigfile)
+        self.assertEqual(result["type"], "psyopsOS")
+        self.assertEqual(result["filename"], "psyopsOS.x86_64.20240705-173840.tar")
+        self.assertEqual(result["version"], "20240705-173840")
+        self.assertEqual(result["kernel"], "6.6.36-0-lts")
+        self.assertEqual(result["alpine"], "3.20")
 
     def test_empty_sigfile(self):
         """Test with an empty sigfile."""
@@ -120,26 +108,12 @@ class TestParseNeuralUpgradeInfoComment(unittest.TestCase):
             parse_psyopsOS_neuralupgrade_info_comment(comment=comment)
 
     def test_with_file(self):
-        """Test with file parameter using a temporary file."""
-        # Create a temporary file with test content
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(
-                textwrap.dedent(
-                    """\
-                    # This is a GRUB configuration file
-                    #### The next line is used by neuralupgrade to show information about the current configuration.
-                    # neuralupgrade-info: last_updated=20240401 default_boot_label=psyopsOS-5.0 extra_programs=rescue,memtest
-                    ####
-                    set timeout=5
-                    set default=0
-                    """
-                ).encode("utf-8")
-            )
-            tmp.seek(0)
-            result = parse_psyopsOS_neuralupgrade_info_comment(file=tmp.name)
-            self.assertEqual(result["last_updated"], "20240401")
-            self.assertEqual(result["default_boot_label"], "psyopsOS-5.0")
-            self.assertEqual(result["extra_programs"], "rescue,memtest")
+        """Test with file parameter using the test scenario."""
+        grub_cfg = SCENARIO_AB_SAME / "efisys" / "grub" / "grub.cfg"
+        result = parse_psyopsOS_neuralupgrade_info_comment(file=grub_cfg)
+        self.assertEqual(result["last_updated"], "20250308-040402")
+        self.assertEqual(result["default_boot_label"], "psyopsOS-A")
+        self.assertEqual(result["extra_programs"], "/memtest64.efi,/tcshell.efi")
 
     def test_file_without_comment(self):
         """Test with a file that doesn't contain a neuralupgrade-info comment."""
