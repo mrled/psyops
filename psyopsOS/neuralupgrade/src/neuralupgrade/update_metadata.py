@@ -60,7 +60,8 @@ def parse_trusted_comment(
             f"Must specify exactly one of comment, sigcontents, or sigfile; got {comment}, {sigcontents}, {sigfile}"
         )
     if sigfile:
-        sigcontents = open(sigfile).read()
+        with open(sigfile, "r") as f:
+            sigcontents = f.read()
         if not sigcontents:
             raise ValueError(f"Empty file {sigfile}")
     if sigcontents:
@@ -116,3 +117,5 @@ def parse_psyopsOS_neuralupgrade_info_comment(comment: Optional[str] = None, fil
     # parse all the key=value pairs in the trusted comment
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in comment[len(prefix) :].split()]}
     return metadata
+
+
