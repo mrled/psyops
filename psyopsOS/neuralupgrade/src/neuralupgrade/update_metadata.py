@@ -82,16 +82,16 @@ def parse_trusted_comment(
     return metadata
 
 
-def parse_psyopsOS_grub_info_comment(comment: Optional[str] = None, file: Optional[str] = None) -> dict:
+def parse_psyopsOS_neuralupgrade_info_comment(comment: Optional[str] = None, file: Optional[str] = None) -> dict:
     """Parse a trusted comment from a psyopsOS minisig
 
-    The comment comes from grub.cfg, like this:
+    The comment comes from the boot file (grub.cfg or similar), like this:
 
         #### The next line is used by neuralupgrade to show information about the current configuration.
         # neuralupgrade-info: last_updated={last_updated} default_boot_label={default_boot_label} extra_programs={extra_programs}
         ####
 
-    Can accept either just the "# neuralupgrade-info: " line, or a path to the grub.cfg file.
+    Can accept either just the "# neuralupgrade-info: " line, or a path to the file containing the comment
     """
     if comment is None:
         comment = ""
@@ -111,7 +111,7 @@ def parse_psyopsOS_grub_info_comment(comment: Optional[str] = None, file: Option
                 raise ValueError(f"Could not find trusted comment in {file}")
 
     if not comment.startswith(prefix):
-        raise ValueError(f"Invalid grub info comment: {comment}")
+        raise ValueError(f"Invalid neuralupgrade-info comment: {comment}")
 
     # parse all the key=value pairs in the trusted comment
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in comment[len(prefix) :].split()]}

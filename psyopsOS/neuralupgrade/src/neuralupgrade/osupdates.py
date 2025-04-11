@@ -12,7 +12,7 @@ from neuralupgrade import logger
 from neuralupgrade.downloader import download_update_signature
 from neuralupgrade.filesystems import Filesystem, Filesystems, sides
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
-from neuralupgrade.update_metadata import minisign_verify, parse_trusted_comment, parse_psyopsOS_grub_info_comment
+from neuralupgrade.update_metadata import minisign_verify, parse_trusted_comment, parse_psyopsOS_neuralupgrade_info_comment
 
 
 def get_system_versions(filesystems: Filesystems) -> dict:
@@ -40,7 +40,7 @@ def get_system_versions(filesystems: Filesystems) -> dict:
         "nonbooted": nonbooted,
     }
 
-    def _get_os_tc(label: str):
+    def get_psyops_partition_metadata(label: str):
         with filesystems.bylabel(label).mount(writable=False) as mountpoint:
             minisig_path = os.path.join(mountpoint, "psyopsOS.tar.minisig")
             try:
@@ -51,7 +51,7 @@ def get_system_versions(filesystems: Filesystems) -> dict:
                 info = {"error": str(exc), "minisig_path": minisig_path, "traceback": traceback.format_exc()}
         result[label] = {**result[label], **info}
 
-    def _get_esp_info():
+    def get_efi_partition_metadata(filesystems: Filesystems):
         with filesystems.efisys.mount(writable=False) as mountpoint:
             minisig_path = os.path.join(mountpoint, "psyopsESP.tar.minisig")
             try:
@@ -66,7 +66,7 @@ def get_system_versions(filesystems: Filesystems) -> dict:
                 }
             grub_cfg_path = os.path.join(mountpoint, "grub", "grub.cfg")
             try:
-                grub_cfg_info = parse_psyopsOS_grub_info_comment(file=grub_cfg_path)
+                grub_cfg_info = parse_psyopsOS_neuralupgrade_info_comment(file=grub_cfg_path)
             except FileNotFoundError:
                 grub_cfg_info = {"error": f"missing grub.cfg at {grub_cfg_path}"}
             except Exception as exc:
@@ -74,11 +74,11 @@ def get_system_versions(filesystems: Filesystems) -> dict:
         # TODO: currently if any keys overlap between grub_cfg_info and trusted_metadata, the latter will overwrite the former, fix?
         result["efisys"] = {**result["efisys"], **grub_cfg_info, **trusted_metadata}
 
-    nonbooted_thread = threading.Thread(target=_get_os_tc, args=(booted,))
+    nonbooted_thread = threading.Thread(target=get_psyops_partition_metadata, args=(booted,))
     nonbooted_thread.start()
-    booted_thread = threading.Thread(target=_get_os_tc, args=(nonbooted,))
+    booted_thread = threading.Thread(target=get_psyops_partition_metadata, args=(nonbooted,))
     booted_thread.start()
-    efisys_thread = threading.Thread(target=_get_esp_info)
+    efisys_thread = threading.Thread(target=get_efi_partition_metadata)
     efisys_thread.start()
 
     booted_thread.join()
@@ -187,7 +187,7 @@ def read_default_boot_label(efisys_mountpoint: str) -> str:
     """Read the default bootlabel from a grub.cfg file"""
 
     try:
-        grub_cfg_info = parse_psyopsOS_grub_info_comment(
+        grub_cfg_info = parse_psyopsOS_neuralupgrade_info_comment(
             file=os.path.join(efisys_mountpoint, "grub", "grub.cfg")
         )
         return grub_cfg_info["default_boot_label"]
