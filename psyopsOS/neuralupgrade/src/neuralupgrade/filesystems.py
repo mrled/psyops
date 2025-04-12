@@ -5,6 +5,7 @@ from typing import Optional
 
 from neuralupgrade import logger
 from neuralupgrade.coginitivedefects import MultiError
+from neuralupgrade.dictify import Dictifiable
 
 
 class UmountError(Exception):
@@ -176,7 +177,7 @@ class Mount:
             return json.loads(findmnt_json.stdout)["filesystems"]
 
 
-class Filesystem:
+class Filesystem(Dictifiable):
     """A psyopsOS filesystem
 
     Arguments:
@@ -250,6 +251,15 @@ class Filesystem:
 
     def __repr__(self):
         return f"Filesystem(label={self.label!r}, device={self.device!r}, mountpoint={self.mountpoint!r})"
+
+    def dictify(self) -> dict:
+        """Convert the object to a dictionary."""
+        return {
+            "label": self.label,
+            "device": self.device,
+            "mountpoint": self.mountpoint,
+            "mockmount": self.mockmount,
+        }
 
 
 class Filesystems:
