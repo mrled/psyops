@@ -92,7 +92,18 @@ from contextlib import redirect_stdout
 import cog
 from neuralupgrade.cmd import main_implementation
 
-command = ["neuralupgrade", "--fwtype=x86_64_uefi", "--booted-mock=psyopsOS-A", "--efisys-mock", "--efisys-mountpoint=./tests/data/scenarios/ab_same/efisys", "--a-mock", "--a-mountpoint=./tests/data/scenarios/ab_same/a", "--b-mock", "--b-mountpoint=./tests/data/scenarios/ab_same/b", "show"]
+command = [
+  "neuralupgrade",
+  "--fwtype=x86_64_uefi",
+  "--booted-mock=psyopsOS-A",
+  "--efisys-mock",
+  "--efisys-mountpoint=./tests/data/scenarios/ab_same/efisys",
+  "--a-mock",
+  "--a-mountpoint=./tests/data/scenarios/ab_same/a",
+  "--b-mock",
+  "--b-mountpoint=./tests/data/scenarios/ab_same/b",
+  "show"
+]
 f = io.StringIO()
 with redirect_stdout(f):
   main_implementation(command)
