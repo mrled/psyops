@@ -7,6 +7,8 @@ from neuralupgrade.systemmetadata import NeuralPartitionFirmware
 class RaspberryPiUBootBootloader(Firmware):
     """Base class for firmware / bootloaders."""
 
+    fwtype = "raspberrypi"
+
     def update(
         self,
         filesystems: Filesystems,

@@ -131,10 +131,10 @@ def subcommand_show(
             metadata["system"] = dictify.dictify(get_system_metadata(filesystems, sides, firmware))
         elif target == "latest":
             os_result = download_update_signature(
-                parsed.repository, parsed.psyopsOS_filename_format, parsed.architecture, "latest"
+                firmware, parsed.repository, parsed.psyopsOS_filename_format, "latest"
             )
             esp_result = download_update_signature(
-                parsed.repository, parsed.psyopsESP_filename_format, parsed.architecture, "latest"
+                firmware, parsed.repository, parsed.psyopsESP_filename_format, "latest"
             )
             metadata["latest"] = {
                 os_result.url: os_result.unverified_metadata,
@@ -178,9 +178,9 @@ def subcommand_apply(
                 os_tar = parsed.os_tar
             elif parsed.os_version:
                 os_tar = download_update(
+                    firmware,
                     parsed.repository,
                     parsed.psyopsOS_filename_format,
-                    parsed.architecture,
                     parsed.os_version,
                     parsed.update_tmpdir,
                     pubkey=parsed.pubkey,
@@ -194,9 +194,9 @@ def subcommand_apply(
                 esp_tar = parsed.esp_tar
             elif parsed.esp_version:
                 esp_tar = download_update(
+                    firmware,
                     parsed.repository,
                     parsed.psyopsESP_filename_format,
-                    parsed.architecture,
                     parsed.esp_version,
                     parsed.update_tmpdir,
                     pubkey=parsed.pubkey,
@@ -241,15 +241,15 @@ def subcommand_apply(
             raise update_err
 
 
-def subcommand_download(parsed: argparse.Namespace, parser: argparse.ArgumentParser):
+def subcommand_download(parsed: argparse.Namespace, parser: argparse.ArgumentParser, firmware: Firmware):
     output: str = parsed.output
     if len(parsed.type) > 1 and not output.endswith("/"):
         output += "/"
     if "psyopsOS" in parsed.type:
         download_update(
+            firmware,
             parsed.repository,
             parsed.psyopsOS_filename_format,
-            parsed.architecture,
             parsed.version,
             output,
             pubkey=parsed.pubkey,
@@ -257,9 +257,9 @@ def subcommand_download(parsed: argparse.Namespace, parser: argparse.ArgumentPar
         )
     if "psyopsESP" in parsed.type:
         download_update(
+            firmware,
             parsed.repository,
             parsed.psyopsESP_filename_format,
-            parsed.architecture,
             parsed.version,
             output,
             pubkey=parsed.pubkey,
@@ -283,7 +283,6 @@ def subcommand_check(
         parsed.repository,
         parsed.psyopsOS_filename_format,
         parsed.psyopsESP_filename_format,
-        parsed.architecture,
     )
     for fs, fsmd in checked.items():
         if fsmd["up_to_date"]:
@@ -354,7 +353,7 @@ def getparser(prog=None) -> argparse.ArgumentParser:
     overrides_group.add_argument("--update-tmpdir", default="/tmp", help="Temporary directory for update downloads")
     overrides_group.add_argument("--booted-mock", action="store", help="Mock the booted side, either 'a' or 'b'")
     overrides_group.add_argument(
-        "--firmware-type",
+        "--fwtype",
         choices=FirmwareTypeMap.keys(),
         help=f"Firmware type to use, one of: {', '.join(FirmwareTypeMap.keys())}; if not present, detect current host firmware",
     )
@@ -362,24 +361,18 @@ def getparser(prog=None) -> argparse.ArgumentParser:
     # Repository options
     repository_group = parser.add_argument_group("Repository options")
     repository_group.add_argument(
-        "--architecture",
-        # This is whatever `uname -m` says, like x86_64.
-        default=platform.machine(),
-        help="Architecture for the update, default is whatever `uname -m` says: %(default)s. WARNING: NO VERIFICATION IS DONE TO ENSURE THIS MATCHES THE ACTUAL ARCHITECTURE OF THE UPDATE. USE WITH CAUTION.",
-    )
-    repository_group.add_argument(
         "--repository",
         default="https://psyops.micahrl.com/os",
         help="URL for the psyopsOS update repository, default: %(default)s",
     )
     repository_group.add_argument(
         "--psyopsOS-filename-format",
-        default="psyopsOS.{architecture}.{version}.tar",
+        default="psyopsOS.{fwtype}.{version}.tar",
         help="The format string for the versioned psyopsESP tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
     repository_group.add_argument(
         "--psyopsESP-filename-format",
-        default="psyopsESP.{architecture}.{version}.tar",
+        default="psyopsESP.{fwtype}.{version}.tar",
         help="The format string for the versioned psyopsOS tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
 
@@ -521,8 +514,8 @@ def main_implementation(arguments: list[str]) -> int:
         a=Filesystem(parsed.a_label, device=parsed.a_dev, mountpoint=parsed.a_mountpoint, mockmount=parsed.a_mock),
         b=Filesystem(parsed.b_label, device=parsed.b_dev, mountpoint=parsed.b_mountpoint, mockmount=parsed.b_mock),
     )
-    if parsed.firmware_type:
-        firmware = FirmwareTypeMap[parsed.firmware_type]()
+    if parsed.fwtype:
+        firmware = FirmwareTypeMap[parsed.fwtype]()
     else:
         try:
             firmware = detect_firmware()
@@ -540,7 +533,7 @@ def main_implementation(arguments: list[str]) -> int:
     if parsed.subcommand == "show":
         subcommand_show(parsed, parser, filesystems, sides, firmware)
     elif parsed.subcommand == "download":
-        subcommand_download(parsed, parser)
+        subcommand_download(parsed, parser, firmware)
     elif parsed.subcommand == "check":
         subcommand_check(parsed, parser, filesystems, sides, firmware)
     elif parsed.subcommand == "apply":

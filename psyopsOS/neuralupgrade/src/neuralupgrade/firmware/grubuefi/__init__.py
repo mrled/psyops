@@ -22,6 +22,8 @@ from neuralupgrade.update_metadata import (
 
 class GrubUEFIBootloader(Firmware):
 
+    fwtype = "x86_64_uefi"
+
     def update(
         self,
         filesystems: Filesystems,

@@ -8,6 +8,8 @@ from neuralupgrade.systemmetadata import NeuralPartitionFirmware
 class Firmware:
     """Base class for firmware / bootloaders."""
 
+    fwtype: str
+
     def update(
         self,
         filesystems: Filesystems,

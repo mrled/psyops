@@ -31,7 +31,12 @@ def detect_firmware() -> Firmware:
     raise UnknownFirmwareError
 
 
-FirmwareTypeMap = {
-    "x86_64_uefi": GrubUEFIBootloader,
-    "raspberrypi": RaspberryPiUBootBootloader,
-}
+FIRMWARES = [
+    GrubUEFIBootloader,
+    RaspberryPiUBootBootloader,
+]
+"""A list of all known firmware classes."""
+
+
+FirmwareTypeMap = {fw.fwtype: fw for fw in FIRMWARES}
+"""A map of firmware type names to their classes."""

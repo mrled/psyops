@@ -92,7 +92,7 @@ from contextlib import redirect_stdout
 import cog
 from neuralupgrade.cmd import main_implementation
 
-command = ["neuralupgrade", "--firmware-type=x86_64_uefi", "--booted-mock=psyopsOS-A", "--efisys-mock", "--efisys-mountpoint=./tests/data/scenarios/ab_same/efisys", "--a-mock", "--a-mountpoint=./tests/data/scenarios/ab_same/a", "--b-mock", "--b-mountpoint=./tests/data/scenarios/ab_same/b", "show"]
+command = ["neuralupgrade", "--fwtype=x86_64_uefi", "--booted-mock=psyopsOS-A", "--efisys-mock", "--efisys-mountpoint=./tests/data/scenarios/ab_same/efisys", "--a-mock", "--a-mountpoint=./tests/data/scenarios/ab_same/a", "--b-mock", "--b-mountpoint=./tests/data/scenarios/ab_same/b", "show"]
 f = io.StringIO()
 with redirect_stdout(f):
   main_implementation(command)
@@ -102,7 +102,7 @@ cog.out(f"```text\n{promptcmd}\n{cmdout}\n```\n")
 ]]]-->
 ```text
 user@host> neuralupgrade \
-    --firmware-type=x86_64_uefi \
+    --fwtype=x86_64_uefi \
     --booted-mock=psyopsOS-A \
     --efisys-mock \
     --efisys-mountpoint=./tests/data/scenarios/ab_same/efisys \
@@ -197,8 +197,8 @@ usage: neuralupgrade [-h] [--debug] [--verbose] [--no-verify] [--pubkey PUBKEY]
                      [--b-mountpoint B_MOUNTPOINT] [--b-label B_LABEL]
                      [--b-mock] [--update-tmpdir UPDATE_TMPDIR]
                      [--booted-mock BOOTED_MOCK]
-                     [--firmware-type {x86_64_uefi,raspberrypi}]
-                     [--architecture ARCHITECTURE] [--repository REPOSITORY]
+                     [--fwtype {x86_64_uefi,raspberrypi}]
+                     [--repository REPOSITORY]
                      [--psyopsOS-filename-format PSYOPSOS_FILENAME_FORMAT]
                      [--psyopsESP-filename-format PSYOPSESP_FILENAME_FORMAT]
                      {show,download,check,apply,set-default} ...
@@ -257,16 +257,11 @@ Device/mountpoint override options:
                         Temporary directory for update downloads
   --booted-mock BOOTED_MOCK
                         Mock the booted side, either 'a' or 'b'
-  --firmware-type {x86_64_uefi,raspberrypi}
+  --fwtype {x86_64_uefi,raspberrypi}
                         Firmware type to use, one of: x86_64_uefi, raspberrypi;
                         if not present, detect current host firmware
 
 Repository options:
-  --architecture ARCHITECTURE
-                        Architecture for the update, default is whatever `uname
-                        -m` says: arm64. WARNING: NO VERIFICATION IS DONE TO
-                        ENSURE THIS MATCHES THE ACTUAL ARCHITECTURE OF THE
-                        UPDATE. USE WITH CAUTION.
   --repository REPOSITORY
                         URL for the psyopsOS update repository, default:
                         https://psyops.micahrl.com/os

@@ -4,6 +4,7 @@ import os
 import requests
 
 from neuralupgrade import logger
+from neuralupgrade.firmware import Firmware
 from neuralupgrade.update_metadata import minisign_verify, parse_trusted_comment
 
 
@@ -40,7 +41,7 @@ class DownloadedSignatureResult:
 
 
 def download_update_signature(
-    repository_url: str, filename_format: str, architecture: str, version: str
+    firmware: Firmware, repository_url: str, filename_format: str, version: str
 ) -> DownloadedSignatureResult:
     """Download a psyopsOS update signature
 
@@ -49,7 +50,7 @@ def download_update_signature(
 
     Return a DownloadedSignatureResult.
     """
-    minisig_filename = filename_format.format(architecture=architecture, version=version) + ".minisig"
+    minisig_filename = filename_format.format(fwtype=firmware.fwtype, version=version) + ".minisig"
     minisig_url = f"{repository_url}/{minisig_filename}"
 
     logger.debug(f"Downloading update minisig from {minisig_url}")
@@ -64,9 +65,9 @@ def download_update_signature(
 
 
 def download_update(
+    firmware: Firmware,
     repository_url: str,
     filename_format: str,
-    architecture: str,
     version: str,
     output: str,
     pubkey: str = "",
@@ -82,7 +83,7 @@ def download_update(
     and finally verify that the signature matches the tarball.
     """
 
-    downloaded = download_update_signature(repository_url, filename_format, architecture, version)
+    downloaded = download_update_signature(firmware, repository_url, filename_format, version)
 
     update_filename = downloaded.unverified_metadata["filename"]
     update_url = f"{repository_url}/{update_filename}"
