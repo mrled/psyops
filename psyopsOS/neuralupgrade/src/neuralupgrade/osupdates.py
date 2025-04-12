@@ -4,9 +4,8 @@ import os
 import platform
 import shutil
 import subprocess
-import threading
 import traceback
-from queue import Queue
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Optional
 
 from neuralupgrade import logger
@@ -20,7 +19,7 @@ from neuralupgrade.update_metadata import (
 )
 
 
-def get_psyops_partition_metadata(fs: Filesystem, out: Queue):
+def get_psyops_partition_metadata(fs: Filesystem) -> dict[str, dict[str, Any]]:
     """Read the psyopsOS partition metadata from the minisig file."""
     with fs.mount(writable=False) as mountpoint:
         minisig_path = os.path.join(mountpoint, "psyopsOS.tar.minisig")
@@ -34,10 +33,10 @@ def get_psyops_partition_metadata(fs: Filesystem, out: Queue):
             info = {"error": f"missing minisig at {minisig_path}"}
         except Exception as exc:
             info = {"error": str(exc), "minisig_path": minisig_path, "traceback": traceback.format_exc()}
-    out.put({fs.label: info})
+    return {fs.label: info}
 
 
-def get_efi_partition_metadata(fs: Filesystem, out: Queue):
+def get_efi_partition_metadata(fs: Filesystem) -> dict[str, dict[str, Any]]:
     """Read the psyopsESP partition metadata from the minisig and grub_cfg files."""
     with fs.mount(writable=False) as mountpoint:
         minisig_path = os.path.join(mountpoint, "psyopsESP.tar.minisig")
@@ -59,7 +58,7 @@ def get_efi_partition_metadata(fs: Filesystem, out: Queue):
         except Exception as exc:
             grub_cfg_info = {"error": str(exc), "grub_cfg_path": grub_cfg_path, "traceback": traceback.format_exc()}
     # TODO: currently if any keys overlap between grub_cfg_info and trusted_metadata, the latter will overwrite the former, fix?
-    out.put({"efisys": {**trusted_metadata, **grub_cfg_info}})
+    return {"efisys": {**trusted_metadata, **grub_cfg_info}}
 
 
 def get_system_versions(filesystems: Filesystems) -> dict:
@@ -67,26 +66,21 @@ def get_system_versions(filesystems: Filesystems) -> dict:
 
     Uses threads to speed up the process of mounting the filesystems and reading the minisig files.
     """
-    q: Queue[dict[str, Any]] = Queue()
-    threads = [
-        threading.Thread(target=get_psyops_partition_metadata, args=(filesystems.a, q)),
-        threading.Thread(target=get_psyops_partition_metadata, args=(filesystems.b, q)),
-        threading.Thread(target=get_efi_partition_metadata, args=(filesystems.efisys, q)),
-    ]
-    # Start the threads, and have them run in parallel
-    for thread in threads:
-        thread.start()
-    # Wait for all threads to finish
-    for thread in threads:
-        thread.join()
-    # Collect the results from the queue
-    result: dict[str, Any] = {}
-    while not q.empty():
-        try:
-            result.update(q.get_nowait())
-        except Exception as exc:
-            logger.error(f"Error getting partition metadata: {exc}")
-            continue
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(get_psyops_partition_metadata, filesystems.a),
+            executor.submit(get_psyops_partition_metadata, filesystems.b),
+            executor.submit(get_efi_partition_metadata, filesystems.efisys),
+        ]
+
+        # Collect the results from the futures
+        result: dict[str, Any] = {}
+        for future in as_completed(futures):
+            try:
+                result.update(future.result())
+            except Exception as exc:
+                logger.error(f"Error getting partition metadata: {exc}")
+                continue
 
     booted, nonbooted = sides(filesystems)
     result["booted"] = booted
