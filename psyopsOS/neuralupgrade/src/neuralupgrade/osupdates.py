@@ -55,8 +55,8 @@ def get_system_versions(filesystems: Filesystems) -> dict:
                 info = {"error": str(exc), "minisig_path": minisig_path, "traceback": traceback.format_exc()}
         result[label] = {**result[label], **info}
 
-    def get_efi_partition_metadata(filesystems: Filesystems):
-        with filesystems.efisys.mount(writable=False) as mountpoint:
+    def get_efi_partition_metadata(fs: Filesystems):
+        with fs.efisys.mount(writable=False) as mountpoint:
             minisig_path = os.path.join(mountpoint, "psyopsESP.tar.minisig")
             try:
                 trusted_metadata = parse_trusted_comment(sigfile=minisig_path)
@@ -82,7 +82,7 @@ def get_system_versions(filesystems: Filesystems) -> dict:
     nonbooted_thread.start()
     booted_thread = threading.Thread(target=get_psyops_partition_metadata, args=(nonbooted,))
     booted_thread.start()
-    efisys_thread = threading.Thread(target=get_efi_partition_metadata)
+    efisys_thread = threading.Thread(target=get_efi_partition_metadata, args=(filesystems,))
     efisys_thread.start()
 
     booted_thread.join()
