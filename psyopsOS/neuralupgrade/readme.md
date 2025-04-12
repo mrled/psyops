@@ -100,11 +100,13 @@ cog.outl(get_argparse_help_string("neuralupgrade", getparser(prog="neuralupgrade
 usage: neuralupgrade [-h] [--debug] [--verbose] [--no-verify] [--pubkey PUBKEY]
                      [--efisys-dev EFISYS_DEV]
                      [--efisys-mountpoint EFISYS_MOUNTPOINT]
-                     [--efisys-label EFISYS_LABEL] [--a-dev A_DEV]
-                     [--a-mountpoint A_MOUNTPOINT] [--a-label A_LABEL]
-                     [--b-dev B_DEV] [--b-mountpoint B_MOUNTPOINT]
-                     [--b-label B_LABEL] [--update-tmpdir UPDATE_TMPDIR]
-                     [--architecture ARCHITECTURE] [--repository REPOSITORY]
+                     [--efisys-label EFISYS_LABEL] [--efisys-mock]
+                     [--a-dev A_DEV] [--a-mountpoint A_MOUNTPOINT]
+                     [--a-label A_LABEL] [--a-mock] [--b-dev B_DEV]
+                     [--b-mountpoint B_MOUNTPOINT] [--b-label B_LABEL]
+                     [--b-mock] [--update-tmpdir UPDATE_TMPDIR]
+                     [--booted-mock BOOTED_MOCK] [--architecture ARCHITECTURE]
+                     [--repository REPOSITORY]
                      [--psyopsOS-filename-format PSYOPSOS_FILENAME_FORMAT]
                      [--psyopsESP-filename-format PSYOPSESP_FILENAME_FORMAT]
                      {show,download,check,apply,set-default} ...
@@ -141,18 +143,27 @@ Device/mountpoint override options:
   --efisys-label EFISYS_LABEL
                         Override label for EFI system partition, default:
                         PSYOPSOSEFI
+  --efisys-mock         Do not actually mount anything to the efisys mountpoint,
+                        just use its contents as-is; requires --efisys-
+                        mountpoint
   --a-dev A_DEV         Override device for A side (found by label by default)
   --a-mountpoint A_MOUNTPOINT
                         Override mountpoint for A side (found by label in fstab
                         by default)
   --a-label A_LABEL     Override label for A side, default: psyopsOS-A
+  --a-mock              Do not actually mount anything to the a mountpoint, just
+                        use its contents as-is; requires --a-mountpoint
   --b-dev B_DEV         Override device for B side (found by label by default)
   --b-mountpoint B_MOUNTPOINT
                         Override mountpoint for B side (found by label in fstab
                         by default)
   --b-label B_LABEL     Override label for B side, default: psyopsOS-B
+  --b-mock              Do not actually mount anything to the b mountpoint, just
+                        use its contents as-is; requires --b-mountpoint
   --update-tmpdir UPDATE_TMPDIR
                         Temporary directory for update downloads
+  --booted-mock BOOTED_MOCK
+                        Mock the booted side, either 'a' or 'b'
 
 Repository options:
   --architecture ARCHITECTURE
