@@ -82,8 +82,92 @@ python3 -m zipapp --main neuralupgrade.cmd:main --output artifacts/neuralupgrade
 scp artifacts/neuralupgrade.pyz root@NODE:/tmp/
 ```
 
-## Full command help
+## `neuralupgrade show` on machines not running psyopsOS
 
+You can see output on machines that are not running psyopsOS by using the `--mock-*` argumenhts.
+
+<!--[[[cog
+import io
+from contextlib import redirect_stdout
+import cog
+from neuralupgrade.cmd import main_implementation
+
+command = ["neuralupgrade", "--booted-mock=psyopsOS-A", "--efisys-mock", "--efisys-mountpoint=./tests/data/scenarios/ab_same/efisys", "--a-mock", "--a-mountpoint=./tests/data/scenarios/ab_same/a", "--b-mock", "--b-mountpoint=./tests/data/scenarios/ab_same/b", "show"]
+f = io.StringIO()
+with redirect_stdout(f):
+  main_implementation(command)
+promptcmd = "user@host> " + " \\\n    ".join(command)
+cmdout = f.getvalue()
+cog.out(f"```text\n{promptcmd}\n{cmdout}\n```\n")
+]]]-->
+```text
+user@host> neuralupgrade \
+    --booted-mock=psyopsOS-A \
+    --efisys-mock \
+    --efisys-mountpoint=./tests/data/scenarios/ab_same/efisys \
+    --a-mock \
+    --a-mountpoint=./tests/data/scenarios/ab_same/a \
+    --b-mock \
+    --b-mountpoint=./tests/data/scenarios/ab_same/b \
+    show
+system:
+    a:
+        fs:
+            label: psyopsOS-A
+            device: /dev/mock/psyopsOS-A
+            mountpoint: ./tests/data/scenarios/ab_same/a
+            mockmount: True
+        metadata:
+            running: False
+            next_boot: False
+            type: psyopsOS
+            filename: psyopsOS.x86_64.20240705-173840.tar
+            version: 20240705-173840
+            kernel: 6.6.36-0-lts
+            alpine: 3.20
+            architecture: x86_64
+        running: False
+        next_boot: False
+    b:
+        fs:
+            label: psyopsOS-B
+            device: /dev/mock/psyopsOS-B
+            mountpoint: ./tests/data/scenarios/ab_same/b
+            mockmount: True
+        metadata:
+            running: False
+            next_boot: False
+            type: psyopsOS
+            filename: psyopsOS.x86_64.20240705-173840.tar
+            version: 20240705-173840
+            kernel: 6.6.36-0-lts
+            alpine: 3.20
+            architecture: x86_64
+        running: False
+        next_boot: False
+    firmware:
+        fs:
+            label: PSYOPSOSEFI
+            device: /dev/mock/PSYOPSOSEFI
+            mountpoint: ./tests/data/scenarios/ab_same/efisys
+            mockmount: True
+        metadata:
+            type: psyopsESP
+            filename: psyopsESP.x86_64.20240705-173849.tar
+            version: 20240705-173849
+            efi_programs: memtest64.efi,tcshell.efi
+        neuralupgrade_info:
+            last_updated: 20250308-040402
+            default_boot_label: psyopsOS-A
+            extra_programs: /memtest64.efi,/tcshell.efi
+    booted_label: psyopsOS-A
+    nonbooted_label: psyopsOS-B
+    nextboot_label: psyopsOS-A
+
+```
+<!--[[[end]]]-->
+
+## Full command help
 
 <!--[[[cog
 #
