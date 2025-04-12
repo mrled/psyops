@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from neuralupgrade.filesystems import Filesystem, Filesystems
+from neuralupgrade.filesystems import Filesystem, Filesystems, Sides
 from neuralupgrade.osupdates import get_system_metadata
 
 # Path to test scenario directories
@@ -19,6 +19,8 @@ class TestGetSystemVersions(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment."""
+        self.sides = Sides(booted="psyopsOS-A", nonbooted="psyopsOS-B")
+
         # Create a mock Filesystems object that uses our scenario test data
         a_fs = Filesystem("psyopsOS-A", mountpoint=SCENARIO_AB_SAME / "a", mockmount=True)
         b_fs = Filesystem("psyopsOS-B", mountpoint=SCENARIO_AB_SAME / "b", mockmount=True)
@@ -30,14 +32,11 @@ class TestGetSystemVersions(unittest.TestCase):
         b_empty_fs = Filesystem("psyopsOS-B", mountpoint=self.temp_emtpy_dir.name, mockmount=True)
         self.filesystems_b_side_empty = Filesystems(efisys=efi_fs, a=a_fs, b=b_empty_fs)
 
-    @patch("neuralupgrade.filesystems.activeside")
-    def test_get_system_versions(self, mock_activeside: unittest.mock.MagicMock):
+    def test_get_system_versions(self):
         """Test get_system_versions."""
-        # Set up mock activeside to return A as the booted side
-        mock_activeside.return_value = "psyopsOS-A"
 
         # Call the function
-        result = get_system_metadata(self.filesystems_ab_same)
+        result = get_system_metadata(self.filesystems_ab_same, self.sides)
 
         # Verify the result
         self.assertEqual(result.booted_label, "psyopsOS-A")
@@ -64,14 +63,11 @@ class TestGetSystemVersions(unittest.TestCase):
         self.assertEqual(result.firmware.neuralupgrade_info["last_updated"], "20250308-040402")
         self.assertEqual(result.firmware.neuralupgrade_info["extra_programs"], "/memtest64.efi,/tcshell.efi")
 
-    @patch("neuralupgrade.filesystems.activeside")
-    def test_get_system_versions_missing_minisig(self, mock_activeside):
+    def test_get_system_versions_missing_minisig(self):
         """Test get_system_versions when a minisig file is missing."""
-        # Set up mock activeside to return A as the booted side
-        mock_activeside.return_value = "psyopsOS-A"
 
         # Call the function
-        result = get_system_metadata(self.filesystems_b_side_empty)
+        result = get_system_metadata(self.filesystems_b_side_empty, self.sides)
 
         # Verify the error is captured in the result for the B side
         self.assertIn("error", result.b.metadata)

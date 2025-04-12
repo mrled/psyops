@@ -12,7 +12,7 @@ from typing import Any, Optional, TypedDict
 from neuralupgrade import logger
 from neuralupgrade.dictify import Dictifiable
 from neuralupgrade.downloader import download_update_signature
-from neuralupgrade.filesystems import Filesystem, Filesystems, sides
+from neuralupgrade.filesystems import Filesystem, Filesystems, Sides
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
 from neuralupgrade.update_metadata import (
     minisign_verify,
@@ -130,7 +130,7 @@ def get_efi_partition_metadata(fs: Filesystem) -> NeuralPartitionFirmware:
     )
 
 
-def get_system_metadata(filesystems: Filesystems) -> SystemMetadata:
+def get_system_metadata(filesystems: Filesystems, sides: Sides) -> SystemMetadata:
     """Show information about the OS of the running system.
 
     Uses threads to speed up the process of mounting the filesystems and reading the minisig files.
@@ -148,14 +148,12 @@ def get_system_metadata(filesystems: Filesystems) -> SystemMetadata:
             label = future_map[future]
             result[label] = future.result()
 
-    booted, nonbooted = sides(filesystems)
-
     return SystemMetadata(
         a=result["a"],
         b=result["b"],
         firmware=result["firmware"],
-        booted_label=booted,
-        nonbooted_label=nonbooted,
+        booted_label=sides.booted,
+        nonbooted_label=sides.nonbooted,
         nextboot_label=result["firmware"].neuralupgrade_info["default_boot_label"],
     )
 
@@ -267,6 +265,7 @@ def read_default_boot_label(efisys_mountpoint: str) -> str:
 
 def apply_updates(
     filesystems: Filesystems,
+    sides: Sides,
     targets: list[str],
     ostar: str = "",
     esptar: str = "",
@@ -328,18 +327,17 @@ def apply_updates(
             if "nonbooted" in targets:
                 targets.remove("nonbooted")
                 updated = datetime.datetime.now()
-                booted, nonbooted = sides(filesystems)
-                nonbooted_fs = idempotently_mount(filesystems.bylabel(nonbooted), writable=True)
+                nonbooted_fs = idempotently_mount(filesystems.bylabel(sides.nonbooted), writable=True)
                 apply_ostar(ostar, nonbooted_fs.mountpoint, verify=verify, verify_pubkey=pubkey)
                 subprocess.run(["sync"], check=True)
-                logger.info(f"Updated nonbooted side {nonbooted} with {ostar} at {nonbooted_fs}")
+                logger.info(f"Updated nonbooted side {sides.nonbooted} with {ostar} at {nonbooted_fs}")
                 if not no_update_default_boot_label:
-                    default_boot_label = nonbooted
+                    default_boot_label = sides.nonbooted
 
                 # If we specified "nonbooted" AND "a", and a is the nonbooted side,
                 # remove "a" from the targets list since we just updated it.
-                if nonbooted in targets:
-                    targets.remove(nonbooted)
+                if sides.nonbooted in targets:
+                    targets.remove(sides.nonbooted)
 
             for side in ["a", "b"]:
                 if side in targets:
@@ -384,6 +382,7 @@ def apply_updates(
 
 def check_updates(
     filesystems: Filesystems,
+    sides: Sides,
     targets: list[str],
     update_version: str,
     repository: str,
@@ -401,7 +400,7 @@ def check_updates(
     - up_to_date: Whether the filesystem is up to date
     """
 
-    system_md = get_system_metadata(filesystems)
+    system_md = get_system_metadata(filesystems, sides)
     update_version_firmware = update_version
     update_version_os = update_version
     if update_version == "latest":

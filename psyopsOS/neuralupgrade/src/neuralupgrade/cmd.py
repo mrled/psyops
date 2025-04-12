@@ -17,7 +17,7 @@ from neuralupgrade import dictify, logger
 
 from neuralupgrade.coginitivedefects import MultiError
 from neuralupgrade.downloader import download_repository_file, download_update, download_update_signature
-from neuralupgrade.filesystems import Filesystem, Filesystems
+from neuralupgrade.filesystems import Filesystem, Filesystems, Sides, flipside
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
 from neuralupgrade.osupdates import apply_updates, check_updates, get_system_metadata
 from neuralupgrade.update_metadata import parse_trusted_comment
@@ -117,11 +117,13 @@ def get_argparse_help_string(name: str, parser: argparse.ArgumentParser, wrap: i
     return docstring
 
 
-def subcommand_show(parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems):
+def subcommand_show(
+    parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems, sides: Sides
+):
     metadata = {}
     for target in parsed.target:
         if target == "system":
-            metadata["system"] = dictify.dictify(get_system_metadata(filesystems))
+            metadata["system"] = dictify.dictify(get_system_metadata(filesystems, sides))
         elif target == "latest":
             os_result = download_update_signature(
                 parsed.repository, parsed.psyopsOS_filename_format, parsed.architecture, "latest"
@@ -148,7 +150,9 @@ def subcommand_show(parsed: argparse.Namespace, parser: argparse.ArgumentParser,
     display_dict(metadata)
 
 
-def subcommand_apply(parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems):
+def subcommand_apply(
+    parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems, sides: Sides
+):
     # Check for invalid combinations
     if "nonbooted" in parsed.target and ("a" in parsed.target or "b" in parsed.target):
         parser.error("Cannot specify 'nonbooted' and 'a' or 'b' at the same time")
@@ -194,6 +198,7 @@ def subcommand_apply(parsed: argparse.Namespace, parser: argparse.ArgumentParser
                 parser.error("Must specify --esp-tar or --esp-version when applying efisys updates")
         apply_updates(
             filesystems,
+            sides,
             parsed.target,
             ostar=os_tar,
             esptar=esp_tar,
@@ -252,9 +257,12 @@ def subcommand_download(parsed: argparse.Namespace, parser: argparse.ArgumentPar
         )
 
 
-def subcommand_check(parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems):
+def subcommand_check(
+    parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems, sides: Sides
+):
     checked = check_updates(
         filesystems,
+        sides,
         parsed.target,
         parsed.version,
         parsed.repository,
@@ -299,12 +307,22 @@ def getparser(prog=None) -> argparse.ArgumentParser:
     overrides_group.add_argument(
         "--efisys-label", default="PSYOPSOSEFI", help="Override label for EFI system partition, default: %(default)s"
     )
+    overrides_group.add_argument(
+        "--efisys-mock",
+        action="store_true",
+        help="Do not actually mount anything to the efisys mountpoint, just use its contents as-is; requires --efisys-mountpoint",
+    )
     overrides_group.add_argument("--a-dev", help="Override device for A side (found by label by default)")
     overrides_group.add_argument(
         "--a-mountpoint", help="Override mountpoint for A side (found by label in fstab by default)"
     )
     overrides_group.add_argument(
         "--a-label", default="psyopsOS-A", help="Override label for A side, default: %(default)s"
+    )
+    overrides_group.add_argument(
+        "--a-mock",
+        action="store_true",
+        help="Do not actually mount anything to the a mountpoint, just use its contents as-is; requires --a-mountpoint",
     )
     overrides_group.add_argument("--b-dev", help="Override device for B side (found by label by default)")
     overrides_group.add_argument(
@@ -313,7 +331,13 @@ def getparser(prog=None) -> argparse.ArgumentParser:
     overrides_group.add_argument(
         "--b-label", default="psyopsOS-B", help="Override label for B side, default: %(default)s"
     )
+    overrides_group.add_argument(
+        "--b-mock",
+        action="store_true",
+        help="Do not actually mount anything to the b mountpoint, just use its contents as-is; requires --b-mountpoint",
+    )
     overrides_group.add_argument("--update-tmpdir", default="/tmp", help="Temporary directory for update downloads")
+    overrides_group.add_argument("--booted-mock", action="store", help="Mock the booted side, either 'a' or 'b'")
 
     # Repository options
     repository_group = parser.add_argument_group("Repository options")
@@ -459,23 +483,39 @@ def main_implementation(arguments: list[str]) -> int:
 
     logger.debug(f"Arguments: {parsed}")
 
+    if parsed.efisys_mock and not parsed.efisys_mountpoint:
+        parser.error("Cannot use --efisys-mock without --efisys-mountpoint")
+    if parsed.a_mock and not parsed.a_mountpoint:
+        parser.error("Cannot use --a-mock without --a-mountpoint")
+    if parsed.b_mock and not parsed.b_mountpoint:
+        parser.error("Cannot use --b-mock without --b-mountpoint")
     filesystems = Filesystems(
-        efisys=Filesystem(parsed.efisys_label, device=parsed.efisys_dev, mountpoint=parsed.efisys_mountpoint),
-        a=Filesystem(parsed.a_label, device=parsed.a_dev, mountpoint=parsed.a_mountpoint),
-        b=Filesystem(parsed.b_label, device=parsed.b_dev, mountpoint=parsed.b_mountpoint),
+        efisys=Filesystem(
+            parsed.efisys_label,
+            device=parsed.efisys_dev,
+            mountpoint=parsed.efisys_mountpoint,
+            mockmount=parsed.efisys_mock,
+        ),
+        a=Filesystem(parsed.a_label, device=parsed.a_dev, mountpoint=parsed.a_mountpoint, mockmount=parsed.a_mock),
+        b=Filesystem(parsed.b_label, device=parsed.b_dev, mountpoint=parsed.b_mountpoint, mockmount=parsed.b_mock),
     )
+
+    if parsed.booted_mock:
+        sides = Sides(parsed.booted_mock, flipside(parsed.booted_mock, filesystems))
+    else:
+        sides = Sides.detect(filesystems)
 
     if not parsed.update_tmpdir.endswith("/"):
         parsed.update_tmpdir += "/"
 
     if parsed.subcommand == "show":
-        subcommand_show(parsed, parser, filesystems)
+        subcommand_show(parsed, parser, filesystems, sides)
     elif parsed.subcommand == "download":
         subcommand_download(parsed, parser)
     elif parsed.subcommand == "check":
-        subcommand_check(parsed, parser, filesystems)
+        subcommand_check(parsed, parser, filesystems, sides)
     elif parsed.subcommand == "apply":
-        subcommand_apply(parsed, parser, filesystems)
+        subcommand_apply(parsed, parser, filesystems, sides)
     elif parsed.subcommand == "set-default":
         with filesystems.efisys.mount(writable=True):
             write_grub_cfg_carefully(filesystems, filesystems.efisys.mountpoint, parsed.label)

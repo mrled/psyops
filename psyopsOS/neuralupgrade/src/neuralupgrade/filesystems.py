@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import json
 import subprocess
 import time
@@ -310,7 +311,17 @@ def flipside(side: str, filesystems: Filesystems) -> str:
     return opposite
 
 
-def sides(filesystems: Filesystems) -> tuple[str, str]:
-    """Return the booted side and the nonbooted side (A or B)"""
-    booted = activeside()
-    return booted, flipside(booted, filesystems)
+@dataclass
+class Sides:
+    """A dataclass to hold the booted and nonbooted sides"""
+
+    booted: str
+    nonbooted: str
+
+    def __repr__(self):
+        return f"Sides(booted={self.booted!r}, nonbooted={self.nonbooted!r})"
+
+    @classmethod
+    def detect(cls, filesystems: Filesystems) -> "Sides":
+        """Detect the booted and nonbooted sides"""
+        return cls(activeside(), flipside(activeside(), filesystems))
