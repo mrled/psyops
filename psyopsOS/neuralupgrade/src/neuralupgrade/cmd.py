@@ -13,13 +13,13 @@ import textwrap
 import traceback
 from typing import Callable, List
 
-from neuralupgrade import logger
+from neuralupgrade import dictify, logger
 
 from neuralupgrade.coginitivedefects import MultiError
 from neuralupgrade.downloader import download_repository_file, download_update, download_update_signature
 from neuralupgrade.filesystems import Filesystem, Filesystems
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
-from neuralupgrade.osupdates import apply_updates, check_updates, get_system_versions
+from neuralupgrade.osupdates import apply_updates, check_updates, get_system_metadata
 from neuralupgrade.update_metadata import parse_trusted_comment
 
 
@@ -121,7 +121,7 @@ def subcommand_show(parsed: argparse.Namespace, parser: argparse.ArgumentParser,
     metadata = {}
     for target in parsed.target:
         if target == "system":
-            metadata["system"] = get_system_versions(filesystems)
+            metadata["system"] = dictify.dictify(get_system_metadata(filesystems))
         elif target == "latest":
             os_result = download_update_signature(
                 parsed.repository, parsed.psyopsOS_filename_format, parsed.architecture, "latest"

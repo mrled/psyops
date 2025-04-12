@@ -5,10 +5,12 @@ import platform
 import shutil
 import subprocess
 import traceback
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Optional
+from concurrent.futures import ThreadPoolExecutor, Future, as_completed
+from dataclasses import dataclass
+from typing import Any, Optional, TypedDict
 
 from neuralupgrade import logger
+from neuralupgrade.dictify import Dictifiable
 from neuralupgrade.downloader import download_update_signature
 from neuralupgrade.filesystems import Filesystem, Filesystems, sides
 from neuralupgrade.grub_cfg import write_grub_cfg_carefully
@@ -19,7 +21,66 @@ from neuralupgrade.update_metadata import (
 )
 
 
-def get_psyops_partition_metadata(fs: Filesystem) -> dict[str, dict[str, Any]]:
+@dataclass
+class NeuralPartition:
+    """A managed partition for either psyopsOS or firmware"""
+
+    fs: Filesystem
+    metadata: dict[str, str]
+
+
+@dataclass
+class NeuralPartitionOS(NeuralPartition):
+    """Result of a psyops partition operation."""
+
+    fs: Filesystem
+    metadata: dict[str, str]
+    running: bool
+    next_boot: bool
+
+
+@dataclass
+class NeuralPartitionFirmware(NeuralPartition):
+    """Result of a psyopsESP operation."""
+
+    fs: Filesystem
+    metadata: dict[str, str]
+    neuralupgrade_info: dict[str, str]
+
+
+@dataclass
+class SystemMetadata:
+    """Result of a system metadata operation."""
+
+    a: NeuralPartitionOS
+    b: NeuralPartitionOS
+    firmware: NeuralPartitionFirmware
+    booted_label: str
+    nonbooted_label: str
+    nextboot_label: str
+
+    @property
+    def by_label(self) -> dict[str, NeuralPartitionOS]:
+        """Return the A and B partitions by label."""
+        return {self.a.fs.label: self.a, self.b.fs.label: self.b}
+
+    @property
+    def booted(self):
+        """Return the booted partition."""
+        return self.by_label[self.booted_label]
+
+    @property
+    def nonbooted(self):
+        """Return the nonbooted partition."""
+        return self.by_label[self.nonbooted_label]
+
+    @property
+    def nextboot(self):
+        """Return the nextboot partition."""
+        return self.by_label[self.nextboot_label]
+
+
+def get_psyops_partition_metadata(fs: Filesystem) -> NeuralPartitionOS:
     """Read the psyopsOS partition metadata from the minisig file."""
     with fs.mount(writable=False) as mountpoint:
         minisig_path = os.path.join(mountpoint, "psyopsOS.tar.minisig")
@@ -33,10 +94,15 @@ def get_psyops_partition_metadata(fs: Filesystem) -> dict[str, dict[str, Any]]:
             info = {"error": f"missing minisig at {minisig_path}"}
         except Exception as exc:
             info = {"error": str(exc), "minisig_path": minisig_path, "traceback": traceback.format_exc()}
-    return {fs.label: info}
+    return NeuralPartitionOS(
+        fs=fs,
+        running=False,
+        next_boot=False,
+        metadata=info,
+    )
 
 
-def get_efi_partition_metadata(fs: Filesystem) -> dict[str, dict[str, Any]]:
+def get_efi_partition_metadata(fs: Filesystem) -> NeuralPartitionFirmware:
     """Read the psyopsESP partition metadata from the minisig and grub_cfg files."""
     with fs.mount(writable=False) as mountpoint:
         minisig_path = os.path.join(mountpoint, "psyopsESP.tar.minisig")
@@ -57,43 +123,41 @@ def get_efi_partition_metadata(fs: Filesystem) -> dict[str, dict[str, Any]]:
             grub_cfg_info = {"error": f"missing grub.cfg at {grub_cfg_path}"}
         except Exception as exc:
             grub_cfg_info = {"error": str(exc), "grub_cfg_path": grub_cfg_path, "traceback": traceback.format_exc()}
-    # TODO: currently if any keys overlap between grub_cfg_info and trusted_metadata, the latter will overwrite the former, fix?
-    return {"efisys": {**trusted_metadata, **grub_cfg_info}}
+    return NeuralPartitionFirmware(
+        fs=fs,
+        metadata=trusted_metadata,
+        neuralupgrade_info=grub_cfg_info,
+    )
 
 
-def get_system_versions(filesystems: Filesystems) -> dict:
+def get_system_metadata(filesystems: Filesystems) -> SystemMetadata:
     """Show information about the OS of the running system.
 
     Uses threads to speed up the process of mounting the filesystems and reading the minisig files.
     """
+    result: dict[str, Any] = {}
     with ThreadPoolExecutor() as executor:
-        futures = [
-            executor.submit(get_psyops_partition_metadata, filesystems.a),
-            executor.submit(get_psyops_partition_metadata, filesystems.b),
-            executor.submit(get_efi_partition_metadata, filesystems.efisys),
-        ]
+        future_map: dict[Future[Any], str] = {
+            executor.submit(get_psyops_partition_metadata, filesystems.a): "a",
+            executor.submit(get_psyops_partition_metadata, filesystems.b): "b",
+            executor.submit(get_efi_partition_metadata, filesystems.efisys): "firmware",
+        }
 
         # Collect the results from the futures
-        result: dict[str, Any] = {}
-        for future in as_completed(futures):
-            try:
-                result.update(future.result())
-            except Exception as exc:
-                logger.error(f"Error getting partition metadata: {exc}")
-                continue
+        for future in as_completed(future_map):
+            label = future_map[future]
+            result[label] = future.result()
 
     booted, nonbooted = sides(filesystems)
-    result["booted"] = booted
-    result["nonbooted"] = nonbooted
-    result[booted]["running"] = True
 
-    try:
-        next_boot = result["efisys"]["default_boot_label"]
-        result[next_boot]["next_boot"] = True
-    except KeyError:
-        result["error"] = "Could not determine next boot"
-
-    return result
+    return SystemMetadata(
+        a=result["a"],
+        b=result["b"],
+        firmware=result["firmware"],
+        booted_label=booted,
+        nonbooted_label=nonbooted,
+        nextboot_label=result["firmware"].neuralupgrade_info["default_boot_label"],
+    )
 
 
 def apply_ostar(tarball: str, osmount: str, verify: bool = True, verify_pubkey: Optional[str] = None):
@@ -337,41 +401,48 @@ def check_updates(
     - up_to_date: Whether the filesystem is up to date
     """
 
-    system_versions = get_system_versions(filesystems)
-    esp_version = update_version
-    os_version = update_version
+    system_md = get_system_metadata(filesystems)
+    update_version_firmware = update_version
+    update_version_os = update_version
     if update_version == "latest":
         if "a" in targets or "b" in targets or "nonbooted" in targets or "booted" in targets:
             os_latest_sig = download_update_signature(repository, psyopsOS_filename_format, architecture, "latest")
-            os_version = os_latest_sig.unverified_metadata["version"]
+            update_version_os = os_latest_sig.unverified_metadata["version"]
         if "efisys" in targets:
             esp_latest_sig = download_update_signature(repository, psyopsESP_filename_format, architecture, "latest")
-            esp_version = esp_latest_sig.unverified_metadata["version"]
+            update_version_firmware = esp_latest_sig.unverified_metadata["version"]
 
     result = {}
+    current_version_os = system_md.booted.metadata.get("version", "UNKNOWN")
+    current_version_firmware = system_md.firmware.metadata.get("version", "UNKNOWN")
+    md: NeuralPartition
     for updatetype in targets:
         if updatetype in ["a", "b", "nonbooted", "booted"]:
-            if updatetype in ["nonbooted", "booted"]:
-                filesystem = filesystems.bylabel(system_versions[updatetype])
-            elif updatetype in ["a", "b"]:
-                filesystem = filesystems[updatetype]
-            else:
-                raise ValueError(f"Unknown updatetype {updatetype}")
-            current_version = system_versions[filesystem.label].get("version", "UNKNOWN")
-            compared_to = os_version
-        elif updatetype in ["efisys"]:
-            filesystem = filesystems.efisys
-            current_version = system_versions["efisys"].get("version", "UNKNOWN")
-            compared_to = esp_version
+            if updatetype == "a":
+                md = system_md.a
+            elif updatetype == "b":
+                md = system_md.b
+            elif updatetype == "booted":
+                md = system_md.booted
+            elif updatetype == "nonbooted":
+                md = system_md.nonbooted
+            result[updatetype] = {
+                "label": md.fs.label,
+                "mountpoint": md.fs.mountpoint,
+                "current_version": current_version_os,
+                "compared_to": update_version_os,
+                "up_to_date": update_version_os == current_version_os,
+            }
+        elif updatetype == "efisys":
+            md = system_md.firmware
+            result[updatetype] = {
+                "label": md.fs.label,
+                "mountpoint": md.fs.mountpoint,
+                "current_version": current_version_firmware,
+                "compared_to": update_version_firmware,
+                "up_to_date": update_version_firmware == current_version_firmware,
+            }
         else:
             raise ValueError(f"Unknown updatetype {updatetype}")
-        up_to_date = compared_to == current_version
-        result[updatetype] = {
-            "label": filesystem.label,
-            "mountpoint": filesystem.mountpoint,
-            "current_version": current_version,
-            "compared_to": compared_to,
-            "up_to_date": up_to_date,
-        }
 
     return result
