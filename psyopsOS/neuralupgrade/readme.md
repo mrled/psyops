@@ -169,6 +169,9 @@ system:
 
 ## Full command help
 
+All command help for all subcommands.
+Sort of like a lazy, abbreviated manual page.
+
 <!--[[[cog
 #
 # This section is generated with cog
@@ -178,8 +181,11 @@ system:
 
 import cog
 from neuralupgrade.cmd import get_argparse_help_string, getparser
+cog.outl("```text")
 cog.outl(get_argparse_help_string("neuralupgrade", getparser(prog="neuralupgrade")))
+cog.outl("```")
 ]]]-->
+```text
 > neuralupgrade --help
 usage: neuralupgrade [-h] [--debug] [--verbose] [--no-verify] [--pubkey PUBKEY]
                      [--efisys-dev EFISYS_DEV]
@@ -349,4 +355,5 @@ positional arguments:
 options:
   -h, --help  show this help message and exit
 
+```
 <!--[[[end]]]-->
