@@ -220,6 +220,9 @@ class Filesystem:
         """A context manager for mounting the filesystem"""
         return Mount(self.device, self.mountpoint, writable)
 
+    def __repr__(self):
+        return f"Filesystem(label={self.label!r}, device={self.device!r}, mountpoint={self.mountpoint!r})"
+
 
 class Filesystems:
     """The collection os psyopsOS filesystems"""
