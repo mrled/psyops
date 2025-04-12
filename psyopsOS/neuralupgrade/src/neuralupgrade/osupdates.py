@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import threading
 import traceback
+from queue import Queue
 from typing import Any, Optional
 
 from neuralupgrade import logger
@@ -19,78 +20,79 @@ from neuralupgrade.update_metadata import (
 )
 
 
+def get_psyops_partition_metadata(fs: Filesystem, out: Queue):
+    """Read the psyopsOS partition metadata from the minisig file."""
+    with fs.mount(writable=False) as mountpoint:
+        minisig_path = os.path.join(mountpoint, "psyopsOS.tar.minisig")
+        try:
+            info: dict[str, Any] = {
+                "running": False,
+                "next_boot": False,
+                **parse_trusted_comment(sigfile=minisig_path),
+            }
+        except FileNotFoundError:
+            info = {"error": f"missing minisig at {minisig_path}"}
+        except Exception as exc:
+            info = {"error": str(exc), "minisig_path": minisig_path, "traceback": traceback.format_exc()}
+    out.put({fs.label: info})
+
+
+def get_efi_partition_metadata(fs: Filesystem, out: Queue):
+    """Read the psyopsESP partition metadata from the minisig and grub_cfg files."""
+    with fs.mount(writable=False) as mountpoint:
+        minisig_path = os.path.join(mountpoint, "psyopsESP.tar.minisig")
+        try:
+            trusted_metadata = parse_trusted_comment(sigfile=minisig_path)
+        except FileNotFoundError:
+            trusted_metadata = {"error": f"missing minisig at {minisig_path}"}
+        except Exception as exc:
+            trusted_metadata = {
+                "error": str(exc),
+                "minisig_path": minisig_path,
+                "traceback": traceback.format_exc(),
+            }
+        grub_cfg_path = os.path.join(mountpoint, "grub", "grub.cfg")
+        try:
+            grub_cfg_info = parse_psyopsOS_neuralupgrade_info_comment(file=grub_cfg_path)
+        except FileNotFoundError:
+            grub_cfg_info = {"error": f"missing grub.cfg at {grub_cfg_path}"}
+        except Exception as exc:
+            grub_cfg_info = {"error": str(exc), "grub_cfg_path": grub_cfg_path, "traceback": traceback.format_exc()}
+    # TODO: currently if any keys overlap between grub_cfg_info and trusted_metadata, the latter will overwrite the former, fix?
+    out.put({"efisys": {**trusted_metadata, **grub_cfg_info}})
+
+
 def get_system_versions(filesystems: Filesystems) -> dict:
     """Show information about the OS of the running system.
 
     Uses threads to speed up the process of mounting the filesystems and reading the minisig files.
     """
+    q: Queue[dict[str, Any]] = Queue()
+    threads = [
+        threading.Thread(target=get_psyops_partition_metadata, args=(filesystems.a, q)),
+        threading.Thread(target=get_psyops_partition_metadata, args=(filesystems.b, q)),
+        threading.Thread(target=get_efi_partition_metadata, args=(filesystems.efisys, q)),
+    ]
+    # Start the threads, and have them run in parallel
+    for thread in threads:
+        thread.start()
+    # Wait for all threads to finish
+    for thread in threads:
+        thread.join()
+    # Collect the results from the queue
+    result: dict[str, Any] = {}
+    while not q.empty():
+        try:
+            result.update(q.get_nowait())
+        except Exception as exc:
+            logger.error(f"Error getting partition metadata: {exc}")
+            continue
+
     booted, nonbooted = sides(filesystems)
+    result["booted"] = booted
+    result["nonbooted"] = nonbooted
+    result[booted]["running"] = True
 
-    result: dict[str, Any] = {
-        booted: {
-            "mountpoint": filesystems.bylabel(booted).mountpoint,
-            "running": True,
-            "next_boot": False,
-        },
-        nonbooted: {
-            "mountpoint": filesystems.bylabel(nonbooted).mountpoint,
-            "running": False,
-            "next_boot": False,
-        },
-        "efisys": {
-            "mountpoint": filesystems.efisys.mountpoint,
-        },
-        "booted": booted,
-        "nonbooted": nonbooted,
-    }
-
-    def get_psyops_partition_metadata(label: str):
-        with filesystems.bylabel(label).mount(writable=False) as mountpoint:
-            minisig_path = os.path.join(mountpoint, "psyopsOS.tar.minisig")
-            try:
-                info = parse_trusted_comment(sigfile=minisig_path)
-            except FileNotFoundError:
-                info = {"error": f"missing minisig at {minisig_path}"}
-            except Exception as exc:
-                info = {"error": str(exc), "minisig_path": minisig_path, "traceback": traceback.format_exc()}
-        result[label] = {**result[label], **info}
-
-    def get_efi_partition_metadata(fs: Filesystems):
-        with fs.efisys.mount(writable=False) as mountpoint:
-            minisig_path = os.path.join(mountpoint, "psyopsESP.tar.minisig")
-            try:
-                trusted_metadata = parse_trusted_comment(sigfile=minisig_path)
-            except FileNotFoundError:
-                trusted_metadata = {"error": f"missing minisig at {minisig_path}"}
-            except Exception as exc:
-                trusted_metadata = {
-                    "error": str(exc),
-                    "minisig_path": minisig_path,
-                    "traceback": traceback.format_exc(),
-                }
-            grub_cfg_path = os.path.join(mountpoint, "grub", "grub.cfg")
-            try:
-                grub_cfg_info = parse_psyopsOS_neuralupgrade_info_comment(file=grub_cfg_path)
-            except FileNotFoundError:
-                grub_cfg_info = {"error": f"missing grub.cfg at {grub_cfg_path}"}
-            except Exception as exc:
-                grub_cfg_info = {"error": str(exc), "grub_cfg_path": grub_cfg_path, "traceback": traceback.format_exc()}
-        # TODO: currently if any keys overlap between grub_cfg_info and trusted_metadata, the latter will overwrite the former, fix?
-        result["efisys"] = {**result["efisys"], **grub_cfg_info, **trusted_metadata}
-
-    nonbooted_thread = threading.Thread(target=get_psyops_partition_metadata, args=(booted,))
-    nonbooted_thread.start()
-    booted_thread = threading.Thread(target=get_psyops_partition_metadata, args=(nonbooted,))
-    booted_thread.start()
-    efisys_thread = threading.Thread(target=get_efi_partition_metadata, args=(filesystems,))
-    efisys_thread.start()
-
-    booted_thread.join()
-    nonbooted_thread.join()
-    efisys_thread.join()
-
-    # Handle these after the threads have joined
-    # I'm not sure what happens if the os tc threads and the efi thread tries to write to the same dict at the same time
     try:
         next_boot = result["efisys"]["default_boot_label"]
         result[next_boot]["next_boot"] = True
