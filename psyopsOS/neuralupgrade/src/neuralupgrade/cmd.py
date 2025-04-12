@@ -18,7 +18,8 @@ from neuralupgrade import dictify, logger
 from neuralupgrade.coginitivedefects import MultiError
 from neuralupgrade.downloader import download_repository_file, download_update, download_update_signature
 from neuralupgrade.filesystems import Filesystem, Filesystems, Sides, flipside
-from neuralupgrade.grub_cfg import write_grub_cfg_carefully
+from neuralupgrade.firmware import Firmware
+from neuralupgrade.firmware.fwtype import FirmwareTypeMap, UnknownFirmwareError, detect_firmware
 from neuralupgrade.osupdates import apply_updates, check_updates, get_system_metadata
 from neuralupgrade.update_metadata import parse_trusted_comment
 
@@ -118,12 +119,16 @@ def get_argparse_help_string(name: str, parser: argparse.ArgumentParser, wrap: i
 
 
 def subcommand_show(
-    parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems, sides: Sides
+    parsed: argparse.Namespace,
+    parser: argparse.ArgumentParser,
+    filesystems: Filesystems,
+    sides: Sides,
+    firmware: Firmware,
 ):
     metadata = {}
     for target in parsed.target:
         if target == "system":
-            metadata["system"] = dictify.dictify(get_system_metadata(filesystems, sides))
+            metadata["system"] = dictify.dictify(get_system_metadata(filesystems, sides, firmware))
         elif target == "latest":
             os_result = download_update_signature(
                 parsed.repository, parsed.psyopsOS_filename_format, parsed.architecture, "latest"
@@ -151,7 +156,11 @@ def subcommand_show(
 
 
 def subcommand_apply(
-    parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems, sides: Sides
+    parsed: argparse.Namespace,
+    parser: argparse.ArgumentParser,
+    filesystems: Filesystems,
+    sides: Sides,
+    firmware: Firmware,
 ):
     # Check for invalid combinations
     if "nonbooted" in parsed.target and ("a" in parsed.target or "b" in parsed.target):
@@ -198,13 +207,14 @@ def subcommand_apply(
                 parser.error("Must specify --esp-tar or --esp-version when applying efisys updates")
         apply_updates(
             filesystems,
+            firmware,
             sides,
             parsed.target,
             ostar=os_tar,
-            esptar=esp_tar,
+            fwtar=esp_tar,
             verify=parsed.verify,
             pubkey=parsed.pubkey,
-            no_update_default_boot_label=parsed.no_grub_cfg,
+            no_update_default_boot_label=parsed.no_boot_cfg,
             default_boot_label=parsed.default_boot_label,
         )
     except Exception as exc:
@@ -258,11 +268,16 @@ def subcommand_download(parsed: argparse.Namespace, parser: argparse.ArgumentPar
 
 
 def subcommand_check(
-    parsed: argparse.Namespace, parser: argparse.ArgumentParser, filesystems: Filesystems, sides: Sides
+    parsed: argparse.Namespace,
+    parser: argparse.ArgumentParser,
+    filesystems: Filesystems,
+    sides: Sides,
+    firmware: Firmware,
 ):
     checked = check_updates(
         filesystems,
         sides,
+        firmware,
         parsed.target,
         parsed.version,
         parsed.repository,
@@ -338,6 +353,11 @@ def getparser(prog=None) -> argparse.ArgumentParser:
     )
     overrides_group.add_argument("--update-tmpdir", default="/tmp", help="Temporary directory for update downloads")
     overrides_group.add_argument("--booted-mock", action="store", help="Mock the booted side, either 'a' or 'b'")
+    overrides_group.add_argument(
+        "--firmware-type",
+        choices=FirmwareTypeMap.keys(),
+        help=f"Firmware type to use, one of: {', '.join(FirmwareTypeMap.keys())}; if not present, detect current host firmware",
+    )
 
     # Repository options
     repository_group = parser.add_argument_group("Repository options")
@@ -446,12 +466,12 @@ def getparser(prog=None) -> argparse.ArgumentParser:
     apply_parser.add_argument(
         "--default-boot-label",
         dest="default_boot_label",
-        help="Default boot label if writing the grub.cfg file",
+        help="Default boot label (if writing the boot configuration file)",
     )
     apply_parser.add_argument(
-        "--no-grub-cfg",
+        "--no-boot-cfg",
         action="store_true",
-        help="Skip updating the grub.cfg file (only applies when target includes nonbooted)",
+        help="Skip updating the boot configuration file (only applies when target includes nonbooted)",
     )
     os_update_group = apply_parser.add_mutually_exclusive_group()
     os_update_group.add_argument("--os-tar", help="A local path to a psyopsOS tarball to apply")
@@ -461,7 +481,9 @@ def getparser(prog=None) -> argparse.ArgumentParser:
     esp_update_group.add_argument("--esp-version", help="A version in the remote repository to apply")
 
     # neuralupgrade set-default
-    set_default_parser = subparsers.add_parser("set-default", help="Set the default boot label in the grub.cfg file")
+    set_default_parser = subparsers.add_parser(
+        "set-default", help="Set the default boot label in the boot configuration file"
+    )
     set_default_parser.add_argument("label", help="The label to set as the default boot label")
 
     return parser
@@ -499,6 +521,13 @@ def main_implementation(arguments: list[str]) -> int:
         a=Filesystem(parsed.a_label, device=parsed.a_dev, mountpoint=parsed.a_mountpoint, mockmount=parsed.a_mock),
         b=Filesystem(parsed.b_label, device=parsed.b_dev, mountpoint=parsed.b_mountpoint, mockmount=parsed.b_mock),
     )
+    if parsed.firmware_type:
+        firmware = FirmwareTypeMap[parsed.firmware_type]()
+    else:
+        try:
+            firmware = detect_firmware()
+        except UnknownFirmwareError as e:
+            parser.error(f"Could not detect firmware: {e}")
 
     if parsed.booted_mock:
         sides = Sides(parsed.booted_mock, flipside(parsed.booted_mock, filesystems))
@@ -509,16 +538,16 @@ def main_implementation(arguments: list[str]) -> int:
         parsed.update_tmpdir += "/"
 
     if parsed.subcommand == "show":
-        subcommand_show(parsed, parser, filesystems, sides)
+        subcommand_show(parsed, parser, filesystems, sides, firmware)
     elif parsed.subcommand == "download":
         subcommand_download(parsed, parser)
     elif parsed.subcommand == "check":
-        subcommand_check(parsed, parser, filesystems, sides)
+        subcommand_check(parsed, parser, filesystems, sides, firmware)
     elif parsed.subcommand == "apply":
-        subcommand_apply(parsed, parser, filesystems, sides)
+        subcommand_apply(parsed, parser, filesystems, sides, firmware)
     elif parsed.subcommand == "set-default":
         with filesystems.efisys.mount(writable=True):
-            write_grub_cfg_carefully(filesystems, filesystems.efisys.mountpoint, parsed.label)
+            firmware.write_default_boot_label(filesystems, parsed.label)
     else:
         parser.error(f"Unknown subcommand {parsed.subcommand}")
 

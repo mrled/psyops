@@ -92,7 +92,7 @@ from contextlib import redirect_stdout
 import cog
 from neuralupgrade.cmd import main_implementation
 
-command = ["neuralupgrade", "--booted-mock=psyopsOS-A", "--efisys-mock", "--efisys-mountpoint=./tests/data/scenarios/ab_same/efisys", "--a-mock", "--a-mountpoint=./tests/data/scenarios/ab_same/a", "--b-mock", "--b-mountpoint=./tests/data/scenarios/ab_same/b", "show"]
+command = ["neuralupgrade", "--firmware-type=x86_64_uefi", "--booted-mock=psyopsOS-A", "--efisys-mock", "--efisys-mountpoint=./tests/data/scenarios/ab_same/efisys", "--a-mock", "--a-mountpoint=./tests/data/scenarios/ab_same/a", "--b-mock", "--b-mountpoint=./tests/data/scenarios/ab_same/b", "show"]
 f = io.StringIO()
 with redirect_stdout(f):
   main_implementation(command)
@@ -102,6 +102,7 @@ cog.out(f"```text\n{promptcmd}\n{cmdout}\n```\n")
 ]]]-->
 ```text
 user@host> neuralupgrade \
+    --firmware-type=x86_64_uefi \
     --booted-mock=psyopsOS-A \
     --efisys-mock \
     --efisys-mountpoint=./tests/data/scenarios/ab_same/efisys \
@@ -195,8 +196,9 @@ usage: neuralupgrade [-h] [--debug] [--verbose] [--no-verify] [--pubkey PUBKEY]
                      [--a-label A_LABEL] [--a-mock] [--b-dev B_DEV]
                      [--b-mountpoint B_MOUNTPOINT] [--b-label B_LABEL]
                      [--b-mock] [--update-tmpdir UPDATE_TMPDIR]
-                     [--booted-mock BOOTED_MOCK] [--architecture ARCHITECTURE]
-                     [--repository REPOSITORY]
+                     [--booted-mock BOOTED_MOCK]
+                     [--firmware-type {x86_64_uefi,raspberrypi}]
+                     [--architecture ARCHITECTURE] [--repository REPOSITORY]
                      [--psyopsOS-filename-format PSYOPSOS_FILENAME_FORMAT]
                      [--psyopsESP-filename-format PSYOPSESP_FILENAME_FORMAT]
                      {show,download,check,apply,set-default} ...
@@ -211,7 +213,8 @@ positional arguments:
     download            Download updates
     check               Check whether the running system is up to date
     apply               Apply psyopsOS or EFI system partition updates
-    set-default         Set the default boot label in the grub.cfg file
+    set-default         Set the default boot label in the boot configuration
+                        file
 
 options:
   -h, --help            show this help message and exit
@@ -254,6 +257,9 @@ Device/mountpoint override options:
                         Temporary directory for update downloads
   --booted-mock BOOTED_MOCK
                         Mock the booted side, either 'a' or 'b'
+  --firmware-type {x86_64_uefi,raspberrypi}
+                        Firmware type to use, one of: x86_64_uefi, raspberrypi;
+                        if not present, detect current host firmware
 
 Repository options:
   --architecture ARCHITECTURE
@@ -322,7 +328,7 @@ ________________________________________________________________________
 
 > neuralupgrade apply --help
 usage: neuralupgrade apply [-h] [--default-boot-label DEFAULT_BOOT_LABEL]
-                           [--no-grub-cfg]
+                           [--no-boot-cfg]
                            [--os-tar OS_TAR | --os-version OS_VERSION]
                            [--esp-tar ESP_TAR | --esp-version ESP_VERSION]
                            {a,b,nonbooted,efisys} [{a,b,nonbooted,efisys} ...]
@@ -334,9 +340,10 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --default-boot-label DEFAULT_BOOT_LABEL
-                        Default boot label if writing the grub.cfg file
-  --no-grub-cfg         Skip updating the grub.cfg file (only applies when
-                        target includes nonbooted)
+                        Default boot label (if writing the boot configuration
+                        file)
+  --no-boot-cfg         Skip updating the boot configuration file (only applies
+                        when target includes nonbooted)
   --os-tar OS_TAR       A local path to a psyopsOS tarball to apply
   --os-version OS_VERSION
                         A version in the remote repository to apply

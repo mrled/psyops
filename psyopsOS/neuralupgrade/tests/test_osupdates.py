@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from neuralupgrade.filesystems import Filesystem, Filesystems, Sides
+from neuralupgrade.firmware.grubuefi import GrubUEFIBootloader
 from neuralupgrade.osupdates import get_system_metadata
 
 # Path to test scenario directories
@@ -20,6 +21,8 @@ class TestGetSystemVersions(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         self.sides = Sides(booted="psyopsOS-A", nonbooted="psyopsOS-B")
+
+        self.firmware = GrubUEFIBootloader()
 
         # Create a mock Filesystems object that uses our scenario test data
         a_fs = Filesystem("psyopsOS-A", mountpoint=SCENARIO_AB_SAME / "a", mockmount=True)
@@ -36,7 +39,7 @@ class TestGetSystemVersions(unittest.TestCase):
         """Test get_system_versions."""
 
         # Call the function
-        result = get_system_metadata(self.filesystems_ab_same, self.sides)
+        result = get_system_metadata(self.filesystems_ab_same, self.sides, self.firmware)
 
         # Verify the result
         self.assertEqual(result.booted_label, "psyopsOS-A")
@@ -67,7 +70,7 @@ class TestGetSystemVersions(unittest.TestCase):
         """Test get_system_versions when a minisig file is missing."""
 
         # Call the function
-        result = get_system_metadata(self.filesystems_b_side_empty, self.sides)
+        result = get_system_metadata(self.filesystems_b_side_empty, self.sides, self.firmware)
 
         # Verify the error is captured in the result for the B side
         self.assertIn("error", result.b.metadata)

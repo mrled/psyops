@@ -1,83 +1,18 @@
 import contextlib
-import datetime
 import os
-import platform
 import shutil
 import subprocess
 import traceback
 from concurrent.futures import ThreadPoolExecutor, Future, as_completed
 from dataclasses import dataclass
-from typing import Any, Optional, TypedDict
+from typing import Any, Optional
 
 from neuralupgrade import logger
-from neuralupgrade.dictify import Dictifiable
 from neuralupgrade.downloader import download_update_signature
 from neuralupgrade.filesystems import Filesystem, Filesystems, Sides
-from neuralupgrade.grub_cfg import write_grub_cfg_carefully
-from neuralupgrade.update_metadata import (
-    minisign_verify,
-    parse_trusted_comment,
-    parse_psyopsOS_neuralupgrade_info_comment,
-)
-
-
-@dataclass
-class NeuralPartition:
-    """A managed partition for either psyopsOS or firmware"""
-
-    fs: Filesystem
-    metadata: dict[str, str]
-
-
-@dataclass
-class NeuralPartitionOS(NeuralPartition):
-    """Result of a psyops partition operation."""
-
-    fs: Filesystem
-    metadata: dict[str, str]
-    running: bool
-    next_boot: bool
-
-
-@dataclass
-class NeuralPartitionFirmware(NeuralPartition):
-    """Result of a psyopsESP operation."""
-
-    fs: Filesystem
-    metadata: dict[str, str]
-    neuralupgrade_info: dict[str, str]
-
-
-@dataclass
-class SystemMetadata:
-    """Result of a system metadata operation."""
-
-    a: NeuralPartitionOS
-    b: NeuralPartitionOS
-    firmware: NeuralPartitionFirmware
-    booted_label: str
-    nonbooted_label: str
-    nextboot_label: str
-
-    @property
-    def by_label(self) -> dict[str, NeuralPartitionOS]:
-        """Return the A and B partitions by label."""
-        return {self.a.fs.label: self.a, self.b.fs.label: self.b}
-
-    @property
-    def booted(self):
-        """Return the booted partition."""
-        return self.by_label[self.booted_label]
-
-    @property
-    def nonbooted(self):
-        """Return the nonbooted partition."""
-        return self.by_label[self.nonbooted_label]
-
-    @property
-    def nextboot(self):
-        """Return the nextboot partition."""
-        return self.by_label[self.nextboot_label]
+from neuralupgrade.firmware import Firmware
+from neuralupgrade.systemmetadata import NeuralPartition, NeuralPartitionOS, SystemMetadata
+from neuralupgrade.update_metadata import minisign_verify, parse_trusted_comment
 
 
 def get_psyops_partition_metadata(fs: Filesystem) -> NeuralPartitionOS:
@@ -102,35 +37,7 @@ def get_psyops_partition_metadata(fs: Filesystem) -> NeuralPartitionOS:
     )
 
 
-def get_efi_partition_metadata(fs: Filesystem) -> NeuralPartitionFirmware:
-    """Read the psyopsESP partition metadata from the minisig and grub_cfg files."""
-    with fs.mount(writable=False) as mountpoint:
-        minisig_path = os.path.join(mountpoint, "psyopsESP.tar.minisig")
-        try:
-            trusted_metadata = parse_trusted_comment(sigfile=minisig_path)
-        except FileNotFoundError:
-            trusted_metadata = {"error": f"missing minisig at {minisig_path}"}
-        except Exception as exc:
-            trusted_metadata = {
-                "error": str(exc),
-                "minisig_path": minisig_path,
-                "traceback": traceback.format_exc(),
-            }
-        grub_cfg_path = os.path.join(mountpoint, "grub", "grub.cfg")
-        try:
-            grub_cfg_info = parse_psyopsOS_neuralupgrade_info_comment(file=grub_cfg_path)
-        except FileNotFoundError:
-            grub_cfg_info = {"error": f"missing grub.cfg at {grub_cfg_path}"}
-        except Exception as exc:
-            grub_cfg_info = {"error": str(exc), "grub_cfg_path": grub_cfg_path, "traceback": traceback.format_exc()}
-    return NeuralPartitionFirmware(
-        fs=fs,
-        metadata=trusted_metadata,
-        neuralupgrade_info=grub_cfg_info,
-    )
-
-
-def get_system_metadata(filesystems: Filesystems, sides: Sides) -> SystemMetadata:
+def get_system_metadata(filesystems: Filesystems, sides: Sides, firmware: Firmware) -> SystemMetadata:
     """Show information about the OS of the running system.
 
     Uses threads to speed up the process of mounting the filesystems and reading the minisig files.
@@ -140,7 +47,7 @@ def get_system_metadata(filesystems: Filesystems, sides: Sides) -> SystemMetadat
         future_map: dict[Future[Any], str] = {
             executor.submit(get_psyops_partition_metadata, filesystems.a): "a",
             executor.submit(get_psyops_partition_metadata, filesystems.b): "b",
-            executor.submit(get_efi_partition_metadata, filesystems.efisys): "firmware",
+            executor.submit(firmware.get_partition_metadata, filesystems): "firmware",
         }
 
         # Collect the results from the futures
@@ -177,98 +84,13 @@ def apply_ostar(tarball: str, osmount: str, verify: bool = True, verify_pubkey: 
     logger.debug(f"Finished applying {tarball} to {osmount}")
 
 
-# Note to self: we release efisys tarballs containing stuff like memtest, which can be extracted on top of an efisys that has grub-install already run on it
-def configure_efisys(
-    filesystems: Filesystems,
-    efisys: str,
-    default_boot_label: str,
-    tarball: Optional[str] = None,
-    verify: bool = True,
-    verify_pubkey: Optional[str] = None,
-):
-    """Populate the EFI system partition with the necessary files"""
-
-    machine = platform.machine()
-    if machine == "x86_64":
-        target = "x86_64-efi"
-    else:
-        raise Exception(f"Unsupported machine type {machine} for efisys configuration")
-
-    # I don't understand why I need --boot-directory too, but I do
-    cmd = [
-        "grub-install",
-        f"--target={target}",
-        f"--efi-directory={efisys}",
-        f"--boot-directory={efisys}",
-        "--removable",
-    ]
-    logger.debug(f"Running grub-install: {cmd}")
-    grub_result = subprocess.run(cmd, capture_output=True, text=True)
-    grub_stderr = grub_result.stderr.strip()
-    grub_stdout = grub_result.stdout.strip()
-    if grub_result.returncode != 0:
-        raise Exception(
-            f"grub-install returned non-zero exit code {grub_result.returncode} with stdout '{grub_stdout}' and stderr '{grub_stderr}'"
-        )
-    logger.debug(f"grub-install stdout: {grub_stdout}")
-    logger.debug(f"grub-install stderr: {grub_stderr}")
-
-    if tarball:
-        if verify:
-            minisign_verify(tarball, pubkey=verify_pubkey)
-        logger.debug(f"Extracting efisys tarball {tarball} to {efisys}")
-        subprocess.run(
-            [
-                "tar",
-                # Ignore permissions as we're extracting to a FAT32 filesystem
-                "--no-same-owner",
-                "--no-same-permissions",
-                "--no-overwrite-dir",
-                "-x",
-                "-f",
-                tarball,
-                "-C",
-                efisys,
-            ],
-            check=True,
-        )
-        logger.debug(f"Finished extracting {tarball} to {efisys}")
-        minisig = tarball + ".minisig"
-        try:
-            shutil.copy(minisig, os.path.join(efisys, "psyopsESP.tar.minisig"))
-            logger.debug(f"Copied {minisig} to {efisys}/psyopsESP.tar.minisig")
-        except FileNotFoundError:
-            logger.warning(f"Could not find {minisig}, partition will not know its version")
-    subprocess.run(["sync"], check=True)
-
-    write_grub_cfg_carefully(filesystems, efisys, default_boot_label)
-    logger.debug("Done configuring efisys")
-
-
-def read_default_boot_label(efisys_mountpoint: str) -> str:
-    """Read the default bootlabel from a grub.cfg file"""
-
-    try:
-        grub_cfg_info = parse_psyopsOS_neuralupgrade_info_comment(
-            file=os.path.join(efisys_mountpoint, "grub", "grub.cfg")
-        )
-        return grub_cfg_info["default_boot_label"]
-    except FileNotFoundError as exc:
-        raise Exception(
-            f"--default-boot-label not passed and no existing GRUB configuration found at {efisys_mountpoint}/grub/grub.cfg file; if the ESP is empty, you need to pass --default-boot-label"
-        ) from exc
-    except Exception as exc:
-        raise Exception(
-            f"Could not find default boot label from existing {efisys_mountpoint}/grub/grub.cfg file"
-        ) from exc
-
-
 def apply_updates(
     filesystems: Filesystems,
+    firmware: Firmware,
     sides: Sides,
     targets: list[str],
     ostar: str = "",
-    esptar: str = "",
+    fwtar: str = "",
     verify: bool = True,
     pubkey: str = "",
     no_update_default_boot_label: bool = False,
@@ -280,13 +102,26 @@ def apply_updates(
     Properly ensures filesystems are mounted at most once,
     and at the end tries to return them to their original state.
     (See the Mount context manager for more details on how this works.)
+
+    Arguments:
+    - filesystems: The Filesystem objects to update
+    - sides: The Sides object containing the booted and nonbooted labels
+    - targets: The list of targets to update (a, b, nonbooted, efisys)
+    - ostar: The path to the ostar tarball to apply
+    - fwtar: The path to the firmware (efisys) tarball to apply
+    - verify: Whether to verify the tarball signatures
+    - pubkey: The public key to use for verification
+    - no_update_default_boot_label: Whether to skip updating the default boot label
+    - default_boot_label: The default boot label to use for the efisys partition
     """
 
     # The default boot label is the partition label to use the next time the system boots (A or B).
     # When updating nonbooted, it is assumed to be the nonbooted side and cannot be passed explicitly,
     # although updating it can be skipped if no_update_default_boot_label is passed.
-    # When installing a new psyopsESP on a partition without a grub.cfg file, it must be passed explicitly.
-    # When updating an existing psyopsESP, it may be omitted to read the existing value from the existing grub.cfg file,
+    # When installing new firmware tarball on a partition without a boot configurarion file,
+    # it must be passed explicitly.
+    # When updating an existing firmware partition,
+    # it may be omitted to read the existing value from the existing boot configuration file,
     # or passed explicitly.
     # When updating a or b, it will be omitted unless passed explicitly.
     # If it is passed explicitly, it must be one of the A/B labels (taking into account any overrides).
@@ -311,11 +146,11 @@ def apply_updates(
 
         try:
             if detect_existing_default_boot_label:
-                # We need to get the default boot label from the existing grub.cfg file.
-                # We mount as writable because we might need to write a new grub.cfg file later,
+                # We need to get the default boot label from the existing boot configuration file.
+                # We mount as writable because we might need to write a new boot configuration later,
                 # but we can't know that until we check whether what's there matches the new value.
                 idempotently_mount(filesystems.efisys, writable=True)
-                default_boot_label = read_default_boot_label(filesystems.efisys.mountpoint)
+                default_boot_label = firmware.read_default_boot_label(filesystems.efisys.mountpoint)
                 # Sanity check the default boot label: it must be one of the A/B labels.
                 if default_boot_label not in [filesystems.a.label, filesystems.b.label]:
                     raise Exception(
@@ -323,10 +158,8 @@ def apply_updates(
                     )
 
             # Handle actions
-            updated = None
             if "nonbooted" in targets:
                 targets.remove("nonbooted")
-                updated = datetime.datetime.now()
                 nonbooted_fs = idempotently_mount(filesystems.bylabel(sides.nonbooted), writable=True)
                 apply_ostar(ostar, nonbooted_fs.mountpoint, verify=verify, verify_pubkey=pubkey)
                 subprocess.run(["sync"], check=True)
@@ -350,23 +183,23 @@ def apply_updates(
             if "efisys" in targets:
                 targets.remove("efisys")
                 efisys_fs = idempotently_mount(filesystems.efisys, writable=True)
-                # This handles any updates to the default_boot_label in grub.cfg.
-                configure_efisys(
+                # This handles any updates to the default_boot_label in the boot configuration file
+                firmware.update(
                     filesystems,
                     efisys_fs.mountpoint,
                     default_boot_label,
-                    tarball=esptar,
+                    tarball=fwtar,
                     verify=verify,
                     verify_pubkey=pubkey,
                 )
                 subprocess.run(["sync"], check=True)
-                logger.info(f"Updated efisys with {esptar} at {efisys_fs}")
+                logger.info(f"Updated efisys with {fwtar} at {efisys_fs}")
             elif default_boot_label:
-                # If we didn't handle updates to default_boot_label in grub.cfg above, do so here.
+                # If we didn't handle updates to default_boot_label in the boot configuration, do so here.
                 efisys_fs = idempotently_mount(filesystems.efisys, writable=True)
-                write_grub_cfg_carefully(filesystems, efisys_fs.mountpoint, default_boot_label, updated=updated)
+                firmware.write_default_boot_label(filesystems, default_boot_label)
                 subprocess.run(["sync"], check=True)
-                logger.info(f"Updated GRUB default boot label to {default_boot_label} at {efisys_fs}")
+                logger.info(f"Updated default boot label to {default_boot_label} at {efisys_fs}")
 
             if targets:
                 raise Exception(f"Unknown targets argument(s): {targets}")
@@ -383,6 +216,7 @@ def apply_updates(
 def check_updates(
     filesystems: Filesystems,
     sides: Sides,
+    firmware: Firmware,
     targets: list[str],
     update_version: str,
     repository: str,
@@ -400,7 +234,7 @@ def check_updates(
     - up_to_date: Whether the filesystem is up to date
     """
 
-    system_md = get_system_metadata(filesystems, sides)
+    system_md = get_system_metadata(filesystems, sides, firmware)
     update_version_firmware = update_version
     update_version_os = update_version
     if update_version == "latest":
