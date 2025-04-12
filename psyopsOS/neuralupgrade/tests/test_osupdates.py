@@ -14,45 +14,20 @@ SCENARIOS_DIR = TESTS_DIR / "data" / "scenarios"
 SCENARIO_AB_SAME = SCENARIOS_DIR / "ab_same"
 
 
-class MockMount:
-    """Mock Mount context manager."""
-
-    def __init__(self, path):
-        self.path = path
-
-    def __enter__(self):
-        return self.path
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
-
-
-class MockFilesystem(Filesystem):
-    """Mock Filesystem for testing."""
-
-    def __init__(self, label, scenario_path):
-        super().__init__(label=label, device=f"/dev/fake/{label}", mountpoint=f"/mnt/{label}")
-        self.scenario_path = scenario_path
-
-    def mount(self, writable=False):
-        """Override mount to return a context manager that returns the scenario path."""
-        return MockMount(self.scenario_path)
-
-
 class TestGetSystemVersions(unittest.TestCase):
     """Tests for get_system_versions function."""
 
     def setUp(self):
         """Set up test environment."""
         # Create a mock Filesystems object that uses our scenario test data
-        a_fs = MockFilesystem("psyopsOS-A", SCENARIO_AB_SAME / "a")
-        b_fs = MockFilesystem("psyopsOS-B", SCENARIO_AB_SAME / "b")
-        efi_fs = MockFilesystem("PSYOPSOSEFI", SCENARIO_AB_SAME / "efisys")
+        a_fs = Filesystem("psyopsOS-A", mountpoint=SCENARIO_AB_SAME / "a", mockmount=True)
+        b_fs = Filesystem("psyopsOS-B", mountpoint=SCENARIO_AB_SAME / "b", mockmount=True)
+        efi_fs = Filesystem("PSYOPSOSEFI", mountpoint=SCENARIO_AB_SAME / "efisys", mockmount=True)
         self.filesystems_ab_same = Filesystems(efisys=efi_fs, a=a_fs, b=b_fs)
 
         self.temp_emtpy_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_emtpy_dir.cleanup)
-        b_empty_fs = MockFilesystem("psyopsOS-B", self.temp_emtpy_dir.name)
+        b_empty_fs = Filesystem("psyopsOS-B", mountpoint=self.temp_emtpy_dir.name, mockmount=True)
         self.filesystems_b_side_empty = Filesystems(efisys=efi_fs, a=a_fs, b=b_empty_fs)
 
     @patch("neuralupgrade.filesystems.activeside")

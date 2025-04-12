@@ -49,6 +49,19 @@ def umount_retry(mountpoint: str, attempts: int = 2, sleepbetween: int = 1) -> N
     raise UmountError(f"Could not umount {mountpoint} after {attempts} attempts")
 
 
+class MockMount:
+    """Mock Mount context manager."""
+
+    def __init__(self, path):
+        self.path = path
+
+    def __enter__(self):
+        return self.path
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+
 class Mount:
     """A context manager for mounting filesystems.
 
@@ -172,12 +185,25 @@ class Filesystem:
                     If not specified, looked up from label
     mountpoint:     The mountpoint of the filesystem
                     If not specified, looked up by device and then by label in /etc/fstab
+    mockmount:      If True, do not ever actually attempt to mount the filesystem,
+                    but use the contents of the "mountpoint" directory as-is.
+                    Useful for test mocking and examples.
+                    Requires that label and mountpoint are specified.
+                    The label and device are not used and may be fake values.
     """
 
-    def __init__(self, label: str = "", device: str = "", mountpoint: str = "", writable: bool = False):
+    def __init__(
+        self, label: str = "", device: str = "", mountpoint: str = "", writable: bool = False, mockmount: bool = False
+    ):
+        if mockmount:
+            if not (label and mountpoint):
+                raise ValueError("Must specify label and mountpoint for mockmount")
+            if not device:
+                device = f"/dev/mock/{label}"
         self.label = label
         self._device = device
         self._mountpoint = mountpoint
+        self.mockmount = mockmount
 
     @property
     def device(self):
@@ -218,6 +244,8 @@ class Filesystem:
 
     def mount(self, writable: bool = False):
         """A context manager for mounting the filesystem"""
+        if self.mockmount:
+            return MockMount(self.mountpoint)
         return Mount(self.device, self.mountpoint, writable)
 
     def __repr__(self):
