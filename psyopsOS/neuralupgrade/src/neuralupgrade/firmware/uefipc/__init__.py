@@ -10,7 +10,7 @@ from typing import Optional
 
 from neuralupgrade import logger
 from neuralupgrade.firmware import Firmware
-from neuralupgrade.firmware.grubuefi.grub_cfg import write_grub_cfg_carefully
+from neuralupgrade.firmware.uefipc.grub_cfg import write_grub_cfg_carefully
 from neuralupgrade.filesystems import Filesystems
 from neuralupgrade.systemmetadata import NeuralPartitionFirmware
 from neuralupgrade.update_metadata import (
@@ -20,7 +20,7 @@ from neuralupgrade.update_metadata import (
 )
 
 
-class GrubUEFIBootloader(Firmware):
+class UEFIPCGrubBootloader(Firmware):
 
     fwtype = "x86_64_uefi"
 

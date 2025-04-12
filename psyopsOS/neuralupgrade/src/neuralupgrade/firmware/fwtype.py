@@ -1,6 +1,6 @@
 import os
 from neuralupgrade.firmware import Firmware
-from neuralupgrade.firmware.grubuefi import GrubUEFIBootloader
+from neuralupgrade.firmware.uefipc import UEFIPCGrubBootloader
 from neuralupgrade.firmware.rpi import RaspberryPiUBootBootloader
 
 
@@ -13,7 +13,7 @@ def detect_firmware() -> Firmware:
 
     # Detecting UEFI is standard on Linux
     if os.path.exists("/sys/firmware/efi"):
-        return GrubUEFIBootloader()
+        return UEFIPCGrubBootloader()
 
     # This path exists on Alpine on Raspberry Pi as of 3.21.3 at least,
     # it doesn't exist on Alpine x86_64 though.
@@ -32,7 +32,7 @@ def detect_firmware() -> Firmware:
 
 
 FIRMWARES = [
-    GrubUEFIBootloader,
+    UEFIPCGrubBootloader,
     RaspberryPiUBootBootloader,
 ]
 """A list of all known firmware classes."""
