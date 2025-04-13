@@ -89,6 +89,18 @@ Resources:
           Type: A
           TTL: "60"
           ResourceRecords: ["10.10.10.8"]
+        - name: dieselgrove.psynet.micahrl.com.
+          Type: A
+          TTL: "60"
+          ResourceRecords: ["10.10.10.9"]
+        - name: rusthaven.psynet.micahrl.com.
+          type: A
+          TTL: "60"
+          ResourceRecords: ["10.10.10.10"]
+        - name: wirefield.psynet.micahrl.com.
+          type: A
+          TTL: "60"
+          ResourceRecords: ["10.10.10.11"]
 
         # Services
         - Name: syslog.psynet.micahrl.com.
