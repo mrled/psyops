@@ -64,7 +64,9 @@ apk add grub-efi --no-scripts
 # Install architecture specific packages
 case $(uname -m) in
     aarch64)
-        apk add u-boot-raspberrypi
+        apk add \
+            u-boot-raspberrypi \
+            u-boot-tools
         ;;
     x86_64)
         apk add syslinux
