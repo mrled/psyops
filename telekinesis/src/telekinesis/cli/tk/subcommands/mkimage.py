@@ -201,7 +201,7 @@ def make_boot_image(
 
     if secrets_tarball:
         builder.extra_volumes = [f"{secrets_tarball}:/tmp/secret.tar"]
-        extra_scriptargs = "-x /tmp/secret.tar"
+        extra_scriptargs = " -x /tmp/secret.tar"
 
     with builder:
         arch_artifacts = tkconfig.arch_artifacts[builder.architecture.name]
@@ -211,7 +211,7 @@ def make_boot_image(
         if architecture.name == "x86_64":
             fwtype = "x86_64_uefi"
             psyopsesptar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.esptar_path.name)
-            extra_scriptargs += f"-E {psyopsesptar}"
+            extra_scriptargs += f" -E {psyopsesptar}"
         elif architecture.name == "aarch64":
             fwtype = "raspberrypi"
         if fwtype is None:
