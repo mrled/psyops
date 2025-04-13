@@ -36,11 +36,14 @@ def write_file_carefully(
     readmode = "rb" if binary else "r"
     writemode = "wb" if binary else "w"
 
-    with open(filepath, readmode) as f:
-        existing_contents = f.read()
-        if existing_contents == contents:
-            logger.debug(f"File {filepath} already has the same contents, not writing")
-            return
+    try:
+        with open(filepath, readmode) as f:
+            existing_contents = f.read()
+            if existing_contents == contents:
+                logger.debug(f"File {filepath} already has the same contents, not writing")
+                return
+    except FileNotFoundError:
+        logger.debug(f"File {filepath} does not exist, will create it")
 
     logger.debug(f"Writing new file contents to {filepath_tmp}")
     with open(filepath_tmp, writemode) as f:
