@@ -204,7 +204,11 @@ def subcommand_apply(
                 )
                 esp_tar_downloaded = True
             else:
-                parser.error("Must specify --esp-tar or --esp-version when applying efisys updates")
+                # TODO: Update this check to require the ESP tarball on certain platforms only.
+                # The Raspberry Pi doesn't support a tarball,
+                # but the GRUB UEFI platform does, so make it required for that one.
+                logger.debug("No ESP tarball specified, will not include one")
+                # parser.error("Must specify --esp-tar or --esp-version when applying efisys updates")
         apply_updates(
             filesystems,
             firmware,
@@ -522,6 +526,8 @@ def main_implementation(arguments: list[str]) -> int:
         except UnknownFirmwareError as e:
             parser.error(f"Could not detect firmware: {e}")
 
+    # TODO: Support execution on a system that is not running psyopsOS and cannot have either side booted for writing etc.
+    #       Currently this requires mocking the booted side, uselessly.
     if parsed.booted_mock:
         sides = Sides(parsed.booted_mock, flipside(parsed.booted_mock, filesystems))
     else:

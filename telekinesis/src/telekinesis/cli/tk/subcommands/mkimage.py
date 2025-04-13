@@ -185,11 +185,12 @@ def make_squashfs(builder: AlpineDockerBuilder):
 
 
 def make_boot_image(
+    architecture: Architecture,
     out_filename: str,
     builder: AlpineDockerBuilder,
     secrets_tarball: str = "",
 ):
-    """Make a disk image containing GRUB and a partition for initramfs-only images that Grub can boot"""
+    """Make a disk image containing our bootloader"""
 
     # We can't have the neuralupgrade package in the Docker image as an APK package,
     # because the Docker image is required to build the neuralupgrade APK package.
@@ -197,22 +198,35 @@ def make_boot_image(
     build_neuralupgrade_pyz()
 
     extra_scriptargs = ""
+
     if secrets_tarball:
         builder.extra_volumes = [f"{secrets_tarball}:/tmp/secret.tar"]
         extra_scriptargs = "-x /tmp/secret.tar"
 
     with builder:
         arch_artifacts = tkconfig.arch_artifacts[builder.architecture.name]
-        make_img_sript = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/osbuild/make-psyopsOS-img.sh")
+
+        fwtype = None
+        psyopsesptar = None
+        if architecture.name == "x86_64":
+            fwtype = "x86_64_uefi"
+            psyopsesptar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.esptar_path.name)
+            extra_scriptargs += f"-E {psyopsesptar}"
+        elif architecture.name == "aarch64":
+            fwtype = "raspberrypi"
+        if fwtype is None:
+            raise RuntimeError(f"Unsupported architecture {architecture.name} for boot image")
+
+        make_img_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/osbuild/make-psyopsOS-img.sh")
         psyopsostar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.ostar_path.name)
-        psyopsesptar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.esptar_path.name)
         neuralupgrade = os.path.join(
             builder.in_container_noarch_artifacts_dir, tkconfig.noarch_artifacts.neuralupgrade.name
         )
         minisign_pubkey = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/minisign.pubkey")
         outimg = os.path.join(builder.in_container_arch_artifacts_dir, out_filename)
+        # TODO: Fix NeuralUpgrade so we don't have to mock a booted side
         in_container_build_cmd = [
-            f"sudo sh {make_img_sript} -n {neuralupgrade} -p {psyopsostar} -E {psyopsesptar} -o {outimg} -V {minisign_pubkey} {extra_scriptargs}",
+            f"sudo sh {make_img_script} -n {neuralupgrade} -N '--booted-mock=psyopsOS-A' -f {fwtype} -p {psyopsostar} -o {outimg} -V {minisign_pubkey} {extra_scriptargs}",
         ]
         builder.run_docker(in_container_build_cmd)
 

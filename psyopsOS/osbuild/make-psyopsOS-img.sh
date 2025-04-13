@@ -6,6 +6,7 @@ script=$(basename "$0")
 # Default argument values
 neuralupgrade=
 neuralupgrade_args=
+fwtype=
 psyostar=
 efisystar=
 secrettarball=
@@ -25,7 +26,7 @@ label_secret="psyops-secret" # max 16 chars, case sensitive
 usage() {
     cat <<ENDUSAGE
 $script: Make a bootable USB drive for psyopsOS
-Usage: $script [-h] [OPTIONS ...] -n NEURALUPGRADE -p PSYOPSOSTAR -E EFISYSTAR -V PUBKEY -o OUTPUTIMG
+Usage: $script [-h] [OPTIONS ...] -n NEURALUPGRADE -f FWTYPE -p PSYOPSOSTAR -V PUBKEY -o OUTPUTIMG
 
 ARGUMENTS:
     -h                      Show this help message
@@ -40,6 +41,7 @@ ARGUMENTS:
                             (default: "$secretsize")
     -n NEURALUPGRADE        Path to the neural upgrade binary to use
     -N NEURALUPGRADEARGS    Arguments to pass to the neural upgrade binary
+    -f FWTYPE               Type of firmware to pass to neuralupgrade (required)
     -p PSYOPSOSTAR          Path to a psyopsOS tarball to use
     -E EFISYSTAR            Path to a tarball containing extra files for the
                             EFI system partition
@@ -84,6 +86,7 @@ while test $# -gt 0; do
     -h) usage; exit 0;;
     -l) loopdev="$2"; shift 2;;
     -e) efisize="$2"; shift 2;;
+    -f) fwtype="$2"; shift 2;;
     -s) psyabsize="$2"; shift 2;;
     -x) secrettarball="$2"; shift 2;;
     -y) secretsize="$2"; shift 2;;
@@ -98,7 +101,7 @@ while test $# -gt 0; do
     esac
 done
 
-for arg in "$efisystar" "$neuralupgrade" "$psyostar" "$pubkey" "$outimg"; do
+for arg in "$fwtype" "$neuralupgrade" "$psyostar" "$pubkey" "$outimg"; do
     if test -z "$arg"; then
         echo "Missing required argument(s); see '$script -h'" >&2
         exit 1
@@ -197,6 +200,7 @@ mkdir -p "$mntbase"/efisys
 "$neuralupgrade" \
     $neuralupgrade_args \
     "--verbose" \
+    "--fwtype" "$fwtype" \
     --efisys-dev "$part_efisys" \
     --efisys-mountpoint "$mntbase"/efisys \
     --a-dev "$part_psya" \
@@ -207,7 +211,7 @@ mkdir -p "$mntbase"/efisys
     apply \
     --default-boot-label "$label_psya" \
     --os-tar "$psyostar" \
-    --esp-tar "$efisystar" \
+    ${efisystar:+--esp-tar="$efisystar"} \
     a b efisys
 
 # Set up the secret partition
