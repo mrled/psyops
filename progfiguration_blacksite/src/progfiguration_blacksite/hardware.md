@@ -8,6 +8,7 @@
 * Single USB 3.0 controller
 * 1 NVME slot
 * 1 SATA port
+* Serial number: Dell service tag
 
 ### `lsusb -t`
 
@@ -95,6 +96,12 @@ dieselgrove:~# lsusb -t
 ```
 
 ## Raspberry Pi 4B
+
+* Serial number: Raspberry Pi serial number
+    * It's *just the last 8 digits*, in hex, of the value found in
+      `/sys/firmware/devicetree/base/serial-number`
+      and also near the end of `/proc/cpuinfo`
+    * <https://www.raspberrypi.com/documentation/computers/config_txt.html#the-serial-number-filter>
 
 ### U-Boot
 
