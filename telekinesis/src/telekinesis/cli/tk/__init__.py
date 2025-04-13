@@ -26,7 +26,7 @@ from telekinesis.cli.tk.subcommands.mkimage import (
     copy_esptar_to_deaddrop,
     copy_ostar_to_deaddrop,
     make_esptar,
-    make_grub_diskimg,
+    make_boot_image,
     make_kernel,
     make_ostar,
     make_squashfs,
@@ -586,7 +586,7 @@ def main_impl():
                         )
                         secrets_tarball = tkconfig.noarch_artifacts.node_secrets(parsed.node_secrets).as_posix()
                     with getbldcm(arch) as builder:
-                        make_grub_diskimg(out_filename, builder, secrets_tarball=secrets_tarball)
+                        make_boot_image(out_filename, builder, secrets_tarball=secrets_tarball)
         else:
             parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
     elif parsed.action == "vm":

@@ -184,7 +184,7 @@ def make_squashfs(builder: AlpineDockerBuilder):
         subprocess.run(["ls", "-larth", osdir_path], check=True)
 
 
-def make_grub_diskimg(
+def make_boot_image(
     out_filename: str,
     builder: AlpineDockerBuilder,
     secrets_tarball: str = "",
