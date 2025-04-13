@@ -8,6 +8,7 @@ from typing import Optional
 from neuralupgrade import logger
 from neuralupgrade.filesystems import Filesystems
 from neuralupgrade.filewriter import write_file_carefully
+from neuralupgrade.firmware.timestamp import firwmare_update_timestamp
 
 
 # These are format strings -- literal { and } must be escaped as {{ and }}
@@ -112,7 +113,7 @@ def grub_cfg(
     sections = [
         _header_format.format(
             default_boot_label=default_boot_label,
-            last_updated=updated.strftime("%Y%m%d-%H%M%S"),
+            last_updated=firwmare_update_timestamp(updated),
             extra_programs=",".join(extra_programs.keys()),
         ),
         _psyopsOS_entry_format.format(label=filesystems.a.label, kernel_params=kernel_params),

@@ -7,6 +7,7 @@ from typing import Optional
 from neuralupgrade import logger
 from neuralupgrade.filesystems import Filesystems
 from neuralupgrade.filewriter import write_file_carefully
+from neuralupgrade.firmware.timestamp import firwmare_update_timestamp
 
 
 # A string.Template that sets variables in the boot.cmd file.
@@ -209,6 +210,7 @@ def rpi_boot_cmd(
         _boot_cmd_header_template.format(
             A_label=filesystems.a.label,
             B_label=filesystems.b.label,
+            last_updated=firwmare_update_timestamp(updated),
             default_label=default_boot_label,
             kernel_addr_r=kernel_addr_r,
             default_boot_label=ramdisk_addr_r,
