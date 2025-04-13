@@ -117,3 +117,19 @@ def parse_psyopsOS_neuralupgrade_info_comment(comment: Optional[str] = None, fil
     # parse all the key=value pairs in the trusted comment
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in comment[len(prefix) :].split()]}
     return metadata
+
+
+def read_default_boot_label(srcfile: str) -> str:
+    """Read the default bootlabel from a boot configuration file
+
+    A wrapper around parse_psyopsOS_neuralupgrade_info_comment to read the default boot label from the metadata.
+    """
+    try:
+        neuralupgrade_info = parse_psyopsOS_neuralupgrade_info_comment(file=srcfile)
+        return neuralupgrade_info["default_boot_label"]
+    except FileNotFoundError as exc:
+        raise Exception(
+            f"--default-boot-label not passed and no existing GRUB configuration found at '{srcfile}'; if the boot partition is empty, you need to pass --default-boot-label"
+        ) from exc
+    except Exception as exc:
+        raise Exception(f"Could not find default boot label from existing '{srcfile}'") from exc

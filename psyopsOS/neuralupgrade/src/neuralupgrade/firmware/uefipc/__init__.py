@@ -17,6 +17,7 @@ from neuralupgrade.update_metadata import (
     minisign_verify,
     parse_psyopsOS_neuralupgrade_info_comment,
     parse_trusted_comment,
+    read_default_boot_label,
 )
 
 
@@ -45,11 +46,12 @@ class UEFIPCGrubBootloader(Firmware):
 
     def read_default_boot_label(self, fw_mountpoint: str) -> str:
         """Read the default boot label from the bootloader configuration."""
-        return read_default_boot_label(fw_mountpoint)
+        return read_default_boot_label(os.path.join(fw_mountpoint, "grub", "grub.cfg"))
 
     def write_default_boot_label(self, filesystems: Filesystems, label: str):
         """Write the default boot label to the bootloader configuration."""
-        write_default_boot_label(filesystems, label)
+        write_grub_cfg_carefully(filesystems, filesystems.efisys.mountpoint, label)
+        logger.info(f"Updated GRUB default boot label to {label} at {filesystems.efisys.mountpoint}")
 
     def get_partition_metadata(self, filesystems: Filesystems) -> NeuralPartitionFirmware:
         """Get the firmware partition metadata."""
@@ -124,27 +126,6 @@ def configure_efisys(
 
     write_grub_cfg_carefully(filesystems, efisys, default_boot_label)
     logger.debug("Done configuring efisys")
-
-
-def read_default_boot_label(fw_mountpoint: str) -> str:
-    """Read the default bootlabel from a grub.cfg file"""
-
-    try:
-        grub_cfg_info = parse_psyopsOS_neuralupgrade_info_comment(file=os.path.join(fw_mountpoint, "grub", "grub.cfg"))
-        return grub_cfg_info["default_boot_label"]
-    except FileNotFoundError as exc:
-        raise Exception(
-            f"--default-boot-label not passed and no existing GRUB configuration found at {fw_mountpoint}/grub/grub.cfg file; if the ESP is empty, you need to pass --default-boot-label"
-        ) from exc
-    except Exception as exc:
-        raise Exception(f"Could not find default boot label from existing {fw_mountpoint}/grub/grub.cfg file") from exc
-
-
-def write_default_boot_label(filesystems: Filesystems, label: str):
-    """Write the default boot label to a grub.cfg file"""
-    write_grub_cfg_carefully(filesystems, filesystems.efisys.mountpoint, label)
-    subprocess.run(["sync"], check=True)
-    logger.info(f"Updated GRUB default boot label to {label} at {filesystems.efisys.mountpoint}")
 
 
 def get_efi_partition_metadata(filesystems: Filesystems) -> NeuralPartitionFirmware:
