@@ -169,8 +169,15 @@ psyb_end=$(( psyb_start + psyabsize ))
 test -f "$outimg" && rm "$outimg"
 dd if=/dev/zero of="$outimg" bs=1048576 seek=$imgsize count=0
 
+set +e
 # Note that this requires a privileged container (docker run --privileged=true)
 losetup "$loopdev" "$outimg"
+if test $? -ne 0; then
+    echo "Failed to set up loop device $loopdev for $outimg"
+    echo "If you're running Docker Desktop, make sure other containers aren't using loop devices, or try restarting Docker Desktop."
+    exit 1
+fi
+set -e
 
 parted -s "$loopdev" mklabel gpt
 parted -s "$loopdev" mkpart primary fat32   ${efi_start}MiB     ${secret_start}MiB
