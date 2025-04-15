@@ -65,8 +65,19 @@ def get_system_metadata(filesystems: Filesystems, sides: Sides, firmware: Firmwa
     )
 
 
-def apply_ostar(tarball: str, osmount: str, verify: bool = True, verify_pubkey: Optional[str] = None):
-    """Apply an ostar to a device"""
+def apply_ostar(tarball: str, osmount: str, sidefile: str, verify: bool = True, verify_pubkey: Optional[str] = None):
+    """Apply an ostar to a device
+
+    Arguments:
+    - tarball: The path to the tarball to apply
+    - osmount: The mountpoint of the filesystem to apply the tarball to
+    - sidefile: A file NAMED after the side (a or b) to use for verification, like psyopsOS-A or psyopsOS-B.
+      Used by U-Boot which is too stupid to read the label
+      but can blindly try to load a file by name and tell if it failed..
+      See `raspberry-pi.md` for more details.
+    - verify: Whether to verify the tarball signature
+    - verify_pubkey: The public key to use for verification
+    """
 
     if verify:
         minisign_verify(tarball, pubkey=verify_pubkey)
@@ -80,6 +91,9 @@ def apply_ostar(tarball: str, osmount: str, verify: bool = True, verify_pubkey: 
         logger.debug(f"Copied {minisig} to {osmount}/psyopsOS.tar.minisig")
     except FileNotFoundError:
         logger.warning(f"Could not find {minisig}, partition will not know its version")
+    with open(os.path.join(osmount, sidefile), "w") as f:
+        # So a file called /mnt/partition/psyopsOS-A will have the contents "psyopsOS-A"
+        f.write(sidefile)
     subprocess.run(["sync"], check=True)
     logger.debug(f"Finished applying {tarball} to {osmount}")
 
@@ -133,7 +147,7 @@ def apply_updates(
         # Keep track of mounted filesystems using label -> Filesystem mapping
         mounted_points: dict[str, Filesystem] = {}
 
-        def idempotently_mount(fs: Filesystem, writable: bool = False):
+        def idempotently_mount(fs: Filesystem, writable: bool = False) -> Filesystem:
             """Use a filesystem's mount context manager to mount it.
 
             Register the Mount context manager with the ExitStack to ensure it gets unmounted at the end.
@@ -161,7 +175,13 @@ def apply_updates(
             if "nonbooted" in targets:
                 targets.remove("nonbooted")
                 nonbooted_fs = idempotently_mount(filesystems.bylabel(sides.nonbooted), writable=True)
-                apply_ostar(ostar, nonbooted_fs.mountpoint, verify=verify, verify_pubkey=pubkey)
+                apply_ostar(
+                    ostar,
+                    nonbooted_fs.mountpoint,
+                    nonbooted_fs.label,
+                    verify=verify,
+                    verify_pubkey=pubkey,
+                )
                 subprocess.run(["sync"], check=True)
                 logger.info(f"Updated nonbooted side {sides.nonbooted} with {ostar} at {nonbooted_fs}")
                 if not no_update_default_boot_label:
@@ -176,7 +196,7 @@ def apply_updates(
                 if side in targets:
                     targets.remove(side)
                     this_fs = idempotently_mount(filesystems[side], writable=True)
-                    apply_ostar(ostar, this_fs.mountpoint, verify=verify, verify_pubkey=pubkey)
+                    apply_ostar(ostar, this_fs.mountpoint, this_fs.label, verify=verify, verify_pubkey=pubkey)
                     subprocess.run(["sync"], check=True)
                     logger.info(f"Updated {side} side with {ostar} at {this_fs.mountpoint}")
 
