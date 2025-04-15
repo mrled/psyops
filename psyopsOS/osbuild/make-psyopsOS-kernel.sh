@@ -194,7 +194,9 @@ make_modloop() {
     openssl dgst -sha1 -sign "$PACKAGER_PRIVKEY" -out "$modsig_path" "$modloopstage/$modimg"
 }
 
-# Include the device tree blobs (used in e.g. ARM)
+# Include the device tree blobs (used in e.g. ARM).
+# The flow here comes from Alpine scripts.
+# TODO: include dtbo files as well?
 include_dtb() {
     _outdir=$1
     dtbdir=
