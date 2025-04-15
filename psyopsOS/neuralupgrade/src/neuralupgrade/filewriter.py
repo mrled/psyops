@@ -75,4 +75,9 @@ def write_file_carefully(
             logger.debug(f"Keeping {oldfile} because it's newer than {max_old_days} days")
     subprocess.run(["sync"], check=True)
 
-    logger.info(f"Wrote {filepath} and cleaned up old backups, new contents:\n{contents!r}")
+    if isinstance(contents, bytes):
+        log_contents = f"{contents!r}"
+    else:
+        log_contents = contents
+
+    logger.info(f"Wrote {filepath} and cleaned up old backups, new contents:\n{log_contents}")
