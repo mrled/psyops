@@ -103,6 +103,14 @@ dieselgrove:~# lsusb -t
       and also near the end of `/proc/cpuinfo`
     * <https://www.raspberrypi.com/documentation/computers/config_txt.html#the-serial-number-filter>
 
+### Pi-specific hardware
+
+#### Waveshare PoE HAT (E)
+
+* <https://www.waveshare.com/PoE-HAT-E.htm>
+* No device tree overlay (`.dtbo` file) is required, because there is no kernel support necessary for this to work.
+  (Currently we are using without a fan; might need a dtbo for fan control, not sure.)
+
 ### U-Boot
 
 We use U-Boot to allow selecting between the psyopsOS A and B partitions.
