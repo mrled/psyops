@@ -1,7 +1,6 @@
 import datetime
 import os
 import shutil
-import subprocess
 import traceback
 from typing import Optional
 from venv import logger
@@ -11,7 +10,6 @@ from neuralupgrade.firmware.rpi.rpi_cfg import write_rpi_cfgs_carefully
 from neuralupgrade.systemmetadata import NeuralPartitionFirmware
 from neuralupgrade.update_metadata import (
     parse_psyopsOS_neuralupgrade_info_comment,
-    parse_trusted_comment,
     read_default_boot_label,
 )
 
@@ -67,12 +65,24 @@ def install_rpi_uboot(
     Expects to be run from an Alpine system for the ARM architecture with the following packages installed:
     - u-boot-raspberrypi: Contains the U-Boot binary that we copy to the boot partition
     - uboot-tools: Contains the mkimage tool that we use to create the U-Boot image
+    - raspberrypi-bootloader: Contains the bootloader files that we copy to the boot partition
 
     Currently we don't support any extra programs or a tarbarll for Raspberry Pi systems,
     so the tarball, verify, and verify_pubkey options are ignored.
     """
     updated = datetime.datetime.now()
-    shutil.copy("/usr/share/u-boot/rpi_arm64/u-boot.bin", os.path.join(efisys, "u-boot.bin"))
+    for f in [
+        # U-Boot itself, from u-boot-raspberrypi package
+        "/usr/share/u-boot/rpi_arm64/u-boot.bin",
+        # Raspberry Pi firmware, from raspberrypi-bootloader package
+        "/boot/start4.elf",
+        "/boot/fixup4.dat",
+        # The DTB is surprisingly REQUIRED for U-Boot, before the kernel loads, at least the Alpine Linux build of it.
+        # If this isn't present, U-Boot will not work at all, will not attempt to run its boot.scr file, anything.
+        # It must be present in the root of the boot partition.
+        "/boot/bcm2711-rpi-4-b.dtb",
+    ]:
+        shutil.copy(f, os.path.join(efisys, os.path.basename(f)))
     write_rpi_cfgs_carefully(filesystems, efisys, default_boot_label, updated)
     logger.debug("Done configuring U-Boot for Raspberry Pi")
 
