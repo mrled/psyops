@@ -65,7 +65,7 @@ def set_apk_repositories(localhost: LocalhostLinux):
     Note that by default ONLY the cdrom repo exists,
     so we have to add even the regular main repo.
 
-    The psyopsOS repo is also added by 000-psyopsOS-postboot.start.
+    The psyopsOS repo is also added by 100-psyopsOS-postboot.start.
     Updating it here requires updating it there too.
     """
     add_repos = [
@@ -79,7 +79,7 @@ def set_apk_repositories(localhost: LocalhostLinux):
     localhost.linesinfile("/etc/apk/repositories", add_repos)
 
     # If we update here, apk often fails with an exit code of 6.
-    # I think this happens because 000-psyopsOS-postboot.start has just updated it before running progfiguration.
+    # I think this happens because 100-psyopsOS-postboot.start has just updated it before running progfiguration.
     # apk update says you should not need to do this normally anyway.
     #
     # result = magicrun("apk update", check=False, log_output=True)

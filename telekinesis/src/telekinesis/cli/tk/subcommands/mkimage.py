@@ -131,7 +131,7 @@ def make_squashfs(builder: AlpineDockerBuilder):
     all_repos, psyopsOS_only_repo = generate_apk_repositories_files(tkconfig.alpine_version)
 
     extra_required_packages = [
-        # If this isn't present, setup-keyboard in 000-psyopsOS-postboot.start will hang waiting for user input forever.
+        # If this isn't present, setup-keyboard in 100-psyopsOS-postboot.start will hang waiting for user input forever.
         "kbd-bkeymaps",
     ]
 

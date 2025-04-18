@@ -1,0 +1,51 @@
+#!/bin/sh
+set -eu
+
+# Dynamically modify /etc/inittab at boot time.
+#
+# Assume that the operating system has created /etc/inittab.
+# If this is the first time running this script, copy that to /etc/inittab.base.
+# Use /etc/inittab.base as the template for the new /etc/inittab.
+# Subsequent runs of this script will use /etc/inittab.base as the template.
+# This prevents state from accumulating in /etc/inittab.
+#
+# Look for devices that any of our hosts may use for a serial console
+# and add them to /etc/inittab.
+
+known_devices="ttyS0 ttyAMA0"
+
+if ! test -e /etc/inittab.base; then
+    cp /etc/inittab /etc/inittab.base
+fi
+cp /etc/inittab.base /etc/inittab.tmp
+
+trap 'rm -f /etc/inittab.tmp' EXIT
+
+echo "" >> /etc/inittab.tmp
+echo "" >> /etc/inittab.tmp
+echo "# gettys added by /etc/local.d/000-getty.start" >> /etc/inittab.tmp
+
+found=
+for device in $known_devices; do
+    if ! test -e /dev/"$device"; then
+        echo "Device '$device' does not exist, skipping..."
+        continue
+    fi
+    if grep -q "$device" /etc/inittab.tmp; then
+        echo "Device '$device' already configured in /etc/inittab.tmp, skipping..."
+        continue
+    fi
+    found="${found:+$found:}${device}"
+    echo "Configuring device '$device' in /etc/inittab..."
+    echo "$device::respawn:/sbin/getty -L $device 115200 vt100" >> /etc/inittab.tmp
+done
+
+if test "$found"; then
+    echo "Found devices: $found"
+    echo "Updating /etc/inittab..."
+    mv /etc/inittab.tmp /etc/inittab
+    echo "Reloading inittab..."
+    kill -HUP 1
+else
+    echo "No devices found, not updating /etc/inittab."
+fi

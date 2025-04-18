@@ -269,7 +269,8 @@ install -o root -g root -m 0755 -d "$squashroot"/usr/local/sbin
 psyops_overlay_install root root 0700 usr/local/sbin/psyopsOS-mount-secret.sh
 
 install -o root -g root -m 0755 -d "$squashroot"/etc/local.d
-psyops_overlay_install root root 0755 etc/local.d/000-psyopsOS-postboot.start
+psyops_overlay_install root root 0755 etc/local.d/050-inittab.start
+psyops_overlay_install root root 0755 etc/local.d/100-psyopsOS-postboot.start
 
 # Configure /etc/fstab
 # Make sure this matches what we do in initramfs-init
@@ -307,7 +308,7 @@ rc_add bootmisc boot
 rc_add syslog boot
 
 # Don't start ntpd here.
-# Networking comes up properly in 000-psyopsOS-postboot.start in local.d;
+# Networking comes up properly in 100-psyopsOS-postboot.start in local.d;
 # start ntpd there instead.
 #rc_add ntpd default
 rc_add local default
