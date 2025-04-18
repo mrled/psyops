@@ -220,7 +220,15 @@ arm_boost=1
 gpu_mem=64
 
 # Disable bluetooth, which uses the serial UART (?)
+# If the Raspberry Pi firmware loads the kernel directly (that is, if kernel= is set to a Linux binary),
+# this does TWO Things:
+# 1. It applies the device tree overlay file in /boot/overlays/disable-bt.dtbo
+# 2. It uses the mailbox interface to set up the PL011 clock and re-configure GPIO 14/15 into the UART function
+# If the firmware loads U-Boot (kernel=u-boot.bin), it doesn't load the overlay file,
+# and U-Boot will have to apply the disable-bt.dbto file itself.
+# However, it is STILL REQUIRED to properly configure the GPIO pins (I think this is "pin-mux" or "pinmux").
 dtoverlay=disable-bt
+
 # Enable the UART in the GPIO pins
 enable_uart=1
 # Enable debug logging to the UART during boot, show early boot messages over serial

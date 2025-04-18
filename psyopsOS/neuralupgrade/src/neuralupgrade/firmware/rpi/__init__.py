@@ -1,4 +1,5 @@
 import datetime
+import glob
 import os
 import shutil
 import traceback
@@ -77,12 +78,23 @@ def install_rpi_uboot(
         # Raspberry Pi firmware, from raspberrypi-bootloader package
         "/boot/start4.elf",
         "/boot/fixup4.dat",
-        # The DTB is surprisingly REQUIRED for U-Boot, before the kernel loads, at least the Alpine Linux build of it.
-        # If this isn't present, U-Boot will not work at all, will not attempt to run its boot.scr file, anything.
-        # It must be present in the root of the boot partition.
-        "/boot/bcm2711-rpi-4-b.dtb",
     ]:
         shutil.copy(f, os.path.join(efisys, os.path.basename(f)))
+
+    # The relevant DTB is surprisingly REQUIRED for U-Boot, BEFORE the kernel loads.
+    # If it isn't present, U-Boot will not work at all, will not attempt to run its boot.scr file, anything.
+    # It must be present in the root of the boot partition.
+    # The overlays are also required for U-Boot --
+    # at least, the disable-bt overly must be present (and dtoverlay=disable-bt in config.txt)
+    # for the kernel to use the serial port after it boots.
+    # WARNING: I am not sure what happens if the U-Boot dtb and dtbo are different from the kernel dtb and dtbo.
+    for dtb in glob.glob("/boot/*.dtb"):
+        shutil.copy(dtb, os.path.join(efisys, os.path.basename(dtb)))
+    dst_overlays = os.path.join(efisys, "overlays")
+    os.makedirs(dst_overlays, exist_ok=True)
+    for dtbo in glob.glob("/boot/overlays/*.dtbo"):
+        shutil.copy(dtbo, os.path.join(dst_overlays, os.path.basename(dtbo)))
+
     write_rpi_cfgs_carefully(filesystems, efisys, default_boot_label, updated)
     logger.debug("Done configuring U-Boot for Raspberry Pi")
 
