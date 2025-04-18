@@ -97,10 +97,12 @@ class NodeSecrets:
 
     @property
     def sshhostprint(self) -> str:
+        """The SSH host key fingerprint for the node"""
         if not self._sshhostprint:
             subprocess.run(["ssh-keygen", "-y", "-f", self.sshhostkey], capture_output=True, check=True, text=True)
             self._sshhostprint = self.sshhostkey.read_text()
-        return self._sshhostprint
+        # The private key must end with a newline
+        return self._sshhostprint + "\n"
 
     def save_directory(self, outdir: Path):
         for f in self.files:
@@ -214,7 +216,8 @@ class NodeSecrets:
 
         # SSH key retrieval
         node_ssh = tksecrets.gopass_get(f"psyopsOS/sshhostkeys/{nodename}")
-        nodefiles.sshhostkey.open("w").write(node_ssh)
+        # The private key must end with a newline
+        nodefiles.sshhostkey.open("w").write(node_ssh + "\n")
         nodefiles._sshhostprint = nodemod.node.ssh_host_fingerprint
 
         # Nebula key retrieval
