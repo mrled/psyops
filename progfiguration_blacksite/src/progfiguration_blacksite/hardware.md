@@ -236,7 +236,7 @@ modules=loop,squashfs,sd-mod,usb-storage console=serial0,115200 console=tty1 log
 
 ```ini
 kernel=boot/vmlinuz-rpi
-initramfs boot/initramfs-rpi
+initramfs=boot/initramfs-rpi
 arm_64bit=1
 arm_boost=1
 gpu_mem=16
