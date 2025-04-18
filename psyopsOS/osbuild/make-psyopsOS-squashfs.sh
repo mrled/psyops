@@ -248,7 +248,6 @@ psyops_overlay_install root root 0644 etc/conf.d/sshd
 
 psyops_overlay_install root root 0644 etc/issue
 psyops_overlay_install root root 0644 etc/motd
-psyops_overlay_install root root 0644 etc/inittab
 
 install -o root -g root -m 0755 -d "$squashroot"/etc/psyopsOS "$squashroot"/etc/psyopsOS/status
 install -o root -g root -m 0644 "$psyops_root"/psyopsOS/minisign.pubkey "$squashroot"/etc/psyopsOS/minisign.pubkey
