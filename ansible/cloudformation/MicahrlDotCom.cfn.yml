@@ -325,6 +325,11 @@ Resources:
           TTL: 60
           ResourceRecords: ["192.168.1.144"]
 
+        - Name: wirefield.home.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["192.168.1.109"]
+
         # Management interfacess
         - Name: edison.home.micahrl.com.
           Type: A
