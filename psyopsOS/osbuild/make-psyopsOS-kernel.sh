@@ -10,6 +10,7 @@ apk_repos_file=/etc/apk/repositories
 features=
 initdir=
 kflavor=lts
+dtbs_dir=
 outdir=
 
 usage() {
@@ -31,6 +32,8 @@ ARGUMENTS:
                             Default: "$apk_repos_file"
     --kernel-flavor         Kernel flavor to use
                             Default: "$kflavor"
+    --dtbs-dir              If passed, include this directory in the initramfs
+                            Default: none
     --mkinitfs-features     Generate initrd with these mkinitfs features
                             Default: get from mkinitfs.conf
     --outdir                Output directory (required)
@@ -63,6 +66,7 @@ while test $# -gt 0; do
     --apk-local-repo) apk_local_repo="$2"; shift 2;;
     --apk-repositories) apk_repos_file="$2"; shift 2;;
     --kernel-flavor) kflavor="$2"; shift 2;;
+    --dtbs-dir) dtbs_dir="$2"; shift 2;;
     --mkinitfs-features) features="$2"; shift 2;;
     --outdir) outdir="$2"; shift 2;;
     --psyopsOS-init-dir) initdir="$2"; shift 2;;
@@ -199,23 +203,6 @@ make_modloop() {
 # TODO: include dtbo files as well?
 include_dtb() {
     _outdir=$1
-    dtbdir=
-    # TODO: Why do we look in these directories? Are some of these deprecated?
-    for possible_dtbdir in \
-        $initramroot/boot/dtbs-$kflavor \
-        $initramroot/usr/lib/linux-$kvers \
-        $initramroot/boot
-    do
-        if test -d "$possible_dtbdir"; then
-            dtbdir="$possible_dtbdir"
-            echo "Found possible dtbdir: $dtbdir" >&2
-            break
-        fi
-    done
-    if test -z "$dtbdir"; then
-        echo "No dtbdir found; assume our platform doesn't need it" >&2
-        return 0
-    fi
 
     # The upstream update-kernel script differentiates between RPi and non-RPi in this way.
     # However, I think that if we boot GRUB on the RPi, this may not be important?
@@ -228,7 +215,7 @@ include_dtb() {
     _opwd=$PWD
     mkdir -p "$_dtb"
     _dtb=$(realpath "$_dtb")
-    cd "$dtbdir"
+    cd "$dtbs_dir"
 
     # Using find|cpio this way copies just the dtb/dtbo files to the destination directory
     # and preserves directory structure
@@ -286,6 +273,8 @@ mkinitfs -s $modsig_path -i "$patchedinit" -q -b $initramroot -F "$features" -o 
 
 mv $modloopstage/* "$outdir"
 
-include_dtb "$outdir"
+if test "$dtbs_dir"; then
+    include_dtb "$outdir"
+fi
 
 echo "$script finished successfully"

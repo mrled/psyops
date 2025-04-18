@@ -92,6 +92,11 @@ def make_kernel(builder: AlpineDockerBuilder):
     """Make a psyopsOS kernel, initramfs, etc for disk images (not ISOs)"""
     all_repos, psyopsOS_only_repo = generate_apk_repositories_files(tkconfig.alpine_version)
 
+    extra_args = ""
+
+    if builder.architecture.name == "aarch64":
+        extra_args = " --kernel-flavor rpi --dtbs-dir /boot/overlays"
+
     with builder:
         # Add the local copy of the psyopsOS repository to the list of repositories in the container.
         # This means that when we do "apk cache download" below,
@@ -118,7 +123,7 @@ def make_kernel(builder: AlpineDockerBuilder):
             "sudo apk cache download alpine-base linux-lts linux-firmware",
             # We don't have to pass the architecture to this script,
             # because we should be running in a container with the right architecture.
-            f"sudo -E {make_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {in_container_osdir}",
+            f"sudo -E {make_kernel_script} --apk-repositories {repositories_file} --apk-local-repo {in_container_local_repo_path} --psyopsOS-init-dir {initdir} --outdir {in_container_osdir} {extra_args}",
         ]
         builder.run_docker(in_container_build_cmd)
         if arch_artifacts.osdir_path.exists():
