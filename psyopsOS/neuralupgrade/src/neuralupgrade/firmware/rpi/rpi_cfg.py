@@ -46,6 +46,7 @@ setenv default_boot_label {default_boot_label}
 setenv kernel_addr_r {kernel_addr_r}
 setenv ramdisk_addr_r {ramdisk_addr_r}
 setenv dtb_addr_r {dtb_addr_r}
+setenv dtbo_1_addr_r {dtbo_1_addr_r}
 
 # Kernel commandline parameters to each A/B side
 setenv kernel_params "{kernel_params}"
@@ -69,7 +70,9 @@ echo ""
 # exit
 
 # Initialize USB
+echo "psyopsOS: Initializing USB..."
 usb start
+echo "psyopsOS: USB initialized"
 
 # Clear previous bootmenu
 # TODO: is this really necessary?
@@ -82,6 +85,7 @@ done
 setenv probe_devtypes "mmc usb"
 # setenv probe_devtypes "mmc usb sata scsi"
 
+echo "psyopsOS: Probing for boot.cmd on ${probe_devtypes} devices..."
 setenv bootdev_type ""
 setenv bootdev_num ""
 for devtype in ${probe_devtypes}; do
@@ -125,7 +129,9 @@ if test "${bootdev_type}" = ""; then
     # Drop into the U-Boot shell
     exit
 fi
+echo "psyopsOS: Found bootable device: ${bootdev_type} ${bootdev_num}"
 
+echo "psyopsOS: Probing for psyopsOS A and B partitions..."
 setenv psyopsOS_A_partnum ""
 setenv psyopsOS_B_partnum ""
 for partnum in 2 3 4 5 6 7 8; do
@@ -146,6 +152,7 @@ if test "${psyopsOS_A_partnum}" = "" && test "${psyopsOS_B_partnum}" = ""; then
     # Drop into the U-Boot shell
     exit
 fi
+echo "psyopsOS: Finished probing for psyopsOS A and B partitions"
 
 # Fallback error message if default_boot_label is not found
 setenv default_bootcmd "echo "ERROR: Default boot label ${default_boot_label} not found! Exiting to U-Boot shell..."; exit;"
@@ -175,26 +182,43 @@ setexpr menu_index ${menu_index} + 1
 setenv bootmenu_${menu_index} "Reboot=reset"
 setexpr menu_index ${menu_index} + 1
 
+dtb_file_path="/dtbs/bcm2711-rpi-4-b.dtb"
+dtbo_file_path="/dtbs/overlays/disable-bt.dtbo"
+
 # Boot logic for psyopsOS_A
 setenv boot_psyopsOS_A "
-  echo Booting psyopsOS_A...;
-  setenv bootargs \"root=LABEL=${psyopsOS_A_label} ${kernel_params}\" &&
+  echo Booting psyopsOS-A...;
+  setenv bootargs \"psyopsos=psyopsOS-A ${kernel_params}\" &&
   ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_A_partnum} ${kernel_addr_r} /kernel &&
   ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_A_partnum} ${ramdisk_addr_r} /initramfs &&
-  setenv initrdsize ${filesize} &&
-  ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_A_partnum} ${dtb_addr_r} /boot/dtbs-lts/broadcom/bcm2711-rpi-4-b.dtb &&
-  booti ${kernel_addr_r} ${ramdisk_addr_r}:${initrdsize} ${dtb_addr_r}
+  setenv initrdsize \${filesize} &&
+  ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_A_partnum} ${dtb_addr_r} ${dtb_file_path} &&
+  fdt addr ${dtb_addr_r} &&
+  fdt resize &&
+  ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_A_partnum} ${dtbo_1_addr_r} ${dtbo_file_path} &&
+  fdt apply ${dtbo_1_addr_r} &&
+  fdt print /soc/serial@7e201000 &&
+  fdt print /aliases &&
+  echo "Booting kernel..." &&
+  booti ${kernel_addr_r} ${ramdisk_addr_r}:\${initrdsize} ${dtb_addr_r}
 "
 
 # Boot logic for psyopsOS_B
 setenv boot_psyopsOS_B "
-  echo Booting psyopsOS_B...;
-  setenv bootargs \"root=LABEL=${psyopsOS_B_label} ${kernel_params}\" &&
+  echo Booting psyopsOS-B...;
+  setenv bootargs \"psyopsos=psyopsOS-B ${kernel_params}\" &&
   ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_B_partnum} ${kernel_addr_r} /kernel &&
   ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_B_partnum} ${ramdisk_addr_r} /initramfs &&
-  setenv initrdsize ${filesize} &&
-  ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_B_partnum} ${dtb_addr_r} /boot/dtbs-lts/broadcom/bcm2711-rpi-4-b.dtb &&
-  booti ${kernel_addr_r} ${ramdisk_addr_r}:${initrdsize} ${dtb_addr_r}
+  setenv initrdsize \${filesize} &&
+  ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_B_partnum} ${dtb_addr_r} ${dtb_file_path} &&
+  fdt addr ${dtb_addr_r} &&
+  fdt resize &&
+  ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_B_partnum} ${dtbo_1_addr_r} ${dtbo_file_path} &&
+  fdt apply ${dtbo_1_addr_r} &&
+  fdt print /soc/serial@7e201000 &&
+  fdt print /aliases &&
+  echo "Booting kernel..." &&
+  booti ${kernel_addr_r} ${ramdisk_addr_r}:\${initrdsize} ${dtb_addr_r}
 "
 
 # Timeout and start menu
@@ -204,6 +228,12 @@ echo "Will boot into ${default_boot_label} in ${bootmenu_delay} seconds..."
 # bootmenu
 # run default_bootcmd
 
+echo "Dummy print bootmenu (not necessary once we rebuild U-Boot with CONFIG_CMD_BOOTMENU enabled):"
+for i in 0 1 2 3 4; do
+    printenv bootmenu_${i}
+done
+
+echo "${boot_psyopsOS_A}"
 run boot_psyopsOS_A
 
 """
@@ -246,10 +276,11 @@ def rpi_boot_cmd(
     updated: Optional[datetime.datetime] = None,
     kernel_params_append: str = "",
     # The following are not meant to be changed normally
-    kernel_params_base: str = "earlyprintk=dbgp console=tty0 console=serial0,115200 loglevel=7",
+    kernel_params_base: str = "earlyprintk=dbgp console=tty0 console=ttyAMA0,115200 loglevel=7",
     kernel_addr_r: str = "0x80200000",
     ramdisk_addr_r: str = "0x82200000",
     dtb_addr_r: str = "0x8a200000",
+    dtbo_1_addr_r: str = "0x8a100000",
 ) -> str:
     """Return a U-Boot boot.cmd file for psyopsOS.
 
@@ -282,6 +313,7 @@ def rpi_boot_cmd(
                             As of 2025, the Raspberry Pi ramdisks I'm building are about 55MB.
                             0x8a200000 is 128MB from the ramdisk start address:
                             (0x8a200000 - 0x82200000) / 0x100000 = 128.0
+    dtbo_1_addr_r:          The address of the first device tree overlay in RAM.
     """
     if updated is None:
         updated = datetime.datetime.now()
@@ -294,6 +326,7 @@ def rpi_boot_cmd(
             kernel_addr_r=kernel_addr_r,
             ramdisk_addr_r=ramdisk_addr_r,
             dtb_addr_r=dtb_addr_r,
+            dtbo_1_addr_r=dtbo_1_addr_r,
             kernel_params=f"{kernel_params_base} {kernel_params_append}".strip(),
         ),
         _boot_cmd_body,

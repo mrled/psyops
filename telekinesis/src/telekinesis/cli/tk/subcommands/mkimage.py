@@ -95,7 +95,7 @@ def make_kernel(builder: AlpineDockerBuilder):
     extra_args = ""
 
     if builder.architecture.name == "aarch64":
-        extra_args = " --kernel-flavor rpi --dtbs-dir /boot/overlays"
+        extra_args = " --kernel-flavor rpi --dtbs-dir /boot"
 
     with builder:
         # Add the local copy of the psyopsOS repository to the list of repositories in the container.
@@ -251,13 +251,22 @@ def make_ostar(architecture: Architecture):
         "initramfs",
         "System.map",
         "config",
-        "boot",  # Contains DTB files if the platform requires, otherwise empty
+    ]
+    optional_items = [
+        # Contains DTB files for some platforms if the platform requires
+        "dtbs",
     ]
     # We don't compress because the big files - kernel/squashfs/initramfs - are already compressed
     # Compressing with "w:gz" saved about 4MB out of 630MB as of 20231215
     with tarfile.open(arch_artifacts.ostar_path.as_posix(), "w") as tar:
         for item in items:
             tar.add(arch_artifacts.osdir_path / item, arcname=item)
+    with tarfile.open(arch_artifacts.ostar_path.as_posix(), "a") as tar:
+        for item in optional_items:
+            item_path = arch_artifacts.osdir_path / item
+            if not item_path.exists():
+                continue
+            tar.add(item_path, arcname=item)
 
     with open(arch_artifacts.osdir_path / "squashfs.alpine_version", "r") as f:
         alpine_version = f.read().strip()

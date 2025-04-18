@@ -198,32 +198,6 @@ make_modloop() {
     openssl dgst -sha1 -sign "$PACKAGER_PRIVKEY" -out "$modsig_path" "$modloopstage/$modimg"
 }
 
-# Include the device tree blobs (used in e.g. ARM).
-# The flow here comes from Alpine scripts.
-# TODO: include dtbo files as well?
-include_dtb() {
-    _outdir=$1
-
-    # The upstream update-kernel script differentiates between RPi and non-RPi in this way.
-    # However, I think that if we boot GRUB on the RPi, this may not be important?
-    # TODO: test RPi booting with this disabled.
-    case "$kflavor" in
-        rpi*) _dtb="$_outdir/" ;;
-        *)    _dtb="$_outdir/boot/dtbs-$kflavor" ;;
-    esac
-
-    _opwd=$PWD
-    mkdir -p "$_dtb"
-    _dtb=$(realpath "$_dtb")
-    cd "$dtbs_dir"
-
-    # Using find|cpio this way copies just the dtb/dtbo files to the destination directory
-    # and preserves directory structure
-    find -type f \( -name "*.dtb" -o -name "*.dtbo" \) | cpio -pudm "$_dtb"
-
-    cd "$_opwd"
-}
-
 # Set up the initramfs root filesystem
 setup_initramfs_root() {
     # Creates APKINDEX etc in the initramroot
@@ -273,8 +247,13 @@ mkinitfs -s $modsig_path -i "$patchedinit" -q -b $initramroot -F "$features" -o 
 
 mv $modloopstage/* "$outdir"
 
+# If we were passed a directory of dtbs, copy them to the output directory
 if test "$dtbs_dir"; then
-    include_dtb "$outdir"
+    _outdtbs="$(realpath "$outdir/dtbs")"
+    _outoverlays="$_outdtbs/overlays"
+    mkdir -p "$_outdtbs" "$_outoverlays"
+    cp -a "$dtbs_dir"/*.dtb "$_outdtbs"
+    cp -a "$dtbs_dir"/overlays/*.dtbo "$_outoverlays"
 fi
 
 echo "$script finished successfully"
