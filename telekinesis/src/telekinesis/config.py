@@ -129,7 +129,7 @@ class TelekinesisConfig:
             self.architecture = arch
             """The architecture for these artifacts"""
 
-            # TODO: some of the downloaded things are x86_64-specific
+            # TODO: some of the downloaded things are architecture-specific
 
             self.memtest_zipfile = self.archroot / "memtest.zip"
             """The path to the memtest86+ zipfile"""
@@ -154,6 +154,24 @@ class TelekinesisConfig:
             """The path to the UEFI shell image relative to the root of the UefiShell.iso file"""
             self.uefishell_extracted_bin = self.ovmf_extracted_path / "efi/boot/bootx64.efi"
             """The path to the extracted UEFI shell binary from the image inside ISO"""
+
+            self.rpi_firmware_version = "1.20250326"
+            """The version of the Raspberry Pi firmware"""
+            self.rpi_firmware_url = f"https://github.com/raspberrypi/firmware/releases/download/1.20250326/raspi-firmware_{self.rpi_firmware_version}.orig.tar.xz"
+            """The URL to download the Raspberry Pi firmware from"""
+            # self.rpi_firmware_zip_url = (
+            #     f"https://codeload.github.com/raspberrypi/firmware/zip/refs/tags/{self.rpi_firmware_version}"
+            # )
+            # """The URL to download the Raspberry Pi firmware zip file of the repo contents
+            # (Contains dtb and dtbo files too.)
+            # """
+            self.rpi_firmware_tarball = self.archroot / f"raspi-firmware_{self.rpi_firmware_version}.orig.tar.xz"
+            """The path to the downloaded Raspberry Pi firmware tarball"""
+            self.rpi_firmware_extracted = self.archroot / f"raspi-firmware-{self.rpi_firmware_version}"
+            """The path to the extracted Raspberry Pi firmware files"""
+
+            self.uboot_path = self.archroot / "u-boot"
+            """The path to the U-Boot files"""
 
             self.osdir_path = self.archroot / "psyopsOS.dir"
             """The path to the OS directory.

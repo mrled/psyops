@@ -25,7 +25,7 @@ from telekinesis.cli.tk.subcommands.buildpkg import (
 from telekinesis.cli.tk.subcommands.mkimage import (
     copy_esptar_to_deaddrop,
     copy_ostar_to_deaddrop,
-    make_esptar,
+    make_boot_tar,
     make_boot_image,
     make_kernel,
     make_ostar,
@@ -560,7 +560,8 @@ def main_impl():
                     copy_ostar_to_deaddrop(arch)
             if "efisystar" in parsed.stages:
                 for arch in architectures:
-                    make_esptar(arch)
+                    with getbldcm(arch) as builder:
+                        make_boot_tar(builder)
             if "efisystar-dd" in parsed.stages:
                 for arch in architectures:
                     copy_esptar_to_deaddrop(arch)

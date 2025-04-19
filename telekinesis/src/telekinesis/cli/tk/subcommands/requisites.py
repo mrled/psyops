@@ -1,6 +1,7 @@
 """Artifact prerequisites"""
 
 import subprocess
+import tarfile
 import zipfile
 
 from telekinesis.config import tkconfig
@@ -60,3 +61,12 @@ def get_x64_memtest():
     if not artifacts.memtest64efi.exists():
         with zipfile.ZipFile(artifacts.memtest_zipfile, "r") as zip_ref:
             zip_ref.extract("memtest64.efi", artifacts.archroot)
+
+
+def get_rpi_firmware():
+    """Download the Raspberry Pi firmware"""
+    artifacts = tkconfig.arch_artifacts["aarch64"]
+
+    rget(artifacts.rpi_firmware_url, artifacts.rpi_firmware_tarball)
+    with tarfile.open(artifacts.rpi_firmware_tarball, "r:xz") as tar:
+        tar.extractall(artifacts.archroot)

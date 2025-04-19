@@ -1,7 +1,5 @@
 import datetime
-import glob
 import os
-import shutil
 import traceback
 from typing import Optional
 from venv import logger
@@ -29,15 +27,19 @@ class RaspberryPiUBootBootloader(Firmware):
         verify: bool = True,
         verify_pubkey: Optional[str] = None,
     ):
-        """Update the bootloader configuration."""
-        return install_rpi_uboot(
-            filesystems,
-            efisys,
-            default_boot_label,
+        """Update the bootloader configuration.
+
+        Needs the u-boot-tools package to be installed.
+        """
+        updated = datetime.datetime.now()
+        write_rpi_cfgs_carefully(filesystems, efisys, default_boot_label, updated)
+        self.apply_tarball(
+            efisys=efisys,
             tarball=tarball,
             verify=verify,
             verify_pubkey=verify_pubkey,
         )
+        logger.debug("Done configuring U-Boot for Raspberry Pi")
 
     def read_default_boot_label(self, fw_mountpoint: str) -> str:
         """Read the default boot label from the bootloader configuration."""
@@ -51,52 +53,6 @@ class RaspberryPiUBootBootloader(Firmware):
     def get_partition_metadata(self, filesystems: Filesystems) -> NeuralPartitionFirmware:
         """Get the firmware partition metadata."""
         return get_rpi_partition_metadata(filesystems)
-
-
-def install_rpi_uboot(
-    filesystems: Filesystems,
-    efisys: str,
-    default_boot_label: str,
-    tarball: Optional[str] = None,
-    verify: bool = True,
-    verify_pubkey: Optional[str] = None,
-):
-    """Populate the Raspberry Pi boot partition with the necessary files
-
-    Expects to be run from an Alpine system for the ARM architecture with the following packages installed:
-    - u-boot-raspberrypi: Contains the U-Boot binary that we copy to the boot partition
-    - uboot-tools: Contains the mkimage tool that we use to create the U-Boot image
-    - raspberrypi-bootloader: Contains the bootloader files that we copy to the boot partition
-
-    Currently we don't support any extra programs or a tarbarll for Raspberry Pi systems,
-    so the tarball, verify, and verify_pubkey options are ignored.
-    """
-    updated = datetime.datetime.now()
-    for f in [
-        # U-Boot itself, from u-boot-raspberrypi package
-        "/usr/share/u-boot/rpi_arm64/u-boot.bin",
-        # Raspberry Pi firmware, from raspberrypi-bootloader package
-        "/boot/start4.elf",
-        "/boot/fixup4.dat",
-    ]:
-        shutil.copy(f, os.path.join(efisys, os.path.basename(f)))
-
-    # The relevant DTB is surprisingly REQUIRED for U-Boot, BEFORE the kernel loads.
-    # If it isn't present, U-Boot will not work at all, will not attempt to run its boot.scr file, anything.
-    # It must be present in the root of the boot partition.
-    # The overlays are also required for U-Boot --
-    # at least, the disable-bt overly must be present (and dtoverlay=disable-bt in config.txt)
-    # for the kernel to use the serial port after it boots.
-    # WARNING: I am not sure what happens if the U-Boot dtb and dtbo are different from the kernel dtb and dtbo.
-    for dtb in glob.glob("/boot/*.dtb"):
-        shutil.copy(dtb, os.path.join(efisys, os.path.basename(dtb)))
-    dst_overlays = os.path.join(efisys, "overlays")
-    os.makedirs(dst_overlays, exist_ok=True)
-    for dtbo in glob.glob("/boot/overlays/*.dtbo"):
-        shutil.copy(dtbo, os.path.join(dst_overlays, os.path.basename(dtbo)))
-
-    write_rpi_cfgs_carefully(filesystems, efisys, default_boot_label, updated)
-    logger.debug("Done configuring U-Boot for Raspberry Pi")
 
 
 def get_rpi_partition_metadata(filesystems: Filesystems) -> NeuralPartitionFirmware:

@@ -249,6 +249,10 @@ arm_boost=1
 # In theory this could be as low as 16 but 64 is more conservative
 gpu_mem=64
 
+# Use the dtb file that was built with U-Boot.
+# U-Boot can load a different one for the kernel in boot.cmd.
+device_tree=u-boot.dtb
+
 # Disable bluetooth, which uses the serial UART (?)
 # If the Raspberry Pi firmware loads the kernel directly (that is, if kernel= is set to a Linux binary),
 # this does TWO Things:
@@ -257,6 +261,7 @@ gpu_mem=64
 # If the firmware loads U-Boot (kernel=u-boot.bin), it doesn't load the overlay file,
 # and U-Boot will have to apply the disable-bt.dbto file itself.
 # However, it is STILL REQUIRED to properly configure the GPIO pins (I think this is "pin-mux" or "pinmux").
+# This overlay comes from the Raspberry Pi firmware project, NOT built with U-Boot.
 dtoverlay=disable-bt
 
 # Enable the UART in the GPIO pins

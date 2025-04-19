@@ -14,7 +14,7 @@ from telekinesis import minisign
 from telekinesis.alpine_docker_builder import AlpineDockerBuilder
 from telekinesis.architectures import Architecture
 from telekinesis.cli.tk.subcommands.buildpkg import build_neuralupgrade_pyz
-from telekinesis.cli.tk.subcommands.requisites import get_x64_memtest, get_x64_ovmf
+from telekinesis.cli.tk.subcommands.requisites import get_rpi_firmware, get_x64_memtest, get_x64_ovmf
 from telekinesis.config import tkconfig
 
 
@@ -215,12 +215,13 @@ def make_boot_image(
         psyopsesptar = None
         if architecture.name == "x86_64":
             fwtype = "x86_64_uefi"
-            psyopsesptar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.esptar_path.name)
-            extra_scriptargs += f" -E {psyopsesptar}"
         elif architecture.name == "aarch64":
             fwtype = "raspberrypi"
         if fwtype is None:
             raise RuntimeError(f"Unsupported architecture {architecture.name} for boot image")
+
+        psyopsesptar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.esptar_path.name)
+        extra_scriptargs += f" -E {psyopsesptar}"
 
         make_img_script = os.path.join(builder.in_container_psyops_checkout, "psyopsOS/osbuild/make-psyopsOS-img.sh")
         psyopsostar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.ostar_path.name)
@@ -299,7 +300,16 @@ def copy_ostar_to_deaddrop(architecture: Architecture):
     latest_sig.symlink_to(f"{metadata['filename']}.minisig")
 
 
-def make_esptar(architecture: Architecture):
+def make_boot_tar(builder: AlpineDockerBuilder):
+    """Make the boot tarball for the platform"""
+
+    if builder.architecture.name == "x86_64":
+        return make_x64_efi_boot_tar(builder)
+    elif builder.architecture.name == "aarch64":
+        return make_rpi4_boot_tar(builder)
+
+
+def make_x64_efi_boot_tar(builder: AlpineDockerBuilder):
     """Make an EFI system partition tarball
 
     The EFI system partition is installed by neuralupgrade,
@@ -307,7 +317,8 @@ def make_esptar(architecture: Architecture):
 
     This tarball contains some extra files like memtest and the EFI shell.
     """
-    build_date = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    architecture = builder.architecture
+    build_date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d-%H%M%S")
     arch_artifacts = tkconfig.arch_artifacts[architecture.name]
     tarball_file = arch_artifacts.esptar_versioned_fmt.format(arch=architecture.name, version=build_date)
     get_x64_ovmf()
@@ -337,6 +348,67 @@ def make_esptar(architecture: Architecture):
         for program in programs:
             tf.add(program.localpath, arcname=program.arcname)
         tf.add(arch_artifacts.esptar_manifest, arcname="manifest.json")
+    minisign.sign(arch_artifacts.esptar_path.as_posix(), trusted_comment=trusted_comment)
+
+
+def get_rpi4_uboot(builder: AlpineDockerBuilder):
+    """Get the Raspberry Pi 4 U-Boot binary"""
+    artifacts = tkconfig.arch_artifacts[builder.architecture.name]
+    with builder:
+        outdir = os.path.join(builder.in_container_arch_artifacts_dir, "u-boot")
+        in_container_cmd = [
+            f"mkdir -p {outdir}",
+            # The Alpine u-boot binary for the Raspberry Pi 4 in package u-boot-raspberrypi
+            f"cp /usr/share/u-boot/rpi_arm64/u-boot.bin {outdir}",
+            f"apk info u-boot-raspberrypi | head -n1 | sed 's/ .*//' > {outdir}/u-boot.version",
+            # The Linux kernel dtb and dtbo files required for U-Boot and VideoCore
+            # (the Pi GPU firmware that runs before U-Boot).
+            # From package linux-rpi.
+            # These are not necessarily the ones used by the psyopsOS kernel.
+            # U-Boot needs the dtb it was built with,
+            # which in this case is the one built for the Alpine linux-rpi kernel,
+            # and VideoCore needs the disable-bt overlay so we can set it in our config.txt,
+            # which is necessary to use the serial port after boot.
+            # The Linux kernel booted from A/B will use the dtb and any overlays
+            # found on the A/B partition, NOT THESE.
+            f"cp /boot/bcm2711-rpi-4-b.dtb {outdir}/u-boot.dtb",
+            f"mkdir -p {outdir}/overlays",
+            f"cp /boot/overlays/disable-bt.dtbo {outdir}/overlays/disable-bt.dtbo",
+            f"apk info linux-rpi | head -n1 | sed 's/ .*//' > {outdir}/dtbs-linux-rpi.version",
+        ]
+        builder.run_docker(in_container_cmd)
+
+
+def make_rpi4_boot_tar(builder: AlpineDockerBuilder):
+    """Make a Raspberry Pi 4 boot tarball
+
+    The Raspberry Pi boot partition is installed by neuralupgrade,
+    which handles installing GRUB and creating its config file.
+    """
+    arch = builder.architecture.name
+    build_date = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d-%H%M%S")
+    arch_artifacts = tkconfig.arch_artifacts[arch]
+    tarball_file = arch_artifacts.esptar_versioned_fmt.format(arch=arch, version=build_date)
+
+    get_rpi4_uboot(builder)
+
+    get_rpi_firmware()
+    rpifwboot = arch_artifacts.rpi_firmware_extracted / "boot"
+
+    uboot_version_file = arch_artifacts.uboot_path / "u-boot.version"
+    uboot_version = uboot_version_file.read_text().strip()
+    trusted_comment = f"type=psyopsOSBoot filename={tarball_file} uboot_version={uboot_version} rpi_firmware_version={arch_artifacts.rpi_firmware_version} version={build_date}"
+
+    with tarfile.open(arch_artifacts.esptar_path, "w") as tf:
+        tf.add(arch_artifacts.uboot_path / "u-boot.bin", arcname="u-boot.bin")
+        tf.add(arch_artifacts.uboot_path / "u-boot.dtb", arcname="u-boot.dtb")
+        tf.add(arch_artifacts.uboot_path / "overlays" / "disable-bt.dtbo", arcname="overlays/disable-bt.dtbo")
+        tf.add(arch_artifacts.uboot_path / "u-boot.version", arcname="u-boot.version")
+        tf.add(arch_artifacts.uboot_path / "dtbs-linux-rpi.version", arcname="u-boot.version")
+
+        tf.add(rpifwboot / "fixup4.dat", arcname="fixup4.dat")
+        tf.add(rpifwboot / "start4.elf", arcname="start4.elf")
+
     minisign.sign(arch_artifacts.esptar_path.as_posix(), trusted_comment=trusted_comment)
 
 
