@@ -1,9 +1,7 @@
 """GRUB bootloader"""
 
-import datetime
 import os
 import platform
-import shutil
 import subprocess
 import traceback
 from typing import Optional
@@ -14,7 +12,6 @@ from neuralupgrade.firmware.uefipc.grub_cfg import write_grub_cfg_carefully
 from neuralupgrade.filesystems import Filesystems
 from neuralupgrade.systemmetadata import NeuralPartitionFirmware
 from neuralupgrade.update_metadata import (
-    minisign_verify,
     parse_psyopsOS_neuralupgrade_info_comment,
     parse_trusted_comment,
     read_default_boot_label,
@@ -35,14 +32,16 @@ class UEFIPCGrubBootloader(Firmware):
         verify_pubkey: Optional[str] = None,
     ):
         """Update the bootloader configuration."""
-        configure_efisys(
-            filesystems=filesystems,
+        grub_install(efisys)
+        self.apply_tarball(
             efisys=efisys,
-            default_boot_label=default_boot_label,
             tarball=tarball,
             verify=verify,
             verify_pubkey=verify_pubkey,
         )
+        write_grub_cfg_carefully(filesystems, efisys, default_boot_label)
+        logger.debug("Done configuring efisys")
+        subprocess.run(["sync"], check=True)
 
     def read_default_boot_label(self, fw_mountpoint: str) -> str:
         """Read the default boot label from the bootloader configuration."""
@@ -58,18 +57,8 @@ class UEFIPCGrubBootloader(Firmware):
         return get_efi_partition_metadata(filesystems)
 
 
-# Note to self: we release efisys tarballs containing stuff like memtest, which can be extracted on top of an efisys that has grub-install already run on it
-def configure_efisys(
-    filesystems: Filesystems,
-    efisys: str,
-    default_boot_label: str,
-    tarball: Optional[str] = None,
-    verify: bool = True,
-    verify_pubkey: Optional[str] = None,
-):
-    """Populate the EFI system partition with the necessary files"""
-
-    updated = datetime.datetime.now()
+def grub_install(efisys: str):
+    """Run grub-install on the efisys filesystem."""
 
     machine = platform.machine()
     if machine == "x86_64":
@@ -95,37 +84,6 @@ def configure_efisys(
         )
     logger.debug(f"grub-install stdout: {grub_stdout}")
     logger.debug(f"grub-install stderr: {grub_stderr}")
-
-    if tarball:
-        if verify:
-            minisign_verify(tarball, pubkey=verify_pubkey)
-        logger.debug(f"Extracting efisys tarball {tarball} to {efisys}")
-        subprocess.run(
-            [
-                "tar",
-                # Ignore permissions as we're extracting to a FAT32 filesystem
-                "--no-same-owner",
-                "--no-same-permissions",
-                "--no-overwrite-dir",
-                "-x",
-                "-f",
-                tarball,
-                "-C",
-                efisys,
-            ],
-            check=True,
-        )
-        logger.debug(f"Finished extracting {tarball} to {efisys}")
-        minisig = tarball + ".minisig"
-        try:
-            shutil.copy(minisig, os.path.join(efisys, "psyopsESP.tar.minisig"))
-            logger.debug(f"Copied {minisig} to {efisys}/psyopsESP.tar.minisig")
-        except FileNotFoundError:
-            logger.warning(f"Could not find {minisig}, partition will not know its version")
-    subprocess.run(["sync"], check=True)
-
-    write_grub_cfg_carefully(filesystems, efisys, default_boot_label)
-    logger.debug("Done configuring efisys")
 
 
 def get_efi_partition_metadata(filesystems: Filesystems) -> NeuralPartitionFirmware:
