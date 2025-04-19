@@ -74,12 +74,6 @@ echo "psyopsOS: Initializing USB..."
 usb start
 echo "psyopsOS: USB initialized"
 
-# Clear previous bootmenu
-# TODO: is this really necessary?
-for i in 0 1 2 3 4 5; do
-    setenv bootmenu_${i}
-done
-
 # Probe for psyopsOS A and B partitions by their partition label.
 # Currently only look on mmc and usb devices because my only U-Boot platform is the Raspberry Pi.
 setenv probe_devtypes "mmc usb"
@@ -125,8 +119,7 @@ for devtype in ${probe_devtypes}; do
 done
 
 if test "${bootdev_type}" = ""; then
-    echo "ERROR: No bootable device found!"
-    # Drop into the U-Boot shell
+    echo "ERROR: No bootable device found! Dropping into U-Boot shell..."
     exit
 fi
 echo "psyopsOS: Found bootable device: ${bootdev_type} ${bootdev_num}"
@@ -148,45 +141,19 @@ done
 
 # Exit with an error if it can't find anything to boot
 if test "${psyopsOS_A_partnum}" = "" && test "${psyopsOS_B_partnum}" = ""; then
-    echo "ERROR: No psyopsOS partitions found!"
-    # Drop into the U-Boot shell
+    echo "ERROR: No psyopsOS partitions found! Dropping into U-Boot shell..."
     exit
 fi
 echo "psyopsOS: Finished probing for psyopsOS A and B partitions"
 
-# Fallback error message if default_boot_label is not found
-setenv default_bootcmd "echo "ERROR: Default boot label ${default_boot_label} not found! Exiting to U-Boot shell..."; exit;"
-
-# Boot commands for each label
-setenv menu_index 0
-if test "${psyopsOS_A_partnum}" != ""; then
-    setenv bootmenu_${menu_index} "${psyopsOS_A_label}=run boot_psyopsOS_A"
-    if test "${default_boot_label}" = "${psyopsOS_A_label}"; then
-        setenv default_bootcmd "run boot_psyopsOS_A"
-    fi
-    setexpr menu_index ${menu_index} + 1
-fi
-if test "${psyopsOS_B_partnum}" != ""; then
-    setenv bootmenu_${menu_index} "${psyopsOS_B_label}=run boot_psyopsOS_B"
-    if test "${default_boot_label}" = "${psyopsOS_B_label}"; then
-        setenv default_bootcmd "run boot_psyopsOS_B"
-    fi
-    setexpr menu_index ${menu_index} + 1
-fi
-
-# Other built-in U-Boot boot commands
-setenv bootmenu_${menu_index} "Board Information=bdinfo"
-setexpr menu_index ${menu_index} + 1
-setenv bootmenu_${menu_index} "U-Boot Shell=exit"
-setexpr menu_index ${menu_index} + 1
-setenv bootmenu_${menu_index} "Reboot=reset"
-setexpr menu_index ${menu_index} + 1
-
+# Location for the dtb and dtbo files for the kernel, relative to the A/B partitions.
+# (Remember that U-Boot has its own dtb and dtbo files in the boot partition,
+# which may be different versions.)
 dtb_file_path="/dtbs/bcm2711-rpi-4-b.dtb"
 dtbo_file_path="/dtbs/overlays/disable-bt.dtbo"
 
 # Boot logic for psyopsOS_A
-setenv boot_psyopsOS_A "
+setenv boota "
   echo Booting psyopsOS-A...;
   setenv bootargs \"psyopsos=psyopsOS-A ${kernel_params}\" &&
   ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_A_partnum} ${kernel_addr_r} /kernel &&
@@ -204,7 +171,7 @@ setenv boot_psyopsOS_A "
 "
 
 # Boot logic for psyopsOS_B
-setenv boot_psyopsOS_B "
+setenv bootb "
   echo Booting psyopsOS-B...;
   setenv bootargs \"psyopsos=psyopsOS-B ${kernel_params}\" &&
   ext4load ${bootdev_type} ${bootdev_num}:${psyopsOS_B_partnum} ${kernel_addr_r} /kernel &&
@@ -220,21 +187,33 @@ setenv boot_psyopsOS_B "
   echo "Booting kernel..." &&
   booti ${kernel_addr_r} ${ramdisk_addr_r}:\${initrdsize} ${dtb_addr_r}
 "
+# Make due with this message in lieu of bootmenu support,
+# which Alpine Linux U-Boot doesn't include.
+echo "psyopsOS: Ready to boot"
+echo ""
+echo "Press ctrl-c to cancel and drop into U-Boot shell"
+echo "Once in the shell:"
+echo "  run boota:      Boot psyopsOS-A"
+echo "  run bootb:      Boot psyopsOS-B"
+echo "  bdinfo:         Show board information"
+echo "  reset:          Reboot the board"
+echo ""
+echo "Will boot into ${default_boot_label} in 5 seconds..."
+sleep 5
 
-# Timeout and start menu
-setenv bootmenu_delay 5
-echo "Will boot into ${default_boot_label} in ${bootmenu_delay} seconds..."
-# TODO: MUST REBUILD U-BOOT TO ENABLE CONFIG_CMD_BOOTMENU
-# bootmenu
-# run default_bootcmd
-
-echo "Dummy print bootmenu (not necessary once we rebuild U-Boot with CONFIG_CMD_BOOTMENU enabled):"
-for i in 0 1 2 3 4; do
-    printenv bootmenu_${i}
-done
-
-echo "${boot_psyopsOS_A}"
-run boot_psyopsOS_A
+# Boot commands for each label
+if test "${psyopsOS_A_partnum}" != ""; then
+    if test "${default_boot_label}" = "${psyopsOS_A_label}"; then
+        run boota
+    fi
+fi
+if test "${psyopsOS_B_partnum}" != ""; then
+    if test "${default_boot_label}" = "${psyopsOS_B_label}"; then
+        run bootb
+    fi
+fi
+echo "ERROR: Default boot label ${default_boot_label} not found! Dropping into U-Boot shell..."
+exit
 
 """
 
