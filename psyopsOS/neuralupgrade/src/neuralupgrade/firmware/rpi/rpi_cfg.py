@@ -61,7 +61,7 @@ exit
 """
 
 # A string, with no variables, that uses the variables set in the header.
-_boot_cmd_body = """\
+_boot_cmd_body = r"""\
 echo "Welcome to psyopsOS. U-Boot configuration last updated: ${last_updated}"
 echo ""
 
