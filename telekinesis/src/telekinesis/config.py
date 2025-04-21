@@ -207,7 +207,7 @@ class TelekinesisConfig:
 
     # Class variables
 
-    alpine_version = "3.20"
+    alpine_version = "3.21"
     """The version of Alpine to use"""
 
     psyopsroot = Path(__file__).parent.parent.parent.parent
