@@ -178,8 +178,9 @@ make_modloop() {
     fi
 
     # include bluetooth firmware in modloop
+    find "$initramroot"/lib/firmware
     if [ -e "$initramroot"/lib/modules/*/kernel/drivers/bluetooth/btbcm.ko* ]; then
-        for _btfw in "$initramroot"/lib/firmware/brcm/*.hcd; do
+        for _btfw in "$initramroot"/lib/firmware/brcm/*.hcd.*; do
             install -pD "$_btfw" \
                 "$modloop"/modules/firmware/brcm/"${_btfw##*/}"
         done
