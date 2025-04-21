@@ -6,6 +6,8 @@ rundate="$(date +%Y%m%d-%H%M%S)"
 exec >"/var/log/postboot.$rundate"
 exec 2>&1
 
+ln -sf /var/log/postboot.$rundate /var/log/postboot.latest
+
 # Make a logger function that also logs to the serial port
 # Useful if we cannot log in after boot when debugging
 logyell() {
