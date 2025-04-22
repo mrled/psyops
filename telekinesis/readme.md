@@ -115,7 +115,7 @@ from telekinesis.cli.tk import makeparser
 cog.outl(get_argparse_help_string("tk", makeparser(prog="tk")))
 ]]]-->
 > tk --help
-usage: tk [-h] [--debug] [--verbose] [--architecture ARCHITECTURE]
+usage: tk [-h] [--debug] [--verbose] [--platform PLATFORM]
           {showconfig,cog,deaddrop,builder,mkimage,buildpkg,deployos,vm,psynet,signify}
           ...
 
@@ -141,9 +141,8 @@ options:
   --debug, -d           Open the debugger if an unhandled exception is
                         encountered.
   --verbose, -v         Print more information about what is happening.
-  --architecture ARCHITECTURE
-                        The architecture(s) to build for. Default:
-                        x86_64,aarch64.
+  --platform PLATFORM   The platform(s) to build for. Default:
+                        x86_64-uefi,aarch64-rpi4uboot.
 
 ________________________________________________________________________
 

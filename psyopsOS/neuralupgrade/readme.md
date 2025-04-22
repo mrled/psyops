@@ -89,19 +89,21 @@ You can see output on machines that are not running psyopsOS by using the `--moc
 <!--[[[cog
 import io
 from contextlib import redirect_stdout
+from os.path import abspath, dirname, join
 import cog
 from neuralupgrade.cmd import main_implementation
 
+scenario = join(dirname(abspath(cog.inFile)), "tests/data/scenarios/ab_same")
 command = [
   "neuralupgrade",
-  "--fwtype=x86_64_uefi",
+  "--fwtype=x86_64-uefi",
   "--booted-mock=psyopsOS-A",
   "--efisys-mock",
-  "--efisys-mountpoint=./tests/data/scenarios/ab_same/efisys",
+  f"--efisys-mountpoint={scenario}/efisys",
   "--a-mock",
-  "--a-mountpoint=./tests/data/scenarios/ab_same/a",
+  f"--a-mountpoint={scenario}/a",
   "--b-mock",
-  "--b-mountpoint=./tests/data/scenarios/ab_same/b",
+  f"--b-mountpoint={scenario}/b",
   "show"
 ]
 f = io.StringIO()
@@ -113,21 +115,21 @@ cog.out(f"```text\n{promptcmd}\n{cmdout}\n```\n")
 ]]]-->
 ```text
 user@host> neuralupgrade \
-    --fwtype=x86_64_uefi \
+    --fwtype=x86_64-uefi \
     --booted-mock=psyopsOS-A \
     --efisys-mock \
-    --efisys-mountpoint=./tests/data/scenarios/ab_same/efisys \
+    --efisys-mountpoint=/Volumes/DataDisk/mrldata/Repositories/psyops/psyopsOS/neuralupgrade/tests/data/scenarios/ab_same/efisys \
     --a-mock \
-    --a-mountpoint=./tests/data/scenarios/ab_same/a \
+    --a-mountpoint=/Volumes/DataDisk/mrldata/Repositories/psyops/psyopsOS/neuralupgrade/tests/data/scenarios/ab_same/a \
     --b-mock \
-    --b-mountpoint=./tests/data/scenarios/ab_same/b \
+    --b-mountpoint=/Volumes/DataDisk/mrldata/Repositories/psyops/psyopsOS/neuralupgrade/tests/data/scenarios/ab_same/b \
     show
 system:
     a:
         fs:
             label: psyopsOS-A
             device: /dev/mock/psyopsOS-A
-            mountpoint: ./tests/data/scenarios/ab_same/a
+            mountpoint: /Volumes/DataDisk/mrldata/Repositories/psyops/psyopsOS/neuralupgrade/tests/data/scenarios/ab_same/a
             mockmount: True
         metadata:
             running: False
@@ -144,7 +146,7 @@ system:
         fs:
             label: psyopsOS-B
             device: /dev/mock/psyopsOS-B
-            mountpoint: ./tests/data/scenarios/ab_same/b
+            mountpoint: /Volumes/DataDisk/mrldata/Repositories/psyops/psyopsOS/neuralupgrade/tests/data/scenarios/ab_same/b
             mockmount: True
         metadata:
             running: False
@@ -161,7 +163,7 @@ system:
         fs:
             label: PSYOPSOSEFI
             device: /dev/mock/PSYOPSOSEFI
-            mountpoint: ./tests/data/scenarios/ab_same/efisys
+            mountpoint: /Volumes/DataDisk/mrldata/Repositories/psyops/psyopsOS/neuralupgrade/tests/data/scenarios/ab_same/efisys
             mockmount: True
         metadata:
             type: psyopsESP
@@ -208,7 +210,7 @@ usage: neuralupgrade [-h] [--debug] [--verbose] [--no-verify] [--pubkey PUBKEY]
                      [--b-mountpoint B_MOUNTPOINT] [--b-label B_LABEL]
                      [--b-mock] [--update-tmpdir UPDATE_TMPDIR]
                      [--booted-mock BOOTED_MOCK]
-                     [--fwtype {x86_64_uefi,raspberrypi}]
+                     [--fwtype {x86_64-uefi,aarch64-rpi4uboot}]
                      [--repository REPOSITORY]
                      [--psyopsOS-filename-format PSYOPSOS_FILENAME_FORMAT]
                      [--psyopsESP-filename-format PSYOPSESP_FILENAME_FORMAT]
@@ -268,9 +270,10 @@ Device/mountpoint override options:
                         Temporary directory for update downloads
   --booted-mock BOOTED_MOCK
                         Mock the booted side, either 'a' or 'b'
-  --fwtype {x86_64_uefi,raspberrypi}
-                        Firmware type to use, one of: x86_64_uefi, raspberrypi;
-                        if not present, detect current host firmware
+  --fwtype {x86_64-uefi,aarch64-rpi4uboot}
+                        Firmware type to use, one of: x86_64-uefi,
+                        aarch64-rpi4uboot; if not present, detect current host
+                        firmware
 
 Repository options:
   --repository REPOSITORY
