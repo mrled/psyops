@@ -407,7 +407,7 @@ def makeparser(prog=None):
     return parser
 
 
-def main_impl():
+def main_impl() -> None:
     """Top level program logic for the `tk` command"""
     parser = makeparser()
     parsed = parser.parse_args()
@@ -594,7 +594,7 @@ def main_impl():
         # TODO: handle architecture
         if len(architectures) > 1:
             parser.error("Can't run multiple VMs at once")
-        arch: Architecture = architectures[0]
+        arch = architectures[0]
         if parsed.vm_action == "diskimg":
             get_x64_ovmf()
             diskimg = parsed.disk_image
