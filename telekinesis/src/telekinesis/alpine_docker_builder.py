@@ -9,8 +9,8 @@ import subprocess
 import sys
 import tempfile
 
-from telekinesis.architectures import Architecture
 from telekinesis.config import tkconfig
+from telekinesis.platforms import Architecture
 
 
 def build_container(

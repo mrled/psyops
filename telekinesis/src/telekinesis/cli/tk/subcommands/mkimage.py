@@ -10,12 +10,12 @@ import subprocess
 import tarfile
 import textwrap
 
-from telekinesis import minisign
+import telekinesis.minisign as minisign
 from telekinesis.alpine_docker_builder import AlpineDockerBuilder
-from telekinesis.architectures import Architecture
 from telekinesis.cli.tk.subcommands.buildpkg import build_neuralupgrade_pyz
 from telekinesis.cli.tk.subcommands.requisites import get_rpi_firmware, get_x64_memtest, get_x64_ovmf
 from telekinesis.config import tkconfig
+from telekinesis.platforms import Architecture, Platform, PLATFORMS
 
 
 def mkimage_iso(architecture: Architecture, builder: AlpineDockerBuilder):
@@ -300,13 +300,15 @@ def copy_ostar_to_deaddrop(architecture: Architecture):
     latest_sig.symlink_to(f"{metadata['filename']}.minisig")
 
 
-def make_boot_tar(builder: AlpineDockerBuilder):
+def make_boot_tar(platform: Platform, builder: AlpineDockerBuilder):
     """Make the boot tarball for the platform"""
 
-    if builder.architecture.name == "x86_64":
+    if platform.name == PLATFORMS["x86_64-uefi"].name:
         return make_x64_efi_boot_tar(builder)
-    elif builder.architecture.name == "aarch64":
+    elif platform.name == PLATFORMS["aarch64-rpi4uboot"].name:
         return make_rpi4_boot_tar(builder)
+    else:
+        raise ValueError(f"Unsupported platform {platform.name} for boot tarball")
 
 
 def make_x64_efi_boot_tar(builder: AlpineDockerBuilder):
@@ -317,10 +319,11 @@ def make_x64_efi_boot_tar(builder: AlpineDockerBuilder):
 
     This tarball contains some extra files like memtest and the EFI shell.
     """
+    plat = PLATFORMS["x86_64-uefi"]
     architecture = builder.architecture
     build_date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d-%H%M%S")
     arch_artifacts = tkconfig.arch_artifacts[architecture.name]
-    tarball_file = arch_artifacts.esptar_versioned_fmt.format(arch=architecture.name, version=build_date)
+    tarball_file = arch_artifacts.esptar_versioned(plat, build_date).name
     get_x64_ovmf()
     get_x64_memtest()
 
@@ -349,6 +352,7 @@ def make_x64_efi_boot_tar(builder: AlpineDockerBuilder):
             tf.add(program.localpath, arcname=program.arcname)
         tf.add(arch_artifacts.esptar_manifest, arcname="manifest.json")
     minisign.sign(arch_artifacts.esptar_path.as_posix(), trusted_comment=trusted_comment)
+    print(f"Signed ESP tarball {arch_artifacts.esptar_path} with trusted comment: {trusted_comment}")
 
 
 def get_rpi4_uboot(builder: AlpineDockerBuilder):
@@ -385,10 +389,10 @@ def make_rpi4_boot_tar(builder: AlpineDockerBuilder):
     The Raspberry Pi boot partition is installed by neuralupgrade,
     which handles installing GRUB and creating its config file.
     """
-    arch = builder.architecture.name
+    plat = PLATFORMS["aarch64-rpi4uboot"]
     build_date = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d-%H%M%S")
-    arch_artifacts = tkconfig.arch_artifacts[arch]
-    tarball_file = arch_artifacts.esptar_versioned_fmt.format(arch=arch, version=build_date)
+    arch_artifacts = tkconfig.arch_artifacts[plat.architecture.name]
+    tarball_file = arch_artifacts.esptar_versioned(plat, build_date).name
 
     get_rpi4_uboot(builder)
 
@@ -412,19 +416,20 @@ def make_rpi4_boot_tar(builder: AlpineDockerBuilder):
     minisign.sign(arch_artifacts.esptar_path.as_posix(), trusted_comment=trusted_comment)
 
 
-def copy_esptar_to_deaddrop(architecture: Architecture):
+def copy_esptar_to_deaddrop(platform: Platform):
     """Copy the EFI tarball and signature to the deaddrop, making sure they have correct names"""
-    arch_artifacts = tkconfig.arch_artifacts[architecture.name]
+    arch_artifacts = tkconfig.arch_artifacts[platform.architecture.name]
     trusted_comment = minisign.verify(arch_artifacts.esptar_path)
     metadata = {kv[0]: kv[1] for kv in [x.split("=") for x in trusted_comment.split()]}
+    filename = metadata["filename"]
     os.makedirs(tkconfig.deaddrop.osdir, exist_ok=True)
-    shutil.copy(arch_artifacts.esptar_path, tkconfig.deaddrop.osdir / metadata["filename"])
+    shutil.copy(arch_artifacts.esptar_path, tkconfig.deaddrop.osdir / filename)
     sig = f"{arch_artifacts.esptar_path}.minisig"
-    shutil.copy(sig, tkconfig.deaddrop.osdir / f"{metadata['filename']}.minisig")
+    shutil.copy(sig, tkconfig.deaddrop.osdir / f"{filename}.minisig")
 
     # symlink the minisig to latest.minisig
-    esptar_name = arch_artifacts.esptar_versioned_fmt.format(arch=architecture.name, version="latest")
-    latest_sig = tkconfig.deaddrop.osdir / (esptar_name + ".minisig")
+    latest_name = arch_artifacts.esptar_versioned(platform, "latest").name
+    latest_sig = tkconfig.deaddrop.osdir / (latest_name + ".minisig")
     if latest_sig.exists():
         latest_sig.unlink()
-    latest_sig.symlink_to(f"{metadata['filename']}.minisig")
+    latest_sig.symlink_to(f"{filename}.minisig")

@@ -8,7 +8,7 @@ Secrets should be stored in 1Password, and accessed with the getsecret function.
 from pathlib import Path
 import pprint
 
-from telekinesis.architectures import Architecture, all_architectures
+from telekinesis.platforms import Architecture, Platform, ARCHITECTURES
 from telekinesis.tksecrets import gopass_get
 
 
@@ -191,19 +191,23 @@ class TelekinesisConfig:
             """The path to the EFI system partition tarball"""
             self.esptar_manifest = self.archroot / "psyopsESP.manifest.json"
             """The path to the JSON manifest for the EFI system partition tarball"""
-            self.esptar_versioned_fmt = "psyopsESP.{arch}.{version}.tar"
+            self.esptar_versioned_fmt = "psyopsESP.{plat}.{version}.tar"
             """The format string for the versioned EFI system partition tarfile.
             Used as the base for the filename in S3, and also of the signature file.
             """
 
-            self.node_image_filename_fmt = "psyopsOS.{arch}.{nodename}.img"
+            self.node_image_filename_fmt = "psyopsOS.{plat}.{nodename}.img"
             """Format string for building the name of psyopsOS image files"""
 
-        def node_image(self, architecture: str, nodename: None | str = None) -> Path:
+        def node_image(self, platform: Platform, nodename: None | str = None) -> Path:
             """Get the path to the node image. If nodename is None, return the path to the generic image."""
             if nodename is None:
                 nodename = "generic"
-            return self.archroot / self.node_image_filename_fmt.format(arch=architecture, nodename=nodename)
+            return self.archroot / self.node_image_filename_fmt.format(plat=platform.name, nodename=nodename)
+
+        def esptar_versioned(self, platform: Platform, version: str) -> Path:
+            """Get the path to the versioned ESP tarball"""
+            return self.archroot / self.esptar_versioned_fmt.format(plat=platform.name, version=version)
 
     # Class variables
 
@@ -222,7 +226,7 @@ class TelekinesisConfig:
         self.noarch_artifacts = self.TkConfigNoArchArtifactsNode(self.repopaths.artifacts)
         self.arch_artifacts = {
             name: self.TelekinesisConfigArtifactsNode(self.repopaths.artifacts, arch)
-            for name, arch in all_architectures.items()
+            for name, arch in ARCHITECTURES.items()
         }
 
     def pformat(self, **kwargs) -> str:

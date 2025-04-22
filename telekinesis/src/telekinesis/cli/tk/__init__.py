@@ -33,9 +33,9 @@ from telekinesis.cli.tk.subcommands.mkimage import (
     mkimage_iso,
 )
 from telekinesis.cli.tk.subcommands.requisites import get_x64_ovmf
-from telekinesis.architectures import Architecture, all_architectures
 from telekinesis.cli.tk.subcommands.vm import vm_diskimg, vm_osdir
 from telekinesis.config import tkconfig
+from telekinesis.platforms import Architecture, PLATFORMS
 
 
 class ListKeyValuePairsAndExit(argparse.Action):
@@ -131,12 +131,29 @@ def makeparser(prog=None):
         action="store_true",
         help="Print more information about what is happening.",
     )
-    archlist = ",".join(all_architectures.keys())
+
+    # archlist = ",".join(all_architectures.keys())
+    # parser.add_argument(
+    #     "--architecture",
+    #     default=list(all_architectures.keys()),
+    #     type=CommaSeparatedStrList,
+    #     help=f"The architecture(s) to build for. Default: {archlist}.",
+    # )
+
+    # bootsyslist = ",".join(BOOTSYSTEMS.keys())
+    # parser.add_argument(
+    #     "--bootsystem",
+    #     default=list(BOOTSYSTEMS.keys()),
+    #     type=CommaSeparatedStrList,
+    #     help=f"The bootsystem(s) to build for. Default: {bootsyslist}.",
+    # )
+
+    platlist = ",".join(PLATFORMS.keys())
     parser.add_argument(
-        "--architecture",
-        default=list(all_architectures.keys()),
+        "--platform",
+        default=list(PLATFORMS.keys()),
         type=CommaSeparatedStrList,
-        help=f"The architecture(s) to build for. Default: {archlist}.",
+        help=f"The platform(s) to build for. Default: {platlist}.",
     )
 
     subparsers = parser.add_subparsers(dest="action", required=True)
@@ -466,9 +483,12 @@ def main_impl() -> None:
         interactive = parsed.interactive
     except AttributeError:
         interactive = False
-    if interactive and len(parsed.architecture) > 1:
+    if interactive and len(parsed.platform) > 1:
         parser.error("Can't run an interactive build container for multiple architectures at once")
-    architectures = [all_architectures[arch] for arch in parsed.architecture]
+    # architectures = [all_architectures[arch] for arch in parsed.architecture]
+    # bootsystem = [BOOTSYSTEMS[bs] for bs in parsed.bootsystem]
+    platforms = [PLATFORMS[plat] for plat in parsed.platform]
+    architectures = set(plat.architecture for plat in platforms)
 
     #### Main logic
 
@@ -513,10 +533,10 @@ def main_impl() -> None:
             parser.error(f"Unknown builder action: {parsed.builder_action}")
     elif parsed.action == "mkimage":
         if parsed.mkimage_action == "iso":
-            for arch in architectures:
-                mkimage_prepare(arch)
-                with getbldcm(arch) as builder:
-                    mkimage_iso(arch, builder)
+            for plat in platforms:
+                mkimage_prepare(plat.architecture)
+                with getbldcm(plat.architecture) as builder:
+                    mkimage_iso(plat.architecture, builder)
         elif parsed.mkimage_action == "diskimg":
             initdir = tkconfig.repopaths.root / "psyopsOS" / "osbuild" / "initramfs-init"
             init_patch = initdir / "initramfs-init.patch"
@@ -559,12 +579,12 @@ def main_impl() -> None:
                 for arch in architectures:
                     copy_ostar_to_deaddrop(arch)
             if "efisystar" in parsed.stages:
-                for arch in architectures:
-                    with getbldcm(arch) as builder:
-                        make_boot_tar(builder)
+                for plat in platforms:
+                    with getbldcm(plat.architecture) as builder:
+                        make_boot_tar(plat, builder)
             if "efisystar-dd" in parsed.stages:
-                for arch in architectures:
-                    copy_esptar_to_deaddrop(arch)
+                for plat in platforms:
+                    copy_esptar_to_deaddrop(plat)
             if "sectar" in parsed.stages and parsed.node_secrets:
                 subprocess.run(
                     [
@@ -577,14 +597,13 @@ def main_impl() -> None:
                     ],
                 )
             if "diskimg" in parsed.stages:
-                for arch in architectures:
-                    mkimage_prepare(arch)
-                    out_filename = tkconfig.arch_artifacts[arch.name].node_image(arch.name).name
+                for plat in platforms:
+                    arch = plat.architecture
+                    mkimage_prepare(plat.architecture)
+                    out_filename = tkconfig.arch_artifacts[arch.name].node_image(plat).name
                     secrets_tarball = ""
                     if parsed.node_secrets:
-                        out_filename = (
-                            tkconfig.arch_artifacts[arch.name].node_image(arch.name, parsed.node_secrets).name
-                        )
+                        out_filename = tkconfig.arch_artifacts[arch.name].node_image(plat, parsed.node_secrets).name
                         secrets_tarball = tkconfig.noarch_artifacts.node_secrets(parsed.node_secrets).as_posix()
                     with getbldcm(arch) as builder:
                         make_boot_image(arch, out_filename, builder, secrets_tarball=secrets_tarball)
@@ -594,19 +613,19 @@ def main_impl() -> None:
         # TODO: handle architecture
         if len(architectures) > 1:
             parser.error("Can't run multiple VMs at once")
-        arch = architectures[0]
+        arch = list(architectures)[0]
         if parsed.vm_action == "diskimg":
             get_x64_ovmf()
             diskimg = parsed.disk_image
             if not diskimg:
-                diskimg = tkconfig.arch_artifacts[arch.name].node_image(arch.name)
+                diskimg = tkconfig.arch_artifacts[arch.name].node_image(PLATFORMS["x86_64-uefi"])
             vm_diskimg(arch, diskimg, parsed.macaddr)
         elif parsed.vm_action == "osdir":
             vm_osdir(arch)
         elif parsed.vm_action == "profile":
             if parsed.profile == "qreamsqueen":
                 get_x64_ovmf()
-                img_path = tkconfig.arch_artifacts[arch.name].node_image(arch.name, "qreamsqueen")
+                img_path = tkconfig.arch_artifacts[arch.name].node_image(PLATFORMS["x86_64-uefi"], "qreamsqueen")
                 vm_diskimg(arch, img_path, "ac:ed:de:ad:be:ef")
             else:
                 parser.error(f"Unknown profile: {parsed.profile}")
@@ -628,7 +647,7 @@ def main_impl() -> None:
     elif parsed.action == "deployos":
         if len(architectures) > 1:
             parser.error("Can't deploy to multiple architectures at once")
-        arch = architectures[0]
+        arch = list(architectures)[0]
         if parsed.deploy_type == "iso":
             raise NotImplementedError("Deploying ISO images is not implemented")
         elif parsed.deploy_type == "diskimg":

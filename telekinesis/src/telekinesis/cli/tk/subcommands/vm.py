@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 import sys
 import termios
-from telekinesis.architectures import Architecture
+from telekinesis.platforms import Architecture
 
 from telekinesis.config import tkconfig
 
