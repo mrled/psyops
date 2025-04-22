@@ -25,7 +25,16 @@ if test -e /mnt/psyops-secret/mount/TESTONLYNOPROD.env; then
 	fi
 fi
 
-export PSYOPSOS_NODENAME="$(cat /mnt/psyops-secret/mount/nodename)"
+# Make sure the nodename is set to something.
+# If we don't do this, the postboot script will hang waiting for a hostname.
+export PSYOPSOS_NODENAME="psyopsOS-unconfigured"
+if test -e /mnt/psyops-secret/mount/nodename; then
+	nodename_contents="$(head -n1 /mnt/psyops-secret/mount/nodename | tr -d '\r\n' | tr -d ' ')"
+	if test "$nodename_contents"; then
+		export PSYOPSOS_NODENAME="$nodename_contents"
+	fi
+fi
+
 export PSYOPSOS_AGEKEY=/mnt/psyops-secret/mount/age.key
 export PSYOPSOS_MINISIGN_PUB=/mnt/psyops-secret/mount/minisign.pubkey
 export PSYOPSOS_MACTAB=/mnt/psyops-secret/mount/mactab
