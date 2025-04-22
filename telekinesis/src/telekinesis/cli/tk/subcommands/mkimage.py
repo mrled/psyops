@@ -190,7 +190,7 @@ def make_squashfs(builder: AlpineDockerBuilder):
 
 
 def make_boot_image(
-    architecture: Architecture,
+    platform: Platform,
     out_filename: str,
     builder: AlpineDockerBuilder,
     secrets_tarball: str = "",
@@ -210,15 +210,7 @@ def make_boot_image(
 
     with builder:
         arch_artifacts = tkconfig.arch_artifacts[builder.architecture.name]
-
-        fwtype = None
-        psyopsesptar = None
-        if architecture.name == "x86_64":
-            fwtype = "x86_64_uefi"
-        elif architecture.name == "aarch64":
-            fwtype = "raspberrypi"
-        if fwtype is None:
-            raise RuntimeError(f"Unsupported architecture {architecture.name} for boot image")
+        fwtype = platform.name
 
         psyopsesptar = os.path.join(builder.in_container_arch_artifacts_dir, arch_artifacts.esptar_path.name)
         extra_scriptargs += f" -E {psyopsesptar}"

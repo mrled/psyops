@@ -606,7 +606,7 @@ def main_impl() -> None:
                         out_filename = tkconfig.arch_artifacts[arch.name].node_image(plat, parsed.node_secrets).name
                         secrets_tarball = tkconfig.noarch_artifacts.node_secrets(parsed.node_secrets).as_posix()
                     with getbldcm(arch) as builder:
-                        make_boot_image(arch, out_filename, builder, secrets_tarball=secrets_tarball)
+                        make_boot_image(plat, out_filename, builder, secrets_tarball=secrets_tarball)
         else:
             parser.error(f"Unknown mkimage action: {parsed.mkimage_action}")
     elif parsed.action == "vm":
