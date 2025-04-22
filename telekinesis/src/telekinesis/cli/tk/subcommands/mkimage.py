@@ -427,9 +427,11 @@ def copy_esptar_to_deaddrop(platform: Platform):
     sig = f"{arch_artifacts.esptar_path}.minisig"
     shutil.copy(sig, tkconfig.deaddrop.osdir / f"{filename}.minisig")
 
-    # symlink the minisig to latest.minisig
+    # make "latest.minisig" symlink to the latest version
     latest_name = arch_artifacts.esptar_versioned(platform, "latest").name
     latest_sig = tkconfig.deaddrop.osdir / (latest_name + ".minisig")
-    if latest_sig.exists():
-        latest_sig.unlink()
-    latest_sig.symlink_to(f"{filename}.minisig")
+    print("latest_sig", latest_sig)
+    print("symlink to", f"{filename}.minisig")
+    latest_sig.unlink(missing_ok=True)
+    os.symlink(f"{filename}.minisig", latest_sig.as_posix())
+    # latest_sig.symlink_to(f"{filename}.minisig")
