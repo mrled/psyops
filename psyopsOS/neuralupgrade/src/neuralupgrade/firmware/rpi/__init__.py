@@ -9,6 +9,7 @@ from neuralupgrade.firmware.rpi.rpi_cfg import write_rpi_cfgs_carefully
 from neuralupgrade.systemmetadata import NeuralPartitionFirmware
 from neuralupgrade.update_metadata import (
     parse_psyopsOS_neuralupgrade_info_comment,
+    parse_trusted_comment,
     read_default_boot_label,
 )
 
@@ -59,6 +60,17 @@ def get_rpi_partition_metadata(filesystems: Filesystems) -> NeuralPartitionFirmw
     """Read the firmware partition metadata from the minisig and boot configuration files."""
 
     with filesystems.efisys.mount(writable=False) as mountpoint:
+        minisig_path = os.path.join(mountpoint, "psyopsESP.tar.minisig")
+        try:
+            trusted_metadata = parse_trusted_comment(sigfile=minisig_path)
+        except FileNotFoundError:
+            trusted_metadata = {"error": f"missing minisig at {minisig_path}"}
+        except Exception as exc:
+            trusted_metadata = {
+                "error": str(exc),
+                "minisig_path": minisig_path,
+                "traceback": traceback.format_exc(),
+            }
         boot_cmd_path = os.path.join(mountpoint, "boot.cmd")
         try:
             boot_cmd_info = parse_psyopsOS_neuralupgrade_info_comment(file=boot_cmd_path)
@@ -72,7 +84,6 @@ def get_rpi_partition_metadata(filesystems: Filesystems) -> NeuralPartitionFirmw
             }
     return NeuralPartitionFirmware(
         fs=filesystems.efisys,
-        # For U-Boot we don't have any extra programs we distribute so there is no minisig metadata
-        metadata={},
+        metadata=trusted_metadata,
         neuralupgrade_info=boot_cmd_info,
     )
