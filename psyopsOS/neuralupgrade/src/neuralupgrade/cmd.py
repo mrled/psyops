@@ -371,7 +371,7 @@ def getparser(prog=None) -> argparse.ArgumentParser:
     )
     repository_group.add_argument(
         "--psyopsOS-filename-format",
-        default="psyopsOS.{fwtype}.{version}.tar",
+        default="psyopsOS.{arch}.{version}.tar",
         help="The format string for the versioned psyopsESP tarfile. Used as the base for the filename in S3, and also of the signature file.",
     )
     repository_group.add_argument(

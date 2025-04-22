@@ -16,6 +16,17 @@ class Firmware:
     # TODO: add an initializer with filesystems
 
     fwtype: str
+    """This must match the platform name according to telekinesis"""
+
+    @property
+    def architecture(self) -> str:
+        """The architecture of the firmware"""
+        return self.fwtype.split("-")[0]
+
+    @property
+    def bootsystem(self) -> str:
+        """The boot system of the firmware"""
+        return self.fwtype.split("-")[1]
 
     def update(
         self,

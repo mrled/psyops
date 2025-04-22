@@ -18,9 +18,9 @@ from neuralupgrade.update_metadata import (
 )
 
 
-class UEFIPCGrubBootloader(Firmware):
+class AMD64UEFIGrubBootloader(Firmware):
 
-    fwtype = "x86_64_uefi"
+    fwtype = "x86_64-uefi"
 
     def update(
         self,

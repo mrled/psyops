@@ -13,10 +13,10 @@ from neuralupgrade.update_metadata import (
 )
 
 
-class RaspberryPiUBootBootloader(Firmware):
+class RaspberryPi4UBootBootloader(Firmware):
     """Base class for firmware / bootloaders."""
 
-    fwtype = "raspberrypi"
+    fwtype = "aarch64-rpi4uboot"
 
     def update(
         self,

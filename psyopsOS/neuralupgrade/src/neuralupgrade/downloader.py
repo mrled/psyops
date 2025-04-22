@@ -50,7 +50,9 @@ def download_update_signature(
 
     Return a DownloadedSignatureResult.
     """
-    minisig_filename = filename_format.format(fwtype=firmware.fwtype, version=version) + ".minisig"
+    minisig_filename = (
+        filename_format.format(fwtype=firmware.fwtype, arch=firmware.architecture, version=version) + ".minisig"
+    )
     minisig_url = f"{repository_url}/{minisig_filename}"
 
     logger.debug(f"Downloading update minisig from {minisig_url}")
