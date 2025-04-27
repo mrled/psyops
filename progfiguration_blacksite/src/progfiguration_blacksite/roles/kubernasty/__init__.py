@@ -49,7 +49,7 @@ class Role(ProgfigurationRole):
     """The VRRP authentication password for the k0s cluster."""
 
     # https://github.com/k0sproject/k0s/releases
-    k0s_version = "v1.32.2+k0s.0"
+    k0s_version = "v1.32.3+k0s.0"
 
     # Config directory, can be ephemeral
     configdir: Path = Path("/etc/kubernasty")
@@ -105,6 +105,9 @@ class Role(ProgfigurationRole):
         magicrun("sysctl -w fs.inotify.max_user_watches=524288")
         magicrun("sysctl -w fs.inotify.max_user_instances=1024")
 
+        # Allow higher file-max
+        magicrun("sysctl -w fs.file-max=2097152")
+
         # Install k0s logrotate configuration
         self.localhost.cp(
             self.role_file("logrotate.k0s.conf"),
@@ -133,6 +136,7 @@ class Role(ProgfigurationRole):
         )
 
         if not self.node_initialized_file.exists():
+            self.node_initialized_file.parent.mkdir(parents=True, exist_ok=True)
             logger.info(
                 f"MANUAL CONFIGURATION REQUIRED. Node not initialized; skipping k0s setup. Join the node to the cluster and then create the file {self.node_initialized_file.as_posix()}"
             )
