@@ -311,7 +311,7 @@ Resources:
         - Name: agassiz.home.micahrl.com.
           Type: A
           TTL: 60
-          ResourceRecords: ["192.168.1.115"]
+          ResourceRecords: ["192.168.1.110"]
         - Name: jesseta.home.micahrl.com.
           Type: A
           TTL: 60
