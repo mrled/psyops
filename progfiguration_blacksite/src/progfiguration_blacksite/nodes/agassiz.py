@@ -12,7 +12,7 @@ node = InventoryNode(
     ),
     roles=dict(
         k3s={
-            "start_k3s": False,
+            "start_k3s": True,
         },
     ),
 )

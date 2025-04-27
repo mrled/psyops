@@ -5,6 +5,13 @@ metadata:
 spec:
   hosts:
   - ssh:
+      address: agassiz.home.micahrl.com
+      user: root
+      port: 22
+      keyPath: ~/.ssh/conspirator@PSYOPS_ed25519
+    role: controller+worker
+    noTaints: true
+  - ssh:
       address: jesseta.home.micahrl.com
       user: root
       port: 22
@@ -27,6 +34,8 @@ spec:
     role: controller+worker
     noTaints: true
   k0s:
+    version: v1.32.3+k0s.0
+
     # Enable dynamic configuration with CRs after initial cluster deployment
     dynamicConfig: true
 
@@ -51,6 +60,8 @@ spec:
             - kubernasty-controlplane.micahrl.me
             - 192.168.1.220
             # Nodes
+            - agassiz.home.micahrl.com
+            - 192.168.1.110
             - jesseta.home.micahrl.com
             - 192.168.1.178
             - kenasus.home.micahrl.com

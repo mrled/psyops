@@ -29,6 +29,7 @@ This is a one-time task that bootstraps the cluster.
   and place it into `~/.kube/config` on whatever machine you're using to administer the cluster
   (your laptop, whatever)
 * See pods starting with `kubectl get pods -A` etc
+* It will automatically substitute environment variables like `${THIS_EXAMPLE}`
 
 Now configure Flux for gitops.
 This is a one-time task that deploys Flux to the cluster,
@@ -68,6 +69,10 @@ Some thoughts:
   which is required for some types of changes
   even when using `k0sctl` and/or even when using k0s dynamic configuration.
 * Check `k0s sysinfo` to see any warnings or errors
+
+## Adding new nodes
+
+Just add them to `k0sctl.yaml` and re-run.
 
 ## The layers of the earth
 
