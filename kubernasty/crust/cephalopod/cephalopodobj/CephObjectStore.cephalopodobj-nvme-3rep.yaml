@@ -14,3 +14,13 @@ spec:
   gateway: # RADOS Gateway / RGW, sort of like a load balancer for Ceph's S3 API
     port: 80
     instances: 2
+    placement:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - rook-ceph-rgw
+          topologyKey: kubernetes.io/hostname
