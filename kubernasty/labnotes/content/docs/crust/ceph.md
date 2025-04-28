@@ -483,6 +483,12 @@ which might be a good thing in production but is very annoying in development.
 * If you do not wipe the disk(s) that ceph used on the host, a new cluster will not come up properly,
   and will have to be entirely deleted and recreated
 
+## Adding a node
+
+To add a new node after Ceph comes up:
+
+* Add it to the CephCluster resource
+
 ## Appendix: Why not minio?
 
 Minio looks cool, and I have heard it is less complex than Ceph.

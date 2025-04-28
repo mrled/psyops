@@ -3,6 +3,8 @@ weight: 20
 title: k0s
 ---
 
+TODO: Replace documentation elsewhere with this, and delete this file
+
 I'm using k0s now instead of k3s.
 
 In progfiguration:
