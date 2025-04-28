@@ -13,3 +13,9 @@ data:
   CSI_LOG_LEVEL: "3"
   CSI_SIDECAR_LOG_LEVEL: "3"
   ROOK_CSI_KUBELET_DIR_PATH: "/var/lib/k0s/kubelet"
+
+  # If this isn't running, adding a node to the CephCluster resource won't add any of its disks,
+  # even if the disks are part of the node definition.
+  # This also gives you the ability to see all attached disks of every node in the dashboard,
+  # which is nice.
+  ROOK_ENABLE_DISCOVERY_DAEMON: "true"

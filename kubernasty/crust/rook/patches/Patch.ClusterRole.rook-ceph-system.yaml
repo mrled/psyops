@@ -1,0 +1,14 @@
+# Allow Prometheus monitoring
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - servicemonitors
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - watch

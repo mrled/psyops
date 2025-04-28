@@ -1,9 +1,49 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+# Must match the namespace deployed by rook-ceph
+namespace: rook-ceph
+
 resources:
+
   # The un-modified rook-ceph manifests from the project
-  - ./rook-ceph
-  # The required csi-snapshotter manifests from Kubernetes
-  - ./csi-external-snapshotter
-  # Our patches on top of the rook-ceph manifests
-  - ./patches
+  # Downloaded from
+  # <https://github.com/rook/rook/tree/v1.14.5/deploy/examples>
+  # following instructions at
+  # <https://rook.io/docs/rook/latest-release/Getting-Started/quickstart>
+  #
+  # As a convention, all kubernasty changes are tagged with a comment `kubernasty:customized`,
+  # so that we can easily identify them.
+  # UPDATE: Now we use patches instead, so we don't need to customize the original files at all.
+  #
+  # These files include some resources intended for running a Ceph *cluster*
+  # in the same namespace as the *operator*,
+  # but they don't run any pods for this purpose,
+  # so we ignore this and create the cluster in `cephalopod`,
+  # using the `common-second-cluster.yaml` manifest from the examples as described here:
+  # <https://rook.io/docs/rook/latest-release/Storage-Configuration/Advanced/ceph-configuration/#deploying-a-second-cluster>
+  #
+  # See /kubernasty/foundation/cephalopod/common-cephalopod.yaml for that.
+  - ./rook-ceph/crds.yaml
+  - ./rook-ceph/common.yaml
+  - ./rook-ceph/operator.yaml
+
+  # The required csi-snapshotter manifests from Kubernetes.
+  # Must be deployed in the rook-ceph namespace.
+  - https://github.com/kubernetes-csi/external-snapshotter/client/config/crd?ref=v8.0.1
+  - https://github.com/kubernetes-csi/external-snapshotter/deploy/kubernetes/snapshot-controller?ref=v8.0.1
+  # TODO: I think I actually don't need this:
+  - https://github.com/kubernetes-csi/external-snapshotter/deploy/kubernetes/csi-snapshotter?ref=v8.0.1
+
+
+patches:
+  # Apply patches to configure
+  - path: ./patches/Patch.ConfigMap.rook-ceph-operator-config.yaml
+    target:
+      kind: ConfigMap
+      name: rook-ceph-operator-config
+  - path: ./patches/Patch.ClusterRole.rook-ceph-system.yaml
+    target:
+      kind: ClusterRole
+      name: rook-ceph-system
+      namespace: null
