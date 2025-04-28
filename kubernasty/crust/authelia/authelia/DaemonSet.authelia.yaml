@@ -31,7 +31,15 @@ spec:
       enableServiceLinks: false
       containers:
       - name: authelia
-        image: ghcr.io/authelia/authelia:4
+        # Lock all containers to a specific version,
+        # and upgrade them all at once.
+        # If you don't, then if a pod dies it might come up as a newer version.
+        # If that happens, clients won't be able to get the same resources from each pod.
+        # The browser requests everything at once over HTTP/2,
+        # and when some subresources fail,
+        # you might get NS_ERROR_CORRUPTED_CONTENT.
+        # ???
+        image: ghcr.io/authelia/authelia:4.39.1
         imagePullPolicy: IfNotPresent
         command: ["authelia"]
         args:
