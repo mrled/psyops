@@ -342,6 +342,130 @@ Instead, you have to do
 and edit it live????????
 TODO: Fucking find a better nicer way to deal with this, what the fuck
 
+### Ceph node planned maintenance
+
+Migrate all Ceph data off the node:
+
+```sh
+# find the tools pod
+toolspod=$(kubectl -n rook-ceph get pod -l app=rook-ceph-tools -o jsonpath='{.items[0].metadata.name}')
+
+# Tell Ceph to migrate PGs off the OSDs on that node
+osdpods=$(kubectl -n rook-ceph get pods --field-selector spec.nodeName=${node} -l app=rook-ceph-osd -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+
+# for each OSD pod, extract its ID and run ceph osd out inside the tools pod
+osdids=""
+for pod in $osdpods; do
+  osdid=$(kubectl -n rook-ceph get pod $pod -o jsonpath='{.spec.containers[0].env[?(@.name=="ROOK_OSD_ID")].value}')
+  if test "$osdid"; then
+    echo "OSD ID: $osdid    POD: $pod"
+    osdids="${osdids} $osdid"
+    kubectl -n rook-ceph exec $toolspod -- ceph osd out $osdid
+  fi
+done
+
+# Wait for no recovery io
+watch kubectl -n rook-ceph exec $toolspod -- ceph -s
+```
+
+That command will show results like:
+
+```text
+Every 2.0s: kubectl -n rook-ceph exec rook-ceph-tools-67bf494bc8-s7fp5 -- ceph -s                                                               Naragua: 12:21:12
+
+  cluster:
+    id:     fbe42f47-44d7-4ba1-b63e-cee394eb7574
+    health: HEALTH_OK
+
+  services:
+    mon: 3 daemons, quorum a,b,c (age 2w)
+    mgr: b(active, since 2h), standbys: a
+    mds: 1/1 daemons up, 1 hot standby
+    osd: 4 osds: 4 up (since 2h), 3 in (since 13m); 6 remapped pgs
+    rgw: 2 daemons active (2 hosts, 1 zones)
+
+  data:
+    volumes: 1/1 healthy
+    pools:   14 pools, 63 pgs
+    objects: 26.71k objects, 74 GiB
+    usage:   120 GiB used, 2.6 TiB / 2.7 TiB avail
+    pgs:     10297/62337 objects misplaced (16.518%)
+             57 active+clean
+             5  active+remapped+backfill_wait
+             1  active+remapped+backfilling
+
+  io:
+    client:   1.4 KiB/s rd, 121 KiB/s wr, 2 op/s rd, 14 op/s wr
+    recovery: 44 MiB/s, 11 objects/s
+```
+
+While there is recovery io at the end, it's still moving PGs around.
+Wait for that to finish before proceeding.
+
+Now you can do your maintenance.
+
+When the node is back:
+
+```sh
+# for each OSD pod, extract its ID and run ceph osd in inside the tools pod
+for osdid in $osdids; do
+  kubectl -n rook-ceph exec $toolspod -- ceph osd in $osdid
+done
+```
+
+### Stale MONs
+
+A MON is locked to a specific Kubernetes node, see <https://github.com/rook/rook/discussions/12292>
+If you take a node down, when it comes back up, it might not be able to schedule the mon the same way.
+To handle that, you may need to fail over the mon primary. (...?)
+
+I had a situation where Ceph saw mons a/b/d but Kubernetes only had pods for mons a/d,
+and was trying to start mon e but was prevented by pod affinity rules.
+
+```text
+> kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph mon stat
+e5: 3 mons at {a=v2:10.104.72.254:3300/0,b=v2:10.102.76.185:3300/0,d=[v2:10.100.179.135:3300/0,v1:10.100.179.135:6789/0]} removed_ranks: {2} disallowed_leaders: {}, election epoch 178, leader 0 a, quorum 0,2 a,d
+```
+
+These pods were created (mon-e was not able to be scheduled):
+
+```text
+│ rook-ceph-mon-a-6fd76d4f76-jbj42
+│ rook-ceph-mon-d-665f6f6d47-bfcl8
+│ rook-ceph-mon-e-859bf9bd-jvd67
+```
+
+I had to remove the stale mon b from ceph,
+and stale mon b resources from Kubernetes:
+
+```sh
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph mon remove b
+kubectl delete -n rook-ceph svc rook-ceph-mon-b
+kubectl delete -n rook-ceph deployment rook-ceph-mon-b
+kubectl delete -n rook-ceph endpoints rook-ceph-mon-b
+```
+
+That solved the pod affinity problem - mon e could then be scheduled on the node that formerly held mon b.
+
+### HEALTH_WARN: 1 mgr modules have recently crashed
+
+You might see errors like this:
+
+```text
+  cluster:
+    id:     fbe42f47-44d7-4ba1-b63e-cee394eb7574
+    health: HEALTH_WARN
+            9 mgr modules have recently crashed
+```
+
+To fix this you can archive crashes:
+
+```sh
+kubectl -n rook-ceph exec $toolspod -- ceph crash archive-all
+```
+
+###
+
 ## Deleting and reinstalling a cluster
 
 You must follow the [cleanup procedure](https://rook.io/docs/rook/latest-release/Getting-Started/ceph-teardown/),
