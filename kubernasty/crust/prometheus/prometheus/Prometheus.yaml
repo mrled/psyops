@@ -11,7 +11,11 @@ spec:
   securityContext:
     fsGroup: 65534
 
+  # Can set both time and size retention policies
   retention: 30d
+  # Chat says to plan for 20-30% free disk space at all times
+  # Prometheus uses different suffixes than Kubernetes, lol
+  retentionSize: 35GiB
 
   serviceMonitorSelector: {}
   serviceMonitorNamespaceSelector: {}
@@ -35,7 +39,7 @@ spec:
         storageClassName: cephalopodblk-nvme-2rep
         resources:
           requests:
-            storage: 20Gi
+            storage: 50Gi
 
   thanos:
     objectStorageConfig:
