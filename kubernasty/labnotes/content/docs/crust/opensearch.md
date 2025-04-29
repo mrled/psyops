@@ -34,3 +34,22 @@ or:
 * OpenSearch Dashboards web UI
 * Left sidebar
 * Discover
+
+## Create an auto delete policy
+
+* OpenSearch Dashboards web UI
+* Left sidebar
+* OpenSearch Plugins section
+* Index Management tab
+* Index Policies tab
+* Create Policy
+    * ID: `delete-old`
+    * Add state:
+        * State name: `delete`
+        * Add action: `Delete`
+    * Add state
+        * State name: `hot`
+        * Don't add any action
+        * Add transition: destination stage: `delete`; condition: minimum index age: `30d`.
+    * Set initial state: `hot`
+
