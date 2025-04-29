@@ -98,14 +98,21 @@ data:
             tls.verify      On
             tls.ca_file     /fluent-bit/secrets/kubernasty-ca-root-cert/ca.crt
             Trace_Error     On
+
             Logstash_Format On
             LogStash_Prefix kubernasty-container-logs
             Suppress_Type_Name On
-            Generate_ID     On
             # Includes a tag for which source generated the log
             Include_Tag_Key On
             # You want this unless you're using logs that are specifically written for ES/OS
             Replace_Dots    On
+
+            # Overwrite existing records instead of creating new ones
+            write_operation index
+            # Generate a new random _id for each record
+            Generate_ID     On
+            # Don't retry on version conflict
+            Retry_Limit     False
 
         [OUTPUT]
             Name            opensearch
@@ -121,9 +128,12 @@ data:
             Logstash_Format On
             LogStash_Prefix kubernasty-node-logs
             Suppress_Type_Name On
-            Generate_ID     On
             Include_Tag_Key On
             Replace_Dots    On
+            write_operation index
+            Generate_ID     On
+            Retry_Limit     False
+
 
     daemonSetVolumes:
       - name: varlog
