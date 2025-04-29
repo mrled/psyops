@@ -23,6 +23,8 @@ Create index patterns for everything that Fluent Bit is collecting:
 * `kubernasty-container-logs-*`
 * `kubernasty-node-logs-*`
 
+TODO: Create this automatically. There is no CRD for it, but maybe use a Job or a CronJob.
+
 ## Exploring logs in OpenSearch
 
 Requires that Index Patterns are created first.
@@ -53,3 +55,4 @@ or:
         * Add transition: destination stage: `delete`; condition: minimum index age: `30d`.
     * Set initial state: `hot`
 
+TODO: Create this via `opensearchismpolicies.opensearch.opster.io` CRD from the operator.

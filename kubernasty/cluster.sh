@@ -226,3 +226,14 @@ EOF
         --image="$image" |
             grep -v 'pod .* deleted'
 }
+
+clusterlogscurl() {
+    urlpath="$1"
+    shift
+    url="https://clusterlogs:9200/$urlpath"
+    cluser="$(kubectl get secret -n logging clusterlogs-admin-password -ojson | jq -r ".data.username | @base64d")"
+    clpass="$(kubectl get secret -n logging clusterlogs-admin-password -ojson | jq -r ".data.password | @base64d")"
+    echo "url: $url"
+    kubectl exec -itn logging clusterlogs-master-0 -- \
+        curl -k -u $cluser:$clpass "$url" "$@"
+}
