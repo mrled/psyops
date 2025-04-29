@@ -69,16 +69,6 @@ data:
             Kube_URL            https://kubernetes.default.svc:443
             Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
             Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
-            Merge_Log           On
-            Keep_Log            Off
-
-        # Expand JSON string in msg field, only when the field is present and is valid JSON
-        # ... actually apparently json_parse is either hallucinated or maybe needs a plugin, TODO figure this out
-        # [FILTER]
-        #     Name          modify
-        #     Match         *
-        #     Condition     Key_Value_Present msg
-        #     JSON_Parse    msg
 
       # https://docs.fluentbit.io/manual/pipeline/outputs/opensearch
       outputs: |+
@@ -111,8 +101,6 @@ data:
             write_operation index
             # Generate a new random _id for each record
             Generate_ID     On
-            # Don't retry on version conflict
-            Retry_Limit     False
 
         [OUTPUT]
             Name            opensearch
@@ -132,7 +120,6 @@ data:
             Replace_Dots    On
             write_operation index
             Generate_ID     On
-            Retry_Limit     False
 
 
     daemonSetVolumes:
