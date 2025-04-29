@@ -55,7 +55,7 @@ spec:
     # Cluster manager roles
     - component: master
       replicas: 3
-      diskSize: "5Gi"
+      diskSize: "50Gi"
       resources:
         requests:
           memory: "4Gi"
@@ -63,6 +63,15 @@ spec:
         limits:
           memory: "4Gi"
           cpu: "4000m"
+      # JVM options:
+      # -Xmx and -Xms: Default to half of the memory request
+      # -Xx:-UseContainerSupport: disable JDK cgroup probe
+      #     This is necessary in Alpine 3.20 or 3.21,
+      #     where without it OpenSearch fails to start with
+      #     java.lang.NullPointerException: Cannot invoke "jdk.internal.platform.CgroupInfo.getMountPoint()" because "anyController" is null
+      #     It means the cgroupv2 controller isn't mounted in the container.
+      #     This might be fixed in future versions of OpenSearch (2.3.1?) and then we can remove this.
+      jvm: -Xmx2048m -Xms2048m -XX:-UseContainerSupport
       roles:
         - "cluster_manager"
       persistence:
@@ -83,7 +92,7 @@ spec:
     # Data storage and search roles
     - component: data
       replicas: 3
-      diskSize: "5Gi"
+      diskSize: "50Gi"
       resources:
         requests:
           memory: "4Gi"
@@ -91,6 +100,7 @@ spec:
         limits:
           memory: "4Gi"
           cpu: "4000m"
+      jvm: -Xmx2048m -Xms2048m -XX:-UseContainerSupport
       roles:
         - "data"
       persistence:
