@@ -17,6 +17,7 @@ resources:
   - ./prometheus-operator
   - ./opensearch-operator
   - ./mongo-operator
+  - ./reloader
 
   # Argo
   - ./argoev
