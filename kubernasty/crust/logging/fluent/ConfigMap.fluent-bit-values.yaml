@@ -63,6 +63,9 @@ data:
             Time_Format %Y-%m-%d %H:%M:%S
 
       filters: |+
+        # https://docs.fluentbit.io/manual/pipeline/filters/kubernetes
+        # Add Kubernetes metadata to the logs by looking it up in the API.
+        # Adds the .kubernetes.* fields to the log record.
         [FILTER]
             Name                kubernetes
             Match               kube.*
