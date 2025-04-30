@@ -18,6 +18,7 @@ resources:
   - ./opensearch-operator
   - ./mongo-operator
   - ./reloader
+  - ./keda
 
   # Argo
   - ./argoev

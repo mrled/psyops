@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keda-values
+  namespace: keda
+data:
+  # https://github.com/kedacore/charts/blob/main/keda/values.yaml
+  values.yaml: |+
+    clusterName: kubernasty
+    prometheus:
+      metricsServer:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+        podMonitor:
+          enabled: true
+      operator:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+        podMonitor:
+          enabled: true
+      webhooks:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+        podMonitor:
+          enabled: true
+    enableServiceLinks: false
