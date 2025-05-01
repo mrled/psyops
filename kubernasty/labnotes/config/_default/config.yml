@@ -9,3 +9,6 @@ module:
 
 params:
   repobase: https://gitea.micahrl.me/kubernasty/psyops/src/branch/master
+  BookLogo: psyops.png
+  BookDateFormat: 2006-01-02
+  BookComments: false
