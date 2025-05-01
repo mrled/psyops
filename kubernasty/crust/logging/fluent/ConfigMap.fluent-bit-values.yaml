@@ -42,7 +42,7 @@ data:
 
         [INPUT]
             Name    tail
-            Path    k0s.*
+            Path    /var/log/k0s.*
             Parser  k0s-logs
             Tag     host.k0s
 
