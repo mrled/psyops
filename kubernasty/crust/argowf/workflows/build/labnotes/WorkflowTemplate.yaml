@@ -30,6 +30,9 @@ spec:
     - name: gitea-registry-creds-workflowexec
       secret:
         secretName: gitea-registry-creds-workflowexec
+    - name: build-labnotes-files
+      configMap:
+        name: build-labnotes-files
 
   templates:
     - name: main
@@ -49,6 +52,11 @@ spec:
 
     # Checkout from Gitea
     - name: checkout
+      # Must be run as the same user as the build-hugo step.
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       container:
         image: alpine/git
         command: ["/bin/sh", "-c"]
@@ -56,14 +64,17 @@ spec:
           - |
             set -eux
             whoami
-            mkdir -p ~/.ssh
-            echo "gitea.micahrl.me $(cat /gitea-ssh-host-keys-pub/gitea.ed25519.pub)" > ~/.ssh/known_hosts
-            cp /ssh/identity ~/.ssh/identity
-            chmod 0600 ~/.ssh/identity
+            umask 077
+            export HOME=/tmp/home
+            mkdir -p $HOME/.ssh
+            echo "gitea.micahrl.me $(cat /gitea-ssh-host-keys-pub/gitea.ed25519.pub)" > $HOME/.ssh/known_hosts
+            cp /ssh/identity $HOME/.ssh/identity
+            chmod 0600 $HOME/.ssh/identity
+            umask 022
             git clone git@gitea.micahrl.me:kubernasty/psyops.git /workspace/psyops
         env:
           - name: GIT_SSH_COMMAND
-            value: "ssh -i $HOME/.ssh/identity -o StrictHostKeyChecking=yes"
+            value: "ssh -i /tmp/home/.ssh/identity -o StrictHostKeyChecking=yes"
         volumeMounts:
           - name: workspace
             mountPath: /workspace
@@ -71,9 +82,20 @@ spec:
             mountPath: /ssh
           - name: gitea-ssh-host-keys-pub
             mountPath: /gitea-ssh-host-keys-pub
+          # Mount a passwd file so the user properly exists in the container
+          - name: build-labnotes-files
+            mountPath: /etc/passwd
+            subPath: passwd
 
     # Build the site with Hugo
     - name: build-hugo
+      # Must run as the same user as the checkout step,
+      # or else Git (which Hugo runs) will complain
+      # about the permissions of the /workspace/psyops directory.
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       container:
         image: hugomods/hugo:ci-non-root
         args:
@@ -92,6 +114,10 @@ spec:
     - name: build-push-docker
       container:
         image: gcr.io/kaniko-project/executor:latest
+        # Kaniko has to run as root
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
         args:
           - "--dockerfile=/workspace/psyops/kubernasty/labnotes/public/Dockerfile"
           - "--context=/workspace/psyops/kubernasty/labnotes/public"

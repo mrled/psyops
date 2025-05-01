@@ -1,0 +1,9 @@
+# Source: authelia/templates/configMap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: build-labnotes-files
+  namespace: argowf
+data:
+  passwd: |+
+    user:x:1000:1000:user:/tmp/home:/bin/sh
