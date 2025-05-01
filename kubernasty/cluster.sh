@@ -228,12 +228,16 @@ EOF
 }
 
 clusterlogscurl() {
-    urlpath="$1"
-    shift
-    url="https://clusterlogs:9200/$urlpath"
+    target="$1"
+    urlpath="$2"
+    shift 2
+    case "$target" in \
+        api) url="https://clusterlogs:9200/$urlpath" ;;
+        dash) url="http://clusterlogs-dashboards:5601/$urlpath" ;;
+        *) echo "Unknown target $target"; return 1 ;;
+    esac
     cluser="$(kubectl get secret -n logging clusterlogs-admin-password -ojson | jq -r ".data.username | @base64d")"
     clpass="$(kubectl get secret -n logging clusterlogs-admin-password -ojson | jq -r ".data.password | @base64d")"
     echo "url: $url"
-    kubectl exec -itn logging clusterlogs-master-0 -- \
-        curl -k -u $cluser:$clpass "$url" "$@"
+    kubectl exec -itn logging clusterlogs-master-0 -c opensearch -- curl -sS --fail-with-body -k -u "$cluser:$clpass" "$url" "$@"
 }
