@@ -46,7 +46,7 @@ data:
     cn = "Clusterlogs Admin"
     description = "A service account for the clusterlogs OpenSearch cluster"
 
-    # This is a SERVICE ACCOUNT used by the Dashboards to access the OpenSearch cluster
+    # This is a service account in the OpenSearch Cluster used by the Dashboards service itself to access the OpenSearch cluster API
     [ldapenforcer.svcacct.clusterlogs-dashboards]
     cn = "Clusterlogs Dashboards"
     description = "A service account for the Dashboards to access the OpenSearch cluster"
@@ -120,6 +120,8 @@ data:
     [ldapenforcer.group.clusterlogs-dashboards-access]
     description = "Users that can log in to the clusterlogs OpenSearch cluster dashboards web UI"
     groups = ["proletarii", "patricii"]
+    # Allow the clusterlogs-admin service account to access the dashboards web UI so that apiconfig can use it to configure the dashboards too
+    svcaccts = ["clusterlogs-admin"]
 
     [ldapenforcer.group.clusterlogs-readall]
     description = "Grant read access to all indicies in clusterlogs OpenSearch cluster"
