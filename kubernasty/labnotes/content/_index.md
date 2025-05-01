@@ -24,7 +24,7 @@ which contains the cluster configuration.
 Some aspects of configuration touch shared resources, like DNS,
 and those may reference other resources inside psyops but outside of the kubernasty subdir.
 
-Links to the psyops repository are preceded with a `♘` symbol,
+Links to the psyops repository are preceded with a `{{< psyops-symbol >}}` symbol,
 for instance, this web page is generated from markdown at:
 {{< repolink "kubernasty/labnotes/content/_index.md" >}}
 
