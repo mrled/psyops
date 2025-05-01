@@ -7,11 +7,34 @@ module:
   imports:
     path: github.com/alex-shpak/hugo-book
 
+enableGitInfo: true
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  tableOfContents:
+    startLevel: 1
+
 params:
-  repobase: https://gitea.micahrl.me/kubernasty/psyops/src/branch/master
   BookTheme: auto
   BookLogo: favicon.png
+  # If set, adds a link to the bottom of each page to the page source.
+  # We also use it in the repolink shortcode.
+  BookRepo: https://gitea.micahrl.me/kubernasty/psyops
+  # Used by both gitea and github
+  BookCommitPath: commit
+  # Used by github, but gitea doesn't seem to be able to edit files in its UI
+  # If set, adds an "edit this page" link to the bottom of each page
+  # BookEditPath: edit/master/kubernasty/labnotes
   BookDateFormat: 2006-01-02
   BookComments: false
 
+  # The path after the BookRepo URL to files/directories in the repo.
+  # Used by the repolink shortcode.
+  # src/branch/master on Gitea, blob/master on Github.
+  PsyopsRepolinkBase: src/branch/master
+
+  # Prefixed to link text for files in the repo by the repolink shortcode.
   PsyopsSymbol: 𓁿
+

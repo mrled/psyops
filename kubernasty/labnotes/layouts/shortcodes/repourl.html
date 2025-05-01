@@ -1,0 +1,6 @@
+{{- $path := .Get "path" | default "" }}
+{{- if $path }}
+  {{- printf "%s/%s/%s" .Site.Params.BookRepo .Site.Params.PsyopsRepolinkBase $path }}
+{{- else }}
+  {{- .Site.Params.BookRepo }}
+{{- end }}

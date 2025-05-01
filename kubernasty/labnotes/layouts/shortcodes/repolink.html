@@ -1,5 +1,5 @@
 {{- $path := .Get 0 }}
-{{- $uri := printf "%s/%s" .Site.Params.repobase $path }}
+{{- $uri := printf "%s/%s/%s" .Site.Params.BookRepo .Site.Params.PsyopsRepolinkBase $path }}
 <a href="{{ $uri }}">
   <span class="psyops-symbol">{{ .Site.Params.PsyopsSymbol }}</span>&nbsp;<code>{{ $path }}</code>
 </a>

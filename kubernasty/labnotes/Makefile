@@ -16,9 +16,9 @@ modget:
 	hugo mod get -u ./...
 
 .PHONY: dev
-dev: modget ## Run a dev server for the lab notes
+dev: modget ## Run a dev server for the labnotes
 	hugo serve --port $(DEVPORT)
 
 .PHONY: production
-production: modget ## Build the lab notes site for production
+production: modget ## Build the labnotes site for production
 	hugo

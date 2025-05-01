@@ -1,5 +1,6 @@
 baseURL: https://kubernasty-labnotes.micahrl.com
 
 params:
-  repobase: https://github.com/mrled/psyops/blob/master
+  BookRepo: https://github.com/mrled/psyops
+  PsyopsRepolinkBase: blob/master
   FathomSiteCode: PIIURJBF
