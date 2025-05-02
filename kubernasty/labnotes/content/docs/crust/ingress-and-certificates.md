@@ -105,7 +105,7 @@ Now create a secret containing the IAM access key id and secret
 so that cert-manager can use it to make Route53 changes for DNS challenges.
 See the unencrypted example at
 {{< repolink "kubernasty/manifests/mantle/cert-manager/secrets/aws-route53-credential.example.yml" >}}
-Use our normal [convention]({{< ref "conventions" >}}) to encrypt with `sops`
+Encrypt with [SOPS]({{< ref sops >}})
 and save the encrypted version of the real manifest as
 {{< repolink "kubernasty/manifests/mantle/cert-manager/secrets/aws-route53-credential.yaml" >}}
 before applying it.
