@@ -1,3 +1,7 @@
+---
+title: Home
+---
+
 # Kubernasty Labnotes
 
 Kubernasty is my home k3s cluster.

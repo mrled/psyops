@@ -1,10 +1,5 @@
 # Kubernasty
 
-Kubernasty is my home k3s cluster.
+Kubernasty is my home Kubernetes cluster.
 
-The docs are written as a Hugo site.
-
-```sh
-cd labnotes
-make dev
-```
+See <https://kubernasty-labnotes.micahrl.com> for documentation.

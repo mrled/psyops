@@ -1,7 +1,7 @@
 ---
 baseURL: https://kubernasty-labnotes.micahrl.com
 languageCode: en-us
-title: Kubernasty
+title: Kubernasty Labnotes
 
 module:
   imports:
@@ -15,6 +15,15 @@ markup:
       unsafe: true
   tableOfContents:
     startLevel: 1
+
+menu:
+  before:
+    - name: "Home"
+      url: "/"
+      weight: 10
+    - name: "GitHub"
+      url: "https://github.com/mrled/psyops/blob/master/kubernasty"
+      weight: 20
 
 params:
   BookTheme: auto
