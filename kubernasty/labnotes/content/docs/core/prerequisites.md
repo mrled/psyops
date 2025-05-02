@@ -3,42 +3,65 @@ title: Prerequisites
 weight: 11
 ---
 
-I am using psyopsOS for my cluster.
-psyopsOS is an operating system I build based on Alpine Linux;
-see {{< repolink "psyopsOS" >}}.
+## Cluster nodes
 
-## Other tools to install
+You need nodes to dedicate to Kubernetes,
+whether VMs or physical machines.
+Some options:
 
-### Age
+* A single-node cluster for labs, testing, etc.
+  Sort of like an extremely heavyweight docker-compose.
+* Three controller+worker nodes for high availability
+* Three, five, or seven nodes for the controller,
+  plus any number of worker nodes.
+  Controller nodes should be an odd number.
 
-Used for encryption in a few places, including SOPS.
+You'll need an ssh key that can talk to all the nodes as root.
 
-### Gopass
+## k0s Kubernetes distribution
 
-We store our passwords in this.
+I use [k0s](https://k0sproject.io/).
+It has its own delcarative
+[k0sctl](https://github.com/k0sproject/k0sctl) tool
+which makes deployments simple,
+and it has useful optional Kubernetes features built in.
 
-### SOPS
+* A single binary with dependencies baked in,
+  including etcd and coredns
+* Networking with kube-router
+* Cluster HA with VRRP
 
-Flux can decrypt SOPS secrets,
-which allows you to commit encrypted secrets to a Git repo and have Flux deploy them automatically.
-You need the SOPS binary to do this.
+For more details on your choices here, see [Kubernetes distribution]({{< ref "kubernetes-distribution" >}}).
 
-### Helm
+## Prerequisites on each node
 
-We will install [Flux]({{ ref "docs/mantle/flux-gitops" }})
-early on in these instructions.
-Once installed, Flux will look for kustomize manifests
-in a specific directory inside the psyops Git repo
-{{< repolink "kubernasty/flux" >}}
-and deploy them automatically,
-including Helm charts.
+I use my own Alpine Linux -based {{< repolink "psyopsOS" >}},
+but in these labnotes I'll just treat it like a regular Alpine system.
+It should translate pretty well to other Linux distributions too.
 
-That means that in theory,
-aside from Kubernetes itself and Flux,
-you won't need the Helm binary deployed to your cluster nodes.
-However, I recommend installing it anyway,
-perhaps on the cluster nodes if you expect to do maintenance from a shell on those nodes,
-but at least on your workstation,
-as it can help make cluster management easier.
+* k0s itself doesn't actually need to be installed on each node in advance;
+  `k0sctl` will do that for us later.
+* Alpine packages:
+  ```sh
+  apk add containerd containerd-ctr cri-tools sgdisk wireguard-tools
+  ```
+  * `cri-tools` for `crictl`, which is useful when troubleshooting
+  * `sgdisk` for `sgdisk --zap-all /dev/XXX` when cleaning up and redeploying a Ceph cluster
+  * `wireguard-tools` to support encrypted networking between the nodes
 
-<https://helm.sh>
+## Prerequisites on your workstation
+
+* [k0sctl](https://github.com/k0sproject/k0sctl):
+  an installation and management tool that talks to all the nodes.
+* [flux](https://fluxcd.io/):
+  automatic deployment of apps based on a Git repository.
+* [age](https://github.com/FiloSottile/age):
+  a file encryption tool.
+* [sops](https://getsops.io/):
+  a tool built on age that can encrypt data in YAML files.
+  Flux can store an age key and decrypt sops files in the cluster,
+  allowing us to safely keep secrets in Git.
+* [helm](https://helm.sh) (optional):
+  a package manager for Kubernetes.
+  In theory Flux can handle this for us entirely within the cluster,
+  but it's nice to have the command available for troubleshooting.

@@ -1,42 +1,25 @@
 ---
-title: Cluster destruction
+title: Destruction
 weight: 80
 ---
 
-* We use the Alpine k3s package, rather than curlbash'ing the installer.
-  This means that we don't get a nice `k3s-uninstall.sh` script for us.
-  We do have a `k3s-killall.sh` which we have adapted from upstream.
-* See the [uninstall script code](https://github.com/k3s-io/k3s/blob/03885fc38532afcb944c892121ffe96b201fc020/install.sh#L407-L449)
-  for more context.
+A few steps to remember when tearing down a cluster.
 
-Make an uninstall script like this and run it:
+* Stop the k0s service on the nodes
+  (this stops all containers that k0s started too)
+* Delete cluster state
+* Delete partition tables on disks usedd by [Ceph]({{< ref ceph >}})
+
+Something like this on each node:
 
 ```sh
-# Stop all containers and the k3s service itself
-# Note: This does unmount /var/lib/rancher/k3s; we have to remount it below
-k3s-killall.sh
-
+# Stop services
+rc-service k0scontroller stop
 rc-service containerd stop
-rc-service iscsid stop
-
-# This is also necessary for some reason?
-killall containerd-shim-runc-v2 traefik longhorn longhorn-manager kube-vip runsvdir pause sleep tini livenessprobe csi-node-driver-registrar cephcsi entry
-
-# Make sure all relevant longhorn/ceph processes are killed too - might be some you have to clean up manually
-ps aux | grep longhorn
-ps aux | grep ceph
-
-# Unmount a bunch of bullshit that Docker mounts
-umount /run/netns/* /var/lib/kubelet/pods/*/volumes/*/*
 
 # Remove old cluster config/state.
-# Do NOT remove /var/lib/rancher/k3s because that's an overlay mountpoint on psyopsOS
-rm -rf /etc/rancher/k3s /psyopsos-data/overlays/var-lib-rancher-k3s/*
+rm -rf /var/lib/k0s /etc/k0s
 
-# Recommended in the kube-vip k3s documentation https://kube-vip.io/docs/usage/k3s/
-ip addr flush dev lo
-ip addr add 127.0.0.1/8 dev lo
-
-# Make sure that /var/lib/rancher/k3s is mounted
-mount -o bind /psyopsos-data/overlays/var-lib-rancher-k3s /var/lib/rancher/k3s
+# Delete partition tables on Ceph disks
+sgdisk --zap-all /dev/XXX
 ```

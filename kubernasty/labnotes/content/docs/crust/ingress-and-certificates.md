@@ -1,19 +1,18 @@
 ---
-title: ⚠️ Ingress and certificates
-weight: 20
+title: Ingress and certificates
+weight: 99
 ---
 
-{{< hint "danger" >}}
-⚠️ **These steps are not necessary** ⚠️
+{{% hint "danger" %}}
+⚠️ **TODO: Refactor this to work via Flux** ⚠️
 
-This section was written when I didn't yet have [Flux]({{< ref "flux-gitops" >}}) installed.
-Now that Flux is available, this is handled automatically
-[in the crust]({{< ref "cert-manager" >}}).
-We keep this section around for historical reasons,
-and because it's helpful for a from-scratch understanding of things like Ingresses.
+Originally I did this with kubectl early,
+and only added Flux later,
+but I now deploy all this via Flux,
+and I need to update this document to reflect that.
+Some of this has already been refactored, like [cert-manager]({{< ref "cert-manager" >}}).
 
-When deploying a cluster, you can skip this.
-{{< /hint >}}
+{{% /hint %}}
 
 How to configure ingress with and without HTTPS certificates.
 

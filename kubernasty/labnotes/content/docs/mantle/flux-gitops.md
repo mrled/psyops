@@ -11,94 +11,49 @@ Via <https://fluxcd.io/flux/guides/mozilla-sops/#encrypting-secrets-using-age>.
 
 Flux can handle `sops` secrets for you automatically.
 
-First, you need an age key file for the cluster.
-We've already done this (see [Conventions]({{< ref "conventions" >}})),
-but to recap, run `age-keygen -o cluster.age`,
-and save the public key value to `cluster.sh` like
-`export SOPS_AGE_RECIPIENTS=age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9`.
+First, make sure you have already [set up SOPS locally]({{< ref sops >}})
 Now we need to add it to the cluster as a secret:
 
 ```sh
 kubectl create namespace flux-system
-gopass -n kubernasty/flux.agekey |
-    kubectl create secret generic sops-age --namespace flux-system --from-file=age.agekey=/dev/stdin
+kubectl create secret generic sops-age --namespace flux-system --from-file=age.agekey
 ```
 
 Now you can use your newly created key for cluster secrets.
-You could run `sops` like this:
-
-```sh
-sops \
-    --age="$SOPS_AGE_RECIPIENTS" \
-    --encrypted-regex '^(data|stringData)$' \
-    ...
-```
-
-... however, it's nicer to create a sops config file under {{< repolink "kubernasty/.sops.yaml" >}}:
-
-```yaml
-creation_rules:
-  - path_regex: .*.yaml
-    encrypted_regex: ^(data|stringData)$
-    age: age1869u6cnxhf7a6u6wqju46f2yas85273cev2u6hyhedsjdv8v39jssutjw9
-```
-
-`sops` looks for this file in every parent directory of a file you try to de/en-crypt,
-so it will find it automatically for files under `kubernasty/`.
-It will only try to encrypt the `data`/`stringData` keys,
-which is required because if we encrypt other keys in a secret manifest,
-Kubernetes will not be able to use it.
 
 We can create manifest files containing secrets,
 then commit the encrypted version to Git.
 Flux will pull them down from the Git server and be able to apply them like any other manifest,
 decrypting them transparently first.
-
-TODO: Test sops secrets in Flux.
-This isn't tested at all yet.
-
-## Encrypted secrets with sealed-secrets in Flux
-
-* Follow the GitOps workflow on [this page](https://fluxcd.io/flux/guides/sealed-secrets/)
-  * Add the HelmRepository
-  * Add the HelmRelease
-  * Push and wait for it to deploy
-* Retrieve the keys that were generated in the cluster
-  * Save the public key:
-    `kubeseal --fetch-cert --controller-name=sealed-secrets-controller --controller-namespace=flux-system > sealed-secrets.pub.pem`
-  * Save the private key:
-    `kubectl get secret -n flux-system -l sealedsecrets.bitnami.com/sealed-secrets-key > sealed-secrets.key.pem`
-    ... save that in a password manager or similar.
+See examples in [SOPS]({{< ref sops >}}).
 
 ## Bootstrapping Flux
 
 See also the [official Flux documentation](https://fluxcd.io/flux/installation).
 
-* Obtain the `flux` binary from the [releases page](https://github.com/fluxcd/flux2/releases).
-* Create a GitHub Personal Access Token.
-  (See the official docs for details.)
-  I made mine a new-style fine-grained token, rather than a "classic" token with whole-account access.
-  * Give access to just this `mrled/psyops` repo
-    * Read and Write: `Administration`
-    * Read and Write: `Contents`
-    * Read and Write: `Commit Statuses`
-    * Everything else is set to the default value
-  * If you modify the repository permissions after generating the token,
-    make sure to _regenerate the token_.
+{{% hint info %}}
+Note that you can use `flux bootstrap github ...`
+with a GitHub Personal Access Token instead,
+which will create a deploy key for you ---
+see the Flux documentation for more.
+I don't do that here because I want to be able to swap my Flux repo to one hosted in the cluster later.
+{{% /hint %}}
 
-Now bootstrap.
-Bootstrapping is idempotent, so running the bootstrap command multiple times won't hurt anything.
+* Create a new SSH key with `ssh-keygen`, and save it to `./flux_deploy_id`
+* Add it to your gitops repository as a deploy key; it requires read/write
+* `flux bootstrap git --url=ssh://git@github.com/mrled/psyops --path=kubernasty/mantle --branch=master --private-key-file=./flux_deploy_id`
+* (Add `--silent` to make it go without manual confirmation)
+* Delete the `./flux_deploy_id` file; it's saved to the cluster now
+* Create an `age` key with `age-keygen` called `./flux.agekey` --
+  note that this filename is important, as the next command uses the filename
+  as the name for the secret value,
+  and the secret value name must end with `.agekey`
+* Add it as a SOPS key for Flux with
+  `kubectl create secret generic sops-age --namespace=flux-system --from-file=./flux.agekey`
+* Delete the `flux.agekey` file
 
-```sh
-export GITHUB_TOKEN="<the personal access token created previously>"
-
-flux bootstrap github \
-    --owner=mrled \
-    --repository=psyops \
-    --path=kubernasty/mantle/flux \
-    --branch=master \
-    --personal
-```
+Bootstrapping is idempotent, so running the bootstrap command multiple times won't hurt anything,
+and changing the command will update the Flux configuration as you expect.
 
 From this point forward, you shouldn't need to apply manifests with `kubectl apply ...` any more.
 Instead you can commit manifests to this repository under `kubernasty/manifests/mantle/flux/<app name>/kustomization.yml`

@@ -1,4 +1,4 @@
 ---
-title: "Core: k3s and prerequisites"
+title: "Core"
 weight: 20
 ---

@@ -1,4 +1,4 @@
 ---
-title: "Mantle: installs by manifest"
+title: "Mantle: Installs without CI/CD"
 weight: 30
 ---
