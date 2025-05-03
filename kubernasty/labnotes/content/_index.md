@@ -50,3 +50,12 @@ These labnotes are organized according to the
   etc.
 * **Crust**:
   applications that can be installed on top of the base layer.
+
+## Status
+
+This documentation is in the middle of a rewrite.
+
+* **Core**: Complete
+* **Mantle**: In progress
+* **Crust**: To do
+
