@@ -3,6 +3,21 @@ title: Prerequisites
 weight: 11
 ---
 
+## DNS
+
+You'll need a DNS server that you have full programmatic control over, like a Route53 zone.
+See [dns]({{< ref dns >}}) for specifics.
+
+## Networking
+
+Aside from IP addresses for each cluster node,
+you'll need two additional addresses on your local network:
+
+* The control plane HA IP; mine is `192.168.1.220`.
+  This goes in `k0sctl.yaml`
+* THe cluster ingress VIPO; mine is `192.168.1.221`.
+  This is used by [metallb]({{< ref metallb >}})
+
 ## Cluster nodes
 
 You need nodes to dedicate to Kubernetes,

@@ -121,12 +121,14 @@ ffs
 
 ## A note on dependencies
 
+TODO: This section is wrong, it's how seedboxk8s works but not how kubernasty works.
+
 Flux can represent dependency relationship for kustomizations in
-{{< repolink "kubernasty/manifests/mantle/flux/flux-system" >}}.
+{{< repolink "seedboxk8s/fluxroot/kustomizations" >}}.
 This is necessary for cert-manager,
 so we end up with
-{{< repolink "kubernasty/manifests/mantle/flux/flux-system/crust/cert-manager-config.yaml" >}} which depends on
-{{< repolink "kubernasty/manifests/mantle/flux/flux-system/crust/cert-manager.yaml" >}}.
+{{< repolink "seedboxk8s/fluxroot/kustomizations/cert-manager-config.yaml" >}} which depends on
+{{< repolink "seedboxk8s/fluxroot/kustomizations/cert-manager.yaml" >}}.
 If we don't do this, we get weird errors like
 `error: the server could not find the requested resource (patch clusterissuers.cert-manager.io letsencrypt-staging`.
 [See also](https://github.com/fluxcd/flux2/discussions/1944).

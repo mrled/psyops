@@ -1,6 +1,5 @@
 ---
-title: Self-hosted git
-weight: 80
+title: "TODO: Self-hosted git"
 ---
 
 (See also [bootstrapping]({{< ref "bootstrapping" >}}))

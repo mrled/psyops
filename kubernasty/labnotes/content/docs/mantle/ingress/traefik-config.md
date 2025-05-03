@@ -7,7 +7,7 @@ Manifests: {{< repolink "kubernasty/manifests/crust/traefik" >}}
 
 We'll enable the Traefik dashboard and configure some middlewares.
 
-Now that we have [ingress and certificates]({{< ref "ingress-and-certificates" >}}) configured,
+Now that we have ingress and certificates configured,
 we can enable the Traefik dashboard.
 
 ## How to access the dashboard

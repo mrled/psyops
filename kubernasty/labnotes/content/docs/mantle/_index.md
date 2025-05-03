@@ -1,4 +1,4 @@
 ---
-title: "Mantle: Installs without CI/CD"
+title: "Mantle: Ordered installation steps"
 weight: 30
 ---
