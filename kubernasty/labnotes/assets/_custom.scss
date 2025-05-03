@@ -1,0 +1,9 @@
+// Append / override hugo-book defaults
+
+nav li span {
+  color: var(--gray-500);
+}
+
+nav li a.active {
+  font-weight: bold;
+}
