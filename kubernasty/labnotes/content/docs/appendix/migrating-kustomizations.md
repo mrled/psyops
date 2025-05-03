@@ -28,8 +28,8 @@ kubectl patch kustomization $old --type=merge -p '{"spec":{"prune":false}}'
 Now move `someapp` from the old place to the new place,
 Make sure to delete references from the old place and add them in the new place.
 For instance,
-if there was `oldlocation/kustomize.yaml` that referenced `someapp/some-resources.yaml`,
-delete that there and put it in `newlocation/kustomize.yaml`.
+if there was `oldlocation/kustomization.yaml` that referenced `someapp/some-resources.yaml`,
+delete that there and put it in `newlocation/kustomization.yaml`.
 
 Then:
 
