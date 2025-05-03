@@ -1,6 +1,5 @@
 ---
 title: Ceph cluster
-weight: 35
 ---
 
 {{< hint warning >}}
@@ -9,21 +8,9 @@ weight: 35
 See section below on deleting and reinstalling a cluster.
 {{< /hint >}}
 
-## Storage options
-
-* Longhorn is a little easier to get started with, and we did use it originally,
-  but it is less flexible.
-  It uses free disk spaces on an existing filesystem.
-  (Is there a performance penalty for that?)
-* Ceph is more mature, and more featureful.
-  It offers block, object, and filesystem storage.
-  It can use raw storage in various formats;
-  we use raw block devices here.
-* OpenEBS: ?
-* SeaweedFS: ?
-* Others?
-
 ## Choosing Ceph
+
+See [Storage options]({{< ref "storage-options" >}}) for more thoughts about storage in Kubernetes.
 
 We will use Ceph for block storage
 
@@ -612,14 +599,6 @@ which might be a good thing in production but is very annoying in development.
 To add a new node after Ceph comes up:
 
 * Add it to the CephCluster resource
-
-## Appendix: Why not minio?
-
-Minio looks cool, and I have heard it is less complex than Ceph.
-However, its recommended storage driver `directpv`
-[cannot be installed via CI/CD](https://github.com/minio/directpv/issues/436).
-
-Ceph doesn't have this limitation, so we're using it for now.
 
 ## Appendix: Caveats
 
