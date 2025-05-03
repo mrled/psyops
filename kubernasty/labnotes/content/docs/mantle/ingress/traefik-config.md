@@ -47,7 +47,7 @@ See also:
 
 ### HTTP basic authentication
 
-We protect most services with [Keycloak]({{< ref "keycloak" >}}) and `traefik-forward-auth`.
+We protect most services with Keycloak and `traefik-forward-auth`.
 However, it's useful to have an HTTP Basic Authentication user for some services,
 because it can be configured in Traefik statically and doesn't require a working Keycloak deployment.
 

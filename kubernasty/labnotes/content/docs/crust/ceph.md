@@ -87,7 +87,7 @@ nvme0n1                              259:0    0 931.5G  0 disk
 
 It's worth using the software (Ceph) or the cluster name (cephalopod) or both
 in the name of the storage class,
-in case we add other storage classes like [Longhorn]({{< ref "longhorn" >}}),
+in case we add other storage classes like Longhorn,
 per-node ephemeral storage, etc.
 
 I also think the disk class should be in the name,
