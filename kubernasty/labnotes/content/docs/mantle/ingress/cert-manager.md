@@ -3,49 +3,59 @@ title: Cert Manager
 weight: 40
 ---
 
-TODO: This page is very old and needs updating, all the manifest links are wrong, etc.
+cert-manager issues certificates for us automatically.
 
-* Traefik can handle Let's Encrypt certs itself...
-* ... but the fucking thing charges money for this if using with HA, as we are in k3s.
-* Instead, we can use `cert-manager` to create and store the certs, and let Traefik use them.
+It should be created when Flux bootstraps.
+This contains notes for things I had to do manually the first time,
+like create the secret object containing AWS credentials.
 
-First, install cert-manager using kubectl with cert-manager’s release file:
+## Prerequisites
 
-```sh
-mkdir -p manifests/mantle/cert-manager/{deployments,secrets,clusterissuers}
-curl -L -o manifests/mantle/cert-manager/deployments/cert-manager.yml https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cert-manager.yaml
-kubectl apply -f manifests/mantle/cert-manager/deployments/cert-manager.yml
-```
+I am using `.micahrl.me` for my cluster.
+This is otherwise used for my [mirror universe](https://com.micahrl.me).
 
-This will create the `cert-manager` namespace and deploy the resources.
+* DNS configured, including
+    * A dedicated zone in Route53 for cluster records
+    * I handle this in CloudFormation under {{< repolink "ansible/cloudformation/MicahrlDotMe.cfn.yml" >}}
+* An AWS IAM user with permission to modify the zone, for DNS challenges with Let's Encrypt
+    * I create a group in the CloudFormation template, and then an IAM user in the AWS console
 
-This step requires an AWS Route53 zone,
-and an IAM user that has permission to update records in the zone.
-I created a Kubernasty zone for this (see {{< repolink "ansible/cloudformation/MicahrlDotCom.cfn.yml" >}}).
-It contains an A record `kubernasty.micahrl.com` pointing to the cluster IP address of `192.168.1.200`,
-and CNAME records for each service as subdomains, like `whoami-https-staging.kubernasty.micahrl.com`.
-(TODO: also show more advanced configurations that support multiple zones.)
-I also created an IAM access key in the AWS console.
+{{< hint warning >}}
+When using the production issuer we define here,
+cert-manager requests Let's Encrypt certs for this domain.
+
+If the cluster is misconfigured (requesting too many times, losing certs in a botched backup restore, etc),
+it could cause Let's Encrypt to temporarily block certificate requests for the entire domain.
+If the cluster is using a TLD that is also used elsewhere,
+this could mean that Let's Encrypt prevents those certs from being renewed for a while.
+
+* Consider using the staging issuer when appropriate (development, testing, etc)
+* Consider using a domain name that isn't used for other services
+{{< /hint >}}
+
+## Setting secrets
 
 Now create a secret containing the IAM access key id and secret
 so that cert-manager can use it to make Route53 changes for DNS challenges.
-See the unencrypted example at
-{{< repolink "kubernasty/manifests/mantle/cert-manager/secrets/aws-route53-credential.example.yml" >}}
-Encrypt with [SOPS]({{< ref sops >}})
-and save the encrypted version of the real manifest as
-{{< repolink "kubernasty/manifests/mantle/cert-manager/secrets/aws-route53-credential.yaml" >}}
-before applying it.
 
 ```sh
-# Write the manifest
-vim tmpsecret.yml
-# Encrypt the manifest
-sops --encrypt tmpsecret.yml > manifests/mantle/cert-manager/secrets/aws-route53-credential.yaml
-# Remove the unencrypted manifest
-rm tmpsecret.yml
+keyid=xxxx
+keysecret=yyyy
 
-# Apply the encrypted manifest
-sops --decrypt manifests/mantle/cert-manager/secrets/aws-route53-credential.yaml | kubectl apply -f -
+cat >manifests/crust/cert-manager/secrets/aws-route53-credential.yaml <<EOF
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+    name: aws-route53-credential
+    # Must be in same namespace as Cert Manager deployment
+    namespace: cert-manager
+stringData:
+    access-key-id: $keyid
+    secret-access-key: $keysecret
+EOF
+
+sops --encrypt --in-place manifests/crust/cert-manager/secrets/aws-route53-credential.yaml
 ```
 
 Then apply the issuer.
@@ -55,160 +65,102 @@ We'll use the staging issuer first so that Let's Encrypt doesn't give us a temp 
 while we are trying to make this work,
 but we can go ahead and apply the prod one as well.
 
-```sh
-kubectl apply -f manifests/mantle/cert-manager/clusterissuers/letsencrypt-issuer-staging.yml
-kubectl apply -f manifests/mantle/cert-manager/clusterissuers/letsencrypt-issuer-prod.yml
-```
-
 Now we're ready to start requesting certificates.
 
-TODO: explain why using DNS challenges is important with Let's Encrypt.
-Short version: they work well for clusters that aren't on the public Internet.
+## Why do we use DNS challenges?
 
-## HTTPS ingress for whoami service using Let's Encrypt staging certificates
+We require Route53 credentials so we can do ACME DNS challenges.
 
-Now we can enable HTTPS for the whoami service.
-We'll use the Let's Encrypt staging infrastructure first so that they don't ban us if something is wrong.
+* DNS challenges are required for wildcard certs
+* DNS challenges work even if you're not exposing HTTP ports from your cluster to the Internet
+  (unlike HTTP challenges, which require an Internet-accessible webserver)
+* We also need a programmatic DNS service anyway for
+  [external-dns]({{< ref "external-dns" >}}),
+  and we can use the same credentials here.
 
-Note that we have to define a `Certificate` resource in this file.
-Traefik can do this if you pay for Enterprise or are not using HA,
-but when using Traefik Proxy + Cert Manager, we have to create it ourselves.
+## Fixing DNS propagation errors
 
-```sh
-kubectl apply -f manifests/mantle/whoami/ingresses/https-staging.yml
+I was seeing errors like this in the cert-manager pod,
+not resolving and repeating every few seconds:
+
+```text
+E0208 01:35:57.904547       1 sync.go:190] cert-manager/challenges "msg"="propagation check failed" "error"="Could not determine authoritative nameservers for \"_acme-challenge.longhorn.kubernasty.micahrl.com.\"" "dnsName"="longhorn.kubernasty.micahrl.com" "resource_kind"="Challenge" "resource_name"="longhorn-cert-backing-secret-lhmbc-2271850782-994157330" "resource_namespace"="longhorn-system" "resource_version"="v1" "type"="DNS-01"
 ```
 
-Verify things are working with commands like:
+To fix, we have to pass additional arguments `--dns01-recursive-nameservers-only` and `--dns01-recursive-nameservers=1.1.1.1:53`.
+To do that, we use the `extraArgs` key in
+{{< repolink "kubernasty/manifests/crust/cert-manager/configmaps/cert-manager.overrides.yaml" >}}.
+
+... or actually maybe that's wrong?
+[Per this bug](https://github.com/cert-manager/cert-manager/issues/2741),
+this is what finally got me un-stuck:
 
 ```sh
-kubectl get certificates -A
-kubectl get certificaterequests -A
-kubectl get ingress -A
-kubectl describe certificate ...
-kubectl describe certificaterequest ...
+kubectl rollout restart deployment -n cert-manager cert-manager
 ```
 
-{{< hint info >}}
-**It can take a while for certificates to become READY.**
+ffs
 
-In my experience on AWS Route53, it seems to usually take 2-5 minutes.
+## Replicating the wildcard
 
-I have heard that other providers may take 30 minutes or longer.
+* An ingress can only use a secret defined in its namespace
+* When using individual certificates for each hostname, you can just put the secret in the right namespace
+* However the wildcard cert exists in the cert-manager namespace
+* We use [reflector](https://github.com/emberstack/kubernetes-reflector) to copy it where it is needed.
+* See {{< repolink "manifests/crust/reflector" >}},
+  and note that we provide reflector annotations in
+  {{< repolink "kubernasty/manifests/crust/cert-manager-config/certificates/micahrl-dot-me-wildcard.cert.yaml" >}}.
 
-Wait to proceed until your certificates enter the READY state.
+## A note on dependencies
+
+TODO: This section is wrong, it's how seedboxk8s works but not how kubernasty works.
+
+Flux can represent dependency relationship for kustomizations in
+{{< repolink "seedboxk8s/fluxroot/kustomizations" >}}.
+This is necessary for cert-manager,
+so we end up with
+{{< repolink "seedboxk8s/fluxroot/kustomizations/cert-manager-config.yaml" >}} which depends on
+{{< repolink "seedboxk8s/fluxroot/kustomizations/cert-manager.yaml" >}}.
+If we don't do this, we get weird errors like
+`error: the server could not find the requested resource (patch clusterissuers.cert-manager.io letsencrypt-staging`.
+[See also](https://github.com/fluxcd/flux2/discussions/1944).
+
+We take this opportunity to add a `dependsOn` relationship to other kustomizations as well,
+like all of the deployments that deploy a certificate should have a `dependsOn`
+for the `cert-manager-config` kustomization,
+all the deployments that need persistent storage should depend on Longhorn, etc.
+
+## Reinstalling cert-manager
+
+I needed to do this when I moved from running `kubectl apply -f ...` to install cert-manager
+to having it managed by Flux.
+
+{{< hint danger >}}
+If you set the `--enable-certificate-owner-ref` flag to `true` at any point in the past,
+certificates could be deleted and require being re-issued when cert-manager is reinstalled.
+See also [the docs](https://cert-manager.io/docs/installation/upgrading/#reinstalling-cert-manager).
+
+Especially if you are using the TLD for other purposes aside from this Kubernetes cluster,
+this could impact you.
+Let's Encrypt has a relatively low limit of the number of certificate requests per week,
+and this limit applies to the TLD -- not just the specific hostname or subdomain.
+
+This repository never sets `--enable-certificate-owner-ref`.
 {{< /hint >}}
 
-Deeper troubleshooting:
+As long as there are no issues with `--enable-certificate-owner-ref`:
 
 ```sh
-# If certs are not going to 'Ready' state, look at the logs in the cert-manager container
-kubectl get pods -n cert-manager
-# Returns a list like:
-# NAME                                       READY   STATUS    RESTARTS   AGE
-# cert-manager-6544c44c6b-v25jr              1/1     Running   0          14h
-# cert-manager-cainjector-5687864d5f-88kgf   1/1     Running   0          14h
-# cert-manager-webhook-785bb86798-f9dn6      1/1     Running   0          14h
-kubectl logs -f cert-manager-6544c44c6b-v25jr -n cert-manager
-
-# If the certs look like they're being created, but the wrong cert is being served (see below),
-# you may also want to see traefik logs
-kubectl get pods -n kube-system
-# Returns a list that includes:
-# ... snip ...
-# kube-system    svclb-traefik-75ce313c-74ggl               2/2     Running     2 (28h ago)   28h
-# kube-system    svclb-traefik-75ce313c-9745x               2/2     Running     6 (28h ago)   29h
-# kube-system    svclb-traefik-75ce313c-f76c6               2/2     Running     4 (28h ago)   28h
-# kube-system    traefik-df4ff85d6-f5wxf                    1/1     Running     3 (28h ago)   29h
-# ... snip ...
-# You'll want the traefik container, not the svclb-traefik containers
-kubectl logs -f traefik-df4ff85d6-f5wxf -n kube-system
+kubectl delete helmrelease -n cert-manager cert-manager
+flux delete kustomization -n flux-system cert-manager
 ```
 
-It will take a few minutes for the certificate to be issued.
-Once it is issued, check that it's working with `curl` (ignoring SSL errors, as this is the staging server)
-and `certissuer`, which is a function defined in {{< repolink "kubernasty/cluster.sh" >}}.
+Here you can verify that the secret containing the certificate is still in the cluster,
+at least if you follow my convention of naming these secrets `CERTNAME-cert-backing-secret`, with:
 
 ```sh
-curl -k https://whoami-https-staging.kubernasty.micahrl.com
-# Should return results similar to those returned by the http request earlier
-
-certissuer whoami-https-staging.kubernasty.micahrl.com
-# Should show the staging Let's Encrypt CA, something like:
-# Issuer: C=US, O=(STAGING) Let's Encrypt, CN=(STAGING) Artificial Apricot R3
+kubectl get secret -A | grep cert-backing-secret
 ```
 
-Make sure that it's showing the staging LE CA!
-If it is instead showing something like `Issuer: CN=TRAEFIK DEFAULT CERT`,
-that means that you don't have certificates configured properly,
-and getting a production LE cert in the next step will not work.
-
-See also:
-
-* <https://blog.crafteo.io/2021/11/26/traefik-high-availability-on-kubernetes-with-lets-encrypt-cert-manager-and-aws-route53/>
-
-## HTTPS ingress for whoami service using Let's Encrypt production certificates
-
-This is very similar to the staging setup, just using a different ClusterIssuer to get real certs.
-
-```sh
-kubectl apply -f manifests/mantle/whoami/ingresses/https-prod.yml
-
-# ... wait ...
-
-# Don't use -k - we want this to fail if the cert isn't trusted
-curl https://whoami-https-prod.kubernasty.micahrl.com
-# Should return results similar to last time
-
-certissuer whoami-https-prod.kubernasty.micahrl.com
-# Should show the production Let's Encrypt CA, something like:
-# Issuer: C=US, O=Let's Encrypt, CN=R3
-```
-
-## Troubleshooting
-
-* Try commands like `kubectl describe certificate whoami-cert-prod -n whoami`
-* Note the message `Issuing certificate as Secret does not exist` is a generic error --
-  it just means the cert doesn't exist locally.
-  If it stays in this state for a long time,
-  you'll have to do some cert-manager troubleshooting.
-* See the [cert-manager troubleshooting guide](https://cert-manager.io/docs/troubleshooting/)
-
-## Appendix: background on certificates
-
-A thoughtful list of considerations about ingress controllers and certificates,
-or a thinly disguised whine about the execrable state of basic tooling in the Kubernetes ecosystem.
-You decide!
-
-You can skip this section.
-I keep it here to provide context on why I chose to do things this way.
-Kubernetes has a _lot_ of Perl's TMTOWTDI design philosophy,
-and comparing different methods of accomplishing the same result can be very confusing at first.
-
-* k3s uses Traefik as its ingress controller by default
-* Traefik can automatically manage Let's Encrypt certificates
-    * You can configure it to automatically request them based on the services it is load balancing for
-    * I've done this in Docker Swarm for a while now
-    * However, this only works with a single instance of Traefik Proxy; you have to pay for Traefik Enterprise for this to work in highly available clusters
-    * Kubernasty will be a highly available cluster; any node should be able to go down and the server should keep running, and when running it should still keep using correct certificates
-* Cert Manager is recommended to use instead when you need a highly available cluster with Traefik IngressController and HTTPS.
-* Kubernetes has a generic resource called `Ingress`.
-    * Traefik supports `Ingress`, but has a more natural extension called `IngressRoute`. It's unclear to me what the differences are.
-    * (The `IngressRoute` name is also used by other proxies that work with Kubernetes, but its nonstandard, and each project's `IngressRoute` is completely different and incompatible.)
-    * <https://stackoverflow.com/questions/60177488/what-is-the-difference-between-a-kubernetes-ingress-and-a-ingressroute>
-    * > Ingress is a shared abstraction that can be implemented by many providers (Nginx, ALBs, Traefik, HAProxy, etc). It is specifically an abstraction over a fairly simple HTTP reverse proxy that can do routing based on hostnames and path prefixes. Because it has to be a shared thing, that means it's been awkward to handle configuration of provider-specific settings. Some teams on the provider side have decided the benefits of a shared abstraction are not worth the complexities of implementation and have made their own things, so far Contour and Traefik have both named them IngressRoute but there is no connection other than similar naming.
-* Traefik's built in Let's Encrypt support works fine with its `IngressRoute`, but Cert Manager cannot work with `IngressRoute`. To use Cert Manager, you need to use `Ingress` instead.
-    * <https://doc.traefik.io/traefik/providers/kubernetes-crd/>
-    * > If you want to keep using Traefik Proxy, high availability for Let's Encrypt can be achieved by using a Certificate Controller such as Cert-Manager. When using Cert-Manager to manage certificates, it creates secrets in your namespaces that can be referenced as TLS secrets in your ingress objects. When using the Traefik Kubernetes CRD Provider, unfortunately Cert-Manager cannot yet interface directly with the CRDs. A workaround is to enable the Kubernetes Ingress provider to allow Cert-Manager to create ingress objects to complete the challenges. Please note that this still requires manual intervention to create the certificates through Cert-Manager, but once the certificates are created, Cert-Manager keeps them renewed.
-    * Note that this means that you have to define your own certificates when spinning up new services. This isn't that bad; you're already writing a gigantic blob of YAML to write the various namespace/service/secret/ingress manifests, you might as well add one more fucking blob of YAML for the cert too. The whole point of computers is to enable humans to write more YAML, and this is just another way to accomplish this goal.
-* It's worth mentioning there is a _new_ thing called the Kubernetes `Gateway`
-    * It is a first party resource like `Ingress`
-    * It's more generic than `Ingress`, hopefully solving the problems that Traefik tries to solve with its proprietary `IngressRoute`
-    * Support is in progress for Traefik, Cert Manager, ExternalDNS... most things are expected to support it since it will become standard
-    * It seems too early right now, things are still rough, e.g. Traefik's support is still "experimental"
-* Why work with Traefik at all?
-    * k3s uses traefik by default (although you can disable it at install time and install something else instead once the cluster is up).
-    * Maybe we should use nginx instead? No idea if nginx has its own problems. Probably!
-    * nginx _does_ offer much less fucked up logs.
-    * WARNING: `kubernetes/ingress-nginx` is an ingress controller maintained by the Kubernetes community; `nginxinc/kubernetes-nginx` is an ingress controller maintained by F5 NGINX. <https://www.nginx.com/blog/guide-to-choosing-ingress-controller-part-4-nginx-ingress-controller-options/>. Naturally, there are two versions of the one maintained by F5, and F5 is also contracted to maintain the community one, so who knows.
-    * maybe try this? <https://gist.github.com/pkeech/24ed00b699509732c4cd33ee89767f49>
-* So for Cert Manager, we need to use the first party `Ingress` resources.
+Then make a no-op commit to the cert-manager kustomization in flux-system.
+You might need to hit it with `flux reconcile`.

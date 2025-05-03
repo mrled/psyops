@@ -19,3 +19,8 @@ but [k0s]({{< ref creation >}}) does provide this functionality for us via `cont
 
 We'll also configure cert-manager to provision HTTPS certificates for the cluster,
 since that's required to have the browser trust any sites we host.
+
+See also:
+
+* Why we use [IngressRoute]({{< ref ingressroute >}}) instead of Ingress
+* Why [we can't use traefik]({{< ref "traefik-cert-manager" >}}) for certificate creation
