@@ -3,7 +3,7 @@ title: OpenSearch
 ---
 
 OpenSearch collects logs for the instance.
-See {{< repolink "/kubernasty/crust/logging" >}}.
+See {{< repolink "/kubernasty/applications/logging" >}}.
 
 ## Create index pattern in OpenSearch
 

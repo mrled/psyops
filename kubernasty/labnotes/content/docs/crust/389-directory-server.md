@@ -11,9 +11,9 @@ but that's not as fun.
 I will stress that it is _much easier_.)
 
 The fun part is in
-{{< repolink "kubernasty/crust/directory/dirsrv/ConfigMap.initldifs" >}},
+{{< repolink "kubernasty/applications/directory/dirsrv/ConfigMap.initldifs" >}},
 which contain `.ldif` files applied by scripts in
-{{< repolink "kubernasty/crust/directory/dirsrv/ConfigMap.initsetup" >}}.
+{{< repolink "kubernasty/applications/directory/dirsrv/ConfigMap.initsetup" >}}.
 The application of these files is made idempotent by the
 `apply_marked_ldif.sh` script,
 where a special OU is checked before applying each LDIF;
@@ -27,7 +27,7 @@ on this subject.
 ## Creating users and groups, and applying group membership
 
 tl;dr: add an LDIF in
-{{< repolink "kubernasty/crust/directory/dirsrv/ConfigMap.initldifs" >}}.
+{{< repolink "kubernasty/applications/directory/dirsrv/ConfigMap.initldifs" >}}.
 
 Understand the difference between POSIX users/groups and LDAP users/groups.
 An LDAP group may also be a POSIX group;

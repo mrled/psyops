@@ -126,7 +126,7 @@ Note that the server doesn't need the client secret.
 
 At this point, you can authenticate via OIDC, but you aren't authorized for anything.
 To do that, bind LDAP groups to cluster roles with `ClusterRoleBinding` resources,
-e.g. {{< repolink "kubernasty/crust/authelia/common/ClusterRoleBinding.patricii.yaml" >}}.
+e.g. {{< repolink "kubernasty/applications/authelia/common/ClusterRoleBinding.patricii.yaml" >}}.
 The `cluster-admin` role is present by default in Kubernetes,
 or you can define your own more limited `Role` and `ClusterRole` resources as appropriate.
 

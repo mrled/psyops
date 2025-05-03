@@ -141,7 +141,7 @@ This is easier to get started with.
   * This makes pushes instantly start a flux reconciliation; flux doesn't have to poll
   * Flux side
     * This can all be done by Flux itself
-    * See `kubernasty/crust/flux-config`
+    * See `kubernasty/applications/flux-config`
   * Gitea side
     * `https://gitea.micahrl.me/kubernasty/cluster/settings/hooks`
     * Add Webhook -> Gitea
@@ -156,7 +156,7 @@ This is easier to get started with.
   * Note that webhooks are rate limited
     * <https://github.com/fluxcd/flux2/discussions/3571>
 * Add a webhook for Argo Workflows
-  * Argo Workflows side, see `kubernasty/crust/argowf/workflows/common/EventSource.webhook.yaml`
+  * Argo Workflows side, see `kubernasty/applications/argowf/workflows/common/EventSource.webhook.yaml`
   * Gitea side
     * Target URL: `http://webhook-eventsource-svc.argowf.svc.cluster.local:12000/gitea`
     * HTTP Method: `POST`

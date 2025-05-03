@@ -223,7 +223,7 @@ The secret is created in the same namespace as the OBC.
 I think there is supposed to be a way to create multiple OBCs (and credentials) for the same bucket,
 but I haven't been able to make that work;
 my workaround is to create a Job to annotate the credentials secret with reflector properties,
-see {{ repolink "kubernasty/crust/argowf/Job.reflect-argowf-artifacts-secret.yaml }}.
+see {{ repolink "kubernasty/applications/argowf/Job.reflect-argowf-artifacts-secret.yaml }}.
 
 See also the `cluster.sh` function `kaws_bucketclaim`.
 

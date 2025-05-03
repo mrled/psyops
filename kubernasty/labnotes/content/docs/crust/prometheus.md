@@ -5,7 +5,7 @@ title: Prometheus
 * Use the Prometheus Operator
 * Deploy the Node Exporter using examples from [here](https://github.com/prometheus-operator/kube-prometheus/tree/main/manifests)
   * Requires the `prometheus` ServiceAccount to have extra privileges,
-    see {{< repolink "kubernasty/crust/prometheus/prometheus/RBAC.prometheus.yaml" >}}.
+    see {{< repolink "kubernasty/applications/prometheus/prometheus/RBAC.prometheus.yaml" >}}.
     ```yaml
     - nonResourceURLs:
       - /metrics

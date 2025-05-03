@@ -4,7 +4,7 @@ weight: 30
 ---
 
 I installed traefik by copying the manifests from their GitHub repo into
-{{< repolink "kubernasty/crust/traefik" >}}.
+{{< repolink "kubernasty/applications/traefik" >}}.
 In retrospect, I don't recommend this,
 and I will update this to use Helm in the future.
 
@@ -13,7 +13,7 @@ TODO: Install traefik with Helm.
 TODO: Add docs about various traefik listen ports.
 
 Take note of the middleware that redirects to HTTPS:
-{{< repolink "kubernasty/crust/traefik/common/Middleware.redirect-to-https.yaml" >}}.
+{{< repolink "kubernasty/applications/traefik/common/Middleware.redirect-to-https.yaml" >}}.
 
 ## whoami service
 

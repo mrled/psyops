@@ -3,7 +3,7 @@ title: metallb
 weight: 20
 ---
 
-See {{< repolink "kubernasty/crust/metallb/kustomization.yaml" >}}.
+See {{< repolink "kubernasty/applications/metallb/kustomization.yaml" >}}.
 
 That file installs the metallb controller,
 including L2Advertisement and IPAddressPool CRDs,
