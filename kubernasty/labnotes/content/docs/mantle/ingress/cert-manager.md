@@ -74,9 +74,6 @@ We require Route53 credentials so we can do ACME DNS challenges.
 * DNS challenges are required for wildcard certs
 * DNS challenges work even if you're not exposing HTTP ports from your cluster to the Internet
   (unlike HTTP challenges, which require an Internet-accessible webserver)
-* We also need a programmatic DNS service anyway for
-  [external-dns]({{< ref "external-dns" >}}),
-  and we can use the same credentials here.
 
 ## Fixing DNS propagation errors
 
