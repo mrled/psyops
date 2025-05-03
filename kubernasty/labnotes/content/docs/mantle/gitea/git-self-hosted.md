@@ -1,5 +1,6 @@
 ---
-title: "TODO: Self-hosted git"
+title: Self hosted Flux repo
+weight: 70
 ---
 
 (See also [bootstrapping]({{< ref "bootstrapping" >}}))

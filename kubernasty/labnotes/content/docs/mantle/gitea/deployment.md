@@ -1,6 +1,9 @@
 ---
 title: Gitea
+weight: 10
 ---
+
+TODO: Re-think this deployment so that it's easier to update, maybe reconsider helm.
 
 A git server.
 
