@@ -7,3 +7,17 @@ nav li span {
 nav li a.active {
   font-weight: bold;
 }
+
+// If any exterrnal links are in the nav bar, annotate them with a small icon
+// to indicate that they will open in a new tab/window
+nav a[href^="http"]:not(:is(
+  [href*="kubernasty-labnotes.micahrl.com"],
+  [href*="labnotes.micahrl.me"],
+))::after {
+  content: " ⇗";
+  font-size: 0.85em;
+  margin-left: 0.1em;
+  vertical-align: super;
+  line-height: 1;
+  font-weight: bold;
+}
