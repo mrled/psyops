@@ -33,10 +33,35 @@ this could mean that Let's Encrypt prevents those certs from being renewed for a
 * Consider using a domain name that isn't used for other services
 {{< /hint >}}
 
+## ACME certificate providers
+
+### Let's Encrypt
+
+The original.
+
+Works without any accounts.
+You can just get a cert, for free, with DNS credentials.
+
+The staging servers do not issue trusted TLS certs,
+but they resolve any problems with your DNS challenge setup.
+Production servers have very long (7d) backoff periods during which you absolutely cannot issue any certs,
+so you wan to make staging work first.
+
+### ZeroSSL
+
+[ZeroSSL](https://zerossl.com/) also offers free ACME certificates,
+without the very long backoff period headaches that you can have with the Let's Encrypt production issuer.
+
+However, to use it you must first create an account with them.
+
 ## Setting secrets
 
 Now create a secret containing the IAM access key id and secret
 so that cert-manager can use it to make Route53 changes for DNS challenges.
+
+Mine is in
+{{< repolink "kubernasty/applications/cert-manager/clusterissuer-kubernasty-ca/Secret.aws-route53-credential.yaml" >}}.
+I created it like this:
 
 ```sh
 keyid=xxxx
@@ -75,6 +100,58 @@ We require Route53 credentials so we can do ACME DNS challenges.
 * DNS challenges work even if you're not exposing HTTP ports from your cluster to the Internet
   (unlike HTTP challenges, which require an Internet-accessible webserver)
 
+## Certificate readiness
+
+**It can take a while for certificates to become READY.**
+
+In my experience on AWS Route53, it seems to usually take 2-5 minutes.
+I have heard that other providers may take 30 minutes or longer.
+Wait to proceed until your certificates enter the READY state.
+
+## Troubleshooting
+
+Verify things are working with commands like:
+
+```sh
+kubectl get certificates -A
+kubectl get certificaterequests -A
+kubectl get ingress -A
+kubectl describe certificate ...
+kubectl describe certificaterequest ...
+```
+
+Deeper troubleshooting:
+
+```sh
+# If certs are not going to 'Ready' state, look at the logs in the cert-manager container
+kubectl get pods -n cert-manager
+# Returns a list like:
+# NAME                                       READY   STATUS    RESTARTS   AGE
+# cert-manager-6544c44c6b-v25jr              1/1     Running   0          14h
+# cert-manager-cainjector-5687864d5f-88kgf   1/1     Running   0          14h
+# cert-manager-webhook-785bb86798-f9dn6      1/1     Running   0          14h
+kubectl logs -f cert-manager-6544c44c6b-v25jr -n cert-manager
+
+# If the certs look like they're being created, but the wrong cert is being served (see below),
+# you may also want to see traefik logs
+kubectl get pods -n kube-system
+# Returns a list that includes:
+# ... snip ...
+# kube-system    svclb-traefik-75ce313c-74ggl               2/2     Running     2 (28h ago)   28h
+# kube-system    svclb-traefik-75ce313c-9745x               2/2     Running     6 (28h ago)   29h
+# kube-system    svclb-traefik-75ce313c-f76c6               2/2     Running     4 (28h ago)   28h
+# kube-system    traefik-df4ff85d6-f5wxf                    1/1     Running     3 (28h ago)   29h
+# ... snip ...
+# You'll want the traefik container, not the svclb-traefik containers
+kubectl logs -f traefik-df4ff85d6-f5wxf -n kube-system
+```
+
+## SSL certificate inspection
+
+In my [cluster.sh]({{< ref "clustersh" >}}),
+I added `certinfo` and `certissuer` commands
+that make it easier to inspect certificates.
+
 ## Fixing DNS propagation errors
 
 I was seeing errors like this in the cert-manager pod,
@@ -107,25 +184,6 @@ ffs
 * See {{< repolink "manifests/crust/reflector" >}},
   and note that we provide reflector annotations in
   {{< repolink "kubernasty/manifests/crust/cert-manager-config/certificates/micahrl-dot-me-wildcard.cert.yaml" >}}.
-
-## A note on dependencies
-
-TODO: This section is wrong, it's how seedboxk8s works but not how kubernasty works.
-
-Flux can represent dependency relationship for kustomizations in
-{{< repolink "seedboxk8s/fluxroot/kustomizations" >}}.
-This is necessary for cert-manager,
-so we end up with
-{{< repolink "seedboxk8s/fluxroot/kustomizations/cert-manager-config.yaml" >}} which depends on
-{{< repolink "seedboxk8s/fluxroot/kustomizations/cert-manager.yaml" >}}.
-If we don't do this, we get weird errors like
-`error: the server could not find the requested resource (patch clusterissuers.cert-manager.io letsencrypt-staging`.
-[See also](https://github.com/fluxcd/flux2/discussions/1944).
-
-We take this opportunity to add a `dependsOn` relationship to other kustomizations as well,
-like all of the deployments that deploy a certificate should have a `dependsOn`
-for the `cert-manager-config` kustomization,
-all the deployments that need persistent storage should depend on Longhorn, etc.
 
 ## Reinstalling cert-manager
 
@@ -161,3 +219,8 @@ kubectl get secret -A | grep cert-backing-secret
 
 Then make a no-op commit to the cert-manager kustomization in flux-system.
 You might need to hit it with `flux reconcile`.
+
+## See also
+
+* <https://blog.crafteo.io/2021/11/26/traefik-high-availability-on-kubernetes-with-lets-encrypt-cert-manager-and-aws-route53/>
+* [cert-manager troubleshooting guide](https://cert-manager.io/docs/troubleshooting/)

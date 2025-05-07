@@ -159,3 +159,13 @@ To undo this, set the value to false.
 ```sh
 kubectl annotate kustomization -n flux-system flux-system reconciler.fluxcd.io/pause=false
 ```
+
+## Kustomization dependencies
+
+Flux can represent dependency relationship for kustomizations with `dependsOn`,
+so that a dependent kustomization won't start reconciling until its dependency has finished.
+{{< repolink "seedboxk8s/fluxroot/kustomizations" >}}.
+
+In some cases this is required, e.g.:
+`error: the server could not find the requested resource (patch clusterissuers.cert-manager.io letsencrypt-staging`.
+[See also](https://github.com/fluxcd/flux2/discussions/1944).
