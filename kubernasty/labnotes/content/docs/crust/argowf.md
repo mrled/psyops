@@ -208,7 +208,7 @@ indicating that all of these path fragments must be at the beginning.
 
 References:
 
-* [argoproj/argo-events#1127: Unsure of the best practice for a filter with multiple paths)](https://github.com/argoproj/argo-events/issues/1127)
+* [argoproj/argo-events#1127: Unsure of the best practice for a filter with multiple paths](https://github.com/argoproj/argo-events/issues/1127)
 * [argoproj/argo-events#1097: Allow for JSON string to be processed in the Sensor DataFilter](https://github.com/argoproj/argo-events/issues/1097)
 * Documentation was written with information about GJSON, but somehow that documentation has been lost from the current docs?
     * [argoproj/argo-events#1130: docs: Enhance the filters tutorial for #1097](https://github.com/argoproj/argo-events/pull/1130/files),
