@@ -1,0 +1,50 @@
+---
+- name: Install Node.js and npm
+  dnf:
+    name:
+      - nodejs
+      - npm
+    state: present
+
+- name: Create npm global directory
+  file:
+    path: "/home/{{ chineseroom_restricted_user }}/opt"
+    state: directory
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: '0755'
+
+- name: Configure npm prefix for agent user
+  # become: yes
+  # become_user: "{{ chineseroom_restricted_user }}"
+  # command: npm config set prefix ~/opt
+  # changed_when: true
+  lineinfile:
+    path: "/home/{{ chineseroom_restricted_user }}/.npmrc"
+    line: 'prefix=/home/{{ chineseroom_restricted_user }}/opt'
+    state: present
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: '0644'
+    create: yes
+
+- name: Add npm global bin to PATH in bashrc
+  lineinfile:
+    path: "/home/{{ chineseroom_restricted_user }}/.bashrc"
+    line: 'export PATH=~/opt/bin:$PATH'
+    state: present
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: '0644'
+    create: yes
+
+- name: Install Claude Code globally for agent user
+  become: yes
+  become_user: "{{ chineseroom_restricted_user }}"
+  npm:
+    name: "@anthropic-ai/claude-code"
+    global: yes
+    state: present
+  environment:
+    PATH: "/home/{{ chineseroom_restricted_user }}/opt/bin:{{ ansible_env.PATH }}"
+    npm_config_prefix: "/home/{{ chineseroom_restricted_user }}/opt"

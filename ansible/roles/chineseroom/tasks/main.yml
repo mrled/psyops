@@ -6,6 +6,8 @@
   include_tasks: user.yml
 - name: Apply network restrictions
   include_tasks: restrictnet.yml
+- name: Set up Claude Code for agent user
+  include_tasks: claude-code.yml
 - name: Configure Let's Encrypt
   include_tasks: letsencrypt.yml
 - name: Install and configure Nginx
