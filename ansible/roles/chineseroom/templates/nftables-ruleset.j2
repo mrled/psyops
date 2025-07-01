@@ -4,35 +4,15 @@ table inet {{ chineseroom_nft_table }} {
   chain output {
     type filter hook output priority 0; policy accept;
 
-    # Always allow localhost
-    ip daddr 127.0.0.1 tcp dport {{ chineseroom_mitmproxy_port }} meta skuid "{{ chineseroom_restricted_user }}" accept
-    ip6 daddr ::1 tcp dport {{ chineseroom_mitmproxy_port }} meta skuid "{{ chineseroom_restricted_user }}" accept
-
-{% for ip in chineseroom_whitelist_ips.ipv4 %}
+{% for ip in chineseroom_allowed_ips.ipv4 %}
     ip daddr {{ ip }} meta skuid "{{ chineseroom_restricted_user }}" accept
 {% endfor %}
-{% for ip in chineseroom_whitelist_ips.ipv6 %}
+{% for ip in chineseroom_allowed_ips.ipv6 %}
     ip6 daddr {{ ip }} meta skuid "{{ chineseroom_restricted_user }}" accept
 {% endfor %}
-
-    # Redirect HTTP/HTTPS traffic from restricted user to mitmproxy
-    #tcp dport {80, 443} meta skuid "{{ chineseroom_restricted_user }}" redirect to :{{ chineseroom_mitmproxy_port }}
 
     # Drop all other traffic from the restricted user
     meta skuid "{{ chineseroom_restricted_user }}" drop
   }
 }
 
-{#
-    # Drop everything else — except for port 80/443 (handled in NAT below)
-    tcp dport != {80, 443} meta skuid callista drop
-  }
-
-  chain output_nat {
-    type nat hook output priority -100; policy accept;
-
-    # Transparent proxy HTTP/HTTPS to mitmproxy
-    tcp dport {80, 443} skuid "{{ chineseroom_restricted_user }}" redirect to :{{ chineseroom_mitmproxy_port }}
-  }
-}
-#}

@@ -10,10 +10,3 @@ chineseroom_user_map_file: "/home/{{ chineseroom_restricted_user }}/domainmap.tx
 chineseroom_nginx_mapping_script: /usr/local/bin/regen-nginx-mappings.sh
 chineseroom_nginx_conf_dir: /etc/nginx/conf.d
 chineseroom_letsencrypt_base: /etc/letsencrypt
-
-# Reserved ports
-# We need some ports out side of the 1-1024 range
-# for non-root daemons that are NOT run by the restricted user, like mitmproxy.
-chineseroom_system_reserved_port_max: 2000
-
-chineseroom_mitmproxy_port: 1081

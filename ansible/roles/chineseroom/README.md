@@ -48,7 +48,7 @@ See `defaults/main.yml` for all available variables. Key variables:
 
 - `chineseroom_restricted_user`: User to apply network restrictions to (default: callista)
 - `chineseroom_domain`: Main domain for the service (default: chineseroom.micahrl.com)
-- `chineseroom_whitelist_ips`: IP addresses the restricted user can connect to
+- `chineseroom_allowed_ips`: IP addresses the restricted user can connect to
 
 ## Example Playbook
 

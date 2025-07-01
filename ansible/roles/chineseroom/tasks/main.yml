@@ -4,8 +4,6 @@
 
 - name: Create and configure agent user
   include_tasks: user.yml
-- name: Configure mitmproxy for SNI filtering
-  include_tasks: mitmproxy.yml
 - name: Apply network restrictions
   include_tasks: restrictnet.yml
 - name: Set up Claude Code for agent user

@@ -9,19 +9,13 @@ chineseroom_enable_autologin: true
 chineseroom_agent_ssh_keys: []
 
 # Allowed IP addresses for the restricted user
-chineseroom_whitelist_ips:
+chineseroom_allowed_ips:
   ipv4:
+    - 127.0.0.1  # localhost
     - 160.79.104.0/23  # Anthropic addresses
   ipv6:
+    - ::1  # localhost
     - 2607:6bc0::/48  # Anthropic addresses
-
-# Allowed domains for mitmproxy filtering
-chineseroom_whitelist_domains:
-  - "*.anthropic.com"
-  - "*.npmjs.org"
-  - "*.python.org"
-  - "*.pythonhosted.org"
-  - "*.github.com"
 
 # Let's Encrypt configuration
 chineseroom_domain: chineseroom.example.com
