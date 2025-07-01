@@ -1,0 +1,22 @@
+---
+# User to apply network restrictions to
+chineseroom_restricted_user: agent
+
+# Enable GDM autologin for the agent user
+chineseroom_enable_autologin: true
+
+# SSH authorized keys for the agent user
+chineseroom_agent_ssh_keys: []
+
+# Allowed IP addresses for the restricted user
+chineseroom_allowed_ips:
+  ipv4:
+    - 127.0.0.1  # localhost
+    - 160.79.104.0/23  # Anthropic addresses
+  ipv6:
+    - ::1  # localhost
+    - 2607:6bc0::/48  # Anthropic addresses
+
+# Let's Encrypt configuration
+chineseroom_domain: chineseroom.example.com
+chineseroom_email: "example@example.com"

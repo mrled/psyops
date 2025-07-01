@@ -1,0 +1,32 @@
+---
+- name: Install nftables
+  package:
+    name: nftables
+    state: present
+
+- name: Ensure nftables service is enabled and started
+  systemd:
+    name: nftables
+    enabled: yes
+    state: started
+
+- name: Save nftables ruleset
+  template:
+    src: nftables-ruleset.j2
+    dest: /etc/nftables/chineseroom.nft
+    mode: '0600'
+
+- name: Delete existing chineseroom table if it exists
+  command: nft delete table inet {{ chineseroom_nft_table }}
+  failed_when: false
+  changed_when: false
+
+- name: Apply nftables ruleset
+  command: nft -f /etc/nftables/chineseroom.nft
+
+- name: Include chineseroom rules in main nftables config
+  lineinfile:
+    path: /etc/sysconfig/nftables.conf
+    line: 'include "/etc/nftables/chineseroom.nft"'
+    create: yes
+    state: present

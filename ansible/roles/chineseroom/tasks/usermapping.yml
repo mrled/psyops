@@ -1,0 +1,34 @@
+---
+- name: Create nginx mapping regeneration script
+  template:
+    src: regen-nginx-mappings.sh.j2
+    dest: "{{ chineseroom_nginx_mapping_script }}"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Allow restricted user to run mapping script via sudo
+  lineinfile:
+    path: /etc/sudoers.d/regen-nginx-mappings
+    line: "{{ chineseroom_restricted_user }} ALL=(ALL) NOPASSWD: {{ chineseroom_nginx_mapping_script }}"
+    create: yes
+    state: present
+    validate: 'visudo -cf %s'
+
+- name: Check if user map file exists
+  stat:
+    path: "{{ chineseroom_user_map_file }}"
+  register: user_map_exists
+
+- name: Create empty user map file if it doesn't exist
+  file:
+    path: "{{ chineseroom_user_map_file }}"
+    state: touch
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: '0644'
+  when: not user_map_exists.stat.exists
+
+- name: Run nginx mapping regeneration script
+  command: "{{ chineseroom_nginx_mapping_script }}"
+  changed_when: false

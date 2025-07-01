@@ -1,0 +1,18 @@
+# -*- mode: jinja -*-
+
+table inet {{ chineseroom_nft_table }} {
+  chain output {
+    type filter hook output priority 0; policy accept;
+
+{% for ip in chineseroom_allowed_ips.ipv4 %}
+    ip daddr {{ ip }} meta skuid "{{ chineseroom_restricted_user }}" accept
+{% endfor %}
+{% for ip in chineseroom_allowed_ips.ipv6 %}
+    ip6 daddr {{ ip }} meta skuid "{{ chineseroom_restricted_user }}" accept
+{% endfor %}
+
+    # Drop all other traffic from the restricted user
+    meta skuid "{{ chineseroom_restricted_user }}" drop
+  }
+}
+

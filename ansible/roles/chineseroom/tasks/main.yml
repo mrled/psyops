@@ -1,0 +1,14 @@
+---
+- name: Install prereqs
+  ansible.builtin.command: dnf install -y python3-libdnf5
+
+- name: Create and configure agent user
+  include_tasks: user.yml
+- name: Apply network restrictions
+  include_tasks: restrictnet.yml
+- name: Configure Let's Encrypt
+  include_tasks: letsencrypt.yml
+- name: Install and configure Nginx
+  include_tasks: nginx.yml
+- name: Set up subdomain:port mappings from the restricted user
+  include_tasks: usermapping.yml

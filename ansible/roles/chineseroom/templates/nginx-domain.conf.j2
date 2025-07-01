@@ -1,0 +1,22 @@
+# Redirect all HTTP traffic to HTTPS, including subdomains
+server {
+    listen 80;
+    server_name {{ chineseroom_domain }} *.{{ chineseroom_domain }};
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# Respond with default content for the main domain only, no subdomains
+server {
+    listen 443 ssl;
+    server_name {{ chineseroom_domain }};
+
+    ssl_certificate     {{ chineseroom_letsencrypt_base }}/live/{{ chineseroom_domain }}/fullchain.pem;
+    ssl_certificate_key {{ chineseroom_letsencrypt_base }}/live/{{ chineseroom_domain }}/privkey.pem;
+
+    location / {
+        root {{ chineseroom_nginx_root }};
+        index index.html;
+    }
+}

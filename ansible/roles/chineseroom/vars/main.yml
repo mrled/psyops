@@ -1,0 +1,12 @@
+---
+# NFT table and chain names
+chineseroom_nft_table: chineseroom
+
+# Nginx configuration
+chineseroom_nginx_root: /usr/share/nginx/html
+chineseroom_user_map_file: "/home/{{ chineseroom_restricted_user }}/domainmap.txt"
+
+# Scripts and configuration paths
+chineseroom_nginx_mapping_script: /usr/local/bin/regen-nginx-mappings.sh
+chineseroom_nginx_conf_dir: /etc/nginx/conf.d
+chineseroom_letsencrypt_base: /etc/letsencrypt
