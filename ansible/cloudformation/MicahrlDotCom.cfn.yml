@@ -235,10 +235,19 @@ Resources:
           TTL: 300
           ResourceRecords: ["df9oxkpvyda4s.cloudfront.net"]
 
-        - Name: whispers.micahrl.com
+        - Name: whispers.micahrl.com.
           Type: CNAME
           TTL: 300
           ResourceRecords: ["micahrl.micro.blog"]
+
+        - Name: chineseroom.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.104.25.104"]
+        - Name: "*.chineseroom.micahrl.com."
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["chineseroom.micahrl.com."]
 
   # Backchannel zone - for VPN clients
   BackchannelZone:
@@ -412,7 +421,8 @@ Resources:
               - Effect: Allow
                 Action:
                   - route53:GetChange
-                  - route53:ListHostedZonesByName
+                  - route53:ListHostedZones # required for certbot-dns-route53
+                  - route53:ListHostedZonesByName # required for lego
                 Resource: "*"
               - Effect: Allow
                 Action:
