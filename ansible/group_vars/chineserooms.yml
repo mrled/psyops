@@ -6,13 +6,18 @@ chineseroom_agent_ssh_keys:
 - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDePi4ZbWyeo2EZAnSyOUbXbxuS/jOShOqdcx43ebhaEDs7592np14eGobzXic/0SppLLFpK2HiUwD3TORQT+rSjNQhe/setbLKPXolRXFgbsZ1UPF+aAcD0pX2yE88L1R11F87JA2uHjSci6jRixjg63L7i2xxAT5rPIaXh7cEN1wq92ZeuJm1KvFSm9dIStlVWAWugKdr8tb5qxMTce2c5A5jNbes+dpUGJjT7Blzsnl7MnCiaN+aaMYLkQincVXYfJRofL/NB+VYCC27421+Hq1nlMC5E/C0RSXxf+8hfeYF+6SvZ5pZBnIeWo5I8BXCDBfCBLTk4RPOWum6yrwLLhV0yVpNLitxGh2NiF0rciTQggOc99DH6LLO6xfeH3Stk5xKPfsabDnwpBpFDlETQE0cK86Pu2wJyvZ3xZndmQRkncbcS0OXmvw2eHTD/VjIhKS15zroN5VblAUbRR7mXqh6PGPxEkv7ZjviQMXlzqHtW0FGNGknIicYNjZt3jJJH3pDXGT+WqXunjCCkgQEFI9akTGzrmrqwtk4PxIQt0Shtpzd8wJDsWbTvmK6oZIZXBxGXXtyDafa1TobLGYbykQArlByZc5UZQkP6UDNYRpanZaHZxntKiCayE9Gen2WCnpzEu3H9abg1TsR8ayYlK3N9D+tyjzL7awnVCyAkQ== ShellFish@Copland-01062022
 
 # Allowed IP addresses for the restricted user
-chineseroom_allowed_ips:
+chineseroom_whitelist_ips:
   ipv4:
-    - 127.0.0.1  # localhost
     - 160.79.104.0/23  # Anthropic addresses
   ipv6:
-    - ::1  # localhost
     - 2607:6bc0::/48  # Anthropic addresses
+
+chineseroom_whitelist_domains:
+  - anthropic.com
+  - npmjs.org
+  - python.org
+  - pythonhosted.org
+  - github.com
 
 # Domain configuration
 chineseroom_domain: chineseroom.micahrl.com

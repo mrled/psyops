@@ -1,0 +1,84 @@
+---
+- name: Install Python and venv module
+  dnf:
+    name:
+      - python3
+      - python3-pip
+    state: present
+
+- name: Create mitmproxy virtual environment
+  command: python3 -m venv /opt/mitmproxy.venv
+  args:
+    creates: /opt/mitmproxy.venv/bin/python
+
+- name: Upgrade pip in mitmproxy venv
+  pip:
+    name: pip
+    state: latest
+    virtualenv: /opt/mitmproxy.venv
+
+- name: Install/upgrade mitmproxy in venv
+  pip:
+    name: mitmproxy
+    state: latest
+    virtualenv: /opt/mitmproxy.venv
+
+- name: Create mitmproxy config directory
+  file:
+    path: /etc/mitmproxy
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Create mitmproxy data directory
+  file:
+    path: /var/lib/mitmproxy
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Install SELinux policy tools
+  dnf:
+    name: policycoreutils-python-utils
+    state: present
+
+- name: Set SELinux context for mitmproxy data directory
+  command: semanage fcontext -a -t var_lib_t "/var/lib/mitmproxy(/.*)?"
+  register: selinux_fcontext
+  changed_when: selinux_fcontext.rc == 0
+  failed_when: selinux_fcontext.rc != 0 and 'already exists' not in selinux_fcontext.stderr
+
+- name: Apply SELinux context to mitmproxy data directory
+  command: restorecon -Rv /var/lib/mitmproxy
+  changed_when: true
+
+- name: Create mitmproxy SNI whitelist script
+  template:
+    src: mitmproxy-sni-filter.py.j2
+    dest: /etc/mitmproxy/sni-filter.py
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create mitmproxy systemd service
+  template:
+    src: mitmproxy.service.j2
+    dest: /etc/systemd/system/mitmproxy.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+  - systemd daemon reload
+  - restart mitmproxy
+
+- name: Enable and start mitmproxy service
+  systemd:
+    name: mitmproxy
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: Trust the mitmproxy cert system-wide
+  command: trust anchor /var/lib/mitmproxy/.mitmproxy/mitmproxy-ca-cert.pem
