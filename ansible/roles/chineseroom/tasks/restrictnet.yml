@@ -16,17 +16,37 @@
     dest: /etc/nftables/chineseroom.nft
     mode: '0600'
 
-- name: Delete existing chineseroom table if it exists
-  command: nft delete table inet {{ chineseroom_nft_table }}
-  failed_when: false
-  changed_when: false
+- name: Enable whitelist
+  block:
 
-- name: Apply nftables ruleset
-  command: nft -f /etc/nftables/chineseroom.nft
+  - name: Delete existing chineseroom table if it exists
+    command: nft delete table inet {{ chineseroom_nft_table }}
+    failed_when: false
+    changed_when: false
 
-- name: Include chineseroom rules in main nftables config
-  lineinfile:
-    path: /etc/sysconfig/nftables.conf
-    line: 'include "/etc/nftables/chineseroom.nft"'
-    create: yes
-    state: present
+  - name: Apply nftables ruleset
+    command: nft -f /etc/nftables/chineseroom.nft
+
+  - name: Include chineseroom rules in main nftables config
+    lineinfile:
+      path: /etc/sysconfig/nftables.conf
+      line: 'include "/etc/nftables/chineseroom.nft"'
+      create: yes
+      state: present
+
+  when: enable_ip_whitelist
+
+- name: Disable whitelist
+  block:
+
+  - name: Delete existing chineseroom table
+    command: nft delete table inet {{ chineseroom_nft_table }}
+    failed_when: false
+    changed_when: false
+
+  - name: Remove chineseroom rules in main nftables config
+    lineinfile:
+      path: /etc/sysconfig/nftables.conf
+      line: 'include "/etc/nftables/chineseroom.nft"'
+      create: yes
+      state: absent

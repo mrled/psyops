@@ -4,10 +4,14 @@ table inet {{ chineseroom_nft_table }} {
   chain output {
     type filter hook output priority 0; policy accept;
 
-{% for ip in chineseroom_allowed_ips.ipv4 %}
+    # Always allow traffic to localhost
+    ip daddr 127.0.0.0/8 meta skuid "{{ chineseroom_restricted_user }}" accept
+    ip6 daddr ::1 meta skuid "{{ chineseroom_restricted_user }}" accept
+
+{% for ip in chineseroom_whitelist_ips.ipv4 %}
     ip daddr {{ ip }} meta skuid "{{ chineseroom_restricted_user }}" accept
 {% endfor %}
-{% for ip in chineseroom_allowed_ips.ipv6 %}
+{% for ip in chineseroom_whitelist_ips.ipv6 %}
     ip6 daddr {{ ip }} meta skuid "{{ chineseroom_restricted_user }}" accept
 {% endfor %}
 
