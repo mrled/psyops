@@ -1,0 +1,7 @@
+{# Squid Whitelist
+#
+# Domains with a leading dot are treated as wildcard domains, including the root and all subdomains.
+#}
+{% for domain in chineseroom_whitelist_domains %}
+.{{ domain }}
+{% endfor %}

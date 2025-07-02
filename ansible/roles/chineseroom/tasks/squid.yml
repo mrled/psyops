@@ -1,0 +1,94 @@
+---
+- name: Install Squid and SSL/TLS tools
+  dnf:
+    name:
+      - squid
+      - openssl
+    state: present
+
+- name: Create Squid SSL certificate directory
+  file:
+    path: /etc/squid/ssl_cert
+    state: directory
+    owner: root
+    group: squid
+    mode: '0750'
+
+- name: Check if CA key exists
+  stat:
+    path: /etc/squid/ssl_cert/myCA.key
+  register: ca_key_stat
+
+- name: Generate CA private key
+  command: openssl genrsa -out /etc/squid/ssl_cert/myCA.key 4096
+  when: not ca_key_stat.stat.exists
+
+- name: Generate CA certificate
+  command: >
+    openssl req -new -x509 -days 3650 -key /etc/squid/ssl_cert/myCA.key
+    -out /etc/squid/ssl_cert/myCA.crt -subj "/CN={{ chineseroom_squid_ca_cn }}"
+  when: not ca_key_stat.stat.exists
+
+- name: Set permissions on CA files
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: squid
+    mode: '0640'
+  loop:
+    - /etc/squid/ssl_cert/myCA.key
+    - /etc/squid/ssl_cert/myCA.crt
+
+- name: Trust CA certificate system-wide
+  command: trust anchor /etc/squid/ssl_cert/myCA.crt
+
+- name: Create parent directory for SSL database
+  file:
+    path: /var/lib
+    state: directory
+    mode: '0755'
+
+- name: Set SELinux boolean to allow Squid to connect
+  seboolean:
+    name: squid_connect_any
+    state: yes
+    persistent: yes
+
+# The directory cannot exist at this point, or it will fail
+- name: Initialize SSL certificate database as root
+  command: /usr/lib64/squid/security_file_certgen -c -s /var/lib/ssl_db -M 4MB
+  args:
+    creates: /var/lib/ssl_db/index.txt
+
+- name: Set ownership of SSL certificate database
+  file:
+    path: /var/lib/ssl_db
+    owner: squid
+    group: squid
+    recurse: yes
+    state: directory
+
+- name: Create Squid configuration
+  template:
+    src: squid.conf.j2
+    dest: /etc/squid/squid.conf
+    owner: root
+    group: squid
+    mode: '0640'
+    backup: yes
+  notify: restart squid
+
+- name: Create dstdomain whitelist file
+  template:
+    src: whitelist.txt.j2
+    dest: /etc/squid/whitelist.txt
+    owner: root
+    group: squid
+    mode: '0640'
+  notify: reconfigure squid
+
+- name: Enable and start Squid service
+  systemd:
+    name: squid
+    enabled: yes
+    state: started

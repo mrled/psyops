@@ -1,0 +1,62 @@
+# Squid configuration for Chinese Room SSL interception
+
+#debug_options ALL,1 33,2 28,9
+
+# Non-intercept ports handle traffic with an explicit proxy configuration,
+# like curl -x http://localhost:{{ chineseroom_squid_http_port }} http://example.com
+# We don't use this, but Squid requires at least one non-intercept port to be defined.
+http_port {{ chineseroom_squid_http_port }}
+https_port {{ chineseroom_squid_https_port }} cert=/etc/squid/ssl_cert/myCA.crt key=/etc/squid/ssl_cert/myCA.key
+
+# Intercept ports
+# nftables will shunt traffic to these ports for the restricted user.
+http_port {{ chineseroom_squid_http_intercept_port }} intercept
+https_port {{ chineseroom_squid_https_intercept_port }} intercept ssl-bump cert=/etc/squid/ssl_cert/myCA.crt key=/etc/squid/ssl_cert/myCA.key
+
+# sslcrtd is the Squid SSL certificate generator
+# It generates certificates for each site, signed by its CA.
+# If the client trusts the CA, it will accept the generated certificates.
+sslcrtd_program /usr/lib64/squid/security_file_certgen -s /var/lib/ssl_db -M 4MB
+sslcrtd_children 5
+
+# Define a list of allowed domains
+acl whitelist_https ssl::server_name "/etc/squid/whitelist.txt"
+
+# Inspect TLS TLS
+acl step1 at_step SslBump1
+# Look at "step1", where the client tries to connect and SNI is available.
+ssl_bump peek step1
+# If it matches the whitelist, bump it (intercept and decrypt).
+ssl_bump bump whitelist_https
+# Otherwise, terminate the connection.
+ssl_bump terminate all
+
+# Anything that isn't already terminated matched the whitelist so is allowed.
+http_access allow all
+
+
+{#
+acl whitelist_http dstdomain "/etc/squid/whitelist.txt"
+acl whitelist_https ssl::server_name "/etc/squid/whitelist.txt"
+acl wl_host req_header host -i  "/etc/squid/whitelist.txt"
+
+acl step1 at_step sslbump1
+ssl_bump peek step1
+ssl_bump bump whitelist_https
+ssl_bump terminate all
+
+# take actions based on acls:
+# allow access to the whitelisted domains,
+# and deny access to all other destinations.
+http_access allow wl_host
+http_access allow whitelist_http
+#http_access allow whitelist_https
+http_access deny all
+#}
+
+# Disable caching
+cache deny all
+cache_store_log none
+
+# Required
+coredump_dir /var/spool/squid

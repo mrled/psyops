@@ -8,3 +8,11 @@
   systemd:
     name: nginx
     state: restarted
+
+- name: reconfigure squid
+  command: squid -k reconfigure
+
+- name: restart squid
+  systemd:
+    name: squid
+    state: restarted

@@ -1,11 +1,22 @@
 ---
 - name: Install prereqs
+  # Make sure we have the libraries needed for Ansible to be able to install packages
   ansible.builtin.command: dnf install -y python3-libdnf5
 
+- name: Install useless UI bling
+  include_tasks: pretty.yml
 - name: Create and configure agent user
   include_tasks: user.yml
+- name: Configure IPv6
+  include_tasks: ipv6.yml
+- name: Configure Squid proxy
+  import_tasks: squid.yml
+  tags:
+  - chineseroom_squid
 - name: Apply network restrictions
-  include_tasks: restrictnet.yml
+  import_tasks: restrictnet.yml
+  tags:
+  - chineseroom_nftables
 - name: Set up Claude Code for agent user
   include_tasks: claude-code.yml
 - name: Configure Let's Encrypt

@@ -17,12 +17,16 @@
     mode: '0600'
 
 - name: Enable whitelist
+  when: chineseroom_enable_whitelist_ips
   block:
 
-  - name: Delete existing chineseroom table if it exists
-    command: nft delete table inet {{ chineseroom_nft_table }}
+  - name: Delete existing chineseroom table
+    command: nft delete table inet {{ item }}
     failed_when: false
     changed_when: false
+    with_items:
+      - "{{ chineseroom_nft_table_filter }}"
+      - "{{ chineseroom_nft_table_nat }}"
 
   - name: Apply nftables ruleset
     command: nft -f /etc/nftables/chineseroom.nft
@@ -34,15 +38,17 @@
       create: yes
       state: present
 
-  when: enable_ip_whitelist
-
 - name: Disable whitelist
+  when: not chineseroom_enable_whitelist_ips
   block:
 
   - name: Delete existing chineseroom table
-    command: nft delete table inet {{ chineseroom_nft_table }}
+    command: nft delete table inet {{ item }}
     failed_when: false
     changed_when: false
+    with_items:
+      - "{{ chineseroom_nft_table_filter }}"
+      - "{{ chineseroom_nft_table_nat }}"
 
   - name: Remove chineseroom rules in main nftables config
     lineinfile:

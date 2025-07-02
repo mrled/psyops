@@ -8,15 +8,32 @@ chineseroom_enable_autologin: true
 # SSH authorized keys for the agent user
 chineseroom_agent_ssh_keys: []
 
-# If true, the restricted user will only be able to connect to the IPs allowed below
-# This is pretty inconvenient, as it prevents stuff like pip and npm from working
-enable_ip_whitelist: false
-# Allowed IP addresses for the restricted user
+# If true, the restricted user will only be able to connect to the IPs allowed below.
+chineseroom_enable_whitelist_ips: false
+# Allowed IP addresses for the restricted user to connect to directly.
+# If chineseroom_enable_whitelist_domains is also true, domains that resolve to these IPs will bypass Squid,
+# without Squid breaking TLS.
 chineseroom_whitelist_ips:
   ipv4:
     - 160.79.104.0/23  # Anthropic addresses
   ipv6:
     - 2607:6bc0::/48  # Anthropic addresses
+
+# If your VM won't have ipv6 connectivity, you may need this for domain whitelisting to work.
+# If curl tries ipv6 and fails, it'll fall back to ipv4.
+# But if curl tries ipv6 and Squid intercepts it,
+# and then Squid fails to connect to the domain over ipv6,
+# Squid won't fall back and curl won't know to fall back,
+# so the connection will just fail.
+chineseroom_disable_ipv6: false
+
+# If true, configure Squid proxy to enforce domain whitelist
+chineseroom_enable_whitelist_domains: false
+# Allowed domains for the restricted user (includes all subdomains).
+# Domains specified here will have Squid intercept them, and use a MITM SSL certificate,
+# UNLESS they resolve to an IP in chineseroom_whitelist_ips.
+chineseroom_whitelist_domains:
+- anthropic.com
 
 # Let's Encrypt configuration
 chineseroom_domain: chineseroom.example.com
