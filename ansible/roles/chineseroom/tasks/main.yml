@@ -4,11 +4,17 @@
   ansible.builtin.command: dnf install -y python3-libdnf5
 
 - name: Install useless UI bling
-  include_tasks: pretty.yml
+  import_tasks: pretty.yml
+  tags:
+  - chineseroom_pretty
 - name: Create and configure agent user
-  include_tasks: user.yml
+  import_tasks: user.yml
+  tags:
+  - chineseroom_user
 - name: Configure IPv6
-  include_tasks: ipv6.yml
+  import_tasks: ipv6.yml
+  tags:
+  - chineseroom_ipv6
 - name: Configure Squid proxy
   import_tasks: squid.yml
   tags:
@@ -18,10 +24,18 @@
   tags:
   - chineseroom_nftables
 - name: Set up Claude Code for agent user
-  include_tasks: claude-code.yml
+  import_tasks: claude-code.yml
+  tags:
+  - chineseroom_user_apps
 - name: Configure Let's Encrypt
-  include_tasks: letsencrypt.yml
+  tags:
+  - chineseroom_letsencrypt
+  import_tasks: letsencrypt.yml
 - name: Install and configure Nginx
-  include_tasks: nginx.yml
+  import_tasks: nginx.yml
+  tags:
+  - chineseroom_nginx
 - name: Set up subdomain:port mappings from the restricted user
-  include_tasks: usermapping.yml
+  import_tasks: usermapping.yml
+  tags:
+  - chineseroom_usermapping

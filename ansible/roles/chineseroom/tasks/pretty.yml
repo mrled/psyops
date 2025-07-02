@@ -1,0 +1,28 @@
+---
+
+- name: Install motd/issue message file
+  copy:
+    src: rorschach.ansi
+    dest: "{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - /etc/motd.d/rorschach
+    - /etc/issue.d/rorschach.issue
+
+- name: Remove cockpit motd/issue
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/motd.d/cockpit
+    - /etc/issue.d/cockpit
+
+- name: Set shell prompt
+  copy:
+    dest: /etc/profile.d/chineseroom-prompt.sh
+    src: prompt.sh
+    owner: root
+    group: root
+    mode: '0644'
