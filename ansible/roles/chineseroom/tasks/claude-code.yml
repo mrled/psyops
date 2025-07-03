@@ -48,3 +48,14 @@
   environment:
     PATH: "/home/{{ chineseroom_restricted_user }}/opt/bin:{{ ansible_env.PATH }}"
     npm_config_prefix: "/home/{{ chineseroom_restricted_user }}/opt"
+
+- name: Install OpenAI Codex CLI for agent user
+  become: yes
+  become_user: "{{ chineseroom_restricted_user }}"
+  npm:
+    name: "@openai/codex"
+    global: yes
+    state: present
+  environment:
+    PATH: "/home/{{ chineseroom_restricted_user }}/opt/bin:{{ ansible_env.PATH }}"
+    npm_config_prefix: "/home/{{ chineseroom_restricted_user }}/opt"
