@@ -2,12 +2,6 @@
 # User to apply network restrictions to
 chineseroom_restricted_user: agent
 
-# Enable GDM autologin for the agent user
-chineseroom_enable_autologin: true
-
-# SSH authorized keys for the agent user
-chineseroom_agent_ssh_keys: []
-
 # If true, the restricted user will only be able to connect to the IPs allowed below.
 chineseroom_enable_whitelist_ips: false
 # Allowed IP addresses for the restricted user to connect to directly.
@@ -34,7 +28,3 @@ chineseroom_enable_whitelist_domains: false
 # UNLESS they resolve to an IP in chineseroom_whitelist_ips.
 chineseroom_whitelist_domains:
 - anthropic.com
-
-# Let's Encrypt configuration
-chineseroom_domain: chineseroom.example.com
-chineseroom_email: "example@example.com"

@@ -2,3 +2,4 @@
   hosts: chineserooms
   roles:
     - { name: chineseroom, tags: ["chineseroom"] }
+    - { name: chineseroom_custom, tags: ["chineseroom"] }

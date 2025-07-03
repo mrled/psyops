@@ -3,15 +3,6 @@
 chineseroom_nft_table_filter: chineseroom_filter
 chineseroom_nft_table_nat: chineseroom_nat
 
-# Nginx configuration
-chineseroom_nginx_root: /usr/share/nginx/html
-chineseroom_user_map_file: "/home/{{ chineseroom_restricted_user }}/domainmap.txt"
-
-# Scripts and configuration paths
-chineseroom_nginx_mapping_script: /usr/local/bin/regen-nginx-mappings.sh
-chineseroom_nginx_conf_dir: /etc/nginx/conf.d
-chineseroom_letsencrypt_base: /etc/letsencrypt
-
 # Squid proxy configuration
 chineseroom_squid_http_port: 1081
 chineseroom_squid_https_port: 1082
