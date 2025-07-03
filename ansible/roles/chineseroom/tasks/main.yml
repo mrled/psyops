@@ -23,10 +23,10 @@
   import_tasks: restrictnet.yml
   tags:
   - chineseroom_nftables
-- name: Set up Claude Code for agent user
-  import_tasks: claude-code.yml
+- name: Install apps as the restricted user
+  import_tasks: apps-user.yml
   tags:
-  - chineseroom_user_apps
+  - chineseroom_apps_user
 - name: Configure Let's Encrypt
   tags:
   - chineseroom_letsencrypt
