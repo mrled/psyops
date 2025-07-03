@@ -1,0 +1,7 @@
+---
+- name: Packages
+  dnf:
+    name:
+      - sqlite
+      - vim
+    state: present

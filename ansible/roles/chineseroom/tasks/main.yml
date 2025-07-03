@@ -23,6 +23,10 @@
   import_tasks: restrictnet.yml
   tags:
   - chineseroom_nftables
+- name: Install apps for the system
+  import_tasks: apps-system.yml
+  tags:
+  - chineseroom_apps_system
 - name: Install apps as the restricted user
   import_tasks: apps-user.yml
   tags:
