@@ -40,3 +40,24 @@
     - { option: "AutomaticLoginEnable", value: "True" }
     - { option: "AutomaticLogin", value: "{{ chineseroom_restricted_user }}" }
   when: chineseroom_enable_autologin
+
+# - name: getent for agent user
+#   ansible.builtin.getent:
+#     database: passwd
+#     key: "{{ chineseroom_restricted_user }}"
+# - debug: var=ansible_facts.getent_passwd
+
+# - name: Get user ID for agent user
+#   ansible.builtin.set_fact:
+#     chineseroom_agent_uid: "{{ ansible_facts.getent_passwd[chineseroom_restricted_user][1] | int }}"
+
+# - name: Set DBUS_SESSION_BUS_ADDRESS as variable
+#   ansible.builtin.set_fact:
+#     DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ chineseroom_agent_uid }}/bus"
+# - debug: var=DBUS_SESSION_BUS_ADDRESS
+
+- name: Disable screen lock for agent user
+  become: yes
+  become_user: "{{ chineseroom_restricted_user }}"
+  shell: |
+    gsettings set org.gnome.desktop.session idle-delay 0
