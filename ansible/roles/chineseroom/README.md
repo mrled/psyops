@@ -77,3 +77,15 @@ subdomain2 3000
 ```
 
 Then run: `sudo /usr/local/bin/regen-nginx-mappings.sh`
+
+## Playwright MCP and Claude
+
+The default instructions assume Chrome is installed.
+Chrome is only installable on x86_64, and this role is meant to work on aarch64 as well, so we don't install it.
+Enable Playwright MCP and tell it to use Firefox instead:
+
+```sh
+claude mcp add playwright npx -- '@playwright/mcp@latest' --browser firefox
+```
+
+The role can't do this for you because it must be done separately in each Claude workspace.
