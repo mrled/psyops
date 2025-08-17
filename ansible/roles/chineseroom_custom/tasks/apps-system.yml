@@ -1,7 +1,18 @@
 ---
+- name: Add Stripe DNF repo
+  ansible.builtin.yum_repository:
+    name: stripe
+    description: Stripe
+    baseurl: https://packages.stripe.dev/stripe-cli-rpm-local/
+    enabled: yes
+    gpgcheck: no
+    repo_gpgcheck: no
+    state: present
+
 - name: Packages
   dnf:
     name:
       - sqlite
+      - stripe
       - vim
     state: present
