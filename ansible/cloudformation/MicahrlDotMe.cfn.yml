@@ -13,14 +13,19 @@ Resources:
     Properties:
       HostedZoneId: !Ref MicahrlDotMeZone
       RecordSets:
+        - Name: micahrl.me.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["104.200.22.214"]
+        - Name: www.micahrl.me.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["micahrl.me."]
+
         - Name: com.micahrl.me.
           Type: CNAME
           TTL: 300
           ResourceRecords: ["boring-perlman-92bf89.netlify.app."]
-        - Name: www.micahrl.me.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["com.micahrl.me."]
 
         # Hosted email with fastmail.com
         - Name: micahrl.me.
