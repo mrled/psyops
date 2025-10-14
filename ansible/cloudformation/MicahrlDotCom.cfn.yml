@@ -245,6 +245,15 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["micahrl.micro.blog"]
+        - Name: xn--xxa.micahrl.com. # μ.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["micahrl.micro.blog."]
+        - Name: u.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["micahrl.micro.blog."]
+
 
         - Name: chineseroom.micahrl.com.
           Type: A
@@ -254,6 +263,51 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["chineseroom.micahrl.com."]
+
+        - Name: xn--5kh.testpuny.micahrl.com. # ⍼.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--xx8a.testpuny.micahrl.com. # ꙮ.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--5g8h.testpuny.micahrl.com. # 🌙.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--txa.testpuny.micahrl.com. # θ.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--sna.testpuny.micahrl.com. # ə.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--o-00a6f.xn--l-s0al3e3b9c421z.testpuny.micahrl.com. # ɔoɯ.ɯᴉɔɐɥɹl.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--xxa.testpuny.micahrl.com. # μ.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--qnl-usb.testpuny.micahrl.com. # qnlɔ.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--2va9k3a.testpuny.micahrl.com. # ωοͻ.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--zx-ekb.testpuny.micahrl.com. # zʎx.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
+        - Name: xn--2vaa.testpuny.micahrl.com. # ͻͻ.testpuny.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["apsylania.micahrl.com."]
 
   # Backchannel zone - for VPN clients
   BackchannelZone:
