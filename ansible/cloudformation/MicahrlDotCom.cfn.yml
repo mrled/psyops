@@ -235,6 +235,12 @@ Resources:
           TTL: 300
           ResourceRecords: ["df9oxkpvyda4s.cloudfront.net"]
 
+        - Name: _atproto.micahrl.com.
+          Type: TXT
+          TTL: 60
+          ResourceRecords:
+            - '"did=did:plc:gu6ixxhtcztv3cow2f6tnq3w"'
+
         - Name: whispers.micahrl.com.
           Type: CNAME
           TTL: 300
