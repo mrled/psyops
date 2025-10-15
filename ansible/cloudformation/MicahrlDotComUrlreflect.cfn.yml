@@ -1,0 +1,205 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFront edge redirector
+
+Parameters:
+  CertificateArn:
+    Type: String
+    Description: The ARN of an ACM certificate in us-east-1 that covers all source hostnames
+    Default: arn:aws:acm:us-east-1:379474500957:certificate/18c13290-f1ad-4e25-8571-8840beb9e6e8
+
+  # These are constants that should not need to be changed
+  PriceClass:
+    Type: String
+    Default: PriceClass_100
+    AllowedValues: [PriceClass_All, PriceClass_200, PriceClass_100]
+    Description: CloudFront price class to use; 100 is cheapest and covers US, Canada, Europe
+  TargetHostedZoneId:
+    Type: String
+    Description: >
+      The hosted zone ID for CloudFront commercial (non-gov, non-China) distributions
+      (this is a global value owned by Amazon CloudFront and never needs to change)
+    Default: Z2FDTNDATAQYW2
+
+Resources:
+
+  ReflectFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: micahrl-com-edge-url-reflector
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Per-host redirect rules (viewer-request)
+        Runtime: cloudfront-js-1.0
+      # Return the full URL that the user requested
+      FunctionCode: |
+        function handler(event) {
+          var req = event.request;
+          var h = req.headers || {};
+          var proto =
+            (h['cloudfront-forwarded-proto'] && h['cloudfront-forwarded-proto'].value) ||
+            (h['x-forwarded-proto'] && h['x-forwarded-proto'].value) ||
+            'https';
+          var host = (h.host && h.host.value) || 'unknown-host';
+
+          function qsFrom(obj) {
+            if (!obj || typeof obj !== "object") return "";
+            var parts = [];
+            for (var k in obj) if (obj.hasOwnProperty(k)) {
+              var entry = obj[k];
+              if (entry && entry.multiValue && entry.multiValue.length) {
+                for (var i = 0; i < entry.multiValue.length; i++) {
+                  var v = entry.multiValue[i].value;
+                  parts.push(encodeURIComponent(k) + (v !== "" ? "=" + encodeURIComponent(v) : ""));
+                }
+              } else {
+                var v = entry && entry.value;
+                if (typeof v === "string") {
+                  parts.push(encodeURIComponent(k) + (v !== "" ? "=" + encodeURIComponent(v) : ""));
+                } else {
+                  parts.push(encodeURIComponent(k)); // key with no value
+                }
+              }
+            }
+            return parts.length ? "?" + parts.join("&") : "";
+          }
+          var qs = qsFrom(r.querystring);
+
+          var url = proto + '://' + host + req.uri + qs;
+
+          var body = '<!doctype html><meta charset="utf-8">' +
+                    '<title>Full URL</title>' +
+                    '<pre style="font:16px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;">' +
+                    url.replace(/&/g,'&amp;').replace(/</g,'&lt;') +
+                    '</pre>';
+
+          return {
+            statusCode: 200,
+            statusDescription: 'OK',
+            headers: {
+              'content-type': { value: 'text/html; charset=utf-8' },
+              'cache-control': { value: 'no-store' }
+            },
+            body: body
+          };
+        }
+
+  ReflectDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Edge redirector
+        Aliases:
+        - urlreflect.micahrl.com
+        - xn--5kh.urlreflect.micahrl.com
+        - xn--xx8a.urlreflect.micahrl.com
+        - xn--5g8h.urlreflect.micahrl.com
+        - xn--txa.urlreflect.micahrl.com
+        - xn--sna.urlreflect.micahrl.com
+        - xn--o-00a6f.urlreflect.micahrl.com
+        - xn--l-s0al3e3b9c421z.urlreflect.micahrl.com
+        - xn--xxa.urlreflect.micahrl.com
+        - xn--qnl-usb.urlreflect.micahrl.com
+        - xn--2va9k3a.urlreflect.micahrl.com
+        - xn--zx-ekb.urlreflect.micahrl.com
+        - xn--2vaa.urlreflect.micahrl.com
+        - xn--ct7da.urlreflect.micahrl.com
+        DefaultRootObject: ""
+
+        # Define a placeholder origin because CloudFront requires one,
+        # even though we always redirect before going to the origin.
+        Origins:
+          - Id: placeholder-origin
+            DomainName: aws.amazon.com
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+
+        DefaultCacheBehavior:
+          TargetOriginId: placeholder-origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          MinTTL: 0
+          DefaultTTL: 300
+          MaxTTL: 31536000
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt ReflectFunction.FunctionMetadata.FunctionARN
+          # What to send to the origin
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        HttpVersion: http2and3
+        PriceClass: !Ref PriceClass
+
+  ReflectRecordSet:
+    Type: "AWS::Route53::RecordSetGroup"
+    Properties:
+      HostedZoneId: !ImportValue MicahrlDotCom-OriginZoneId
+      RecordSets:
+        - Name: urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--5kh.urlreflect.micahrl.com. # ⍼.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--xx8a.urlreflect.micahrl.com. # ꙮ.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--5g8h.urlreflect.micahrl.com. # 🌙.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--txa.urlreflect.micahrl.com. # θ.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--sna.urlreflect.micahrl.com. # ə.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--l-s0al3e3b9c421z.urlreflect.micahrl.com. # ɯᴉɔɐɥɹl.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--o-00a6f.urlreflect.micahrl.com. # ɔoɯ.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--xxa.urlreflect.micahrl.com. # μ.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--qnl-usb.urlreflect.micahrl.com. # qnlɔ.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--2va9k3a.urlreflect.micahrl.com. # ωοͻ.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--zx-ekb.urlreflect.micahrl.com. # zʎx.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--2vaa.urlreflect.micahrl.com. # ͻͻ.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+        - Name: xn--ct7da.urlreflect.micahrl.com. # 𓂒𓂒.urlreflect.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt ReflectDistribution.DomainName]
+
+Outputs:
+  DistributionDomainName:
+    Value: !GetAtt ReflectDistribution.DomainName
