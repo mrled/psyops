@@ -10,11 +10,12 @@
       cloudformation_template_path: cloudformation/MicahrlDotCom.cfn.yml
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
       tags: micahrl.com
-    - name: cfn
-      cloudformation_stack_name: PsynetDotMicahrlDotCom
-      cloudformation_template_path: cloudformation/PsynetZone.cfn.yml
-      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
-      tags: psynet.micahrl.com
+    # No longer deploying this as of 20251015
+    # - name: cfn
+    #   cloudformation_stack_name: PsynetDotMicahrlDotCom
+    #   cloudformation_template_path: cloudformation/PsynetZone.cfn.yml
+    #   cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+    #   tags: psynet.micahrl.com
     - name: cfn
       cloudformation_stack_name: MicahrlDotMe
       cloudformation_template_path: cloudformation/MicahrlDotMe.cfn.yml
