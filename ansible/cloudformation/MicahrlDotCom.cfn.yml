@@ -221,16 +221,6 @@ Resources:
           ResourceRecords:
             - '"did=did:plc:gu6ixxhtcztv3cow2f6tnq3w"'
 
-        - Name: xn--xxa.micahrl.com. # μ.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["micahrl.micro.blog."]
-        - Name: u.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["micahrl.micro.blog."]
-
-
         - Name: chineseroom.micahrl.com.
           Type: A
           TTL: 60

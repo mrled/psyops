@@ -100,7 +100,7 @@ Resources:
           if (host === "toys.micahrl.com" && uri.indexOf("/biblemunger") === 0) {
             var newUri = uri.substring("/biblemunger".length) || "/";
             return redirect("https://biblemunger.micahrl.com" + newUri + qs);
-          } else if (host === "whispers.micahrl.com") {
+          } else if (host === "whispers.micahrl.com" || host === "xn--xxa.micahrl.com" || host === "u.micahrl.com") {
             return redirect("https://micahrl.me" + uri + qs);
           }
 
@@ -181,6 +181,14 @@ Resources:
           TTL: 60
           ResourceRecords: [!GetAtt RedirectDistribution.DomainName]
         - Name: whispers.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt RedirectDistribution.DomainName]
+        - Name: xn--xxa.micahrl.com. # μ.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt RedirectDistribution.DomainName]
+        - Name: u.micahrl.com.
           Type: CNAME
           TTL: 60
           ResourceRecords: [!GetAtt RedirectDistribution.DomainName]
