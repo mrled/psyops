@@ -1,0 +1,198 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFront edge redirector
+
+# Create a CloudFront Distribution that handles redirects at the edge.
+#
+# This works for any *.younix.us domain
+#
+# Initial deployment:
+# 1. Deploy YounixDotUs.cfn.yml to create the younix.us zone
+# 2. Deploy Certificates.cfn.yml to create a wildcard cert for *.younix.us
+# 3. Edit this template to specify the source hostnames.
+#    - Add each source hostname to the Aliases list in RedirectDistribution
+#    - Add a mapping from each source hostname to the target base URL in hostMap in RedirectFunction
+#    - Add a Route53 record for A and AAAA for each source hostname pointing to the DistributionDomainName output
+# 4. Edit this template to add the CertificateArn parameter value to the ARN output from step 2
+# 5. Deploy this template
+#
+# This is annoying because Certificates must be deployed to us-east-1,
+# but our existing stuff has been deployed to us-east-2 for years,
+# and CloudFormation doesn't support cross-region references.
+#
+# How to add new domains
+# 1. Update Certificates.cfn.yml and redeploy
+# 2. Update this template with additional source hostnames and redeploy
+
+Parameters:
+  CertificateArn:
+    Type: String
+    Description: The ARN of an ACM certificate in us-east-1 that covers all source hostnames
+    Default: arn:aws:acm:us-east-1:379474500957:certificate/2408b1f1-5ada-43d3-a206-9046fef19602
+
+  # These are constants that should not need to be changed
+  PriceClass:
+    Type: String
+    Default: PriceClass_100
+    AllowedValues: [PriceClass_All, PriceClass_200, PriceClass_100]
+    Description: CloudFront price class to use; 100 is cheapest and covers US, Canada, Europe
+  TargetHostedZoneId:
+    Type: String
+    Description: >
+      The hosted zone ID for CloudFront commercial (non-gov, non-China) distributions
+      (this is a global value owned by Amazon CloudFront and never needs to change)
+    Default: Z2FDTNDATAQYW2
+
+Resources:
+
+  RedirectFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      # This name is GLOBAL TO THE AWS ACCOUNT
+      Name: younix-us-edge-redirector
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Per-host redirect rules (viewer-request)
+        Runtime: cloudfront-js-1.0
+      # Warning: CloudFront Functions are limited:
+      # - 10kB source code size
+      # - ES5.1 subset with no let/const, no arrow functions, no classes, no modules
+      FunctionCode: |
+        function handler(event) {
+          var r = event.request;
+          var host = r.headers.host.value.toLowerCase();
+          var uri  = r.uri || "/";
+
+          function qsFrom(obj) {
+            if (!obj || typeof obj !== "object") return "";
+            var parts = [];
+            for (var k in obj) if (obj.hasOwnProperty(k)) {
+              var entry = obj[k];
+              if (entry && entry.multiValue && entry.multiValue.length) {
+                for (var i = 0; i < entry.multiValue.length; i++) {
+                  var v = entry.multiValue[i].value;
+                  parts.push(encodeURIComponent(k) + (v !== "" ? "=" + encodeURIComponent(v) : ""));
+                }
+              } else {
+                var v = entry && entry.value;
+                if (typeof v === "string") {
+                  parts.push(encodeURIComponent(k) + (v !== "" ? "=" + encodeURIComponent(v) : ""));
+                } else {
+                  parts.push(encodeURIComponent(k)); // key with no value
+                }
+              }
+            }
+            return parts.length ? "?" + parts.join("&") : "";
+          }
+
+          var qs = qsFrom(r.querystring);
+
+          // Generate a redirect response
+          function redirect(url) {
+            return {
+              statusCode: 301,
+              statusDescription: "Moved Permanently",
+              headers: {
+                location: { value: url },
+                "strict-transport-security": { value: "max-age=31536000; includeSubDomains; preload" }
+              }
+            };
+          }
+
+          if (host === "toys.younix.us" && uri.indexOf("/biblemunger") === 0) {
+            var newUri = uri.substring("/biblemunger".length) || "/";
+            return redirect("https://biblemunger.micahrl.com" + newUri + qs);
+          }
+
+          // If none of the above conditions match, fall back
+          return redirect("https://me.micahrl.com" + uri + qs);
+        }
+
+  RedirectDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Edge redirector
+        Aliases:
+        - younix.us
+        - www.younix.us
+        - toys.younix.us
+        DefaultRootObject: ""
+
+        # Define a placeholder origin because CloudFront requires one,
+        # even though we always redirect before going to the origin.
+        Origins:
+          - Id: placeholder-origin
+            DomainName: aws.amazon.com
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+
+        DefaultCacheBehavior:
+          TargetOriginId: placeholder-origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          MinTTL: 0
+          DefaultTTL: 300
+          MaxTTL: 31536000
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt RedirectFunction.FunctionMetadata.FunctionARN
+          # What to send to the origin
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        HttpVersion: http2and3
+        PriceClass: !Ref PriceClass
+
+  RedirectRecordSet:
+    Type: "AWS::Route53::RecordSetGroup"
+    Properties:
+      HostedZoneId: !ImportValue YounixDotUs-OriginZoneId
+      RecordSets:
+        - Name: younix.us.
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt RedirectDistribution.DomainName
+            HostedZoneId: !Ref TargetHostedZoneId
+            EvaluateTargetHealth: false
+        - Name: younix.us.
+          Type: AAAA
+          AliasTarget:
+            DNSName: !GetAtt RedirectDistribution.DomainName
+            HostedZoneId: !Ref TargetHostedZoneId
+            EvaluateTargetHealth: false
+        - Name: www.younix.us.
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt RedirectDistribution.DomainName
+            HostedZoneId: !Ref TargetHostedZoneId
+            EvaluateTargetHealth: false
+        - Name: www.younix.us.
+          Type: AAAA
+          AliasTarget:
+            DNSName: !GetAtt RedirectDistribution.DomainName
+            HostedZoneId: !Ref TargetHostedZoneId
+            EvaluateTargetHealth: false
+        - Name: toys.younix.us.
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt RedirectDistribution.DomainName
+            HostedZoneId: !Ref TargetHostedZoneId
+            EvaluateTargetHealth: false
+        - Name: toys.younix.us.
+          Type: AAAA
+          AliasTarget:
+            DNSName: !GetAtt RedirectDistribution.DomainName
+            HostedZoneId: !Ref TargetHostedZoneId
+            EvaluateTargetHealth: false
+
+Outputs:
+  DistributionDomainName:
+    Value: !GetAtt RedirectDistribution.DomainName

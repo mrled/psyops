@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFront edge redirector
+
+# ACM Certificates
+#
+# This stack MUST be deployed to us-east-1, which is a requirement for ACM for some fucking reason.
+#
+# It doesn't matter if the zone is deployed in a stack in a different region --
+# *zones* are global, even if the *stack that deployed it* is region-specific.
+
+Parameters:
+  MicahrlDotComZoneId:
+    Type: String
+    Description: Route53 Hosted Zone ID for micahrl.com (comes from MicahrlDotCom.cfn.yml stack)
+    Default: Z3HVGWA7OSS1TK
+  MicahrlDotComZoneName:
+    Type: String
+    Description: Route53 Hosted Zone name for micahrl.com
+    Default: micahrl.com
+  YounixDotUsZoneId:
+    Type: String
+    Description: Route53 Hosted Zone ID for younix.us (comes from YounixDotUs.cfn.yml stack)
+    Default: Z02081123S4X7YC5EUFE5
+  YounixDotUsZoneName:
+    Type: String
+    Description: Route53 Hosted Zone name for younix.us
+    Default: younix.us
+
+Resources:
+  MicahrlDotComWildcardCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref MicahrlDotComZoneName
+      SubjectAlternativeNames:
+        - !Sub '*.${MicahrlDotComZoneName}'
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        # The wildcard and the base domain can use the same validation record --
+        # and actually it will try to create the same record twice if we don't do this.
+        - DomainName: !Ref MicahrlDotComZoneName
+          HostedZoneId: !Ref MicahrlDotComZoneId
+        # - DomainName: !Sub '*.${MicahrlDotComZoneName}'
+        #   HostedZoneId: !Ref MicahrlDotComZoneId
+
+  UrlreflectDotMicahrlDotComWildcardCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: urlreflect.micahrl.com
+      SubjectAlternativeNames:
+        - '*.urlreflect.micahrl.com'
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: urlreflect.micahrl.com
+          HostedZoneId: !Ref MicahrlDotComZoneId
+
+  YounixDotUsWildcardCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref YounixDotUsZoneName
+      SubjectAlternativeNames:
+        - !Sub '*.${YounixDotUsZoneName}'
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        # The wildcard and the base domain can use the same validation record --
+        # and actually it will try to create the same record twice if we don't do this.
+        - DomainName: !Ref YounixDotUsZoneName
+          HostedZoneId: !Ref YounixDotUsZoneId
+
+Outputs:
+  MicahrlDotComWildcardCertificateArn:
+    Description: The ARN of the wildcard certificate for micahrl.com and all subdomains
+    Value: !Ref MicahrlDotComWildcardCertificate
+  UrlreflectDotMicahrlDotComWildcardCertificateArn:
+    Description: The ARN of the wildcard certificate for urlreflect.micahrl.com and all subdomains
+    Value: !Ref UrlreflectDotMicahrlDotComWildcardCertificate
+  YounixDotUsWildcardCertificateArn:
+    Description: The ARN of the wildcard certificate for younix.us and all subdomains
+    Value: !Ref YounixDotUsWildcardCertificate

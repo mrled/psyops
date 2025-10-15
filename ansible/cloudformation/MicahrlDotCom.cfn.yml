@@ -25,19 +25,6 @@ Resources:
     Properties:
       HostedZoneId: !Ref OriginZone
       RecordSets:
-        # Apex domain
-        - Name: micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["5.161.64.176"]
-        - Name: micahrl.com.
-          Type: AAAA
-          TTL: 300
-          ResourceRecords: ["2a01:4ff:f0:a310::0"]
-        - Name: www.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["apsylania.micahrl.com."]
 
         # Primary app server for the web site
         - Name: apsylania.micahrl.com
@@ -51,13 +38,6 @@ Resources:
 
         # IndieWeb stuff like IndieAuth, etc
         - Name: interpersonal.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["apsylania.micahrl.com."]
-        # Old server that hosted biblemunger
-        # Biblemunger app is now hosted on Vercel with the canonical url biblemunger.micahrl.com
-        # toys.micahrl.com exists to redirect toys.micahrl.com/biblemunger/* -> biblemunger.micahrl.com/*
-        - Name: toys.micahrl.com.
           Type: CNAME
           TTL: 300
           ResourceRecords: ["apsylania.micahrl.com."]
@@ -241,10 +221,6 @@ Resources:
           ResourceRecords:
             - '"did=did:plc:gu6ixxhtcztv3cow2f6tnq3w"'
 
-        - Name: whispers.micahrl.com.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["micahrl.micro.blog"]
         - Name: xn--xxa.micahrl.com. # μ.micahrl.com.
           Type: CNAME
           TTL: 60
@@ -570,6 +546,8 @@ Outputs:
   OriginZoneId:
     Description: The ID of the micahrl.com. root zone
     Value: !Ref OriginZone
+    Export:
+      Name: !Sub "${AWS::StackName}-OriginZoneId"
   OriginZoneUpdaterGroupArn:
     Description: The ARN for a group with permission to modify records in the origin zone
     Value: !GetAtt OriginZoneUpdaterGroup.Arn

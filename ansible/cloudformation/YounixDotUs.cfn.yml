@@ -13,25 +13,6 @@ Resources:
     Properties:
       HostedZoneId: !Ref YounixDotUsZone
       RecordSets:
-
-        # Redirect everything to the micahrl.com root HTTP server
-        - Name: younix.us.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["5.161.64.176"]
-        - Name: younix.us.
-          Type: AAAA
-          TTL: 300
-          ResourceRecords: ["2a01:4ff:f0:a310::0"]
-        - Name: www.younix.us.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["younix.us."]
-        - Name: toys.younix.us.
-          Type: CNAME
-          TTL: 300
-          ResourceRecords: ["younix.us."]
-
         # Hosted email with fastmail.com
         - Name: younix.us.
           Type: MX
@@ -94,3 +75,5 @@ Outputs:
   OriginZoneId:
     Description: The ID of the younix.us. root zone
     Value: !Ref YounixDotUsZone
+    Export:
+      Name: !Sub "${AWS::StackName}-OriginZoneId"
