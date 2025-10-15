@@ -17,9 +17,8 @@ Resources:
   OriginRecords:
     Type: "AWS::Route53::RecordSetGroup"
 
-    # Required because of the delegation record for backchannel.micahrl.com.
+    # Required because of the delegation records
     DependsOn:
-      - BackchannelZone
       - HomeZone
 
     Properties:
@@ -94,13 +93,6 @@ Resources:
             - '"keybase-site-verification=Z8Ro6BPCbOvBtJOG9CYDkdseYa0EgGBm6Z475VKMzWc"'
             # SPF for Fastmail
             - '"v=spf1 include:spf.messagingengine.com ?all"'
-
-        # Nameserver delegation record for the backchannel subdomain
-        # This necessitates `DependsOn: ["BackchannelZone"]`
-        - Name: backchannel.micahrl.com.
-          Type: NS
-          TTL: 300
-          ResourceRecords: !GetAtt BackchannelZone.NameServers
 
         # Nameserver delegation record for the home subdomain
         - Name: home.micahrl.com.
@@ -229,34 +221,6 @@ Resources:
           Type: CNAME
           TTL: 60
           ResourceRecords: ["chineseroom.micahrl.com."]
-
-  # Backchannel zone - for VPN clients
-  BackchannelZone:
-    Type: "AWS::Route53::HostedZone"
-    Properties:
-      Name: backchannel.micahrl.com.
-
-  BackchannelRecords:
-    Type: "AWS::Route53::RecordSetGroup"
-    Properties:
-      HostedZoneId: !Ref BackchannelZone
-      RecordSets:
-        - Name: haluth.backchannel.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["100.108.197.65"]
-        - Name: naragua.backchannel.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["100.74.227.113"]
-        - Name: copland.backchannel.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["100.116.66.78"]
-        - Name: tagasaw.backchannel.micahrl.com.
-          Type: A
-          TTL: 60
-          ResourceRecords: ["100.86.119.112"]
 
   # Home Zone
   # Unifi is too dumb to set hostnames for its clients :) lol
@@ -422,38 +386,6 @@ Resources:
                       ],
                   }
 
-  # A new group with permission to modify records in the BackchannelZone
-  # Required permissions: https://github.com/xenolf/lego#aws-route-53
-  BackchannelZoneUpdaterGroup:
-    Type: AWS::IAM::Group
-    Properties:
-      Policies:
-        - PolicyName: AllowUpdatingBackchannelZonePolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - route53:GetChange
-                  - route53:ListHostedZonesByName
-                Resource: "*"
-              - Effect: Allow
-                Action:
-                  - route53:ChangeResourceRecordSets
-                  - route53:GetHostedZone
-                  - route53:ListResourceRecordSets
-                Resource:
-                  {
-                    "Fn::Join":
-                      [
-                        "",
-                        [
-                          "arn:aws:route53:::hostedzone/",
-                          { "Ref": "BackchannelZone" },
-                        ],
-                      ],
-                  }
-
   # A new group with permission to modify records in the HomeZone
   # For use with Let's Encrypt / ACME
   HomeZoneUpdaterGroup:
@@ -496,12 +428,6 @@ Outputs:
   OriginZoneUpdaterGroupArn:
     Description: The ARN for a group with permission to modify records in the origin zone
     Value: !GetAtt OriginZoneUpdaterGroup.Arn
-  BackchannelZoneId:
-    Description: The ID of the backchannel.micahrl.com. zone
-    Value: !Ref BackchannelZone
-  BackchannelZoneUpdaterGroupArn:
-    Description: The ARN for a group with permission to modify records in the backchannel zone
-    Value: !GetAtt BackchannelZoneUpdaterGroup.Arn
   HomeZoneId:
     Description: The ID of the home.micahrl.com. zone
     Value: !Ref HomeZone
