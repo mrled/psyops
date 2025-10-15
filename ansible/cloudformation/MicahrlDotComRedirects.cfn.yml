@@ -158,6 +158,7 @@ Resources:
     Properties:
       HostedZoneId: !ImportValue MicahrlDotCom-OriginZoneId
       RecordSets:
+        # Origin records must be Alias records with separate A and AAAA entries
         - Name: micahrl.com.
           Type: A
           AliasTarget:
@@ -170,42 +171,19 @@ Resources:
             DNSName: !GetAtt RedirectDistribution.DomainName
             HostedZoneId: !Ref TargetHostedZoneId
             EvaluateTargetHealth: false
+        # Subdomains can all use CNAME, which means we only need to specify one per name
         - Name: www.micahrl.com.
-          Type: A
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
-        - Name: www.micahrl.com.
-          Type: AAAA
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt RedirectDistribution.DomainName]
         - Name: toys.micahrl.com.
-          Type: A
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
-        - Name: toys.micahrl.com.
-          Type: AAAA
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt RedirectDistribution.DomainName]
         - Name: whispers.micahrl.com.
-          Type: A
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
-        - Name: whispers.micahrl.com.
-          Type: AAAA
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt RedirectDistribution.DomainName]
 
 Outputs:
   DistributionDomainName:

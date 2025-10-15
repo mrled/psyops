@@ -156,6 +156,7 @@ Resources:
     Properties:
       HostedZoneId: !ImportValue YounixDotUs-OriginZoneId
       RecordSets:
+        # Origin records must be Alias records with separate A and AAAA entries
         - Name: younix.us.
           Type: A
           AliasTarget:
@@ -168,30 +169,15 @@ Resources:
             DNSName: !GetAtt RedirectDistribution.DomainName
             HostedZoneId: !Ref TargetHostedZoneId
             EvaluateTargetHealth: false
+        # Subdomains can all use CNAME, which means we only need to specify one per name
         - Name: www.younix.us.
-          Type: A
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
-        - Name: www.younix.us.
-          Type: AAAA
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt RedirectDistribution.DomainName]
         - Name: toys.younix.us.
-          Type: A
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
-        - Name: toys.younix.us.
-          Type: AAAA
-          AliasTarget:
-            DNSName: !GetAtt RedirectDistribution.DomainName
-            HostedZoneId: !Ref TargetHostedZoneId
-            EvaluateTargetHealth: false
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: [!GetAtt RedirectDistribution.DomainName]
 
 Outputs:
   DistributionDomainName:
