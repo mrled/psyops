@@ -28,3 +28,6 @@ chineseroom_enable_whitelist_domains: false
 # UNLESS they resolve to an IP in chineseroom_whitelist_ips.
 chineseroom_whitelist_domains:
 - anthropic.com
+
+# Jujutsu version control system version
+jujutsu_version: "0.34.0"
