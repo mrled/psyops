@@ -26,6 +26,11 @@ Resources:
           Type: CNAME
           TTL: 300
           ResourceRecords: ["boring-perlman-92bf89.netlify.app."]
+        - Name: _suns.com.micahrl.me.
+          Type: TXT
+          TTL: 300
+          ResourceRecords:
+            - '"v1:e:9tagFKZudVQcih+CmEPZV4+CmKVAJzFBCKFfa3pFCm4=:US2J6QAgICRh/18mjTdnqM1u15yqy1TPmfU4PqsbEi4="'
 
         # Hosted email with fastmail.com
         - Name: micahrl.me.
