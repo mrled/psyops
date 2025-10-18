@@ -119,7 +119,8 @@ Resources:
         - www.micahrl.com
         - toys.micahrl.com
         - whispers.micahrl.com
-        DefaultRootObject: ""
+        - xn--xxa.micahrl.com
+        - u.micahrl.com
 
         # Define a placeholder origin because CloudFront requires one,
         # even though we always redirect before going to the origin.
