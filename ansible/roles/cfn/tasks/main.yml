@@ -6,8 +6,6 @@
     region: "{{ cloudformation_aws_region }}"
     template: "{{ cloudformation_template_path }}"
     tags: "{{ cloudformation_tags }}"
-    aws_access_key: "{{ cloudformation_aws_access_key }}"
-    aws_secret_key: "{{ cloudformation_aws_secret_key }}"
     on_create_failure: "{{ cloudformation_on_create_failure }}"
     template_parameters: "{{ cloudformation_template_params }}"
   register: cloudformation_result
