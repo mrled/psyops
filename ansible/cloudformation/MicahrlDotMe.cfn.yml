@@ -30,7 +30,7 @@ Resources:
           Type: TXT
           TTL: 300
           ResourceRecords:
-            - '"v1:e:9tagFKZudVQcih+CmEPZV4+CmKVAJzFBCKFfa3pFCm4=:US2J6QAgICRh/18mjTdnqM1u15yqy1TPmfU4PqsbEi4="'
+            - '"v1:e:3DOcEA7tFJAbQSbvIQ2d5c6P7k4xu2adw+gL2PYvrng=:US2J6QAgICRh/18mjTdnqM1u15yqy1TPmfU4PqsbEi4="'
 
         # Hosted email with fastmail.com
         - Name: micahrl.me.
