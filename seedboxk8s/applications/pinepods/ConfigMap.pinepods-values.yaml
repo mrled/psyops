@@ -10,7 +10,7 @@ data:
     replicaCount: 1
 
     image:
-      repository: pinepods
+      repository: madeofpendletonwool/pinepods
       tag: latest
       pullPolicy: IfNotPresent
 
@@ -32,6 +32,8 @@ data:
 
     postgresql:
       enabled: true
+      image:
+        repository: bitnamilegacy/postgresql # TODO: FIXME
       auth:
         username: postgres
         database: pinepods_database
