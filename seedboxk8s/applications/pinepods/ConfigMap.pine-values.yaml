@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pinepods-values
+  namespace: pinepods
+
+data:
+  # https://github.com/madeofpendletonwool/PinePods/blob/main/deployment/kubernetes/helm/pinepods/values.yaml
+  values.yaml: |
+    replicaCount: 1
+
+    image:
+      repository: pinepods
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    service:
+      type: ClusterIP
+      port: 8040
+
+    ingress:
+      enabled: false
+
+    persistence:
+      enabled: true
+      downloads:
+        storageClass: seedbox-slow-mirror
+        size: 50Gi
+      backups:
+        storageClass: seedbox-slow-mirror
+        size: 10Gi
+
+    postgresql:
+      enabled: true
+      auth:
+        username: postgres
+        database: pinepods_database
+      primary:
+        persistence:
+          enabled: true
+          storageClass: seedbox-slow-mirror
+          size: 3Gi
+
+    valkey:
+      enabled: false
+
+    backend:
+      enabled: false
+
+    podpeople:
+      enabled: false
+
+    env:
+      SEARCH_API_URL: "https://search.pinepods.online/api/search"
+      USERNAME: "freeleech"
+      FULLNAME: "Free Leech"
+      EMAIL: "freeleech@${productionClusterFqdn}"
+      DB_TYPE: "postgresql"
+      DB_HOST: "pinepods-postgresql.pinepods-namespace.svc.cluster.local"
+      DB_PORT: "5432"
+      DB_USER: "postgres"
+      DB_NAME: "pinepods_database"
+      DEBUG_MODE: "false"

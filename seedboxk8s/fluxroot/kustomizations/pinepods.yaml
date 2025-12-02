@@ -1,0 +1,26 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: pinepods
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: /seedboxk8s/applications/pinepods
+  prune: true
+  timeout: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: fluxcfg
+    - name: topolvm
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: seedboxk8s-config
+      - kind: ConfigMap
+        name: seedboxk8s-config
