@@ -58,7 +58,7 @@ data:
       FULLNAME: "Free Leech"
       EMAIL: "freeleech@${productionClusterFqdn}"
       DB_TYPE: "postgresql"
-      DB_HOST: "pinepods-postgresql.pinepods-namespace.svc.cluster.local"
+      DB_HOST: "pinepods-postgresql.pinepods.svc.cluster.local"
       DB_PORT: "5432"
       DB_USER: "postgres"
       DB_NAME: "pinepods_database"
