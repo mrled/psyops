@@ -31,7 +31,7 @@ data:
         size: 10Gi
 
     postgresql:
-      enabled: true
+      enabled: false
       image:
         repository: bitnamilegacy/postgresql # TODO: FIXME
       auth:
@@ -42,6 +42,21 @@ data:
           enabled: true
           storageClass: seedbox-slow-mirror
           size: 3Gi
+
+    # External database configuration
+    # Only used when postgresql.enabled is false
+    externalDatabase:
+      type: postgresql
+      host: "pinepods-postgres.pinepods.svc.cluster.local"
+      port: 5432
+      user: postgres
+      database: pinepods_database
+      existingSecret:
+        enabled: false
+        name: existing-secret
+        key: password
+      # -- manually provide the DB environment variables under extraEnv. Useful for DB solutions like CNPG
+      manuallyProvide: false
 
     valkey:
       enabled: false
@@ -58,8 +73,10 @@ data:
       FULLNAME: "Free Leech"
       EMAIL: "freeleech@${productionClusterFqdn}"
       DB_TYPE: "postgresql"
-      DB_HOST: "pinepods-postgresql.pinepods.svc.cluster.local"
+      DB_HOST: "pinepods-postgres.pinepods.svc.cluster.local"
       DB_PORT: "5432"
       DB_USER: "postgres"
       DB_NAME: "pinepods_database"
+      VALKEY_HOST: "pinepods-valkey.pinepods.svc.cluster.local"
+      VALKEY_PORT: "6379"
       DEBUG_MODE: "false"

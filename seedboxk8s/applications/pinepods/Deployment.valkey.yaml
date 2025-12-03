@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pinepods-valkey
+  namespace: pinepods
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pinepods-valkey
+  template:
+    metadata:
+      labels:
+        app: pinepods-valkey
+    spec:
+      containers:
+      - name: valkey
+        image: valkey/valkey:8
+        ports:
+        - containerPort: 6379
+          name: valkey
+        command:
+        - valkey-server
+        - --requirepass
+        - $(VALKEY_PASSWORD)
+        env:
+        - name: VALKEY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pinepods-valkey-secret
+              key: valkey-password
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
