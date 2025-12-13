@@ -9,4 +9,4 @@ data:
   ## WARNING: Reminder to be careful of ${var...} here (and everywhere), which is interpreted by Flux Kustomize. Escape with $${var...}.
 
   options.yaml: |+
-    proxy: http://pprox.tortuga.svc.cluster.local:3128
+    proxy: "http://pprox.tortuga.svc.cluster.local:3128"
