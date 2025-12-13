@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metube
+  namespace: tortuga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metube
+  template:
+    metadata:
+      labels:
+        app: metube
+    spec:
+      containers:
+      - name: metube
+        image: ghcr.io/alexta69/metube
+        ports:
+        - containerPort: 8081
+        env:
+        - name: MAX_CONCURRENT_DOWNLOADS
+          value: "5"
+        - name: DOWNLOAD_DIR
+          value: /media/Trix/stash/metube
+        - name: DOWNLOAD_DIRS_INDEXABLE
+          value: "true"
+        - name: STATE_DIR
+          value: /temporary/state
+        - name: TEMP_DIR
+          value: /temporary/temp
+        - name: PUBLIC_HOST_URL
+          value: https://bk2.${productionClusterFqdn}
+        - name: UID
+          value: ${quote}${plexUid}${quote}
+        - name: GID
+          value: ${quote}${plexGid}${quote}
+        - name: LOGLEVEL
+          value: INFO
+        volumeMounts:
+        - mountPath: /temporary
+          name: metube-temp
+          readOnly: false
+        - mountPath: /media
+          name: seedboxmedia-nfs
+          readOnly: false
+      volumes:
+      - name: metube-temp
+        emptyDir: {}
+      - name: seedboxmedia-nfs
+        persistentVolumeClaim:
+          claimName: seedboxmedia-nfs-pvc

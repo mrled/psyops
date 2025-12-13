@@ -1,0 +1,22 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: metube
+  namespace: tortuga
+  annotations:
+    kubernetes.io/ingress.class: traefik-tailscale
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`bk2.${productionClusterFqdn}`)
+      kind: Rule
+      services:
+        - name: metube
+          kind: Service
+          port: 8081
+      middlewares:
+        - name: bridgetroll-mw
+          namespace: bridgetroll
+  tls:
+    secretName: seedbox-wildcard-backing-secret

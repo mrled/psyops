@@ -1,0 +1,27 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: bk2
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: /seedboxk8s/applications/bk2
+  prune: true
+  timeout: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: fluxcfg
+    - name: topolvm
+    - name: tortuga
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: seedboxk8s-config
+      - kind: ConfigMap
+        name: seedboxk8s-config
