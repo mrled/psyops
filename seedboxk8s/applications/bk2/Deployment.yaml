@@ -26,9 +26,9 @@ spec:
         - name: DOWNLOAD_DIRS_INDEXABLE
           value: "true"
         - name: STATE_DIR
-          value: /temporary/state
+          value: /state
         - name: TEMP_DIR
-          value: /temporary/temp
+          value: /temporary
         - name: PUBLIC_HOST_URL
           value: https://bk2.${productionClusterFqdn}/
         - name: UID
@@ -43,6 +43,9 @@ spec:
         - mountPath: /temporary
           name: metube-temp
           readOnly: false
+        - mountPath: /state
+          name: bk2-metube-state-pvc
+          readOnly: false
         - mountPath: /media
           name: seedboxmedia-nfs
           readOnly: false
@@ -52,6 +55,9 @@ spec:
       volumes:
       - name: metube-temp
         emptyDir: {}
+      - name: bk2-metube-state-pvc
+        persistentVolumeClaim:
+          claimName: bk2-metube-state-pvc
       - name: seedboxmedia-nfs
         persistentVolumeClaim:
           claimName: seedboxmedia-nfs-pvc
