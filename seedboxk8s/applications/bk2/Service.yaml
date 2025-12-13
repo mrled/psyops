@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: metube
+  name: bk2-metube
   namespace: tortuga
 spec:
   selector:
-    app: metube
+    app: bk2-metube
   ports:
   - protocol: TCP
     port: 8081

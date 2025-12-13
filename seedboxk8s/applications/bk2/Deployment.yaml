@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: metube
+  name: bk2-metube
   namespace: tortuga
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: metube
+      app: bk2-metube
   template:
     metadata:
       labels:
-        app: metube
+        app: bk2-metube
     spec:
       containers:
       - name: metube
@@ -37,6 +37,8 @@ spec:
           value: ${quote}${plexGid}${quote}
         - name: LOGLEVEL
           value: INFO
+        - name: YTDL_OPTIONS_FILE
+          value: /options/options.yaml
         volumeMounts:
         - mountPath: /temporary
           name: metube-temp
@@ -44,9 +46,15 @@ spec:
         - mountPath: /media
           name: seedboxmedia-nfs
           readOnly: false
+        - mountPath: /options
+          name: bk2-ytdl-options
+          readOnly: true
       volumes:
       - name: metube-temp
         emptyDir: {}
       - name: seedboxmedia-nfs
         persistentVolumeClaim:
           claimName: seedboxmedia-nfs-pvc
+      - name: bk2-ytdl-options
+        configMap:
+          name: bk2-ytdl-options
