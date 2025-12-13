@@ -30,7 +30,7 @@ spec:
         - name: TEMP_DIR
           value: /temporary/temp
         - name: PUBLIC_HOST_URL
-          value: https://bk2.${productionClusterFqdn}
+          value: https://bk2.${productionClusterFqdn}/
         - name: UID
           value: ${quote}${plexUid}${quote}
         - name: GID
