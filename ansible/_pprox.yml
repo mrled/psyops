@@ -5,4 +5,5 @@
   roles:
     - { name: autoupgrade, tags: ["autoupgrade"] }
     - { name: emailfwd, tags: ["emailfwd"] }
+    - { name: tailscale, tags: ["tailscale"] }
     - { name: pprox, tags: ["pprox"] }
