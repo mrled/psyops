@@ -13,7 +13,6 @@ spec:
     name: flux-system
   dependsOn:
     - name: fluxcfg
-    - name: topolvm
     - name: tortuga
   decryption:
     provider: sops
