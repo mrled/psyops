@@ -19,12 +19,16 @@ cloudkey.home.micahrl.com
 [emailfwd]
 apsylania.micahrl.com
 tagasaw.home.micahrl.com
+wenaglia.banded-goblin.ts.net
 
 [http_root_micahrl_com]
 apsylania.micahrl.com
 
 #[privnet]
 #kalix.home.micahrl.com
+
+[pprox]
+wenaglia.banded-goblin.ts.net
 
 [psynet_lighthouses]
 psynet-lighthouse1

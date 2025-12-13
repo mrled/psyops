@@ -1,0 +1,6 @@
+---
+
+pprox_listen_interface: tailscale0
+pprox_listen_port: 3128
+pprox_allowed_networks:
+  - 100.64.0.0/10  # Tailscale CGNAT range

@@ -1,0 +1,33 @@
+http_port {{ pprox_listen_ip }}:{{ pprox_listen_port }}
+
+{% for network in pprox_allowed_networks %}
+acl pprox_allow_net src {{ network }}
+{% endfor %}
+
+# Safe ports (standard ports we allow CONNECT to)
+acl SSL_ports port 443
+acl Safe_ports port 80
+acl Safe_ports port 443
+
+acl CONNECT method CONNECT
+
+# Deny requests to unsafe ports
+http_access deny !Safe_ports
+# Deny CONNECT to non-SSL ports
+http_access deny CONNECT !SSL_ports
+
+# Allow requests from pprox_allow_net network
+http_access allow pprox_allow_net
+
+# Deny all other access
+http_access deny all
+
+cache deny all
+cache_mem 0 MB
+maximum_object_size 0 KB
+
+#access_log daemon:/var/log/squid/access.log
+#cache_log /var/log/squid/cache.log
+
+# Disable via header to be more transparent
+via off

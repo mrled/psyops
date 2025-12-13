@@ -1,0 +1,41 @@
+---
+
+- name: Install squid
+  ansible.builtin.apt:
+    name: squid
+    state: present
+    update_cache: true
+
+- name: Set listen IP from interface facts (IPv4)
+  ansible.builtin.set_fact:
+    pprox_listen_ip: "{{ ansible_facts[pprox_listen_interface].ipv4.address | default('') }}"
+
+- name: Fail if interface has no IPv4
+  ansible.builtin.assert:
+    that:
+      - pprox_listen_ip | trim | length > 0
+    fail_msg: "No IPv4 found on interface {{ pprox_listen_interface }}; refusing to render squid.conf."
+
+- name: Validate listen IP format
+  ansible.builtin.assert:
+    that:
+      - pprox_listen_ip is match('^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$')
+    fail_msg: "pprox_listen_ip={{ pprox_listen_ip }} does not look like an IPv4 address."
+
+- name: Deploy squid configuration
+  ansible.builtin.template:
+    src: squid.conf.j2
+    dest: /etc/squid/squid.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: squid -k parse -f %s
+  notify: Restart squid
+  tags:
+    - config
+
+- name: Ensure squid is enabled and started
+  ansible.builtin.systemd:
+    name: squid
+    enabled: true
+    state: started
