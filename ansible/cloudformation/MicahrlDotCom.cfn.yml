@@ -105,16 +105,6 @@ Resources:
           TTL: 300
           ResourceRecords: !GetAtt HomeZone.NameServers
 
-        # Dynamic DNS delegation to noip
-        - Name: homeward.micahrl.com.
-          Type: NS
-          TTL: 300
-          ResourceRecords:
-            - ns1.no-ip.com.
-            - ns2.no-ip.com.
-            - ns3.no-ip.com.
-            - ns4.no-ip.com.
-
         # psynet sub-zone
         - Name: psynet.micahrl.com.
           Type: NS
