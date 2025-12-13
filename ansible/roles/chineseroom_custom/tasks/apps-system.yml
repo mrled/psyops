@@ -12,6 +12,7 @@
 - name: Packages
   dnf:
     name:
+      - git-lfs
       - sqlite
       - stripe
       - vim
