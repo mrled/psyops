@@ -1,24 +1,6 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: data-import-helper
-  namespace: seedboxutil
-  annotations:
-    reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
-    reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: >-
-      clustergit,
-      registry,
-      tortuga,
-    reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
-    reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: ""
-
-data:
-
-  ## WARNING: Reminder to be careful of ${var...} here (and everywhere), which is interpreted by Flux Kustomize. Escape with $${var...}.
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: bk2-ytdl-options
   namespace: tortuga
 
