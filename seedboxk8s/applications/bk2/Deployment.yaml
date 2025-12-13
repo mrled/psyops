@@ -38,7 +38,7 @@ spec:
         - name: LOGLEVEL
           value: INFO
         - name: YTDL_OPTIONS_FILE
-          value: /options/options.yaml
+          value: /options/options.json
         volumeMounts:
         - mountPath: /temporary
           name: metube-temp
