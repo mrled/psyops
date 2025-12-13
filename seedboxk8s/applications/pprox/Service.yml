@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pprox
+  namespace: tortuga
+  annotations:
+    tailscale.com/tailnet-fqdn: wenaglia.banded-goblin.ts.net
+spec:
+  type: ExternalName
+  externalName: placeholder
+  ports:
+    - name: squid
+      port: 3128
+      protocol: TCP
