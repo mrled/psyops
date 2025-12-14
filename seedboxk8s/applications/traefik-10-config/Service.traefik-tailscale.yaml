@@ -9,10 +9,6 @@ spec:
   selector:
     app: traefik-tailscale
 
-  # This must match the IP address in the TS_DEST_IP env var in the tailscale pod,
-  # and ofc it must be unique in the cluster.
-  clusterIP: 10.96.0.100
-
   ports:
   - name: web
     protocol: TCP
