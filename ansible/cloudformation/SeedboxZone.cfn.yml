@@ -25,7 +25,8 @@ Resources:
         - Name: !Ref DomainName
           Type: A
           TTL: "300"
-          ResourceRecords: ["100.69.221.89"]
+          # The Tailscale address for the seedboxk8s proxy node; must deploy the node to the cluster first.
+          ResourceRecords: ["100.106.30.67"]
         - Name: !Join [".", ["*", !Ref DomainName]]
           Type: CNAME
           TTL: "60"
