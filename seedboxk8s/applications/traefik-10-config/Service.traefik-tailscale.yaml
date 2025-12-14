@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: traefik-tailscale
+  name: seedboxk8s-tailscale-proxy
   namespace: traefik
   annotations:
     tailscale.com/expose: "true"
