@@ -51,7 +51,8 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: linuxserver/lidarr:2.8.2
+        # https://github.com/linuxserver/docker-lidarr/releases
+        - image: ghcr.io/linuxserver/lidarr:3.1.0.4875-ls14
           name: lidarr
           ports:
             - containerPort: 8686

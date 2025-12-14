@@ -51,7 +51,8 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: linuxserver/sonarr:4.0.12
+        # https://github.com/linuxserver/docker-sonarr/releases
+        - image: ghcr.io/linuxserver/sonarr:4.0.16.2944-ls299
           name: sonarr
           ports:
             - containerPort: 8989

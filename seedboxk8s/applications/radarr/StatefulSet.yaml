@@ -51,7 +51,8 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: linuxserver/radarr:5.17.2
+        # https://github.com/linuxserver/docker-radarr/releases
+        - image: ghcr.io/linuxserver/radarr:6.0.4.10291-ls289
           name: radarr
           ports:
             - containerPort: 7878
