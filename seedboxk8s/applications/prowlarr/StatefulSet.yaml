@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prowlarr
+  namespace: tortuga
+spec:
+  replicas: 1
+  serviceName: prowlarr
+  selector:
+    matchLabels:
+      app: prowlarr
+  template:
+    metadata:
+      labels:
+        app: prowlarr
+    spec:
+      initContainers:
+        - name: import-data
+          image: busybox
+          command:
+            - sh
+            - -c
+            # BE VERY CAREFUL WITH TRAILING SEMICOLONS
+            - >
+              if test "$DANGER_CLEAR_EXISTING_DATA" = "true"; then
+                for f in /config/{*,.*}; do
+                  if test "$f" = "/config/." || test "$f" = "/config/.."; then
+                    continue;
+                  fi;
+                  echo "Removing $f recursively...";
+                  rm -f "$f";
+                done;
+                rm -rf /config/*;
+              elif test -f /config/import-data-complete; then
+                exit 0;
+              fi;
+              while test ! -f /import/import-data-ready; do
+                sleep 1;
+              done;
+              echo "Extracting data...";
+              tar -xvf /import/import.tar.gz -C /config;
+              echo "Extraction complete.";
+              touch /config/import-data-complete;
+              exit 0;
+          env:
+            - name: DANGER_CLEAR_EXISTING_DATA
+              value: "false"
+          volumeMounts:
+            - name: prowlarr-config-pvc
+              mountPath: /config
+            - name: import
+              mountPath: /import
+      containers:
+        # https://github.com/linuxserver/docker-prowlarr/releases
+        - image: ghcr.io/linuxserver/prowlarr:2.3.0.5236-ls133
+          name: prowlarr
+          ports:
+            - containerPort: 9696
+          env:
+            - name: PUID
+              value: ${quote}${plexUid}${quote}
+            - name: PGID
+              value: ${quote}${plexGid}${quote}
+            - name: TZ
+              value: ${timezone}
+          volumeMounts:
+            - mountPath: /config
+              name: prowlarr-config-pvc
+              readOnly: false
+            - mountPath: /media
+              name: seedboxmedia-nfs
+              readOnly: false
+      volumes:
+        - name: import
+          emptyDir: {}
+        - name: prowlarr-config-pvc
+          persistentVolumeClaim:
+            claimName: prowlarr-config-pvc
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc
