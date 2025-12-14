@@ -51,7 +51,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${productionClusterFqdn}/tortuga/shhh:latest
+        - image: ${shhhImage}
           name: shhh
           ports:
             - containerPort: 6969
