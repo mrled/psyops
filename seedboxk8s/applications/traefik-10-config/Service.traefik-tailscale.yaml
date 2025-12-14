@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: traefik-tailscale
   namespace: traefik
+  annotations:
+    metadata.annotations.tailscale.com/expose: "true"
 spec:
   selector:
     app: traefik-tailscale
