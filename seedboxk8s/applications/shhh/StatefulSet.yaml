@@ -51,7 +51,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ${shhhImage}
+        - image: ${shhhImage}:v3
           name: shhh
           ports:
             - containerPort: 6969

@@ -51,7 +51,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ${x3Image}
+        - image: ${x3Image}:latest
           name: x3
           securityContext:
             runAsUser: ${plexUid}
