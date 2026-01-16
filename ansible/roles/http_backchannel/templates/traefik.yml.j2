@@ -28,6 +28,7 @@ certificatesResolvers:
     acme:
       email: {{ http_backchannel_acme_email }}
       storage: /usr/local/etc/traefik/acme.json
+      caServer: https://acme-staging-v02.api.letsencrypt.org/directory
       dnsChallenge:
         provider: route53
         delayBeforeCheck: 30
