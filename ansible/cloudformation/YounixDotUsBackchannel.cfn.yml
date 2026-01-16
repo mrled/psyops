@@ -5,7 +5,7 @@ Description: Backchannel Zones
 # Separate backchannel zone for each host that needs to use it.
 # The hosts will save long lived AWS credentials and request wildcard TLS certs.
 # This lets individual nodes in the tailnet to serve separate services on subdomains based on their hostname,
-# like appname.naragua.backchannel.micahrl.com.
+# like appname.naragua.backchannel.younix.us.
 #
 # After running this stack, create a node's IAM user credentials.
 # THESE WILL ONLY BE SHOWN ONCE and cannot be retrieved later.
@@ -18,7 +18,7 @@ Resources:
   NaraguaBackchannelZone:
     Type: "AWS::Route53::HostedZone"
     Properties:
-      Name: naragua.backchannel.micahrl.com.
+      Name: naragua.backchannel.younix.us.
 
   # Records in the backchannel zone
   NaraguaBackchannelRecords:
@@ -27,16 +27,16 @@ Resources:
       HostedZoneId: !Ref NaraguaBackchannelZone
       RecordSets:
         # Root A record pointing to Tailscale IP
-        - Name: naragua.backchannel.micahrl.com.
+        - Name: naragua.backchannel.younix.us.
           Type: A
           TTL: 60
           ResourceRecords: ["100.112.192.27"]
 
         # Wildcard subdomain pointing to the root
-        - Name: "*.naragua.backchannel.micahrl.com."
+        - Name: "*.naragua.backchannel.younix.us."
           Type: CNAME
           TTL: 60
-          ResourceRecords: ["naragua.backchannel.micahrl.com."]
+          ResourceRecords: ["naragua.backchannel.younix.us."]
 
   # IAM group with permission to modify records in the backchannel zone
   NaraguaBackchannelZoneUpdaterGroup:
@@ -95,3 +95,9 @@ Outputs:
     Value: !Ref NaraguaBackchannelZoneUpdaterUser
     Export:
       Name: NaraguaBackchannelZone-UpdaterUserName
+
+  NaraguaBackchannelZoneNameServers:
+    Description: The nameservers for the naragua backchannel zone
+    Value: !Join [",", !GetAtt NaraguaBackchannelZone.NameServers]
+    Export:
+      Name: NaraguaBackchannelZone-NameServers

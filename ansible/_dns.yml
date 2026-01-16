@@ -45,13 +45,13 @@
       cloudformation_aws_profile: primary-micahrl
       tags: aws_certificates
     - name: cfn
-      cloudformation_stack_name: MicahrlDotComBackchannel
-      cloudformation_template_path: cloudformation/MicahrlDotComBackchannel.cfn.yml
+      cloudformation_stack_name: YounixDotUsBackchannel
+      cloudformation_template_path: cloudformation/YounixDotUsBackchannel.cfn.yml
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
       cloudformation_aws_profile: primary-micahrl
       tags:
-      - micahrl.com_backchannel
-      - micahrl.com
+      - younix.us_backchannel
+      - younix.us
     - name: cfn
       cloudformation_stack_name: MicahrlDotComRedirects
       cloudformation_template_path: cloudformation/MicahrlDotComRedirects.cfn.yml

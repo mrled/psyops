@@ -51,6 +51,12 @@ Resources:
           TTL: 300
           ResourceRecords: ["seedboxk8s.younix.us."]
 
+        # Nameserver delegation record for the backchannel subdomain
+        - Name: backchannel.younix.us.
+          Type: NS
+          TTL: 300
+          ResourceRecords: !Split [",", !ImportValue NaraguaBackchannelZone-NameServers]
+
   Seedboxk8sYounixDotUsZoneUpdaterGroup:
     Type: AWS::IAM::Group
     Properties:
