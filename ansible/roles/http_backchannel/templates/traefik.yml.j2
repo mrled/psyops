@@ -1,0 +1,45 @@
+---
+# Traefik configuration for HTTP backchannel
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: false
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: {{ http_backchannel_acme_email }}
+      storage: /usr/local/etc/traefik/acme.json
+      dnsChallenge:
+        provider: route53
+        delayBeforeCheck: 30
+
+providers:
+  file:
+    directory: /usr/local/etc/traefik/dynamic
+    watch: true
+
+log:
+  level: {{ http_backchannel_log_level }}
+  filePath: /var/log/traefik.log
+
+accessLog:
+  filePath: /var/log/traefik-access.log

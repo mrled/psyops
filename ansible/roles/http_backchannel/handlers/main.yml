@@ -1,0 +1,5 @@
+---
+- name: restart traefik
+  command: launchctl bootout system/com.micahrl.backchannel && launchctl bootstrap system /Library/LaunchDaemons/com.micahrl.backchannel.plist
+  become: yes
+  ignore_errors: yes

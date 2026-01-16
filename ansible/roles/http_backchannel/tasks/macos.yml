@@ -1,0 +1,98 @@
+---
+- name: Install Traefik with Homebrew
+  community.general.homebrew:
+    name: traefik
+    state: present
+  # Homebrew will error if we try to call it from root
+  become: false
+
+- name: Create Traefik configuration directory
+  file:
+    path: /usr/local/etc/traefik
+    state: directory
+    owner: root
+    group: wheel
+    mode: '0700'
+  become: yes
+
+- name: Create Traefik dynamic configuration directory
+  file:
+    path: /usr/local/etc/traefik/dynamic
+    state: directory
+    owner: root
+    group: wheel
+    mode: '0700'
+  become: yes
+
+- name: Create Traefik acme.json file
+  file:
+    path: /usr/local/etc/traefik/acme.json
+    state: touch
+    owner: root
+    group: wheel
+    mode: '0600'
+    modification_time: preserve
+    access_time: preserve
+  become: yes
+
+- name: Deploy Traefik configuration
+  template:
+    src: traefik.yml.j2
+    dest: /usr/local/etc/traefik/traefik.yml
+    owner: root
+    group: wheel
+    mode: '0600'
+  become: yes
+  notify: restart traefik
+
+- name: Deploy AWS credentials file
+  template:
+    src: awscreds.conf.j2
+    dest: /usr/local/etc/traefik/awscreds.conf
+    owner: root
+    group: wheel
+    mode: '0600'
+  become: yes
+  notify: restart traefik
+
+- name: Deploy AWS config file
+  template:
+    src: awsconfig.conf.j2
+    dest: /usr/local/etc/traefik/awsconfig.conf
+    owner: root
+    group: wheel
+    mode: '0600'
+  become: yes
+  notify: restart traefik
+
+- name: Deploy wildcard certificate dynamic configuration
+  template:
+    src: wildcard-cert.yml.j2
+    dest: /usr/local/etc/traefik/dynamic/wildcard-cert.yml
+    owner: root
+    group: wheel
+    mode: '0600'
+  become: yes
+  notify: restart traefik
+
+- name: Deploy Traefik launch daemon
+  template:
+    src: com.micahrl.backchannel.plist.j2
+    dest: /Library/LaunchDaemons/com.micahrl.backchannel.plist
+    owner: root
+    group: wheel
+    mode: '0644'
+  become: yes
+  notify: restart traefik
+
+- name: Check if Traefik launch daemon is loaded
+  command: launchctl list com.micahrl.backchannel
+  register: launchd_status
+  failed_when: false
+  changed_when: false
+  become: yes
+
+- name: Enable and start Traefik launch daemon
+  command: launchctl bootstrap system /Library/LaunchDaemons/com.micahrl.backchannel.plist
+  when: launchd_status.rc != 0
+  become: yes

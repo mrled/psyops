@@ -1,0 +1,23 @@
+---
+# Dynamic configuration to trigger wildcard certificate generation
+# This creates a dummy router that will trigger certificate generation for the wildcard domain
+
+http:
+  routers:
+    wildcard-cert-trigger:
+      rule: "Host(`{{ http_backchannel_dnsname }}`) || Host(`dummy.{{ http_backchannel_dnsname }}`)"
+      entryPoints:
+        - websecure
+      service: noop
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: {{ http_backchannel_dnsname }}
+            sans:
+              - "*.{{ http_backchannel_dnsname }}"
+
+  services:
+    noop:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:1"

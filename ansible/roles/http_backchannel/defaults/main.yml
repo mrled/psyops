@@ -1,0 +1,8 @@
+---
+# Traefik log level (DEBUG, INFO, WARN, ERROR, FATAL, PANIC)
+http_backchannel_log_level: "INFO"
+
+# Path to Traefik binary (adjust for Intel vs Apple Silicon Macs)
+# Intel Macs: /usr/local/bin/traefik
+# Apple Silicon Macs: /opt/homebrew/bin/traefik
+http_backchannel_traefik_binary: "/opt/homebrew/bin/traefik"

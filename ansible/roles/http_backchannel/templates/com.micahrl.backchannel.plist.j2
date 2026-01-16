@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.micahrl.backchannel</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>{{ http_backchannel_traefik_binary }}</string>
+      <string>--configFile=/usr/local/etc/traefik/traefik.yml</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>AWS_SHARED_CREDENTIALS_FILE</key>
+      <string>/usr/local/etc/traefik/awscreds.conf</string>
+      <key>AWS_CONFIG_FILE</key>
+      <string>/usr/local/etc/traefik/awsconfig.conf</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true />
+
+    <key>KeepAlive</key>
+    <true />
+
+    <key>WorkingDirectory</key>
+    <string>/usr/local/etc/traefik</string>
+  </dict>
+</plist>
