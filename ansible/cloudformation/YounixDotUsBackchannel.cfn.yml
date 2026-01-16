@@ -7,10 +7,11 @@ Description: Backchannel Zone
 # This lets individual nodes in the tailnet to serve separate services on subdomains based on their hostname,
 # like appname.naragua.backchannel.younix.us.
 #
-# After running this stack, create IAM user credentials for hosts that need to update DNS.
+# Each node gets its own IAM user for credential isolation, even though they all have permission to update the entire zone.
+# After running this stack, create IAM user credentials for each host that needs to update DNS.
 # THESE WILL ONLY BE SHOWN ONCE and cannot be retrieved later.
 # Use a command like:
-# aws --profile primary-micahrl iam create-access-key --user-name BackchannelZoneUpdater --query 'AccessKey.[AccessKeyId,SecretAccessKey]' --output text | cat
+# aws --profile primary-micahrl iam create-access-key --user-name NaraguaBackchannelZoneUpdater --query 'AccessKey.[AccessKeyId,SecretAccessKey]' --output text | cat
 
 
 Resources:
@@ -72,11 +73,11 @@ Resources:
                   - - "arn:aws:route53:::hostedzone"
                     - !Ref BackchannelZone
 
-  # IAM user in the updater group
-  BackchannelZoneUpdaterUser:
+  # IAM users in the updater group - one per node
+  NaraguaBackchannelZoneUpdaterUser:
     Type: AWS::IAM::User
     Properties:
-      UserName: BackchannelZoneUpdater
+      UserName: NaraguaBackchannelZoneUpdater
       Groups:
         - !Ref BackchannelZoneUpdaterGroup
 
@@ -93,17 +94,17 @@ Outputs:
     Export:
       Name: BackchannelZone-UpdaterGroupArn
 
-  BackchannelZoneUpdaterUserArn:
-    Description: The ARN for the user with permission to modify records in the backchannel zone
-    Value: !GetAtt BackchannelZoneUpdaterUser.Arn
+  NaraguaBackchannelZoneUpdaterUserArn:
+    Description: The ARN for the Naragua user with permission to modify records in the backchannel zone
+    Value: !GetAtt NaraguaBackchannelZoneUpdaterUser.Arn
     Export:
-      Name: BackchannelZone-UpdaterUserArn
+      Name: BackchannelZone-NaraguaUpdaterUserArn
 
-  BackchannelZoneUpdaterUserName:
-    Description: The name of the user with permission to modify records in the backchannel zone
-    Value: !Ref BackchannelZoneUpdaterUser
+  NaraguaBackchannelZoneUpdaterUserName:
+    Description: The name of the Naragua user with permission to modify records in the backchannel zone
+    Value: !Ref NaraguaBackchannelZoneUpdaterUser
     Export:
-      Name: BackchannelZone-UpdaterUserName
+      Name: BackchannelZone-NaraguaUpdaterUserName
 
   BackchannelZoneNameServers:
     Description: The nameservers for the backchannel zone
