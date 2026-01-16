@@ -1,5 +1,11 @@
 ---
 - name: restart traefik
-  command: launchctl bootout system/us.younix.backchannel && launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
-  become: yes
-  ignore_errors: yes
+  block:
+    - name: Bootout traefik service
+      command: launchctl bootout system/us.younix.backchannel
+      failed_when: false
+      become: yes
+
+    - name: Bootstrap traefik service
+      command: launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
+      become: yes

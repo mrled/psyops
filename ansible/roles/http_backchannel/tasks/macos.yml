@@ -86,13 +86,18 @@
   notify: restart traefik
 
 - name: Check if Traefik launch daemon is loaded
-  command: launchctl list us.younix.backchannel
+  command: launchctl print system/us.younix.backchannel
   register: launchd_status
   failed_when: false
   changed_when: false
   become: yes
 
-- name: Enable and start Traefik launch daemon
+- name: Bootstrap Traefik launch daemon if not loaded
   command: launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
   when: launchd_status.rc != 0
   become: yes
+
+- name: Ensure Traefik launch daemon is running
+  command: launchctl kickstart -k system/us.younix.backchannel
+  become: yes
+  changed_when: false
