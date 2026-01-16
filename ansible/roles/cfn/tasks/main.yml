@@ -1,4 +1,5 @@
 ---
+
 - name: Deploy CloudFormation template for stack {{ cloudformation_stack_name }}
   cloudformation:
     stack_name: "{{ cloudformation_stack_name }}"
@@ -8,7 +9,9 @@
     tags: "{{ cloudformation_tags }}"
     on_create_failure: "{{ cloudformation_on_create_failure }}"
     template_parameters: "{{ cloudformation_template_params }}"
+    profile: "{{ cloudformation_aws_profile | default(omit) }}"
   register: cloudformation_result
+
 - name: Show deployment result for stack {{ cloudformation_stack_name }}
   debug:
     var: cloudformation_result

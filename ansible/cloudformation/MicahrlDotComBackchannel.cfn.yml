@@ -1,0 +1,97 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Backchannel Zones
+
+# Separate backchannel zone for each host that needs to use it.
+# The hosts will save long lived AWS credentials and request wildcard TLS certs.
+# This lets individual nodes in the tailnet to serve separate services on subdomains based on their hostname,
+# like appname.naragua.backchannel.micahrl.com.
+#
+# After running this stack, create a node's IAM user credentials.
+# THESE WILL ONLY BE SHOWN ONCE and cannot be retrieved later.
+# Use a command like:
+# aws --profile primary-micahrl iam create-access-key --user-name NaraguaBackchannelZoneUpdater --query 'AccessKey.[AccessKeyId,SecretAccessKey]' --output text | cat
+
+
+Resources:
+  # Backchannel zone for naragua
+  NaraguaBackchannelZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      Name: naragua.backchannel.micahrl.com.
+
+  # Records in the backchannel zone
+  NaraguaBackchannelRecords:
+    Type: "AWS::Route53::RecordSetGroup"
+    Properties:
+      HostedZoneId: !Ref NaraguaBackchannelZone
+      RecordSets:
+        # Root A record pointing to Tailscale IP
+        - Name: naragua.backchannel.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.112.192.27"]
+
+        # Wildcard subdomain pointing to the root
+        - Name: "*.naragua.backchannel.micahrl.com."
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["naragua.backchannel.micahrl.com."]
+
+  # IAM group with permission to modify records in the backchannel zone
+  NaraguaBackchannelZoneUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: NaraguaBackchannelZoneUpdaters
+      Policies:
+        - PolicyName: AllowUpdatingNaraguaBackchannelZonePolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZonesByName
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                  - route53:GetHostedZone
+                  - route53:ListResourceRecordSets
+                Resource: !Join
+                  - "/"
+                  - - "arn:aws:route53:::hostedzone"
+                    - !Ref NaraguaBackchannelZone
+
+  # IAM user in the updater group
+  NaraguaBackchannelZoneUpdaterUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: NaraguaBackchannelZoneUpdater
+      Groups:
+        - !Ref NaraguaBackchannelZoneUpdaterGroup
+
+Outputs:
+  NaraguaBackchannelZoneId:
+    Description: The ID of the naragua backchannel zone
+    Value: !Ref NaraguaBackchannelZone
+    Export:
+      Name: NaraguaBackchannelZone-ZoneId
+
+  NaraguaBackchannelZoneUpdaterGroupArn:
+    Description: The ARN for a group with permission to modify records in the backchannel zone
+    Value: !GetAtt NaraguaBackchannelZoneUpdaterGroup.Arn
+    Export:
+      Name: NaraguaBackchannelZone-UpdaterGroupArn
+
+  NaraguaBackchannelZoneUpdaterUserArn:
+    Description: The ARN for the user with permission to modify records in the backchannel zone
+    Value: !GetAtt NaraguaBackchannelZoneUpdaterUser.Arn
+    Export:
+      Name: NaraguaBackchannelZone-UpdaterUserArn
+
+  NaraguaBackchannelZoneUpdaterUserName:
+    Description: The name of the user with permission to modify records in the backchannel zone
+    Value: !Ref NaraguaBackchannelZoneUpdaterUser
+    Export:
+      Name: NaraguaBackchannelZone-UpdaterUserName

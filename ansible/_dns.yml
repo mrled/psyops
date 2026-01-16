@@ -9,6 +9,7 @@
       cloudformation_stack_name: MicahrlDotCom
       cloudformation_template_path: cloudformation/MicahrlDotCom.cfn.yml
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_aws_profile: primary-micahrl
       tags: micahrl.com
     # No longer deploying this as of 20251015
     # - name: cfn
@@ -20,11 +21,13 @@
       cloudformation_stack_name: MicahrlDotMe
       cloudformation_template_path: cloudformation/MicahrlDotMe.cfn.yml
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_aws_profile: primary-micahrl
       tags: micahrl.me
     - name: cfn
       cloudformation_stack_name: YounixDotUs
       cloudformation_template_path: cloudformation/YounixDotUs.cfn.yml
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_aws_profile: primary-micahrl
       tags: younix.us
     - name: cfn
       cloudformation_stack_name: SeedboxZone
@@ -32,25 +35,38 @@
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
       cloudformation_template_params:
         DomainName: "{{ global_seedbox_domain }}"
+      cloudformation_aws_profile: primary-micahrl
       tags: seedbox
     - name: cfn
       cloudformation_stack_name: Certificates
       cloudformation_template_path: cloudformation/Certificates.cfn.yml
       cloudformation_aws_region: us-east-1 # ACM *requites* us-east-1
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_aws_profile: primary-micahrl
       tags: aws_certificates
+    - name: cfn
+      cloudformation_stack_name: MicahrlDotComBackchannel
+      cloudformation_template_path: cloudformation/MicahrlDotComBackchannel.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_aws_profile: primary-micahrl
+      tags:
+      - micahrl.com_backchannel
+      - micahrl.com
     - name: cfn
       cloudformation_stack_name: MicahrlDotComRedirects
       cloudformation_template_path: cloudformation/MicahrlDotComRedirects.cfn.yml
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_aws_profile: primary-micahrl
       tags: micahrl.com_redirects
     - name: cfn
       cloudformation_stack_name: MicahrlDotComUrlreflect
       cloudformation_template_path: cloudformation/MicahrlDotComUrlreflect.cfn.yml
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_aws_profile: primary-micahrl
       tags: micahrl.com_urlreflect
     - name: cfn
       cloudformation_stack_name: YounixDotUsRedirects
       cloudformation_template_path: cloudformation/YounixDotUsRedirects.cfn.yml
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_aws_profile: primary-micahrl
       tags: younix.us_redirects
