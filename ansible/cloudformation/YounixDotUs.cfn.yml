@@ -55,7 +55,7 @@ Resources:
         - Name: backchannel.younix.us.
           Type: NS
           TTL: 300
-          ResourceRecords: !Split [",", !ImportValue NaraguaBackchannelZone-NameServers]
+          ResourceRecords: !Split [",", !ImportValue BackchannelZone-NameServers]
 
   Seedboxk8sYounixDotUsZoneUpdaterGroup:
     Type: AWS::IAM::Group
