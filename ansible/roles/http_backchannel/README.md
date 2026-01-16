@@ -83,8 +83,8 @@ After running this role:
 1. Configure subdomain port mappings in your host_vars (see example above)
 2. Traefik will automatically reload when files in the dynamic directory change
 3. Check logs at:
-   - `/var/log/traefik.log` - main log
-   - `/var/log/traefik-access.log` - access log
+   - `/var/log/traefik.log` - main log (configured in traefik.yml)
+   - `/var/log/traefik-access.log` - access log (configured in traefik.yml)
 
 ## Managing the Service
 
