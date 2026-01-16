@@ -1,0 +1,23 @@
+---
+# Dynamic configuration for subdomain to port routing
+# Routes subdomains to localhost ports
+
+http:
+  routers:
+{% for subdomain, port in http_backchannel_subdomain_ports.items() %}
+    {{ subdomain }}-router:
+      rule: "Host(`{{ subdomain }}.{{ http_backchannel_dnsname }}`)"
+      entryPoints:
+        - websecure
+      service: {{ subdomain }}-service
+      tls:
+        certResolver: letsencrypt
+{% endfor %}
+
+  services:
+{% for subdomain, port in http_backchannel_subdomain_ports.items() %}
+    {{ subdomain }}-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:{{ port }}"
+{% endfor %}

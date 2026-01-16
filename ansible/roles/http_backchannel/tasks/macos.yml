@@ -75,6 +75,16 @@
   become: yes
   notify: restart traefik
 
+- name: Deploy subdomain routes dynamic configuration
+  template:
+    src: subdomain-routes.yml.j2
+    dest: /usr/local/etc/traefik/dynamic/subdomain-routes.yml
+    owner: root
+    group: wheel
+    mode: '0600'
+  become: yes
+  notify: restart traefik
+
 - name: Deploy Traefik launch daemon
   template:
     src: us.younix.backchannel.plist.j2

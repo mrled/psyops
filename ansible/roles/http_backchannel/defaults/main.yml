@@ -6,3 +6,12 @@ http_backchannel_log_level: "DEBUG"
 # Intel Macs: /usr/local/bin/traefik
 # Apple Silicon Macs: /opt/homebrew/bin/traefik
 http_backchannel_traefik_binary: "/opt/homebrew/bin/traefik"
+
+# Subdomain to port mappings for this host
+# Map subdomain names to localhost ports
+# Example:
+#   http_backchannel_subdomain_ports:
+#     plex: 32400
+#     sonarr: 8989
+# This will route plex.NODE.backchannel.younix.us -> localhost:32400
+http_backchannel_subdomain_ports: {}

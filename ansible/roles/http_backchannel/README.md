@@ -16,8 +16,9 @@ Available variables are listed in `defaults/main.yml`:
 - `http_backchannel_aws_access_key_id`: AWS access key for Route53 (required)
 - `http_backchannel_aws_secret_access_key`: AWS secret key for Route53 (required)
 - `http_backchannel_aws_region`: AWS region for Route53 (default: "us-east-1")
-- `http_backchannel_log_level`: Traefik log level (default: "INFO")
+- `http_backchannel_log_level`: Traefik log level (default: "DEBUG")
 - `http_backchannel_traefik_binary`: Path to Traefik binary (default: "/opt/homebrew/bin/traefik")
+- `http_backchannel_subdomain_ports`: Dictionary mapping subdomains to localhost ports (default: {})
 
 ## Dependencies
 
@@ -36,6 +37,26 @@ None
         http_backchannel_aws_secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 ```
 
+## Subdomain to Port Mapping
+
+You can configure automatic routing from subdomains to localhost ports using the `http_backchannel_subdomain_ports` variable. This is typically set in host_vars:
+
+```yaml
+# In host_vars/myhost.yml
+http_backchannel_dnsname: myhost.backchannel.example.com
+http_backchannel_subdomain_ports:
+  plex: 32400
+  sonarr: 8989
+  radarr: 7878
+```
+
+This will automatically create traefik routes:
+- `plex.myhost.backchannel.example.com` → `http://127.0.0.1:32400`
+- `sonarr.myhost.backchannel.example.com` → `http://127.0.0.1:8989`
+- `radarr.myhost.backchannel.example.com` → `http://127.0.0.1:7878`
+
+All routes automatically use HTTPS with Let's Encrypt certificates. Requests to unmatched subdomains will return Traefik's 404 page.
+
 ## What This Role Does
 
 1. Installs Traefik via Homebrew
@@ -53,34 +74,36 @@ None
    - Obtain wildcard certificates via Let's Encrypt using Route53 DNS challenge
    - Request certificates for both the domain and all subdomains (*.domain)
    - Store certificates in `acme.json`
+   - Route configured subdomains to localhost ports
 
 ## Post-Installation
 
 After running this role:
 
-1. Add your dynamic routing configuration to `/usr/local/etc/traefik/dynamic/`
+1. Configure subdomain port mappings in your host_vars (see example above)
 2. Traefik will automatically reload when files in the dynamic directory change
 3. Check logs at:
    - `/var/log/traefik.log` - main log
    - `/var/log/traefik-access.log` - access log
-   - `/var/log/traefik.stdout.log` - stdout
-   - `/var/log/traefik.stderr.log` - stderr
 
 ## Managing the Service
 
 ```bash
 # Check status
-sudo launchctl list | grep backchannel
+sudo launchctl print system/us.younix.backchannel
 
 # Stop service
-sudo launchctl bootout system/com.micahrl.backchannel
+sudo launchctl bootout system/us.younix.backchannel
 
 # Start service
-sudo launchctl bootstrap system /Library/LaunchDaemons/com.micahrl.backchannel.plist
+sudo launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
 
 # Restart service
-sudo launchctl bootout system/com.micahrl.backchannel && \
-sudo launchctl bootstrap system /Library/LaunchDaemons/com.micahrl.backchannel.plist
+sudo launchctl kickstart -k system/us.younix.backchannel
+
+# View logs
+tail -f /var/log/traefik.log
+tail -f /var/log/traefik-access.log
 ```
 
 ## License
