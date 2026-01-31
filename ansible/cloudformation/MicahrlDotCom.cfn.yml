@@ -41,16 +41,6 @@ Resources:
           TTL: 300
           ResourceRecords: ["apsylania.micahrl.com."]
 
-        # Old apex server
-        - Name: abraxas.micahrl.com.
-          Type: A
-          TTL: 300
-          ResourceRecords: ["167.71.20.245"]
-        - Name: abraxas.micahrl.com.
-          Type: AAAA
-          TTL: 300
-          ResourceRecords: ["2604:a880:400:d0::2100:1001"]
-
         # GitHub Pages
         # (Documentation for my projects is at pages.micahrl.com)
         - Name: pages.micahrl.com.
