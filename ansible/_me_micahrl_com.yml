@@ -1,0 +1,20 @@
+---
+- name: Deploy me.micahrl.com static site infrastructure
+  hosts: localhost
+  connection: local
+  become: no
+  gather_facts: no
+  roles:
+    - name: cfn
+      cloudformation_stack_name: MeMicahrlDotCom
+      cloudformation_template_path: cloudformation/MeMicahrlDotCom.cfn.yml
+      cloudformation_aws_region: us-east-1  # ACM certificates for CloudFront must be in us-east-1
+      cloudformation_aws_profile: primary-micahrl
+      cloudformation_template_params:
+        ObverseDomain: testme.micahrl.com
+        ObverseHostedZoneStackName: MicahrlDotCom
+        ReverseDomain: testcom.micahrl.me
+        ReverseHostedZoneStackName: MicahrlDotMe
+      tags:
+        - me.micahrl.com
+        - com.micahrl.me
