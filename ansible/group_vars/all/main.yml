@@ -36,6 +36,9 @@ global_orogin_zone_updater_aws_secret_key: "{{ vault_origin_zone_updater_aws_sec
 global_origin_zone_zone_id: Z3HVGWA7OSS1TK
 global_origin_zone_aws_region: "{{ global_aws_region }}"
 
+# Zone ID for micahrl.me
+global_micahrl_me_zone_id: Z05310581X3YVCCVKG9XH
+
 # For ACME DNS challenges in the home.micahrl.com domain
 # Used in multiple roles
 global_home_zone_updater_access_key: "{{ vault_home_zone_updater_access_key }}"

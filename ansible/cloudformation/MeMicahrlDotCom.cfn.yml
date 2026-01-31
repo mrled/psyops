@@ -7,20 +7,18 @@ Parameters:
     Default: me.micahrl.com
     Description: Obverse domain name for the static site
 
-  ObverseHostedZoneStackName:
+  ObverseHostedZoneId:
     Type: String
-    Default: MicahrlDotCom
-    Description: Name of the CloudFormation stack that created the Route53 hosted zone for obverse domain
+    Description: Route53 hosted zone ID for obverse domain
 
   ReverseDomain:
     Type: String
     Default: com.micahrl.me
     Description: Reverse domain name for the static site
 
-  ReverseHostedZoneStackName:
+  ReverseHostedZoneId:
     Type: String
-    Default: MicahrlDotMe
-    Description: Name of the CloudFormation stack that created the Route53 hosted zone for reverse domain
+    Description: Route53 hosted zone ID for reverse domain
 
 Resources:
   LogsBucket:
@@ -85,8 +83,7 @@ Resources:
       ValidationMethod: DNS
       DomainValidationOptions:
         - DomainName: !Ref ObverseDomain
-          HostedZoneId:
-            Fn::ImportValue: !Sub "${ObverseHostedZoneStackName}-OriginZoneId"
+          HostedZoneId: !Ref ObverseHostedZoneId
 
   ObverseCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -140,8 +137,7 @@ Resources:
   ObverseDNSRecord:
     Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneId:
-        Fn::ImportValue: !Sub "${ObverseHostedZoneStackName}-OriginZoneId"
+      HostedZoneId: !Ref ObverseHostedZoneId
       Name: !Ref ObverseDomain
       Type: A
       AliasTarget:
@@ -193,8 +189,7 @@ Resources:
       ValidationMethod: DNS
       DomainValidationOptions:
         - DomainName: !Ref ReverseDomain
-          HostedZoneId:
-            Fn::ImportValue: !Sub "${ReverseHostedZoneStackName}-OriginZoneId"
+          HostedZoneId: !Ref ReverseHostedZoneId
 
   ReverseCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -248,14 +243,47 @@ Resources:
   ReverseDNSRecord:
     Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneId:
-        Fn::ImportValue: !Sub "${ReverseHostedZoneStackName}-OriginZoneId"
+      HostedZoneId: !Ref ReverseHostedZoneId
       Name: !Ref ReverseDomain
       Type: A
       AliasTarget:
         DNSName: !GetAtt ReverseCloudFrontDistribution.DomainName
         HostedZoneId: Z2FDTNDATAQYW2  # CloudFront hosted zone ID (always this value)
         EvaluateTargetHealth: false
+
+  DeployerGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub "${AWS::StackName}-Deployers"
+      Policies:
+        - PolicyName: DeployToS3AndInvalidateCloudFront
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AllowS3BucketListing
+                Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ObverseContentBucket.Arn
+                  - !GetAtt ReverseContentBucket.Arn
+              - Sid: AllowS3ObjectOperations
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub "${ObverseContentBucket.Arn}/*"
+                  - !Sub "${ReverseContentBucket.Arn}/*"
+              - Sid: AllowCloudFrontInvalidation
+                Effect: Allow
+                Action:
+                  - cloudfront:CreateInvalidation
+                  - cloudfront:GetInvalidation
+                Resource:
+                  - !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${ObverseCloudFrontDistribution}"
+                  - !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${ReverseCloudFrontDistribution}"
 
 Outputs:
   LogsBucketName:
@@ -287,3 +315,20 @@ Outputs:
 
   ReverseWebsiteURL:
     Value: !Sub "https://${ReverseDomain}"
+
+  DeployerGroupName:
+    Description: IAM group for deployment access
+    Value: !Ref DeployerGroup
+
+  DeployerGroupArn:
+    Value: !GetAtt DeployerGroup.Arn
+
+  Deployment:
+    Description: Commands to create a deployment user with access keys
+    Value: !Sub |
+      # Create a user, add to the deployer group, and create access keys (will only be displayed once)
+      aws iam create-user --user-name github-micahrl-obverse-reverse-deployer
+      aws iam add-user-to-group --user-name github-micahrl-obverse-reverse-deployer --group-name ${DeployerGroup}
+      aws iam create-access-key --user-name github-micahrl-obverse-reverse-deployer
+      # Use hugo to deploy the site
+      hugo deploy --invalidateCDN ...
