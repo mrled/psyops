@@ -2,6 +2,11 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: me.micahrl.com and com.micahrl.me static sites on S3 + CloudFront
 
 Parameters:
+  LogsBucketName:
+    Type: String
+    Default: micahrl-web-prod-logs
+    Description: S3 bucket name for CloudFront access logs
+
   ObverseDomain:
     Type: String
     Default: me.micahrl.com
@@ -34,7 +39,7 @@ Resources:
   LogsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${ObverseBucketName}-logs"
+      BucketName: !Ref LogsBucketName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
