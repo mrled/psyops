@@ -300,6 +300,127 @@ Resources:
                   - !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${ObverseCloudFrontDistribution}"
                   - !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${ReverseCloudFrontDistribution}"
 
+  # ===== ATHENA LOG ANALYSIS =====
+
+  AthenaResultsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${LogsBucketName}-athena-results"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldQueryResults
+            Status: Enabled
+            ExpirationInDays: 30
+
+  AthenaWorkGroup:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Name: !Sub "${AWS::StackName}-logs"
+      WorkGroupConfiguration:
+        ResultConfiguration:
+          OutputLocation: !Sub "s3://${AthenaResultsBucket}/"
+        EnforceWorkGroupConfiguration: true
+        PublishCloudWatchMetricsEnabled: false
+
+  AthenaDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: !Sub "${AWS::StackName}_logs"
+        Description: CloudFront access logs database
+
+  AthenaLogsTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref AthenaDatabase
+      TableInput:
+        Name: cloudfront_access_logs
+        TableType: EXTERNAL_TABLE
+        Parameters:
+          EXTERNAL: "TRUE"
+          skip.header.line.count: "2"
+        StorageDescriptor:
+          Columns:
+            - Name: date_time
+              Type: string
+            - Name: edge_location
+              Type: string
+            - Name: bytes_sent
+              Type: bigint
+            - Name: client_ip
+              Type: string
+            - Name: http_method
+              Type: string
+            - Name: host
+              Type: string
+            - Name: uri_stem
+              Type: string
+            - Name: status_code
+              Type: int
+            - Name: referer
+              Type: string
+            - Name: user_agent
+              Type: string
+            - Name: query_string
+              Type: string
+            - Name: cookie
+              Type: string
+            - Name: edge_result_type
+              Type: string
+            - Name: edge_request_id
+              Type: string
+            - Name: host_header
+              Type: string
+            - Name: protocol
+              Type: string
+            - Name: bytes_received
+              Type: bigint
+            - Name: time_taken
+              Type: float
+            - Name: forwarded_for
+              Type: string
+            - Name: ssl_protocol
+              Type: string
+            - Name: ssl_cipher
+              Type: string
+            - Name: edge_response_result_type
+              Type: string
+            - Name: protocol_version
+              Type: string
+            - Name: fle_status
+              Type: string
+            - Name: fle_encrypted_fields
+              Type: int
+            - Name: port
+              Type: int
+            - Name: time_to_first_byte
+              Type: float
+            - Name: edge_detailed_result_type
+              Type: string
+            - Name: content_type
+              Type: string
+            - Name: content_length
+              Type: bigint
+            - Name: range_start
+              Type: bigint
+            - Name: range_end
+              Type: bigint
+          Location: !Sub "s3://${LogsBucket}/cloudfront/"
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+            Parameters:
+              field.delim: "\t"
+              serialization.format: "\t"
+
 Outputs:
   LogsBucketName:
     Description: Name of the S3 bucket for access logs (shared)
@@ -337,6 +458,39 @@ Outputs:
 
   DeployerGroupArn:
     Value: !GetAtt DeployerGroup.Arn
+
+  AthenaWorkGroupName:
+    Description: Athena workgroup for querying logs
+    Value: !Ref AthenaWorkGroup
+
+  AthenaDatabaseName:
+    Description: Athena database name
+    Value: !Ref AthenaDatabase
+
+  AthenaQueryExamples:
+    Description: Example Athena queries for log analysis
+    Value: !Sub |
+      # Query in AWS Console: Athena → Query Editor → Select workgroup: ${AthenaWorkGroup}
+
+      # Top 10 pages by requests
+      SELECT uri_stem, COUNT(*) as requests
+      FROM ${AthenaDatabase}.cloudfront_access_logs
+      GROUP BY uri_stem
+      ORDER BY requests DESC
+      LIMIT 10;
+
+      # 404 errors
+      SELECT uri_stem, COUNT(*) as count
+      FROM ${AthenaDatabase}.cloudfront_access_logs
+      WHERE status_code = 404
+      GROUP BY uri_stem
+      ORDER BY count DESC;
+
+      # Traffic by status code
+      SELECT status_code, COUNT(*) as requests
+      FROM ${AthenaDatabase}.cloudfront_access_logs
+      GROUP BY status_code
+      ORDER BY requests DESC;
 
   Deployment:
     Description: Commands to create a deployment user with access keys
