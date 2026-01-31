@@ -1,13 +1,13 @@
 ---
-- name: Deploy me.micahrl.com static site infrastructure
+- name: Deploy me.micahrl.com/com.micahrl.me static site infrastructure
   hosts: localhost
   connection: local
   become: no
   gather_facts: no
   roles:
     - name: cfn
-      cloudformation_stack_name: MeMicahrlDotCom
-      cloudformation_template_path: cloudformation/MeMicahrlDotCom.cfn.yml
+      cloudformation_stack_name: MicahrlWeb
+      cloudformation_template_path: cloudformation/MicahrlWeb.cfn.yml
       cloudformation_aws_region: us-east-1  # ACM certificates for CloudFront must be in us-east-1
       cloudformation_aws_profile: primary-micahrl
       cloudformation_capabilities: ["CAPABILITY_IAM"]
