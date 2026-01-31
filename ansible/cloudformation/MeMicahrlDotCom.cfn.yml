@@ -7,6 +7,11 @@ Parameters:
     Default: me.micahrl.com
     Description: Obverse domain name for the static site
 
+  ObverseBucketName:
+    Type: String
+    Default: micahrl-web-prod-obverse
+    Description: S3 bucket name for obverse content
+
   ObverseHostedZoneId:
     Type: String
     Description: Route53 hosted zone ID for obverse domain
@@ -16,6 +21,11 @@ Parameters:
     Default: com.micahrl.me
     Description: Reverse domain name for the static site
 
+  ReverseBucketName:
+    Type: String
+    Default: micahrl-web-prod-reverse
+    Description: S3 bucket name for reverse content
+
   ReverseHostedZoneId:
     Type: String
     Description: Route53 hosted zone ID for reverse domain
@@ -24,7 +34,7 @@ Resources:
   LogsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${ObverseDomain}-logs"
+      BucketName: !Sub "${ObverseBucketName}-logs"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -44,7 +54,7 @@ Resources:
   ObverseContentBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref ObverseDomain
+      BucketName: !Ref ObverseBucketName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -150,7 +160,7 @@ Resources:
   ReverseContentBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref ReverseDomain
+      BucketName: !Ref ReverseBucketName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
