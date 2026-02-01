@@ -56,7 +56,7 @@ Resources:
         Rules:
           - Id: DeleteOldLogs
             Status: Enabled
-            ExpirationInDays: 90
+            ExpirationInDays: 365
             Prefix: cloudfront/
           - Id: DeleteOldAthenaResults
             Status: Enabled
