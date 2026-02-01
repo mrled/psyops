@@ -347,7 +347,9 @@ Resources:
           skip.header.line.count: "2"
         StorageDescriptor:
           Columns:
-            - Name: date_time
+            - Name: log_date
+              Type: string
+            - Name: log_time
               Type: string
             - Name: edge_location
               Type: string
@@ -471,7 +473,14 @@ Outputs:
     Value: !Sub |
       # Query in AWS Console: Athena → Query Editor → Select workgroup: ${AthenaWorkGroup}
 
-      # Top 10 pages by requests
+      # Top 10 pages by requests (with actual domain)
+      SELECT host_header, uri_stem, COUNT(*) as requests
+      FROM ${AthenaDatabase}.cloudfront_access_logs
+      GROUP BY host_header, uri_stem
+      ORDER BY requests DESC
+      LIMIT 10;
+
+      # Top 10 paths across all domains
       SELECT uri_stem, COUNT(*) as requests
       FROM ${AthenaDatabase}.cloudfront_access_logs
       GROUP BY uri_stem
@@ -479,10 +488,10 @@ Outputs:
       LIMIT 10;
 
       # 404 errors
-      SELECT uri_stem, COUNT(*) as count
+      SELECT host_header, uri_stem, COUNT(*) as count
       FROM ${AthenaDatabase}.cloudfront_access_logs
       WHERE status_code = 404
-      GROUP BY uri_stem
+      GROUP BY host_header, uri_stem
       ORDER BY count DESC;
 
       # Traffic by status code
