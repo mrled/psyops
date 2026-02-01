@@ -2,6 +2,13 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: me.micahrl.com and com.micahrl.me static sites on S3 + CloudFront
 
 Parameters:
+  AthenaDatabaseName:
+    Type: String
+    Default: micahrl_web_prod_logs
+    Description: Athena/Glue database name (lowercase only)
+    AllowedPattern: ^[a-z0-9_]+$
+    ConstraintDescription: Must contain only lowercase letters, numbers, and underscores
+
   LogsBucketName:
     Type: String
     Default: micahrl-web-prod-logs
@@ -332,7 +339,7 @@ Resources:
     Properties:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
-        Name: !Sub "${AWS::StackName}_logs"
+        Name: !Ref AthenaDatabaseName
         Description: CloudFront access logs database
 
   AthenaLogsTable:
