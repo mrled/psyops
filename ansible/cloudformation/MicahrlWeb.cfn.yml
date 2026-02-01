@@ -167,6 +167,7 @@ Resources:
       HostedZoneId: !Ref ObverseHostedZoneId
       Name: !Ref ObverseDomain
       Type: A
+      # Alias records inherit TTL from target (CloudFront uses 60s), cannot set TTL explicitly
       AliasTarget:
         DNSName: !GetAtt ObverseCloudFrontDistribution.DomainName
         HostedZoneId: Z2FDTNDATAQYW2  # CloudFront hosted zone ID (always this value)
@@ -273,6 +274,7 @@ Resources:
       HostedZoneId: !Ref ReverseHostedZoneId
       Name: !Ref ReverseDomain
       Type: A
+      # Alias records inherit TTL from target (CloudFront uses 60s), cannot set TTL explicitly
       AliasTarget:
         DNSName: !GetAtt ReverseCloudFrontDistribution.DomainName
         HostedZoneId: Z2FDTNDATAQYW2  # CloudFront hosted zone ID (always this value)
