@@ -48,11 +48,13 @@ Resources:
           TTL: 300
           ResourceRecords: ["mrled.github.io."]
 
-        # Webserver
-        - Name: me.micahrl.com.
-          Type: CNAME
-          TTL: 60
-          ResourceRecords: ["clever-kepler-458884.netlify.com."]
+        # Webserver - now handled by MicahrlWeb stack
+        # - Name: me.micahrl.com.
+        #   Type: CNAME
+        #   TTL: 60
+        #   ResourceRecords: ["clever-kepler-458884.netlify.com."]
+
+        # SUNS verification
         - Name: _suns.me.micahrl.com.
           Type: TXT
           TTL: 300
