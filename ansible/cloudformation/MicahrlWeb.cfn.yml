@@ -57,6 +57,11 @@ Resources:
           - Id: DeleteOldLogs
             Status: Enabled
             ExpirationInDays: 90
+            Prefix: cloudfront/
+          - Id: DeleteOldAthenaResults
+            Status: Enabled
+            ExpirationInDays: 30
+            Prefix: athena-results/
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerPreferred
@@ -309,28 +314,13 @@ Resources:
 
   # ===== ATHENA LOG ANALYSIS =====
 
-  AthenaResultsBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub "${LogsBucketName}-athena-results"
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteOldQueryResults
-            Status: Enabled
-            ExpirationInDays: 30
-
   AthenaWorkGroup:
     Type: AWS::Athena::WorkGroup
     Properties:
       Name: !Sub "${AWS::StackName}-logs"
       WorkGroupConfiguration:
         ResultConfiguration:
-          OutputLocation: !Sub "s3://${AthenaResultsBucket}/"
+          OutputLocation: !Sub "s3://${LogsBucket}/athena-results/"
         EnforceWorkGroupConfiguration: true
         PublishCloudWatchMetricsEnabled: false
 
