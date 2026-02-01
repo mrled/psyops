@@ -51,7 +51,7 @@ Resources:
         # Webserver
         - Name: me.micahrl.com.
           Type: CNAME
-          TTL: 300
+          TTL: 60
           ResourceRecords: ["clever-kepler-458884.netlify.com."]
         - Name: _suns.me.micahrl.com.
           Type: TXT

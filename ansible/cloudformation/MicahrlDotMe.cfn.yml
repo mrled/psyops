@@ -24,7 +24,7 @@ Resources:
 
         - Name: com.micahrl.me.
           Type: CNAME
-          TTL: 300
+          TTL: 60
           ResourceRecords: ["boring-perlman-92bf89.netlify.app."]
         - Name: _suns.com.micahrl.me.
           Type: TXT
