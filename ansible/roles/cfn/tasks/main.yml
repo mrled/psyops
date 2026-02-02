@@ -5,7 +5,7 @@
     stack_name: "{{ cloudformation_stack_name }}"
     state: present
     region: "{{ cloudformation_aws_region }}"
-    template_body: "{{ lookup('file', cloudformation_template_path) }}"
+    template_body: "{{ lookup('template' if cloudformation_jinja2_enable else 'file', cloudformation_template_path) }}"
     tags: "{{ cloudformation_tags }}"
     on_create_failure: "{{ cloudformation_on_create_failure }}"
     template_parameters: "{{ cloudformation_template_params }}"
