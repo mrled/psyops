@@ -22,11 +22,11 @@ Resources:
           TTL: 60
           ResourceRecords: ["micahrl.me."]
 
-        # Reverse MicahrlWeb records -- this is now handled by MicahrlWeb stack
-        # - Name: com.micahrl.me.
-        #   Type: CNAME
-        #   TTL: 60
-        #   ResourceRecords: ["boring-perlman-92bf89.netlify.app."]
+        # Webserver
+        - Name: com.micahrl.me.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["boring-perlman-92bf89.netlify.app."]
 
         # SUNS verification
         - Name: _suns.com.micahrl.me.
