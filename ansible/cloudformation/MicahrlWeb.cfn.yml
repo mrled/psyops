@@ -86,46 +86,10 @@ Resources:
       Name: !Sub "${AWS::StackName}-obverse-index-rewrite"
       AutoPublish: true
       FunctionCode: !Sub |
-        import cf from 'cloudfront';
+{% filter indent(8, first=True) %}
+{% include 'MicahrlWeb/obverse-index-rewrite.js' %}
+{% endfilter %}
 
-        const kvsId = '${ObverseKeyValueStore}';
-
-        async function handler(event) {
-          const request = event.request;
-          const uri = request.uri;
-
-          // Try KVS lookup with recursion protection
-          const kvs = cf.kvs(kvsId);
-          let lookupUri = uri;
-          const maxRedirects = 10;
-          let redirectCount = 0;
-
-          while (redirectCount < maxRedirects) {
-            try {
-              const value = await kvs.get(lookupUri);
-              if (value) {
-                lookupUri = value;
-                redirectCount++;
-              } else {
-                break;
-              }
-            } catch (err) {
-              // Key not found or other error, break out
-              break;
-            }
-          }
-
-          // If we found a different path through KVS, use it
-          if (lookupUri !== uri) {
-            request.uri = lookupUri;
-          }
-          // Otherwise fall back to index.html normalization for trailing slashes
-          else if (uri.endsWith('/')) {
-            request.uri += 'index.html';
-          }
-
-          return request;
-        }
       FunctionConfig:
         Comment: KVS redirects with fallback to index.html rewriting
         Runtime: cloudfront-js-2.0
@@ -138,87 +102,10 @@ Resources:
       Name: !Sub "${AWS::StackName}-obverse-header-response"
       AutoPublish: true
       FunctionCode: !Sub |
-        import cf from 'cloudfront';
+{% filter indent(8, first=True) %}
+{% include 'MicahrlWeb/obverse-header-response.js' %}
+{% endfilter %}
 
-        const kvsId = '${ObverseHeadersKeyValueStore}';
-
-        async function handler(event) {
-          const response = event.response;
-          const request = event.request;
-          const path = request.uri;
-
-          // Build hierarchical path list: /, /one/, /one/two/, /one/two/three.txt
-          const parts = path.split('/').filter(p => p);
-          const paths = ['/'];
-
-          // Add each parent directory with trailing slash
-          for (let i = 0; i < parts.length - 1; i++) {
-            paths.push('/' + parts.slice(0, i + 1).join('/') + '/');
-          }
-
-          // Add the full path as-is (unless it's just /)
-          if (path !== '/') {
-            paths.push(path);
-          }
-
-          // Collect headers from all paths in order (parent to child)
-          const kvs = cf.kvs(kvsId);
-          const headers = {};
-
-          for (const lookupPath of paths) {
-            try {
-              const value = await kvs.get(lookupPath);
-              if (value) {
-                // Parse line-delimited headers: "Header-Name: value"
-                const lines = value.split('\n');
-                for (const line of lines) {
-                  const trimmed = line.trim();
-                  if (trimmed && trimmed.includes(':')) {
-                    const colonIndex = trimmed.indexOf(':');
-                    const headerName = trimmed.substring(0, colonIndex).trim().toLowerCase();
-                    const headerValue = trimmed.substring(colonIndex + 1).trim();
-                    if (headerName) {
-                      headers[headerName] = { value: headerValue };
-                    }
-                  }
-                }
-              }
-            } catch (err) {
-              // Key not found, continue
-            }
-          }
-
-          // Handle special pattern for path-based headers with $1 substitution
-          try {
-            const patternValue = await kvs.get('**/*');
-            if (patternValue) {
-              const lines = patternValue.split('\n');
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (trimmed && trimmed.includes(':')) {
-                  const colonIndex = trimmed.indexOf(':');
-                  const headerName = trimmed.substring(0, colonIndex).trim().toLowerCase();
-                  let headerValue = trimmed.substring(colonIndex + 1).trim();
-                  // Replace $1 with the request path
-                  headerValue = headerValue.replace('$1', path);
-                  if (headerName) {
-                    headers[headerName] = { value: headerValue };
-                  }
-                }
-              }
-            }
-          } catch (err) {
-            // Pattern not found, continue
-          }
-
-          // Apply headers to response
-          response.headers = response.headers || {};
-          for (const [name, header] of Object.entries(headers)) {
-            response.headers[name] = header;
-          }
-
-          return response;
-        }
       FunctionConfig:
         Comment: Hierarchical custom headers from KVS
         Runtime: cloudfront-js-2.0
@@ -355,46 +242,10 @@ Resources:
       Name: !Sub "${AWS::StackName}-reverse-index-rewrite"
       AutoPublish: true
       FunctionCode: !Sub |
-        import cf from 'cloudfront';
+{% filter indent(8, first=True) %}
+{% include 'MicahrlWeb/reverse-index-rewrite.js' %}
+{% endfilter %}
 
-        const kvsId = '${ReverseKeyValueStore}';
-
-        async function handler(event) {
-          const request = event.request;
-          const uri = request.uri;
-
-          // Try KVS lookup with recursion protection
-          const kvs = cf.kvs(kvsId);
-          let lookupUri = uri;
-          const maxRedirects = 10;
-          let redirectCount = 0;
-
-          while (redirectCount < maxRedirects) {
-            try {
-              const value = await kvs.get(lookupUri);
-              if (value) {
-                lookupUri = value;
-                redirectCount++;
-              } else {
-                break;
-              }
-            } catch (err) {
-              // Key not found or other error, break out
-              break;
-            }
-          }
-
-          // If we found a different path through KVS, use it
-          if (lookupUri !== uri) {
-            request.uri = lookupUri;
-          }
-          // Otherwise fall back to index.html normalization for trailing slashes
-          else if (uri.endsWith('/')) {
-            request.uri += 'index.html';
-          }
-
-          return request;
-        }
       FunctionConfig:
         Comment: KVS redirects with fallback to index.html rewriting
         Runtime: cloudfront-js-2.0
@@ -407,87 +258,10 @@ Resources:
       Name: !Sub "${AWS::StackName}-reverse-header-response"
       AutoPublish: true
       FunctionCode: !Sub |
-        import cf from 'cloudfront';
+{% filter indent(8, first=True) %}
+{% include 'MicahrlWeb/reverse-header-response.js' %}
+{% endfilter %}
 
-        const kvsId = '${ReverseHeadersKeyValueStore}';
-
-        async function handler(event) {
-          const response = event.response;
-          const request = event.request;
-          const path = request.uri;
-
-          // Build hierarchical path list: /, /one/, /one/two/, /one/two/three.txt
-          const parts = path.split('/').filter(p => p);
-          const paths = ['/'];
-
-          // Add each parent directory with trailing slash
-          for (let i = 0; i < parts.length - 1; i++) {
-            paths.push('/' + parts.slice(0, i + 1).join('/') + '/');
-          }
-
-          // Add the full path as-is (unless it's just /)
-          if (path !== '/') {
-            paths.push(path);
-          }
-
-          // Collect headers from all paths in order (parent to child)
-          const kvs = cf.kvs(kvsId);
-          const headers = {};
-
-          for (const lookupPath of paths) {
-            try {
-              const value = await kvs.get(lookupPath);
-              if (value) {
-                // Parse line-delimited headers: "Header-Name: value"
-                const lines = value.split('\n');
-                for (const line of lines) {
-                  const trimmed = line.trim();
-                  if (trimmed && trimmed.includes(':')) {
-                    const colonIndex = trimmed.indexOf(':');
-                    const headerName = trimmed.substring(0, colonIndex).trim().toLowerCase();
-                    const headerValue = trimmed.substring(colonIndex + 1).trim();
-                    if (headerName) {
-                      headers[headerName] = { value: headerValue };
-                    }
-                  }
-                }
-              }
-            } catch (err) {
-              // Key not found, continue
-            }
-          }
-
-          // Handle special pattern for path-based headers with $1 substitution
-          try {
-            const patternValue = await kvs.get('**/*');
-            if (patternValue) {
-              const lines = patternValue.split('\n');
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (trimmed && trimmed.includes(':')) {
-                  const colonIndex = trimmed.indexOf(':');
-                  const headerName = trimmed.substring(0, colonIndex).trim().toLowerCase();
-                  let headerValue = trimmed.substring(colonIndex + 1).trim();
-                  // Replace $1 with the request path
-                  headerValue = headerValue.replace('$1', path);
-                  if (headerName) {
-                    headers[headerName] = { value: headerValue };
-                  }
-                }
-              }
-            }
-          } catch (err) {
-            // Pattern not found, continue
-          }
-
-          // Apply headers to response
-          response.headers = response.headers || {};
-          for (const [name, header] of Object.entries(headers)) {
-            response.headers[name] = header;
-          }
-
-          return response;
-        }
       FunctionConfig:
         Comment: Hierarchical custom headers from KVS
         Runtime: cloudfront-js-2.0
@@ -847,127 +621,3 @@ Outputs:
   AthenaDatabaseName:
     Description: Athena database name
     Value: !Ref AthenaDatabase
-
-  AthenaQueryExamples:
-    Description: Example Athena queries for log analysis
-    Value: !Sub |
-      # Query in AWS Console: Athena → Query Editor → Select workgroup: ${AthenaWorkGroup}
-
-      # Top 10 pages by requests (with actual domain)
-      SELECT host_header, uri_stem, COUNT(*) as requests
-      FROM ${AthenaDatabase}.cloudfront_access_logs
-      GROUP BY host_header, uri_stem
-      ORDER BY requests DESC
-      LIMIT 10;
-
-      # Top 10 paths across all domains
-      SELECT uri_stem, COUNT(*) as requests
-      FROM ${AthenaDatabase}.cloudfront_access_logs
-      GROUP BY uri_stem
-      ORDER BY requests DESC
-      LIMIT 10;
-
-      # 404 errors
-      SELECT host_header, uri_stem, COUNT(*) as count
-      FROM ${AthenaDatabase}.cloudfront_access_logs
-      WHERE status_code = 404
-      GROUP BY host_header, uri_stem
-      ORDER BY count DESC;
-
-      # Traffic by status code
-      SELECT status_code, COUNT(*) as requests
-      FROM ${AthenaDatabase}.cloudfront_access_logs
-      GROUP BY status_code
-      ORDER BY requests DESC;
-
-  Deployment:
-    Description: Commands to create a deployment user with access keys
-    Value: !Sub |
-      # Create a user, add to the deployer group, and create access keys (will only be displayed once)
-      aws iam create-user --user-name github-micahrl-obverse-reverse-deployer
-      aws iam add-user-to-group --user-name github-micahrl-obverse-reverse-deployer --group-name ${DeployerGroup}
-      aws iam create-access-key --user-name github-micahrl-obverse-reverse-deployer
-      # Use hugo to deploy the site
-      hugo deploy --invalidateCDN ...
-
-  KeyValueStoreManagement:
-    Description: Commands for managing redirect KeyValueStores
-    Value: !Sub |
-      # List all KeyValueStores
-      aws cloudfront list-key-value-stores
-
-      # List all keys in the obverse KVS
-      aws cloudfront-keyvaluestore list-keys --kvs-arn ${ObverseKeyValueStore.Arn}
-
-      # Put a redirect mapping (e.g., /old-path -> /new-path)
-      aws cloudfront-keyvaluestore update-keys --kvs-arn ${ObverseKeyValueStore.Arn} \
-        --puts '[{"Key":"/old-path","Value":"/new-path"}]'
-
-      # Put multiple redirects at once
-      aws cloudfront-keyvaluestore update-keys --kvs-arn ${ObverseKeyValueStore.Arn} \
-        --puts '[{"Key":"/old1","Value":"/new1"},{"Key":"/old2","Value":"/new2"}]'
-
-      # Delete a redirect
-      aws cloudfront-keyvaluestore update-keys --kvs-arn ${ObverseKeyValueStore.Arn} \
-        --deletes '[{"Key":"/old-path"}]'
-
-      # Redirect chains are automatically followed (max 10 levels)
-      # Example: /a -> /b, /b -> /c, request for /a will serve /c
-
-      # Create a new KeyValueStore (for testing or migration)
-      aws cloudfront create-key-value-store --name my-new-kvs --comment "My redirects"
-
-      # Delete a KeyValueStore (must not be associated with any functions)
-      aws cloudfront delete-key-value-store --if-match ETAG_FROM_DESCRIBE --name my-old-kvs
-
-      # View function configuration to see current KVS association
-      aws cloudfront get-function --name ${AWS::StackName}-obverse-index-rewrite
-
-      # To change which KVS a function uses, update the CloudFormation template
-      # and redeploy the stack - manual function updates would cause drift
-
-      # Same commands work for reverse using: ${ReverseKeyValueStore.Arn} and ${AWS::StackName}-reverse-index-rewrite
-
-  HeadersKeyValueStoreManagement:
-    Description: Commands for managing custom response headers KeyValueStores
-    Value: !Sub |
-      # Headers are stored as line-delimited "Header-Name: value" strings
-      # Headers are looked up hierarchically and merged (child overrides parent)
-
-      # Example: Add headers to the root path
-      # These will apply to all responses unless overridden
-      aws cloudfront-keyvaluestore update-keys --kvs-arn ${ObverseHeadersKeyValueStore.Arn} \
-        --puts '[{"Key":"/","Value":"X-Frame-Options: DENY\nX-Content-Type-Options: nosniff"}]'
-
-      # Example: Override a header for a specific directory
-      # For /blog/post.html, this will add both headers from / and the custom one from /blog/
-      aws cloudfront-keyvaluestore update-keys --kvs-arn ${ObverseHeadersKeyValueStore.Arn} \
-        --puts '[{"Key":"/blog/","Value":"Cache-Control: public, max-age=3600"}]'
-
-      # Example: Add headers to a specific file
-      aws cloudfront-keyvaluestore update-keys --kvs-arn ${ObverseHeadersKeyValueStore.Arn} \
-        --puts '[{"Key":"/blog/post.html","Value":"X-Robots-Tag: noindex"}]'
-
-      # Example: Special pattern for path-based headers with $1 substitution
-      # This applies to ALL paths and $1 is replaced with the request path
-      # Useful for Onion-Location headers pointing to Tor hidden services
-      aws cloudfront-keyvaluestore update-keys --kvs-arn ${ObverseHeadersKeyValueStore.Arn} \
-        --puts '[{"Key":"**/*","Value":"Onion-Location: http://example.onion$1"}]'
-
-      # For path /one/two/three.txt, headers are looked up in this order:
-      # 1. / (root)
-      # 2. /one/ (first directory)
-      # 3. /one/two/ (second directory)
-      # 4. /one/two/three.txt (the file itself)
-      # 5. **/* (special pattern with $1 = /one/two/three.txt)
-      # Later definitions override earlier ones for the same header name
-      # Different headers from parents are combined
-
-      # List all header mappings
-      aws cloudfront-keyvaluestore list-keys --kvs-arn ${ObverseHeadersKeyValueStore.Arn}
-
-      # Delete a header mapping
-      aws cloudfront-keyvaluestore update-keys --kvs-arn ${ObverseHeadersKeyValueStore.Arn} \
-        --deletes '[{"Key":"/blog/"}]'
-
-      # Same commands work for reverse using: ${ReverseHeadersKeyValueStore.Arn}

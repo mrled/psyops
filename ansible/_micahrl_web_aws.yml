@@ -11,6 +11,7 @@
       cloudformation_aws_region: us-east-1  # ACM certificates for CloudFront must be in us-east-1
       cloudformation_aws_profile: primary-micahrl
       cloudformation_capabilities: ["CAPABILITY_IAM"]
+      cloudformation_jinja2_enable: true
       cloudformation_template_params:
         ObverseHostedZoneId: "{{ global_origin_zone_zone_id }}"
         ReverseHostedZoneId: "{{ global_micahrl_me_zone_id }}"
