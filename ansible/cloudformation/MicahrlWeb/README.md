@@ -119,18 +119,18 @@ aws cloudfront-keyvaluestore update-keys --kvs-arn <ObverseHeadersKeyValueStoreA
 aws cloudfront-keyvaluestore update-keys --kvs-arn <ObverseHeadersKeyValueStoreArn> \
   --puts '[{"Key":"/blog/post.html","Value":"X-Robots-Tag: noindex"}]'
 
-# Example: Special pattern for path-based headers with $1 substitution
-# This applies to ALL paths and $1 is replaced with the request path
+# Example: Special pattern for path-based headers with {/path} substitution
+# This applies to ALL paths and {/path} is replaced with the request path (always includes leading /)
 # Useful for Onion-Location headers pointing to Tor hidden services
 aws cloudfront-keyvaluestore update-keys --kvs-arn <ObverseHeadersKeyValueStoreArn> \
-  --puts '[{"Key":"**/*","Value":"Onion-Location: http://example.onion$1"}]'
+  --puts '[{"Key":"**/*","Value":"Onion-Location: http://example.onion{/path}"}]'
 
 # For path /one/two/three.txt, headers are looked up in this order:
 # 1. / (root)
 # 2. /one/ (first directory)
 # 3. /one/two/ (second directory)
 # 4. /one/two/three.txt (the file itself)
-# 5. **/* (special pattern with $1 = /one/two/three.txt)
+# 5. **/* (special pattern with {/path} = /one/two/three.txt)
 # Later definitions override earlier ones for the same header name
 # Different headers from parents are combined
 

@@ -5,7 +5,11 @@ const kvsId = '${ObverseHeadersKeyValueStore}';
 async function handler(event) {
   const response = event.response;
   const request = event.request;
-  const path = request.uri;
+  // CloudFront always provides normalized URIs with leading slash, but ensure it
+  let path = request.uri;
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
 
   // Build hierarchical path list: /, /one/, /one/two/, /one/two/three.txt
   const parts = path.split('/').filter(p => p);
@@ -62,8 +66,8 @@ async function handler(event) {
           const colonIndex = trimmed.indexOf(':');
           const headerName = trimmed.substring(0, colonIndex).trim().toLowerCase();
           let headerValue = trimmed.substring(colonIndex + 1).trim();
-          // Replace $1 with the request path
-          headerValue = headerValue.replace('$1', path);
+          // Replace {/path} with the request path (always has leading /)
+          headerValue = headerValue.replace('{/path}', path);
           if (headerName) {
             headers[headerName] = { value: headerValue };
           }
