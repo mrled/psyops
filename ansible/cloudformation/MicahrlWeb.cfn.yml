@@ -85,11 +85,13 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-obverse-index-rewrite"
       AutoPublish: true
-      FunctionCode: !Sub |
-{% filter indent(8, first=True) %}
+      FunctionCode: !Sub
+        - |
+{% filter indent(10, first=True) %}
 {% include 'MicahrlWeb/obverse-index-rewrite.js' %}
 {% endfilter %}
 
+        - ObverseKeyValueStore: !GetAtt ObverseKeyValueStore.Id
       FunctionConfig:
         Comment: KVS redirects with fallback to index.html rewriting
         Runtime: cloudfront-js-2.0
@@ -101,11 +103,13 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-obverse-header-response"
       AutoPublish: true
-      FunctionCode: !Sub |
-{% filter indent(8, first=True) %}
+      FunctionCode: !Sub
+        - |
+{% filter indent(10, first=True) %}
 {% include 'MicahrlWeb/obverse-header-response.js' %}
 {% endfilter %}
 
+        - ObverseHeadersKeyValueStore: !GetAtt ObverseHeadersKeyValueStore.Id
       FunctionConfig:
         Comment: Hierarchical custom headers from KVS
         Runtime: cloudfront-js-2.0
@@ -241,11 +245,13 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-reverse-index-rewrite"
       AutoPublish: true
-      FunctionCode: !Sub |
-{% filter indent(8, first=True) %}
+      FunctionCode: !Sub
+        - |
+{% filter indent(10, first=True) %}
 {% include 'MicahrlWeb/reverse-index-rewrite.js' %}
 {% endfilter %}
 
+        - ReverseKeyValueStore: !GetAtt ReverseKeyValueStore.Id
       FunctionConfig:
         Comment: KVS redirects with fallback to index.html rewriting
         Runtime: cloudfront-js-2.0
@@ -257,11 +263,13 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-reverse-header-response"
       AutoPublish: true
-      FunctionCode: !Sub |
-{% filter indent(8, first=True) %}
+      FunctionCode: !Sub
+        - |
+{% filter indent(10, first=True) %}
 {% include 'MicahrlWeb/reverse-header-response.js' %}
 {% endfilter %}
 
+        - ReverseHeadersKeyValueStore: !GetAtt ReverseHeadersKeyValueStore.Id
       FunctionConfig:
         Comment: Hierarchical custom headers from KVS
         Runtime: cloudfront-js-2.0

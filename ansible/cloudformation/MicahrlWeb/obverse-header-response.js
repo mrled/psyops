@@ -25,13 +25,15 @@ async function handler(event) {
   const kvs = cf.kvs(kvsId);
   const headers = {};
 
-  for (const lookupPath of paths) {
+  for (let i = 0; i < paths.length; i++) {
+    const lookupPath = paths[i];
     try {
       const value = await kvs.get(lookupPath);
       if (value) {
         // Parse line-delimited headers: "Header-Name: value"
         const lines = value.split('\n');
-        for (const line of lines) {
+        for (let j = 0; j < lines.length; j++) {
+          const line = lines[j];
           const trimmed = line.trim();
           if (trimmed && trimmed.includes(':')) {
             const colonIndex = trimmed.indexOf(':');
@@ -53,7 +55,8 @@ async function handler(event) {
     const patternValue = await kvs.get('**/*');
     if (patternValue) {
       const lines = patternValue.split('\n');
-      for (const line of lines) {
+      for (let j = 0; j < lines.length; j++) {
+        const line = lines[j];
         const trimmed = line.trim();
         if (trimmed && trimmed.includes(':')) {
           const colonIndex = trimmed.indexOf(':');
@@ -73,8 +76,10 @@ async function handler(event) {
 
   // Apply headers to response
   response.headers = response.headers || {};
-  for (const [name, header] of Object.entries(headers)) {
-    response.headers[name] = header;
+  const headerKeys = Object.keys(headers);
+  for (let i = 0; i < headerKeys.length; i++) {
+    const name = headerKeys[i];
+    response.headers[name] = headers[name];
   }
 
   return response;

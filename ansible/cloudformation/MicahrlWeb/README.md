@@ -8,6 +8,12 @@ The stack for deploying <https://me.micahrl.com> and <https://com.micahrl.me> to
   - The CFN stack was exceeding 1kloc which was unwieldy, so we split it up with Jinja2 includes that Ansible manages.
     I don't love doing this, and maybe it should be CDK instead.
 
+## CloudFront Function JavaScript
+
+**CloudFront Function code must be written in a restricted JavaScript runtime**
+called `cloudfront-js-2.0`.
+In general, use ES5 syntax, and make sure the functions execute in 1ms or less and contain less than 10KB of code.
+
 ## Deployment Commands
 
 Create a deployment user with access keys:
