@@ -14,6 +14,17 @@ The stack for deploying <https://me.micahrl.com> and <https://com.micahrl.me> to
 called `cloudfront-js-2.0`.
 In general, use ES5 syntax, and make sure the functions execute in 1ms or less and contain less than 10KB of code.
 
+- See [AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/functions-javascript-runtime-20.html)
+  for specific language features.
+  "The CloudFront Functions JavaScript runtime environment is compliant with ECMAScript (ES) version 5.1 and also supports some features of ES versions 6 through 12. It also provides some nonstandard methods that are not part of the ES specifications."
+- There are very serious limits that will cause 500 errors with no logging at all
+  - Total execution time < 10ms
+  - Viewer Response:
+    - Total response size (of headers -- not counting what is retrieved from S3) <= 8KB
+    - Total header count <= 70
+    - Individual header size (name + value) <= 1783B
+
+
 ## Deployment Commands
 
 Create a deployment user with access keys:
@@ -102,37 +113,57 @@ aws cloudfront get-function --name <StackName>-obverse-index-rewrite
 
 ## KeyValueStore Management - Custom Headers
 
-Headers are stored as line-delimited "Header-Name: value" strings. Headers are looked up hierarchically and merged (child overrides parent).
+Headers are stored as line-delimited "Header-Name: value" strings. The function checks patterns hierarchically and applies headers in order of specificity.
+
+### Pattern Types
+
+1. **Root path**: `/` - Applies to all requests
+2. **Directory paths**: `/blog/`, `/blog/post/` - Must end with `/`, applies to all files in that directory and subdirectories
+3. **Extension wildcards**: `*.xml`, `*.html` - Applies to all files with that extension
+4. **Exact paths**: `/blog/rss.xml` - Applies only to that specific file
+
+### Specificity Order
+
+For a request to `/blog/post/article.html`, patterns are checked and applied in this order:
+1. `/` - root (least specific)
+2. `/blog/` - first parent directory
+3. `/blog/post/` - second parent directory
+4. `*.html` - extension wildcard
+5. `/blog/post/article.html` - exact path (most specific)
+
+More specific patterns override headers from less specific patterns.
+
+### Path Substitution
+
+Any header value can use `{/path}` which will be replaced with the request path (always includes leading `/`).
+
+### Value Format
+
+Values are line-delimited headers in the format `header-name: value`:
+
+```
+header-name: header value
+another-header: another value
+```
+
+### Examples
 
 ```bash
-# Example: Add headers to the root path
-# These will apply to all responses unless overridden
+# Add headers to all paths (root)
 aws cloudfront-keyvaluestore update-keys --kvs-arn <ObverseHeadersKeyValueStoreArn> \
-  --puts '[{"Key":"/","Value":"X-Frame-Options: DENY\nX-Content-Type-Options: nosniff"}]'
+  --puts '[{"Key":"/","Value":"onion-location: http://example.onion{/path}\nx-frame-options: DENY"}]'
 
-# Example: Override a header for a specific directory
-# For /blog/post.html, this will add both headers from / and the custom one from /blog/
+# Add headers to all files in /blog/ and subdirectories
 aws cloudfront-keyvaluestore update-keys --kvs-arn <ObverseHeadersKeyValueStoreArn> \
-  --puts '[{"Key":"/blog/","Value":"Cache-Control: public, max-age=3600"}]'
+  --puts '[{"Key":"/blog/","Value":"cache-control: public, max-age=3600"}]'
 
-# Example: Add headers to a specific file
+# Add headers to all XML files
 aws cloudfront-keyvaluestore update-keys --kvs-arn <ObverseHeadersKeyValueStoreArn> \
-  --puts '[{"Key":"/blog/post.html","Value":"X-Robots-Tag: noindex"}]'
+  --puts '[{"Key":"*.xml","Value":"content-type: application/xml; charset=utf-8\nx-content-type-options: nosniff"}]'
 
-# Example: Special pattern for path-based headers with {/path} substitution
-# This applies to ALL paths and {/path} is replaced with the request path (always includes leading /)
-# Useful for Onion-Location headers pointing to Tor hidden services
+# Add headers to a specific file (overrides all other patterns)
 aws cloudfront-keyvaluestore update-keys --kvs-arn <ObverseHeadersKeyValueStoreArn> \
-  --puts '[{"Key":"**/*","Value":"Onion-Location: http://example.onion{/path}"}]'
-
-# For path /one/two/three.txt, headers are looked up in this order:
-# 1. / (root)
-# 2. /one/ (first directory)
-# 3. /one/two/ (second directory)
-# 4. /one/two/three.txt (the file itself)
-# 5. **/* (special pattern with {/path} = /one/two/three.txt)
-# Later definitions override earlier ones for the same header name
-# Different headers from parents are combined
+  --puts '[{"Key":"/blog/post.html","Value":"x-robots-tag: noindex"}]'
 
 # List all header mappings
 aws cloudfront-keyvaluestore list-keys --kvs-arn <ObverseHeadersKeyValueStoreArn>
