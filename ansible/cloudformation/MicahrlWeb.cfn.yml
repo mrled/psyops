@@ -428,6 +428,9 @@ Resources:
                 Action:
                   - cloudfront-keyvaluestore:DescribeKeyValueStore
                   - cloudfront-keyvaluestore:UpdateKeys
+                  - cloudfront-keyvaluestore:PutKey
+                  - cloudfront-keyvaluestore:GetKey
+                  - cloudfront-keyvaluestore:DeleteKey
                   - cloudfront-keyvaluestore:ListKeys
                 Resource:
                   - !GetAtt ObverseIndexRewriteKvs.Arn
