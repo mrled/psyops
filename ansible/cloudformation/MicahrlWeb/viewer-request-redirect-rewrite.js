@@ -27,9 +27,15 @@ async function handler(event) {
     }
   }
 
-  // If we found a different path through KVS, use it
+  // If we found a different path through KVS, return a 301 redirect
   if (lookupUri !== uri) {
-    request.uri = lookupUri;
+    return {
+      statusCode: 301,
+      statusDescription: 'Moved Permanently',
+      headers: {
+        'location': { value: lookupUri }
+      }
+    };
   }
 
   // Append index.html to trailing slashes
