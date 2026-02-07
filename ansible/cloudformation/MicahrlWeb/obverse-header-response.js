@@ -9,11 +9,9 @@ async function handler(event) {
 
   // Initialize headers object first
   response.headers = response.headers || {};
-  response.headers['x-micahrl-debug-headers-will-inject'] = { value: "im-doing-my-best" };
+  // response.headers['x-mrldbg-start'] = { value: "ok" };
 
   try {
-    // throw new Error("Test error to verify debug header is added and contains message");
-
     // CloudFront always provides normalized URIs with leading slash
     path = request.uri;
     if (path.charAt(0) !== '/') {
@@ -46,18 +44,16 @@ async function handler(event) {
       patterns.push(path);
     }
 
-    response.headers['x-micahrl-debug-patterns'] = { value: patterns.join(',') };
+    var patternList = patterns.join(',');
+    response.headers['x-mrldbg-patterns'] = { value: patternList.length > 200 ? patternList.substring(0, 200) + '...' : patternList };
 
     // Collect headers from all matching patterns
     var kvs = cf.kvs(kvsId);
     var headers = {};
-    var parsedPatternIdxes = [];
-
-    // TODO: don't use patternId, use pattern index number, bc we list the patterns in x-micahrl-debug-patterns header.
+    var matchedPatternIdxes = [];
 
     for (var i = 0; i < patterns.length; i++) {
       var pattern = patterns[i];
-      var patternId = pattern.replace(/[^a-zA-Z0-9]/g, '_');
       try {
         var value = await kvs.get(pattern);
         if (value) {
@@ -77,8 +73,7 @@ async function handler(event) {
             }
           }
         }
-        parsedPatternIdxes.push(i);
-        // response.headers['x-micahrl-debug-pattern-value-' + patternId] = { value: value || '' };
+        matchedPatternIdxes.push(i);
       } catch (err) {
         // Key not found or parse error, continue
         var errMsg = 'error';
@@ -87,12 +82,11 @@ async function handler(event) {
         } else if (err) {
           errMsg = String(err);
         }
-        // response.headers['x-micahrl-debug-pattern-error-' + patternId] = { value: errMsg.substring(0, 100) };
       }
     }
 
-    var pasredPatternIdxesStr = parsedPatternIdxes.map(function(idx) { return patterns[idx]; }).join(',');
-    response.headers['x-micahrl-debug-patterns-parsed'] = { value: pasredPatternIdxesStr };
+    var matchedList = matchedPatternIdxes.join(",");
+    response.headers['x-mrldbg-matchedpatterns'] = { value: matchedList.length > 200 ? matchedList.substring(0, 200) + '...' : matchedList };
 
     // Apply headers to response
     var headerKeys = Object.keys(headers);
@@ -100,8 +94,6 @@ async function handler(event) {
       var name = headerKeys[i];
       response.headers[name] = headers[name];
     }
-
-    response.headers['x-micahrl-debug-headers-injected'] = { value: "yes-goddammit" };
 
     return response;
 
@@ -117,7 +109,7 @@ async function handler(event) {
     }
     // Limit length and sanitize
     debugMsg = debugMsg.substring(0, 200).replace(/[\r\n]+/g, ' ');
-    response.headers['x-micahrl-debug'] = { value: debugMsg };
+    response.headers['x-mrldbg'] = { value: debugMsg };
     return response;
   }
 }

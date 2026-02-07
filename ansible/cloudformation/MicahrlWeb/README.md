@@ -18,7 +18,8 @@ In general, use ES5 syntax, and make sure the functions execute in 1ms or less a
   for specific language features.
   "The CloudFront Functions JavaScript runtime environment is compliant with ECMAScript (ES) version 5.1 and also supports some features of ES versions 6 through 12. It also provides some nonstandard methods that are not part of the ES specifications."
 - There are very serious limits that will cause 500 errors with no logging at all
-  - Total execution time < 10ms
+  - Total execution time <= 1ms
+  - Total function size <= 10KB
   - Viewer Response:
     - Total response size (of headers -- not counting what is retrieved from S3) <= 8KB
     - Total header count <= 70
