@@ -481,72 +481,39 @@ Resources:
           skip.header.line.count: "2"
         StorageDescriptor:
           Columns:
-            - Name: log_date
-              Type: string
-            - Name: log_time
-              Type: string
-            - Name: edge_location
-              Type: string
-            - Name: bytes_sent
-              Type: bigint
-            - Name: client_ip
-              Type: string
-            - Name: http_method
-              Type: string
-            - Name: host
-              Type: string
-            - Name: uri_stem
-              Type: string
-            - Name: status_code
-              Type: int
-            - Name: referer
-              Type: string
-            - Name: user_agent
-              Type: string
-            - Name: query_string
-              Type: string
-            - Name: cookie
-              Type: string
-            - Name: edge_result_type
-              Type: string
-            - Name: edge_request_id
-              Type: string
-            - Name: host_header
-              Type: string
-            - Name: protocol
-              Type: string
-            - Name: bytes_received
-              Type: bigint
-            - Name: time_taken
-              Type: float
-            - Name: forwarded_for
-              Type: string
-            - Name: ssl_protocol
-              Type: string
-            - Name: ssl_cipher
-              Type: string
-            - Name: edge_response_result_type
-              Type: string
-            - Name: protocol_version
-              Type: string
-            - Name: fle_status
-              Type: string
-            - Name: fle_encrypted_fields
-              Type: int
-            - Name: port
-              Type: int
-            - Name: time_to_first_byte
-              Type: float
-            - Name: edge_detailed_result_type
-              Type: string
-            - Name: content_type
-              Type: string
-            - Name: content_length
-              Type: bigint
-            - Name: range_start
-              Type: bigint
-            - Name: range_end
-              Type: bigint
+            - {Name: log_date, Type: string}
+            - {Name: log_time, Type: string}
+            - {Name: edge_location, Type: string}
+            - {Name: bytes_sent, Type: bigint}
+            - {Name: client_ip, Type: string}
+            - {Name: http_method, Type: string}
+            - {Name: host, Type: string}
+            - {Name: uri_stem, Type: string}
+            - {Name: status_code, Type: int}
+            - {Name: referer, Type: string}
+            - {Name: user_agent, Type: string}
+            - {Name: query_string, Type: string}
+            - {Name: cookie, Type: string}
+            - {Name: edge_result_type, Type: string}
+            - {Name: edge_request_id, Type: string}
+            - {Name: host_header, Type: string}
+            - {Name: protocol, Type: string}
+            - {Name: bytes_received, Type: bigint}
+            - {Name: time_taken, Type: float}
+            - {Name: forwarded_for, Type: string}
+            - {Name: ssl_protocol, Type: string}
+            - {Name: ssl_cipher, Type: string}
+            - {Name: edge_response_result_type, Type: string}
+            - {Name: protocol_version, Type: string}
+            - {Name: fle_status, Type: string}
+            - {Name: fle_encrypted_fields, Type: int}
+            - {Name: port, Type: int}
+            - {Name: time_to_first_byte, Type: float}
+            - {Name: edge_detailed_result_type, Type: string}
+            - {Name: content_type, Type: string}
+            - {Name: content_length, Type: bigint}
+            - {Name: range_start, Type: bigint}
+            - {Name: range_end, Type: bigint}
           Location: !Sub "s3://${LogsBucket}/cloudfront/"
           InputFormat: org.apache.hadoop.mapred.TextInputFormat
           OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
