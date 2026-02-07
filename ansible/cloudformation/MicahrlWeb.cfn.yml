@@ -87,9 +87,10 @@ Resources:
       AutoPublish: true
       FunctionCode: !Sub
         - |
-{% filter indent(10, first=True) %}
-{% include 'MicahrlWeb/obverse-index-rewrite.js' %}
-{% endfilter %}
+          const kvsId = '${ObverseKeyValueStore}';
+          {% filter indent(10, false) %}
+          {% include 'MicahrlWeb/viewer-request.js' %}
+          {% endfilter %}
 
         - ObverseKeyValueStore: !GetAtt ObverseKeyValueStore.Id
       FunctionConfig:
@@ -105,9 +106,10 @@ Resources:
       AutoPublish: true
       FunctionCode: !Sub
         - |
-{% filter indent(10, first=True) %}
-{% include 'MicahrlWeb/obverse-header-response.js' %}
-{% endfilter %}
+          const kvsId = '${ObverseHeadersKeyValueStore}';
+          {% filter indent(10, false) %}
+          {% include 'MicahrlWeb/viewer-response.js' %}
+          {% endfilter %}
 
         - ObverseHeadersKeyValueStore: !GetAtt ObverseHeadersKeyValueStore.Id
       FunctionConfig:
@@ -247,9 +249,10 @@ Resources:
       AutoPublish: true
       FunctionCode: !Sub
         - |
-{% filter indent(10, first=True) %}
-{% include 'MicahrlWeb/reverse-index-rewrite.js' %}
-{% endfilter %}
+          const kvsId = '${ReverseKeyValueStore}';
+          {% filter indent(10, false) %}
+          {% include 'MicahrlWeb/viewer-request.js' %}
+          {% endfilter %}
 
         - ReverseKeyValueStore: !GetAtt ReverseKeyValueStore.Id
       FunctionConfig:
@@ -265,9 +268,10 @@ Resources:
       AutoPublish: true
       FunctionCode: !Sub
         - |
-{% filter indent(10, first=True) %}
-{% include 'MicahrlWeb/reverse-header-response.js' %}
-{% endfilter %}
+          const kvsId = '${ReverseHeadersKeyValueStore}';
+          {% filter indent(10, false) %}
+          {% include 'MicahrlWeb/viewer-response.js' %}
+          {% endfilter %}
 
         - ReverseHeadersKeyValueStore: !GetAtt ReverseHeadersKeyValueStore.Id
       FunctionConfig:

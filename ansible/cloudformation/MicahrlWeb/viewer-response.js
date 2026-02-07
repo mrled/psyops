@@ -1,7 +1,5 @@
 import cf from 'cloudfront';
 
-const kvsId = '${ObverseHeadersKeyValueStore}';
-
 // Max headers for entire request is 8KB
 // We have to leave room for CloudFront and S3 headers too: 2-3KB
 // We also don't keep track of our debug headers: keep them less than 1KB

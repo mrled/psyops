@@ -1,7 +1,5 @@
 import cf from 'cloudfront';
 
-const kvsId = '${ObverseKeyValueStore}';
-
 async function handler(event) {
   const request = event.request;
   const uri = request.uri;
