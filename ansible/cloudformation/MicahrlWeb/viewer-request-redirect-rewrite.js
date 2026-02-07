@@ -31,8 +31,9 @@ async function handler(event) {
   if (lookupUri !== uri) {
     request.uri = lookupUri;
   }
-  // Otherwise fall back to index.html normalization for trailing slashes
-  else if (uri.endsWith('/')) {
+
+  // Append index.html to trailing slashes
+  if (request.uri.endsWith('/')) {
     request.uri += 'index.html';
   }
 
