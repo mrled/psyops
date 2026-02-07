@@ -1,3 +1,5 @@
+// NOTE: THIS FILE EXPECTS const kvsId = 'something'; TO BE DEFINED IN THE CFN TEMPLATE THAT USES IT
+
 import cf from 'cloudfront';
 
 async function handler(event) {

@@ -68,7 +68,7 @@ Resources:
 
   # ===== OBVERSE DOMAIN =====
 
-  ObverseKeyValueStore:
+  ObverseIndexRewriteKvs:
     Type: AWS::CloudFront::KeyValueStore
     Properties:
       Name: !Sub "${AWS::StackName}-obverse-redirects"
@@ -83,32 +83,32 @@ Resources:
   ObverseIndexRewriteFunction:
     Type: AWS::CloudFront::Function
     Properties:
-      Name: !Sub "${AWS::StackName}-obverse-index-rewrite"
+      Name: !Sub "${AWS::StackName}-obverse-reqfunc-redirect-rewrite"
       AutoPublish: true
       FunctionCode: !Sub
         - |
-          const kvsId = '${ObverseKeyValueStore}';
+          const kvsId = '${ObverseIndexRewriteKvs}';
           {% filter indent(10, false) %}
-          {% include 'MicahrlWeb/viewer-request.js' %}
+          {% include 'MicahrlWeb/viewer-request-redirect-rewrite.js' %}
           {% endfilter %}
 
-        - ObverseKeyValueStore: !GetAtt ObverseKeyValueStore.Id
+        - ObverseIndexRewriteKvs: !GetAtt ObverseIndexRewriteKvs.Id
       FunctionConfig:
         Comment: KVS redirects with fallback to index.html rewriting
         Runtime: cloudfront-js-2.0
         KeyValueStoreAssociations:
-          - KeyValueStoreARN: !GetAtt ObverseKeyValueStore.Arn
+          - KeyValueStoreARN: !GetAtt ObverseIndexRewriteKvs.Arn
 
   ObverseHeaderResponseFunction:
     Type: AWS::CloudFront::Function
     Properties:
-      Name: !Sub "${AWS::StackName}-obverse-header-response"
+      Name: !Sub "${AWS::StackName}-obverse-respfunc-headers"
       AutoPublish: true
       FunctionCode: !Sub
         - |
           const kvsId = '${ObverseHeadersKeyValueStore}';
           {% filter indent(10, false) %}
-          {% include 'MicahrlWeb/viewer-response.js' %}
+          {% include 'MicahrlWeb/viewer-response-add-headers.js' %}
           {% endfilter %}
 
         - ObverseHeadersKeyValueStore: !GetAtt ObverseHeadersKeyValueStore.Id
@@ -230,7 +230,7 @@ Resources:
 
   # ===== REVERSE DOMAIN =====
 
-  ReverseKeyValueStore:
+  ReverseIndexRewriteKvs:
     Type: AWS::CloudFront::KeyValueStore
     Properties:
       Name: !Sub "${AWS::StackName}-reverse-redirects"
@@ -245,32 +245,32 @@ Resources:
   ReverseIndexRewriteFunction:
     Type: AWS::CloudFront::Function
     Properties:
-      Name: !Sub "${AWS::StackName}-reverse-index-rewrite"
+      Name: !Sub "${AWS::StackName}-reverse-reqfunc-redirect-rewrite"
       AutoPublish: true
       FunctionCode: !Sub
         - |
-          const kvsId = '${ReverseKeyValueStore}';
+          const kvsId = '${ReverseIndexRewriteKvs}';
           {% filter indent(10, false) %}
-          {% include 'MicahrlWeb/viewer-request.js' %}
+          {% include 'MicahrlWeb/viewer-request-redirect-rewrite.js' %}
           {% endfilter %}
 
-        - ReverseKeyValueStore: !GetAtt ReverseKeyValueStore.Id
+        - ReverseIndexRewriteKvs: !GetAtt ReverseIndexRewriteKvs.Id
       FunctionConfig:
         Comment: KVS redirects with fallback to index.html rewriting
         Runtime: cloudfront-js-2.0
         KeyValueStoreAssociations:
-          - KeyValueStoreARN: !GetAtt ReverseKeyValueStore.Arn
+          - KeyValueStoreARN: !GetAtt ReverseIndexRewriteKvs.Arn
 
   ReverseHeaderResponseFunction:
     Type: AWS::CloudFront::Function
     Properties:
-      Name: !Sub "${AWS::StackName}-reverse-header-response"
+      Name: !Sub "${AWS::StackName}--reverse-respfunc-headers"
       AutoPublish: true
       FunctionCode: !Sub
         - |
           const kvsId = '${ReverseHeadersKeyValueStore}';
           {% filter indent(10, false) %}
-          {% include 'MicahrlWeb/viewer-response.js' %}
+          {% include 'MicahrlWeb/viewer-response-add-headers.js' %}
           {% endfilter %}
 
         - ReverseHeadersKeyValueStore: !GetAtt ReverseHeadersKeyValueStore.Id
@@ -430,8 +430,8 @@ Resources:
                   - cloudfront-keyvaluestore:UpdateKeys
                   - cloudfront-keyvaluestore:ListKeys
                 Resource:
-                  - !GetAtt ObverseKeyValueStore.Arn
-                  - !GetAtt ReverseKeyValueStore.Arn
+                  - !GetAtt ObverseIndexRewriteKvs.Arn
+                  - !GetAtt ReverseIndexRewriteKvs.Arn
                   - !GetAtt ObverseHeadersKeyValueStore.Arn
                   - !GetAtt ReverseHeadersKeyValueStore.Arn
               - Sid: AllowKeyValueStoreCreation
@@ -535,12 +535,12 @@ Outputs:
   ObverseContentBucketName:
     Value: !Ref ObverseContentBucket
 
-  ObverseKeyValueStoreId:
+  ObverseIndexRewriteKvsId:
     Description: KeyValueStore ID for managing redirects
-    Value: !Ref ObverseKeyValueStore
+    Value: !Ref ObverseIndexRewriteKvs
 
-  ObverseKeyValueStoreArn:
-    Value: !GetAtt ObverseKeyValueStore.Arn
+  ObverseIndexRewriteKvsArn:
+    Value: !GetAtt ObverseIndexRewriteKvs.Arn
 
   ObverseHeadersKeyValueStoreId:
     Description: KeyValueStore ID for managing custom headers
@@ -562,12 +562,12 @@ Outputs:
   ReverseContentBucketName:
     Value: !Ref ReverseContentBucket
 
-  ReverseKeyValueStoreId:
+  ReverseIndexRewriteKvsId:
     Description: KeyValueStore ID for managing redirects
-    Value: !Ref ReverseKeyValueStore
+    Value: !Ref ReverseIndexRewriteKvs
 
-  ReverseKeyValueStoreArn:
-    Value: !GetAtt ReverseKeyValueStore.Arn
+  ReverseIndexRewriteKvsArn:
+    Value: !GetAtt ReverseIndexRewriteKvs.Arn
 
   ReverseHeadersKeyValueStoreId:
     Description: KeyValueStore ID for managing custom headers
