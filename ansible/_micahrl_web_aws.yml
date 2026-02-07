@@ -4,6 +4,13 @@
   connection: local
   become: no
   gather_facts: no
+  tasks:
+    - template:
+        src: cloudformation/MicahrlWeb.cfn.yml
+        dest: /tmp/MicahrlWebRendered.cfn.yml
+      when: "'micahrl_web_test_render' in ansible_run_tags"
+      tags:
+        - micahrl_web_test_render
   roles:
     - name: cfn
       cloudformation_stack_name: MicahrlWebTest
@@ -21,6 +28,7 @@
         ReverseHostedZoneId: "{{ global_micahrl_me_zone_id }}"
         ObverseDomain: "testme.micahrl.com"
         ReverseDomain: "testcom.micahrl.me"
+      when: "'micahrl_web_test_render' not in ansible_run_tags"
       tags:
         - me.micahrl.com
         - com.micahrl.me
