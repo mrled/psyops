@@ -2,6 +2,11 @@ import cf from 'cloudfront';
 
 const kvsId = '${ObverseHeadersKeyValueStore}';
 
+// Max headers for entire request is 8KB
+// We have to leave room for CloudFront and S3 headers too: 2-3KB
+// We also don't keep track of our debug headers: keep them less than 1KB
+const headerSizeLimitBytes = 4096;
+
 async function handler(event) {
   var response = event.response;
   var request = event.request;
@@ -9,7 +14,6 @@ async function handler(event) {
 
   // Initialize headers object first
   response.headers = response.headers || {};
-  // response.headers['x-mrldbg-start'] = { value: "ok" };
 
   try {
     // CloudFront always provides normalized URIs with leading slash
@@ -51,6 +55,8 @@ async function handler(event) {
     var kvs = cf.kvs(kvsId);
     var headers = {};
     var matchedPatternIdxes = [];
+    var totalAddedBytes = 0;
+    var truncated = false;
 
     for (var i = 0; i < patterns.length; i++) {
       var pattern = patterns[i];
@@ -68,9 +74,19 @@ async function handler(event) {
               // Replace {/path} with the request path
               headerValue = headerValue.replace('{/path}', path);
               if (headerName) {
+                // Estimate header size (name + value + overhead)
+                var headerSize = headerName.length + headerValue.length + 4;
+                if (totalAddedBytes + headerSize > headerSizeLimitBytes) {
+                  truncated = true;
+                  break; // Stop adding headers
+                }
                 headers[headerName] = { value: headerValue };
+                totalAddedBytes += headerSize;
               }
             }
+          }
+          if (truncated) {
+            break; // Stop processing patterns
           }
         }
         matchedPatternIdxes.push(i);
@@ -87,6 +103,10 @@ async function handler(event) {
 
     var matchedList = matchedPatternIdxes.join(",");
     response.headers['x-mrldbg-matchedpatterns'] = { value: matchedList.length > 200 ? matchedList.substring(0, 200) + '...' : matchedList };
+    response.headers['x-mrldbg-size'] = { value: String(totalAddedBytes) };
+    if (truncated) {
+      response.headers['x-mrldbg-truncated'] = { value: 'yes' };
+    }
 
     // Apply headers to response
     var headerKeys = Object.keys(headers);
