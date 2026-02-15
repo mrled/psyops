@@ -1,2 +1,18 @@
 ---
+
+# TODO: Would like to rename this host to something else, maybe 'dreadnought';
+# chineseroom is the Ansible role but it doesn't have to be the hostname.
+
 ansible_ssh_user: micahrl
+chineseroom_restricted_user: callista
+
+chineseroom_enable_autologin: true
+chineseroom_disable_screen_lock: true
+
+chineseroom_app_openclaw_enable: false
+
+# Domain configuration
+# TODO: change this to something using younix.us,
+# so that if there are DNS problems it doesn't affect my personal email.
+chineseroom_letsencrypt_domain: chineseroom.micahrl.com
+chineseroom_letsencrypt_email: "psyops@micahrl.com"

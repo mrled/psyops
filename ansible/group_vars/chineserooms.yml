@@ -1,10 +1,12 @@
 ---
-chineseroom_restricted_user: callista
-chineseroom_enable_autologin: true
-chineseroom_disable_screen_lock: true
 chineseroom_user_ssh_keys:
 - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMN/4Rdkz4vlGaQRvhmhLhkaH0CfhNnoggGBBknz17+u mrled@Haluth
 - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDePi4ZbWyeo2EZAnSyOUbXbxuS/jOShOqdcx43ebhaEDs7592np14eGobzXic/0SppLLFpK2HiUwD3TORQT+rSjNQhe/setbLKPXolRXFgbsZ1UPF+aAcD0pX2yE88L1R11F87JA2uHjSci6jRixjg63L7i2xxAT5rPIaXh7cEN1wq92ZeuJm1KvFSm9dIStlVWAWugKdr8tb5qxMTce2c5A5jNbes+dpUGJjT7Blzsnl7MnCiaN+aaMYLkQincVXYfJRofL/NB+VYCC27421+Hq1nlMC5E/C0RSXxf+8hfeYF+6SvZ5pZBnIeWo5I8BXCDBfCBLTk4RPOWum6yrwLLhV0yVpNLitxGh2NiF0rciTQggOc99DH6LLO6xfeH3Stk5xKPfsabDnwpBpFDlETQE0cK86Pu2wJyvZ3xZndmQRkncbcS0OXmvw2eHTD/VjIhKS15zroN5VblAUbRR7mXqh6PGPxEkv7ZjviQMXlzqHtW0FGNGknIicYNjZt3jJJH3pDXGT+WqXunjCCkgQEFI9akTGzrmrqwtk4PxIQt0Shtpzd8wJDsWbTvmK6oZIZXBxGXXtyDafa1TobLGYbykQArlByZc5UZQkP6UDNYRpanZaHZxntKiCayE9Gen2WCnpzEu3H9abg1TsR8ayYlK3N9D+tyjzL7awnVCyAkQ== ShellFish@Copland-01062022
+- ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS
+
+chineseroom_aws_region: us-east-1
+chineseroom_aws_access_key_id: "{{ vault_chineseroom_aws_access_key_id }}"
+chineseroom_aws_secret_access_key: "{{ vault_chineseroom_aws_secret_access_key }}"
 
 chineseroom_enable_whitelist_ips: false
 # chineseroom_whitelist_ips:
@@ -23,7 +25,3 @@ chineseroom_enable_whitelist_domains: false
 # - python.org
 # - pypi.org
 # - bun.sh
-
-# Domain configuration
-chineseroom_letsencrypt_domain: chineseroom.micahrl.com
-chineseroom_letsencrypt_email: "psyops@micahrl.com"

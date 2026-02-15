@@ -47,6 +47,16 @@ Resources:
           TTL: 60
           ResourceRecords: ["chineseroom.backchannel.younix.us."]
 
+        - # Burrow host records
+          Name: burrow.backchannel.younix.us.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.111.97.32"]
+        - Name: "*.burrow.backchannel.younix.us."
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["burrow.backchannel.younix.us."]
+
   # IAM group with permission to modify records in the backchannel zone
   BackchannelZoneUpdaterGroup:
     Type: AWS::IAM::Group
@@ -81,12 +91,25 @@ Resources:
       Groups:
         - !Ref BackchannelZoneUpdaterGroup
 
+  BurrowBackchannelZoneUpdaterUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: BurrowBackchannelZoneUpdater
+      Groups:
+        - !Ref BackchannelZoneUpdaterGroup
+
 Outputs:
   BackchannelZoneId:
     Description: The ID of the backchannel zone
     Value: !Ref BackchannelZone
     Export:
       Name: BackchannelZone-ZoneId
+
+  BackchannelZoneNameServers:
+    Description: The nameservers for the backchannel zone
+    Value: !Join [",", !GetAtt BackchannelZone.NameServers]
+    Export:
+      Name: BackchannelZone-NameServers
 
   BackchannelZoneUpdaterGroupArn:
     Description: The ARN for a group with permission to modify records in the backchannel zone
@@ -100,14 +123,8 @@ Outputs:
     Export:
       Name: BackchannelZone-NaraguaUpdaterUserArn
 
-  NaraguaBackchannelZoneUpdaterUserName:
-    Description: The name of the Naragua user with permission to modify records in the backchannel zone
-    Value: !Ref NaraguaBackchannelZoneUpdaterUser
+  BurrowBackchannelZoneUpdaterUserArn:
+    Description: The ARN for the Burrow user with permission to modify records in the backchannel zone
+    Value: !GetAtt BurrowBackchannelZoneUpdaterUser.Arn
     Export:
-      Name: BackchannelZone-NaraguaUpdaterUserName
-
-  BackchannelZoneNameServers:
-    Description: The nameservers for the backchannel zone
-    Value: !Join [",", !GetAtt BackchannelZone.NameServers]
-    Export:
-      Name: BackchannelZone-NameServers
+      Name: BackchannelZone-BurrowUpdaterUserArn

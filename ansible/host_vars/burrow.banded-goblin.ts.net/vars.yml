@@ -1,0 +1,11 @@
+---
+ansible_ssh_user: micahrl
+chineseroom_restricted_user: arthropodestrienne
+
+chineseroom_enable_autologin: true
+chineseroom_disable_screen_lock: true
+
+chineseroom_app_openclaw_enable: true
+
+chineseroom_letsencrypt_domain: burrow.backchannel.younix.us
+chineseroom_letsencrypt_email: "psyops@micahrl.com"

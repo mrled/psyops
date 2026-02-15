@@ -1,4 +1,4 @@
-- name: Deploy the Chinese Room
+- name: Deploy the Chinese Rooms
   hosts: chineserooms
   roles:
     - { name: chineseroom, tags: ["chineseroom"] }
