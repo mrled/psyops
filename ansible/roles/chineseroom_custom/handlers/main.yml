@@ -1,6 +1,8 @@
 ---
 - name: reconfigure squid
-  command: squid -k reconfigure
+  systemd:
+    name: squid
+    state: reloaded
 
 - name: restart squid
   systemd:
