@@ -209,6 +209,19 @@ Resources:
           TTL: 60
           ResourceRecords: ["chineseroom.micahrl.com."]
 
+        # Hedgerules
+        - Name: hedgerules.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords:
+            - d447g1zqgagy6.cloudfront.net.
+        # Hedgerules ACM verification
+        - Name: _759beca0848dae72f80f36001e58769c.hedgerules.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords:
+            - _562b4b0268120e6c21252af703a4dc33.jkddzztszm.acm-validations.aws.
+
   # Home Zone
   # Unifi is too dumb to set hostnames for its clients :) lol
   HomeZone:
