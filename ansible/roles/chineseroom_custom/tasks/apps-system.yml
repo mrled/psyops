@@ -12,6 +12,7 @@
 - name: Packages
   dnf:
     name:
+      - atuin
       - git-lfs
       - sqlite
       - stripe
