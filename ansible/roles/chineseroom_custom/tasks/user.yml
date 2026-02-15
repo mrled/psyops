@@ -1,0 +1,6 @@
+---
+- name: Set shell for chineseroom user
+  user:
+    name: "{{ chineseroom_restricted_user }}"
+    shell: "{{ chineseroom_restricted_user_shell }}"
+  when: chineseroom_restricted_user_shell is defined

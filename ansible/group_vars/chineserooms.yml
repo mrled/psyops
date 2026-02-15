@@ -8,6 +8,9 @@ chineseroom_aws_region: us-east-1
 chineseroom_aws_access_key_id: "{{ vault_chineseroom_aws_access_key_id }}"
 chineseroom_aws_secret_access_key: "{{ vault_chineseroom_aws_secret_access_key }}"
 
+# Atuin needs zsh, or requires a giant blob of gunk to support bash
+chineseroom_restricted_user_shell: /bin/zsh
+
 chineseroom_enable_whitelist_ips: false
 # chineseroom_whitelist_ips:
 #   ipv4:

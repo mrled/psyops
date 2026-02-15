@@ -1,4 +1,9 @@
 ---
+- name: Configure user
+  import_tasks: user.yml
+  tags:
+  - chineseroom_user
+
 - name: Install useless UI bling
   import_tasks: pretty.yml
   tags:
