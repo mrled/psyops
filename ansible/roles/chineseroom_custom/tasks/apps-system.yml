@@ -13,6 +13,7 @@
   dnf:
     name:
       - atuin
+      - clang # used with linuxbrew a lot
       - git-lfs
       - ripgrep
       - sqlite
