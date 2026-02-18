@@ -60,6 +60,18 @@ Resources:
           TTL: 300
           ResourceRecords: [fm3.micahrl.me.dkim.fmhosted.com]
 
+        # Test webserver certificate challenge record
+        - Name: _2beefea6ffce0adf16e0823247dc9654.testcom.micahrl.me.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["_fbd683e0b07ae9cabb3ebe703039998d.jkddzztszm.acm-validations.aws."]
+
+        # Test webserver record
+        - Name: testcom.micahrl.me.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["d2chf3ip7meb8o.cloudfront.net."]
+
         - Name: kubernasty-controlplane.micahrl.me.
           Type: A
           TTL: 300

@@ -222,6 +222,18 @@ Resources:
           ResourceRecords:
             - _562b4b0268120e6c21252af703a4dc33.jkddzztszm.acm-validations.aws.
 
+        # Test webserver certificate challenge record
+        - Name: _933b2a3c301234bae791e1e1c7342185.testme.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["_1464e80468c959707f5538f3a2a7e001.jkddzztszm.acm-validations.aws."]
+
+        # Test webserver record
+        - Name: testme.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["d2chf3ip7meb8o.cloudfront.net."]
+
   # Home Zone
   # Unifi is too dumb to set hostnames for its clients :) lol
   HomeZone:
