@@ -70,7 +70,7 @@ Resources:
         - Name: testcom.micahrl.me.
           Type: CNAME
           TTL: 60
-          ResourceRecords: ["d2chf3ip7meb8o.cloudfront.net."]
+          ResourceRecords: ["d37ji90jthghvn.cloudfront.net."]
 
         - Name: kubernasty-controlplane.micahrl.me.
           Type: A
