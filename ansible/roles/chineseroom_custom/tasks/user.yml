@@ -4,3 +4,14 @@
     name: "{{ chineseroom_restricted_user }}"
     shell: "{{ chineseroom_restricted_user_shell }}"
   when: chineseroom_restricted_user_shell is defined
+
+- name: Install GHCup for chineseroom user
+  become: yes
+  become_user: "{{ chineseroom_restricted_user }}"
+  shell: |
+    curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+  args:
+    creates: "/home/{{ chineseroom_restricted_user }}/.ghcup/bin/ghcup"
+  environment:
+    BOOTSTRAP_HASKELL_NONINTERACTIVE: "1"
+  when: chineseroom_app_ghcup_enable

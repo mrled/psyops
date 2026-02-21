@@ -9,12 +9,24 @@
     repo_gpgcheck: no
     state: present
 
+- name: Add Charm DNF repo
+  ansible.builtin.yum_repository:
+    name: charm
+    description: Charm
+    baseurl: https://repo.charm.sh/yum/
+    enabled: yes
+    gpgcheck: yes
+    repo_gpgcheck: yes
+    gpgkey: https://repo.charm.sh/yum/gpg.key
+    state: present
+
 - name: Packages
   dnf:
     name:
       - atuin
       - clang # used with linuxbrew a lot
       - git-lfs
+      - glow
       - ripgrep
       - sqlite
       - stripe
