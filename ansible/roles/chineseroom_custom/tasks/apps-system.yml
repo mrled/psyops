@@ -27,6 +27,7 @@
       - clang # used with linuxbrew a lot
       - git-lfs
       - glow
+      - gmp-devel # required for haskell shake
       - ripgrep
       - sqlite
       - stripe
