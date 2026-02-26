@@ -22,11 +22,22 @@ Resources:
           TTL: 60
           ResourceRecords: ["micahrl.me."]
 
-        # Webserver
-        - Name: com.micahrl.me.
+        # prod-reverse certificate challenge record
+        - Name: _1e77df1fbb2672054829ec577071dc5a.com.micahrl.me.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["_2ab860832e3f1c14fea89624b691b122.jkddzztszm.acm-validations.aws."]
+
+        # prod-reverse record for micahrl.me, pointing to netlify
+        - Name: com-netlify.micahrl.me.
           Type: CNAME
           TTL: 60
           ResourceRecords: ["boring-perlman-92bf89.netlify.app."]
+        # prod-reverse webserver record
+        - Name: com.micahrl.me.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["d263iz7qbkcj1o.cloudfront.net."]
 
         # SUNS verification
         - Name: _suns.com.micahrl.me.
@@ -60,7 +71,7 @@ Resources:
           TTL: 300
           ResourceRecords: [fm3.micahrl.me.dkim.fmhosted.com]
 
-        # Test webserver certificate challenge record
+        # test-reverse certificate challenge record
         - Name: _2beefea6ffce0adf16e0823247dc9654.testcom.micahrl.me.
           Type: CNAME
           TTL: 60
