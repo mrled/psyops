@@ -48,11 +48,23 @@ Resources:
           TTL: 300
           ResourceRecords: ["mrled.github.io."]
 
-        # Webserver
-        - Name: me.micahrl.com.
+        # prod-obverse record for micahrl.me, pointing to netlify
+        - Name: me-netlify.micahrl.com.
           Type: CNAME
           TTL: 60
           ResourceRecords: ["clever-kepler-458884.netlify.com."]
+
+        # prod-obverse certificate challenge record
+        - Name: _6e97c5b7b741c174e208135c1ae4cf34.me.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["_413a84036e2aeaeee50bc87d3d16e120.jkddzztszm.acm-validations.aws."]
+
+        # prod-obverse webserver record
+        - Name: me.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["d295ewgha3yrqc.cloudfront.net."]
 
         # SUNS verification
         - Name: _suns.me.micahrl.com.
