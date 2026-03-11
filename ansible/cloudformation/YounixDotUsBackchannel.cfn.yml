@@ -47,8 +47,8 @@ Resources:
           TTL: 60
           ResourceRecords: ["chineseroom.backchannel.younix.us."]
 
-        - # Burrow host records
-          Name: burrow.backchannel.younix.us.
+        # Burrow host records
+        - Name: burrow.backchannel.younix.us.
           Type: A
           TTL: 60
           ResourceRecords: ["100.111.97.32"]
