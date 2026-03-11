@@ -56,7 +56,7 @@
   block:
     - debug:
         msg: This machine is already joined to the tailnet
-    when: '_machinekey' in tailscale_daemon_state
+  when: "'_machinekey' in (tailscale_daemon_state['content'] | b64decode)"
 
 - name: When the machine is not joined to the tailnet
   block:
@@ -74,5 +74,5 @@
             This machine is not joined to the tailnet.
             We couldn't join it automatically without an auth key.
     when: tailscale_auth_key is not defined
-  when: '_machinekey' not in tailscale_daemon_state
+  when: "'_machinekey' not in (tailscale_daemon_state['content'] | b64decode)"
 
