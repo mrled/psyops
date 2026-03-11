@@ -2,6 +2,12 @@
 
 # Note: generate an auth key and pass it with
 # ansible-playbook -e tailscale_auth_key=xxxx
+#
+# When a host sets tailscale_take_over_ssh: true,
+# the role will turn off SSH on 0.0.0.0 and only allow it on the Tailscale interface.
+# Hosts with this enabled probably will use the tailscale name as their inventory hostname.
+# When setting that up for the first time, you probably want to add
+# -e ansible_ssh_host=<tailscale-hostname>
 
 - name: Configure Tailscale endpoints
   hosts: tailscale

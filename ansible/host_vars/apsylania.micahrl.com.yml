@@ -1,2 +1,4 @@
 ---
 ansible_user: root
+tailscale_take_over_ssh: true
+ansible_ssh_host: apsylania.banded-goblin.ts.net

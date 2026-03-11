@@ -1,0 +1,5 @@
+---
+tailscale_take_over_ssh: false
+tailscale_ssh_listen_ipv4: true
+tailscale_ssh_listen_ipv6: true
+tailscale_ssh_port: 22

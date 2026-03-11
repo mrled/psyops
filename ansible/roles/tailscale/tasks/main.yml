@@ -76,3 +76,6 @@
     when: tailscale_auth_key is not defined
   when: "'_machinekey' not in (tailscale_daemon_state['content'] | b64decode)"
 
+- name: Configure SSH takeover
+  import_tasks: ssh_takeover.yml
+  when: tailscale_take_over_ssh

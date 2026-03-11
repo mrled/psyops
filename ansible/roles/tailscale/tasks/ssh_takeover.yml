@@ -1,0 +1,54 @@
+---
+- name: Configure SSH to listen only on Tailscale
+  block:
+    - name: Get Tailscale IPv4 address
+      command: tailscale ip -4
+      register: tailscale_ipv4
+      changed_when: false
+      when: tailscale_ssh_listen_ipv4
+
+    - name: Get Tailscale IPv6 address
+      command: tailscale ip -6
+      register: tailscale_ipv6
+      changed_when: false
+      failed_when: false
+      when: tailscale_ssh_listen_ipv6
+
+    - name: Set Tailscale IP facts
+      set_fact:
+        tailscale_ssh_ipv4_addr: "{{ tailscale_ipv4.stdout | trim }}"
+        tailscale_ssh_ipv6_addr: "{{ tailscale_ipv6.stdout | default('') | trim }}"
+
+    - name: Ensure sshd_config.d directory exists
+      file:
+        path: /etc/ssh/sshd_config.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Check if main sshd_config has Include directive
+      shell: grep -q "^Include /etc/ssh/sshd_config.d/\*" /etc/ssh/sshd_config
+      register: sshd_include_check
+      changed_when: false
+      failed_when: false
+
+    - name: Add Include directive if missing
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        line: "Include /etc/ssh/sshd_config.d/*.conf"
+        insertbefore: BOF
+        backup: yes
+      when: sshd_include_check.rc != 0
+
+    - name: Deploy Tailscale-only SSH configuration
+      template:
+        src: tailscale-sshd.conf.j2
+        dest: /etc/ssh/sshd_config.d/99-tailscale-only.conf
+        owner: root
+        group: root
+        mode: "0644"
+        validate: 'sh -c "cat %s /etc/ssh/sshd_config | sshd -t -f /dev/stdin"'
+      notify: restart sshd
+
+  when: "'_machinekey' in (tailscale_daemon_state['content'] | b64decode)"

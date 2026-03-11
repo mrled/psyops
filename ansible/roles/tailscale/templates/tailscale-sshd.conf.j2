@@ -1,0 +1,10 @@
+# Ansible managed - tailscale role
+# Configure SSH to listen only on Tailscale interface
+
+{% if tailscale_ssh_listen_ipv4 and tailscale_ssh_ipv4_addr | length > 0 %}
+ListenAddress {{ tailscale_ssh_ipv4_addr }}:{{ tailscale_ssh_port }}
+{% endif %}
+
+{% if tailscale_ssh_listen_ipv6 and tailscale_ssh_ipv6_addr | length > 0 %}
+ListenAddress [{{ tailscale_ssh_ipv6_addr }}]:{{ tailscale_ssh_port }}
+{% endif %}
