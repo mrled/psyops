@@ -28,6 +28,8 @@
       - git-lfs
       - glow
       - gmp-devel # required for haskell shake
+      - podman-docker
+      - restic
       - ripgrep
       - sqlite
       - stripe
