@@ -39,8 +39,6 @@ http_root_micahrl_com_interpersonal_uri: https://interpersonal.micahrl.com/
 http_root_micahrl_com_interpersonal_app_private_key: "{{ vault_http_root_micahrl_com_interpersonal_app_private_key }}"
 http_root_micahrl_com_interpersonal_app_id: 153329
 
-http_root_micahrl_com_nostr_hex_pub_key: 322d0b38fab7056406cdf1a2303178a15cbf619a42ce73daf947122bb304cb64
-
 http_root_micahrl_com_ci_authorized_keys:
   - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMN/4Rdkz4vlGaQRvhmhLhkaH0CfhNnoggGBBknz17+u mrled@haluth
 

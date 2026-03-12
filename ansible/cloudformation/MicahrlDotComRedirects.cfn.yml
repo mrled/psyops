@@ -97,6 +97,19 @@ Resources:
             };
           }
 
+          // Serve nostr NIP-05 verification file for micahrl.com
+          if (host === "micahrl.com" && uri === "/.well-known/nostr.json") {
+            return {
+              statusCode: 200,
+              statusDescription: "OK",
+              headers: {
+                "content-type": { value: "application/json" },
+                "cache-control": { value: "public, max-age=86400" }
+              },
+              body: '{"names":{"_":"322d0b38fab7056406cdf1a2303178a15cbf619a42ce73daf947122bb304cb64"}}'
+            };
+          }
+
           if (host === "toys.micahrl.com" && uri.indexOf("/biblemunger") === 0) {
             var newUri = uri.substring("/biblemunger".length) || "/";
             return redirect("https://biblemunger.micahrl.com" + newUri + qs);
