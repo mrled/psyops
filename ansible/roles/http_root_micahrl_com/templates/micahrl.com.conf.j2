@@ -1,9 +1,6 @@
 <VirtualHost *:80>
     ServerAdmin {{ http_root_micahrl_com_email }}
     ServerName {{ http_root_micahrl_com_root_site_primary_domain }}
-{% for domain in http_root_micahrl_com_root_site_alias_domains %}
-    ServerAlias {{ domain }}
-{% endfor %}
 
     ErrorLog ${APACHE_LOG_DIR}/http.micahrl.com_error.log
     CustomLog ${APACHE_LOG_DIR}/http.micahrl.com_access.log combined
@@ -16,9 +13,6 @@
     RewriteRule ^/.well-known/acme-challenge/ - [L]
 
     # Redirect all to HTTPS
-{% for domain in http_root_micahrl_com_root_site_alias_domains %}
-    RewriteCond %{SERVER_NAME} ={{ domain }} [OR]
-{% endfor %}
     RewriteCond %{SERVER_NAME} ={{ http_root_micahrl_com_root_site_primary_domain }}
     RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
 
@@ -28,9 +22,6 @@
     <VirtualHost *:443>
         ServerAdmin {{ http_root_micahrl_com_email }}
         ServerName {{ http_root_micahrl_com_root_site_primary_domain }}
-{% for domain in http_root_micahrl_com_root_site_alias_domains %}
-        ServerAlias {{ domain }}
-{% endfor %}
 
         ErrorLog ${APACHE_LOG_DIR}/https.micahrl.com_error.log
         CustomLog ${APACHE_LOG_DIR}/https.micahrl.com_access.log combined

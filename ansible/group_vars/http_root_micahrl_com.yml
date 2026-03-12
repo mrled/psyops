@@ -6,13 +6,6 @@ http_root_micahrl_com_email: psyops@micahrl.com
 
 # Domains that all share the same Apache site configuration with the $ORIGIN site
 http_root_micahrl_com_root_site_primary_domain: apsylania.micahrl.com
-http_root_micahrl_com_root_site_alias_domains:
-  - toys.micahrl.com
-  - www.micahrl.com
-  - micahrl.com
-  - younix.us
-  - www.younix.us
-  - toys.younix.us
 
 # Other domains, configured separately
 http_root_micahrl_com_interpersonal_domain: interpersonal.micahrl.com
@@ -20,7 +13,7 @@ http_root_micahrl_com_interpersonal_domain: interpersonal.micahrl.com
 # Domains that we need certbot to get certificates for
 # You can use this to move cerbot domains over slowly when bringing up a new webserver by only putting some domains here at a time
 #http_root_micahrl_com_certbot_domain_list: "{{ [http_root_micahrl_com_root_site_primary_domain] }}"
-http_root_micahrl_com_certbot_domain_list: "{{ [http_root_micahrl_com_root_site_primary_domain] + http_root_micahrl_com_root_site_alias_domains + [http_root_micahrl_com_interpersonal_domain] }}"
+http_root_micahrl_com_certbot_domain_list: "{{ [http_root_micahrl_com_root_site_primary_domain] + [http_root_micahrl_com_interpersonal_domain] }}"
 
 #### Other config
 
