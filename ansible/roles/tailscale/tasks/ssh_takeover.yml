@@ -27,6 +27,34 @@
         group: root
         mode: "0755"
 
+    - name: Ensure systemd override directory exists for sshd
+      file:
+        path: /etc/systemd/system/sshd.service.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Add systemd dependency on tailscaled
+      copy:
+        content: |
+          # Ansible managed - tailscale role
+          # Ensure sshd starts after tailscaled when SSH is bound to Tailscale IP
+          [Unit]
+          After=tailscaled.service
+          Wants=tailscaled.service
+        dest: /etc/systemd/system/sshd.service.d/tailscale.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: restart sshd
+      register: sshd_systemd_override
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+      when: sshd_systemd_override.changed
+
     - name: Check if main sshd_config has Include directive
       shell: grep -q "^Include /etc/ssh/sshd_config.d/\*" /etc/ssh/sshd_config
       register: sshd_include_check
