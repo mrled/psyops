@@ -25,6 +25,9 @@ Resources:
       HostedZoneId: !Ref OriginZone
       RecordSets:
 
+        # NOTE: Origin record for bare micahrl.com domain is in MicahrlDotComRedirects.cfn.yml
+        # because it has to point to a CloudFront distribution that is created there.
+
         # Primary app server for the web site
         - Name: apsylania.micahrl.com
           Type: A
