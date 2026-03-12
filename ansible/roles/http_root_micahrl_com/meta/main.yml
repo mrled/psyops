@@ -1,0 +1,3 @@
+---
+dependencies:
+  - certbot_apache_manager

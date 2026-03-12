@@ -1,0 +1,81 @@
+---
+# Install certbot with Apache plugin
+- name: Install certbot and Apache plugin
+  apt:
+    name:
+      - certbot
+      - python3-certbot-apache
+    state: present
+    update_cache: yes
+
+# Set up Let's Encrypt directory structure
+- name: Ensure Let's Encrypt directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  loop:
+    - /etc/letsencrypt
+    - /etc/letsencrypt/renewal-hooks
+    - /etc/letsencrypt/renewal-hooks/deploy
+    - /etc/letsencrypt/renewal-hooks/pre
+    - /etc/letsencrypt/renewal-hooks/post
+    - /var/log/letsencrypt
+
+# Create empty SSL config file for Apache
+# This is needed for Apache to validate config before certbot runs
+- name: Check for Let's Encrypt Apache SSL config file
+  stat:
+    path: /etc/letsencrypt/options-ssl-apache.conf
+  register: letsencrypt_apache_config
+
+- name: Create empty Let's Encrypt Apache SSL config if it doesn't exist
+  copy:
+    content: ""
+    dest: /etc/letsencrypt/options-ssl-apache.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: letsencrypt_apache_config.stat.exists == False
+
+# Set up webroot for HTTP-01 ACME challenges
+- name: Create webroot for ACME challenges
+  file:
+    path: /var/www/letsencrypt/.well-known/acme-challenge
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+# Install Apache config for Let's Encrypt
+- name: Install global Let's Encrypt Apache config
+  copy:
+    src: 100-letsencrypt.conf
+    dest: /etc/apache2/sites-available/100-letsencrypt.conf
+    owner: root
+    group: root
+    mode: "0644"
+  register: certbot_apache_install_letsencrypt
+
+- name: Enable Let's Encrypt Apache config
+  file:
+    state: link
+    src: ../sites-available/100-letsencrypt.conf
+    dest: /etc/apache2/sites-enabled/100-letsencrypt.conf
+  register: certbot_apache_enable_letsencrypt
+
+# Reload Apache if config changed
+- name: Reload Apache for Let's Encrypt config
+  systemd:
+    name: apache2
+    state: reloaded
+  when: certbot_apache_install_letsencrypt.changed or certbot_apache_enable_letsencrypt.changed
+
+# Debian's certbot package includes a systemd timer for automatic renewal
+- name: Enable certbot renewal timer
+  systemd:
+    name: certbot.timer
+    enabled: yes
+    state: started

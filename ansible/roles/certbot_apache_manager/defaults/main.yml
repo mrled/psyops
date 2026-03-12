@@ -1,0 +1,8 @@
+---
+# Common paths (standardized across all roles)
+certbot_config_dir: /etc/letsencrypt
+certbot_live_dir: /etc/letsencrypt/live
+certbot_renewal_hooks_dir: /etc/letsencrypt/renewal-hooks/deploy
+
+# Webroot for HTTP-01 ACME challenges
+certbot_apache_webroot: /var/www/letsencrypt

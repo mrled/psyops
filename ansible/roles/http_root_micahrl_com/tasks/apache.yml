@@ -5,25 +5,8 @@
     name:
       - apache2
       - libapache2-mod-wsgi-py3
-      - python3-certbot-apache
     state: latest
     update_cache: yes
-
-- name: Check for lets encrypt config file
-  stat:
-    path: /etc/letsencrypt/options-ssl-apache.conf
-  register: letsencrypt_config
-
-# If we don't do this, apache2 will not validate the config file (apachectl configtest),
-# which is required for enabling modules.
-- name: Create empty letsencrypt config file if it doesn't exist
-  copy:
-    content: ""
-    dest: /etc/letsencrypt/options-ssl-apache.conf
-    owner: root
-    group: root
-    mode: "0644"
-  when: letsencrypt_config.stat.exists == False
 
 - name: Enable Apache modules
   apache2_module:
@@ -37,24 +20,6 @@
     - rewrite
     - ssl
     - wsgi
-
-- name: Install global Let's Encrypt config
-  copy:
-    src: 100-letsencrypt.conf
-    dest: /etc/apache2/sites-available/100-letsencrypt.conf
-    owner: root
-    group: root
-    mode: "0644"
-  register: http_root_micahrl_com_install_letsencrypt
-  tags: apache_conf
-
-- name: Enable Let's Encrypt config
-  file:
-    state: link
-    src: ../sites-available/100-letsencrypt.conf
-    dest: /etc/apache2/sites-enabled/100-letsencrypt.conf
-  register: http_root_micahrl_com_enable_letsencrypt
-  tags: apache_conf
 
 - name: Install micahrl.com site config
   template:
@@ -84,7 +49,7 @@
   systemd:
     name: apache2
     state: restarted
-  when: http_root_micahrl_com_install_site.changed or http_root_micahrl_com_enable_site.changed or http_root_micahrl_com_install_letsencrypt.changed or http_root_micahrl_com_enable_letsencrypt.changed
+  when: http_root_micahrl_com_install_site.changed or http_root_micahrl_com_enable_site.changed
   tags: apache_conf
 
 - name: Start apache
@@ -93,25 +58,9 @@
     state: started
     enabled: yes
 
-- name: Create /etc/letsencrypt
-  file:
-    path: /etc/letsencrypt
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-
 - name: Create .well-known dir
   file:
     path: /var/www/html/.well-known
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
-
-- name: Create acme-challenge dir
-  file:
-    path: /var/www/letsencrypt/.well-known/acme-challenge
     state: directory
     owner: root
     group: root
@@ -152,12 +101,11 @@
   tags: certbot
 
 # Running certbot here does a few things for us:
-# 1) If the cert doen't exist or is expired, it'll get us a valid cert
+# 1) If the cert doesn't exist or is expired, it'll get us a valid cert
 # 2) It'll add RewriteCond entries to the port 80 vhost to redirect to HTTPS
 #    (which means we always have to run certbot after installing the config file)
-# 3) It'll set up the cert to be renewed automatically in cron
+# 3) Registers the certificate with certbot for automatic renewal
+#    (the certbot_apache_manager role enables the systemd timer for automatic renewal)
 - name: Run certbot once
   shell: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
   tags: certbot
-
-# Note that the Debian certbot package configures a systemd timer so we don't have to cron it
