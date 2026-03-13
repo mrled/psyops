@@ -1,0 +1,4 @@
+---
+
+dependencies:
+  - role: certbot_apache_manager

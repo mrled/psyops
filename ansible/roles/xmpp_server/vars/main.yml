@@ -1,0 +1,9 @@
+---
+
+xmpp_server_config_path: /etc/prosody/prosody.cfg.lua
+xmpp_server_data_path: /var/lib/prosody
+xmpp_server_certs_path: /etc/prosody/certs
+xmpp_server_letsencrypt_base: /etc/letsencrypt
+xmpp_server_ssl_cert_dest: /etc/prosody/certs/{{ xmpp_server_hostname }}.crt
+xmpp_server_ssl_key_dest: /etc/prosody/certs/{{ xmpp_server_hostname }}.key
+xmpp_server_ssl_dhparam: /etc/prosody/certs/dh-2048.pem

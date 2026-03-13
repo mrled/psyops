@@ -1,0 +1,33 @@
+---
+
+xmpp_server_hostname: xmpp.example.com
+xmpp_server_admin_user: admin
+xmpp_server_admin_email: admin@example.com
+
+# Prosody user/group
+xmpp_server_prosody_user: prosody
+xmpp_server_prosody_group: prosody
+
+# Network ports
+xmpp_server_c2s_port: 5222    # Client-to-server
+xmpp_server_s2s_port: 5269    # Server-to-server (federation)
+xmpp_server_http_port: 5280   # HTTP (for BOSH)
+xmpp_server_https_port: 5281  # HTTPS (for BOSH/WebSocket)
+
+# SSL/TLS certificate configuration
+# Certificates managed via certbot with HTTP-01 (webroot)
+xmpp_server_certname: xmpp
+xmpp_server_letsencrypt_email: "{{ xmpp_server_admin_email }}"
+
+# Certbot domains (hostname + subdomains for MUC and file sharing)
+xmpp_server_certbot_domains:
+  - "{{ xmpp_server_hostname }}"
+  - "conference.{{ xmpp_server_hostname }}"
+  - "upload.{{ xmpp_server_hostname }}"
+
+# Enable registration (set to false in production)
+xmpp_server_allow_registration: false
+
+# Enable file uploads via HTTP
+xmpp_server_http_upload_quota: 104857600  # 100MB in bytes
+xmpp_server_http_upload_expire_days: 30

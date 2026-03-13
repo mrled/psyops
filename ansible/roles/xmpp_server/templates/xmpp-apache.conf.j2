@@ -1,0 +1,17 @@
+# Apache vhost for XMPP server domains
+# Used only for Let's Encrypt HTTP-01 challenges
+# Prosody handles the actual XMPP traffic
+
+<VirtualHost *:80>
+    ServerName {{ xmpp_server_hostname }}
+    ServerAlias conference.{{ xmpp_server_hostname }}
+    ServerAlias upload.{{ xmpp_server_hostname }}
+
+    DocumentRoot /var/www/letsencrypt
+
+    ErrorLog ${APACHE_LOG_DIR}/xmpp_letsencrypt_error.log
+    CustomLog ${APACHE_LOG_DIR}/xmpp_letsencrypt_access.log combined
+
+    # Allow ACME challenges (handled globally by 100-letsencrypt.conf)
+    # This vhost just needs to exist so Apache will respond to these domains
+</VirtualHost>

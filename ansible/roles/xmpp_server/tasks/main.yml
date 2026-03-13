@@ -1,0 +1,148 @@
+---
+
+- name: Install Prosody XMPP server
+  package:
+    name:
+      - liblua5.4-dev
+      - lua-unbound
+      - luarocks
+      - prosody
+    state: present
+
+- name: Install community modules via prosodyctl
+  command: prosodyctl install --server=https://modules.prosody.im/rocks/ {{ item }}
+  args:
+    creates: /var/lib/prosody/custom_plugins/{{ item }}/{{ item }}.lua
+  loop:
+    - mod_cloud_notify
+    - mod_vcard_muc
+  notify: restart prosody
+
+- name: Ensure SSL certificate directory exists
+  file:
+    path: "{{ xmpp_server_certs_path }}"
+    state: directory
+    owner: "{{ xmpp_server_prosody_user }}"
+    group: "{{ xmpp_server_prosody_group }}"
+    mode: "0750"
+
+- name: Install Apache vhost for XMPP domains (for Let's Encrypt challenges)
+  template:
+    src: xmpp-apache.conf.j2
+    dest: /etc/apache2/sites-available/xmpp.conf
+    owner: root
+    group: root
+    mode: "0644"
+  register: xmpp_server_install_apache_vhost
+
+- name: Enable XMPP Apache vhost
+  file:
+    state: link
+    src: ../sites-available/xmpp.conf
+    dest: /etc/apache2/sites-enabled/xmpp.conf
+  register: xmpp_server_enable_apache_vhost
+
+- name: Reload Apache for XMPP vhost
+  systemd:
+    name: apache2
+    state: reloaded
+  when: xmpp_server_install_apache_vhost.changed or xmpp_server_enable_apache_vhost.changed
+
+- name: Create certbot wrapper script for XMPP
+  copy:
+    content: >+
+      certbot certonly
+      --noninteractive
+      --agree-tos
+      --webroot
+      --webroot-path /var/www/letsencrypt
+      --keep-until-expiring
+      --cert-name {{ xmpp_server_certname }}
+      --email {{ xmpp_server_letsencrypt_email }}
+      --domains {{ xmpp_server_certbot_domains | join(',') }}
+      $*
+    dest: /usr/local/bin/certbot_{{ xmpp_server_certname }}.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Run certbot once to get initial certificate
+  shell: /usr/local/bin/certbot_{{ xmpp_server_certname }}.sh
+
+- name: Create Let's Encrypt renewal hook directory
+  file:
+    path: "{{ xmpp_server_letsencrypt_base }}/renewal-hooks/deploy"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install Let's Encrypt renewal hook for Prosody
+  copy:
+    content: |
+      #!/bin/sh
+      set -eu
+      user="{{ xmpp_server_prosody_user }}"
+      group="{{ xmpp_server_prosody_group }}"
+      srcdir="{{ xmpp_server_letsencrypt_base }}/live/{{ xmpp_server_certname }}"
+      install -o "$user" -g "$group" -m 0640 "$srcdir/fullchain.pem" "{{ xmpp_server_ssl_cert_dest }}"
+      install -o "$user" -g "$group" -m 0640 "$srcdir/privkey.pem" "{{ xmpp_server_ssl_key_dest }}"
+      systemctl reload prosody
+    dest: "{{ xmpp_server_letsencrypt_base }}/renewal-hooks/deploy/prosody.sh"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Run certificate installation hook once to copy initial certs
+  command: "{{ xmpp_server_letsencrypt_base }}/renewal-hooks/deploy/prosody.sh"
+  args:
+    creates: "{{ xmpp_server_ssl_cert_dest }}"
+
+- name: Generate DH parameters if not present
+  command: openssl dhparam -out {{ xmpp_server_ssl_dhparam }} 2048
+  args:
+    creates: "{{ xmpp_server_ssl_dhparam }}"
+
+- name: Set DH parameters ownership
+  file:
+    path: "{{ xmpp_server_ssl_dhparam }}"
+    owner: "{{ xmpp_server_prosody_user }}"
+    group: "{{ xmpp_server_prosody_group }}"
+    mode: "0640"
+
+- name: Deploy Prosody configuration
+  template:
+    src: prosody.cfg.lua.j2
+    dest: "{{ xmpp_server_config_path }}"
+    owner: root
+    group: "{{ xmpp_server_prosody_group }}"
+    mode: "0640"
+    validate: luac -p %s
+  notify: restart prosody
+
+- name: Ensure Prosody data directory has correct permissions
+  file:
+    path: "{{ xmpp_server_data_path }}"
+    state: directory
+    owner: "{{ xmpp_server_prosody_user }}"
+    group: "{{ xmpp_server_prosody_group }}"
+    mode: "0750"
+    recurse: yes
+
+# - name: Configure firewall for XMPP ports
+#   firewalld:
+#     port: "{{ item }}"
+#     permanent: yes
+#     state: enabled
+#     immediate: yes
+#   loop:
+#     - "{{ xmpp_server_c2s_port }}/tcp"      # Client connections
+#     - "{{ xmpp_server_s2s_port }}/tcp"      # Server-to-server (federation)
+#     - "{{ xmpp_server_http_port }}/tcp"     # HTTP (BOSH)
+#     - "{{ xmpp_server_https_port }}/tcp"    # HTTPS (BOSH/WebSocket)
+
+- name: Enable and start Prosody service
+  systemd:
+    name: prosody
+    enabled: yes
+    state: started

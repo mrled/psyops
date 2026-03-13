@@ -1,0 +1,6 @@
+---
+- name: Deploy XMPP server
+  hosts: xmpp_server
+  roles:
+    - role: xmpp_server
+      tags: ["xmpp_server"]

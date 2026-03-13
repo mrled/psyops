@@ -224,6 +224,34 @@ Resources:
           TTL: 60
           ResourceRecords: ["chineseroom.micahrl.com."]
 
+        # XMPP server on apsylania
+        # SRV targets cannot be CNAMEs, so we have to point them to A/AAAA records on the same hostname
+        - Name: xmpp.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["5.161.64.176"]
+        - Name: xmpp.micahrl.com.
+          Type: AAAA
+          TTL: 60
+          ResourceRecords: ["2a01:4ff:f0:a310::0"]
+        - Name: conference.xmpp.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["xmpp.micahrl.com."]
+        - Name: upload.xmpp.micahrl.com.
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["xmpp.micahrl.com."]
+        # XMPP SRV records for service discovery (allows user@micahrl.com addresses)
+        - Name: _xmpp-client._tcp.micahrl.com.
+          Type: SRV
+          TTL: 60
+          ResourceRecords: ["5 0 5222 xmpp.micahrl.com."]
+        - Name: _xmpp-server._tcp.micahrl.com.
+          Type: SRV
+          TTL: 60
+          ResourceRecords: ["5 0 5269 xmpp.micahrl.com."]
+
         # Hedgerules
         - Name: hedgerules.micahrl.com.
           Type: CNAME

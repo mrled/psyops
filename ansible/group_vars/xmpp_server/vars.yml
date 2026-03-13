@@ -1,0 +1,14 @@
+---
+# XMPP Server Configuration for Apsylania
+
+xmpp_server_hostname: xmpp.micahrl.com
+xmpp_server_letsencrypt_email: psyops@micahrl.com
+xmpp_server_admin_email: me@micahrl.com
+xmpp_server_admin_user: me
+
+# File upload settings
+xmpp_server_http_upload_quota: 104857600  # 100MB
+xmpp_server_http_upload_expire_days: 30
+
+# Disable public registration
+xmpp_server_allow_registration: false
