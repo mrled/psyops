@@ -66,6 +66,7 @@ modules_enabled = {
 
     -- Privacy and sync
     "blocklist";
+    "bookmarks";     -- XEP-0402 synchronized bookmarks across devices
     "carbons";       -- Multi-device sync (real-time)
     "smacks";        -- Stream management and resumption
     "csi_simple";    -- Client state indication
@@ -104,7 +105,11 @@ https_ports = { {{ xmpp_server_https_port }} }
 https_interfaces = { "::", "0.0.0.0" }
 
 -- Message archive settings
+default_archive_policy = "always"  -- Archive all messages automatically
 -- archive_expires_after = "4w"  -- Keep forever by default
+
+-- Stream Management (XEP-0198) - Better mobile experience
+smacks_hibernation_time = 600  -- Keep stream alive for 10 minutes after disconnect
 
 -- Rate limiting
 -- These don't affect HTTP file uploads, but would affect inline images and actual messages
