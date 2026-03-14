@@ -2,6 +2,8 @@
 
 ansible_ssh_private_key_file: ~/.ssh/conspirator@PSYOPS_ed25519
 
+ansible_python_interpreter: /usr/bin/python3
+
 # Global variables
 # We prefix all of these with global_ so its clear where they come from
 
