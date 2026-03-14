@@ -6,7 +6,7 @@
 plugin_paths = { "/var/lib/prosody/custom_plugins" }
 
 -- Server-wide settings
-admins = { "{{ xmpp_server_admin_user }}@{{ xmpp_server_hostname }}" }
+admins = { "{{ xmpp_server_admin_user }}@{{ xmpp_server_domain }}" }
 
 -- Enable better logging
 log = {
@@ -118,8 +118,14 @@ limits = {
 }
 
 -- Virtual host
-VirtualHost "{{ xmpp_server_hostname }}"
+-- This is the domain that appears in user JIDs (user@domain.com)
+-- SRV records point this to the actual server hostname
+VirtualHost "{{ xmpp_server_domain }}"
     enabled = true
+    -- Tell HTTP modules and clients to use the server hostname for certificate validation
+    http_host = "{{ xmpp_server_hostname }}"
+    -- Certificate matches the server hostname (xmpp.micahrl.com), not the domain (micahrl.com)
+    -- XMPP clients use SRV records to discover the server and validate against the SRV target
     ssl = {
         key = "{{ xmpp_server_ssl_key_dest }}";
         certificate = "{{ xmpp_server_ssl_cert_dest }}";

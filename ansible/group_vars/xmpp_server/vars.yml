@@ -1,10 +1,17 @@
 ---
 # XMPP Server Configuration for Apsylania
 
+# The XMPP domain for user JIDs (e.g., me@micahrl.com)
+xmpp_server_domain: micahrl.com
+# The actual server hostname (e.g., xmpp.micahrl.com)
 xmpp_server_hostname: xmpp.micahrl.com
 xmpp_server_letsencrypt_email: psyops@micahrl.com
 xmpp_server_admin_email: me@micahrl.com
 xmpp_server_admin_user: me
+
+xmpp_server_aws_access_key: "{{ vault_xmpp_server_aws_access_key_id }}"
+xmpp_server_aws_secret_key: "{{ vault_xmpp_server_aws_secret_access_key }}"
+xmpp_server_aws_region: "{{ global_origin_zone_aws_region }}"
 
 # File upload settings
 xmpp_server_http_upload_quota: 104857600  # 100MB

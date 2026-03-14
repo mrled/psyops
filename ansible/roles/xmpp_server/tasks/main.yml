@@ -7,12 +7,13 @@
       - lua-unbound
       - luarocks
       - prosody
+      - python3-certbot-dns-route53
     state: present
 
 - name: Install community modules via prosodyctl
   command: prosodyctl install --server=https://modules.prosody.im/rocks/ {{ item }}
   args:
-    creates: /var/lib/prosody/custom_plugins/{{ item }}/{{ item }}.lua
+    creates: /var/lib/prosody/custom_plugins/share/lua/5.4/{{ item }}.lua
   loop:
     - mod_cloud_notify
     - mod_vcard_muc
@@ -26,48 +27,61 @@
     group: "{{ xmpp_server_prosody_group }}"
     mode: "0750"
 
-- name: Install Apache vhost for XMPP domains (for Let's Encrypt challenges)
-  template:
-    src: xmpp-apache.conf.j2
-    dest: /etc/apache2/sites-available/xmpp.conf
+- name: Create AWS credentials directory for certbot
+  file:
+    path: /root/.aws
+    state: directory
     owner: root
     group: root
-    mode: "0644"
-  register: xmpp_server_install_apache_vhost
+    mode: "0700"
 
-- name: Enable XMPP Apache vhost
-  file:
-    state: link
-    src: ../sites-available/xmpp.conf
-    dest: /etc/apache2/sites-enabled/xmpp.conf
-  register: xmpp_server_enable_apache_vhost
+- name: Configure AWS credentials for certbot Route53 access
+  copy:
+    content: |
+      [default]
+      aws_access_key_id = {{ xmpp_server_aws_access_key }}
+      aws_secret_access_key = {{ xmpp_server_aws_secret_key }}
+    dest: /root/.aws/credentials
+    owner: root
+    group: root
+    mode: "0600"
 
-- name: Reload Apache for XMPP vhost
-  systemd:
-    name: apache2
-    state: reloaded
-  when: xmpp_server_install_apache_vhost.changed or xmpp_server_enable_apache_vhost.changed
+- name: Configure AWS region for certbot
+  copy:
+    content: |
+      [default]
+      region = {{ xmpp_server_aws_region }}
+    dest: /root/.aws/config
+    owner: root
+    group: root
+    mode: "0600"
 
 - name: Create certbot wrapper script for XMPP
   copy:
-    content: >+
-      certbot certonly
-      --noninteractive
-      --agree-tos
-      --webroot
-      --webroot-path /var/www/letsencrypt
-      --keep-until-expiring
-      --cert-name {{ xmpp_server_certname }}
-      --email {{ xmpp_server_letsencrypt_email }}
-      --domains {{ xmpp_server_certbot_domains | join(',') }}
-      $*
+    content: |
+      #!/bin/bash
+      set -e
+      certbot certonly \
+        --noninteractive \
+        --agree-tos \
+        --{{ xmpp_server_certbot_dns_plugin }} \
+        --{{ xmpp_server_certbot_dns_plugin }}-propagation-seconds {{ xmpp_server_certbot_propagation_seconds }} \
+        --keep-until-expiring \
+        --cert-name {{ xmpp_server_certname }} \
+        --email {{ xmpp_server_letsencrypt_email }} \
+        --domains {{ xmpp_server_certbot_domains | join(',') }} \
+        "$@"
+
+      # Always run deploy hook to ensure certs are copied to Prosody
+      # (even if cert wasn't renewed due to --keep-until-expiring)
+      if [ -f "{{ xmpp_server_letsencrypt_base }}/renewal-hooks/deploy/prosody.sh" ]; then
+        echo "Running deploy hook..."
+        "{{ xmpp_server_letsencrypt_base }}/renewal-hooks/deploy/prosody.sh"
+      fi
     dest: /usr/local/bin/certbot_{{ xmpp_server_certname }}.sh
     owner: root
     group: root
     mode: "0755"
-
-- name: Run certbot once to get initial certificate
-  shell: /usr/local/bin/certbot_{{ xmpp_server_certname }}.sh
 
 - name: Create Let's Encrypt renewal hook directory
   file:
@@ -93,10 +107,8 @@
     group: root
     mode: "0755"
 
-- name: Run certificate installation hook once to copy initial certs
-  command: "{{ xmpp_server_letsencrypt_base }}/renewal-hooks/deploy/prosody.sh"
-  args:
-    creates: "{{ xmpp_server_ssl_cert_dest }}"
+- name: Run certbot once to get initial certificate (also runs the deploy hook to copy certs to Prosody directory)
+  shell: /usr/local/bin/certbot_{{ xmpp_server_certname }}.sh
 
 - name: Generate DH parameters if not present
   command: openssl dhparam -out {{ xmpp_server_ssl_dhparam }} 2048

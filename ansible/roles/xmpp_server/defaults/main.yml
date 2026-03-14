@@ -1,5 +1,8 @@
 ---
 
+# The XMPP domain that appears in user JIDs (e.g., user@example.com)
+xmpp_server_domain: example.com
+# The actual server hostname (can be different from domain, e.g., xmpp.example.com)
 xmpp_server_hostname: xmpp.example.com
 xmpp_server_admin_user: admin
 xmpp_server_admin_email: admin@example.com
@@ -19,11 +22,23 @@ xmpp_server_https_port: 5281  # HTTPS (for BOSH/WebSocket)
 xmpp_server_certname: xmpp
 xmpp_server_letsencrypt_email: "{{ xmpp_server_admin_email }}"
 
-# Certbot domains (hostname + subdomains for MUC and file sharing)
+# Certbot domains (domain + hostname + subdomains for MUC and file sharing)
+# For XMPP with SRV records, certificate must include both the domain AND the SRV target
+# per RFC 6120 section 13.7.2
 xmpp_server_certbot_domains:
+  - "{{ xmpp_server_domain }}"
   - "{{ xmpp_server_hostname }}"
   - "conference.{{ xmpp_server_hostname }}"
   - "upload.{{ xmpp_server_hostname }}"
+
+# DNS-01 challenge method (required because domain may not point to this server)
+xmpp_server_certbot_dns_plugin: dns-route53
+xmpp_server_certbot_propagation_seconds: 30
+
+# AWS credentials for Route53 DNS updates (should be set in group_vars)
+# xmpp_server_aws_access_key: ""
+# xmpp_server_aws_secret_key: ""
+# xmpp_server_aws_region: "us-east-2"
 
 # Enable registration (set to false in production)
 xmpp_server_allow_registration: false
