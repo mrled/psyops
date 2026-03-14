@@ -474,6 +474,77 @@ Resources:
                       ],
                   }
 
+  # IAM group for XMPP ACME DNS-01 challenges
+  # Restricted to only update _acme-challenge TXT records for XMPP domains
+  # This provides least-privilege access for certbot-dns-route53 on the XMPP server
+  #
+  # To create a user and credentials using AWS CLI:
+  # 1. Create the user:
+  #    aws iam create-user --user-name xmpp-acme-updater
+  # 2. Add user to the group (replace STACK_NAME with your CloudFormation stack name):
+  #    GROUP_NAME=$(aws cloudformation describe-stacks --stack-name STACK_NAME --query 'Stacks[0].Outputs[?OutputKey==`XmppAcmeDnsChallengeUpdaterGroupArn`].OutputValue' --output text | sed 's|.*/||')
+  #    aws iam add-user-to-group --user-name xmpp-acme-updater --group-name "$GROUP_NAME"
+  # 3. Create access key:
+  #    aws iam create-access-key --user-name xmpp-acme-updater
+  # 4. Save the AccessKeyId and SecretAccessKey from the output
+  # 5. Add to ansible vault as vault_xmpp_acme_updater_access_key and vault_xmpp_acme_updater_secret_key
+  XmppAcmeDnsChallengeUpdaterGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+        - PolicyName: AllowXmppAcmeChallengeDnsUpdatesPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              # Global read-only permissions needed by certbot-dns-route53
+              - Effect: Allow
+                Action:
+                  - route53:GetChange
+                  - route53:ListHostedZones
+                  - route53:ListHostedZonesByName
+                Resource: "*"
+              # Zone-specific permissions for the origin zone
+              - Effect: Allow
+                Action:
+                  - route53:GetHostedZone
+                  - route53:ListResourceRecordSets
+                Resource:
+                  {
+                    "Fn::Join":
+                      [
+                        "",
+                        [
+                          "arn:aws:route53:::hostedzone/",
+                          { "Ref": "OriginZone" },
+                        ],
+                      ],
+                  }
+              # Restricted write permission - only for _acme-challenge TXT records
+              - Effect: Allow
+                Action:
+                  - route53:ChangeResourceRecordSets
+                Resource:
+                  {
+                    "Fn::Join":
+                      [
+                        "",
+                        [
+                          "arn:aws:route53:::hostedzone/",
+                          { "Ref": "OriginZone" },
+                        ],
+                      ],
+                  }
+                Condition:
+                  ForAllValues:StringEquals:
+                    route53:ChangeResourceRecordSetsRecordTypes:
+                      - TXT
+                  ForAllValues:StringLike:
+                    route53:ChangeResourceRecordSetsNormalizedRecordNames:
+                      - _acme-challenge.micahrl.com
+                      - _acme-challenge.xmpp.micahrl.com
+                      - _acme-challenge.conference.xmpp.micahrl.com
+                      - _acme-challenge.upload.xmpp.micahrl.com
+
 Outputs:
   OriginZoneId:
     Description: The ID of the micahrl.com. root zone
@@ -489,3 +560,6 @@ Outputs:
   HomeZoneUpdaterGroupArn:
     Description: The ARN for a group with permission to modify records in the home zone
     Value: !GetAtt HomeZoneUpdaterGroup.Arn
+  XmppAcmeDnsChallengeUpdaterGroupArn:
+    Description: The ARN for a group with permission to update ACME challenge TXT records for XMPP domains
+    Value: !GetAtt XmppAcmeDnsChallengeUpdaterGroup.Arn
