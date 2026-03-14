@@ -429,17 +429,7 @@ Resources:
                   - route53:ChangeResourceRecordSets
                   - route53:GetHostedZone
                   - route53:ListResourceRecordSets
-                Resource:
-                  {
-                    "Fn::Join":
-                      [
-                        "",
-                        [
-                          "arn:aws:route53:::hostedzone/",
-                          { "Ref": "OriginZone" },
-                        ],
-                      ],
-                  }
+                Resource: !Sub "arn:aws:route53:::hostedzone/${OriginZone}"
 
   # A new group with permission to modify records in the HomeZone
   # For use with Let's Encrypt / ACME
@@ -462,17 +452,7 @@ Resources:
                   - route53:ChangeResourceRecordSets
                   - route53:GetHostedZone
                   - route53:ListResourceRecordSets
-                Resource:
-                  {
-                    "Fn::Join":
-                      [
-                        "",
-                        [
-                          "arn:aws:route53:::hostedzone/",
-                          { "Ref": "HomeZone" },
-                        ],
-                      ],
-                  }
+                Resource: !Sub "arn:aws:route53:::hostedzone/${HomeZone}"
 
   # IAM group for XMPP ACME DNS-01 challenges
   # Restricted to only update _acme-challenge TXT records for XMPP domains
@@ -508,32 +488,12 @@ Resources:
                 Action:
                   - route53:GetHostedZone
                   - route53:ListResourceRecordSets
-                Resource:
-                  {
-                    "Fn::Join":
-                      [
-                        "",
-                        [
-                          "arn:aws:route53:::hostedzone/",
-                          { "Ref": "OriginZone" },
-                        ],
-                      ],
-                  }
+                Resource: !Sub "arn:aws:route53:::hostedzone/${OriginZone}"
               # Restricted write permission - only for _acme-challenge TXT records
               - Effect: Allow
                 Action:
                   - route53:ChangeResourceRecordSets
-                Resource:
-                  {
-                    "Fn::Join":
-                      [
-                        "",
-                        [
-                          "arn:aws:route53:::hostedzone/",
-                          { "Ref": "OriginZone" },
-                        ],
-                      ],
-                  }
+                Resource: !Sub "arn:aws:route53:::hostedzone/${OriginZone}"
                 Condition:
                   ForAllValues:StringEquals:
                     route53:ChangeResourceRecordSetsRecordTypes:
