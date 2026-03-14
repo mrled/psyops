@@ -135,6 +135,11 @@ VirtualHost "{{ xmpp_server_domain }}"
         key = "{{ xmpp_server_ssl_key_dest }}";
         certificate = "{{ xmpp_server_ssl_cert_dest }}";
     }
+    -- Advertise components via service discovery
+    disco_items = {
+        { "conference.{{ xmpp_server_hostname }}", "Multi-User Chat" };
+        { "upload.{{ xmpp_server_hostname }}", "HTTP File Upload" };
+    }
 
 -- Multi-user chat (MUC)
 Component "conference.{{ xmpp_server_hostname }}" "muc"
