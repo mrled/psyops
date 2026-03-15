@@ -1,11 +1,7 @@
 # Static inventory
 
 [acmednsremotes]
-chenoska.home.micahrl.com
 cloudkey.home.micahrl.com
-
-#[afaarit]
-#kalix.home.micahrl.com
 
 [backchannel]
 naragua.home.micahrl.com
@@ -28,9 +24,6 @@ wenaglia.banded-goblin.ts.net
 [http_root_micahrl_com]
 apsylania.micahrl.com
 
-#[privnet]
-#kalix.home.micahrl.com
-
 [pprox]
 wenaglia.banded-goblin.ts.net
 
@@ -40,9 +33,6 @@ psynet-lighthouse2
 
 [seedboxes]
 tagasaw.home.micahrl.com
-
-[synologynas]
-chenoska.home.micahrl.com
 
 [tailscale]
 apsylania.micahrl.com

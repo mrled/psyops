@@ -1,8 +1,0 @@
----
-
-# See the docs for the psynet_lighthouse role for how these work
-
-- name: Deploy psynet lighthouses
-  hosts: psynet_lighthouses
-  roles:
-    - { name: psynet_lighthouse, tags: ["psynet_lighthouses"] }

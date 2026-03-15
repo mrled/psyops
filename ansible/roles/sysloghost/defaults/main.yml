@@ -1,8 +1,0 @@
----
-sysloghost_netsys_port: "514"
-sysloghost_netcons_port: "5514"
-sysloghost_nettemp_port: "5515"
-sysloghost_all_ports:
-  - "{{ sysloghost_netsys_port }}"
-  - "{{ sysloghost_netcons_port }}"
-  - "{{ sysloghost_nettemp_port }}"

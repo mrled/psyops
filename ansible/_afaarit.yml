@@ -1,5 +1,0 @@
-- name: Deploy ifrit
-  hosts: afaarit
-  roles:
-    - { name: matrix_bot_ifrit, tags: ["ifrit"] }
-

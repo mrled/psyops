@@ -1,3 +1,0 @@
-# ircbnc
-
-My IRC bouncer
