@@ -1,7 +1,5 @@
 """The Kubernetes seedbox role
 
-TODO: THIS IS NOT YET TESTED OR WORKING. This role is for Tagasaw running RHEL.
-
 * Built for a machine running Rocky Linux 8.x (based on RHEL).
   That requires adding python3.11 via dnf and age via GitHub release out of band.
 * Uses flux which looks for manifests in seedboxk8s/manifests in the root of this repo.
