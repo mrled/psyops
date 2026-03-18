@@ -1,5 +1,10 @@
 #!/bin/sh
 set -eu
+# If it's set as an env var, just use that
+if test -n "$ANSIBLE_VAULT_PASSWORD"; then
+    echo "$ANSIBLE_VAULT_PASSWORD"
+    exit 0
+fi
 # When run by ansible, this is run from the root of the ansible directory
 # But when run by git in a smudge filter, it's run from the root of the git repo
 # So we have to look for .vault-passphrase.gpg in two relative places
