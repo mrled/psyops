@@ -36,6 +36,20 @@
       - vim
     state: present
 
+- name: Install zellij
+  tags: chineseroom_zellij
+  block:
+  - name: Download zellij
+    get_url:
+      url: "https://github.com/zellij-org/zellij/releases/download/v{{ zellij_version }}/zellij-aarch64-unknown-linux-musl.tar.gz"
+      dest: "/usr/local/src/zellij-v{{ zellij_version }}-aarch64-unknown-linux-musl.tar.gz"
+
+  - name: Extract zellij
+    unarchive:
+      src: "/usr/local/src/zellij-v{{ zellij_version }}-aarch64-unknown-linux-musl.tar.gz"
+      dest: /usr/local/bin
+      remote_src: yes
+
 - name: Install jujutsu
   block:
   - name: Set jujutsu architecture

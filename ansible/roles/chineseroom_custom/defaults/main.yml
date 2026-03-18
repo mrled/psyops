@@ -31,3 +31,6 @@ chineseroom_whitelist_domains:
 
 # Jujutsu version control system version
 jujutsu_version: "0.34.0"
+
+# Zellij terminal multiplexer version
+zellij_version: "0.43.1"
