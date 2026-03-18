@@ -8,3 +8,8 @@
   systemd:
     name: squid
     state: restarted
+
+- name: Restart sshd
+  systemd:
+    name: sshd
+    state: restarted

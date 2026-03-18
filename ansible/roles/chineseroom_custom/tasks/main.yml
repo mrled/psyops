@@ -28,3 +28,8 @@
   import_tasks: apps-system.yml
   tags:
   - chineseroom_apps_system
+
+- name: Configure SSH
+  import_tasks: ssh.yml
+  tags:
+  - chineseroom_ssh
