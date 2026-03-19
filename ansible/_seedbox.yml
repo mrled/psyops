@@ -3,4 +3,6 @@
 - name: Deploy seedbox
   hosts: seedboxes
   roles:
-    - { name: seedbox, tags: ["seedbox"] }
+    - { name: tailscale, tags: ["tailscale"] }
+    - { name: seedbox_storage, tags: ["seedbox_storage"] }
+    #- { name: seedbox_new, tags: ["seedbox"] }

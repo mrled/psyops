@@ -1,0 +1,49 @@
+---
+- name: Install cryptsetup
+  package:
+    name: cryptsetup
+    state: present
+
+# - name: Open LUKS encrypted disks
+#   command: cryptsetup open --key-file=- {{ item }} {{ item | basename }}_encrypted
+#   args:
+#     stdin: "{{ seedbox_storage_luks_password }}"
+#     creates: /dev/mapper/{{ item | basename }}_encrypted
+#   loop: "{{ seedbox_storage_media_disks }}"
+#   when: false
+
+- name: Open LUKS encrypted disks
+  community.crypto.luks_device:
+    device: "{{ item }}"
+    passphrase: "{{ seedbox_storage_luks_password }}"
+    name: "{{ item | basename }}_encrypted"
+    state: opened
+  loop: "{{ seedbox_storage_media_disks }}"
+  no_log: true
+
+- name: Activate volume group
+  command: vgchange -ay {{ seedbox_storage_volume_group }}
+  args:
+    creates: /dev/{{ seedbox_storage_volume_group }}
+
+- name: Create media mount point
+  file:
+    path: "{{ seedbox_storage_media_mount }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Mount media volume
+  mount:
+    src: /dev/{{ seedbox_storage_volume_group }}/{{ seedbox_storage_media_lv }}
+    path: "{{ seedbox_storage_media_mount }}"
+    fstype: ext4
+    # state: mounted PERSISTS this in /etc/fstab
+    state: mounted
+
+- name: Create media symlink
+  file:
+    src: "{{ seedbox_storage_media_mount }}"
+    dest: "{{ seedbox_storage_media_symlink }}"
+    state: link

@@ -1,6 +1,13 @@
 ---
 # Seedbox settings
 
+seedbox_storage_media_disks:
+  - /dev/sda
+  - /dev/sdb
+  - /dev/sdc
+  - /dev/sdd
+seedbox_storage_luks_password: "{{ vault_seedbox_storage_luks_password }}"
+
 # TODO: This isn't ideal, because it keeps the media in the same directory as the configs.
 # Would be better to separate them for sharing purposes.
 seedbox_config_dir: /seedboxmedia/seedboxconf
