@@ -5,6 +5,9 @@ seedbox_storage_media_disks: []
 # LUKS passphrase for all media disks
 seedbox_storage_luks_password: ""
 
+# Path to the LUKS key file on the host for automatic unlock at boot
+seedbox_storage_luks_keyfile: /etc/cryptsetup-keys.d/seedbox_vg.key
+
 # LVM volume group to activate after decrypting disks
 seedbox_storage_volume_group: seedbox
 

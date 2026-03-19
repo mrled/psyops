@@ -4,6 +4,22 @@
     name: cryptsetup
     state: present
 
+- name: Create cryptsetup keys directory
+  file:
+    path: /etc/cryptsetup-keys.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Deploy LUKS key file
+  copy:
+    src: seedbox_vg_keyfile
+    dest: "{{ seedbox_storage_luks_keyfile }}"
+    owner: root
+    group: root
+    mode: "0400"
+
 # - name: Open LUKS encrypted disks
 #   command: cryptsetup open --key-file=- {{ item }} {{ item | basename }}_encrypted
 #   args:
@@ -20,6 +36,15 @@
     state: opened
   loop: "{{ seedbox_storage_media_disks }}"
   no_log: true
+
+- name: Configure crypttab for automatic unlock at boot
+  community.general.crypttab:
+    name: "{{ item | basename }}_encrypted"
+    backing_device: "{{ item }}"
+    password: "{{ seedbox_storage_luks_keyfile }}"
+    opts: luks
+    state: present
+  loop: "{{ seedbox_storage_media_disks }}"
 
 - name: Activate volume group
   command: vgchange -ay {{ seedbox_storage_volume_group }}
