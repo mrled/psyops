@@ -1,0 +1,33 @@
+---
+- name: Getent for user home
+  getent:
+    database: passwd
+    key: "{{ interactive_user_name }}"
+
+- name: Set home fact
+  set_fact:
+    interactive_user_home: "{{ getent_passwd[interactive_user_name][4] }}"
+
+- name: Clone dhd repo
+  become: yes
+  become_user: "{{ interactive_user_name }}"
+  git:
+    repo: https://github.com/mrled/dhd
+    dest: "{{ interactive_user_home }}/.dhd"
+    update: yes
+
+- name: Symlink dotfiles from dhd
+  become: yes
+  become_user: "{{ interactive_user_name }}"
+  file:
+    src: "{{ interactive_user_home }}/.dhd/hbase/{{ item }}"
+    dest: "{{ interactive_user_home }}/{{ item }}"
+    state: link
+    force: yes
+  loop:
+    - .bashrc
+    - .inputrc
+    - .profile
+    - .tmux.conf
+    - .vimrc
+    - .zshrc

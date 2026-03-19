@@ -1,0 +1,17 @@
+---
+- name: Install packages
+  package:
+    name:
+      - atuin
+      - git
+      - ripgrep
+      - tmux
+      - vim
+      - zsh
+    state: present
+
+- name: Set shell to zsh for users
+  user:
+    name: "{{ item }}"
+    shell: /usr/bin/zsh
+  loop: "{{ interactive_system_zsh_users }}"
