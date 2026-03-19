@@ -1,0 +1,14 @@
+---
+- name: restart samba
+  service:
+    name: "{{ item }}"
+    state: restarted
+  with_items:
+    - smbd
+    - nmbd
+
+- name: reload nfs exports
+  command: exportfs -ra
+
+- name: update ca certificates
+  command: update-ca-certificates

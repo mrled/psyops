@@ -1,0 +1,152 @@
+---
+
+- name: Fail because this role is UNTESTED and may be broken
+  fail:
+    msg: "The seedbox_new role is currently untested and may be broken. Needs to be iteratively tested task-by-task (ish) before it can be trusted."
+
+# Install Debian system packages.
+# No EPEL/RPMFusion needed -- Debian repos have what we need.
+- name: Install system packages
+  apt:
+    name:
+      - ffmpeg
+      - gnupg
+      - python3-cryptography
+      - python3-lxml
+      - python3-pip
+      - python3-passlib
+      - samba
+      - smbclient
+      - ufw
+    state: present
+    update_cache: yes
+
+- name: Add seedbox group
+  group:
+    name: "{{ seedbox_group }}"
+    system: yes
+
+- name: Add seedbox user
+  user:
+    name: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    system: yes
+    create_home: yes
+
+- name: getent seedbox
+  getent:
+    database: passwd
+    key: "{{ seedbox_user }}"
+  register: seedbox_getent
+
+- name: Set UID/GID facts
+  set_fact:
+    seedbox_uid: "{{ getent_passwd[seedbox_user][1] }}"
+    seedbox_gid: "{{ getent_passwd[seedbox_user][2] }}"
+    seedbox_homedir: "{{ getent_passwd[seedbox_user][4] }}"
+
+- import_tasks: samba.yml
+  tags: samba
+
+- name: Create seedbox config dirs (0750 seedbox)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0750"
+  with_items:
+    - "{{ seedbox_config_dir }}"
+    - "{{ seedbox_sabnzbd_config_dir }}"
+    - "{{ seedbox_lidarr_config_dir }}"
+    - "{{ seedbox_headphones_config_dir }}"
+    - "{{ seedbox_sonarr_config_dir }}"
+    - "{{ seedbox_radarr_config_dir }}"
+    - "{{ seedbox_hydra2_config_dir }}"
+    - "{{ seedbox_cops_config_dir }}"
+    - "{{ seedbox_transmission_config_dir }}"
+    - "{{ seedbox_tentacles_config_dir }}"
+    - "{{ seedbox_jackett_config_dir }}"
+    - "{{ seedbox_heimdall_config_dir }}"
+    - "{{ seedbox_tautulli_config_dir }}"
+    - "{{ seedbox_rtorrent_config_dir }}"
+    - "{{ seedbox_prowlarr_config_dir }}"
+    - "{{ seedbox_stash_config_dir }}"
+    - "{{ seedbox_media.trix }}/stash"
+    - "{{ seedbox_media.trix }}/generated"
+    - "{{ seedbox_media.trix }}/metadata"
+    - "{{ seedbox_media.trix }}/cache"
+    - "{{ seedbox_ersatztv_config_dir }}/roothome"
+    - "{{ seedbox_ersatztv_config_dir }}/xdg_data_home/ersatztv"
+    - "{{ seedbox_shhh_config_dir }}"
+    - "{{ seedbox_lazylibrarian_config_dir }}"
+
+- name: Make seedbox media subdirs
+  file:
+    path: "{{ item.value }}"
+    state: directory
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0770"
+  with_dict: "{{ seedbox_media }}"
+
+- name: Make seedbox download/usenet subdirs
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ seedbox_user }}"
+    group: "{{ seedbox_group }}"
+    mode: "0770"
+  with_items:
+    - "{{ seedbox_usenet_completes_dir }}"
+    - "{{ seedbox_usenet_incompletes_dir }}"
+    - "{{ seedbox_usenet_watch_dir }}"
+    - "{{ seedbox_torrent_downloads_dir }}"
+    - "{{ seedbox_jackett_blackhole_dir }}"
+
+# UFW firewall rules.
+# ufw is installed but may not be enabled; we only open ports here.
+# Enable ufw and set default policies separately if desired.
+- name: Allow HTTP/HTTPS
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  with_items:
+    - "80"
+    - "443"
+
+- name: Allow transmission peer port
+  community.general.ufw:
+    rule: allow
+    port: "{{ seedbox_transmission_peer_port }}"
+    proto: "{{ item }}"
+  with_items:
+    - tcp
+    - udp
+
+- name: Allow rtorrent DHT port
+  community.general.ufw:
+    rule: allow
+    port: "{{ seedbox_rtorrent_dht_port }}"
+    proto: "{{ item }}"
+  with_items:
+    - tcp
+    - udp
+
+- name: Allow rtorrent peer port
+  community.general.ufw:
+    rule: allow
+    port: "{{ seedbox_rtorrent_peer_port }}"
+    proto: "{{ item }}"
+  with_items:
+    - tcp
+    - udp
+
+- name: Configure seedbox backups
+  import_tasks: backups.yml
+  tags: seedbox_backups
+
+- name: Configure k8s (k0s + Flux)
+  import_tasks: k8s.yml
+  tags: seedbox_k8s

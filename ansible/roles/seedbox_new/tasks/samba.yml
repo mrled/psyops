@@ -1,0 +1,33 @@
+---
+- name: Install samba config
+  template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: testparm --suppress-prompt %s
+  notify: restart samba
+
+# TODO: check whether existing smbpasswd matches seedbox_user_samba_passwd_ro
+# and only update the password if necessary
+- name: Set seedbox samba account password (read only)
+  shell: >
+    printf '{{ seedbox_user_samba_passwd_ro }}\n{{ seedbox_user_samba_passwd_ro }}\n' |
+    smbpasswd -a "{{ seedbox_user }}"
+
+# Debian uses AppArmor, not SELinux -- no sefcontext/restorecon needed
+
+- name: Start samba
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  with_items:
+    - smbd
+    - nmbd
+
+- name: Allow samba through ufw
+  community.general.ufw:
+    rule: allow
+    name: Samba
