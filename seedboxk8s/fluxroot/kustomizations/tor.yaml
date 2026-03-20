@@ -13,6 +13,7 @@ spec:
     name: flux-system
   dependsOn:
     - name: fluxcfg
+    - name: traefik-00-base
   decryption:
     provider: sops
     secretRef:
