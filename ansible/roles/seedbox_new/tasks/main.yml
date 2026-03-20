@@ -47,7 +47,6 @@
     - "{{ seedbox_hydra2_config_dir }}"
     - "{{ seedbox_cops_config_dir }}"
     - "{{ seedbox_transmission_config_dir }}"
-    - "{{ seedbox_tentacles_config_dir }}"
     - "{{ seedbox_jackett_config_dir }}"
     - "{{ seedbox_heimdall_config_dir }}"
     - "{{ seedbox_tautulli_config_dir }}"
@@ -128,8 +127,6 @@
 - name: Configure seedbox backups
   import_tasks: backups.yml
   tags: seedbox_backups
-
-- fail: msg="ITERATIVELY TESTING, LAST GOT HERE."
 
 - name: Configure k8s (k0s + Flux)
   import_tasks: k8s.yml

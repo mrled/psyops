@@ -129,16 +129,11 @@ seedbox_k8s_host_ip: "192.168.1.25"  # Override in host_vars
 seedbox_k8s_api_sans:
   - "{{ seedbox_ingress_ipaddr }}"  # Tailscale IP
 
-# Secrets from vault -- generate new keys for a fresh Debian host:
-#   openssl genrsa -out seedboxk8s.ca.key 4096
-#   openssl req -x509 -new -nodes -key seedboxk8s.ca.key -sha256 -days 36500 -out seedboxk8s.ca.crt -subj "/CN=SeedboxK8s Internal CA"
-# WARNING: seedbox_k8s_ca_crt must also match the k8s cluster-ca ConfigMap and Secret manifests.
 seedbox_k8s_flux_deploy_id: "{{ vault_seedbox_k8s_flux_deploy_id }}"
 seedbox_k8s_flux_agekey: "{{ vault_seedbox_k8s_flux_agekey }}"
 seedbox_k8s_ca_key: "{{ vault_seedbox_k8s_ca_key }}"
 seedbox_k8s_ca_crt: "{{ vault_seedbox_k8s_ca_crt }}"
 
-# seedbox_new role: backup GPG key secrets
+# Backup secrets
 seedbox_backup_gpg_pub_key: "{{ vault_seedbox_backup_gpg_pub_key }}"
 seedbox_backup_gpg_priv_key: "{{ vault_seedbox_backup_gpg_priv_key }}"
-seedbox_backup_gpg_key_id: "{{ vault_seedbox_backup_gpg_key_id }}"

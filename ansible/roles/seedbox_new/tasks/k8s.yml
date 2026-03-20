@@ -254,6 +254,8 @@
     group: root
     mode: "0600"
 
+- fail: msg="ITERATIVELY TESTING, LAST GOT HERE."
+
 # Bootstrap Flux
 - name: Check if flux-system namespace exists
   command: /usr/local/bin/k0s kubectl get ns flux-system

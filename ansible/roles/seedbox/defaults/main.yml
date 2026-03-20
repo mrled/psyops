@@ -95,6 +95,7 @@ seedbox_backup_duplicity_archive_dir: "{{ seedbox_backup_config_dir }}/archive"
 seedbox_backup_script: "{{ seedbox_backup_config_dir }}/seedbox-backup.sh"
 seedbox_backup_exclude_paths:
   - "{{ seedbox_backup_config_dir }}"
+  - "{{ seedbox_config_dir }}/archived"
   - "{{ seedbox_lidarr_config_dir }}/logs"
   - "{{ seedbox_radarr_config_dir }}/logs"
   - "{{ seedbox_sonarr_config_dir }}/logs"
