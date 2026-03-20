@@ -14,7 +14,13 @@ seedbox_config_dir: /seedboxmedia/seedboxconf
 
 seedbox_user: seedbox
 seedbox_group: seedbox
+# Fixed UID/GID: above distro system account ranges (100-999) and won't conflict
+# with package-managed accounts on Debian, RHEL, Alpine, or Arch.
+seedbox_uid: 6000
+seedbox_gid: 6000
+seedbox_homedir: /home/seedbox
 seedbox_user_samba_passwd_ro: "{{ vault_seedbox_user_samba_passwd_ro }}"
+
 seedbox_timezone: "{{ global_timezone.zoneinfo_cityname }}"
 
 # Assume this is already created with a mounted filesystem.
@@ -39,6 +45,13 @@ seedbox_media:
   books: "{{ seedbox_media_root }}/Books"
   itunes: "{{ seedbox_media_root }}/iTunes"
   trix: "{{ seedbox_media_root }}/Trix"
+  kids_clips: "{{ seedbox_media_root }}/KidsClips"
+  mst3k: "{{ seedbox_media_root }}/MST3K"
+  mst3k_tv: "{{ seedbox_media_root }}/MST3K-TV"
+  shorts: "{{ seedbox_media_root }}/Shorts"
+  software: "{{ seedbox_media_root }}/Software"
+  internet_archive: "{{ seedbox_media_root }}/InternetArchive"
+  audiobooks: "{{ seedbox_media_root }}/Audiobooks"
 seedbox_media_selinux_enable:
 - /mnt/seedboxmedia
 

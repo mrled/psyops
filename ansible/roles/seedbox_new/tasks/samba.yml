@@ -9,14 +9,29 @@
     validate: testparm --suppress-prompt %s
   notify: restart samba
 
-# TODO: check whether existing smbpasswd matches seedbox_user_samba_passwd_ro
-# and only update the password if necessary
-- name: Set seedbox samba account password (read only)
+- name: Install samba-check-passwd script
+  copy:
+    src: samba-check-passwd
+    dest: /usr/local/bin/samba-check-passwd
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Check if samba password needs updating
+  command: /usr/local/bin/samba-check-passwd "{{ seedbox_user }}"
+  args:
+    stdin: "{{ seedbox_user_samba_passwd_ro }}"
+  register: seedbox_samba_passwd_check
+  changed_when: false
+  failed_when: seedbox_samba_passwd_check.rc > 1
+  no_log: true
+
+- name: Set seedbox samba password
   shell: >
     printf '{{ seedbox_user_samba_passwd_ro }}\n{{ seedbox_user_samba_passwd_ro }}\n' |
     smbpasswd -a "{{ seedbox_user }}"
-
-# Debian uses AppArmor, not SELinux -- no sefcontext/restorecon needed
+  no_log: true
+  when: seedbox_samba_passwd_check.rc == 1
 
 - name: Start samba
   systemd:

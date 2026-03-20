@@ -7,4 +7,4 @@
     - { name: interactive_system, tags: ["interactive", "interactive_system"] }
     - { name: interactive_user, tags: ["interactive", "interactive_user"] }
     - { name: seedbox_storage, tags: ["seedbox_storage"] }
-    #- { name: seedbox_new, tags: ["seedbox"] }
+    - { name: seedbox_new, tags: ["seedbox"] }

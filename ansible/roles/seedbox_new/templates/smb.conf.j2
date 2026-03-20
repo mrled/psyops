@@ -9,9 +9,62 @@
     workgroup = SAMBA
     security = user
     passdb backend = tdbsam
+    # Guest connections map to the seedbox unix user so file permissions work.
+    guest account = {{ seedbox_user }}
 
 [media]
     path = {{ seedbox_media_root }}
     writable = no
     guest ok = no
     valid users = {{ seedbox_user }}
+
+# Family shares: open to guests (no credentials required).
+[KidsClips]
+    path = {{ seedbox_media.kids_clips }}
+    writable = no
+    guest ok = yes
+
+[MST3K]
+    path = {{ seedbox_media.mst3k }}
+    writable = no
+    guest ok = yes
+
+[MST3K-TV]
+    path = {{ seedbox_media.mst3k_tv }}
+    writable = no
+    guest ok = yes
+
+[Movies]
+    path = {{ seedbox_media.movies }}
+    writable = no
+    guest ok = yes
+
+[Shorts]
+    path = {{ seedbox_media.shorts }}
+    writable = no
+    guest ok = yes
+
+[TV]
+    path = {{ seedbox_media.tv }}
+    writable = no
+    guest ok = yes
+
+[Audiobooks]
+    path = {{ seedbox_media.audiobooks }}
+    writable = no
+    guest ok = yes
+
+[InternetArchive]
+    path = {{ seedbox_media.internet_archive }}
+    writable = no
+    guest ok = yes
+
+[Music]
+    path = {{ seedbox_media.music }}
+    writable = no
+    guest ok = yes
+
+[Software]
+    path = {{ seedbox_media.software }}
+    writable = no
+    guest ok = yes

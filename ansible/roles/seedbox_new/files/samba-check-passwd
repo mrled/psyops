@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""Check whether a plaintext password matches the NT hash in Samba's database."""
+
+import argparse
+import subprocess
+import sys
+
+
+def get_stored_nt_hash(username):
+    """Return the stored NT hash for a user from pdbedit, or None if not found."""
+    result = subprocess.run(
+        ["pdbedit", "-L", "-w", username],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    # pdbedit -w format: username:uid:LM_HASH:NT_HASH:account_flags:...
+    fields = result.stdout.strip().split(":")
+    if len(fields) < 4 or not fields[3]:
+        return None
+    return fields[3].upper()
+
+
+def compute_nt_hash(password):
+    from passlib.hash import nthash  # type: ignore[import]
+
+    return nthash.hash(password).upper()
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Check whether a plaintext password matches the NT hash stored in "
+            "Samba's database for a given user. "
+            "Reads the password from stdin. "
+            "Exits 0 if the password matches, 1 if it does not or the user is not found."
+        )
+    )
+    parser.add_argument("username", help="Samba username to check")
+    args = parser.parse_args()
+
+    password = sys.stdin.read().strip()
+    if not password:
+        print("Error: no password provided on stdin", file=sys.stderr)
+        sys.exit(2)
+
+    stored_nt = get_stored_nt_hash(args.username)
+    if stored_nt is None:
+        sys.exit(1)
+
+    expected_nt = compute_nt_hash(password)
+    sys.exit(0 if stored_nt == expected_nt else 1)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,11 +1,4 @@
 ---
-
-- name: Fail because this role is UNTESTED and may be broken
-  fail:
-    msg: "The seedbox_new role is currently untested and may be broken. Needs to be iteratively tested task-by-task (ish) before it can be trusted."
-
-# Install Debian system packages.
-# No EPEL/RPMFusion needed -- Debian repos have what we need.
 - name: Install system packages
   apt:
     name:
@@ -24,26 +17,15 @@
 - name: Add seedbox group
   group:
     name: "{{ seedbox_group }}"
-    system: yes
+    gid: "{{ seedbox_gid }}"
 
 - name: Add seedbox user
   user:
     name: "{{ seedbox_user }}"
+    uid: "{{ seedbox_uid }}"
     group: "{{ seedbox_group }}"
-    system: yes
+    home: "{{ seedbox_homedir }}"
     create_home: yes
-
-- name: getent seedbox
-  getent:
-    database: passwd
-    key: "{{ seedbox_user }}"
-  register: seedbox_getent
-
-- name: Set UID/GID facts
-  set_fact:
-    seedbox_uid: "{{ getent_passwd[seedbox_user][1] }}"
-    seedbox_gid: "{{ getent_passwd[seedbox_user][2] }}"
-    seedbox_homedir: "{{ getent_passwd[seedbox_user][4] }}"
 
 - import_tasks: samba.yml
   tags: samba
@@ -103,6 +85,8 @@
     - "{{ seedbox_usenet_watch_dir }}"
     - "{{ seedbox_torrent_downloads_dir }}"
     - "{{ seedbox_jackett_blackhole_dir }}"
+
+- fail: msg="ITERATIVELY TESTING, LAST GOT HERE."
 
 # UFW firewall rules.
 # ufw is installed but may not be enabled; we only open ports here.
