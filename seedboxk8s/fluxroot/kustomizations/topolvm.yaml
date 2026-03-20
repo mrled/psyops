@@ -7,12 +7,13 @@ spec:
   interval: 15m
   path: /seedboxk8s/applications/topolvm
   prune: true
-  timeout: 2m
+  timeout: 5m
   sourceRef:
     kind: GitRepository
     name: flux-system
   dependsOn:
     - name: fluxcfg
+    - name: cert-manager
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
