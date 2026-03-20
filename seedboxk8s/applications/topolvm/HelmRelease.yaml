@@ -43,6 +43,12 @@ spec:
       # Override default restriction against running on control plane nodes
       tolerations: []
 
+    webhook:
+      existingCertManagerIssuer:
+        group: cert-manager.io
+        kind: ClusterIssuer
+        name: selfsigned
+
     storageClasses:
       - name: seedbox-slow-mirror
         storageClass:
