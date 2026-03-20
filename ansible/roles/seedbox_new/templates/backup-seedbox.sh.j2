@@ -11,13 +11,18 @@ exclude_file="{{ seedbox_backup_exclude_file }}"
 archive_dir="{{ seedbox_backup_duplicity_archive_dir }}"
 seedbox_config_dir="{{ seedbox_config_dir }}"
 
-duplicity \
-    --encrypt-key $backup_key \
+duplicity backup \
+    --encrypt-key "$backup_key" \
     --exclude-filelist "$exclude_file" \
     --verbosity 4 \
     --archive-dir="$archive_dir" \
     --full-if-older-than 6M \
-    --remove-all-but-n-full 2 \
     --s3-endpoint-url "$s3_endpoint" \
     "$seedbox_config_dir" \
+    "$s3_uri/data"
+
+duplicity remove-all-but-n-full 2 \
+    --force \
+    --archive-dir="$archive_dir" \
+    --s3-endpoint-url "$s3_endpoint" \
     "$s3_uri/data"

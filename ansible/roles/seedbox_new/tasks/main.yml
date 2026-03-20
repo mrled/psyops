@@ -86,8 +86,6 @@
     - "{{ seedbox_torrent_downloads_dir }}"
     - "{{ seedbox_jackett_blackhole_dir }}"
 
-- fail: msg="ITERATIVELY TESTING, LAST GOT HERE."
-
 # UFW firewall rules.
 # ufw is installed but may not be enabled; we only open ports here.
 # Enable ufw and set default policies separately if desired.
@@ -130,6 +128,8 @@
 - name: Configure seedbox backups
   import_tasks: backups.yml
   tags: seedbox_backups
+
+- fail: msg="ITERATIVELY TESTING, LAST GOT HERE."
 
 - name: Configure k8s (k0s + Flux)
   import_tasks: k8s.yml
