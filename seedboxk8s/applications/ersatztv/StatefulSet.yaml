@@ -52,12 +52,6 @@ spec:
               mountPath: /config
             - name: import
               mountPath: /import
-        - name: fix-ownership
-          image: busybox
-          command: ["chown", "-R", "${plexUid}:${plexGid}", "/config"]
-          volumeMounts:
-            - name: ersatztv-config-pvc
-              mountPath: /config
       containers:
         - image: jasongdove/ersatztv:develop-vaapi
           name: ersatztv

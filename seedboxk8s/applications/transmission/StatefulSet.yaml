@@ -52,12 +52,6 @@ spec:
               mountPath: /config
             - name: import
               mountPath: /import
-        - name: fix-ownership
-          image: busybox
-          command: ["chown", "-R", "${plexUid}:${plexGid}", "/config"]
-          volumeMounts:
-            - name: transmission-config-pvc
-              mountPath: /config
       containers:
         - image: registry.${productionClusterFqdn}/tortuga/transmission:latest
           name: transmission
