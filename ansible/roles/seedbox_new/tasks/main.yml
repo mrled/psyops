@@ -13,6 +13,7 @@
   with_items:
     - { name: fs.inotify.max_user_watches,    value: "524288" }
     - { name: fs.inotify.max_user_instances,  value: "512" }
+  tags: seedbox_inotify
 
 - name: Install system packages
   apt:
