@@ -26,7 +26,11 @@
     owner: root
     group: root
     mode: "0644"
-  notify: reload nfs exports
+
+# Always apply exports -- don't rely on a handler, since on fresh install
+# the NFS server may have started before /etc/exports was written.
+- name: Apply NFS exports
+  command: exportfs -ra
 
 - name: Install cluster CA certificate
   copy:

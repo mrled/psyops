@@ -7,8 +7,5 @@
     - smbd
     - nmbd
 
-- name: reload nfs exports
-  command: exportfs -ra
-
 - name: update ca certificates
   command: update-ca-certificates
