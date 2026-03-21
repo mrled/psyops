@@ -1,7 +1,11 @@
 ---
-- name: Install cryptsetup
+- name: Install cryptsetup packages
   package:
-    name: cryptsetup
+    name:
+      - cryptsetup
+      - cryptsetup-initramfs
+      - systemd-cryptsetup
+      - lvm2
     state: present
 
 - name: Create cryptsetup keys directory
@@ -45,6 +49,7 @@
     opts: luks
     state: present
   loop: "{{ seedbox_storage_media_disks }}"
+  notify: Update initramfs
 
 - name: Activate volume group
   command: vgchange -ay {{ seedbox_storage_volume_group }}
