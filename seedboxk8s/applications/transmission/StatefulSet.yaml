@@ -14,6 +14,8 @@ spec:
       labels:
         app: transmission
     spec:
+      securityContext:
+        fsGroup: ${plexGid}
       initContainers:
         - name: import-data
           image: busybox

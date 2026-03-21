@@ -14,6 +14,8 @@ spec:
       labels:
         app: nzbhydra2
     spec:
+      securityContext:
+        fsGroup: ${plexGid}
       initContainers:
         - name: import-data
           image: busybox

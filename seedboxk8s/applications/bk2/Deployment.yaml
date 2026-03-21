@@ -13,6 +13,8 @@ spec:
       labels:
         app: bk2-metube
     spec:
+      securityContext:
+        fsGroup: ${plexGid}
       containers:
       - name: metube
         image: ghcr.io/alexta69/metube
