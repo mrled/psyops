@@ -80,8 +80,8 @@ data:
 
   timezone: America/Chicago
 
-  plexUid: "989"
-  plexGid: "986"
+  plexUid: "6000"
+  plexGid: "6000"
 
   # We use this to test IngressRouteTCP
   whoamiHttpTcpPort: "10080"
