@@ -1,5 +1,11 @@
 ---
 
+# The hostname of this node as k8s knows it.
+# When restoring an old cluster, the hostname must match exactly
+# (e.g. for TopoLVM node affinity on static PVs).
+# Defaults to inventory_hostname; override in host_vars if needed.
+seedbox_hostname: "{{ inventory_hostname }}"
+
 # k0s/Kubernetes tool versions
 seedbox_k8s_k0s_version: "v1.30.0+k0s.0"
 seedbox_k8s_helm_version: "v3.14.4"
