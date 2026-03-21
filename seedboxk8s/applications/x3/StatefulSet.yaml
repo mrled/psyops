@@ -52,6 +52,12 @@ spec:
               mountPath: /config
             - name: import
               mountPath: /import
+        - name: fix-ownership
+          image: busybox
+          command: ["chown", "-R", "${plexUid}:${plexGid}", "/config"]
+          volumeMounts:
+            - name: x3-config-pvc
+              mountPath: /config
       containers:
         - image: ${x3Image}:latest
           name: x3
