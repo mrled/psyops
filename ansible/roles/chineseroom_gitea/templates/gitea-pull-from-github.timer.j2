@@ -1,0 +1,9 @@
+[Unit]
+Description=Periodically pull GitHub changes into Gitea
+
+[Timer]
+OnCalendar={{ chineseroom_gitea_sync_pull_oncalendar }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# -*- mode: bash -*-
+# Pull changes from GitHub into Gitea for all configured repos.
+# Run periodically by the gitea-pull-from-github.timer systemd timer.
+#
+# Sync logic per repo:
+#   - If GitHub is strictly ahead (fast-forward): push GitHub's tip into Gitea.
+#   - If Gitea is strictly ahead: skip (the webhook will push to GitHub on the next merge).
+#   - If the histories have diverged: log a warning and skip (needs manual resolution).
+#   - If already in sync: nothing to do.
+set -euo pipefail
+
+MIRRORS_DIR="{{ chineseroom_gitea_mirrors_dir }}"
+
+# Query GitHub for the repo's current default branch via the SSH remote.
+# Caches the result in .git/gitea/default-branch; falls back to cache on failure.
+get_default_branch() {
+    local mirror_dir="$1" tag="$2"
+    local cache="$mirror_dir/.git/gitea/default-branch"
+    local branch
+
+    branch=$(git -C "$mirror_dir" ls-remote --symref github HEAD 2>/dev/null \
+        | awk '/^ref:/ { sub("refs/heads/", "", $2); print $2; exit }')
+
+    if [[ -n "$branch" ]]; then
+        printf '%s' "$branch" > "$cache"
+        printf '%s' "$branch"
+        return 0
+    fi
+
+    if [[ -f "$cache" ]]; then
+        logger -t "$tag" "GitHub unreachable; using cached default branch"
+        cat "$cache"
+        return 0
+    fi
+
+    logger -t "$tag" "Cannot determine default branch (GitHub unreachable and no cache)"
+    return 1
+}
+
+sync_repo() {
+    local repo="$1"
+    local mirror_dir="$MIRRORS_DIR/$repo"
+    local tag="gitea-pull-github[$repo]"
+
+    if [[ ! -d "$mirror_dir/.git" ]]; then
+        logger -t "$tag" "Mirror directory not found; skipping"
+        return 0
+    fi
+
+    # Run in a subshell so 'cd' and early 'exit 0' don't affect the rest of the script
+    (
+        cd "$mirror_dir"
+
+        local branch
+        branch=$(get_default_branch "$mirror_dir" "$tag") \
+          || { logger -t "$tag" "Skipping: cannot determine default branch"; exit 0; }
+
+        logger -t "$tag" "Fetching from GitHub (branch: $branch)..."
+        git fetch github "$branch" \
+          || { logger -t "$tag" "ERROR: git fetch from GitHub failed"; exit 0; }
+
+        logger -t "$tag" "Fetching LFS objects from GitHub..."
+        git lfs fetch github --all || true   # non-fatal; may have no LFS objects yet
+
+        local gitea_tip github_tip
+        gitea_tip=$(git rev-parse "origin/$branch" 2>/dev/null) \
+          || { logger -t "$tag" "Cannot resolve origin/$branch (repo may not be initialised in Gitea yet)"; exit 0; }
+        github_tip=$(git rev-parse "github/$branch" 2>/dev/null) \
+          || { logger -t "$tag" "Cannot resolve github/$branch"; exit 0; }
+
+        if [[ "$gitea_tip" == "$github_tip" ]]; then
+            logger -t "$tag" "In sync."
+
+        elif git merge-base --is-ancestor "$gitea_tip" "$github_tip"; then
+            # GitHub is ahead — fast-forward Gitea
+            logger -t "$tag" "GitHub is ahead; updating Gitea..."
+            git push origin "refs/remotes/github/${branch}:refs/heads/${branch}"
+            git lfs push origin --all
+            logger -t "$tag" "Gitea updated from GitHub."
+
+        elif git merge-base --is-ancestor "$github_tip" "$gitea_tip"; then
+            # Gitea is ahead — the push webhook will sync to GitHub when ready
+            logger -t "$tag" "Gitea is ahead of GitHub; no pull needed."
+
+        else
+            logger -t "$tag" "WARNING: Gitea and GitHub have diverged! Manual intervention required."
+        fi
+    ) || true   # don't abort the whole script if one repo's subshell fails
+}
+
+{% for repo in chineseroom_gitea_repos %}
+{% if repo.enable_auto_pull | default(true) %}
+sync_repo "{{ repo.name }}"
+{% endif %}
+{% endfor %}

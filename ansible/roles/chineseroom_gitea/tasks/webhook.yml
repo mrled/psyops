@@ -1,0 +1,45 @@
+---
+- name: Install webhook receiver Python script
+  template:
+    src: gitea-webhook-receiver.py.j2
+    dest: "{{ chineseroom_gitea_webhook_receiver_bin }}"
+    owner: root
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0750"
+  notify: restart gitea-webhook-receiver
+
+- name: Install push-to-github script
+  template:
+    src: gitea-push-to-github.sh.j2
+    dest: "{{ chineseroom_gitea_push_script }}"
+    owner: root
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0750"
+
+- name: Install webhook receiver environment file
+  template:
+    src: gitea-webhook-receiver.env.j2
+    dest: "{{ chineseroom_gitea_webhook_env_file }}"
+    owner: root
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0640"
+  no_log: yes
+  notify: restart gitea-webhook-receiver
+
+- name: Install webhook receiver systemd service
+  template:
+    src: gitea-webhook-receiver.service.j2
+    dest: /etc/systemd/system/gitea-webhook-receiver.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - daemon-reload
+    - restart gitea-webhook-receiver
+
+- name: Enable and start webhook receiver
+  systemd:
+    name: gitea-webhook-receiver
+    enabled: yes
+    state: started
+    daemon_reload: yes

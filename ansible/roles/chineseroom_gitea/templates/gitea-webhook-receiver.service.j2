@@ -1,0 +1,18 @@
+[Unit]
+Description=Gitea webhook receiver for GitHub push sync
+After=network.target gitea.service
+
+[Service]
+Type=simple
+User={{ chineseroom_gitea_user }}
+Group={{ chineseroom_gitea_group }}
+EnvironmentFile={{ chineseroom_gitea_webhook_env_file }}
+ExecStart=/usr/bin/python3 {{ chineseroom_gitea_webhook_receiver_bin }}
+Restart=always
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths={{ chineseroom_gitea_mirrors_dir }}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,23 @@
+---
+# Versioned binary path allows side-by-side downloads; symlink points at active version
+chineseroom_gitea_binary_versioned: /usr/local/bin/gitea-{{ chineseroom_gitea_version }}
+chineseroom_gitea_binary: /usr/local/bin/gitea
+chineseroom_gitea_dl_url: "https://github.com/go-gitea/gitea/releases/download/v{{ chineseroom_gitea_version }}/gitea-{{ chineseroom_gitea_version }}-linux-{{ chineseroom_gitea_arch }}"
+
+chineseroom_gitea_config_dir: /etc/gitea
+chineseroom_gitea_data_dir: "{{ chineseroom_gitea_home }}/data"
+chineseroom_gitea_repos_dir: "{{ chineseroom_gitea_home }}/repositories"
+chineseroom_gitea_lfs_dir: "{{ chineseroom_gitea_home }}/lfs"
+chineseroom_gitea_mirrors_dir: "{{ chineseroom_gitea_home }}/mirrors"
+chineseroom_gitea_log_dir: /var/log/gitea
+
+# Directory for sync helper scripts and the webhook receiver env file
+chineseroom_gitea_sync_lib_dir: /usr/local/lib/gitea-sync
+chineseroom_gitea_webhook_receiver_bin: "{{ chineseroom_gitea_sync_lib_dir }}/webhook-receiver.py"
+chineseroom_gitea_push_script: "{{ chineseroom_gitea_sync_lib_dir }}/push-to-github.sh"
+chineseroom_gitea_pull_script: "{{ chineseroom_gitea_sync_lib_dir }}/pull-from-github.sh"
+chineseroom_gitea_webhook_env_file: "{{ chineseroom_gitea_sync_lib_dir }}/.webhook-receiver.env"
+
+# nginx config location (conf.trusted.d is included by the chineseroom nginx)
+chineseroom_gitea_nginx_conf_dir: /etc/nginx/conf.trusted.d
+chineseroom_gitea_nginx_conf_path: "{{ chineseroom_gitea_nginx_conf_dir }}/gitea.conf"

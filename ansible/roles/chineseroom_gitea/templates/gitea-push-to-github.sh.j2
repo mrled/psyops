@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# -*- mode: bash -*-
+# Push the Gitea default branch to GitHub, including all LFS objects.
+# Called asynchronously by the webhook receiver when Gitea signals a push.
+#
+# Usage: push-to-github.sh <repo_name> <ref>
+#   repo_name  Gitea repository name (must have a mirror in {{ chineseroom_gitea_mirrors_dir }})
+#   ref        Git ref that was pushed, e.g. refs/heads/main
+set -euo pipefail
+
+REPO="${1:?usage: $0 <repo_name> <ref>}"
+REF="${2:?usage: $0 <repo_name> <ref>}"
+MIRRORS_DIR="{{ chineseroom_gitea_mirrors_dir }}"
+MIRROR_DIR="$MIRRORS_DIR/$REPO"
+LOCK_FILE="/tmp/gitea-push-${REPO}.lock"
+LOG_TAG="gitea-push-github[$REPO]"
+
+log() { logger -t "$LOG_TAG" -- "$*"; }
+
+# Query GitHub for the repo's current default branch via the SSH remote.
+# Caches the result in .git/gitea/default-branch; falls back to cache on failure.
+get_default_branch() {
+    local mirror_dir="$1"
+    local cache="$mirror_dir/.git/gitea/default-branch"
+    local branch
+
+    branch=$(git -C "$mirror_dir" ls-remote --symref github HEAD 2>/dev/null \
+        | awk '/^ref:/ { sub("refs/heads/", "", $2); print $2; exit }')
+
+    if [[ -n "$branch" ]]; then
+        printf '%s' "$branch" > "$cache"
+        printf '%s' "$branch"
+        return 0
+    fi
+
+    if [[ -f "$cache" ]]; then
+        log "GitHub unreachable; using cached default branch"
+        cat "$cache"
+        return 0
+    fi
+
+    log "Cannot determine default branch (GitHub unreachable and no cache)"
+    return 1
+}
+
+if [[ ! -d "$MIRROR_DIR/.git" ]]; then
+    log "Mirror directory not found: $MIRROR_DIR"
+    exit 1
+fi
+
+DEFAULT_BRANCH=$(get_default_branch "$MIRROR_DIR") || exit 1
+
+if [[ "$REF" != "refs/heads/$DEFAULT_BRANCH" ]]; then
+    log "Ref $REF is not the default branch (refs/heads/$DEFAULT_BRANCH); skipping"
+    exit 0
+fi
+
+# Prevent concurrent pushes for this repo
+exec 200>"$LOCK_FILE"
+if ! flock -n 200; then
+    log "Another sync is already running; skipping"
+    exit 0
+fi
+
+(
+    cd "$MIRROR_DIR"
+
+    log "Fetching commits from Gitea (origin/$DEFAULT_BRANCH)..."
+    git fetch origin "$DEFAULT_BRANCH"
+
+    log "Fetching LFS objects from Gitea..."
+    git lfs fetch origin --all
+
+    log "Pushing commits to GitHub..."
+    git push github "refs/remotes/origin/${DEFAULT_BRANCH}:refs/heads/${DEFAULT_BRANCH}"
+
+    log "Pushing LFS objects to GitHub..."
+    git lfs push github --all
+
+    log "Push to GitHub complete."
+)

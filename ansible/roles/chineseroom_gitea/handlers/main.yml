@@ -1,0 +1,19 @@
+---
+- name: daemon-reload
+  systemd:
+    daemon_reload: yes
+
+- name: restart gitea
+  systemd:
+    name: gitea
+    state: restarted
+
+- name: restart gitea-webhook-receiver
+  systemd:
+    name: gitea-webhook-receiver
+    state: restarted
+
+- name: reload nginx
+  service:
+    name: nginx
+    state: reloaded

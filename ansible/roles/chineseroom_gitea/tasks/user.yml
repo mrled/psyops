@@ -1,0 +1,60 @@
+---
+- name: Create gitea group
+  group:
+    name: "{{ chineseroom_gitea_group }}"
+    system: yes
+
+- name: Create gitea user
+  user:
+    name: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    home: "{{ chineseroom_gitea_home }}"
+    shell: /sbin/nologin
+    system: yes
+    create_home: yes
+
+- name: Create SSH directory
+  file:
+    path: "{{ chineseroom_gitea_home }}/.ssh"
+    state: directory
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0700"
+
+- name: Install GitHub SSH private key
+  copy:
+    content: "{{ chineseroom_gitea_github_ssh_privkey }}"
+    dest: "{{ chineseroom_gitea_home }}/.ssh/id_ed25519"
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0600"
+  no_log: yes
+
+- name: Derive GitHub SSH public key from private key
+  command: ssh-keygen -y -f {{ chineseroom_gitea_home }}/.ssh/id_ed25519
+  register: chineseroom_gitea_derived_pubkey
+  changed_when: false
+
+- name: Install derived GitHub SSH public key
+  copy:
+    content: "{{ chineseroom_gitea_derived_pubkey.stdout }}\n"
+    dest: "{{ chineseroom_gitea_home }}/.ssh/id_ed25519.pub"
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0644"
+
+- name: Install GitHub SSH known_hosts
+  copy:
+    content: "{{ chineseroom_gitea_github_ssh_host_fingerprints | join('\n') }}\n"
+    dest: "{{ chineseroom_gitea_home }}/.ssh/known_hosts"
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0644"
+
+- name: Install SSH config for GitHub
+  template:
+    src: ssh_config.j2
+    dest: "{{ chineseroom_gitea_home }}/.ssh/config"
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0600"

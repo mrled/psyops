@@ -1,0 +1,17 @@
+[Unit]
+Description=Gitea (Git with a cup of tea)
+After=network.target
+
+[Service]
+User={{ chineseroom_gitea_user }}
+Group={{ chineseroom_gitea_group }}
+WorkingDirectory={{ chineseroom_gitea_home }}
+ExecStart={{ chineseroom_gitea_binary }} web --config {{ chineseroom_gitea_config_dir }}/app.ini
+Restart=always
+Environment=USER={{ chineseroom_gitea_user }} HOME={{ chineseroom_gitea_home }} GITEA_WORK_DIR={{ chineseroom_gitea_home }}
+# Allow binding low ports if needed (e.g. SSH on port 22)
+#CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+#AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

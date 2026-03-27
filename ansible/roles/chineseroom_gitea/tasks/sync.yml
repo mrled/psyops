@@ -1,0 +1,33 @@
+---
+- name: Install pull-from-github script
+  template:
+    src: gitea-pull-from-github.sh.j2
+    dest: "{{ chineseroom_gitea_pull_script }}"
+    owner: root
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0750"
+
+- name: Install pull-from-github oneshot service
+  template:
+    src: gitea-pull-from-github.service.j2
+    dest: /etc/systemd/system/gitea-pull-from-github.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: daemon-reload
+
+- name: Install pull-from-github timer
+  template:
+    src: gitea-pull-from-github.timer.j2
+    dest: /etc/systemd/system/gitea-pull-from-github.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: daemon-reload
+
+- name: Enable and start pull-from-github timer
+  systemd:
+    name: gitea-pull-from-github.timer
+    enabled: yes
+    state: started
+    daemon_reload: yes

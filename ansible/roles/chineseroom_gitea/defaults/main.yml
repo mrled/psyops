@@ -1,0 +1,81 @@
+---
+# System user that owns Gitea data and runs sync services
+chineseroom_gitea_user: gitea
+chineseroom_gitea_group: gitea
+chineseroom_gitea_home: /var/lib/gitea
+
+# Gitea HTTP and SSH ports
+chineseroom_gitea_http_port: 3000
+chineseroom_gitea_ssh_port: 2222
+chineseroom_gitea_domain: gitea.example.com
+chineseroom_gitea_app_name: Gitea
+
+# Gitea binary version and architecture (arm64 for aarch64, amd64 for x86_64)
+chineseroom_gitea_version: "1.25.5"
+chineseroom_gitea_arch: arm64
+
+# Gitea secret values — store in vault; all required
+# chineseroom_gitea_secret_key:     64-char random string; generate with: openssl rand -hex 32
+# chineseroom_gitea_internal_token: JWT token; generate with: gitea generate secret INTERNAL_TOKEN
+# chineseroom_gitea_lfs_jwt_secret: JWT secret; generate with: gitea generate secret JWT_SECRET
+chineseroom_gitea_secret_key: ""
+chineseroom_gitea_internal_token: ""
+chineseroom_gitea_lfs_jwt_secret: ""
+
+# SSH private key for pushing/pulling to GitHub from the mirror working clones.
+# Store in vault. The public key is derived automatically via ssh-keygen.
+chineseroom_gitea_github_ssh_privkey: ""
+
+# SSH host fingerprints for github.com in known_hosts format.
+# Obtain from https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
+# Required; leaving this empty will cause all GitHub SSH connections to fail.
+chineseroom_gitea_github_ssh_host_fingerprints: []
+
+# HMAC secret shared with Gitea's webhook configuration (Settings → Webhooks → Secret)
+chineseroom_gitea_webhook_secret: ""
+
+# Gitea API token used by mirror clones to authenticate to the local Gitea+LFS server.
+# Create via Gitea: User Settings → Applications → Generate Token (needs repo scope).
+chineseroom_gitea_mirror_token: ""
+
+# Username used by mirror clones in the Gitea HTTP URL.
+# A Gitea user with this name must exist and own the mirror token above.
+chineseroom_gitea_mirror_user: mirror-bot
+
+# Webhook receiver listen address and port (loopback only — Gitea calls it locally)
+chineseroom_gitea_webhook_listen: "127.0.0.1"
+chineseroom_gitea_webhook_port: 9420
+
+# Disable public self-registration; set false only for open installs
+chineseroom_gitea_disable_registration: true
+
+# Enable Gitea's built-in LFS server
+chineseroom_gitea_lfs_enable: true
+
+# List of repositories to mirror between Gitea and GitHub.
+# Each entry supports:
+#   name:             Gitea repository name (required)
+#   gitea_owner:      Gitea user or org that owns the repo (required)
+#   github_repo:      GitHub full name, e.g. myorg/myrepo (required)
+#   default_branch:   initial/fallback branch for sync; updated at runtime from GitHub HEAD
+#                     (default: main)
+#   enable_auto_push: push to GitHub when default branch is updated (default: true)
+#   enable_auto_pull: periodically pull from GitHub (default: true)
+#
+# Example:
+#   chineseroom_gitea_repos:
+#     - name: myproject
+#       gitea_owner: myorg
+#       github_repo: myorg/myproject
+#       default_branch: main
+#       enable_auto_push: true
+#       enable_auto_pull: true
+chineseroom_gitea_repos: []
+
+# systemd OnCalendar expression for the GitHub→Gitea pull timer
+chineseroom_gitea_sync_pull_oncalendar: "*:0/15"
+
+# TLS certificate and key for the nginx reverse proxy.
+# Typically the wildcard/SAN cert managed by the chineseroom role.
+chineseroom_gitea_nginx_ssl_cert: ""
+chineseroom_gitea_nginx_ssl_key: ""

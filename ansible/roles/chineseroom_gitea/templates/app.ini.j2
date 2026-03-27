@@ -1,0 +1,42 @@
+APP_NAME = {{ chineseroom_gitea_app_name }}
+RUN_USER = {{ chineseroom_gitea_user }}
+RUN_MODE = prod
+
+[database]
+DB_TYPE = sqlite3
+PATH    = {{ chineseroom_gitea_data_dir }}/gitea.db
+
+[repository]
+ROOT = {{ chineseroom_gitea_repos_dir }}
+
+[server]
+DOMAIN           = {{ chineseroom_gitea_domain }}
+HTTP_PORT        = {{ chineseroom_gitea_http_port }}
+ROOT_URL         = https://{{ chineseroom_gitea_domain }}/
+SSH_DOMAIN       = {{ chineseroom_gitea_domain }}
+SSH_PORT         = {{ chineseroom_gitea_ssh_port }}
+DISABLE_SSH      = false
+START_SSH_SERVER = true
+LFS_START_SERVER = {{ chineseroom_gitea_lfs_enable | lower }}
+LFS_JWT_SECRET   = {{ chineseroom_gitea_lfs_jwt_secret }}
+
+[lfs]
+PATH = {{ chineseroom_gitea_lfs_dir }}
+
+[security]
+SECRET_KEY     = {{ chineseroom_gitea_secret_key }}
+INTERNAL_TOKEN = {{ chineseroom_gitea_internal_token }}
+INSTALL_LOCK   = true
+
+[service]
+DISABLE_REGISTRATION = {{ chineseroom_gitea_disable_registration | lower }}
+REQUIRE_SIGNIN_VIEW  = false
+
+[webhook]
+; Allow Gitea to deliver webhooks to the local receiver on loopback
+ALLOWED_HOST_LIST = loopback,127.0.0.1,::1
+
+[log]
+ROOT_PATH = {{ chineseroom_gitea_log_dir }}
+MODE      = file
+LEVEL     = Info

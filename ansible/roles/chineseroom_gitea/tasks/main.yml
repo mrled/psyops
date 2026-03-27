@@ -1,0 +1,30 @@
+---
+- name: Create and configure Gitea system user
+  import_tasks: user.yml
+  tags:
+    - chineseroom_gitea_user
+
+- name: Install and configure Gitea
+  import_tasks: gitea.yml
+  tags:
+    - chineseroom_gitea_app
+
+- name: Configure nginx reverse proxy for Gitea
+  import_tasks: nginx.yml
+  tags:
+    - chineseroom_gitea_nginx
+
+- name: Configure GitHub sync webhook receiver
+  import_tasks: webhook.yml
+  tags:
+    - chineseroom_gitea_webhook
+
+- name: Configure periodic GitHub→Gitea pull sync
+  import_tasks: sync.yml
+  tags:
+    - chineseroom_gitea_sync
+
+- name: Set up per-repo mirror working clones
+  import_tasks: mirrors.yml
+  tags:
+    - chineseroom_gitea_mirrors

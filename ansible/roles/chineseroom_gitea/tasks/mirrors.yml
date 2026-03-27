@@ -1,0 +1,17 @@
+---
+# Each mirror is a working clone with two remotes:
+#   origin  → local Gitea (HTTP with token, so git-lfs talks to Gitea's LFS server)
+#   github  → GitHub (SSH, so git-lfs uses SSH credentials)
+#
+# Marker files written into each mirror dir:
+#   .git/gitea/default-branch  — branch name to watch and sync (seeded by Ansible, updated at runtime)
+#   .git/gitea/auto-push       — present iff enable_auto_push is true
+#
+# Note: mirrors are initialised but not initially populated.  The first push from
+# Gitea (or the first pull timer run) will fetch commits and LFS objects.
+
+- name: Set up mirror working clone for each repo
+  include_tasks: mirror_repo.yml
+  loop: "{{ chineseroom_gitea_repos }}"
+  loop_control:
+    loop_var: chineseroom_gitea_mirror_repo

@@ -1,0 +1,17 @@
+---
+- name: Create nginx conf.trusted.d directory
+  file:
+    path: "{{ chineseroom_gitea_nginx_conf_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install Gitea nginx reverse proxy config
+  template:
+    src: gitea-nginx.conf.j2
+    dest: "{{ chineseroom_gitea_nginx_conf_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload nginx

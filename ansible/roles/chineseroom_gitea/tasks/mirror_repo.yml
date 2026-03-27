@@ -1,0 +1,63 @@
+---
+- name: "Create mirror directory for {{ chineseroom_gitea_mirror_repo.name }}"
+  file:
+    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_mirror_repo.name }}"
+    state: directory
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0750"
+
+# Initialise the git repo and configure remotes only on first run.
+# The 'creates' guard means this shell block is skipped if .git already exists.
+# git remote add is idempotent via 2>/dev/null || true so re-runs after partial failure are safe.
+- name: "Initialise mirror repo and remotes for {{ chineseroom_gitea_mirror_repo.name }}"
+  shell: |
+    set -euo pipefail
+    cd "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_mirror_repo.name }}"
+    git init -b "{{ chineseroom_gitea_mirror_repo.default_branch | default('main') }}"
+    git lfs install
+    git remote get-url origin 2>/dev/null \
+      || git remote add origin \
+           "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_repo.gitea_owner }}/{{ chineseroom_gitea_mirror_repo.name }}.git"
+    git remote get-url github 2>/dev/null \
+      || git remote add github "git@github.com:{{ chineseroom_gitea_mirror_repo.github_repo }}.git"
+  args:
+    creates: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_mirror_repo.name }}/.git"
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  no_log: yes
+
+# Store sync metadata inside .git/gitea/ so it is invisible to git-status and
+# cannot accidentally be staged or committed.
+- name: "Create .git/gitea metadata directory for {{ chineseroom_gitea_mirror_repo.name }}"
+  file:
+    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_mirror_repo.name }}/.git/gitea"
+    state: directory
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0750"
+
+- name: "Seed default-branch cache for {{ chineseroom_gitea_mirror_repo.name }}"
+  copy:
+    content: "{{ chineseroom_gitea_mirror_repo.default_branch | default('main') }}\n"
+    dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_mirror_repo.name }}/.git/gitea/default-branch"
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0640"
+    force: no   # scripts update this at runtime; don't overwrite on re-runs
+
+- name: "Create auto-push marker for {{ chineseroom_gitea_mirror_repo.name }}"
+  copy:
+    content: ""
+    dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_mirror_repo.name }}/.git/gitea/auto-push"
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0640"
+    force: no
+  when: chineseroom_gitea_mirror_repo.enable_auto_push | default(true)
+
+- name: "Remove auto-push marker for {{ chineseroom_gitea_mirror_repo.name }}"
+  file:
+    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_mirror_repo.name }}/.git/gitea/auto-push"
+    state: absent
+  when: not (chineseroom_gitea_mirror_repo.enable_auto_push | default(true))
