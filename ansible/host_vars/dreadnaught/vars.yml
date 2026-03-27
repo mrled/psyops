@@ -1,0 +1,24 @@
+---
+# Lima VM - connect via lima SSH config
+# For initial setup, use lima configuration in ~/.lima/dreadnaught/ssh.config
+# ansible_host: lima-dreadnaught
+# ansible_ssh_common_args: "-F {{ lookup('env', 'HOME') }}/.lima/dreadnaught/ssh.config"
+# Connect via tailscale
+ansible_host: 100.124.185.62
+ansible_ssh_common_args: "-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+ansible_user: mrled # must match lima VM username, which is same as host VM username by default
+
+tailscale_enable: true
+
+chineseroom_restricted_user: callista
+chineseroom_letsencrypt_domain: dreadnaught.backchannel.younix.us
+chineseroom_firewall_enabled: false
+chineseroom_aws_access_key_id: "{{ vault_chineseroom_aws_access_key_id }}"
+chineseroom_aws_secret_access_key: "{{ vault_chineseroom_aws_secret_access_key }}"
+chineseroom_app_openclaw_enable: false
+chineseroom_letsencrypt_email: "psyops@micahrl.com"
+
+interactive_user_list:
+- mrled # default user, passwordless sudo
+- callista # chineseroom limited user
+interactive_system_zsh_users: "{{ interactive_user_list }}"

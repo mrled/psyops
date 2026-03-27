@@ -1,0 +1,3 @@
+---
+ssh_copy_id_user: "{{ ansible_user }}"
+ssh_copy_id_keys: []
