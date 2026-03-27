@@ -1,0 +1,27 @@
+# Lima VM configuration for dreadnaught
+# Create and start: limactl start --name dreadnaught lima/dreadnaught.yaml
+# Shell access:     limactl shell dreadnaught
+# Stop:             limactl stop dreadnaught
+# Delete:           limactl delete dreadnaught
+
+base:
+  - template:_images/fedora-43
+
+cpus: 2
+memory: "2GiB"
+
+mounts:
+  - location: "~/mrldata/vmpub"
+    mountPoint: "/mnt/vmpub"
+    writable: false
+
+provision:
+  # By default on Fedora, lima allocates all 65536 subuid/subgid entries to the single VM user,
+  # leaving none available for containers or other users. Cap each entry at 65536 instead.
+  - mode: system
+    script: |
+      #!/bin/sh
+      set -eu
+      for file in /etc/subuid /etc/subgid; do
+        sed -i 's/^\([^:]*:[^:]*:\)[0-9]*$/\165536/' "$file"
+      done
