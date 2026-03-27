@@ -57,6 +57,16 @@ Resources:
           TTL: 60
           ResourceRecords: ["burrow.backchannel.younix.us."]
 
+        # Dreadnaught host records
+        - Name: dreadnaught.backchannel.younix.us.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.124.185.62"]
+        - Name: "*.dreadnaught.backchannel.younix.us."
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["dreadnaught.backchannel.younix.us."]
+
   # IAM group with permission to modify records in the backchannel zone
   BackchannelZoneUpdaterGroup:
     Type: AWS::IAM::Group
@@ -98,6 +108,13 @@ Resources:
       Groups:
         - !Ref BackchannelZoneUpdaterGroup
 
+  DreadnaughtBackchannelZoneUpdaterUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: DreadnaughtBackchannelZoneUpdater
+      Groups:
+        - !Ref BackchannelZoneUpdaterGroup
+
 Outputs:
   BackchannelZoneId:
     Description: The ID of the backchannel zone
@@ -128,3 +145,9 @@ Outputs:
     Value: !GetAtt BurrowBackchannelZoneUpdaterUser.Arn
     Export:
       Name: BackchannelZone-BurrowUpdaterUserArn
+
+  DreadnaughtBackchannelZoneUpdaterUserArn:
+    Description: The ARN for the Dreadnaught user with permission to modify records in the backchannel zone
+    Value: !GetAtt DreadnaughtBackchannelZoneUpdaterUser.Arn
+    Export:
+      Name: BackchannelZone-DreadnaughtUpdaterUserArn
