@@ -25,15 +25,25 @@
     name:
       - atuin
       - clang # used with linuxbrew a lot
+      - curl
       - git-lfs
       - glow
+      - gcc
+      - gcc-c++
+      - gmp
       - gmp-devel # required for haskell shake
+      - make
+      - ncurses
+      - ncurses-compat-libs
+      - perl # required for haskell ghcup
+      - pkg-config
       - podman-docker
       - restic
       - ripgrep
       - sqlite
       - stripe
       - vim
+      - xz
     state: present
 
 - name: Install zellij

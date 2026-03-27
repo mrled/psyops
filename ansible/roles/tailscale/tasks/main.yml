@@ -21,16 +21,24 @@
       state: latest
   when: ansible_distribution in ["Debian", "Ubuntu"]
 
-- name: Install Tailscale on CentOS
+- debug: var=ansible_distribution
+
+- name: Install Tailscale on RH
   block:
   # Rocky Linux is basically CentOS, but still supported.
-  # Tailscale doesn't support it by name, so we'll just swap it out here
-  - name: Set repo name
+  # Tailscale doesn't support it by name, so we'll just swap it out here.
+  # Fedora uses a different URL pattern (no version subdir).
+  - name: Set repo URL
     set_fact:
-      reponame: "{{ 'centos' if ansible_distribution == 'Rocky' else ansible_distribution | lower }}"
+      tailscale_repo_url: >-
+        {{
+          'https://pkgs.tailscale.com/stable/fedora/tailscale.repo'
+          if ansible_distribution | lower == 'fedora'
+          else 'https://pkgs.tailscale.com/stable/' + ('centos' if ansible_distribution == 'Rocky' else ansible_distribution | lower) + '/' + ansible_distribution_major_version + '/tailscale.repo'
+        }}
   - name: Get repo file
     get_url:
-      url: https://pkgs.tailscale.com/stable/{{ reponame }}/{{ ansible_distribution_major_version }}/tailscale.repo
+      url: "{{ tailscale_repo_url }}"
       dest: /etc/yum.repos.d/tailscale.repo
       owner: root
       mode: "0644"
@@ -39,7 +47,7 @@
       update_cache: yes
       name: tailscale
       state: latest
-  when: ansible_distribution | lower in ["rocky", "centos"]
+  when: ansible_distribution in ["Rocky", "Fedora"]
 
 - name: Start and enable tailscale service
   systemd:
