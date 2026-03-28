@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- mode: python -*-
 """
-Gitea webhook receiver — triggers GitHub push when the protected default branch is updated.
+Gitea webhook receiver — triggers a GitHub push when a protected/* branch is
+updated in Gitea.
 
 Gitea must be configured to send a push webhook to:
   http://127.0.0.1:{{ chineseroom_gitea_webhook_port }}/push-sync
@@ -24,6 +25,8 @@ PUSH_SCRIPT = os.environ['GITEA_PUSH_SCRIPT']
 MIRRORS_DIR = os.environ['GITEA_MIRRORS_DIR']
 HOST = os.environ.get('GITEA_WEBHOOK_LISTEN', '127.0.0.1')
 PORT = int(os.environ.get('GITEA_WEBHOOK_PORT', '9420'))
+
+PROTECTED_PREFIX = 'refs/heads/protected/'
 
 
 class WebhookHandler(http.server.BaseHTTPRequestHandler):
@@ -58,7 +61,6 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
 
         mirror_dir = os.path.join(MIRRORS_DIR, repo_name)
         auto_push_marker = os.path.join(mirror_dir, '.git', 'gitea', 'auto-push')
-        branch_file = os.path.join(mirror_dir, '.git', 'gitea', 'default-branch')
 
         if not os.path.isdir(mirror_dir):
             self._reply(200, b'no mirror configured\n')
@@ -68,20 +70,12 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             self._reply(200, b'auto-push disabled\n')
             return
 
-        if not os.path.exists(branch_file):
-            log.warning('Missing .git/gitea/default-branch for %s', repo_name)
-            self._reply(500, b'misconfigured: no default branch file\n')
+        if not ref.startswith(PROTECTED_PREFIX):
+            log.info('Ref %s is not under protected/; skipping', ref)
+            self._reply(200, b'not a protected branch\n')
             return
 
-        with open(branch_file) as fh:
-            default_branch = fh.read().strip()
-
-        if ref != f'refs/heads/{default_branch}':
-            log.info('Push to %s is not the default branch, skipping', ref)
-            self._reply(200, b'not default branch\n')
-            return
-
-        log.info('Triggering GitHub push for %s:%s', repo_name, default_branch)
+        log.info('Triggering GitHub push for %s:%s', repo_name, ref)
         subprocess.Popen(
             [PUSH_SCRIPT, repo_name, ref],
             stdout=subprocess.DEVNULL,

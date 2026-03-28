@@ -81,6 +81,7 @@
     --password {{ chineseroom_gitea_mirror_password_slurped.content | b64decode | trim }}
     --must-change-password=false
     --email {{ chineseroom_gitea_mirror_email }}
+    --admin
     --config {{ chineseroom_gitea_config_dir }}/app.ini
   become: yes
   become_user: "{{ chineseroom_gitea_user }}"
@@ -95,7 +96,7 @@
     --username {{ chineseroom_gitea_mirror_user }}
     --token-name mirrorbot
     --raw
-    --scopes write:repository
+    --scopes all
     --config {{ chineseroom_gitea_config_dir }}/app.ini
     > {{ chineseroom_gitea_mirror_token_file }}
   become: yes

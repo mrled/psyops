@@ -6,7 +6,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: [200, 404]
   register: _mirror_org_check
@@ -15,7 +15,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: POST
     body_format: json
     body:
@@ -28,7 +28,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/teams"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: 200
   register: _mirror_org_teams
@@ -37,7 +37,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/teams"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: POST
     body_format: json
     body:
@@ -57,7 +57,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/teams"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: POST
     body_format: json
     body:
@@ -78,7 +78,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/teams"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: 200
   register: _mirror_org_teams_current
@@ -92,6 +92,6 @@
           | first).id
       }}/members/{{ chineseroom_gitea_mirror_user }}
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: PUT
     status_code: [200, 204]

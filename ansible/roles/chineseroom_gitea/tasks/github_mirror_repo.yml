@@ -14,7 +14,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: [200, 404]
   register: _gitea_repo_check
@@ -23,7 +23,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/repos"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: POST
     body_format: json
     body:
@@ -41,7 +41,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/branch_protections"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: 200
   register: _gitea_branch_protections
@@ -73,7 +73,7 @@
       https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/branch_protections{{
         '/protected%2F*' if _rule_exists else '' }}
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: "{{ 'PATCH' if _rule_exists else 'POST' }}"
     body_format: json
     body: "{{ _bp_body | combine({'rule_name': 'protected/*'} if not _rule_exists else {}) }}"
@@ -85,7 +85,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/hooks"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: 200
   register: _gitea_hooks
@@ -94,7 +94,7 @@
   uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/hooks"
     headers:
-      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: POST
     body_format: json
     body:
@@ -138,6 +138,15 @@
     creates: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git"
   become: yes
   become_user: "{{ chineseroom_gitea_user }}"
+  no_log: yes
+
+- name: Update origin remote URL for {{ _gitea_name }}
+  shell: >-
+    git -C "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}" remote set-url origin
+    "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}.git"
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  changed_when: false
   no_log: yes
 
 - name: Create .git/gitea metadata directory for {{ _gitea_name }}

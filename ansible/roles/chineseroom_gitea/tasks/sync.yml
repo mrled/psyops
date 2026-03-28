@@ -1,11 +1,19 @@
 ---
 - name: Install pull-from-github script
-  template:
-    src: gitea-pull-from-github.sh.j2
+  copy:
+    src: gitea-pull-from-github.py
     dest: "{{ chineseroom_gitea_pull_script }}"
     owner: root
     group: "{{ chineseroom_gitea_group }}"
     mode: "0750"
+
+- name: Install pull-from-github config
+  template:
+    src: gitea-pull-from-github.conf.j2
+    dest: "{{ chineseroom_gitea_pull_config }}"
+    owner: root
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0640"
 
 - name: Install pull-from-github oneshot service
   template:

@@ -6,8 +6,8 @@ After=gitea.service
 Type=oneshot
 User={{ chineseroom_gitea_user }}
 Group={{ chineseroom_gitea_group }}
-ExecStart={{ chineseroom_gitea_pull_script }}
-# Allow write access to mirror working clones
+ExecStart=/usr/bin/python3 {{ chineseroom_gitea_pull_script }} {{ chineseroom_gitea_pull_config }}
 NoNewPrivileges=yes
 ProtectSystem=strict
 ReadWritePaths={{ chineseroom_gitea_mirrors_dir }}
+ReadOnlyPaths={{ chineseroom_gitea_sync_lib_dir }} {{ chineseroom_gitea_data_dir }}

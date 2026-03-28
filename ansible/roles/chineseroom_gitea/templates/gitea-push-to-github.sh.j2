@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # -*- mode: bash -*-
-# Push the Gitea default branch to GitHub, including all LFS objects.
-# Called asynchronously by the webhook receiver when Gitea signals a push.
+# Push a protected/* branch from Gitea to the corresponding branch on GitHub.
+# Called asynchronously by the webhook receiver when Gitea signals a push to
+# refs/heads/protected/<branch>.  The branch name is pushed verbatim to GitHub.
 #
 # Usage: push-to-github.sh <repo_name> <ref>
-#   repo_name  Gitea repository name (must have a mirror in {{ chineseroom_gitea_mirrors_dir }})
-#   ref        Git ref that was pushed, e.g. refs/heads/main
+#   repo_name  Gitea repository name (must have a working clone in {{ chineseroom_gitea_mirrors_dir }})
+#   ref        Git ref that was pushed, e.g. refs/heads/protected/main
 set -euo pipefail
 
 REPO="${1:?usage: $0 <repo_name> <ref>}"
@@ -17,65 +18,40 @@ LOG_TAG="gitea-push-github[$REPO]"
 
 log() { logger -t "$LOG_TAG" -- "$*"; }
 
-# Query GitHub for the repo's current default branch via the SSH remote.
-# Caches the result in .git/gitea/default-branch; falls back to cache on failure.
-get_default_branch() {
-    local mirror_dir="$1"
-    local cache="$mirror_dir/.git/gitea/default-branch"
-    local branch
-
-    branch=$(git -C "$mirror_dir" ls-remote --symref github HEAD 2>/dev/null \
-        | awk '/^ref:/ { sub("refs/heads/", "", $2); print $2; exit }')
-
-    if [[ -n "$branch" ]]; then
-        printf '%s' "$branch" > "$cache"
-        printf '%s' "$branch"
-        return 0
-    fi
-
-    if [[ -f "$cache" ]]; then
-        log "GitHub unreachable; using cached default branch"
-        cat "$cache"
-        return 0
-    fi
-
-    log "Cannot determine default branch (GitHub unreachable and no cache)"
-    return 1
-}
-
-if [[ ! -d "$MIRROR_DIR/.git" ]]; then
-    log "Mirror directory not found: $MIRROR_DIR"
-    exit 1
-fi
-
-DEFAULT_BRANCH=$(get_default_branch "$MIRROR_DIR") || exit 1
-
-if [[ "$REF" != "refs/heads/$DEFAULT_BRANCH" ]]; then
-    log "Ref $REF is not the default branch (refs/heads/$DEFAULT_BRANCH); skipping"
+PROTECTED_PREFIX="refs/heads/protected/"
+if [[ "$REF" != ${PROTECTED_PREFIX}* ]]; then
+    log "Ref $REF is not under protected/; skipping"
     exit 0
 fi
 
-# Prevent concurrent pushes for this repo
+BRANCH="${REF#${PROTECTED_PREFIX}}"
+
+if [[ ! -d "$MIRROR_DIR/.git" ]]; then
+    log "Working clone not found: $MIRROR_DIR"
+    exit 1
+fi
+
+# Prevent concurrent pushes for the same repo
 exec 200>"$LOCK_FILE"
 if ! flock -n 200; then
-    log "Another sync is already running; skipping"
+    log "Another push is already running for $REPO; skipping"
     exit 0
 fi
 
 (
     cd "$MIRROR_DIR"
 
-    log "Fetching commits from Gitea (origin/$DEFAULT_BRANCH)..."
-    git fetch origin "$DEFAULT_BRANCH"
+    log "Fetching protected/$BRANCH from Gitea..."
+    git fetch origin "refs/heads/protected/${BRANCH}:refs/remotes/origin/protected/${BRANCH}"
 
     log "Fetching LFS objects from Gitea..."
-    git lfs fetch origin --all
+    git lfs fetch origin --all || true
 
-    log "Pushing commits to GitHub..."
-    git push github "refs/remotes/origin/${DEFAULT_BRANCH}:refs/heads/${DEFAULT_BRANCH}"
+    log "Pushing $BRANCH to GitHub..."
+    git push github "refs/remotes/origin/protected/${BRANCH}:refs/heads/${BRANCH}"
 
     log "Pushing LFS objects to GitHub..."
-    git lfs push github --all
+    git lfs push github --all || true
 
     log "Push to GitHub complete."
 )

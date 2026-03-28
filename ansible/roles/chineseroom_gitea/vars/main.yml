@@ -15,7 +15,8 @@ chineseroom_gitea_log_dir: /var/log/gitea
 chineseroom_gitea_sync_lib_dir: /usr/local/lib/gitea-sync
 chineseroom_gitea_webhook_receiver_bin: "{{ chineseroom_gitea_sync_lib_dir }}/webhook-receiver.py"
 chineseroom_gitea_push_script: "{{ chineseroom_gitea_sync_lib_dir }}/push-to-github.sh"
-chineseroom_gitea_pull_script: "{{ chineseroom_gitea_sync_lib_dir }}/pull-from-github.sh"
+chineseroom_gitea_pull_script: "{{ chineseroom_gitea_sync_lib_dir }}/pull-from-github.py"
+chineseroom_gitea_pull_config: "{{ chineseroom_gitea_sync_lib_dir }}/pull-from-github.conf"
 chineseroom_gitea_webhook_env_file: "{{ chineseroom_gitea_sync_lib_dir }}/.webhook-receiver.env"
 
 # nginx config location (conf.trusted.d is included by the chineseroom nginx)
