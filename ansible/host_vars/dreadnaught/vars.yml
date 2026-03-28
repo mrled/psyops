@@ -74,6 +74,12 @@ chineseroom_gitea_github_mirrors:
         port: 3002
       - subdomain: understatement3
         port: 3003
+  - github_repo: mrled/me.micahrl.com
+    domain_map:
+      - subdomain: micahrl
+        port: 64224
+      - subdomain: lrhacim
+        port: 42246
 
 chineseroom_user_ssh_privkeys:
   - filename: id_ed25519
