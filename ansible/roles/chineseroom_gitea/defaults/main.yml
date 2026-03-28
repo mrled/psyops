@@ -117,3 +117,6 @@ chineseroom_gitea_repos: []
 
 # systemd OnCalendar expression for the GitHub→Gitea pull timer
 chineseroom_gitea_sync_pull_oncalendar: "*:0/15"
+
+# Set true to open Gitea ports in firewalld
+chineseroom_firewall_enabled: false

@@ -87,7 +87,7 @@
     permanent: yes
     state: enabled
     immediate: yes
-  ignore_errors: yes
+  when: chineseroom_firewall_enabled
 
 - name: Open Gitea SSH port in firewall
   firewalld:
@@ -96,7 +96,7 @@
     permanent: yes
     state: enabled
     immediate: yes
-  ignore_errors: yes
+  when: chineseroom_firewall_enabled
 
 - name: Enable and start Gitea
   systemd:
