@@ -1,0 +1,161 @@
+---
+# Called once per entry in chineseroom_gitea_github_mirrors.
+# Loop var: chineseroom_gitea_github_mirror
+
+- name: Set derived facts for {{ chineseroom_gitea_github_mirror.github_repo }}
+  set_fact:
+    _gitea_name: "{{ chineseroom_gitea_github_mirror.github_repo | replace('/', '--') }}"
+    _github_owner: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[0] }}"
+    _github_name: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[1] }}"
+
+# --- Gitea repo ---
+
+- name: Check if Gitea repo {{ _gitea_name }} exists
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_user }}/{{ _gitea_name }}"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: GET
+    status_code: [200, 404]
+  register: _gitea_repo_check
+
+- name: Create Gitea repo {{ _gitea_name }}
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/admin/users/{{ chineseroom_gitea_mirror_user }}/repos"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ _gitea_name }}"
+      description: "Mirror of https://github.com/{{ chineseroom_gitea_github_mirror.github_repo }}"
+      private: false
+      auto_init: false
+      default_branch: "{{ chineseroom_gitea_github_mirror.default_branch | default('main') }}"
+    status_code: 201
+  when: _gitea_repo_check.status == 404
+
+# --- Gitea webhook ---
+
+- name: Get webhooks for {{ _gitea_name }}
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_user }}/{{ _gitea_name }}/hooks"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: GET
+    status_code: 200
+  register: _gitea_hooks
+
+- name: Add push webhook for {{ _gitea_name }}
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_user }}/{{ _gitea_name }}/hooks"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: POST
+    body_format: json
+    body:
+      type: gitea
+      config:
+        url: "http://127.0.0.1:{{ chineseroom_gitea_webhook_port }}/push-sync"
+        content_type: json
+        secret: "{{ chineseroom_gitea_webhook_secret }}"
+      events: ["push"]
+      active: true
+    status_code: 201
+  no_log: yes
+  when: >-
+    (_gitea_hooks.json
+      | selectattr('config.url', 'equalto',
+          'http://127.0.0.1:' + chineseroom_gitea_webhook_port | string + '/push-sync')
+      | list | length) == 0
+
+# --- Working clone (gitea system user) ---
+
+- name: Create working clone directory for {{ _gitea_name }}
+  file:
+    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}"
+    state: directory
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0750"
+
+- name: Initialise working clone and remotes for {{ _gitea_name }}
+  shell: |
+    set -euo pipefail
+    cd "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}"
+    git init -b "{{ chineseroom_gitea_github_mirror.default_branch | default('main') }}"
+    git lfs install
+    git remote get-url origin 2>/dev/null \
+      || git remote add origin \
+           "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_user }}/{{ _gitea_name }}.git"
+    git remote get-url github 2>/dev/null \
+      || git remote add github "git@github.com:{{ chineseroom_gitea_github_mirror.github_repo }}.git"
+  args:
+    creates: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git"
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  no_log: yes
+
+- name: Create .git/gitea metadata directory for {{ _gitea_name }}
+  file:
+    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git/gitea"
+    state: directory
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0750"
+
+- name: Seed default-branch cache for {{ _gitea_name }}
+  copy:
+    content: "{{ chineseroom_gitea_github_mirror.default_branch | default('main') }}\n"
+    dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git/gitea/default-branch"
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0640"
+    force: no
+
+- name: Create auto-push marker for {{ _gitea_name }}
+  copy:
+    content: ""
+    dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git/gitea/auto-push"
+    owner: "{{ chineseroom_gitea_user }}"
+    group: "{{ chineseroom_gitea_group }}"
+    mode: "0640"
+    force: no
+
+# --- Restricted user checkout ---
+
+- name: Create checkout parent directory for {{ _gitea_name }}
+  file:
+    path: "/home/{{ chineseroom_restricted_user }}/repo/github.com/{{ _github_owner }}"
+    state: directory
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: "0755"
+
+- name: Clone {{ _gitea_name }} to restricted user checkout
+  shell: >-
+    git clone
+    http://127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_user }}/{{ _gitea_name }}.git
+    /home/{{ chineseroom_restricted_user }}/repo/github.com/{{ _github_owner }}/{{ _github_name }}
+  become: yes
+  become_user: "{{ chineseroom_restricted_user }}"
+  args:
+    creates: "/home/{{ chineseroom_restricted_user }}/repo/github.com/{{ _github_owner }}/{{ _github_name }}/.git"
+  failed_when: false
+
+# --- Sandbox domain map ---
+
+- name: Add domain map entries for {{ _gitea_name }}
+  blockinfile:
+    path: "{{ chineseroom_user_map_file }}"
+    create: yes
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: "0644"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - github-mirror-{{ _gitea_name }}"
+    block: |
+      {% for mapping in chineseroom_gitea_github_mirror.domain_map | default([]) %}
+      {{ mapping.subdomain }} {{ mapping.port }}
+      {% endfor %}
+  when: chineseroom_gitea_github_mirror.domain_map | default([]) | length > 0
+  notify: regen nginx mappings

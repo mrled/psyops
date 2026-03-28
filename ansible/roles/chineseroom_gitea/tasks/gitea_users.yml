@@ -43,7 +43,7 @@
     --username {{ chineseroom_gitea_admin_username }}
     --token-name ansible-admin
     --raw
-    --scopes write:admin,write:user
+    --scopes all
     --config {{ chineseroom_gitea_config_dir }}/app.ini
     > {{ chineseroom_gitea_admin_token_file }}
   become: yes

@@ -44,13 +44,14 @@ chineseroom_gitea_users:
       - title: callista@dreadnaught
         pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGmEr9SIPlKKHxIFGbzTNcPnfMVquDal8Z0EAb+tLxpB
 
-chineseroom_gitea_repos:
-  - name: KeymapKit
-    gitea_owner: callista
-    github_repo: mrled/KeymapKit
+chineseroom_gitea_github_mirrors:
+  - github_repo: mrled/KeymapKit
     default_branch: main
-    enable_auto_push: true
-    enable_auto_pull: true
+    domain_map:
+      - subdomain: keymapkit1
+        port: 8081
+      - subdomain: keymapkit2
+        port: 8082
 
 chineseroom_user_ssh_privkeys:
   - filename: id_ed25519

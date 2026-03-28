@@ -29,6 +29,12 @@
   tags:
     - chineseroom_gitea_users
 
+- name: Set up GitHub mirror repos
+  import_tasks: github_mirrors.yml
+  tags:
+    - chineseroom_gitea_github_mirrors
+  when: chineseroom_gitea_github_mirrors | length > 0
+
 - name: Set up per-repo mirror working clones
   import_tasks: mirrors.yml
   tags:

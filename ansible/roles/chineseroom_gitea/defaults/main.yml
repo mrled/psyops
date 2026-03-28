@@ -47,10 +47,21 @@ chineseroom_gitea_webhook_secret: ""
 chineseroom_gitea_admin_username: chineseroom-admin
 chineseroom_gitea_admin_email: chineseroom-admin@example.com
 
-# Service account used by mirror clones to authenticate to the local Gitea+LFS server.
+# Service account that owns GitHub mirror repos and authenticates mirror clone git operations.
 # Created automatically; password and token are generated on the host and saved to files.
-chineseroom_gitea_mirror_user: mirror-bot
-chineseroom_gitea_mirror_email: chineseroom-mirror-bot@example.com
+chineseroom_gitea_mirror_user: github
+chineseroom_gitea_mirror_email: chineseroom-github@example.com
+
+# List of GitHub repos to mirror into Gitea.
+# Each entry:
+#   github_repo:     GitHub owner/repo (required), e.g. mrled/psyops
+#   default_branch:  branch to sync (default: main)
+#   domain_map:      optional list of {subdomain, port} sandbox nginx entries
+#
+# Gitea repo name: owner--repo  (e.g. mrled--psyops)
+# Gitea owner:     chineseroom_gitea_mirror_user (github)
+# Restricted user checkout: ~/repo/github.com/owner/repo
+chineseroom_gitea_github_mirrors: []
 
 # Webhook receiver listen address and port (loopback only — Gitea calls it locally)
 chineseroom_gitea_webhook_listen: "127.0.0.1"

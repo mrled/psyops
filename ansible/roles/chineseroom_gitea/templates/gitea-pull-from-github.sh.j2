@@ -89,6 +89,9 @@ sync_repo() {
     ) || true   # don't abort the whole script if one repo's subshell fails
 }
 
+{% for mirror in chineseroom_gitea_github_mirrors %}
+sync_repo "{{ mirror.github_repo | replace('/', '--') }}"
+{% endfor %}
 {% for repo in chineseroom_gitea_repos %}
 {% if repo.enable_auto_pull | default(true) %}
 sync_repo "{{ repo.name }}"

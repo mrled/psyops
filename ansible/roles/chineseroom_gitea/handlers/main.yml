@@ -17,3 +17,7 @@
   service:
     name: nginx
     state: reloaded
+
+- name: regen nginx mappings
+  command: "{{ chineseroom_nginx_mapping_script }}"
+  changed_when: false
