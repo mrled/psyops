@@ -1,0 +1,27 @@
+---
+# Called once per user entry that has ssh_keys defined.
+# Loop var: gitea_user (one entry from chineseroom_gitea_users)
+
+- name: Get existing SSH keys for {{ gitea_user.username }}
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/users/{{ gitea_user.username }}/keys"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: GET
+    status_code: 200
+  register: chineseroom_gitea_existing_keys
+
+- name: Add missing SSH keys for {{ gitea_user.username }}
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/admin/users/{{ gitea_user.username }}/keys"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: POST
+    body_format: json
+    body:
+      key: "{{ item.pubkey }}"
+      title: "{{ item.title }}"
+      read_only: false
+    status_code: 201
+  when: item.title not in (chineseroom_gitea_existing_keys.json | map(attribute='title') | list)
+  loop: "{{ gitea_user.ssh_keys }}"

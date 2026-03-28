@@ -21,3 +21,10 @@ chineseroom_gitea_webhook_env_file: "{{ chineseroom_gitea_sync_lib_dir }}/.webho
 # nginx config location (conf.trusted.d is included by the chineseroom nginx)
 chineseroom_gitea_nginx_conf_dir: /etc/nginx/conf.trusted.d
 chineseroom_gitea_nginx_conf_path: "{{ chineseroom_gitea_nginx_conf_dir }}/gitea.conf"
+
+# Paths where generated passwords and tokens are stored on the server.
+# All are written once and reused on subsequent runs.
+chineseroom_gitea_admin_password_file: "{{ chineseroom_gitea_data_dir }}/ansible-admin.password"
+chineseroom_gitea_admin_token_file: "{{ chineseroom_gitea_data_dir }}/ansible-admin.token"
+chineseroom_gitea_mirror_password_file: "{{ chineseroom_gitea_data_dir }}/mirror-bot.password"
+chineseroom_gitea_mirror_token_file: "{{ chineseroom_gitea_data_dir }}/mirror-bot.token"

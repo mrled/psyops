@@ -5,6 +5,16 @@
     shell: "{{ chineseroom_restricted_user_shell }}"
   when: chineseroom_restricted_user_shell is defined
 
+- name: Install SSH private keys for restricted user
+  copy:
+    content: "{{ item.content }}"
+    dest: "/home/{{ chineseroom_restricted_user }}/.ssh/{{ item.filename }}"
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: "0600"
+  no_log: yes
+  loop: "{{ chineseroom_user_ssh_privkeys }}"
+
 - name: Install GHCup for chineseroom user
   become: yes
   become_user: "{{ chineseroom_restricted_user }}"

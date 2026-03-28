@@ -18,6 +18,44 @@ chineseroom_aws_secret_access_key: "{{ vault_chineseroom_aws_secret_access_key }
 chineseroom_app_openclaw_enable: false
 chineseroom_letsencrypt_email: "psyops@micahrl.com"
 
+chineseroom_gitea_enable: true
+chineseroom_gitea_domain: "gitea.dreadnaught.backchannel.younix.us"
+chineseroom_gitea_arch: arm64
+chineseroom_gitea_github_ssh_privkey: "{{ vault_chineseroom_gitea_github_ssh_privkey }}"
+chineseroom_gitea_secret_key: "{{ vault_chineseroom_gitea_secret_key }}"
+chineseroom_gitea_internal_token: "{{ vault_chineseroom_gitea_internal_token }}"
+chineseroom_gitea_lfs_jwt_secret: "{{ vault_chineseroom_gitea_lfs_jwt_secret }}"
+chineseroom_gitea_oauth2_jwt_secret: "{{ vault_chineseroom_gitea_oauth2_jwt_secret }}"
+
+# WARNING: gitea doesn't change the password if it's already set, so these passwords are only used at creation time.
+chineseroom_gitea_users:
+  - username: mrled
+    email: me@micahrl.com
+    password: "{{ vault_chineseroom_gitea_users['mrled'].password }}"
+    admin: false
+    ssh_keys:
+      - title: conspirator@PSYOPS
+        pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m
+  - username: callista
+    email: me+callista-dreadnaught-gitea@micahrl.com
+    password: "{{ vault_chineseroom_gitea_users['callista'].password }}"
+    admin: false
+    ssh_keys:
+      - title: callista@dreadnaught
+        pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGmEr9SIPlKKHxIFGbzTNcPnfMVquDal8Z0EAb+tLxpB
+
+chineseroom_gitea_repos:
+  - name: KeymapKit
+    gitea_owner: callista
+    github_repo: mrled/KeymapKit
+    default_branch: main
+    enable_auto_push: true
+    enable_auto_pull: true
+
+chineseroom_user_ssh_privkeys:
+  - filename: id_ed25519
+    content: "{{ vault_chineseroom_user_ssh_privkey }}"
+
 interactive_user_list:
 - mrled # default user, passwordless sudo
 - callista # chineseroom limited user

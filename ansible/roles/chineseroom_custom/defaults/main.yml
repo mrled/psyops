@@ -29,6 +29,11 @@ chineseroom_enable_whitelist_domains: false
 chineseroom_whitelist_domains:
 - anthropic.com
 
+# Private SSH keys to install into the restricted user's ~/.ssh/.
+# Each entry: {filename: "id_ed25519", content: "{{ vault_... }}"}
+# Store key contents in vault.
+chineseroom_user_ssh_privkeys: []
+
 # Jujutsu version control system version
 jujutsu_version: "0.34.0"
 

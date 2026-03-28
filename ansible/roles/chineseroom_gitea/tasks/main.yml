@@ -24,6 +24,11 @@
   tags:
     - chineseroom_gitea_sync
 
+- name: Create Gitea application users
+  import_tasks: gitea_users.yml
+  tags:
+    - chineseroom_gitea_users
+
 - name: Set up per-repo mirror working clones
   import_tasks: mirrors.yml
   tags:

@@ -7,5 +7,7 @@
     - { name: tailscale, tags: ["tailscale"], when: "tailscale_enable | default(False)" }
     - { name: chineseroom, tags: ["chineseroom"] }
     - { name: chineseroom_custom, tags: ["chineseroom"] }
+    - { name: chineseroom_gitea, tags: ["chineseroom_gitea"], when : "chineseroom_gitea_enable | default(False)" }
+    - { name: chineseroom_user_apps, tags: ["chineseroom_user_apps"], when: "chineseroom_user_apps | default([]) | length > 0" }
     - { name: interactive_system, tags: ["interactive", "interactive_system"] }
     - { name: interactive_user, tags: ["interactive", "interactive_user"] }

@@ -18,9 +18,11 @@ chineseroom_gitea_arch: arm64
 # chineseroom_gitea_secret_key:     64-char random string; generate with: openssl rand -hex 32
 # chineseroom_gitea_internal_token: JWT token; generate with: gitea generate secret INTERNAL_TOKEN
 # chineseroom_gitea_lfs_jwt_secret: JWT secret; generate with: gitea generate secret JWT_SECRET
+# chineseroom_gitea_oauth2_jwt_secret: JWT secret; generate with: gitea generate secret JWT_SECRET
 chineseroom_gitea_secret_key: ""
 chineseroom_gitea_internal_token: ""
 chineseroom_gitea_lfs_jwt_secret: ""
+chineseroom_gitea_oauth2_jwt_secret: ""
 
 # SSH private key for pushing/pulling to GitHub from the mirror working clones.
 # Store in vault. The public key is derived automatically via ssh-keygen.
@@ -29,18 +31,26 @@ chineseroom_gitea_github_ssh_privkey: ""
 # SSH host fingerprints for github.com in known_hosts format.
 # Obtain from https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 # Required; leaving this empty will cause all GitHub SSH connections to fail.
-chineseroom_gitea_github_ssh_host_fingerprints: []
+chineseroom_gitea_github_ssh_host_fingerprints:
+- github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+- github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+- github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
 
 # HMAC secret shared with Gitea's webhook configuration (Settings → Webhooks → Secret)
 chineseroom_gitea_webhook_secret: ""
 
-# Gitea API token used by mirror clones to authenticate to the local Gitea+LFS server.
-# Create via Gitea: User Settings → Applications → Generate Token (needs repo scope).
-chineseroom_gitea_mirror_token: ""
+# Dedicated Gitea admin account used by Ansible for API operations (e.g. adding SSH keys).
+# Always created as an admin; not intended for interactive login.
+# Password is generated on the host and saved to chineseroom_gitea_admin_password_file.
+# API token is generated and saved to chineseroom_gitea_admin_token_file.
+# Both files are created once and reused on subsequent runs.
+chineseroom_gitea_admin_username: chineseroom-admin
+chineseroom_gitea_admin_email: chineseroom-admin@example.com
 
-# Username used by mirror clones in the Gitea HTTP URL.
-# A Gitea user with this name must exist and own the mirror token above.
+# Service account used by mirror clones to authenticate to the local Gitea+LFS server.
+# Created automatically; password and token are generated on the host and saved to files.
 chineseroom_gitea_mirror_user: mirror-bot
+chineseroom_gitea_mirror_email: chineseroom-mirror-bot@example.com
 
 # Webhook receiver listen address and port (loopback only — Gitea calls it locally)
 chineseroom_gitea_webhook_listen: "127.0.0.1"
@@ -70,12 +80,17 @@ chineseroom_gitea_lfs_enable: true
 #       default_branch: main
 #       enable_auto_push: true
 #       enable_auto_pull: true
+# List of Gitea application users to create.
+# Passwords are only set at creation — Ansible will not update them afterwards.
+# Each entry supports:
+#   username:             login name (required)
+#   email:                email address (required)
+#   password:             initial password — store in vault (required)
+#   admin:                whether the user has admin rights (default: false)
+#   must_change_password: force password change on first login (default: true)
+chineseroom_gitea_users: []
+
 chineseroom_gitea_repos: []
 
 # systemd OnCalendar expression for the GitHub→Gitea pull timer
 chineseroom_gitea_sync_pull_oncalendar: "*:0/15"
-
-# TLS certificate and key for the nginx reverse proxy.
-# Typically the wildcard/SAN cert managed by the chineseroom role.
-chineseroom_gitea_nginx_ssl_cert: ""
-chineseroom_gitea_nginx_ssl_key: ""

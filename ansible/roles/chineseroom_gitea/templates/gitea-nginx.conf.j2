@@ -10,8 +10,8 @@ server {
     listen 443 ssl;
     server_name {{ chineseroom_gitea_domain }};
 
-    ssl_certificate     {{ chineseroom_gitea_nginx_ssl_cert }};
-    ssl_certificate_key {{ chineseroom_gitea_nginx_ssl_key }};
+    ssl_certificate     {{ chineseroom_letsencrypt_base }}/live/{{ chineseroom_letsencrypt_domain }}/fullchain.pem;
+    ssl_certificate_key {{ chineseroom_letsencrypt_base }}/live/{{ chineseroom_letsencrypt_domain }}/privkey.pem;
 
     # No body size limit — required for git-lfs uploads
     client_max_body_size 0;

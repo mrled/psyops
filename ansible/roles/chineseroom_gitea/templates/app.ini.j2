@@ -32,6 +32,11 @@ INSTALL_LOCK   = true
 DISABLE_REGISTRATION = {{ chineseroom_gitea_disable_registration | lower }}
 REQUIRE_SIGNIN_VIEW  = false
 
+[oauth2]
+ENABLED = false
+# it'll write this if we don't provide one
+JWT_SECRET = {{ chineseroom_gitea_oauth2_jwt_secret }}
+
 [webhook]
 ; Allow Gitea to deliver webhooks to the local receiver on loopback
 ALLOWED_HOST_LIST = loopback,127.0.0.1,::1

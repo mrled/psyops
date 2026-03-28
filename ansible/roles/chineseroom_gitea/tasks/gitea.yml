@@ -6,6 +6,11 @@
       - git-lfs
     state: present
 
+- name: Check if Gitea binary already exists
+  stat:
+    path: "{{ chineseroom_gitea_binary_versioned }}"
+  register: chineseroom_gitea_binary_stat
+
 - name: Download Gitea binary
   get_url:
     url: "{{ chineseroom_gitea_dl_url }}"
@@ -13,7 +18,7 @@
     mode: "0755"
     owner: root
     group: root
-  creates: "{{ chineseroom_gitea_binary_versioned }}"
+  when: not chineseroom_gitea_binary_stat.stat.exists
   notify: restart gitea
 
 - name: Symlink Gitea binary to /usr/local/bin/gitea
@@ -57,9 +62,10 @@
   template:
     src: app.ini.j2
     dest: "{{ chineseroom_gitea_config_dir }}/app.ini"
-    owner: root
+    owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
-    mode: "0640"
+    mode: "0660"
+    backup: yes
   no_log: yes
   notify: restart gitea
 

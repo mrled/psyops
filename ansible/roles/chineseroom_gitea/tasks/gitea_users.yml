@@ -1,0 +1,138 @@
+---
+- name: List existing Gitea users
+  command: "{{ chineseroom_gitea_binary }} admin user list --config {{ chineseroom_gitea_config_dir }}/app.ini"
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  environment:
+    GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
+  register: chineseroom_gitea_user_list
+  changed_when: false
+  failed_when: false
+
+- name: Generate admin password
+  shell: openssl rand -hex 32 > {{ chineseroom_gitea_admin_password_file }}
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  args:
+    creates: "{{ chineseroom_gitea_admin_password_file }}"
+
+- name: Read admin password
+  slurp:
+    src: "{{ chineseroom_gitea_admin_password_file }}"
+  register: chineseroom_gitea_admin_password_slurped
+
+- name: Create Gitea admin user for Ansible API operations
+  command: >-
+    {{ chineseroom_gitea_binary }} admin user create
+    --username {{ chineseroom_gitea_admin_username }}
+    --password {{ chineseroom_gitea_admin_password_slurped.content | b64decode | trim }}
+    --email {{ chineseroom_gitea_admin_email }}
+    --admin
+    --must-change-password=false
+    --config {{ chineseroom_gitea_config_dir }}/app.ini
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  environment:
+    GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
+  when: chineseroom_gitea_admin_username not in chineseroom_gitea_user_list.stdout
+  no_log: yes
+
+- name: Generate Ansible admin API token
+  shell: >-
+    {{ chineseroom_gitea_binary }} admin user generate-access-token
+    --username {{ chineseroom_gitea_admin_username }}
+    --token-name ansible-admin
+    --raw
+    --scopes write:admin,write:user
+    --config {{ chineseroom_gitea_config_dir }}/app.ini
+    > {{ chineseroom_gitea_admin_token_file }}
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  environment:
+    GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
+  args:
+    creates: "{{ chineseroom_gitea_admin_token_file }}"
+
+- name: Read Ansible admin API token
+  slurp:
+    src: "{{ chineseroom_gitea_admin_token_file }}"
+  register: chineseroom_gitea_admin_token_slurped
+
+- name: Set admin token fact
+  set_fact:
+    chineseroom_gitea_admin_token: "{{ chineseroom_gitea_admin_token_slurped.content | b64decode | trim }}"
+
+- name: Generate mirror-bot password
+  shell: openssl rand -hex 32 > {{ chineseroom_gitea_mirror_password_file }}
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  args:
+    creates: "{{ chineseroom_gitea_mirror_password_file }}"
+
+- name: Read mirror-bot password
+  slurp:
+    src: "{{ chineseroom_gitea_mirror_password_file }}"
+  register: chineseroom_gitea_mirror_password_slurped
+
+- name: Create mirror-bot user
+  command: >-
+    {{ chineseroom_gitea_binary }} admin user create
+    --username {{ chineseroom_gitea_mirror_user }}
+    --password {{ chineseroom_gitea_mirror_password_slurped.content | b64decode | trim }}
+    --must-change-password=false
+    --email {{ chineseroom_gitea_mirror_email }}
+    --config {{ chineseroom_gitea_config_dir }}/app.ini
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  environment:
+    GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
+  when: chineseroom_gitea_mirror_user not in chineseroom_gitea_user_list.stdout
+  # no_log: yes
+
+- name: Generate mirror-bot API token
+  shell: >-
+    {{ chineseroom_gitea_binary }} admin user generate-access-token
+    --username {{ chineseroom_gitea_mirror_user }}
+    --token-name mirror-bot
+    --raw
+    --scopes write:repository
+    --config {{ chineseroom_gitea_config_dir }}/app.ini
+    > {{ chineseroom_gitea_mirror_token_file }}
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  environment:
+    GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
+  args:
+    creates: "{{ chineseroom_gitea_mirror_token_file }}"
+
+- name: Read mirror-bot API token
+  slurp:
+    src: "{{ chineseroom_gitea_mirror_token_file }}"
+  register: chineseroom_gitea_mirror_token_slurped
+
+- name: Set mirror-bot token fact
+  set_fact:
+    chineseroom_gitea_mirror_token: "{{ chineseroom_gitea_mirror_token_slurped.content | b64decode | trim }}"
+
+- name: Create Gitea users
+  command: >-
+    {{ chineseroom_gitea_binary }} admin user create
+    --username {{ item.username }}
+    --password {{ item.password }}
+    --email {{ item.email }}
+    --must-change-password=false
+    {{ '--admin' if item.admin | default(false) else '' }}
+    --config {{ chineseroom_gitea_config_dir }}/app.ini
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  environment:
+    GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
+  when: item.username not in chineseroom_gitea_user_list.stdout
+  no_log: yes
+  loop: "{{ chineseroom_gitea_users }}"
+
+- name: Add SSH keys to Gitea users
+  include_tasks: gitea_user_ssh_keys.yml
+  loop: "{{ chineseroom_gitea_users | selectattr('ssh_keys', 'defined') | list }}"
+  loop_control:
+    loop_var: gitea_user
