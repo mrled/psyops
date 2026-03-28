@@ -26,6 +26,7 @@ chineseroom_gitea_oauth2_jwt_secret: ""
 
 # SSH private key for pushing/pulling to GitHub from the mirror working clones.
 # Store in vault. The public key is derived automatically via ssh-keygen.
+chineseroom_gitea_github_api_token: ""
 chineseroom_gitea_github_ssh_privkey: ""
 
 # SSH host fingerprints for github.com in known_hosts format.
@@ -62,7 +63,7 @@ chineseroom_gitea_mirror_team_untrusted: untrusted
 # List of GitHub repos to mirror into Gitea.
 # Each entry:
 #   github_repo:     GitHub owner/repo (required), e.g. mrled/psyops
-#   default_branch:  branch to sync (default: main)
+#   default_branch:  branch to sync (default: queried from GitHub API)
 #   domain_map:      optional list of {subdomain, port} sandbox nginx entries
 #
 # Gitea repo name: owner--repo  (e.g. mrled--psyops)

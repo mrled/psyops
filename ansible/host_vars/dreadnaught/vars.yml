@@ -21,6 +21,7 @@ chineseroom_letsencrypt_email: "psyops@micahrl.com"
 chineseroom_gitea_enable: true
 chineseroom_gitea_domain: "gitea.dreadnaught.backchannel.younix.us"
 chineseroom_gitea_arch: arm64
+chineseroom_gitea_github_api_token: "{{ vault_chineseroom_gitea_github_api_token }}"
 chineseroom_gitea_github_ssh_privkey: "{{ vault_chineseroom_gitea_github_ssh_privkey }}"
 chineseroom_gitea_secret_key: "{{ vault_chineseroom_gitea_secret_key }}"
 chineseroom_gitea_internal_token: "{{ vault_chineseroom_gitea_internal_token }}"
@@ -50,12 +51,29 @@ chineseroom_gitea_users:
 
 chineseroom_gitea_github_mirrors:
   - github_repo: mrled/KeymapKit
-    default_branch: main
     domain_map:
       - subdomain: keymapkit1
         port: 8081
       - subdomain: keymapkit2
         port: 8082
+  - github_repo: mrled/dhd
+  - github_repo: mrled/psyops
+  - github_repo: mrled/suns
+    domain_map:
+      - subdomain: suns
+        port: 7867
+  - github_repo: mrled/hedgerules
+    domain_map:
+      - subdomain: hedgerules
+        port: 13100
+  - github_repo: mrled/understatement
+    domain_map:
+      - subdomain: understatement1
+        port: 3001
+      - subdomain: understatement2
+        port: 3002
+      - subdomain: understatement3
+        port: 3003
 
 chineseroom_user_ssh_privkeys:
   - filename: id_ed25519

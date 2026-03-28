@@ -8,6 +8,19 @@
     _github_owner: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[0] }}"
     _github_name: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[1] }}"
 
+- name: Query GitHub API for {{ chineseroom_gitea_github_mirror.github_repo }}
+  uri:
+    url: "https://api.github.com/repos/{{ chineseroom_gitea_github_mirror.github_repo }}"
+    method: GET
+    headers:
+      Accept: application/vnd.github+json
+      Authorization: "{{ 'Bearer ' + chineseroom_gitea_github_api_token if chineseroom_gitea_github_api_token else omit }}"
+  register: _github_repo_info
+
+- name: Set default branch fact for {{ chineseroom_gitea_github_mirror.github_repo }}
+  set_fact:
+    _github_default_branch: "{{ chineseroom_gitea_github_mirror.default_branch | default(_github_repo_info.json.default_branch) }}"
+
 # --- Gitea repo ---
 
 - name: Check if Gitea repo {{ _gitea_name }} exists
@@ -31,7 +44,7 @@
       description: "Mirror of https://github.com/{{ chineseroom_gitea_github_mirror.github_repo }}"
       private: false
       auto_init: false
-      default_branch: "{{ chineseroom_gitea_github_mirror.default_branch | default('main') }}"
+      default_branch: "{{ _github_default_branch }}"
     status_code: 201
   when: _gitea_repo_check.status == 404
 
@@ -127,7 +140,7 @@
   shell: |
     set -euo pipefail
     cd "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}"
-    git init -b "{{ chineseroom_gitea_github_mirror.default_branch | default('main') }}"
+    git init -b "{{ _github_default_branch }}"
     git lfs install
     git remote get-url origin 2>/dev/null \
       || git remote add origin \
@@ -159,7 +172,7 @@
 
 - name: Seed default-branch cache for {{ _gitea_name }}
   copy:
-    content: "{{ chineseroom_gitea_github_mirror.default_branch | default('main') }}\n"
+    content: "{{ _github_default_branch }}\n"
     dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git/gitea/default-branch"
     owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
