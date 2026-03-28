@@ -135,7 +135,7 @@
 - name: Clone {{ _gitea_name }} to restricted user checkout
   shell: >-
     git clone
-    http://127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_user }}/{{ _gitea_name }}.git
+    ssh://git@{{ chineseroom_gitea_domain }}:{{ chineseroom_gitea_ssh_port }}/{{ chineseroom_gitea_mirror_user }}/{{ _gitea_name }}.git
     /home/{{ chineseroom_restricted_user }}/repo/github.com/{{ _github_owner }}/{{ _github_name }}
   become: yes
   become_user: "{{ chineseroom_restricted_user }}"

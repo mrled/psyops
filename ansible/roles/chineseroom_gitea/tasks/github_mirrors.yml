@@ -1,4 +1,13 @@
 ---
+- name: Add Gitea SSH host key to system known_hosts
+  shell: |
+    if ! ssh-keygen -F '[{{ chineseroom_gitea_domain }}]:{{ chineseroom_gitea_ssh_port }}' \
+         -f /etc/ssh/ssh_known_hosts > /dev/null 2>&1; then
+      ssh-keyscan -p {{ chineseroom_gitea_ssh_port }} {{ chineseroom_gitea_domain }} \
+        >> /etc/ssh/ssh_known_hosts
+    fi
+  changed_when: false
+
 - name: Set up GitHub mirror repos
   include_tasks: github_mirror_repo.yml
   loop: "{{ chineseroom_gitea_github_mirrors }}"
