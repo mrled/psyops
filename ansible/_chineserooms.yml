@@ -2,7 +2,7 @@
   hosts: chineserooms
   roles:
     # - { name: base, tags: ["base"] }
-    # - { name: emailfwd, tags: ["emailfwd"] }
+    - { name: emailfwd, tags: ["emailfwd"] }
     - { name: ssh_copy_id, tags: ["ssh_copy_id"], when: "ssh_copy_id_keys | length > 0" }
     - { name: tailscale, tags: ["tailscale"], when: "tailscale_enable | default(False)" }
     - { name: chineseroom, tags: ["chineseroom"] }

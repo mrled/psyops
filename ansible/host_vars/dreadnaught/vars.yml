@@ -10,6 +10,13 @@ ansible_user: mrled # must match lima VM username, which is same as host VM user
 
 tailscale_enable: true
 
+mailfwd_smtp_host: email-smtp.us-east-2.amazonaws.com
+mailfwd_smtp_port: 465
+mailfwd_from_address: dreadnaught@alerts.micahrl.com
+mailfwd_smtp_user: "{{ vault_ses_iam_access_key_id }}"
+mailfwd_smtp_pass: "{{ vault_ses_iam_secret_access_key | ses_smtp_password('us-east-2') }}"
+
+
 chineseroom_restricted_user: callista
 chineseroom_letsencrypt_domain: dreadnaught.backchannel.younix.us
 chineseroom_firewall_enabled: false

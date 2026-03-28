@@ -95,7 +95,12 @@ Resources:
           ResourceRecords:
             - !GetAtt AlertsEmailIdentity.DkimDNSTokenValue3
 
-  # IAM group: permission to send email FROM *@alerts.micahrl.com only
+  # IAM group: permission to send email FROM *@alerts.micahrl.com only.
+  # Both identities (alerts.micahrl.com and micahrl.com) are required here due to an SES quirk:
+  # when a parent-domain identity exists in the account, SES resolves IAM authorization against
+  # the parent domain rather than the subdomain identity, even when sending from the subdomain.
+  # The micahrl.com identity must also exist so that SES sandbox mode allows sending to
+  # *@micahrl.com recipients (sandbox restricts recipients to verified addresses/domains).
   AlertsSenderGroup:
     Type: AWS::IAM::Group
     Properties:
@@ -110,6 +115,7 @@ Resources:
                   - ses:SendRawEmail
                 Resource:
                   - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/alerts.micahrl.com"
+                  - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/micahrl.com"
 
   TagasawSmtpAlertsUser:
     Type: AWS::IAM::User
