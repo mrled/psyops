@@ -49,6 +49,11 @@
     - chineseroom_gitea_github_mirrors
   when: chineseroom_gitea_github_mirrors | length > 0
 
+- name: Write sandbox domain map for Gitea-managed repos
+  import_tasks: domainmap.yml
+  tags:
+    - chineseroom_gitea_github_mirrors
+
 - name: Set up per-repo mirror working clones
   import_tasks: mirrors.yml
   tags:

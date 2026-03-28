@@ -196,19 +196,3 @@
     creates: "/home/{{ chineseroom_restricted_user }}/repo/github.com/{{ _github_owner }}/{{ _github_name }}/.git"
   failed_when: false
 
-# --- Sandbox domain map ---
-
-- name: Add domain map entries for {{ _gitea_name }}
-  blockinfile:
-    path: "{{ chineseroom_user_map_file }}"
-    create: yes
-    owner: "{{ chineseroom_restricted_user }}"
-    group: "{{ chineseroom_restricted_user }}"
-    mode: "0644"
-    marker: "# {mark} ANSIBLE MANAGED BLOCK - github-mirror-{{ _gitea_name }}"
-    block: |
-      {% for mapping in chineseroom_gitea_github_mirror.domain_map | default([]) %}
-      {{ mapping.subdomain }} {{ mapping.port }}
-      {% endfor %}
-  when: chineseroom_gitea_github_mirror.domain_map | default([]) | length > 0
-  notify: regen nginx mappings

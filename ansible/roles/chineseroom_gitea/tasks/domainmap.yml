@@ -1,0 +1,25 @@
+---
+- name: Create /etc/chineseroom parent directory
+  file:
+    path: "{{ chineseroom_domainmap_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create domainmap.sandbox.d directory with restricted user write access
+  file:
+    path: "{{ chineseroom_domainmap_sandbox_dir }}"
+    state: directory
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: '0755'
+
+- name: Write chineseroom_gitea domain map file
+  template:
+    src: domainmap.sandbox.j2
+    dest: "{{ chineseroom_domainmap_sandbox_dir }}/chineseroom_gitea"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: regen nginx mappings

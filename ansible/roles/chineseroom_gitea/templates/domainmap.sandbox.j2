@@ -1,0 +1,5 @@
+{% for mirror in chineseroom_gitea_github_mirrors %}
+{% for mapping in mirror.domain_map | default([]) %}
+{{ mapping.subdomain }} {{ mapping.port }}
+{% endfor %}
+{% endfor %}
