@@ -26,5 +26,5 @@ chineseroom_gitea_nginx_conf_path: "{{ chineseroom_gitea_nginx_conf_dir }}/gitea
 # All are written once and reused on subsequent runs.
 chineseroom_gitea_admin_password_file: "{{ chineseroom_gitea_data_dir }}/chineseroom-admin.password"
 chineseroom_gitea_admin_token_file: "{{ chineseroom_gitea_data_dir }}/chineseroom-admin.token"
-chineseroom_gitea_mirror_password_file: "{{ chineseroom_gitea_data_dir }}/github-user.password"
-chineseroom_gitea_mirror_token_file: "{{ chineseroom_gitea_data_dir }}/github-user.token"
+chineseroom_gitea_mirror_password_file: "{{ chineseroom_gitea_data_dir }}/mirrorbot.password"
+chineseroom_gitea_mirror_token_file: "{{ chineseroom_gitea_data_dir }}/mirrorbot.token"

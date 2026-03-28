@@ -62,19 +62,19 @@
   set_fact:
     chineseroom_gitea_admin_token: "{{ chineseroom_gitea_admin_token_slurped.content | b64decode | trim }}"
 
-- name: Generate mirror-bot password
+- name: Generate mirrorbot password
   shell: openssl rand -hex 32 > {{ chineseroom_gitea_mirror_password_file }}
   become: yes
   become_user: "{{ chineseroom_gitea_user }}"
   args:
     creates: "{{ chineseroom_gitea_mirror_password_file }}"
 
-- name: Read mirror-bot password
+- name: Read mirrorbot password
   slurp:
     src: "{{ chineseroom_gitea_mirror_password_file }}"
   register: chineseroom_gitea_mirror_password_slurped
 
-- name: Create mirror-bot user
+- name: Create mirrorbot user
   command: >-
     {{ chineseroom_gitea_binary }} admin user create
     --username {{ chineseroom_gitea_mirror_user }}
@@ -87,13 +87,13 @@
   environment:
     GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
   when: chineseroom_gitea_mirror_user not in chineseroom_gitea_user_list.stdout
-  # no_log: yes
+  no_log: yes
 
-- name: Generate mirror-bot API token
+- name: Generate mirrorbot API token
   shell: >-
     {{ chineseroom_gitea_binary }} admin user generate-access-token
     --username {{ chineseroom_gitea_mirror_user }}
-    --token-name mirror-bot
+    --token-name mirrorbot
     --raw
     --scopes write:repository
     --config {{ chineseroom_gitea_config_dir }}/app.ini
@@ -105,12 +105,12 @@
   args:
     creates: "{{ chineseroom_gitea_mirror_token_file }}"
 
-- name: Read mirror-bot API token
+- name: Read mirrorbot API token
   slurp:
     src: "{{ chineseroom_gitea_mirror_token_file }}"
   register: chineseroom_gitea_mirror_token_slurped
 
-- name: Set mirror-bot token fact
+- name: Set mirrorbot token fact
   set_fact:
     chineseroom_gitea_mirror_token: "{{ chineseroom_gitea_mirror_token_slurped.content | b64decode | trim }}"
 
@@ -136,3 +136,4 @@
   loop: "{{ chineseroom_gitea_users | selectattr('ssh_keys', 'defined') | list }}"
   loop_control:
     loop_var: gitea_user
+

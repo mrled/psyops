@@ -1,0 +1,97 @@
+---
+# Create the mirror org, its two teams, and add mirrorbot to the trusted team.
+# Depends on: chineseroom_gitea_admin_token, chineseroom_gitea_mirror_token (set in gitea_users.yml)
+
+- name: Check if mirror org exists
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: GET
+    status_code: [200, 404]
+  register: _mirror_org_check
+
+- name: Create mirror org
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: POST
+    body_format: json
+    body:
+      username: "{{ chineseroom_gitea_mirror_org }}"
+      visibility: private
+    status_code: 201
+  when: _mirror_org_check.status == 404
+
+- name: Get teams in mirror org
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/teams"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: GET
+    status_code: 200
+  register: _mirror_org_teams
+
+- name: Create trusted team
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/teams"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ chineseroom_gitea_mirror_team_trusted }}"
+      permission: write
+      includes_all_repositories: true
+      units:
+        - repo.code
+        - repo.pulls
+    status_code: 201
+  when: >-
+    (_mirror_org_teams.json
+      | selectattr('name', 'equalto', chineseroom_gitea_mirror_team_trusted)
+      | list | length) == 0
+
+- name: Create untrusted team
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/teams"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ chineseroom_gitea_mirror_team_untrusted }}"
+      permission: write
+      includes_all_repositories: true
+      units:
+        - repo.code
+        - repo.pulls
+    status_code: 201
+  when: >-
+    (_mirror_org_teams.json
+      | selectattr('name', 'equalto', chineseroom_gitea_mirror_team_untrusted)
+      | list | length) == 0
+
+# Re-fetch after potential creation to get current team IDs.
+- name: Get teams in mirror org (refresh)
+  uri:
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/teams"
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: GET
+    status_code: 200
+  register: _mirror_org_teams_current
+
+- name: Add mirrorbot to trusted team
+  uri:
+    url: >-
+      https://{{ chineseroom_gitea_domain }}/api/v1/teams/{{
+        (_mirror_org_teams_current.json
+          | selectattr('name', 'equalto', chineseroom_gitea_mirror_team_trusted)
+          | first).id
+      }}/members/{{ chineseroom_gitea_mirror_user }}
+    headers:
+      Authorization: "token {{ chineseroom_gitea_admin_token }}"
+    method: PUT
+    status_code: [200, 204]

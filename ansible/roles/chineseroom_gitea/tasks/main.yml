@@ -29,6 +29,20 @@
   tags:
     - chineseroom_gitea_users
 
+- name: Create mirror org and teams
+  import_tasks: gitea_mirror_org.yml
+  tags:
+    - chineseroom_gitea_mirror_org
+
+- name: Assign users to org teams
+  include_tasks: gitea_user_teams.yml
+  loop: "{{ chineseroom_gitea_users | selectattr('orgs', 'defined') | list }}"
+  loop_control:
+    loop_var: _gitea_user_for_teams
+    label: "{{ _gitea_user_for_teams.username }}"
+  tags:
+    - chineseroom_gitea_users
+
 - name: Set up GitHub mirror repos
   import_tasks: github_mirrors.yml
   tags:

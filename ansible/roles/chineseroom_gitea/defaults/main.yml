@@ -47,10 +47,17 @@ chineseroom_gitea_webhook_secret: ""
 chineseroom_gitea_admin_username: chineseroom-admin
 chineseroom_gitea_admin_email: chineseroom-admin@example.com
 
-# Service account that owns GitHub mirror repos and authenticates mirror clone git operations.
+# Service account that authenticates mirror clone git operations.
 # Created automatically; password and token are generated on the host and saved to files.
-chineseroom_gitea_mirror_user: github
-chineseroom_gitea_mirror_email: chineseroom-github@example.com
+chineseroom_gitea_mirror_user: mirrorbot
+chineseroom_gitea_mirror_email: chineseroom-mirrorbot@example.com
+
+# Org that owns all mirrored repos, and its two access teams.
+# trusted:   branch-protection whitelist — can push to protected/*, approve and merge PRs
+# untrusted: read/write access, subject to branch protection rules
+chineseroom_gitea_mirror_org: mirror
+chineseroom_gitea_mirror_team_trusted: trusted
+chineseroom_gitea_mirror_team_untrusted: untrusted
 
 # List of GitHub repos to mirror into Gitea.
 # Each entry:
@@ -99,6 +106,11 @@ chineseroom_gitea_lfs_enable: true
 #   password:             initial password — store in vault (required)
 #   admin:                whether the user has admin rights (default: false)
 #   must_change_password: force password change on first login (default: true)
+#   ssh_keys:             list of {title, pubkey} SSH keys to add
+#   orgs:                 dict of org name → list of team names to join, e.g.:
+#                           orgs:
+#                             mirror: [trusted]
+#                             someorg: [team1, team2]
 chineseroom_gitea_users: []
 
 chineseroom_gitea_repos: []
