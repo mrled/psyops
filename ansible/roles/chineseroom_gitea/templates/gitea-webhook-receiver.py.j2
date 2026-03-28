@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- mode: python -*-
 """
-Gitea webhook receiver — triggers a GitHub push when a protected/* branch is
-updated in Gitea.
+Gitea webhook receiver — triggers a GitHub push when any branch is updated
+in Gitea.
 
 Gitea must be configured to send a push webhook to:
   http://127.0.0.1:{{ chineseroom_gitea_webhook_port }}/push-sync
@@ -25,8 +25,6 @@ PUSH_SCRIPT = os.environ['GITEA_PUSH_SCRIPT']
 MIRRORS_DIR = os.environ['GITEA_MIRRORS_DIR']
 HOST = os.environ.get('GITEA_WEBHOOK_LISTEN', '127.0.0.1')
 PORT = int(os.environ.get('GITEA_WEBHOOK_PORT', '9420'))
-
-PROTECTED_PREFIX = 'refs/heads/protected/'
 
 
 class WebhookHandler(http.server.BaseHTTPRequestHandler):
@@ -70,9 +68,9 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             self._reply(200, b'auto-push disabled\n')
             return
 
-        if not ref.startswith(PROTECTED_PREFIX):
-            log.info('Ref %s is not under protected/; skipping', ref)
-            self._reply(200, b'not a protected branch\n')
+        if not ref.startswith('refs/heads/'):
+            log.info('Ref %s is not a branch; skipping', ref)
+            self._reply(200, b'not a branch\n')
             return
 
         log.info('Triggering GitHub push for %s:%s', repo_name, ref)

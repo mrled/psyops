@@ -4,7 +4,7 @@
 
 - name: Set derived facts for {{ chineseroom_gitea_github_mirror.github_repo }}
   set_fact:
-    _gitea_name: "{{ chineseroom_gitea_github_mirror.github_repo | replace('/', '--') }}"
+    _gitea_name: "github--{{ chineseroom_gitea_github_mirror.github_repo | replace('/', '--') }}"
     _github_owner: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[0] }}"
     _github_name: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[1] }}"
 
@@ -47,50 +47,6 @@
       default_branch: "{{ _github_default_branch }}"
     status_code: 201
   when: _gitea_repo_check.status == 404
-
-# --- Branch protection ---
-
-- name: Get branch protections for {{ _gitea_name }}
-  uri:
-    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/branch_protections"
-    headers:
-      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
-    method: GET
-    status_code: 200
-  register: _gitea_branch_protections
-
-- name: Create or update protected/* branch protection for {{ _gitea_name }}
-  vars:
-    _rule_exists: >-
-      {{ (_gitea_branch_protections.json
-          | selectattr('rule_name', 'equalto', 'protected/*')
-          | list | length) > 0 }}
-    _bp_body:
-      enable_push: true
-      enable_push_whitelist: true
-      push_whitelist_teams:
-        - "{{ chineseroom_gitea_mirror_team_trusted }}"
-      enable_force_push: true
-      enable_force_push_allowlist: true
-      force_push_allowlist_teams:
-        - "{{ chineseroom_gitea_mirror_team_trusted }}"
-      required_approvals: 1
-      enable_approvals_whitelist: true
-      approvals_whitelist_teams:
-        - "{{ chineseroom_gitea_mirror_team_trusted }}"
-      enable_merge_whitelist: true
-      merge_whitelist_teams:
-        - "{{ chineseroom_gitea_mirror_team_trusted }}"
-  uri:
-    url: >-
-      https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/branch_protections{{
-        '/protected%2F*' if _rule_exists else '' }}
-    headers:
-      Authorization: "token {{ chineseroom_gitea_mirror_token }}"
-    method: "{{ 'PATCH' if _rule_exists else 'POST' }}"
-    body_format: json
-    body: "{{ _bp_body | combine({'rule_name': 'protected/*'} if not _rule_exists else {}) }}"
-    status_code: "{{ 200 if _rule_exists else 201 }}"
 
 # --- Gitea webhook ---
 

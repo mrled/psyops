@@ -35,7 +35,7 @@ chineseroom_gitea_users:
     password: "{{ vault_chineseroom_gitea_users['mrled'].password }}"
     admin: true
     orgs:
-      mirror: [trusted]
+      mirror: [readwrite]
     ssh_keys:
       - title: conspirator@PSYOPS
         pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m
@@ -44,7 +44,7 @@ chineseroom_gitea_users:
     password: "{{ vault_chineseroom_gitea_users['callista'].password }}"
     admin: false
     orgs:
-      mirror: [untrusted]
+      mirror: [readonly]
     ssh_keys:
       - title: callista@dreadnaught
         pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGmEr9SIPlKKHxIFGbzTNcPnfMVquDal8Z0EAb+tLxpB

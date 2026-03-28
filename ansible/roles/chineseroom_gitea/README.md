@@ -9,16 +9,16 @@ Installs and configures a Gitea instance as a GitHub mirror server.
 - Creates two automatic service accounts with generated passwords and tokens:
   - `chineseroom-admin` — Ansible API admin; credentials in `$data_dir/chineseroom-admin.{password,token}`
   - `mirrorbot` — authenticates working clone git operations; credentials in `$data_dir/mirrorbot.{password,token}`
-- Creates the `mirror` org to own all mirrored repos, with two teams:
-  - `trusted` — can push to `protected/*`, approve PRs, and merge. `mirrorbot` is a member.
-  - `untrusted` — read/write access, subject to branch protection rules.
+- Creates the `mirror` org to own all mirrored repos, with three teams:
+  - `administrators` — org admin access; `mirrorbot` is a member. Can manage repos, webhooks, and settings.
+  - `readwrite` — write access; for human admin users who can push directly and merge PRs.
+  - `readonly` — read access; for restricted users who fork and open cross-repo PRs.
 - Creates application users from `chineseroom_gitea_users` (passwords vault-backed, SSH keys via API)
 - Assigns users to org teams via the `orgs` field (see below)
 - Mirrors GitHub repos defined in `chineseroom_gitea_github_mirrors`:
-  - Creates Gitea repo `mirror/OWNER--REPO`
-  - Applies `protected/*` branch protection (see below)
-  - Sets up a working clone at `$mirrors_dir/OWNER--REPO` with two remotes (`origin` = local Gitea HTTP, `github` = GitHub SSH)
-  - Configures a Gitea push webhook → pushes `protected/*` branches back to GitHub on merge
+  - Creates Gitea repo `mirror/github--OWNER--REPO`
+  - Sets up a working clone at `$mirrors_dir/github--OWNER--REPO` with two remotes (`origin` = local Gitea HTTP, `github` = GitHub SSH)
+  - Configures a Gitea push webhook → pushes branches back to GitHub on any Gitea push
   - Pull timer syncs from GitHub on a schedule (default: every 15 minutes)
   - Clones to restricted user at `~/repo/github.com/OWNER/REPO` over SSH
   - Adds optional sandbox nginx entries via `domain_map`
@@ -31,34 +31,35 @@ A systemd timer runs the pull script on a schedule. On each run, it queries the 
 
 For each repo the script:
 
-1. Fetches all branches from GitHub and maps them into the `protected/*` namespace in Gitea:
-   - `refs/heads/main` on GitHub → `refs/heads/protected/main` in Gitea
-   - Uses `--prune` so branches deleted on GitHub are also removed from `protected/*`
+1. Fetches all branches from GitHub verbatim into Gitea:
+   - `refs/heads/main` on GitHub → `refs/heads/main` in Gitea
+   - Uses `--prune` so branches deleted on GitHub are also removed from Gitea
 2. Fetches all tags from GitHub and force-overwrites them in Gitea (so moved tags follow GitHub)
 3. Fetches all LFS objects from GitHub and pushes them to Gitea
 
 ### Push: Gitea → GitHub (webhook-driven)
 
-When a `protected/*` branch is updated in Gitea (e.g. a PR is merged), Gitea sends a push webhook to the local receiver service. The receiver:
+When any branch is updated in Gitea, Gitea sends a push webhook to the local receiver service. The receiver:
 
 1. Validates the HMAC-SHA256 signature
 2. Checks that the repo has auto-push enabled (`.git/gitea/auto-push` marker file)
-3. Fires the push script asynchronously for refs under `refs/heads/protected/`
+3. Fires the push script asynchronously for any `refs/heads/` ref
 
-The push script strips the `protected/` prefix and pushes to the matching branch on GitHub:
-- `refs/heads/protected/main` in Gitea → `refs/heads/main` on GitHub
+The push script pushes the branch verbatim to GitHub:
+- `refs/heads/main` in Gitea → `refs/heads/main` on GitHub
 
 LFS objects are pushed to GitHub after each branch push.
 
 To disable auto-push for a specific repo, remove the `.git/gitea/auto-push` file from its working clone directory.
 
-## Branch protection on `protected/*`
+## Review workflow
 
-The `protected/*` branch namespace is synced with GitHub. The protection rules enforce a review workflow that allows untrusted contributors to propose changes while ensuring only trusted users can land them:
+The intended flow for the restricted user to propose changes:
 
-- **Untrusted users** can push branches and open PRs, but cannot merge.
-- **Trusted users** (members of the `trusted` team) can push, force-push, approve PRs, and merge.
-- 1 approval from the `trusted` team is required before a PR can be merged.
+1. The restricted user (in `readonly` team) forks a `mirror` org repo into their own namespace
+2. They push changes to their fork and open a cross-repo PR targeting the `mirror` org repo
+3. A user in the `readwrite` team reviews and merges the PR
+4. The merge triggers the webhook, which pushes the branch to GitHub
 
 ## User team assignment
 
@@ -70,7 +71,12 @@ chineseroom_gitea_users:
     email: alice@example.com
     password: "{{ vault_alice_password }}"
     orgs:
-      mirror: [trusted]
+      mirror: [readwrite]
+  - username: bob
+    email: bob@example.com
+    password: "{{ vault_bob_password }}"
+    orgs:
+      mirror: [readonly]
 ```
 
 ## First-run notes

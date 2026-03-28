@@ -3,8 +3,8 @@
 Pull changes from GitHub into Gitea for all repos in the mirror org.
 Run periodically by the gitea-pull-from-github.timer systemd timer.
 
-GitHub branches are mapped to the protected/* namespace in Gitea:
-  GitHub refs/heads/foo  ->  Gitea refs/heads/protected/foo
+GitHub branches are copied verbatim into Gitea:
+  GitHub refs/heads/foo  ->  Gitea refs/heads/foo
 
 GitHub tags are copied verbatim with force-overwrite:
   GitHub refs/tags/v1.0  ->  Gitea refs/tags/v1.0
@@ -105,7 +105,7 @@ def github_default_branch_from_remote(mirror_dir):
 
 
 def sync_default_branch(gitea_url, gitea_org, repo, mirror_token, mirror_dir):
-    """Set the Gitea repo default branch to protected/<github-default> if it has changed."""
+    """Set the Gitea repo default branch to match GitHub's if it has changed."""
     tag = f"[{repo}]"
 
     gh_default = github_default_branch_from_remote(mirror_dir)
@@ -114,7 +114,7 @@ def sync_default_branch(gitea_url, gitea_org, repo, mirror_token, mirror_dir):
         return
 
     log.info("%s GitHub default branch: %s", tag, gh_default)
-    gitea_default = f"protected/{gh_default}"
+    gitea_default = gh_default
 
     try:
         info = gitea_api(gitea_url, mirror_token, "GET", f"/repos/{gitea_org}/{repo}")
@@ -148,8 +148,8 @@ def sync_repo(repo, config, token):
         log.info("%s fetching LFS objects from GitHub", tag)
         run_lfs(mirror_dir, "fetch", "github", "--all")
 
-        log.info("%s pushing branches to Gitea as protected/*", tag)
-        run_git(mirror_dir, "push", "origin", "+refs/remotes/github/*:refs/heads/protected/*", "--prune")
+        log.info("%s pushing branches to Gitea", tag)
+        run_git(mirror_dir, "push", "origin", "+refs/remotes/github/*:refs/heads/*", "--prune")
 
         log.info("%s pushing tags to Gitea", tag)
         run_git(mirror_dir, "push", "origin", "+refs/tags/*:refs/tags/*")

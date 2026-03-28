@@ -53,12 +53,14 @@ chineseroom_gitea_admin_email: chineseroom-admin@example.com
 chineseroom_gitea_mirror_user: mirrorbot
 chineseroom_gitea_mirror_email: chineseroom-mirrorbot@example.com
 
-# Org that owns all mirrored repos, and its two access teams.
-# trusted:   branch-protection whitelist — can push to protected/*, approve and merge PRs
-# untrusted: read/write access, subject to branch protection rules
+# Org that owns all mirrored repos, and its three access teams.
+# admin:     org administrators (mirrorbot is a member); can manage repos, webhooks, settings
+# readwrite: can push directly and merge PRs (human admin user)
+# readonly:  read-only access; can fork and open cross-repo PRs (restricted user)
 chineseroom_gitea_mirror_org: mirror
-chineseroom_gitea_mirror_team_trusted: trusted
-chineseroom_gitea_mirror_team_untrusted: untrusted
+chineseroom_gitea_mirror_team_admin: administrators
+chineseroom_gitea_mirror_team_readwrite: readwrite
+chineseroom_gitea_mirror_team_readonly: readonly
 
 # List of GitHub repos to mirror into Gitea.
 # Each entry:
@@ -66,7 +68,7 @@ chineseroom_gitea_mirror_team_untrusted: untrusted
 #   default_branch:  branch to sync (default: queried from GitHub API)
 #   domain_map:      optional list of {subdomain, port} sandbox nginx entries
 #
-# Gitea repo name: owner--repo  (e.g. mrled--psyops)
+# Gitea repo name: github--owner--repo  (e.g. github--mrled--psyops)
 # Gitea owner:     chineseroom_gitea_mirror_user (github)
 # Restricted user checkout: ~/repo/github.com/owner/repo
 chineseroom_gitea_github_mirrors: []
