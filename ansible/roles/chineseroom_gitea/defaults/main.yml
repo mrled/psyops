@@ -81,24 +81,6 @@ chineseroom_gitea_disable_registration: true
 # Enable Gitea's built-in LFS server
 chineseroom_gitea_lfs_enable: true
 
-# List of repositories to mirror between Gitea and GitHub.
-# Each entry supports:
-#   name:             Gitea repository name (required)
-#   gitea_owner:      Gitea user or org that owns the repo (required)
-#   github_repo:      GitHub full name, e.g. myorg/myrepo (required)
-#   default_branch:   initial/fallback branch for sync; updated at runtime from GitHub HEAD
-#                     (default: main)
-#   enable_auto_push: push to GitHub when default branch is updated (default: true)
-#   enable_auto_pull: periodically pull from GitHub (default: true)
-#
-# Example:
-#   chineseroom_gitea_repos:
-#     - name: myproject
-#       gitea_owner: myorg
-#       github_repo: myorg/myproject
-#       default_branch: main
-#       enable_auto_push: true
-#       enable_auto_pull: true
 # List of Gitea application users to create.
 # Passwords are only set at creation — Ansible will not update them afterwards.
 # Each entry supports:
@@ -113,8 +95,6 @@ chineseroom_gitea_lfs_enable: true
 #                             mirror: [trusted]
 #                             someorg: [team1, team2]
 chineseroom_gitea_users: []
-
-chineseroom_gitea_repos: []
 
 # systemd OnCalendar expression for the GitHub→Gitea pull timer
 chineseroom_gitea_sync_pull_oncalendar: "*:0/15"

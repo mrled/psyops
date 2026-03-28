@@ -54,7 +54,3 @@
   tags:
     - chineseroom_gitea_github_mirrors
 
-- name: Set up per-repo mirror working clones
-  import_tasks: mirrors.yml
-  tags:
-    - chineseroom_gitea_mirrors
