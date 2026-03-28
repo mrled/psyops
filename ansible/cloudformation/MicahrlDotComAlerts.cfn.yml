@@ -14,6 +14,19 @@ Description: >
 
 Resources:
 
+  # SES email identity for micahrl.com
+  # Verifying the root domain allows sending to any @micahrl.com address while
+  # still in SES Sandbox mode (Sandbox restricts recipients to verified addresses/domains).
+  # No SPF change needed — we are not sending FROM micahrl.com via SES.
+  MicahrlDotComEmailIdentity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: micahrl.com
+      DkimAttributes:
+        SigningEnabled: true
+      DkimSigningAttributes:
+        NextSigningKeyLength: RSA_2048_BIT
+
   # SES email identity for alerts.micahrl.com with Easy DKIM (SES-managed, RSA-2048)
   AlertsEmailIdentity:
     Type: AWS::SES::EmailIdentity
@@ -27,10 +40,29 @@ Resources:
   # DNS records in the micahrl.com OriginZone (cross-stack reference)
   AlertsDnsRecords:
     Type: AWS::Route53::RecordSetGroup
-    DependsOn: AlertsEmailIdentity
+    DependsOn:
+      - MicahrlDotComEmailIdentity
+      - AlertsEmailIdentity
     Properties:
       HostedZoneId: !ImportValue MicahrlDotCom-OriginZoneId
       RecordSets:
+
+        # Easy DKIM for micahrl.com identity
+        - Name: !Sub "${MicahrlDotComEmailIdentity.DkimDNSTokenName1}."
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - !GetAtt MicahrlDotComEmailIdentity.DkimDNSTokenValue1
+        - Name: !Sub "${MicahrlDotComEmailIdentity.DkimDNSTokenName2}."
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - !GetAtt MicahrlDotComEmailIdentity.DkimDNSTokenValue2
+        - Name: !Sub "${MicahrlDotComEmailIdentity.DkimDNSTokenName3}."
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - !GetAtt MicahrlDotComEmailIdentity.DkimDNSTokenValue3
 
         # SPF: only Amazon SES is authorised to send from alerts.micahrl.com
         - Name: alerts.micahrl.com.
