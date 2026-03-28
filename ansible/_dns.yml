@@ -70,3 +70,9 @@
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
       cloudformation_aws_profile: primary-micahrl
       tags: younix.us_redirects
+    - name: cfn
+      cloudformation_stack_name: MicahrlDotComAlerts
+      cloudformation_template_path: cloudformation/MicahrlDotComAlerts.cfn.yml
+      cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
+      cloudformation_aws_profile: primary-micahrl
+      tags: micahrl.com_alerts

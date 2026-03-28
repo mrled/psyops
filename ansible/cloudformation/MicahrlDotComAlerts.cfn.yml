@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  alerts.micahrl.com SES email identity with DKIM, SPF, DMARC, IAM sender group,
+  and per-host IAM users. See Outputs for credential generation instructions.
+
+# NOTES:
+# - TXT records must have inner double-quotes in the ResourceRecords string:
+#   YES: `ResourceRecords: ['"v=spf1 ..."']`
+# - SES must be deployed in a region where SES is supported (e.g. us-east-1, us-west-2).
+#   The SMTP endpoint is region-specific; see Outputs.SmtpEndpoint.
+# - DkimDNSTokenName1/2/3 already include the full hostname, e.g.:
+#     <token>._domainkey.alerts.micahrl.com
+#   so we just append a trailing dot when using them in Route53 RecordSets.
+
+Resources:
+
+  # SES email identity for alerts.micahrl.com with Easy DKIM (SES-managed, RSA-2048)
+  AlertsEmailIdentity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: alerts.micahrl.com
+      DkimAttributes:
+        SigningEnabled: true
+      DkimSigningAttributes:
+        NextSigningKeyLength: RSA_2048_BIT
+
+  # DNS records in the micahrl.com OriginZone (cross-stack reference)
+  AlertsDnsRecords:
+    Type: AWS::Route53::RecordSetGroup
+    DependsOn: AlertsEmailIdentity
+    Properties:
+      HostedZoneId: !ImportValue MicahrlDotCom-OriginZoneId
+      RecordSets:
+
+        # SPF: only Amazon SES is authorised to send from alerts.micahrl.com
+        - Name: alerts.micahrl.com.
+          Type: TXT
+          TTL: 300
+          ResourceRecords:
+            - '"v=spf1 include:amazonses.com ~all"'
+
+        # DMARC: quarantine failures, send aggregate reports to postmaster
+        - Name: _dmarc.alerts.micahrl.com.
+          Type: TXT
+          TTL: 300
+          ResourceRecords:
+            - '"v=DMARC1; p=quarantine; rua=mailto:postmaster@micahrl.com"'
+
+        # Easy DKIM – three CNAME records published by SES
+        - Name: !Sub "${AlertsEmailIdentity.DkimDNSTokenName1}."
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - !GetAtt AlertsEmailIdentity.DkimDNSTokenValue1
+        - Name: !Sub "${AlertsEmailIdentity.DkimDNSTokenName2}."
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - !GetAtt AlertsEmailIdentity.DkimDNSTokenValue2
+        - Name: !Sub "${AlertsEmailIdentity.DkimDNSTokenName3}."
+          Type: CNAME
+          TTL: 300
+          ResourceRecords:
+            - !GetAtt AlertsEmailIdentity.DkimDNSTokenValue3
+
+  # IAM group: permission to send email FROM *@alerts.micahrl.com only
+  AlertsSenderGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+        - PolicyName: AllowSendFromAlertsDomainPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource:
+                  - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/alerts.micahrl.com"
+
+  TagasawSmtpAlertsUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: tagasaw-smtp-alerts
+      Groups:
+        - !Ref AlertsSenderGroup
+
+  ApsynaniaSmtpAlertsUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: apsylania-smtp-alerts
+      Groups:
+        - !Ref AlertsSenderGroup
+
+  WenagliaSmtpAlertsUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: wenaglia-smtp-alerts
+      Groups:
+        - !Ref AlertsSenderGroup
+
+  DreadnaughtSmtpAlertsUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: dreadnaught-smtp-alerts
+      Groups:
+        - !Ref AlertsSenderGroup
+
+Outputs:
+
+  AlertsEmailIdentityName:
+    Description: The verified SES email identity
+    Value: alerts.micahrl.com
+
+  AlertsSenderGroupArn:
+    Description: IAM group ARN – add one IAM user per service to grant send permission
+    Value: !GetAtt AlertsSenderGroup.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-AlertsSenderGroupArn"
+
+  # -----------------------------------------------------------------------
+  # To generate credentials for a user (run once per user):
+  #
+  #   USER=tagasaw-smtp-alerts   # or whichever user
+  #   aws iam create-access-key --user-name "$USER" --profile primary-micahrl
+  #   # ^ save the AccessKeyId and SecretAccessKey, then:
+  #   aws configure --profile "$USER"   # enter AccessKeyId + SecretAccessKey
+  #   aws sesv2 create-smtp-credentials --profile "$USER"
+  #   # ^ yields SMTP username + password (these differ from the IAM credentials)
+  #
+  # SMTP endpoint: email-smtp.<region>.amazonaws.com  port 587 (STARTTLS) or 465 (TLS)
+  # -----------------------------------------------------------------------
+  SmtpEndpoint:
+    Description: SMTP endpoint for this stack's region (port 587 STARTTLS / 465 TLS)
+    Value: !Sub "email-smtp.${AWS::Region}.amazonaws.com"
