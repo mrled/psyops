@@ -1,10 +1,4 @@
 ---
-- name: Set shell for chineseroom user
-  user:
-    name: "{{ chineseroom_restricted_user }}"
-    shell: "{{ chineseroom_restricted_user_shell }}"
-  when: chineseroom_restricted_user_shell is defined
-
 - name: Ensure .ssh directory exists for restricted user
   file:
     path: "/home/{{ chineseroom_restricted_user }}/.ssh"
