@@ -96,6 +96,7 @@ chineseroom_user_ssh_privkeys:
     content: "{{ vault_chineseroom_user_ssh_privkey }}"
 
 interactive_user_list:
-- mrled # default user, passwordless sudo
-- callista # chineseroom limited user
-interactive_system_zsh_users: "{{ interactive_user_list }}"
+- name: mrled # default user, passwordless sudo
+- name: callista # chineseroom limited user
+  dhd_disable: true
+interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') | list }}"

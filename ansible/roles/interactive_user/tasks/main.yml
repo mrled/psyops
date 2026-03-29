@@ -3,4 +3,4 @@
   include_tasks: user.yml
   loop: "{{ interactive_user_list }}"
   loop_control:
-    loop_var: interactive_user_name
+    loop_var: interactive_user

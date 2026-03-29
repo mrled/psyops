@@ -6,8 +6,8 @@ base_fucking_broadcom_wifi: yes
 docker_standalone_swarm_advertise_addr: 192.168.1.124
 
 interactive_user_list:
-- root
-- micahrl
+- name: root
+- name: micahrl
 interactive_system_zsh_users:
 - micahrl
 
