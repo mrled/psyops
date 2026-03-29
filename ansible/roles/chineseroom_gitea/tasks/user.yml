@@ -43,14 +43,6 @@
     group: "{{ chineseroom_gitea_group }}"
     mode: "0644"
 
-- name: Install GitHub SSH known_hosts
-  copy:
-    content: "{{ chineseroom_gitea_github_ssh_host_fingerprints | join('\n') }}\n"
-    dest: "{{ chineseroom_gitea_home }}/.ssh/known_hosts"
-    owner: "{{ chineseroom_gitea_user }}"
-    group: "{{ chineseroom_gitea_group }}"
-    mode: "0644"
-
 - name: Install SSH config for GitHub
   template:
     src: ssh_config.j2

@@ -1,12 +1,24 @@
 ---
 - name: Add Gitea SSH host key to system known_hosts
   shell: |
-    if ! ssh-keygen -F '[{{ chineseroom_gitea_domain }}]:{{ chineseroom_gitea_ssh_port }}' \
+    if ssh-keygen -F '[{{ chineseroom_gitea_domain }}]:{{ chineseroom_gitea_ssh_port }}' \
          -f /etc/ssh/ssh_known_hosts > /dev/null 2>&1; then
+      echo already_present
+    else
       ssh-keyscan -p {{ chineseroom_gitea_ssh_port }} {{ chineseroom_gitea_domain }} \
         >> /etc/ssh/ssh_known_hosts
+      echo added
     fi
-  changed_when: false
+  register: _gitea_known_hosts_result
+  changed_when: "'added' in _gitea_known_hosts_result.stdout"
+
+- name: Add GitHub SSH host keys to system known_hosts
+  known_hosts:
+    path: /etc/ssh/ssh_known_hosts
+    name: github.com
+    key: "{{ item }}"
+    state: present
+  loop: "{{ chineseroom_gitea_github_ssh_host_fingerprints }}"
 
 - name: Symlink ~/work to /mnt/aiworkspace for restricted user
   file:
