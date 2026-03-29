@@ -27,6 +27,7 @@ chineseroom_letsencrypt_email: "psyops@micahrl.com"
 
 chineseroom_gitea_enable: true
 chineseroom_gitea_domain: "gitea.dreadnaught.backchannel.younix.us"
+chineseroom_gitae_shortname: dreadgit
 chineseroom_gitea_arch: arm64
 chineseroom_gitea_github_api_token: "{{ vault_chineseroom_gitea_github_api_token }}"
 chineseroom_gitea_github_ssh_privkey: "{{ vault_chineseroom_gitea_github_ssh_privkey }}"

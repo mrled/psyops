@@ -19,6 +19,15 @@ chineseroom_gitea_pull_script: "{{ chineseroom_gitea_sync_lib_dir }}/pull-from-g
 chineseroom_gitea_pull_config: "{{ chineseroom_gitea_sync_lib_dir }}/pull-from-github.conf"
 chineseroom_gitea_webhook_env_file: "{{ chineseroom_gitea_sync_lib_dir }}/.webhook-receiver.env"
 
+# SSH host used in git remote URLs: shortname (if set) or user@hostname:port.
+# When shortname is set, /etc/ssh/ssh_config.d/SHORTNAME.conf provides HostName/Port/User,
+# so git remote URLs become ssh://SHORTNAME/org/repo.git instead of
+# ssh://gitea@domain:port/org/repo.git
+chineseroom_gitea_ssh_host: >-
+  {{ chineseroom_gitea_server_shortname
+     if chineseroom_gitea_server_shortname
+     else 'gitea@' + chineseroom_gitea_domain + ':' + chineseroom_gitea_ssh_port | string }}
+
 # nginx config location (conf.trusted.d is included by the chineseroom nginx)
 chineseroom_gitea_nginx_conf_dir: /etc/nginx/conf.trusted.d
 chineseroom_gitea_nginx_conf_path: "{{ chineseroom_gitea_nginx_conf_dir }}/gitea.conf"

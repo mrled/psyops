@@ -10,6 +10,11 @@ chineseroom_gitea_ssh_port: 2222
 chineseroom_gitea_domain: gitea.example.com
 chineseroom_gitea_app_name: Gitea
 
+# Short hostname alias written to /etc/ssh/ssh_config.d/SHORTNAME.conf
+# Allows `ssh SHORTNAME` to connect to the Gitea SSH port as the gitea user.
+# Leave empty to skip creating the file.
+chineseroom_gitea_server_shortname: ""
+
 # Gitea binary version and architecture (arm64 for aarch64, amd64 for x86_64)
 chineseroom_gitea_version: "1.25.5"
 chineseroom_gitea_arch: arm64
@@ -70,7 +75,7 @@ chineseroom_gitea_mirror_team_readonly: readonly
 #
 # Gitea repo name: github--owner--repo  (e.g. github--mrled--psyops)
 # Gitea owner:     chineseroom_gitea_mirror_user (github)
-# Restricted user checkout: ~/repo/github.com/owner/repo
+# Restricted user checkout: ~/repos/github.com/owner/repo (fork of mirror org repo)
 chineseroom_gitea_github_mirrors: []
 
 # Webhook receiver listen address and port (loopback only — Gitea calls it locally)

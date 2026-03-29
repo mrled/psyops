@@ -14,6 +14,17 @@
   tags:
     - chineseroom_gitea_nginx
 
+- name: Write SSH client shortname config
+  template:
+    src: ssh_config_shortname.j2
+    dest: "/etc/ssh/ssh_config.d/{{ chineseroom_gitea_server_shortname }}.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  when: chineseroom_gitea_server_shortname != ""
+  tags:
+    - chineseroom_gitea_ssh_shortname
+
 - name: Configure GitHub sync webhook receiver
   import_tasks: webhook.yml
   tags:
