@@ -27,7 +27,7 @@ chineseroom_letsencrypt_email: "psyops@micahrl.com"
 
 chineseroom_gitea_enable: true
 chineseroom_gitea_domain: "gitea.dreadnaught.backchannel.younix.us"
-chineseroom_gitae_shortname: dreadgit
+chineseroom_gitea_server_shortname: dreadgit
 chineseroom_gitea_arch: arm64
 chineseroom_gitea_github_api_token: "{{ vault_chineseroom_gitea_github_api_token }}"
 chineseroom_gitea_github_ssh_privkey: "{{ vault_chineseroom_gitea_github_ssh_privkey }}"
@@ -66,6 +66,7 @@ chineseroom_gitea_github_mirrors:
         port: 8082
   - github_repo: mrled/dhd
   - github_repo: mrled/psyops
+  - github_repo: mrled/ansible-collection-chineseroom
   - github_repo: mrled/suns
     domain_map:
       - subdomain: suns
@@ -88,6 +89,7 @@ chineseroom_gitea_github_mirrors:
         port: 64224
       - subdomain: lrhacim
         port: 42246
+  - github_repo: mrled/bibliographer
 
 chineseroom_user_ssh_privkeys:
   - filename: id_ed25519
