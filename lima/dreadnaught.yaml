@@ -14,6 +14,9 @@ mounts:
   - location: "~/mrldata/vmpub"
     mountPoint: "/mnt/vmpub"
     writable: false
+  - location: ~/mrldata/aiworkspace
+    mountPoint: /mnt/aiworkspace
+    writable: true
 
 provision:
   # By default on Fedora, lima allocates all 65536 subuid/subgid entries to the single VM user,
