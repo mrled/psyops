@@ -86,8 +86,8 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def log_message(self, fmt, *args):
-        log.debug('%s - %s', self.address_string(), fmt % args)
+    def log_message(self, format, *args):
+        log.debug('%s - %s', self.address_string(), format % args)
 
 
 if __name__ == '__main__':
