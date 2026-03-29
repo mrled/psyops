@@ -24,3 +24,11 @@
     'already exists' not in (_tea_login_result.stderr | default('')) and
     _tea_login_result.rc == 0
   no_log: yes
+
+- name: Set tea default login for restricted user
+  become: yes
+  become_user: "{{ chineseroom_gitea_restricted_user }}"
+  command: >-
+    /home/linuxbrew/.linuxbrew/bin/tea logins default
+    {{ chineseroom_gitea_server_shortname if chineseroom_gitea_server_shortname else chineseroom_gitea_domain }}
+  changed_when: false
