@@ -1,4 +1,18 @@
 ---
+- name: Symlink dotfiles from dhd in aiworkspace for restricted user
+  file:
+    src: "/mnt/aiworkspace/dhd/hbase/{{ item }}"
+    dest: "/home/{{ chineseroom_restricted_user }}/{{ item }}"
+    state: link
+    force: yes
+  loop:
+    - .bashrc
+    - .inputrc
+    - .profile
+    - .tmux.conf
+    - .vimrc
+    - .zshrc
+
 - name: Install GHCup for chineseroom user
   become: yes
   become_user: "{{ chineseroom_restricted_user }}"
