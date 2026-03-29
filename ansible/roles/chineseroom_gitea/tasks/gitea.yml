@@ -104,3 +104,11 @@
     enabled: yes
     state: started
     daemon_reload: yes
+
+- name: Install tea CLI via Linuxbrew
+  community.general.homebrew:
+    name: tea
+    path: /home/linuxbrew/.linuxbrew/bin
+    state: latest
+  become: yes
+  become_user: "{{ chineseroom_restricted_user }}"
