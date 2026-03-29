@@ -111,4 +111,4 @@
     path: /home/linuxbrew/.linuxbrew/bin
     state: latest
   become: yes
-  become_user: "{{ chineseroom_restricted_user }}"
+  become_user: "{{ chineseroom_gitea_restricted_user }}"

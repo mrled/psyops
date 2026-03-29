@@ -147,18 +147,18 @@
 
 # --- Restricted user fork and checkout ---
 
-- name: Check if fork of {{ _gitea_name }} exists for {{ chineseroom_restricted_user }}
+- name: Check if fork of {{ _gitea_name }} exists for {{ chineseroom_gitea_restricted_user }}
   uri:
-    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_restricted_user }}/{{ _gitea_name }}"
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_restricted_user }}/{{ _gitea_name }}"
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
     method: GET
     status_code: [200, 404]
   register: _restricted_user_fork_check
 
-- name: Fork {{ _gitea_name }} to {{ chineseroom_restricted_user }}
+- name: Fork {{ _gitea_name }} to {{ chineseroom_gitea_restricted_user }}
   uri:
-    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/forks?sudo={{ chineseroom_restricted_user }}"
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/forks?sudo={{ chineseroom_gitea_restricted_user }}"
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
     method: POST
@@ -175,11 +175,11 @@
       git -C "${dest}" fetch --all
     else
       git clone \
-        "ssh://{{ chineseroom_gitea_ssh_host }}/{{ chineseroom_restricted_user }}/{{ _gitea_name }}.git" \
+        "ssh://{{ chineseroom_gitea_ssh_host }}/{{ chineseroom_gitea_restricted_user }}/{{ _gitea_name }}.git" \
         "${dest}"
     fi
   become: yes
-  become_user: "{{ chineseroom_restricted_user }}"
+  become_user: "{{ chineseroom_gitea_restricted_user }}"
   changed_when: false
 
 - name: Add upstream remote to restricted user checkout of {{ _gitea_name }}
@@ -190,6 +190,6 @@
       || git -C "${dest}" remote add upstream \
            "ssh://{{ chineseroom_gitea_ssh_host }}/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}.git"
   become: yes
-  become_user: "{{ chineseroom_restricted_user }}"
+  become_user: "{{ chineseroom_gitea_restricted_user }}"
   changed_when: false
 

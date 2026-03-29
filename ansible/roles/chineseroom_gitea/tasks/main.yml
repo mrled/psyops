@@ -40,6 +40,11 @@
   tags:
     - chineseroom_gitea_users
 
+- name: Configure tea CLI login for restricted user
+  import_tasks: tea_login.yml
+  tags:
+    - chineseroom_gitea_tea
+
 - name: Create mirror org and teams
   import_tasks: gitea_mirror_org.yml
   tags:

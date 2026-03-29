@@ -19,6 +19,10 @@ chineseroom_gitea_server_shortname: ""
 chineseroom_gitea_version: "1.25.5"
 chineseroom_gitea_arch: arm64
 
+# Gitea account for the restricted user; defaults to the OS restricted user.
+# Override if the Gitea username differs from the system username.
+chineseroom_gitea_restricted_user: "{{ chineseroom_restricted_user | default('agent') }}"
+
 # Gitea secret values — store in vault; all required
 # chineseroom_gitea_secret_key:     64-char random string; generate with: openssl rand -hex 32
 # chineseroom_gitea_internal_token: JWT token; generate with: gitea generate secret INTERNAL_TOKEN

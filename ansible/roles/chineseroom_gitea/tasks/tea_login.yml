@@ -1,0 +1,26 @@
+---
+- name: Install tea CLI via Homebrew
+  become: yes
+  become_user: "{{ chineseroom_gitea_restricted_user }}"
+  command: /home/linuxbrew/.linuxbrew/bin/brew install tea
+  environment:
+    HOME: /home/linuxbrew
+  register: _tea_brew_install
+  changed_when: "'already installed' not in _tea_brew_install.stdout"
+
+- name: Configure tea login for restricted user
+  become: yes
+  become_user: "{{ chineseroom_gitea_restricted_user }}"
+  command: >-
+    /home/linuxbrew/.linuxbrew/bin/tea login add
+    --name {{ chineseroom_gitea_server_shortname if chineseroom_gitea_server_shortname else chineseroom_gitea_domain }}
+    --url https://{{ chineseroom_gitea_domain }}
+    --token {{ chineseroom_gitea_restricted_user_token }}
+  register: _tea_login_result
+  failed_when: >-
+    'already exists' not in (_tea_login_result.stderr | default('')) and
+    _tea_login_result.rc != 0
+  changed_when: >-
+    'already exists' not in (_tea_login_result.stderr | default('')) and
+    _tea_login_result.rc == 0
+  no_log: yes

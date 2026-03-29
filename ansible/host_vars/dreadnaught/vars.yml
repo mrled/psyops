@@ -47,7 +47,7 @@ chineseroom_gitea_users:
     ssh_keys:
       - title: conspirator@PSYOPS
         pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m
-  - username: callista
+  - username: "{{ chineseroom_gitea_restricted_user }}"
     email: me+callista-dreadnaught-gitea@micahrl.com
     password: "{{ vault_chineseroom_gitea_users['callista'].password }}"
     admin: false

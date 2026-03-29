@@ -137,3 +137,50 @@
   loop_control:
     loop_var: gitea_user
 
+- name: Create gitea token directory for restricted user
+  file:
+    path: "{{ chineseroom_gitea_restricted_user_token_dir }}"
+    state: directory
+    owner: "{{ chineseroom_gitea_restricted_user }}"
+    group: "{{ chineseroom_gitea_restricted_user }}"
+    mode: '0750'
+
+- name: Check if restricted user token file exists
+  stat:
+    path: "{{ chineseroom_gitea_restricted_user_token_file }}"
+  register: _restricted_user_token_stat
+
+- name: Generate restricted user API token for tea CLI
+  command: >-
+    {{ chineseroom_gitea_binary }} admin user generate-access-token
+    --username {{ chineseroom_gitea_restricted_user }}
+    --token-name tea-cli
+    --raw
+    --scopes all
+    --config {{ chineseroom_gitea_config_dir }}/app.ini
+  become: yes
+  become_user: "{{ chineseroom_gitea_user }}"
+  environment:
+    GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
+  register: _restricted_user_token_generated
+  when: not _restricted_user_token_stat.stat.exists
+
+- name: Write restricted user token file with correct ownership
+  copy:
+    content: "{{ _restricted_user_token_generated.stdout }}"
+    dest: "{{ chineseroom_gitea_restricted_user_token_file }}"
+    owner: root
+    group: "{{ chineseroom_gitea_restricted_user }}"
+    mode: '0640'
+  when: not _restricted_user_token_stat.stat.exists
+  no_log: yes
+
+- name: Read restricted user API token
+  slurp:
+    src: "{{ chineseroom_gitea_restricted_user_token_file }}"
+  register: chineseroom_gitea_restricted_user_token_slurped
+
+- name: Set restricted user token fact
+  set_fact:
+    chineseroom_gitea_restricted_user_token: "{{ chineseroom_gitea_restricted_user_token_slurped.content | b64decode | trim }}"
+
