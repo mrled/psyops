@@ -1,4 +1,22 @@
 ---
+- name: Ensure .ssh directory exists for restricted user
+  file:
+    path: "/home/{{ chineseroom_gitea_restricted_user }}/.ssh"
+    state: directory
+    owner: "{{ chineseroom_gitea_restricted_user }}"
+    group: "{{ chineseroom_gitea_restricted_user }}"
+    mode: "0700"
+
+- name: Install SSH private keys for restricted user
+  copy:
+    content: "{{ item.content }}"
+    dest: "/home/{{ chineseroom_gitea_restricted_user }}/.ssh/{{ item.filename }}"
+    owner: "{{ chineseroom_gitea_restricted_user }}"
+    group: "{{ chineseroom_gitea_restricted_user }}"
+    mode: "0600"
+  no_log: yes
+  loop: "{{ chineseroom_gitea_restricted_user_privkeys }}"
+
 - name: Install tea CLI via Homebrew
   become: yes
   become_user: "{{ chineseroom_gitea_restricted_user }}"

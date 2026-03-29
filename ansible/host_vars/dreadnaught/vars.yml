@@ -91,9 +91,9 @@ chineseroom_gitea_github_mirrors:
         port: 42246
   - github_repo: mrled/bibliographer
 
-chineseroom_user_ssh_privkeys:
+chineseroom_gitea_restricted_user_privkeys:
   - filename: id_ed25519
-    content: "{{ vault_chineseroom_user_ssh_privkey }}"
+    content: "{{ vault_chineseroom_gitea_restricted_user_ssh_privkey }}"
 
 interactive_user_list:
 - name: mrled # default user, passwordless sudo

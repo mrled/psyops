@@ -33,6 +33,11 @@ chineseroom_gitea_internal_token: ""
 chineseroom_gitea_lfs_jwt_secret: ""
 chineseroom_gitea_oauth2_jwt_secret: ""
 
+# SSH private keys to install into the restricted user's ~/.ssh/.
+# Each entry: {filename: "id_ed25519", content: "{{ vault_... }}"}
+# Store key contents in vault.
+chineseroom_gitea_restricted_user_privkeys: []
+
 # SSH private key for pushing/pulling to GitHub from the mirror working clones.
 # Store in vault. The public key is derived automatically via ssh-keygen.
 chineseroom_gitea_github_api_token: ""
