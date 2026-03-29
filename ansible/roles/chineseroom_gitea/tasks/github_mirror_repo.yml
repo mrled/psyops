@@ -7,6 +7,7 @@
     _gitea_name: "github--{{ chineseroom_gitea_github_mirror.github_repo | replace('/', '--') }}"
     _github_owner: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[0] }}"
     _github_name: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[1] }}"
+    _checkout_name: "{{ chineseroom_gitea_github_mirror.checkout_name | default(chineseroom_gitea_github_mirror.github_repo.split('/')[1]) }}"
 
 - name: Query GitHub API for {{ chineseroom_gitea_github_mirror.github_repo }}
   uri:
@@ -166,18 +167,10 @@
     status_code: 202
   when: _restricted_user_fork_check.status == 404
 
-- name: Create checkout parent directory for {{ _gitea_name }}
-  file:
-    path: "/home/{{ chineseroom_restricted_user }}/repos/github.com/{{ _github_owner }}"
-    state: directory
-    owner: "{{ chineseroom_restricted_user }}"
-    group: "{{ chineseroom_restricted_user }}"
-    mode: "0755"
-
 - name: Clone or fetch fork of {{ _gitea_name }} for restricted user
   shell: |
     set -euo pipefail
-    dest="/home/{{ chineseroom_restricted_user }}/repos/github.com/{{ _github_owner }}/{{ _github_name }}"
+    dest="/mnt/aiworkspace/{{ _checkout_name }}"
     if [ -d "${dest}/.git" ]; then
       git -C "${dest}" fetch --all
     else
@@ -192,7 +185,7 @@
 - name: Add upstream remote to restricted user checkout of {{ _gitea_name }}
   shell: |
     set -euo pipefail
-    dest="/home/{{ chineseroom_restricted_user }}/repos/github.com/{{ _github_owner }}/{{ _github_name }}"
+    dest="/mnt/aiworkspace/{{ _checkout_name }}"
     git -C "${dest}" remote get-url upstream 2>/dev/null \
       || git -C "${dest}" remote add upstream \
            "ssh://{{ chineseroom_gitea_ssh_host }}/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}.git"

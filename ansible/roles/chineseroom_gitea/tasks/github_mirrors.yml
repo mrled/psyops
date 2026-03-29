@@ -8,6 +8,14 @@
     fi
   changed_when: false
 
+- name: Symlink ~/work to /mnt/aiworkspace for restricted user
+  file:
+    src: /mnt/aiworkspace
+    dest: "/home/{{ chineseroom_restricted_user }}/work"
+    state: link
+  become: yes
+  become_user: "{{ chineseroom_restricted_user }}"
+
 - name: Set up GitHub mirror repos
   include_tasks: github_mirror_repo.yml
   loop: "{{ chineseroom_gitea_github_mirrors }}"

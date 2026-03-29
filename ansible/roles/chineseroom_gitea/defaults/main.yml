@@ -71,11 +71,14 @@ chineseroom_gitea_mirror_team_readonly: readonly
 # Each entry:
 #   github_repo:     GitHub owner/repo (required), e.g. mrled/psyops
 #   default_branch:  branch to sync (default: queried from GitHub API)
+#   checkout_name:   directory name under /mnt/aiworkspace for the restricted user checkout
+#                    (default: the GitHub repo name without the owner, e.g. psyops)
 #   domain_map:      optional list of {subdomain, port} sandbox nginx entries
 #
 # Gitea repo name: github--owner--repo  (e.g. github--mrled--psyops)
 # Gitea owner:     chineseroom_gitea_mirror_user (github)
-# Restricted user checkout: ~/repos/github.com/owner/repo (fork of mirror org repo)
+# Restricted user checkout: /mnt/aiworkspace/CHECKOUT_NAME (fork of mirror org repo)
+#                           also accessible via ~/work/CHECKOUT_NAME (symlink)
 chineseroom_gitea_github_mirrors: []
 
 # Webhook receiver listen address and port (loopback only — Gitea calls it locally)
