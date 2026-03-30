@@ -4,14 +4,15 @@
 # Called asynchronously by the webhook receiver when Gitea signals a push to
 # refs/heads/<branch>.  The branch name is pushed verbatim to GitHub.
 #
-# Usage: push-to-github.sh <repo_name> <ref>
-#   repo_name  Gitea repository name (must have a working clone in {{ chineseroom_gitea_mirrors_dir }})
-#   ref        Git ref that was pushed, e.g. refs/heads/main
+# Usage: push-to-github.sh <repo_name> <ref> <mirrors_dir>
+#   repo_name    Gitea repository name
+#   ref          Git ref that was pushed, e.g. refs/heads/main
+#   mirrors_dir  Directory containing working clones
 set -euo pipefail
 
-REPO="${1:?usage: $0 <repo_name> <ref>}"
-REF="${2:?usage: $0 <repo_name> <ref>}"
-MIRRORS_DIR="{{ chineseroom_gitea_mirrors_dir }}"
+REPO="${1:?usage: $0 <repo_name> <ref> <mirrors_dir>}"
+REF="${2:?usage: $0 <repo_name> <ref> <mirrors_dir>}"
+MIRRORS_DIR="${3:?usage: $0 <repo_name> <ref> <mirrors_dir>}"
 MIRROR_DIR="$MIRRORS_DIR/$REPO"
 LOCK_FILE="/tmp/gitea-push-${REPO}.lock"
 LOG_TAG="gitea-push-github[$REPO]"

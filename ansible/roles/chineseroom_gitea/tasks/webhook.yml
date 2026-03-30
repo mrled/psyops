@@ -9,8 +9,8 @@
   notify: restart gitea-webhook-receiver
 
 - name: Install push-to-github script
-  template:
-    src: gitea-push-to-github.sh.j2
+  copy:
+    src: gitea-push-to-github.sh
     dest: "{{ chineseroom_gitea_push_script }}"
     owner: root
     group: "{{ chineseroom_gitea_group }}"

@@ -55,7 +55,7 @@ PORT = int(os.environ.get("GITEA_WEBHOOK_PORT", "9420"))
 def do_push(repo, ref):
     """Invoke push-to-github.sh for one repo/branch, logging all output."""
     log.info("[%s] pushing %s to GitHub", repo, ref)
-    result = subprocess.run([PUSH_SCRIPT, repo, ref], capture_output=True, text=True)
+    result = subprocess.run([PUSH_SCRIPT, repo, ref, MIRRORS_DIR], capture_output=True, text=True)
     for line in result.stdout.splitlines():
         log.info("[%s] push: %s", repo, line)
     for line in result.stderr.splitlines():
