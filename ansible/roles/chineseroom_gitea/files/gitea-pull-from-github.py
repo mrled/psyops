@@ -174,13 +174,17 @@ def main():
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("config", metavar="CONFIG", help="Path to pull-from-github.conf JSON config file")
+    parser.add_argument("--repo", metavar="REPO", help="Sync only this repo name (default: all repos in mirror org)")
     args = parser.parse_args()
 
     config = load_config(args.config)
     token = Path(config["mirror_token_file"]).read_text().strip()
 
-    for repo in get_mirror_repos(config["gitea_url"], config["gitea_org"], token):
-        sync_repo(repo, config, token)
+    if args.repo:
+        sync_repo(args.repo, config, token)
+    else:
+        for repo in get_mirror_repos(config["gitea_url"], config["gitea_org"], token):
+            sync_repo(repo, config, token)
 
 
 if __name__ == "__main__":
