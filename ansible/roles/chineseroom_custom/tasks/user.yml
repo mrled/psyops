@@ -30,7 +30,7 @@
     state: link
     force: yes
   loop:
-    - src: "/mnt/aiworkspace/dhd/hbase/.claude/CLAUDE.md
+    - src: "/mnt/aiworkspace/dhd/hbase/.claude/CLAUDE.md"
       dest: "/home/{{ chineseroom_restricted_user }}/.claude/CLAUDE.md"
 
 - name: Install GHCup for chineseroom user
