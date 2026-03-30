@@ -149,6 +149,8 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             self._handle_push(payload)
         elif self.path == "/pull-sync":
             self._handle_pull(payload)
+        elif self.path == "/pull-all":
+            self._handle_pull_all()
         else:
             self._reply(404, b"not found\n")
 
@@ -174,6 +176,29 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
         log.info("Scheduling push: %s:%s", repo_name, ref)
         _jobs.schedule_push(repo_name, ref)
         self._reply(200, b"push scheduled\n")
+
+    def _handle_pull_all(self):
+        try:
+            repos = list(pull.get_mirror_repos(
+                _pull_config["gitea_url"],
+                _pull_config["gitea_org"],
+                _pull_token,
+            ))
+        except Exception:
+            log.exception("pull-all: failed to list mirror repos")
+            self._reply(500, b"failed to list repos\n")
+            return
+
+        scheduled = 0
+        for repo in repos:
+            if os.path.isdir(os.path.join(MIRRORS_DIR, repo)):
+                _jobs.schedule_pull(repo)
+                scheduled += 1
+            else:
+                log.info("pull-all: skipping %s (no mirror dir)", repo)
+
+        log.info("pull-all: scheduled %d repos", scheduled)
+        self._reply(200, f"scheduled {scheduled} pulls\n".encode())
 
     def _handle_pull(self, payload):
         repo_name = payload.get("repo", "")

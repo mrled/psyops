@@ -1,13 +1,12 @@
 [Unit]
 Description=Pull GitHub changes into Gitea (oneshot, driven by timer)
-After=gitea.service
+After=gitea-webhook-receiver.service
 
 [Service]
 Type=oneshot
 User={{ chineseroom_gitea_user }}
 Group={{ chineseroom_gitea_group }}
-ExecStart={{ chineseroom_gitea_pull_bin }} {{ chineseroom_gitea_pull_config }}
+EnvironmentFile={{ chineseroom_gitea_webhook_env_file }}
+ExecStart={{ chineseroom_gitea_pull_bin }}
 NoNewPrivileges=yes
 ProtectSystem=strict
-ReadWritePaths={{ chineseroom_gitea_mirrors_dir }}
-ReadOnlyPaths={{ chineseroom_gitea_sync_lib_dir }} {{ chineseroom_gitea_data_dir }}

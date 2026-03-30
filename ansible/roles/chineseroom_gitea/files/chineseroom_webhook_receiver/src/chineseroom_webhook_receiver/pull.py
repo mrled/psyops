@@ -1,21 +1,18 @@
 """
-Pull changes from GitHub into Gitea for all repos in the mirror org.
-Run periodically via the chineseroom-pull-from-github console script.
+Pull changes from GitHub into Gitea.
 
-GitHub branches are copied verbatim into Gitea:
-  GitHub refs/heads/foo  ->  Gitea refs/heads/foo
+sync_repo() and related functions contain the git logic and are called directly
+by the webhook receiver process (server.py).
 
-GitHub tags are copied verbatim with force-overwrite:
-  GitHub refs/tags/v1.0  ->  Gitea refs/tags/v1.0
-
-The mirror org is queried via the Gitea API on each run, so newly added repos
-are picked up automatically without re-running Ansible.
-
-Usage: chineseroom-pull-from-github <config-file> [--repo REPO]
+The chineseroom-pull-from-github console script (main()) is a thin HTTP client
+that asks the webhook receiver to schedule a pull, so all git operations are
+serialized through the receiver's RepoJobManager regardless of whether a pull
+was triggered by the timer or by a /pull-sync webhook.
 """
 import argparse
 import json
 import logging
+import os
 import re
 import sys
 import urllib.error
@@ -145,22 +142,28 @@ def sync_repo(repo, config, token):
 
 
 def main():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(name)s %(levelname)s %(message)s",
-        stream=sys.stderr,
-    )
+    """HTTP client entry point: ask the webhook receiver to schedule a pull."""
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("config", metavar="CONFIG", help="Path to pull-from-github.conf JSON config file")
-    parser.add_argument("--repo", metavar="REPO", help="Sync only this repo name (default: all repos in mirror org)")
+    parser = argparse.ArgumentParser(description="Trigger a GitHub pull via the webhook receiver.")
+    parser.add_argument("--repo", metavar="REPO", help="Pull only this repo (default: all repos)")
     args = parser.parse_args()
 
-    config = load_config(args.config)
-    token = Path(config["mirror_token_file"]).read_text().strip()
+    host = os.environ.get("GITEA_WEBHOOK_LISTEN", "127.0.0.1")
+    port = int(os.environ.get("GITEA_WEBHOOK_PORT", "9420"))
 
     if args.repo:
-        sync_repo(args.repo, config, token)
+        url = f"http://{host}:{port}/pull-sync"
+        body = json.dumps({"repo": args.repo}).encode()
     else:
-        for repo in get_mirror_repos(config["gitea_url"], config["gitea_org"], token):
-            sync_repo(repo, config, token)
+        url = f"http://{host}:{port}/pull-all"
+        body = b""
+
+    req = urllib.request.Request(url, data=body, method="POST",
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req) as resp:
+            sys.stdout.write(resp.read().decode())
+    except urllib.error.URLError as exc:
+        log.error("Failed to contact webhook receiver at %s: %s", url, exc)
+        sys.exit(1)
