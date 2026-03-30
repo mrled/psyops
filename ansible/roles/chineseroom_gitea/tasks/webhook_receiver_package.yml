@@ -9,7 +9,7 @@
   pip:
     name: /tmp/chineseroom_webhook_receiver
     virtualenv: "{{ chineseroom_gitea_package_install_dir }}"
-    virtualenv_python: python3
+    virtualenv_command: python3 -m venv
     state: forcereinstall
   when: _chineseroom_webhook_pkg_src.changed
   notify: restart gitea-webhook-receiver
