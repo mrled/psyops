@@ -31,6 +31,11 @@
   tags:
     - chineseroom_gitea_ssh_shortname
 
+- name: Install webhook receiver Python package
+  import_tasks: webhook_receiver_package.yml
+  tags:
+    - chineseroom_gitea_package
+
 - name: Configure GitHub sync webhook receiver
   import_tasks: webhook.yml
   tags:

@@ -1,21 +1,4 @@
 ---
-- name: Install webhook receiver Python script
-  template:
-    src: gitea-webhook-receiver.py.j2
-    dest: "{{ chineseroom_gitea_webhook_receiver_bin }}"
-    owner: root
-    group: "{{ chineseroom_gitea_group }}"
-    mode: "0750"
-  notify: restart gitea-webhook-receiver
-
-- name: Install push-to-github script
-  copy:
-    src: gitea-push-to-github.sh
-    dest: "{{ chineseroom_gitea_push_script }}"
-    owner: root
-    group: "{{ chineseroom_gitea_group }}"
-    mode: "0750"
-
 - name: Install webhook receiver environment file
   template:
     src: gitea-webhook-receiver.env.j2

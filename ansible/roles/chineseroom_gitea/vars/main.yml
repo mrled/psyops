@@ -11,11 +11,13 @@ chineseroom_gitea_lfs_dir: "{{ chineseroom_gitea_home }}/lfs"
 chineseroom_gitea_mirrors_dir: "{{ chineseroom_gitea_home }}/mirrors"
 chineseroom_gitea_log_dir: /var/log/gitea
 
-# Directory for sync helper scripts and the webhook receiver env file
+# Webhook receiver Python package installed as a virtualenv
+chineseroom_gitea_package_install_dir: /opt/chineseroom_webhook_receiver
+chineseroom_gitea_webhook_receiver_bin: "{{ chineseroom_gitea_package_install_dir }}/bin/chineseroom-webhook-receiver"
+chineseroom_gitea_pull_bin: "{{ chineseroom_gitea_package_install_dir }}/bin/chineseroom-pull-from-github"
+
+# Config and env files for the webhook receiver (rendered by Ansible)
 chineseroom_gitea_sync_lib_dir: /usr/local/lib/gitea-sync
-chineseroom_gitea_webhook_receiver_bin: "{{ chineseroom_gitea_sync_lib_dir }}/webhook-receiver.py"
-chineseroom_gitea_push_script: "{{ chineseroom_gitea_sync_lib_dir }}/push-to-github.sh"
-chineseroom_gitea_pull_script: "{{ chineseroom_gitea_sync_lib_dir }}/pull-from-github.py"
 chineseroom_gitea_pull_config: "{{ chineseroom_gitea_sync_lib_dir }}/pull-from-github.conf"
 chineseroom_gitea_webhook_env_file: "{{ chineseroom_gitea_sync_lib_dir }}/.webhook-receiver.env"
 

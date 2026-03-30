@@ -1,0 +1,15 @@
+---
+- name: Copy webhook receiver package source to host
+  copy:
+    src: chineseroom_webhook_receiver
+    dest: /tmp/
+  register: _chineseroom_webhook_pkg_src
+
+- name: Install webhook receiver package into virtualenv
+  pip:
+    name: /tmp/chineseroom_webhook_receiver
+    virtualenv: "{{ chineseroom_gitea_package_install_dir }}"
+    virtualenv_python: python3
+    state: forcereinstall
+  when: _chineseroom_webhook_pkg_src.changed
+  notify: restart gitea-webhook-receiver

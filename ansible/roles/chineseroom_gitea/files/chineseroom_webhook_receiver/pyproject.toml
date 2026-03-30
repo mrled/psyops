@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "chineseroom-webhook-receiver"
+version = "0.1.0"
+requires-python = ">=3.9"
+
+[project.scripts]
+chineseroom-webhook-receiver = "chineseroom_webhook_receiver.server:main"
+chineseroom-pull-from-github = "chineseroom_webhook_receiver.pull:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+chineseroom_webhook_receiver = ["scripts/*"]

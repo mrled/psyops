@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- mode: python -*-
 """
 Gitea webhook receiver — bidirectional sync between Gitea and GitHub.
 
@@ -14,24 +12,24 @@ Endpoints:
       Effect: schedules a pull of that repo from GitHub
 
 The receiver listens on localhost only, so no authentication is required.
-Every request returns 200 immediately. The actual
-git operations run in background threads with dirty-flag semantics per repo: if
-a new request arrives while an operation is already in-flight for that repo, it
-is queued and executed immediately after the current operation finishes.
+Every request returns 200 immediately. The actual git operations run in
+background threads with dirty-flag semantics per repo: if a new request
+arrives while an operation is already in-flight for that repo, it is queued
+and executed immediately after the current operation finishes.
 
 Coalescing rules:
   - Multiple pending pushes to the same branch collapse to one push.
   - Multiple pending pushes to different branches are each queued.
   - Multiple pending pulls collapse to one pull.
   - When both pushes and a pull are pending, pushes run first (flush
-    Gitea → GitHub before syncing GitHub → Gitea).
+    Gitea -> GitHub before syncing GitHub -> Gitea).
 
 Gitea must be configured to send a push webhook to:
-  http://127.0.0.1:{{ chineseroom_gitea_webhook_port }}/push-sync
+  http://127.0.0.1:$GITEA_WEBHOOK_PORT/push-sync
 
 To trigger a pull on demand:
-  curl -X POST http://127.0.0.1:{{ chineseroom_gitea_webhook_port }}/pull-sync \
-    -H "Content-Type: application/json" \
+  curl -X POST http://127.0.0.1:$GITEA_WEBHOOK_PORT/pull-sync \\
+    -H "Content-Type: application/json" \\
     -d '{"repo": "github--owner--reponame"}'
 """
 import http.server
@@ -39,13 +37,17 @@ import json
 import logging
 import os
 import subprocess
+import sys
 import threading
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
-PUSH_SCRIPT = os.environ["GITEA_PUSH_SCRIPT"]
-PULL_SCRIPT = os.environ["GITEA_PULL_SCRIPT"]
+_SCRIPTS_DIR = Path(__file__).parent / "scripts"
+PUSH_SCRIPT = str(_SCRIPTS_DIR / "push-to-github.sh")
+PULL_SCRIPT = str(_SCRIPTS_DIR / "pull-from-github.py")
+
 PULL_CONFIG = os.environ["GITEA_PULL_CONFIG"]
 MIRRORS_DIR = os.environ["GITEA_MIRRORS_DIR"]
 HOST = os.environ.get("GITEA_WEBHOOK_LISTEN", "127.0.0.1")
@@ -55,7 +57,9 @@ PORT = int(os.environ.get("GITEA_WEBHOOK_PORT", "9420"))
 def do_push(repo, ref):
     """Invoke push-to-github.sh for one repo/branch, logging all output."""
     log.info("[%s] pushing %s to GitHub", repo, ref)
-    result = subprocess.run([PUSH_SCRIPT, repo, ref, MIRRORS_DIR], capture_output=True, text=True)
+    result = subprocess.run(
+        ["/bin/bash", PUSH_SCRIPT, repo, ref, MIRRORS_DIR], capture_output=True, text=True
+    )
     for line in result.stdout.splitlines():
         log.info("[%s] push: %s", repo, line)
     for line in result.stderr.splitlines():
@@ -68,7 +72,9 @@ def do_pull(repo):
     """Invoke pull-from-github.py --repo for one repo, logging all output."""
     log.info("[%s] pulling from GitHub", repo)
     result = subprocess.run(
-        [PULL_SCRIPT, PULL_CONFIG, "--repo", repo], capture_output=True, text=True
+        [sys.executable, PULL_SCRIPT, PULL_CONFIG, "--repo", repo],
+        capture_output=True,
+        text=True,
     )
     for line in result.stdout.splitlines():
         log.info("[%s] pull: %s", repo, line)
@@ -93,9 +99,9 @@ class RepoJobManager:
 
     def __init__(self):
         self._lock = threading.Lock()
-        self._active = {}  # repo -> bool
+        self._active = {}          # repo -> bool
         self._pending_pushes = {}  # repo -> set[ref]
-        self._pending_pull = {}  # repo -> bool
+        self._pending_pull = {}    # repo -> bool
 
     def schedule_push(self, repo, ref):
         with self._lock:
@@ -216,7 +222,7 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
         log.debug("%s - %s", self.address_string(), format % args)
 
 
-if __name__ == "__main__":
+def main():
     server = http.server.ThreadingHTTPServer((HOST, PORT), WebhookHandler)
     log.info("Listening on %s:%d", HOST, PORT)
     server.serve_forever()
