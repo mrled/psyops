@@ -1,4 +1,14 @@
 ---
+- name: Make directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: '0700'
+  loop:
+    - /mnt/aiworkspace/dhd/hbase/.claude
+
 - name: Symlink dotfiles from dhd in aiworkspace for restricted user
   file:
     src: "/mnt/aiworkspace/dhd/hbase/{{ item }}"
@@ -12,6 +22,16 @@
     - .tmux.conf
     - .vimrc
     - .zshrc
+
+- name: Symlink other files
+  file:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+    force: yes
+  loop:
+    - src: "/mnt/aiworkspace/dhd/hbase/.claude/CLAUDE.md
+      dest: "/home/{{ chineseroom_restricted_user }}/.claude/CLAUDE.md"
 
 - name: Install GHCup for chineseroom user
   become: yes
