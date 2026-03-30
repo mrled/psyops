@@ -13,6 +13,3 @@ chineseroom-pull-from-github = "chineseroom_webhook_receiver.pull:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-chineseroom_webhook_receiver = ["scripts/*"]

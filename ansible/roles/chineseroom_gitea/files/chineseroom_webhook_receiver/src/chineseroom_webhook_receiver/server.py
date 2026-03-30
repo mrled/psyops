@@ -36,52 +36,29 @@ import http.server
 import json
 import logging
 import os
-import subprocess
-import sys
 import threading
 from pathlib import Path
 
+from chineseroom_webhook_receiver import pull, push
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
-
-_SCRIPTS_DIR = Path(__file__).parent / "scripts"
-PUSH_SCRIPT = str(_SCRIPTS_DIR / "push-to-github.sh")
-PULL_SCRIPT = str(_SCRIPTS_DIR / "pull-from-github.py")
 
 PULL_CONFIG = os.environ["GITEA_PULL_CONFIG"]
 MIRRORS_DIR = os.environ["GITEA_MIRRORS_DIR"]
 HOST = os.environ.get("GITEA_WEBHOOK_LISTEN", "127.0.0.1")
 PORT = int(os.environ.get("GITEA_WEBHOOK_PORT", "9420"))
 
+_pull_config = pull.load_config(PULL_CONFIG)
+_pull_token = Path(_pull_config["mirror_token_file"]).read_text().strip()
+
 
 def do_push(repo, ref):
-    """Invoke push-to-github.sh for one repo/branch, logging all output."""
-    log.info("[%s] pushing %s to GitHub", repo, ref)
-    result = subprocess.run(
-        ["/bin/bash", PUSH_SCRIPT, repo, ref, MIRRORS_DIR], capture_output=True, text=True
-    )
-    for line in result.stdout.splitlines():
-        log.info("[%s] push: %s", repo, line)
-    for line in result.stderr.splitlines():
-        log.info("[%s] push: %s", repo, line)
-    if result.returncode != 0:
-        log.error("[%s] push exited %d", repo, result.returncode)
+    push.do_push(repo, ref, MIRRORS_DIR)
 
 
 def do_pull(repo):
-    """Invoke pull-from-github.py --repo for one repo, logging all output."""
-    log.info("[%s] pulling from GitHub", repo)
-    result = subprocess.run(
-        [sys.executable, PULL_SCRIPT, PULL_CONFIG, "--repo", repo],
-        capture_output=True,
-        text=True,
-    )
-    for line in result.stdout.splitlines():
-        log.info("[%s] pull: %s", repo, line)
-    for line in result.stderr.splitlines():
-        log.info("[%s] pull: %s", repo, line)
-    if result.returncode != 0:
-        log.error("[%s] pull exited %d", repo, result.returncode)
+    pull.sync_repo(repo, _pull_config, _pull_token)
 
 
 class RepoJobManager:
@@ -94,7 +71,7 @@ class RepoJobManager:
     a single follow-up thread to handle it.
 
     All state mutations are protected by self._lock. The lock is never held
-    during subprocess calls or any other blocking I/O.
+    during blocking I/O.
     """
 
     def __init__(self):
