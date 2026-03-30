@@ -1,4 +1,23 @@
 ---
+- name: Install ghostty terminfo system-wide
+  when: base_ghostty_terminfo
+  block:
+    - name: Create terminfo sources directory
+      file:
+        path: /usr/local/share/terminfo-sources
+        state: directory
+        mode: '0755'
+
+    - name: Copy ghostty terminfo source to remote
+      copy:
+        src: xterm-ghostty.terminfo
+        dest: /usr/local/share/terminfo-sources/xterm-ghostty.terminfo
+      register: base_ghostty_terminfo_src
+
+    - name: Compile and install ghostty terminfo
+      command: tic -x -o /usr/share/terminfo /usr/local/share/terminfo-sources/xterm-ghostty.terminfo
+      when: base_ghostty_terminfo_src.changed
+
 - name: Fix fucking Broadcom wifi on Fedora
   import_tasks: fucking_broadcom_wifi.yml
   when: base_fucking_broadcom_wifi

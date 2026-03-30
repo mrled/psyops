@@ -1,4 +1,5 @@
 ---
+base_ghostty_terminfo: false
 base_fucking_broadcom_wifi: false
 base_rpi: false
 base_rpi_poe_hat: false

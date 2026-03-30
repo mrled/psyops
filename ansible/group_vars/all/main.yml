@@ -13,6 +13,8 @@ global_timezone:
 # This is not prefixed with global_, but the base role is very generic
 base_timezone: "{{ global_timezone.zoneinfo_tzname }}"
 
+base_ghostty_terminfo: true
+
 # This stuff is used on all my Linux machines
 global_syslog_host: syslog.home.micahrl.com
 global_syslog_netsys_port: "514"
