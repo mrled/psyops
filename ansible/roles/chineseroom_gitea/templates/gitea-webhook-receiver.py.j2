@@ -3,7 +3,7 @@
 """
 Gitea webhook receiver — bidirectional sync between Gitea and GitHub.
 
-Endpoints (all require X-Gitea-Signature HMAC-SHA256 auth):
+Endpoints:
 
   POST /push-sync  — triggered by Gitea webhook on branch push
       Body: standard Gitea push webhook JSON
@@ -13,7 +13,8 @@ Endpoints (all require X-Gitea-Signature HMAC-SHA256 auth):
       Body: {"repo": "<mirror-repo-name>"}
       Effect: schedules a pull of that repo from GitHub
 
-Every request returns 200 immediately after signature verification. The actual
+The receiver listens on localhost only, so no authentication is required.
+Every request returns 200 immediately. The actual
 git operations run in background threads with dirty-flag semantics per repo: if
 a new request arrives while an operation is already in-flight for that repo, it
 is queued and executed immediately after the current operation finishes.
@@ -30,14 +31,9 @@ Gitea must be configured to send a push webhook to:
 
 To trigger a pull on demand:
   curl -X POST http://127.0.0.1:{{ chineseroom_gitea_webhook_port }}/pull-sync \
-    -H "X-Gitea-Signature: <hmac-sha256-of-body>" \
     -H "Content-Type: application/json" \
     -d '{"repo": "github--owner--reponame"}'
-
-Set the webhook Secret to the value of chineseroom_gitea_webhook_secret.
 """
-import hashlib
-import hmac
 import http.server
 import json
 import logging
@@ -48,7 +44,6 @@ import threading
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
-SECRET = os.environ["GITEA_WEBHOOK_SECRET"].encode()
 PUSH_SCRIPT = os.environ["GITEA_PUSH_SCRIPT"]
 PULL_SCRIPT = os.environ["GITEA_PULL_SCRIPT"]
 PULL_CONFIG = os.environ["GITEA_PULL_CONFIG"]
@@ -160,13 +155,6 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length)
-
-        sig = self.headers.get("X-Gitea-Signature", "")
-        expected = hmac.new(SECRET, body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(sig, expected):
-            log.warning("Invalid webhook signature from %s", self.client_address[0])
-            self._reply(403, b"forbidden\n")
-            return
 
         try:
             payload = json.loads(body)

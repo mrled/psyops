@@ -72,11 +72,9 @@
       config:
         url: "http://127.0.0.1:{{ chineseroom_gitea_webhook_port }}/push-sync"
         content_type: json
-        secret: "{{ chineseroom_gitea_webhook_secret }}"
       events: ["push"]
       active: true
     status_code: 201
-  no_log: yes
   when: >-
     (_gitea_hooks.json
       | selectattr('config.url', 'equalto',
