@@ -143,7 +143,7 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
         body = self.rfile.read(length)
 
         try:
-            payload = json.loads(body)
+            payload = json.loads(body) if body else {}
         except json.JSONDecodeError:
             self._reply(400, b"bad json\n")
             return
