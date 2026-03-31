@@ -96,6 +96,7 @@ chineseroom_gitea_restricted_user_privkeys:
   - filename: id_ed25519
     content: "{{ vault_chineseroom_gitea_restricted_user_ssh_privkey }}"
 
+interactive_user_disable_dhd: true
 interactive_user_list:
 - name: mrled # default user, passwordless sudo
 - name: callista # chineseroom limited user

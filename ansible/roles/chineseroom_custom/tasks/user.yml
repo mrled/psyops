@@ -9,6 +9,13 @@
   loop:
     - /mnt/aiworkspace/dhd/hbase/.claude
 
+- name: Link dhd
+  file:
+    src: /mnt/aiworkspace/dhd
+    dest: "/home/{{ chineseroom_restricted_user }}/.dhd"
+    state: link
+    force: yes
+
 - name: Symlink dotfiles from dhd in aiworkspace for restricted user
   file:
     src: "/mnt/aiworkspace/dhd/hbase/{{ item }}"
@@ -30,7 +37,7 @@
     state: link
     force: yes
   loop:
-    - src: "/mnt/aiworkspace/dhd/hbase/.claude/CLAUDE.md"
+    - src: "/home/{{ chineseroom_restricted_user }}/.dhd/hosts/{{ ansible_facts['hostname'] }}/CLAUDE.md"
       dest: "/home/{{ chineseroom_restricted_user }}/.claude/CLAUDE.md"
 
 - name: Install GHCup for chineseroom user

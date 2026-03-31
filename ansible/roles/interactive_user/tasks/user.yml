@@ -15,7 +15,7 @@
     repo: https://github.com/mrled/dhd
     dest: "{{ interactive_user_home }}/.dhd"
     update: yes
-  when: not (interactive_user.dhd_disable | default(false))
+  when: not interactive_user_disable_dhd
 
 - name: Symlink dotfiles from dhd
   become: yes
@@ -32,4 +32,4 @@
     - .tmux.conf
     - .vimrc
     - .zshrc
-  when: not (interactive_user.dhd_disable | default(false))
+  when: not interactive_user_disable_dhd
