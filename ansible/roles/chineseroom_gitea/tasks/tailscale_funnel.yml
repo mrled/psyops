@@ -1,0 +1,10 @@
+---
+- name: Check tailscale funnel status
+  command: tailscale funnel status
+  register: _ts_funnel_status
+  changed_when: false
+  failed_when: false
+
+- name: Configure tailscale funnel for webhook receiver
+  command: tailscale funnel --bg --yes {{ chineseroom_gitea_webhook_port }}
+  when: chineseroom_gitea_webhook_port | string not in _ts_funnel_status.stdout

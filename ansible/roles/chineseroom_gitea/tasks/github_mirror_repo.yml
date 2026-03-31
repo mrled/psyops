@@ -81,6 +81,46 @@
           'http://127.0.0.1:' + chineseroom_gitea_webhook_port | string + '/push-sync')
       | list | length) == 0
 
+# --- GitHub webhook ---
+
+- name: Get GitHub webhooks for {{ chineseroom_gitea_github_mirror.github_repo }}
+  uri:
+    url: "https://api.github.com/repos/{{ chineseroom_gitea_github_mirror.github_repo }}/hooks"
+    method: GET
+    headers:
+      Accept: application/vnd.github+json
+      Authorization: "Bearer {{ chineseroom_gitea_github_api_token }}"
+    status_code: 200
+  register: _github_hooks
+  when: chineseroom_gitea_github_webhook_secret != ""
+
+- name: Add GitHub webhook for {{ chineseroom_gitea_github_mirror.github_repo }}
+  uri:
+    url: "https://api.github.com/repos/{{ chineseroom_gitea_github_mirror.github_repo }}/hooks"
+    method: POST
+    headers:
+      Accept: application/vnd.github+json
+      Authorization: "Bearer {{ chineseroom_gitea_github_api_token }}"
+    body_format: json
+    body:
+      name: web
+      active: true
+      events: ["push"]
+      config:
+        url: "{{ _chineseroom_ts_funnel_url }}/github-webhook"
+        content_type: json
+        secret: "{{ chineseroom_gitea_github_webhook_secret }}"
+        insecure_ssl: "0"
+    status_code: 201
+  when:
+    - chineseroom_gitea_github_webhook_secret != ""
+    - >-
+      (_github_hooks.json
+        | selectattr('config.url', 'equalto',
+            _chineseroom_ts_funnel_url + '/github-webhook')
+        | list | length) == 0
+  no_log: yes
+
 # --- Working clone (gitea system user) ---
 
 - name: Create working clone directory for {{ _gitea_name }}

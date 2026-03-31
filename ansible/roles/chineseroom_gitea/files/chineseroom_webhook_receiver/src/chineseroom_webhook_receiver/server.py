@@ -32,6 +32,8 @@ To trigger a pull on demand:
     -H "Content-Type: application/json" \\
     -d '{"repo": "github--owner--reponame"}'
 """
+import hashlib
+import hmac
 import http.server
 import json
 import logging
@@ -48,6 +50,7 @@ PULL_CONFIG = os.environ["GITEA_PULL_CONFIG"]
 MIRRORS_DIR = os.environ["GITEA_MIRRORS_DIR"]
 HOST = os.environ.get("GITEA_WEBHOOK_LISTEN", "127.0.0.1")
 PORT = int(os.environ.get("GITEA_WEBHOOK_PORT", "9420"))
+GITHUB_WEBHOOK_SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
 
 _pull_config = pull.load_config(PULL_CONFIG)
 _pull_token = Path(_pull_config["mirror_token_file"]).read_text().strip()
@@ -151,6 +154,8 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             self._handle_pull(payload)
         elif self.path == "/pull-all":
             self._handle_pull_all()
+        elif self.path == "/github-webhook":
+            self._handle_github_webhook(body, payload)
         else:
             self._reply(404, b"not found\n")
 
@@ -212,6 +217,38 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             return
 
         log.info("Scheduling pull: %s", repo_name)
+        _jobs.schedule_pull(repo_name)
+        self._reply(200, b"pull scheduled\n")
+
+    def _handle_github_webhook(self, raw_body, payload):
+        if GITHUB_WEBHOOK_SECRET:
+            sig_header = self.headers.get("X-Hub-Signature-256", "")
+            expected = "sha256=" + hmac.new(
+                GITHUB_WEBHOOK_SECRET.encode(),
+                raw_body,
+                hashlib.sha256,
+            ).hexdigest()
+            if not hmac.compare_digest(sig_header, expected):
+                self._reply(403, b"invalid signature\n")
+                return
+
+        event = self.headers.get("X-GitHub-Event", "")
+        if event != "push":
+            self._reply(200, b"ignored\n")
+            return
+
+        full_name = payload.get("repository", {}).get("full_name", "")
+        if not full_name:
+            self._reply(400, b"missing repository.full_name\n")
+            return
+
+        repo_name = "github--" + full_name.replace("/", "--")
+        mirror_dir = os.path.join(MIRRORS_DIR, repo_name)
+        if not os.path.isdir(mirror_dir):
+            self._reply(200, b"no mirror configured\n")
+            return
+
+        log.info("GitHub push event: scheduling pull for %s", repo_name)
         _jobs.schedule_pull(repo_name)
         self._reply(200, b"pull scheduled\n")
 

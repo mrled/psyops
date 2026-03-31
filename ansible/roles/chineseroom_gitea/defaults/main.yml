@@ -43,6 +43,11 @@ chineseroom_gitea_restricted_user_privkeys: []
 chineseroom_gitea_github_api_token: ""
 chineseroom_gitea_github_ssh_privkey: ""
 
+# HMAC secret shared with GitHub for webhook signature validation.
+# Set via vault; must match the secret configured on each GitHub webhook.
+# Leave empty to skip signature validation (not recommended for production).
+chineseroom_gitea_github_webhook_secret: ""
+
 # SSH host fingerprints for github.com in known_hosts format.
 # Obtain from https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 # Required; leaving this empty will cause all GitHub SSH connections to fail.
@@ -113,7 +118,7 @@ chineseroom_gitea_lfs_enable: true
 chineseroom_gitea_users: []
 
 # systemd OnCalendar expression for the GitHub→Gitea pull timer
-chineseroom_gitea_sync_pull_oncalendar: "*:0/15"
+chineseroom_gitea_sync_pull_oncalendar: "daily"
 
 # Set true to open Gitea ports in firewalld
 chineseroom_firewall_enabled: false

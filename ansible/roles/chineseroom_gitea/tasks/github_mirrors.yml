@@ -28,6 +28,18 @@
   become: yes
   become_user: "{{ chineseroom_gitea_restricted_user }}"
 
+- name: Get Tailscale status for funnel URL
+  command: tailscale status --json
+  register: _ts_status_raw
+  changed_when: false
+  when: chineseroom_gitea_github_webhook_secret != ""
+
+- name: Set Tailscale funnel base URL fact
+  set_fact:
+    _chineseroom_ts_funnel_url: >-
+      https://{{ (_ts_status_raw.stdout | from_json).Self.DNSName | regex_replace('\.$', '') }}
+  when: chineseroom_gitea_github_webhook_secret != ""
+
 - name: Set up GitHub mirror repos
   include_tasks: github_mirror_repo.yml
   loop: "{{ chineseroom_gitea_github_mirrors }}"

@@ -35,6 +35,7 @@ chineseroom_gitea_secret_key: "{{ vault_chineseroom_gitea_secret_key }}"
 chineseroom_gitea_internal_token: "{{ vault_chineseroom_gitea_internal_token }}"
 chineseroom_gitea_lfs_jwt_secret: "{{ vault_chineseroom_gitea_lfs_jwt_secret }}"
 chineseroom_gitea_oauth2_jwt_secret: "{{ vault_chineseroom_gitea_oauth2_jwt_secret }}"
+chineseroom_gitea_github_webhook_secret: "{{ vault_chineseroom_gitea_github_webhook_secret }}"
 
 # WARNING: gitea doesn't change the password if it's already set, so these passwords are only used at creation time.
 chineseroom_gitea_users:
