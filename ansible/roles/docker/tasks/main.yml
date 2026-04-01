@@ -34,6 +34,8 @@
   when: ansible_distribution == "CentOS"
 
 - name: Add Docker repo (Ubuntu)
+  when: ansible_distribution == "Ubuntu"
+
   block:
     - name: Download GPG key
       ansible.builtin.get_url:
@@ -41,7 +43,7 @@
         dest: /usr/local/docker-apt-gpg-key
       register: docker_apt_gpg_key
     - name: Import GPG key
-      ansible.builtin.shell: apt-key add /usr/local/docker-apt-gpg-key
+      ansible.builtin.command: apt-key add /usr/local/docker-apt-gpg-key
       when: docker_apt_gpg_key.changed
     # NOTE: must use bionic (18.04) for 20.04, for now, apparently this will get fixed later, smh
     - name: Add Docker repo (Ubuntu)
@@ -49,9 +51,9 @@
         repo: deb https://download.docker.com/linux/ubuntu/ bionic stable
         filename: docker
         state: present
-  when: ansible_distribution == "Ubuntu"
-
 - name: Add Docker repo (Debian)
+  when: ansible_distribution == "Debian"
+
   block:
     - name: Download GPG key
       ansible.builtin.get_url:
@@ -59,15 +61,13 @@
         dest: /usr/local/docker-apt-gpg-key
       register: docker_apt_gpg_key
     - name: Import GPG key
-      ansible.builtin.shell: apt-key add /usr/local/docker-apt-gpg-key
+      ansible.builtin.command: apt-key add /usr/local/docker-apt-gpg-key
       when: docker_apt_gpg_key.changed
     - name: Add Docker repo (Debian)
       ansible.builtin.apt_repository:
         repo: deb https://download.docker.com/linux/{{ ansible_facts.lsb.id | lower }}/ {{ ansible_facts.lsb.codename }} stable
         filename: docker
         state: present
-  when: ansible_distribution == "Debian"
-
 - name: Install packages (RPM)
   ansible.builtin.dnf:
     name:
@@ -99,6 +99,8 @@
     state: latest
 
 - name: Fix CentOS 8.x firewalld
+  when: ansible_distribution == "CentOS" and ansible_facts['distribution_version'] is version('8', '>=')
+
   block:
     - name: Enable masquerading
       ansible.posix.firewalld:
@@ -112,8 +114,6 @@
         name: firewalld
         state: reloaded
       when: docker_rh_firewalld_masq_enabled.changed
-  when: ansible_distribution == "CentOS" and ansible_facts['distribution_version'] is version('8', '>=')
-
 - name: Start docker service
   ansible.builtin.systemd:
     name: docker

@@ -1,5 +1,7 @@
 ---
 - name: Install Tailscale on Debian/Ubuntu
+  when: ansible_distribution in ["Debian", "Ubuntu"]
+
   block:
     - name: Get GPG key
       ansible.builtin.get_url:
@@ -18,10 +20,11 @@
         update_cache: true
         name: tailscale
         state: latest
-  when: ansible_distribution in ["Debian", "Ubuntu"]
-
-- ansible.builtin.debug: var=ansible_distribution
+- ansible.builtin.debug:
+    var: ansible_distribution
 - name: Install Tailscale on RH
+  when: ansible_distribution in ["Rocky", "Fedora"]
+
   block:
   # Rocky Linux is basically CentOS, but still supported.
   # Tailscale doesn't support it by name, so we'll just swap it out here.
@@ -46,8 +49,6 @@
         update_cache: true
         name: tailscale
         state: latest
-  when: ansible_distribution in ["Rocky", "Fedora"]
-
 - name: Start and enable tailscale service
   ansible.builtin.systemd:
     name: tailscaled
@@ -60,29 +61,29 @@
   register: tailscale_daemon_state
 
 - name: When machine is already joined to the tailnet
+  when: "'_machinekey' in (tailscale_daemon_state['content'] | b64decode)"
+
   block:
     - ansible.builtin.debug:
         msg: This machine is already joined to the tailnet
-  when: "'_machinekey' in (tailscale_daemon_state['content'] | b64decode)"
-
 - name: When the machine is not joined to the tailnet
+  when: "'_machinekey' not in (tailscale_daemon_state['content'] | b64decode)"
+
   block:
     - name: When the auth key is defined
+      when: tailscale_auth_key is defined
       block:
         - name: Connect to the tailnet via an auth key
           ansible.builtin.command: tailscale up --authkey {{ tailscale_auth_key }}
         - ansible.builtin.debug:
             msg: Joined this machine to the tailnet via auth key
-      when: tailscale_auth_key is defined
     - name: When the auth key is not defined
+      when: tailscale_auth_key is not defined
       block:
         - ansible.builtin.debug:
             msg: >
               This machine is not joined to the tailnet.
               We couldn't join it automatically without an auth key.
-      when: tailscale_auth_key is not defined
-  when: "'_machinekey' not in (tailscale_daemon_state['content'] | b64decode)"
-
 - name: Configure SSH takeover
   ansible.builtin.import_tasks: ssh_takeover.yml
   when: tailscale_take_over_ssh

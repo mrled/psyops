@@ -106,5 +106,5 @@
 # 3) Registers the certificate with certbot for automatic renewal
 #    (the certbot_apache_manager role enables the systemd timer for automatic renewal)
 - name: Run certbot once
-  ansible.builtin.shell: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
+  ansible.builtin.command: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
   tags: certbot

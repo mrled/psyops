@@ -16,6 +16,8 @@
   when: base_rpi_poe_hat
 
 - name: Log rpi temperature to the temporal log
+  when: base_log_rpi_temperature_temporal
+  tags: base_log_rpi_temperature_temporal
   block:
     - name: Copy rpi_log_temperature script
       ansible.builtin.copy:
@@ -42,5 +44,3 @@
         job: "{{ base_log_rpi_temp_script }}"
         user: root
         cron_file: "{{ base_log_rpi_temperature_temporal_jobname }}"
-  when: base_log_rpi_temperature_temporal
-  tags: base_log_rpi_temperature_temporal

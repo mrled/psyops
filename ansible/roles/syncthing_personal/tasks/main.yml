@@ -109,7 +109,8 @@
       content: "{{ syncthing_personal_new_config | to_nice_json(indent=2) }}"
 
 - name: Show new config (pre-update)
-  ansible.builtin.debug: var=syncthing_personal_new_config
+  ansible.builtin.debug:
+    var: syncthing_personal_new_config
 - name: Set updated configuration
   ansible.builtin.uri:
     url: "http://{{ syncthing_personal_address }}/rest/system/config"
@@ -129,4 +130,5 @@
       content: "{{ syncthing_personal_set_config_result | to_nice_json(indent=2) }}"
 
 - name: Show config posts-update
-  ansible.builtin.debug: var=syncthing_personal_set_config_result
+  ansible.builtin.debug:
+    var: syncthing_personal_set_config_result

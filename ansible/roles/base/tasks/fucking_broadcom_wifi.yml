@@ -1,12 +1,15 @@
 ---
 - name: Handle fucking Broadcom 14e4:43a0 (Fedora)
+  when: ansible_distribution == "Fedora"
   block:
     - ansible.builtin.set_fact:
         rpmfusion_free: rpmfusion-free-release-{{ ansible_distribution_version }}.noarch.rpm
         rpmfusion_nonfree: rpmfusion-nonfree-release-{{ ansible_distribution_version }}.noarch.rpm
 
     - name: Get rpmfusion
-      ansible.builtin.get_url: url={{ item }} dest=/usr/local/src
+      ansible.builtin.get_url:
+        url: "{{ item }}"
+        dest: /usr/local/src
       with_items:
         - https://download1.rpmfusion.org/free/fedora/{{ rpmfusion_free }}
         - https://download1.rpmfusion.org/nonfree/fedora/{{ rpmfusion_nonfree }}
@@ -19,7 +22,9 @@
         state: present
 
     - name: Install broadcom package and prereqs
-      ansible.builtin.package: name={{ item }} state=latest
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: latest
       with_items:
         - broadcom-wl
         - kernel-devel-{{ ansible_kernel }}
@@ -29,4 +34,3 @@
       ansible.builtin.command: akmods
     - name: modprobe wl
       ansible.builtin.command: modprobe wl
-  when: ansible_distribution == "Fedora"

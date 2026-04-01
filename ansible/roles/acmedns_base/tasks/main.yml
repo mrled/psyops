@@ -1,5 +1,7 @@
 ---
 - name: Install prereqs (RH)
+  when: ansible_distribution in ["Fedora", "CentOS"]
+
   block:
     - name: Install packages (RH)
       ansible.builtin.dnf:
@@ -12,8 +14,6 @@
         name:
           - cryptography
         state: latest
-  when: ansible_distribution in ["Fedora", "CentOS"]
-
 - name: Install prereqs (Ubuntu)
   ansible.builtin.apt:
     name:

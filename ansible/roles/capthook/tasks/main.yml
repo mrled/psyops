@@ -78,18 +78,32 @@
     mode: "0644"
 
 - name: Configure firewall (RH)
-  block:
-    - name: Configure port in the trusted zone
-      ansible.posix.firewalld: port={{ capthook_port }}/tcp permanent=yes zone=trusted state=enabled immediate=yes
-    - name: Configure port in the default zone
-      ansible.posix.firewalld: port={{ capthook_port }}/tcp permanent=yes state=enabled immediate=yes
   when: ansible_distribution in ["CentOS", "Fedora"]
 
+  block:
+    - name: Configure port in the trusted zone
+      ansible.posix.firewalld:
+        port: "{{ capthook_port }}/tcp"
+        permanent: "yes"
+        zone: trusted
+        state: enabled
+        immediate: "yes"
+    - name: Configure port in the default zone
+      ansible.posix.firewalld:
+        port: "{{ capthook_port }}/tcp"
+        permanent: "yes"
+        state: enabled
+        immediate: "yes"
 - name: Configure firewall (Ubuntu)
-  community.general.ufw: port={{ capthook_port }} proto=tcp rule=allow
+  community.general.ufw:
+    port: "{{ capthook_port }}"
+    proto: tcp
+    rule: allow
   when: ansible_distribution == "Ubuntu"
 
 - name: Configure SELinux (RH)
+  when: ansible_distribution in ["Fedora", "CentOS"]
+
   block:
     - name: Copy SELinux type enforcement file for buildpy
       ansible.builtin.template:
@@ -122,8 +136,6 @@
       ansible.builtin.command: semodule -i /etc/selinux/capthook_webhook.pp
       when: capthook_webhook_copytefile.changed
       notify: restart capthook
-
-  when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Start service
   ansible.builtin.systemd:

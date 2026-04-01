@@ -91,6 +91,7 @@
   when: base_timezone is defined
 
 - name: Restart cron if timezone changed
+  when: base_set_timezone.changed
   block:
     - name: Restart cron (Ubuntu)
       ansible.builtin.systemd:
@@ -102,4 +103,3 @@
         name: crond
         state: restarted
       when: ansible_distribution == "CentOS"
-  when: base_set_timezone.changed

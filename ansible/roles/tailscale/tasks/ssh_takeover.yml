@@ -1,5 +1,6 @@
 ---
 - name: Configure SSH to listen only on Tailscale
+  when: "'_machinekey' in (tailscale_daemon_state['content'] | b64decode)"
   block:
     - name: Get Tailscale IPv4 address
       ansible.builtin.command: tailscale ip -4
@@ -78,5 +79,3 @@
         mode: "0644"
         validate: 'sh -c "cat %s /etc/ssh/sshd_config | sshd -t -f /dev/stdin"'
       notify: restart sshd
-
-  when: "'_machinekey' in (tailscale_daemon_state['content'] | b64decode)"
