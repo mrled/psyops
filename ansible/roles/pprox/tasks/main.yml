@@ -1,5 +1,4 @@
 ---
-
 - name: Install squid
   ansible.builtin.apt:
     name: squid
@@ -28,7 +27,7 @@
     dest: /etc/squid/squid.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
     validate: squid -k parse -f %s
   notify: Restart squid
   tags:

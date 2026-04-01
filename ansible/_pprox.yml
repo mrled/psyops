@@ -1,5 +1,4 @@
 ---
-
 - name: Deploy pprox
   hosts: pprox
   roles:

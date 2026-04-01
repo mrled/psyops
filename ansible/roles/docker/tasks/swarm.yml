@@ -2,19 +2,19 @@
 - name: Configure Swarm ports in the trusted zone (RH)
   firewalld:
     port: "{{ item.port }}/{{ item.proto }}"
-    permanent: yes
+    permanent: true
     zone: trusted
     state: enabled
-    immediate: yes
+    immediate: true
   with_items: "{{ docker_swarm_ports }}"
   when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Configure Swarm ports in the default zone (RH)
   firewalld:
     port: "{{ item.port }}/{{ item.proto }}"
-    permanent: yes
+    permanent: true
     state: enabled
-    immediate: yes
+    immediate: true
   with_items: "{{ docker_swarm_ports }}"
   when: ansible_distribution in ["Fedora", "CentOS"]
 

@@ -52,7 +52,7 @@
 
     - name: Reload systemd daemon
       systemd:
-        daemon_reload: yes
+        daemon_reload: true
       when: sshd_systemd_override.changed
 
     - name: Check if main sshd_config has Include directive
@@ -66,7 +66,7 @@
         path: /etc/ssh/sshd_config
         line: "Include /etc/ssh/sshd_config.d/*.conf"
         insertbefore: BOF
-        backup: yes
+        backup: true
       when: sshd_include_check.rc != 0
 
     - name: Deploy Tailscale-only SSH configuration

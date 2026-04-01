@@ -6,7 +6,7 @@
       file:
         path: /usr/local/share/terminfo-sources
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Copy ghostty terminfo source to remote
       copy:
@@ -43,7 +43,7 @@
       - python3
       - python3-venv # fuck this lol
     state: latest
-    update_cache: yes
+    update_cache: true
   when: ansible_distribution == "Ubuntu"
 
 - name: Install base packages (Debian)
@@ -80,7 +80,7 @@
     line: "127.0.0.254 {{ ansible_hostname }} {{ ansible_fqdn }}"
     regex: >-
       ^127\.0\.0\.254.
-    backup: yes
+    backup: true
     path: /etc/hosts
   tags: hostname
 

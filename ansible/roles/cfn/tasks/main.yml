@@ -1,5 +1,4 @@
 ---
-
 - name: Deploy CloudFormation template for stack {{ cloudformation_stack_name }}
   cloudformation:
     stack_name: "{{ cloudformation_stack_name }}"

@@ -14,7 +14,7 @@
   systemd:
     name: "{{ item }}"
     state: started
-    enabled: yes
+    enabled: true
   with_items:
     - nfs-kernel-server
     - rpcbind
@@ -96,7 +96,7 @@
   unarchive:
     src: "/tmp/helm-{{ seedbox_k8s_helm_version }}.tar.gz"
     dest: /tmp/
-    remote_src: yes
+    remote_src: true
   when: helm_tarball is changed
 
 - name: Install helm binary
@@ -106,7 +106,7 @@
     owner: root
     group: root
     mode: "0755"
-    remote_src: yes
+    remote_src: true
   when: helm_tarball is changed
 
 # Install kubeseal
@@ -127,7 +127,7 @@
   unarchive:
     src: "/tmp/kubeseal-{{ seedbox_k8s_kubeseal_version }}.tar.gz"
     dest: /usr/local/bin/
-    remote_src: yes
+    remote_src: true
     include:
       - kubeseal
   when: kubeseal_tarball is changed
@@ -158,7 +158,7 @@
   unarchive:
     src: "/tmp/flux-{{ seedbox_k8s_flux_version }}.tar.gz"
     dest: /usr/local/bin/
-    remote_src: yes
+    remote_src: true
     include:
       - flux
   when: flux_tarball is changed
@@ -235,7 +235,7 @@
   systemd:
     name: k0scontroller
     state: started
-    enabled: yes
+    enabled: true
 
 # Set up kubeconfig for root
 - name: Create /root/.kube directory

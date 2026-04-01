@@ -15,7 +15,7 @@
 
 - name: Allow passwordless sudo
   copy:
-    content: |+
+    content: |
       {{ backup_remote_host_user }} ALL=(ALL) NOPASSWD: ALL
     dest: /etc/sudoers.d/{{ backup_remote_host_user }}_passwordless
     owner: root

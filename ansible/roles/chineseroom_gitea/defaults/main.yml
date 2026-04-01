@@ -37,7 +37,6 @@ chineseroom_gitea_oauth2_jwt_secret: ""
 # Each entry: {filename: "id_ed25519", content: "{{ vault_... }}"}
 # Store key contents in vault.
 chineseroom_gitea_restricted_user_privkeys: []
-
 # SSH private key for pushing/pulling to GitHub from the mirror working clones.
 # Store in vault. The public key is derived automatically via ssh-keygen.
 chineseroom_gitea_github_api_token: ""
@@ -93,7 +92,6 @@ chineseroom_gitea_mirror_team_readonly: readonly
 # Restricted user checkout: /mnt/aiworkspace/CHECKOUT_NAME (fork of mirror org repo)
 #                           also accessible via ~/work/CHECKOUT_NAME (symlink)
 chineseroom_gitea_github_mirrors: []
-
 # Webhook receiver listen address and port (loopback only — Gitea calls it locally)
 chineseroom_gitea_webhook_listen: "127.0.0.1"
 chineseroom_gitea_webhook_port: 9420
@@ -118,7 +116,6 @@ chineseroom_gitea_lfs_enable: true
 #                             mirror: [trusted]
 #                             someorg: [team1, team2]
 chineseroom_gitea_users: []
-
 # systemd OnCalendar expression for the GitHub→Gitea pull timer
 chineseroom_gitea_sync_pull_oncalendar: "daily"
 

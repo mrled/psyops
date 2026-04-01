@@ -76,7 +76,7 @@
       - docker-ce-cli
       - python3-pip
     state: latest
-    update_cache: yes
+    update_cache: true
   when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Install packages (DEB)
@@ -87,7 +87,7 @@
       - docker-ce-cli
       - python3-pip
     state: latest
-    update_cache: yes
+    update_cache: true
   when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Install pip packages
@@ -102,9 +102,9 @@
   block:
     - name: Enable masquerading
       firewalld:
-        masquerade: yes
+        masquerade: true
         state: enabled
-        permanent: yes
+        permanent: true
         zone: public
       register: docker_rh_firewalld_masq_enabled
     - name: Reload firewalld
@@ -118,7 +118,7 @@
   systemd:
     name: docker
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Configure the Docker Swarm
   import_tasks: swarm.yml

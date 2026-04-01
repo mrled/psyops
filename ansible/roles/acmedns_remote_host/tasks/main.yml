@@ -1,5 +1,4 @@
 ---
-
 - name: Fix homedir permissions
   # SSH won't accept key auth if homedir is world/group writable, which it is by default on Synology
   file:
@@ -16,7 +15,7 @@
 
 - name: Allow passwordless sudo
   copy:
-    content: |+
+    content: |
       {{ acmedns_remote_host_user }} ALL=(ALL) NOPASSWD: ALL
     dest: /etc/sudoers.d/{{ acmedns_remote_host_user }}_passwordless
     owner: root

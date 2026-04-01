@@ -65,8 +65,8 @@
     owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
     mode: "0660"
-    backup: yes
-  no_log: yes
+    backup: true
+  no_log: true
   notify: restart gitea
 
 - name: Install Gitea systemd service
@@ -84,31 +84,31 @@
   firewalld:
     port: "{{ chineseroom_gitea_http_port }}/tcp"
     zone: public
-    permanent: yes
+    permanent: true
     state: enabled
-    immediate: yes
+    immediate: true
   when: chineseroom_firewall_enabled
 
 - name: Open Gitea SSH port in firewall
   firewalld:
     port: "{{ chineseroom_gitea_ssh_port }}/tcp"
     zone: public
-    permanent: yes
+    permanent: true
     state: enabled
-    immediate: yes
+    immediate: true
   when: chineseroom_firewall_enabled
 
 - name: Enable and start Gitea
   systemd:
     name: gitea
-    enabled: yes
+    enabled: true
     state: started
-    daemon_reload: yes
+    daemon_reload: true
 
 - name: Install tea CLI via Linuxbrew
   community.general.homebrew:
     name: tea
     path: /home/linuxbrew/.linuxbrew/bin
     state: latest
-  become: yes
+  become: true
   become_user: "{{ chineseroom_gitea_restricted_user }}"

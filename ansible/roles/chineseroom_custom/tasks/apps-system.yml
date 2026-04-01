@@ -4,9 +4,9 @@
     name: stripe
     description: Stripe
     baseurl: https://packages.stripe.dev/stripe-cli-rpm-local/
-    enabled: yes
-    gpgcheck: no
-    repo_gpgcheck: no
+    enabled: true
+    gpgcheck: false
+    repo_gpgcheck: false
     state: present
 
 - name: Add Charm DNF repo
@@ -14,9 +14,9 @@
     name: charm
     description: Charm
     baseurl: https://repo.charm.sh/yum/
-    enabled: yes
-    gpgcheck: yes
-    repo_gpgcheck: yes
+    enabled: true
+    gpgcheck: true
+    repo_gpgcheck: true
     gpgkey: https://repo.charm.sh/yum/gpg.key
     state: present
 
@@ -49,32 +49,32 @@
 - name: Install zellij
   tags: chineseroom_zellij
   block:
-  - name: Download zellij
-    get_url:
-      url: "https://github.com/zellij-org/zellij/releases/download/v{{ zellij_version }}/zellij-aarch64-unknown-linux-musl.tar.gz"
-      dest: "/usr/local/src/zellij-v{{ zellij_version }}-aarch64-unknown-linux-musl.tar.gz"
+    - name: Download zellij
+      get_url:
+        url: "https://github.com/zellij-org/zellij/releases/download/v{{ zellij_version }}/zellij-aarch64-unknown-linux-musl.tar.gz"
+        dest: "/usr/local/src/zellij-v{{ zellij_version }}-aarch64-unknown-linux-musl.tar.gz"
 
-  - name: Extract zellij
-    unarchive:
-      src: "/usr/local/src/zellij-v{{ zellij_version }}-aarch64-unknown-linux-musl.tar.gz"
-      dest: /usr/local/bin
-      remote_src: yes
+    - name: Extract zellij
+      unarchive:
+        src: "/usr/local/src/zellij-v{{ zellij_version }}-aarch64-unknown-linux-musl.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
 
 - name: Install jujutsu
   block:
-  - name: Set jujutsu architecture
-    set_fact:
-      jujutsu_arch: "{{ 'aarch64' if ansible_architecture == 'aarch64' else 'x86_64' }}"
+    - name: Set jujutsu architecture
+      set_fact:
+        jujutsu_arch: "{{ 'aarch64' if ansible_architecture == 'aarch64' else 'x86_64' }}"
 
-  - name: Download jujutsu
-    get_url:
-      url: "https://github.com/jj-vcs/jj/releases/download/v{{ jujutsu_version }}/jj-v{{ jujutsu_version }}-{{ jujutsu_arch }}-unknown-linux-musl.tar.gz"
-      dest: "/usr/local/src/jj-v{{ jujutsu_version }}-{{ jujutsu_arch }}-unknown-linux-musl.tar.gz"
+    - name: Download jujutsu
+      get_url:
+        url: "https://github.com/jj-vcs/jj/releases/download/v{{ jujutsu_version }}/jj-v{{ jujutsu_version }}-{{ jujutsu_arch }}-unknown-linux-musl.tar.gz"
+        dest: "/usr/local/src/jj-v{{ jujutsu_version }}-{{ jujutsu_arch }}-unknown-linux-musl.tar.gz"
 
-  - name: Extract jujutsu
-    unarchive:
-      src: "/usr/local/src/jj-v{{ jujutsu_version }}-{{ jujutsu_arch }}-unknown-linux-musl.tar.gz"
-      dest: /usr/local/bin
-      remote_src: yes
-      extra_opts:
-        - --strip-components=1
+    - name: Extract jujutsu
+      unarchive:
+        src: "/usr/local/src/jj-v{{ jujutsu_version }}-{{ jujutsu_arch }}-unknown-linux-musl.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts:
+          - --strip-components=1

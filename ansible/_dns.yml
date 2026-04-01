@@ -2,8 +2,8 @@
 - name: Configure DNS
   hosts: localhost
   connection: local
-  become: no
-  gather_facts: no
+  become: false
+  gather_facts: false
   roles:
     - name: cfn
       cloudformation_stack_name: MicahrlDotCom
@@ -50,8 +50,8 @@
       cloudformation_capabilities: ["CAPABILITY_NAMED_IAM"]
       cloudformation_aws_profile: primary-micahrl
       tags:
-      - younix.us_backchannel
-      - younix.us
+        - younix.us_backchannel
+        - younix.us
     - name: cfn
       cloudformation_stack_name: MicahrlDotComRedirects
       cloudformation_template_path: cloudformation/MicahrlDotComRedirects.cfn.yml

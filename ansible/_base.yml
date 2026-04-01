@@ -1,5 +1,4 @@
 ---
-
 - name: Configure base
   hosts: all
   roles:

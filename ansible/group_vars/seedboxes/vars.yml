@@ -53,7 +53,7 @@ seedbox_media:
   internet_archive: "{{ seedbox_media_root }}/InternetArchive"
   audiobooks: "{{ seedbox_media_root }}/Audiobooks"
 seedbox_media_selinux_enable:
-- /mnt/seedboxmedia
+  - /mnt/seedboxmedia
 
 seedbox_root_domain: "{{ global_seedbox_domain }}"
 seedbox_misc_domain: "seedbox.{{ seedbox_root_domain }}"
@@ -125,9 +125,9 @@ seedbox_ingress_ipaddr: 100.86.119.112
 # seedbox_new role: k0s / Kubernetes / Flux settings
 # Set seedbox_k8s_host_ip in host_vars for each host (the host's primary LAN IP).
 # Add the Tailscale IP and any others to seedbox_k8s_api_sans.
-seedbox_k8s_host_ip: "192.168.1.25"  # Override in host_vars
+seedbox_k8s_host_ip: "192.168.1.25" # Override in host_vars
 seedbox_k8s_api_sans:
-  - "{{ seedbox_ingress_ipaddr }}"  # Tailscale IP
+  - "{{ seedbox_ingress_ipaddr }}" # Tailscale IP
 
 seedbox_k8s_flux_deploy_id: "{{ vault_seedbox_k8s_flux_deploy_id }}"
 seedbox_k8s_flux_agekey: "{{ vault_seedbox_k8s_flux_agekey }}"

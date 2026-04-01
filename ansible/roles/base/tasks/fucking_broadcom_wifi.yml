@@ -1,8 +1,6 @@
 ---
-
 - name: Handle fucking Broadcom 14e4:43a0 (Fedora)
   block:
-
     - set_fact:
         rpmfusion_free: rpmfusion-free-release-{{ ansible_distribution_version }}.noarch.rpm
         rpmfusion_nonfree: rpmfusion-nonfree-release-{{ ansible_distribution_version }}.noarch.rpm

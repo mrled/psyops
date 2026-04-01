@@ -2,7 +2,7 @@
 - name: Create gitea group
   group:
     name: "{{ chineseroom_gitea_group }}"
-    system: yes
+    system: true
 
 - name: Create gitea user
   user:
@@ -10,8 +10,8 @@
     group: "{{ chineseroom_gitea_group }}"
     home: "{{ chineseroom_gitea_home }}"
     shell: /sbin/nologin
-    system: yes
-    create_home: yes
+    system: true
+    create_home: true
 
 - name: Create SSH directory
   file:
@@ -28,7 +28,7 @@
     owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
     mode: "0600"
-  no_log: yes
+  no_log: true
 
 - name: Derive GitHub SSH public key from private key
   command: ssh-keygen -y -f {{ chineseroom_gitea_home }}/.ssh/id_ed25519

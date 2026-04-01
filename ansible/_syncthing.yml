@@ -1,5 +1,4 @@
 ---
-
 - name: Configure personal syncthing
   hosts: syncthing_personal
   roles:

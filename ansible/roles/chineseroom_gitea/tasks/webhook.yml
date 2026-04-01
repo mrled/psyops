@@ -6,7 +6,7 @@
     owner: root
     group: "{{ chineseroom_gitea_group }}"
     mode: "0640"
-  no_log: yes
+  no_log: true
   notify: restart gitea-webhook-receiver
 
 - name: Install webhook receiver systemd service
@@ -23,6 +23,6 @@
 - name: Enable and start webhook receiver
   systemd:
     name: gitea-webhook-receiver
-    enabled: yes
+    enabled: true
     state: started
-    daemon_reload: yes
+    daemon_reload: true

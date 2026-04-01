@@ -1,5 +1,4 @@
 ---
-
 - name: Install grubby
   dnf:
     name: grubby
@@ -8,9 +7,9 @@
 - name: Check if the kernel is already set to use cgroups v1
   command: grep -Eq '^kernelopts=.* systemd\.unified_cgroup_hierarchy=0' /boot/grub2/grubenv
   register: seedbox_fedora31_cgroupsv1_check
-  check_mode: no
-  ignore_errors: yes
-  changed_when: no
+  check_mode: false
+  ignore_errors: true
+  changed_when: false
 
 - name: Configure the kernel to use cgroups v1
   command: grubby --update-kernel=ALL --args="systemd.unified_cgroup_hierarchy=0"
@@ -19,4 +18,3 @@
 - name: Reboot to use cgroups v1
   reboot:
   when: seedbox_fedora31_cgroupsv1_check.rc != 0
-

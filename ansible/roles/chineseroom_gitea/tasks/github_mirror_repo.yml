@@ -119,7 +119,7 @@
         | selectattr('config.url', 'equalto',
             _chineseroom_ts_funnel_url + '/github-webhook')
         | list | length) == 0
-  no_log: yes
+  no_log: true
 
 # --- Working clone (gitea system user) ---
 
@@ -144,18 +144,18 @@
       || git remote add github "git@github.com:{{ chineseroom_gitea_github_mirror.github_repo }}.git"
   args:
     creates: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git"
-  become: yes
+  become: true
   become_user: "{{ chineseroom_gitea_user }}"
-  no_log: yes
+  no_log: true
 
 - name: Update origin remote URL for {{ _gitea_name }}
   shell: |
     git -C "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}" remote set-url origin \
       "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}.git"
-  become: yes
+  become: true
   become_user: "{{ chineseroom_gitea_user }}"
   changed_when: false
-  no_log: yes
+  no_log: true
 
 - name: Create .git/gitea metadata directory for {{ _gitea_name }}
   file:
@@ -172,7 +172,7 @@
     owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
     mode: "0640"
-    force: no
+    force: false
 
 - name: Create auto-push marker for {{ _gitea_name }}
   copy:
@@ -181,7 +181,7 @@
     owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
     mode: "0640"
-    force: no
+    force: false
 
 # --- Restricted user fork and checkout ---
 
@@ -217,7 +217,7 @@
         "ssh://{{ chineseroom_gitea_ssh_host }}/{{ chineseroom_gitea_restricted_user }}/{{ _gitea_name }}.git" \
         "${dest}"
     fi
-  become: yes
+  become: true
   become_user: "{{ chineseroom_gitea_restricted_user }}"
   changed_when: false
 
@@ -228,7 +228,6 @@
     git -C "${dest}" remote get-url upstream 2>/dev/null \
       || git -C "${dest}" remote add upstream \
            "ssh://{{ chineseroom_gitea_ssh_host }}/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}.git"
-  become: yes
+  become: true
   become_user: "{{ chineseroom_gitea_restricted_user }}"
   changed_when: false
-

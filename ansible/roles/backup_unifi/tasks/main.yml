@@ -1,5 +1,4 @@
 ---
-
 - name: Create backup destinatio
   file:
     state: directory
@@ -12,7 +11,7 @@
   known_hosts:
     name: "{{ backup_unifi_controller_hostname }}"
     key: "{{ backup_unifi_controller_hostkey }}"
-  become: yes
+  become: true
   become_user: "{{ backup_unifi_user }}"
 
 - name: Install backup script
@@ -49,7 +48,7 @@
     owner: root
     group: root
     mode: "0640"
-    create: yes
+    create: true
     validate: visudo -cf %s
 
 - name: Install hook
@@ -60,4 +59,3 @@
     group: "{{ capthook_user }}"
     mode: "0644"
   notify: restart capthook
-

@@ -9,22 +9,22 @@
     interactive_user_home: "{{ getent_passwd[interactive_user.name][4] }}"
 
 - name: Clone dhd repo
-  become: yes
+  become: true
   become_user: "{{ interactive_user.name }}"
   git:
     repo: https://github.com/mrled/dhd
     dest: "{{ interactive_user_home }}/.dhd"
-    update: yes
+    update: true
   when: not interactive_user_disable_dhd
 
 - name: Symlink dotfiles from dhd
-  become: yes
+  become: true
   become_user: "{{ interactive_user.name }}"
   file:
     src: "{{ interactive_user_home }}/.dhd/hbase/{{ item }}"
     dest: "{{ interactive_user_home }}/{{ item }}"
     state: link
-    force: yes
+    force: true
   loop:
     - .bashrc
     - .inputrc

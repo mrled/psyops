@@ -37,7 +37,7 @@
   systemd:
     name: "{{ item }}"
     state: started
-    enabled: yes
+    enabled: true
   with_items:
     - smbd
     - nmbd

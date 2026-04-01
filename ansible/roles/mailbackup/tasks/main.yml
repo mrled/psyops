@@ -1,5 +1,4 @@
 ---
-
 - name: Install offlineimap packages
   package:
     name:
@@ -19,8 +18,8 @@
 - name: Add mailbackup user
   user:
     name: "{{ mailbackup_username }}"
-    system: yes
-    create_home: yes
+    system: true
+    create_home: true
     home: "{{ mailbackup_homedir }}"
 
 - name: Copy offlineimap config file
@@ -41,7 +40,7 @@
 
 - name: Configure mailbackup mount files
   copy:
-    content: |+
+    content: |
       username={{ item.username }}
       password={{ item.password }}
     dest: "{{ item.credsfile }}"
@@ -104,7 +103,7 @@
     owner: root
     group: root
     mode: "0640"
-    create: yes
+    create: true
     validate: visudo -cf %s
 
 - name: Install hook
@@ -115,4 +114,3 @@
     group: "{{ capthook_user }}"
     mode: "0644"
   notify: restart capthook
-

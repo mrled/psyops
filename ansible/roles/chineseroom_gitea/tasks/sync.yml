@@ -28,6 +28,6 @@
 - name: Enable and start pull-from-github timer
   systemd:
     name: gitea-pull-from-github.timer
-    enabled: yes
+    enabled: true
     state: started
-    daemon_reload: yes
+    daemon_reload: true

@@ -85,4 +85,3 @@
   import_tasks: domainmap.yml
   tags:
     - chineseroom_gitea_github_mirrors
-

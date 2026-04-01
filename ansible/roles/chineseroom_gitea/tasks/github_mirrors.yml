@@ -25,7 +25,7 @@
     src: /mnt/aiworkspace
     dest: "/home/{{ chineseroom_gitea_restricted_user }}/work"
     state: link
-  become: yes
+  become: true
   become_user: "{{ chineseroom_gitea_restricted_user }}"
 
 - name: Get Tailscale status for funnel URL

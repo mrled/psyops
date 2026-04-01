@@ -9,9 +9,9 @@ chineseroom_enable_whitelist_ips: false
 # without Squid breaking TLS.
 chineseroom_whitelist_ips:
   ipv4:
-    - 160.79.104.0/23  # Anthropic addresses
+    - 160.79.104.0/23 # Anthropic addresses
   ipv6:
-    - 2607:6bc0::/48  # Anthropic addresses
+    - 2607:6bc0::/48 # Anthropic addresses
 
 # If your VM won't have ipv6 connectivity, you may need this for domain whitelisting to work.
 # If curl tries ipv6 and fails, it'll fall back to ipv4.
@@ -27,7 +27,7 @@ chineseroom_enable_whitelist_domains: false
 # Domains specified here will have Squid intercept them, and use a MITM SSL certificate,
 # UNLESS they resolve to an IP in chineseroom_whitelist_ips.
 chineseroom_whitelist_domains:
-- anthropic.com
+  - anthropic.com
 
 # Jujutsu version control system version
 jujutsu_version: "0.34.0"

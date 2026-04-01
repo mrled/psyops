@@ -1,5 +1,4 @@
 ---
-
 # The website's Git repo is stored on this server.
 # My "sidecar" app runs on this server too.
 # The static site is built and deployed to Netlify.
@@ -24,7 +23,7 @@
     comment: CI user for micahrl.com
     shell: /bin/bash
     home: /home/micahrlci
-    create_home: yes
+    create_home: true
 
 - name: Configure micahrlci ulimit
   copy:
@@ -47,7 +46,7 @@
     state: directory
     owner: micahrlci
     group: micahrlci
-    mode: '0700'
+    mode: "0700"
 
 - name: Create authorized_keys file
   copy:
@@ -59,7 +58,7 @@
     dest: /home/micahrlci/.ssh/authorized_keys
     owner: micahrlci
     group: micahrlci
-    mode: '0600'
+    mode: "0600"
 
 # - name: Add git-only SSH keys to authorized_keys
 #   blockinfile:
@@ -76,7 +75,7 @@
     state: directory
     owner: micahrlci
     group: micahrlci
-    mode: '0700'
+    mode: "0700"
 
 - name: Install micahrlci script
   copy:
@@ -84,7 +83,7 @@
     dest: "{{ http_root_micahrl_com_micahrlci_script }}"
     owner: micahrlci
     group: micahrlci
-    mode: '0700'
+    mode: "0700"
   tags: micahrlci.py
 
 - name: Create repo root
@@ -93,13 +92,13 @@
     state: directory
     owner: micahrlci
     group: micahrlci
-    mode: '0700'
+    mode: "0700"
 
 - name: Create bare Git repository
   command:
     cmd: git init --bare "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
     creates: "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
-  become: yes
+  become: true
   become_user: micahrlci
 
 - name: Create secrets root
@@ -108,7 +107,7 @@
     path: /home/micahrlci/micahrlci/secrets
     owner: micahrlci
     group: micahrlci
-    mode: '0700'
+    mode: "0700"
 
 - name: Install secret key
   copy:
@@ -116,7 +115,7 @@
     dest: /home/micahrlci/micahrlci/secrets/secret.age
     owner: micahrlci
     group: micahrlci
-    mode: '0600'
+    mode: "0600"
 
 - name: Set up post-receive hook
   template:
@@ -124,5 +123,5 @@
     dest: "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}/hooks/post-receive"
     owner: micahrlci
     group: micahrlci
-    mode: '0755'
+    mode: "0755"
   tags: micahrlci.py

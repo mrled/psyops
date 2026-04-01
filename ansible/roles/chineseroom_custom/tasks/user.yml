@@ -5,7 +5,7 @@
     state: directory
     owner: "{{ chineseroom_restricted_user }}"
     group: "{{ chineseroom_restricted_user }}"
-    mode: '0700'
+    mode: "0700"
   loop:
     - /mnt/aiworkspace/dhd/hbase/.claude
 
@@ -14,14 +14,14 @@
     src: /mnt/aiworkspace/dhd
     dest: "/home/{{ chineseroom_restricted_user }}/.dhd"
     state: link
-    force: yes
+    force: true
 
 - name: Symlink dotfiles from dhd in aiworkspace for restricted user
   file:
     src: "/mnt/aiworkspace/dhd/hbase/{{ item }}"
     dest: "/home/{{ chineseroom_restricted_user }}/{{ item }}"
     state: link
-    force: yes
+    force: true
   loop:
     - .bashrc
     - .inputrc
@@ -35,13 +35,13 @@
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     state: link
-    force: yes
+    force: true
   loop:
     - src: "/home/{{ chineseroom_restricted_user }}/.dhd/hosts/{{ ansible_facts['hostname'] }}/CLAUDE.md"
       dest: "/home/{{ chineseroom_restricted_user }}/.claude/CLAUDE.md"
 
 - name: Install GHCup for chineseroom user
-  become: yes
+  become: true
   become_user: "{{ chineseroom_restricted_user }}"
   shell: |
     curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh

@@ -5,7 +5,7 @@
     state: directory
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
 
 - name: Create domainmap.sandbox.d directory with restricted user write access
   file:
@@ -13,7 +13,7 @@
     state: directory
     owner: "{{ chineseroom_gitea_restricted_user }}"
     group: "{{ chineseroom_gitea_restricted_user }}"
-    mode: '0755'
+    mode: "0755"
 
 - name: Write chineseroom_gitea domain map file
   template:
@@ -21,5 +21,5 @@
     dest: "{{ chineseroom_domainmap_sandbox_dir }}/chineseroom_gitea"
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   notify: regen nginx mappings

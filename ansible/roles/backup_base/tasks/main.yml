@@ -1,16 +1,15 @@
 ---
-
 - name: Add group
   group:
     name: "{{ backup_base_group }}"
-    system: yes
+    system: true
 
 - name: Add user
   user:
     name: "{{ backup_base_user }}"
     group: "{{ backup_base_group }}"
-    system: yes
-    create_home: yes
+    system: true
+    create_home: true
 
 - name: Getent for home
   getent:
@@ -41,7 +40,7 @@
       value: "{{ backup_base_privkey }}"
     - name: id_rsa.pub
       value: "{{ backup_base_pubkey }}"
-  no_log: yes
+  no_log: true
 
 - name: Create mountpoint
   file:
@@ -54,7 +53,7 @@
 
 - name: Configure mount credential files
   copy:
-    content: |+
+    content: |
       username={{ item.username }}
       password={{ item.password }}
     dest: "{{ item.credsfile }}"
@@ -80,6 +79,3 @@
     state: mounted
   with_items: "{{ backup_base_mountpoints }}"
   tags: netmount
-
-
-

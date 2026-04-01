@@ -12,8 +12,8 @@
     state: directory
     owner: root
     group: wheel
-    mode: '0700'
-  become: yes
+    mode: "0700"
+  become: true
 
 - name: Create Traefik dynamic configuration directory
   file:
@@ -21,8 +21,8 @@
     state: directory
     owner: root
     group: wheel
-    mode: '0700'
-  become: yes
+    mode: "0700"
+  become: true
 
 - name: Create Traefik acme.json file
   file:
@@ -30,10 +30,10 @@
     state: touch
     owner: root
     group: wheel
-    mode: '0600'
+    mode: "0600"
     modification_time: preserve
     access_time: preserve
-  become: yes
+  become: true
 
 - name: Deploy Traefik configuration
   template:
@@ -41,8 +41,8 @@
     dest: /usr/local/etc/traefik/traefik.yml
     owner: root
     group: wheel
-    mode: '0600'
-  become: yes
+    mode: "0600"
+  become: true
   notify: restart traefik
 
 - name: Deploy AWS credentials file
@@ -51,8 +51,8 @@
     dest: /usr/local/etc/traefik/awscreds.conf
     owner: root
     group: wheel
-    mode: '0600'
-  become: yes
+    mode: "0600"
+  become: true
   notify: restart traefik
 
 - name: Deploy AWS config file
@@ -61,8 +61,8 @@
     dest: /usr/local/etc/traefik/awsconfig.conf
     owner: root
     group: wheel
-    mode: '0600'
-  become: yes
+    mode: "0600"
+  become: true
   notify: restart traefik
 
 - name: Deploy wildcard certificate dynamic configuration
@@ -71,8 +71,8 @@
     dest: /usr/local/etc/traefik/dynamic/wildcard-cert.yml
     owner: root
     group: wheel
-    mode: '0600'
-  become: yes
+    mode: "0600"
+  become: true
   notify: restart traefik
 
 - name: Deploy subdomain routes dynamic configuration
@@ -81,8 +81,8 @@
     dest: /usr/local/etc/traefik/dynamic/subdomain-routes.yml
     owner: root
     group: wheel
-    mode: '0600'
-  become: yes
+    mode: "0600"
+  become: true
   notify: restart traefik
 
 - name: Deploy Traefik launch daemon
@@ -91,8 +91,8 @@
     dest: /Library/LaunchDaemons/us.younix.backchannel.plist
     owner: root
     group: wheel
-    mode: '0644'
-  become: yes
+    mode: "0644"
+  become: true
   notify: restart traefik
 
 - name: Check if Traefik launch daemon is loaded
@@ -100,14 +100,14 @@
   register: launchd_status
   failed_when: false
   changed_when: false
-  become: yes
+  become: true
 
 - name: Bootstrap Traefik launch daemon if not loaded
   command: launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
   when: launchd_status.rc != 0
-  become: yes
+  become: true
 
 - name: Ensure Traefik launch daemon is running
   command: launchctl kickstart -k system/us.younix.backchannel
-  become: yes
+  become: true
   changed_when: false

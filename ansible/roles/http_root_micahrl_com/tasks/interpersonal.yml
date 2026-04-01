@@ -1,5 +1,4 @@
 ---
-
 - name: Install prerequisites
   apt:
     name:
@@ -10,21 +9,21 @@
 - name: Add interpersonal group
   group:
     name: "{{ http_root_micahrl_com_interpersonal_group }}"
-    system: yes
+    system: true
 
 - name: Add interpersonal user
   user:
     name: "{{ http_root_micahrl_com_interpersonal_user }}"
     group: "{{ http_root_micahrl_com_interpersonal_group }}"
-    system: yes
-    create_home: yes
+    system: true
+    create_home: true
     home: "{{ http_root_micahrl_com_interpersonal_home }}"
 
 - name: Clone Interpersonal git repo
   git:
-    repo: 'https://github.com/mrled/interpersonal'
+    repo: "https://github.com/mrled/interpersonal"
     dest: "{{ http_root_micahrl_com_interpersonal_checkout_dir }}"
-    force: yes
+    force: true
   become: true
   become_user: "{{ http_root_micahrl_com_interpersonal_user }}"
   when: not http_root_micahrl_com_interpersonal_skip_install
@@ -37,8 +36,8 @@
     group: "{{ http_root_micahrl_com_interpersonal_group }}"
     mode: "0750"
   with_items:
-  - "{{ http_root_micahrl_com_interpersonal_private_dir }}"
-  - "{{ http_root_micahrl_com_interpersonal_mediastaging_dir }}"
+    - "{{ http_root_micahrl_com_interpersonal_private_dir }}"
+    - "{{ http_root_micahrl_com_interpersonal_mediastaging_dir }}"
 
 - name: Create Interpersonal venv and install package and prerequisites
   pip:
@@ -77,7 +76,7 @@
     # You can call an executable installed to a venv directly
     # and it'll use its own venv transparently
     flask: "{{ http_root_micahrl_com_interpersonal_venv }}/bin/flask"
-  shell: |+
+  shell: |
     export FLASK_APP="interpersonal"
     export INTERPERSONAL_CONFIG="{{ http_root_micahrl_com_interpersonal_config }}"
     {{ flask }} init-db

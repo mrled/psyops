@@ -65,4 +65,4 @@ global_backup_ssh_client_pubkey: |
 http_backchannel_acme_email: psyops@micahrl.com
 
 ssh_copy_id_keys:
-- ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m

@@ -16,7 +16,6 @@ seedbox_k8s_flux_version: "2.2.3"
 # seedbox_k8s_host_ip is always included automatically.
 # Add tailscale IP, additional IPs, or hostnames here.
 seedbox_k8s_api_sans: []
-
 # Torrent ports (used for firewall rules)
 seedbox_transmission_peer_port: 10298
 seedbox_rtorrent_peer_port: 10395

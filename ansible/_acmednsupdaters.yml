@@ -1,5 +1,4 @@
 ---
-
 - name: Deploy ACME DNS base
   hosts: acmednsupdaters
   roles:

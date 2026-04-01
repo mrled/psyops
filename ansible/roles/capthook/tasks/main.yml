@@ -2,14 +2,14 @@
 - name: Add group
   group:
     name: "{{ capthook_group }}"
-    system: yes
+    system: true
 
 - name: Add user
   user:
     name: "{{ capthook_user }}"
     group: "{{ capthook_group }}"
-    system: yes
-    create_home: yes
+    system: true
+    create_home: true
 
 - name: Getent for home
   getent:
@@ -27,14 +27,14 @@
     cmd: curl -L -o "{{ capthook_webhook_archive_path }}" "{{ capthook_webhook_dl_uri }}"
     creates: "{{ capthook_webhook_archive_path }}"
     warn: false
-  become: yes
+  become: true
   become_user: "{{ capthook_user }}"
 
 - name: Extract webhook
   unarchive:
     src: "{{ capthook_webhook_archive_path }}"
     dest: "{{ capthook_home }}"
-    remote_src: yes
+    remote_src: true
     owner: "{{ capthook_user }}"
     group: "{{ capthook_group }}"
 
@@ -129,5 +129,5 @@
   systemd:
     name: capthook
     state: started
-    enabled: yes
-    daemon_reload: yes
+    enabled: true
+    daemon_reload: true

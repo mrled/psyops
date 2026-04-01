@@ -1,5 +1,4 @@
 ---
-
 - name: Configure email forwarding
   hosts: emailfwd
   roles:

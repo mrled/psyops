@@ -1,5 +1,4 @@
 ---
-
 # Note: I have no automated import of the SSH host key generated in the EC2 deployment phase
 # So you'll have to trust that one manually before running this play
 - name: Configure deployed micahrl.com root webserver instance

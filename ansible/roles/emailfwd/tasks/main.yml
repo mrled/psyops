@@ -1,5 +1,4 @@
 ---
-
 # ssmtp is no longer maintained
 # I also couldn't get it to work with Fastmail.
 # - name: Remove packages
@@ -15,7 +14,7 @@
       - bsd-mailx
       - msmtp-mta
     state: latest
-    update_cache: yes
+    update_cache: true
   when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Install packages (.rpm)
@@ -24,7 +23,7 @@
       - mailx
       - msmtp
     state: latest
-    update_cache: yes
+    update_cache: true
   when: ansible_distribution in ["CentOS", "Fedora", "Rocky"]
 
 # TODO: Find a way for users to send email without being able to read the msmtp config file.
@@ -41,7 +40,7 @@
 
 - name: Configure aliases to send all mail to a single address
   copy:
-    content: |+
+    content: |
       default: {{ mailfwd_default_destination_address }}
     dest: /etc/aliases
     owner: root
@@ -50,7 +49,7 @@
 
 - name: Send an email to {{ mailfwd_default_destination_address }}
   vars:
-    subj: 'Subject: Test message from Ansible playbook run'
-    body: 'Message generated on {{ inventory_hostname }}'
-    addr: '{{ mailfwd_default_destination_address }}'
+    subj: "Subject: Test message from Ansible playbook run"
+    body: "Message generated on {{ inventory_hostname }}"
+    addr: "{{ mailfwd_default_destination_address }}"
   shell: printf "{{ subj }}\n{{ body }}\n" | msmtp -d -a default {{ addr }}

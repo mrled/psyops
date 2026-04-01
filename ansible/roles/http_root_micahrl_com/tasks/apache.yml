@@ -1,12 +1,11 @@
 ---
-
 - name: Install packages
   package:
     name:
       - apache2
       - libapache2-mod-wsgi-py3
     state: latest
-    update_cache: yes
+    update_cache: true
 
 - name: Enable Apache modules
   apache2_module:
@@ -56,7 +55,7 @@
   systemd:
     name: apache2
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Create .well-known dir
   file:
@@ -79,7 +78,7 @@
 # This can be easily run from SSH as well
 - name: Create certbot wrapper
   copy:
-    content: >+
+    content: >
       certbot certonly
       --noninteractive
       --agree-tos

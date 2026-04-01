@@ -2,8 +2,8 @@
 - name: Install prereqs
   apt:
     name:
-    - apt-transport-https
-    - python3-lxml
+      - apt-transport-https
+      - python3-lxml
 - name: Add apt signing key
   apt_key:
     url: https://syncthing.net/release-key.txt
@@ -22,7 +22,7 @@
   systemd:
     name: "{{ syncthing_personal_service }}"
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Getent for home
   getent:
@@ -67,7 +67,6 @@
     state: directory
     path: "{{ syncthing_personal_default_folder_path }}"
     owner: "{{ syncthing_personal_user }}"
-
 
 # To configure syncthing, you have to GET the existing configuration over the REST API,
 # make whatever changes you want to the resulting JSON document,

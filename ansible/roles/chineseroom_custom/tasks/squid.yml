@@ -12,7 +12,7 @@
     state: directory
     owner: root
     group: squid
-    mode: '0750'
+    mode: "0750"
 
 - name: Check if CA key exists
   stat:
@@ -34,7 +34,7 @@
     path: "{{ item }}"
     owner: root
     group: squid
-    mode: '0640'
+    mode: "0640"
   loop:
     - /etc/squid/ssl_cert/myCA.key
     - /etc/squid/ssl_cert/myCA.crt
@@ -46,13 +46,13 @@
   file:
     path: /var/lib
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Set SELinux boolean to allow Squid to connect
   seboolean:
     name: squid_connect_any
-    state: yes
-    persistent: yes
+    state: true
+    persistent: true
 
 # The directory cannot exist at this point, or it will fail
 - name: Initialize SSL certificate database as root
@@ -65,7 +65,7 @@
     path: /var/lib/ssl_db
     owner: squid
     group: squid
-    recurse: yes
+    recurse: true
     state: directory
 
 - name: Create Squid configuration
@@ -74,8 +74,8 @@
     dest: /etc/squid/squid.conf
     owner: root
     group: squid
-    mode: '0640'
-    backup: yes
+    mode: "0640"
+    backup: true
   notify: restart squid
 
 - name: Create dstdomain whitelist file
@@ -84,11 +84,11 @@
     dest: /etc/squid/whitelist.txt
     owner: root
     group: squid
-    mode: '0640'
+    mode: "0640"
   notify: reconfigure squid
 
 - name: Enable and start Squid service
   systemd:
     name: squid
-    enabled: yes
+    enabled: true
     state: started

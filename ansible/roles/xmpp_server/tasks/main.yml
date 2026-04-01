@@ -1,5 +1,4 @@
 ---
-
 - name: Install Prosody XMPP server
   package:
     name:
@@ -139,7 +138,7 @@
     owner: "{{ xmpp_server_prosody_user }}"
     group: "{{ xmpp_server_prosody_group }}"
     mode: "0750"
-    recurse: yes
+    recurse: true
 
 # - name: Configure firewall for XMPP ports
 #   firewalld:
@@ -156,5 +155,5 @@
 - name: Enable and start Prosody service
   systemd:
     name: prosody
-    enabled: yes
+    enabled: true
     state: started

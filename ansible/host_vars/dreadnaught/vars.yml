@@ -16,7 +16,6 @@ mailfwd_from_address: dreadnaught@alerts.micahrl.com
 mailfwd_smtp_user: "{{ vault_ses_iam_access_key_id }}"
 mailfwd_smtp_pass: "{{ vault_ses_iam_secret_access_key | ses_smtp_password('us-east-2') }}"
 
-
 chineseroom_restricted_user: callista
 chineseroom_letsencrypt_domain: dreadnaught.backchannel.younix.us
 chineseroom_firewall_enabled: false
@@ -102,7 +101,7 @@ chineseroom_gitea_restricted_user_privkeys:
 
 interactive_user_disable_dhd: true
 interactive_user_list:
-- name: mrled # default user, passwordless sudo
-- name: callista # chineseroom limited user
-  dhd_disable: true
+  - name: mrled # default user, passwordless sudo
+  - name: callista # chineseroom limited user
+    dhd_disable: true
 interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') | list }}"

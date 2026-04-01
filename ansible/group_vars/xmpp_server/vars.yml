@@ -14,7 +14,7 @@ xmpp_server_aws_secret_key: "{{ vault_xmpp_server_aws_secret_access_key }}"
 xmpp_server_aws_region: "{{ global_origin_zone_aws_region }}"
 
 # File upload settings
-xmpp_server_http_upload_quota: 104857600  # 100MB
+xmpp_server_http_upload_quota: 104857600 # 100MB
 xmpp_server_http_upload_expire_days: 30
 
 # Disable public registration

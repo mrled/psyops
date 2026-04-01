@@ -1,12 +1,11 @@
 ---
-
 - name: Install motd/issue message file
   copy:
     src: rorschach.ansi
     dest: "{{ item }}"
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   loop:
     - /etc/motd.d/rorschach
     - /etc/issue.d/rorschach.issue
@@ -25,4 +24,4 @@
     src: prompt.sh
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"

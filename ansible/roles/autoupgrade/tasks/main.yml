@@ -1,5 +1,4 @@
 ---
-
 # https://wiki.debian.org/UnattendedUpgrades
 
 - name: Install packages
@@ -13,17 +12,17 @@
 - name: Send mail
   lineinfile:
     path: /etc/apt/apt.conf.d/50unattended-upgrades
-    regexp: 'Unattended-Upgrade::Mail '
+    regexp: "Unattended-Upgrade::Mail "
     line: 'Unattended-Upgrade::Mail "root";'
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: Report only errors via mail
   lineinfile:
     path: /etc/apt/apt.conf.d/50unattended-upgrades
-    regexp: 'Unattended-Upgrade::MailReport'
+    regexp: "Unattended-Upgrade::MailReport"
     line: 'Unattended-Upgrade::MailReport "only-on-error";'
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"

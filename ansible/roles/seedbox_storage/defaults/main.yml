@@ -1,7 +1,6 @@
 ---
 # List of block device paths to decrypt, e.g. [/dev/sdb, /dev/sdc]
 seedbox_storage_media_disks: []
-
 # LUKS passphrase for all media disks
 seedbox_storage_luks_password: ""
 

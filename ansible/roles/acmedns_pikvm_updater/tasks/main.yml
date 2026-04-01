@@ -1,10 +1,9 @@
 ---
-
 - name: Add pikvm to known_hosts
   known_hosts:
     name: "{{ acmedns_pikvm_updater_server }}"
     key: "{{ acmedns_pikvm_updater_host_ssh_pubkey }}"
-  become: yes
+  become: true
   become_user: "{{ acmedns_pikvm_updater_user }}"
 
 - name: Create local certificate dir
@@ -61,12 +60,12 @@
     owner: root
     group: root
     mode: "0640"
-    create: yes
+    create: true
     validate: visudo -cf %s
 
 - name: Run wrapper script once
   # Wrapper script passes --days, so this won't contact Let's Encrypt unless necessary
   command: "{{ acmedns_pikvm_updater_script_path }}"
-  become: yes
+  become: true
   become_user: "{{ acmedns_pikvm_updater_user }}"
   when: acmedns_pikvm_updater_runonce|bool

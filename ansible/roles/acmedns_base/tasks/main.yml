@@ -6,7 +6,7 @@
         name:
           - python3-pip
         state: latest
-        update_cache: yes
+        update_cache: true
     - name: Install python modules (RH)
       pip:
         name:
@@ -19,20 +19,20 @@
     name:
       - python3-cryptography
     state: latest
-    update_cache: yes
+    update_cache: true
   when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Add acme group
   group:
     name: "{{ acmedns_base_group }}"
-    system: yes
+    system: true
 
 - name: Add acme user
   user:
     name: "{{ acmedns_base_user }}"
     group: "{{ acmedns_base_group }}"
-    system: yes
-    create_home: yes
+    system: true
+    create_home: true
     home: "{{ acmedns_base_home }}"
 
 - name: Create acme user .ssh directory
@@ -63,7 +63,7 @@
       value: "{{ acmedns_base_privkey }}"
     - name: id_rsa.pub
       value: "{{ acmedns_base_pubkey }}"
-  no_log: yes
+  no_log: true
 
 - name: Get lego
   get_url:
@@ -82,7 +82,7 @@
   unarchive:
     src: "{{ acmedns_base_lego_archive_path }}"
     dest: "{{ acmedns_base_lego_extracted_path }}"
-    remote_src: yes
+    remote_src: true
 
 - name: Install lego
   file:
