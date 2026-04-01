@@ -97,7 +97,7 @@
 
 - name: Create bare Git repository
   command:
-    cmd: git init --bare "{{ http_root_micahrl_com_micahrlci_micahrlrepo}}"
+    cmd: git init --bare "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
     creates: "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
   become: yes
   become_user: micahrlci
