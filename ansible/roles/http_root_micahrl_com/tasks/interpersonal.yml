@@ -118,4 +118,7 @@
   systemd:
     name: apache2
     state: restarted
-  when: http_root_micahrl_com_interpersonal_install_wsgi.changed or http_root_micahrl_com_interpersonal_install_site.changed or http_root_micahrl_com_interpersonal_enable_site.changed
+  when: >
+    http_root_micahrl_com_interpersonal_install_wsgi.changed
+    or http_root_micahrl_com_interpersonal_install_site.changed
+    or http_root_micahrl_com_interpersonal_enable_site.changed

@@ -149,9 +149,9 @@
   no_log: yes
 
 - name: Update origin remote URL for {{ _gitea_name }}
-  shell: >-
-    git -C "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}" remote set-url origin
-    "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}.git"
+  shell: |
+    git -C "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}" remote set-url origin \
+      "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}.git"
   become: yes
   become_user: "{{ chineseroom_gitea_user }}"
   changed_when: false
@@ -196,7 +196,8 @@
 
 - name: Fork {{ _gitea_name }} to {{ chineseroom_gitea_restricted_user }}
   uri:
-    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/forks?sudo={{ chineseroom_gitea_restricted_user }}"
+    url: |
+      "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/forks?sudo={{ chineseroom_gitea_restricted_user }}"
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
     method: POST

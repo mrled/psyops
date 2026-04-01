@@ -2,7 +2,8 @@
 # Versioned binary path allows side-by-side downloads; symlink points at active version
 chineseroom_gitea_binary_versioned: /usr/local/bin/gitea-{{ chineseroom_gitea_version }}
 chineseroom_gitea_binary: /usr/local/bin/gitea
-chineseroom_gitea_dl_url: "https://github.com/go-gitea/gitea/releases/download/v{{ chineseroom_gitea_version }}/gitea-{{ chineseroom_gitea_version }}-linux-{{ chineseroom_gitea_arch }}"
+chineseroom_gitea_dl_url: |-
+  https://github.com/go-gitea/gitea/releases/download/v{{ chineseroom_gitea_version }}/gitea-{{ chineseroom_gitea_version }}-linux-{{ chineseroom_gitea_arch }}
 
 chineseroom_gitea_config_dir: /etc/gitea
 chineseroom_gitea_data_dir: "{{ chineseroom_gitea_home }}/data"

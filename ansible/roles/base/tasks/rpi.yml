@@ -32,7 +32,8 @@
           - rpi-gpio
     - name: Install rpi_log_temperature cronjob
       vars:
-        base_log_rpi_temp_script: sh -c ". /var/venvs/rpi_log_temperature/bin/activate && /usr/local/bin/rpi_log_temperature.py --syslog-server '{{ global_syslog_host }}' --syslog-port '{{ global_syslog_nettemp_port }}'  --no-console-log"
+        base_log_rpi_temp_script: |
+          sh -c ". /var/venvs/rpi_log_temperature/bin/activate && /usr/local/bin/rpi_log_temperature.py --syslog-server '{{ global_syslog_host }}' --syslog-port '{{ global_syslog_nettemp_port }}'  --no-console-log"
       cron:
         name: "{{ base_log_rpi_temperature_temporal_jobname }}"
         day: "*"

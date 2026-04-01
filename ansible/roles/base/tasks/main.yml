@@ -78,7 +78,8 @@
     # these values will be based on whatever inventory_hostname is
     # this means I can set DNS, then run ansible, and the host will have its name configured properly
     line: "127.0.0.254 {{ ansible_hostname }} {{ ansible_fqdn }}"
-    regex: '^127\.0\.0\.254.'
+    regex: >-
+      ^127\.0\.0\.254.
     backup: yes
     path: /etc/hosts
   tags: hostname
