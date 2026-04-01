@@ -2,4 +2,4 @@
 - name: Configure base
   hosts: all
   roles:
-    - { name: base, tags: ["base"] }
+    - { role: base, tags: ["base"] }

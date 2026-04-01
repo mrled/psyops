@@ -2,4 +2,4 @@
 - name: Configure backchannel
   hosts: backchannel
   roles:
-    - { name: http_backchannel, tags: ["http_backchannel"] }
+    - { role: http_backchannel, tags: ["http_backchannel"] }

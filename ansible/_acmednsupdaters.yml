@@ -2,5 +2,5 @@
 - name: Deploy ACME DNS base
   hosts: acmednsupdaters
   roles:
-    - { name: acmedns_base, tags: ["acmedns_base"] }
-    - { name: acmedns_pikvm_updater, tags: ["acmedns_pikvm_updater"] }
+    - { role: acmedns_base, tags: ["acmedns_base"] }
+    - { role: acmedns_pikvm_updater, tags: ["acmedns_pikvm_updater"] }

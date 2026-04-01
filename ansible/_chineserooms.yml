@@ -3,11 +3,11 @@
   hosts: chineserooms
   roles:
     # - { name: base, tags: ["base"] }
-    - { name: emailfwd, tags: ["emailfwd"] }
-    - { name: ssh_copy_id, tags: ["ssh_copy_id"], when: "ssh_copy_id_keys | length > 0" }
-    - { name: tailscale, tags: ["tailscale"], when: "tailscale_enable | default(False)" }
-    - { name: chineseroom, tags: ["chineseroom", "chineseroom_base"] }
-    - { name: chineseroom_gitea, tags: ["chineseroom", "chineseroom_gitea"], when: "chineseroom_gitea_enable | default(False)" }
-    - { name: chineseroom_custom, tags: ["chineseroom", "chineseroom_custom"] }
-    - { name: interactive_system, tags: ["interactive", "interactive_system"] }
-    - { name: interactive_user, tags: ["interactive", "interactive_user"] }
+    - { role: emailfwd, tags: ["emailfwd"] }
+    - { role: ssh_copy_id, tags: ["ssh_copy_id"], when: "ssh_copy_id_keys | length > 0" }
+    - { role: tailscale, tags: ["tailscale"], when: "tailscale_enable | default(False)" }
+    - { role: chineseroom, tags: ["chineseroom", "chineseroom_base"] }
+    - { role: chineseroom_gitea, tags: ["chineseroom", "chineseroom_gitea"], when: "chineseroom_gitea_enable | default(False)" }
+    - { role: chineseroom_custom, tags: ["chineseroom", "chineseroom_custom"] }
+    - { role: interactive_system, tags: ["interactive", "interactive_system"] }
+    - { role: interactive_user, tags: ["interactive", "interactive_user"] }

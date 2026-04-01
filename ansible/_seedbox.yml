@@ -2,10 +2,10 @@
 - name: Deploy seedbox
   hosts: seedboxes
   roles:
-    - { name: base, tags: ["base"] }
-    - { name: emailfwd, tags: ["emailfwd"] }
-    - { name: tailscale, tags: ["tailscale"] }
-    - { name: interactive_system, tags: ["interactive", "interactive_system"] }
-    - { name: interactive_user, tags: ["interactive", "interactive_user"] }
-    - { name: seedbox_storage, tags: ["seedbox_storage"] }
-    - { name: seedbox_new, tags: ["seedbox"] }
+    - { role: base, tags: ["base"] }
+    - { role: emailfwd, tags: ["emailfwd"] }
+    - { role: tailscale, tags: ["tailscale"] }
+    - { role: interactive_system, tags: ["interactive", "interactive_system"] }
+    - { role: interactive_user, tags: ["interactive", "interactive_user"] }
+    - { role: seedbox_storage, tags: ["seedbox_storage"] }
+    - { role: seedbox_new, tags: ["seedbox"] }

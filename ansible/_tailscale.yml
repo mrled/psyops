@@ -11,4 +11,4 @@
 - name: Configure Tailscale endpoints
   hosts: tailscale
   roles:
-    - { name: tailscale, tags: ["tailscale"] }
+    - { role: tailscale, tags: ["tailscale"] }

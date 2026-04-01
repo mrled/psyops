@@ -2,7 +2,7 @@
 - name: Deploy pprox
   hosts: pprox
   roles:
-    - { name: autoupgrade, tags: ["autoupgrade"] }
-    - { name: emailfwd, tags: ["emailfwd"] }
-    - { name: tailscale, tags: ["tailscale"] }
-    - { name: pprox, tags: ["pprox"] }
+    - { role: autoupgrade, tags: ["autoupgrade"] }
+    - { role: emailfwd, tags: ["emailfwd"] }
+    - { role: tailscale, tags: ["tailscale"] }
+    - { role: pprox, tags: ["pprox"] }
