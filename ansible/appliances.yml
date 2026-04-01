@@ -1,10 +1,4 @@
 ---
-- name: Configure Synology NASes
-  hosts: synologynas
-  roles:
-    - { name: acmedns_remote_host, tags: ["acmedns_remote_host"] }
-  tags: synology
-
 - name: Configure cloudkey
   hosts: cloudkey
   roles:
