@@ -1,18 +1,18 @@
 ---
 - name: Install git and git-lfs
-  package:
+  ansible.builtin.package:
     name:
       - git
       - git-lfs
     state: present
 
 - name: Check if Gitea binary already exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ chineseroom_gitea_binary_versioned }}"
   register: chineseroom_gitea_binary_stat
 
 - name: Download Gitea binary
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ chineseroom_gitea_dl_url }}"
     dest: "{{ chineseroom_gitea_binary_versioned }}"
     mode: "0755"
@@ -22,14 +22,14 @@
   notify: restart gitea
 
 - name: Symlink Gitea binary to /usr/local/bin/gitea
-  file:
+  ansible.builtin.file:
     src: "{{ chineseroom_gitea_binary_versioned }}"
     dest: "{{ chineseroom_gitea_binary }}"
     state: link
   notify: restart gitea
 
 - name: Create Gitea config directory
-  file:
+  ansible.builtin.file:
     path: "{{ chineseroom_gitea_config_dir }}"
     state: directory
     owner: root
@@ -37,7 +37,7 @@
     mode: "0750"
 
 - name: Create Gitea data directories
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ chineseroom_gitea_user }}"
@@ -51,7 +51,7 @@
     - "{{ chineseroom_gitea_log_dir }}"
 
 - name: Create sync helper library directory
-  file:
+  ansible.builtin.file:
     path: "{{ chineseroom_gitea_sync_lib_dir }}"
     state: directory
     owner: root
@@ -59,7 +59,7 @@
     mode: "0750"
 
 - name: Install Gitea app.ini
-  template:
+  ansible.builtin.template:
     src: app.ini.j2
     dest: "{{ chineseroom_gitea_config_dir }}/app.ini"
     owner: "{{ chineseroom_gitea_user }}"
@@ -70,7 +70,7 @@
   notify: restart gitea
 
 - name: Install Gitea systemd service
-  template:
+  ansible.builtin.template:
     src: gitea.service.j2
     dest: /etc/systemd/system/gitea.service
     owner: root
@@ -81,7 +81,7 @@
     - restart gitea
 
 - name: Open Gitea HTTP port in firewall
-  firewalld:
+  ansible.posix.firewalld:
     port: "{{ chineseroom_gitea_http_port }}/tcp"
     zone: public
     permanent: true
@@ -90,7 +90,7 @@
   when: chineseroom_firewall_enabled
 
 - name: Open Gitea SSH port in firewall
-  firewalld:
+  ansible.posix.firewalld:
     port: "{{ chineseroom_gitea_ssh_port }}/tcp"
     zone: public
     permanent: true
@@ -99,7 +99,7 @@
   when: chineseroom_firewall_enabled
 
 - name: Enable and start Gitea
-  systemd:
+  ansible.builtin.systemd:
     name: gitea
     enabled: true
     state: started

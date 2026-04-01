@@ -1,10 +1,10 @@
 ---
 - name: Use cgroups v1 on Fedora 31
-  import_tasks: fedora31_cgroupsv1.yml
+  ansible.builtin.import_tasks: fedora31_cgroupsv1.yml
   when: ansible_distribution == "Fedora" and ansible_distribution_major_version >= '31'
 
 - name: Install prereqs (DEB)
-  apt:
+  ansible.builtin.apt:
     name:
       - apt-transport-https
       - ca-certificates
@@ -15,7 +15,7 @@
   when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Add Docker repo (Fedora)
-  yum_repository:
+  ansible.builtin.yum_repository:
     name: docker
     description: docker
     # Got this baseurl by reading Docker install manual,
@@ -25,7 +25,7 @@
   when: ansible_distribution == "Fedora"
 
 - name: Add Docker repo (CentOS)
-  yum_repository:
+  ansible.builtin.yum_repository:
     name: docker
     description: docker
     # Got this baseurl by reading Docker install manual, and looking at
@@ -36,16 +36,16 @@
 - name: Add Docker repo (Ubuntu)
   block:
     - name: Download GPG key
-      get_url:
+      ansible.builtin.get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
         dest: /usr/local/docker-apt-gpg-key
       register: docker_apt_gpg_key
     - name: Import GPG key
-      shell: apt-key add /usr/local/docker-apt-gpg-key
+      ansible.builtin.shell: apt-key add /usr/local/docker-apt-gpg-key
       when: docker_apt_gpg_key.changed
     # NOTE: must use bionic (18.04) for 20.04, for now, apparently this will get fixed later, smh
     - name: Add Docker repo (Ubuntu)
-      apt_repository:
+      ansible.builtin.apt_repository:
         repo: deb https://download.docker.com/linux/ubuntu/ bionic stable
         filename: docker
         state: present
@@ -54,22 +54,22 @@
 - name: Add Docker repo (Debian)
   block:
     - name: Download GPG key
-      get_url:
+      ansible.builtin.get_url:
         url: https://download.docker.com/linux/{{ ansible_facts.lsb.id | lower }}/gpg
         dest: /usr/local/docker-apt-gpg-key
       register: docker_apt_gpg_key
     - name: Import GPG key
-      shell: apt-key add /usr/local/docker-apt-gpg-key
+      ansible.builtin.shell: apt-key add /usr/local/docker-apt-gpg-key
       when: docker_apt_gpg_key.changed
     - name: Add Docker repo (Debian)
-      apt_repository:
+      ansible.builtin.apt_repository:
         repo: deb https://download.docker.com/linux/{{ ansible_facts.lsb.id | lower }}/ {{ ansible_facts.lsb.codename }} stable
         filename: docker
         state: present
   when: ansible_distribution == "Debian"
 
 - name: Install packages (RPM)
-  dnf:
+  ansible.builtin.dnf:
     name:
       - containerd.io
       - docker-ce
@@ -80,7 +80,7 @@
   when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Install packages (DEB)
-  apt:
+  ansible.builtin.apt:
     name:
       - containerd.io
       - docker-ce
@@ -91,7 +91,7 @@
   when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Install pip packages
-  pip:
+  ansible.builtin.pip:
     name:
       - docker
       - jsondiff
@@ -101,25 +101,25 @@
 - name: Fix CentOS 8.x firewalld
   block:
     - name: Enable masquerading
-      firewalld:
+      ansible.posix.firewalld:
         masquerade: true
         state: enabled
         permanent: true
         zone: public
       register: docker_rh_firewalld_masq_enabled
     - name: Reload firewalld
-      systemd:
+      ansible.builtin.systemd:
         name: firewalld
         state: reloaded
       when: docker_rh_firewalld_masq_enabled.changed
   when: ansible_distribution == "CentOS" and ansible_facts['distribution_version'] is version('8', '>=')
 
 - name: Start docker service
-  systemd:
+  ansible.builtin.systemd:
     name: docker
     state: started
     enabled: true
 
 - name: Configure the Docker Swarm
-  import_tasks: swarm.yml
+  ansible.builtin.import_tasks: swarm.yml
   when: docker_standalone_swarm|bool

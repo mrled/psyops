@@ -1,4 +1,4 @@
 ---
 - name: Import macOS tasks
-  import_tasks: macos.yml
+  ansible.builtin.import_tasks: macos.yml
   when: ansible_distribution == "MacOSX"

@@ -3,32 +3,32 @@
   when: base_ghostty_terminfo
   block:
     - name: Create terminfo sources directory
-      file:
+      ansible.builtin.file:
         path: /usr/local/share/terminfo-sources
         state: directory
         mode: "0755"
 
     - name: Copy ghostty terminfo source to remote
-      copy:
+      ansible.builtin.copy:
         src: xterm-ghostty.terminfo
         dest: /usr/local/share/terminfo-sources/xterm-ghostty.terminfo
       register: base_ghostty_terminfo_src
 
     - name: Compile and install ghostty terminfo
-      command: tic -x -o /usr/share/terminfo /usr/local/share/terminfo-sources/xterm-ghostty.terminfo
+      ansible.builtin.command: tic -x -o /usr/share/terminfo /usr/local/share/terminfo-sources/xterm-ghostty.terminfo
       when: base_ghostty_terminfo_src.changed
 
 - name: Fix fucking Broadcom wifi on Fedora
-  import_tasks: fucking_broadcom_wifi.yml
+  ansible.builtin.import_tasks: fucking_broadcom_wifi.yml
   when: base_fucking_broadcom_wifi
 
 - name: Import raspberry pi tasks
-  import_tasks: rpi.yml
+  ansible.builtin.import_tasks: rpi.yml
   when: base_rpi
 
 # The base CentOS install is very minimal
 - name: Install base packages (CentOS)
-  package:
+  ansible.builtin.package:
     name:
       - checkpolicy
       - setools-console
@@ -36,7 +36,7 @@
   when: ansible_distribution == "CentOS"
 
 - name: Install base packages (Ubuntu)
-  apt:
+  ansible.builtin.apt:
     name:
       - cifs-utils # allow mounting CIFS network filesystems
       - net-tools # netstat etc
@@ -47,13 +47,13 @@
   when: ansible_distribution == "Ubuntu"
 
 - name: Install base packages (Debian)
-  apt:
+  ansible.builtin.apt:
     name:
       - ntp
       - sudo
 
 - name: Set system hostname to inventory_hostname
-  hostname:
+  ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
   register: base_hostname_result
   when: base_set_system_hostname_to_inventory_hostname
@@ -67,7 +67,7 @@
 # Note that if a machine cannot resolve its short hostname, sudo can be very slow
 # https://devtidbits.com/2018/07/26/way-too-slow-sudo/
 - name: Add hostname to /etc/hosts
-  lineinfile:
+  ansible.builtin.lineinfile:
     # NOTE:
     # ansible_hostname is a single hostname like 'asdf01' as discovered by ansible
     #    (possibly just set in previous step)
@@ -85,7 +85,7 @@
   tags: hostname
 
 - name: Set timezone
-  timezone:
+  community.general.timezone:
     name: "{{ base_timezone }}"
   register: base_set_timezone
   when: base_timezone is defined
@@ -93,12 +93,12 @@
 - name: Restart cron if timezone changed
   block:
     - name: Restart cron (Ubuntu)
-      systemd:
+      ansible.builtin.systemd:
         name: cron
         state: restarted
       when: ansible_distribution == "Ubuntu"
     - name: Restart cron (Red Hat)
-      systemd:
+      ansible.builtin.systemd:
         name: crond
         state: restarted
       when: ansible_distribution == "CentOS"

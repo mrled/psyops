@@ -1,10 +1,10 @@
 ---
 - name: restart prosody
-  systemd:
+  ansible.builtin.systemd:
     name: prosody
     state: restarted
 
 - name: reload prosody
-  systemd:
+  ansible.builtin.systemd:
     name: prosody
     state: reloaded

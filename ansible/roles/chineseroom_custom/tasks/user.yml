@@ -1,6 +1,6 @@
 ---
 - name: Make directories
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ chineseroom_restricted_user }}"
@@ -10,14 +10,14 @@
     - /mnt/aiworkspace/dhd/hbase/.claude
 
 - name: Link dhd
-  file:
+  ansible.builtin.file:
     src: /mnt/aiworkspace/dhd
     dest: "/home/{{ chineseroom_restricted_user }}/.dhd"
     state: link
     force: true
 
 - name: Symlink dotfiles from dhd in aiworkspace for restricted user
-  file:
+  ansible.builtin.file:
     src: "/mnt/aiworkspace/dhd/hbase/{{ item }}"
     dest: "/home/{{ chineseroom_restricted_user }}/{{ item }}"
     state: link
@@ -31,7 +31,7 @@
     - .zshrc
 
 - name: Symlink other files
-  file:
+  ansible.builtin.file:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     state: link
@@ -43,7 +43,7 @@
 - name: Install GHCup for chineseroom user
   become: true
   become_user: "{{ chineseroom_restricted_user }}"
-  shell: |
+  ansible.builtin.shell: |
     curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
   args:
     creates: "/home/{{ chineseroom_restricted_user }}/.ghcup/bin/ghcup"

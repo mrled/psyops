@@ -1,6 +1,6 @@
 ---
 - name: Configure Swarm ports in the trusted zone (RH)
-  firewalld:
+  ansible.posix.firewalld:
     port: "{{ item.port }}/{{ item.proto }}"
     permanent: true
     zone: trusted
@@ -10,7 +10,7 @@
   when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Configure Swarm ports in the default zone (RH)
-  firewalld:
+  ansible.posix.firewalld:
     port: "{{ item.port }}/{{ item.proto }}"
     permanent: true
     state: enabled
@@ -19,7 +19,7 @@
   when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Configure Swarm ports (Ubuntu)
-  ufw:
+  community.general.ufw:
     rule: allow
     port: "{{ item.port }}"
     proto: "{{ item.proto }}"
@@ -27,7 +27,7 @@
   when: ansible_distribution == "Ubuntu"
 
 - name: Create standalone swarm
-  docker_swarm:
+  community.docker.docker_swarm:
     state: present
     advertise_addr: "{{ docker_standalone_swarm_advertise_addr | default(false) }}"
   when: docker_standalone_swarm|bool
@@ -36,5 +36,5 @@
   community.docker.docker_swarm_info:
   register: docker_swarm_inspect
 
-- debug:
+- ansible.builtin.debug:
     var: docker_swarm_inspect

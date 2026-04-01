@@ -1,23 +1,23 @@
 ---
 - name: daemon-reload
-  systemd:
+  ansible.builtin.systemd:
     daemon_reload: true
 
 - name: restart gitea
-  systemd:
+  ansible.builtin.systemd:
     name: gitea
     state: restarted
 
 - name: restart gitea-webhook-receiver
-  systemd:
+  ansible.builtin.systemd:
     name: gitea-webhook-receiver
     state: restarted
 
 - name: reload nginx
-  service:
+  ansible.builtin.service:
     name: nginx
     state: reloaded
 
 - name: regen nginx mappings
-  command: "{{ chineseroom_nginx_mapping_script }}"
+  ansible.builtin.command: "{{ chineseroom_nginx_mapping_script }}"
   changed_when: false

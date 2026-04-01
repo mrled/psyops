@@ -1,69 +1,69 @@
 ---
 - name: Install prereqs
-  apt:
+  ansible.builtin.apt:
     name:
       - apt-transport-https
       - python3-lxml
 - name: Add apt signing key
-  apt_key:
+  ansible.builtin.apt_key:
     url: https://syncthing.net/release-key.txt
     state: present
 - name: Add apt repo
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: deb https://apt.syncthing.net/ syncthing stable
     filename: syncthing
     state: present
   register: syncthing_add_apt_repo_result
 - name: Install syncthing
-  apt:
+  ansible.builtin.apt:
     name: syncthing
     update_cache: "{{ syncthing_add_apt_repo_result.changed }}"
 - name: Enable and start syncthing
-  systemd:
+  ansible.builtin.systemd:
     name: "{{ syncthing_personal_service }}"
     state: started
     enabled: true
 
 - name: Getent for home
-  getent:
+  ansible.builtin.getent:
     database: passwd
     key: "{{ syncthing_personal_user }}"
 - name: Set home fact
-  set_fact:
+  ansible.builtin.set_fact:
     syncthing_personal_home: "{{ getent_passwd[syncthing_personal_user][4] }}"
 
 - name: Get API key
-  xml:
+  community.general.xml:
     path: "{{ syncthing_personal_config_xml }}"
     xpath: /configuration/gui/apikey
     content: text
   register: syncthing_personal_apikey_result
 - name: Get API endpoint
-  xml:
+  community.general.xml:
     path: "{{ syncthing_personal_config_xml }}"
     xpath: /configuration/gui/address
     content: text
   register: syncthing_personal_address_result
-- set_fact:
+- ansible.builtin.set_fact:
     syncthing_personal_apikey: "{{ syncthing_personal_apikey_result.matches[0].apikey }}"
     syncthing_personal_address: "{{ syncthing_personal_address_result.matches[0].address }}"
 - name: Get system status
-  uri:
+  ansible.builtin.uri:
     url: "http://{{ syncthing_personal_address }}/rest/system/status"
     headers:
       "X-API-KEY": "{{ syncthing_personal_apikey }}"
   register: syncthing_personal_status_result
 - name: Set facts
-  set_fact:
+  ansible.builtin.set_fact:
     syncthing_personal_id: "{{ syncthing_personal_status_result.json.myID }}"
 - name: Show ID
-  debug:
+  ansible.builtin.debug:
     msg: "Syncthing at {{ syncthing_personal_address }} has personal ID: {{ syncthing_personal_id }}"
 # - debug:
 #     msg: "API key (secret): {{ syncthing_personal_apikey }}"
 
 - name: Create default folder path
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ syncthing_personal_default_folder_path }}"
     owner: "{{ syncthing_personal_user }}"
@@ -73,15 +73,15 @@
 # and then POST the new, complete config file back to the REST API.
 
 - name: Get current configuration
-  uri:
+  ansible.builtin.uri:
     url: "http://{{ syncthing_personal_address }}/rest/system/config"
     headers:
       "X-API-KEY": "{{ syncthing_personal_apikey }}"
   register: syncthing_personal_config_result
 
-- set_fact:
+- ansible.builtin.set_fact:
     syncthing_personal_old_config: "{{ syncthing_personal_config_result.json }}"
-- set_fact:
+- ansible.builtin.set_fact:
     syncthing_personal_config_update:
       # Combine two lists of dicts, where if any dict has the same 'deviceID' key as another dict,
       # use the dict from the 'syncthing_personal_add_devices' list of dicts.
@@ -90,13 +90,13 @@
       options:
         defaultFolderPath: "{{ syncthing_personal_default_folder_path }}"
 
-- set_fact:
+- ansible.builtin.set_fact:
     # Apply the newer config on top of the older config
     # See also the docs for the Jinja2 combine filter
     syncthing_personal_new_config: "{{ syncthing_personal_old_config | combine(syncthing_personal_config_update) }}"
 
 - name: Save filesystem copies for debugging
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.content }}"
     dest: "{{ item.dest }}"
     owner: "{{ syncthing_personal_user }}"
@@ -109,10 +109,9 @@
       content: "{{ syncthing_personal_new_config | to_nice_json(indent=2) }}"
 
 - name: Show new config (pre-update)
-  debug: var=syncthing_personal_new_config
-
+  ansible.builtin.debug: var=syncthing_personal_new_config
 - name: Set updated configuration
-  uri:
+  ansible.builtin.uri:
     url: "http://{{ syncthing_personal_address }}/rest/system/config"
     headers:
       "X-API-KEY": "{{ syncthing_personal_apikey }}"
@@ -121,7 +120,7 @@
     method: POST
   register: syncthing_personal_set_config_result
 - name: Save filesystem copy of result config for debugging
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.content }}"
     dest: "{{ item.dest }}"
     owner: "{{ syncthing_personal_user }}"
@@ -130,4 +129,4 @@
       content: "{{ syncthing_personal_set_config_result | to_nice_json(indent=2) }}"
 
 - name: Show config posts-update
-  debug: var=syncthing_personal_set_config_result
+  ansible.builtin.debug: var=syncthing_personal_set_config_result

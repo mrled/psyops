@@ -3,12 +3,12 @@
   when: chineseroom_disable_ipv6
   block:
     - name: Remove IPv6 enable sysctl file if exists
-      file:
+      ansible.builtin.file:
         path: /etc/sysctl.d/99-enable-ipv6.conf
         state: absent
 
     - name: Disable IPv6 via sysctl (persistent)
-      sysctl:
+      ansible.posix.sysctl:
         name: "{{ item }}"
         value: "1"
         state: present
@@ -23,12 +23,12 @@
   when: not chineseroom_disable_ipv6
   block:
     - name: Remove IPv6 disable sysctl file if exists
-      file:
+      ansible.builtin.file:
         path: /etc/sysctl.d/99-disable-ipv6.conf
         state: absent
 
     - name: Enable IPv6 via sysctl (persistent)
-      sysctl:
+      ansible.posix.sysctl:
         name: "{{ item }}"
         value: "0"
         state: present

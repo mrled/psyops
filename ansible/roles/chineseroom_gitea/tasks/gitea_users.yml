@@ -1,6 +1,6 @@
 ---
 - name: List existing Gitea users
-  command: "{{ chineseroom_gitea_binary }} admin user list --config {{ chineseroom_gitea_config_dir }}/app.ini"
+  ansible.builtin.command: "{{ chineseroom_gitea_binary }} admin user list --config {{ chineseroom_gitea_config_dir }}/app.ini"
   become: true
   become_user: "{{ chineseroom_gitea_user }}"
   environment:
@@ -10,19 +10,19 @@
   failed_when: false
 
 - name: Generate admin password
-  shell: openssl rand -hex 32 > {{ chineseroom_gitea_admin_password_file }}
+  ansible.builtin.shell: openssl rand -hex 32 > {{ chineseroom_gitea_admin_password_file }}
   become: true
   become_user: "{{ chineseroom_gitea_user }}"
   args:
     creates: "{{ chineseroom_gitea_admin_password_file }}"
 
 - name: Read admin password
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ chineseroom_gitea_admin_password_file }}"
   register: chineseroom_gitea_admin_password_slurped
 
 - name: Create Gitea admin user for Ansible API operations
-  command: >-
+  ansible.builtin.command: >-
     {{ chineseroom_gitea_binary }} admin user create
     --username {{ chineseroom_gitea_admin_username }}
     --password {{ chineseroom_gitea_admin_password_slurped.content | b64decode | trim }}
@@ -38,7 +38,7 @@
   no_log: true
 
 - name: Generate Ansible admin API token
-  shell: >-
+  ansible.builtin.shell: >-
     {{ chineseroom_gitea_binary }} admin user generate-access-token
     --username {{ chineseroom_gitea_admin_username }}
     --token-name ansible-admin
@@ -54,28 +54,28 @@
     creates: "{{ chineseroom_gitea_admin_token_file }}"
 
 - name: Read Ansible admin API token
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ chineseroom_gitea_admin_token_file }}"
   register: chineseroom_gitea_admin_token_slurped
 
 - name: Set admin token fact
-  set_fact:
+  ansible.builtin.set_fact:
     chineseroom_gitea_admin_token: "{{ chineseroom_gitea_admin_token_slurped.content | b64decode | trim }}"
 
 - name: Generate mirrorbot password
-  shell: openssl rand -hex 32 > {{ chineseroom_gitea_mirror_password_file }}
+  ansible.builtin.shell: openssl rand -hex 32 > {{ chineseroom_gitea_mirror_password_file }}
   become: true
   become_user: "{{ chineseroom_gitea_user }}"
   args:
     creates: "{{ chineseroom_gitea_mirror_password_file }}"
 
 - name: Read mirrorbot password
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ chineseroom_gitea_mirror_password_file }}"
   register: chineseroom_gitea_mirror_password_slurped
 
 - name: Create mirrorbot user
-  command: >-
+  ansible.builtin.command: >-
     {{ chineseroom_gitea_binary }} admin user create
     --username {{ chineseroom_gitea_mirror_user }}
     --password {{ chineseroom_gitea_mirror_password_slurped.content | b64decode | trim }}
@@ -90,7 +90,7 @@
   no_log: true
 
 - name: Generate mirrorbot API token
-  shell: >-
+  ansible.builtin.shell: >-
     {{ chineseroom_gitea_binary }} admin user generate-access-token
     --username {{ chineseroom_gitea_mirror_user }}
     --token-name mirrorbot
@@ -106,16 +106,16 @@
     creates: "{{ chineseroom_gitea_mirror_token_file }}"
 
 - name: Read mirrorbot API token
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ chineseroom_gitea_mirror_token_file }}"
   register: chineseroom_gitea_mirror_token_slurped
 
 - name: Set mirrorbot token fact
-  set_fact:
+  ansible.builtin.set_fact:
     chineseroom_gitea_mirror_token: "{{ chineseroom_gitea_mirror_token_slurped.content | b64decode | trim }}"
 
 - name: Create Gitea users
-  command: >-
+  ansible.builtin.command: >-
     {{ chineseroom_gitea_binary }} admin user create
     --username {{ item.username }}
     --password {{ item.password }}
@@ -132,13 +132,13 @@
   loop: "{{ chineseroom_gitea_users }}"
 
 - name: Add SSH keys to Gitea users
-  include_tasks: gitea_user_ssh_keys.yml
+  ansible.builtin.include_tasks: gitea_user_ssh_keys.yml
   loop: "{{ chineseroom_gitea_users | selectattr('ssh_keys', 'defined') | list }}"
   loop_control:
     loop_var: gitea_user
 
 - name: Create gitea token directory for restricted user
-  file:
+  ansible.builtin.file:
     path: "{{ chineseroom_gitea_restricted_user_token_dir }}"
     state: directory
     owner: "{{ chineseroom_gitea_restricted_user }}"
@@ -146,12 +146,12 @@
     mode: "0750"
 
 - name: Check if restricted user token file exists
-  stat:
+  ansible.builtin.stat:
     path: "{{ chineseroom_gitea_restricted_user_token_file }}"
   register: _restricted_user_token_stat
 
 - name: Generate restricted user API token for tea CLI
-  command: >-
+  ansible.builtin.command: >-
     {{ chineseroom_gitea_binary }} admin user generate-access-token
     --username {{ chineseroom_gitea_restricted_user }}
     --token-name tea-cli
@@ -166,7 +166,7 @@
   when: not _restricted_user_token_stat.stat.exists
 
 - name: Write restricted user token file with correct ownership
-  copy:
+  ansible.builtin.copy:
     content: "{{ _restricted_user_token_generated.stdout }}"
     dest: "{{ chineseroom_gitea_restricted_user_token_file }}"
     owner: root
@@ -176,10 +176,10 @@
   no_log: true
 
 - name: Read restricted user API token
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ chineseroom_gitea_restricted_user_token_file }}"
   register: chineseroom_gitea_restricted_user_token_slurped
 
 - name: Set restricted user token fact
-  set_fact:
+  ansible.builtin.set_fact:
     chineseroom_gitea_restricted_user_token: "{{ chineseroom_gitea_restricted_user_token_slurped.content | b64decode | trim }}"

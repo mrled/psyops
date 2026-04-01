@@ -1,35 +1,35 @@
 ---
 - name: Configure user
-  import_tasks: user.yml
+  ansible.builtin.import_tasks: user.yml
   tags:
     - chineseroom_user
 
 - name: Install useless UI bling
-  import_tasks: pretty.yml
+  ansible.builtin.import_tasks: pretty.yml
   tags:
     - chineseroom_pretty
 
 - name: Configure IPv6
-  import_tasks: ipv6.yml
+  ansible.builtin.import_tasks: ipv6.yml
   tags:
     - chineseroom_ipv6
 
 - name: Configure Squid proxy
-  import_tasks: squid.yml
+  ansible.builtin.import_tasks: squid.yml
   tags:
     - chineseroom_squid
 
 - name: Apply network restrictions
-  import_tasks: restrictnet.yml
+  ansible.builtin.import_tasks: restrictnet.yml
   tags:
     - chineseroom_nftables
 
 - name: Install apps for the system
-  import_tasks: apps-system.yml
+  ansible.builtin.import_tasks: apps-system.yml
   tags:
     - chineseroom_apps_system
 
 - name: Configure SSH
-  import_tasks: ssh.yml
+  ansible.builtin.import_tasks: ssh.yml
   tags:
     - chineseroom_ssh

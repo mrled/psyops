@@ -1,12 +1,12 @@
 ---
 - name: Copy webhook receiver package source to host
-  copy:
+  ansible.builtin.copy:
     src: chineseroom_webhook_receiver
     dest: /tmp/
   register: _chineseroom_webhook_pkg_src
 
 - name: Install webhook receiver package into virtualenv
-  pip:
+  ansible.builtin.pip:
     name: /tmp/chineseroom_webhook_receiver
     virtualenv: "{{ chineseroom_gitea_package_install_dir }}"
     virtualenv_command: python3 -m venv

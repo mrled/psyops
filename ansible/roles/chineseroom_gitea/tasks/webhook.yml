@@ -1,6 +1,6 @@
 ---
 - name: Install webhook receiver environment file
-  template:
+  ansible.builtin.template:
     src: gitea-webhook-receiver.env.j2
     dest: "{{ chineseroom_gitea_webhook_env_file }}"
     owner: root
@@ -10,7 +10,7 @@
   notify: restart gitea-webhook-receiver
 
 - name: Install webhook receiver systemd service
-  template:
+  ansible.builtin.template:
     src: gitea-webhook-receiver.service.j2
     dest: /etc/systemd/system/gitea-webhook-receiver.service
     owner: root
@@ -21,7 +21,7 @@
     - restart gitea-webhook-receiver
 
 - name: Enable and start webhook receiver
-  systemd:
+  ansible.builtin.systemd:
     name: gitea-webhook-receiver
     enabled: true
     state: started

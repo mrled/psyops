@@ -21,7 +21,7 @@
     state: present
 
 - name: Packages
-  dnf:
+  ansible.builtin.dnf:
     name:
       - atuin
       - clang # used with linuxbrew a lot
@@ -50,12 +50,12 @@
   tags: chineseroom_zellij
   block:
     - name: Download zellij
-      get_url:
+      ansible.builtin.get_url:
         url: "https://github.com/zellij-org/zellij/releases/download/v{{ zellij_version }}/zellij-aarch64-unknown-linux-musl.tar.gz"
         dest: "/usr/local/src/zellij-v{{ zellij_version }}-aarch64-unknown-linux-musl.tar.gz"
 
     - name: Extract zellij
-      unarchive:
+      ansible.builtin.unarchive:
         src: "/usr/local/src/zellij-v{{ zellij_version }}-aarch64-unknown-linux-musl.tar.gz"
         dest: /usr/local/bin
         remote_src: true
@@ -63,16 +63,16 @@
 - name: Install jujutsu
   block:
     - name: Set jujutsu architecture
-      set_fact:
+      ansible.builtin.set_fact:
         jujutsu_arch: "{{ 'aarch64' if ansible_architecture == 'aarch64' else 'x86_64' }}"
 
     - name: Download jujutsu
-      get_url:
+      ansible.builtin.get_url:
         url: "https://github.com/jj-vcs/jj/releases/download/v{{ jujutsu_version }}/jj-v{{ jujutsu_version }}-{{ jujutsu_arch }}-unknown-linux-musl.tar.gz"
         dest: "/usr/local/src/jj-v{{ jujutsu_version }}-{{ jujutsu_arch }}-unknown-linux-musl.tar.gz"
 
     - name: Extract jujutsu
-      unarchive:
+      ansible.builtin.unarchive:
         src: "/usr/local/src/jj-v{{ jujutsu_version }}-{{ jujutsu_arch }}-unknown-linux-musl.tar.gz"
         dest: /usr/local/bin
         remote_src: true

@@ -1,20 +1,20 @@
 ---
 - name: Install grubby
-  dnf:
+  ansible.builtin.dnf:
     name: grubby
     state: present
 
 - name: Check if the kernel is already set to use cgroups v1
-  command: grep -Eq '^kernelopts=.* systemd\.unified_cgroup_hierarchy=0' /boot/grub2/grubenv
+  ansible.builtin.command: grep -Eq '^kernelopts=.* systemd\.unified_cgroup_hierarchy=0' /boot/grub2/grubenv
   register: seedbox_fedora31_cgroupsv1_check
   check_mode: false
   ignore_errors: true
   changed_when: false
 
 - name: Configure the kernel to use cgroups v1
-  command: grubby --update-kernel=ALL --args="systemd.unified_cgroup_hierarchy=0"
+  ansible.builtin.command: grubby --update-kernel=ALL --args="systemd.unified_cgroup_hierarchy=0"
   when: seedbox_fedora31_cgroupsv1_check.rc != 0
 
 - name: Reboot to use cgroups v1
-  reboot:
+  ansible.builtin.reboot:
   when: seedbox_fedora31_cgroupsv1_check.rc != 0

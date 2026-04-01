@@ -1,6 +1,6 @@
 ---
 - name: Add authorized SSH keys for {{ ssh_copy_id_user }}
-  authorized_key:
+  ansible.posix.authorized_key:
     user: "{{ ssh_copy_id_user }}"
     key: "{{ item }}"
     state: present

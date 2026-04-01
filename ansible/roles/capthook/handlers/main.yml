@@ -1,6 +1,6 @@
 ---
 - name: restart capthook
-  systemd:
+  ansible.builtin.systemd:
     name: capthook
     state: restarted
     daemon_reload: true

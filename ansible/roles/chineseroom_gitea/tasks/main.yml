@@ -1,16 +1,16 @@
 ---
 - name: Create and configure Gitea system user
-  import_tasks: user.yml
+  ansible.builtin.import_tasks: user.yml
   tags:
     - chineseroom_gitea_user
 
 - name: Install and configure Gitea
-  import_tasks: gitea.yml
+  ansible.builtin.import_tasks: gitea.yml
   tags:
     - chineseroom_gitea_app
 
 - name: Install Gitea nginx reverse proxy config
-  template:
+  ansible.builtin.template:
     src: gitea-nginx.conf.j2
     dest: "{{ chineseroom_gitea_nginx_conf_path }}"
     owner: root
@@ -21,7 +21,7 @@
     - chineseroom_gitea_nginx
 
 - name: Write SSH client shortname config
-  template:
+  ansible.builtin.template:
     src: ssh_config_shortname.j2
     dest: "/etc/ssh/ssh_config.d/{{ chineseroom_gitea_server_shortname }}.conf"
     owner: root
@@ -32,42 +32,42 @@
     - chineseroom_gitea_ssh_shortname
 
 - name: Install webhook receiver Python package
-  import_tasks: webhook_receiver_package.yml
+  ansible.builtin.import_tasks: webhook_receiver_package.yml
   tags:
     - chineseroom_gitea_package
 
 - name: Configure GitHub sync webhook receiver
-  import_tasks: webhook.yml
+  ansible.builtin.import_tasks: webhook.yml
   tags:
     - chineseroom_gitea_webhook
 
 - name: Configure Tailscale funnel for webhook receiver
-  import_tasks: tailscale_funnel.yml
+  ansible.builtin.import_tasks: tailscale_funnel.yml
   tags:
     - chineseroom_gitea_funnel
 
 - name: Configure periodic GitHub→Gitea pull sync
-  import_tasks: sync.yml
+  ansible.builtin.import_tasks: sync.yml
   tags:
     - chineseroom_gitea_sync
 
 - name: Create Gitea application users
-  import_tasks: gitea_users.yml
+  ansible.builtin.import_tasks: gitea_users.yml
   tags:
     - chineseroom_gitea_users
 
 - name: Configure tea CLI login for restricted user
-  import_tasks: tea_login.yml
+  ansible.builtin.import_tasks: tea_login.yml
   tags:
     - chineseroom_gitea_tea
 
 - name: Create mirror org and teams
-  import_tasks: gitea_mirror_org.yml
+  ansible.builtin.import_tasks: gitea_mirror_org.yml
   tags:
     - chineseroom_gitea_mirror_org
 
 - name: Assign users to org teams
-  include_tasks: gitea_user_teams.yml
+  ansible.builtin.include_tasks: gitea_user_teams.yml
   loop: "{{ chineseroom_gitea_users | selectattr('orgs', 'defined') | list }}"
   loop_control:
     loop_var: _gitea_user_for_teams
@@ -76,12 +76,12 @@
     - chineseroom_gitea_users
 
 - name: Set up GitHub mirror repos
-  import_tasks: github_mirrors.yml
+  ansible.builtin.import_tasks: github_mirrors.yml
   tags:
     - chineseroom_gitea_github_mirrors
   when: chineseroom_gitea_github_mirrors | length > 0
 
 - name: Write sandbox domain map for Gitea-managed repos
-  import_tasks: domainmap.yml
+  ansible.builtin.import_tasks: domainmap.yml
   tags:
     - chineseroom_gitea_github_mirrors

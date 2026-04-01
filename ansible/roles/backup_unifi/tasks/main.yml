@@ -1,6 +1,6 @@
 ---
 - name: Create backup destinatio
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ backup_unifi_dest }}"
     owner: "{{ backup_unifi_user }}"
@@ -8,14 +8,14 @@
     mode: "0700"
 
 - name: Add cloudkey to known_hosts
-  known_hosts:
+  ansible.builtin.known_hosts:
     name: "{{ backup_unifi_controller_hostname }}"
     key: "{{ backup_unifi_controller_hostkey }}"
   become: true
   become_user: "{{ backup_unifi_user }}"
 
 - name: Install backup script
-  template:
+  ansible.builtin.template:
     src: backup_unifi.sh.j2
     dest: "{{ backup_unifi_scriptpath }}"
     owner: "{{ backup_unifi_user }}"
@@ -23,7 +23,7 @@
     mode: "0700"
 
 - name: Configure cronvar
-  cronvar:
+  community.general.cronvar:
     name: "{{ item.name }}"
     value: "{{ item.value }}"
     cron_file: "{{ backup_unifi_jobname }}"
@@ -32,7 +32,7 @@
       value: root
 
 - name: Configure cronjob
-  cron:
+  ansible.builtin.cron:
     name: "{{ backup_unifi_jobname }}"
     day: "*"
     hour: "3"
@@ -42,7 +42,7 @@
     cron_file: "{{ backup_unifi_jobname }}"
 
 - name: Allow all users to run wrapper script as our user
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/sudoers.d/acmedns_{{ backup_unifi_jobname }}
     line: "ALL ALL=({{ backup_unifi_user }}) NOPASSWD: {{ backup_unifi_scriptpath }}"
     owner: root
@@ -52,7 +52,7 @@
     validate: visudo -cf %s
 
 - name: Install hook
-  template:
+  ansible.builtin.template:
     src: hook.json.j2
     dest: "{{ capthook_webhooks_dir }}/{{ backup_unifi_jobname }}.hook.json"
     owner: "{{ capthook_user }}"

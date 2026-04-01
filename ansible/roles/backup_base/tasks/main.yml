@@ -1,27 +1,27 @@
 ---
 - name: Add group
-  group:
+  ansible.builtin.group:
     name: "{{ backup_base_group }}"
     system: true
 
 - name: Add user
-  user:
+  ansible.builtin.user:
     name: "{{ backup_base_user }}"
     group: "{{ backup_base_group }}"
     system: true
     create_home: true
 
 - name: Getent for home
-  getent:
+  ansible.builtin.getent:
     database: passwd
     key: "{{ backup_base_user }}"
 
 - name: Set home fact
-  set_fact:
+  ansible.builtin.set_fact:
     backup_base_home: "{{ getent_passwd[backup_base_user][4] }}"
 
 - name: Create ~/.ssh
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ backup_base_home }}/.ssh"
     owner: "{{ backup_base_user }}"
@@ -29,7 +29,7 @@
     mode: "0700"
 
 - name: Set ssh key
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.value }}"
     dest: "{{ backup_base_home }}/.ssh/{{ item.name }}"
     owner: "{{ backup_base_user }}"
@@ -43,7 +43,7 @@
   no_log: true
 
 - name: Create mountpoint
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ item.path }}"
     owner: "{{ item.mountowner }}"
@@ -52,7 +52,7 @@
   with_items: "{{ backup_base_mountpoints }}"
 
 - name: Configure mount credential files
-  copy:
+  ansible.builtin.copy:
     content: |
       username={{ item.username }}
       password={{ item.password }}
@@ -71,7 +71,7 @@
       - x-systemd.automount
       - x-systemd.requires=network-online.target
       - vers=3
-  mount:
+  ansible.posix.mount:
     path: "{{ item.path }}"
     src: "{{ item.src }}"
     fstype: "{{ item.fstype }}"

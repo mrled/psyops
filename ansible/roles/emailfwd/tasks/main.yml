@@ -9,7 +9,7 @@
 #     update_cache: yes
 
 - name: Install packages (.deb)
-  package:
+  ansible.builtin.package:
     name:
       - bsd-mailx
       - msmtp-mta
@@ -18,7 +18,7 @@
   when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Install packages (.rpm)
-  package:
+  ansible.builtin.package:
     name:
       - mailx
       - msmtp
@@ -31,7 +31,7 @@
 - name: Copy msmtp config
   vars:
     group: "{{ 'msmtp' if ansible_distribution in ['Debian', 'Ubuntu'] else 'mail' }}"
-  template:
+  ansible.builtin.template:
     src: msmtprc.j2
     dest: /etc/msmtprc
     owner: root
@@ -39,7 +39,7 @@
     mode: "0644"
 
 - name: Configure aliases to send all mail to a single address
-  copy:
+  ansible.builtin.copy:
     content: |
       default: {{ mailfwd_default_destination_address }}
     dest: /etc/aliases
@@ -52,4 +52,4 @@
     subj: "Subject: Test message from Ansible playbook run"
     body: "Message generated on {{ inventory_hostname }}"
     addr: "{{ mailfwd_default_destination_address }}"
-  shell: printf "{{ subj }}\n{{ body }}\n" | msmtp -d -a default {{ addr }}
+  ansible.builtin.shell: printf "{{ subj }}\n{{ body }}\n" | msmtp -d -a default {{ addr }}

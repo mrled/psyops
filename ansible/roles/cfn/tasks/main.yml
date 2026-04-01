@@ -1,6 +1,6 @@
 ---
 - name: Deploy CloudFormation template for stack {{ cloudformation_stack_name }}
-  cloudformation:
+  amazon.aws.cloudformation:
     stack_name: "{{ cloudformation_stack_name }}"
     state: present
     region: "{{ cloudformation_aws_region }}"
@@ -12,5 +12,5 @@
   register: cloudformation_result
 
 - name: Show deployment result for stack {{ cloudformation_stack_name }}
-  debug:
+  ansible.builtin.debug:
     var: cloudformation_result

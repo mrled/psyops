@@ -1,17 +1,17 @@
 ---
 - name: Install nftables
-  package:
+  ansible.builtin.package:
     name: nftables
     state: present
 
 - name: Ensure nftables service is enabled and started
-  systemd:
+  ansible.builtin.systemd:
     name: nftables
     enabled: true
     state: started
 
 - name: Save nftables ruleset
-  template:
+  ansible.builtin.template:
     src: nftables-ruleset.j2
     dest: /etc/nftables/chineseroom.nft
     mode: "0600"
@@ -20,7 +20,7 @@
   when: chineseroom_enable_whitelist_ips
   block:
     - name: Delete existing chineseroom table
-      command: nft delete table inet {{ item }}
+      ansible.builtin.command: nft delete table inet {{ item }}
       failed_when: false
       changed_when: false
       with_items:
@@ -28,10 +28,9 @@
         - "{{ chineseroom_nft_table_nat }}"
 
     - name: Apply nftables ruleset
-      command: nft -f /etc/nftables/chineseroom.nft
-
+      ansible.builtin.command: nft -f /etc/nftables/chineseroom.nft
     - name: Include chineseroom rules in main nftables config
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/sysconfig/nftables.conf
         line: 'include "/etc/nftables/chineseroom.nft"'
         create: true
@@ -41,7 +40,7 @@
   when: not chineseroom_enable_whitelist_ips
   block:
     - name: Delete existing chineseroom table
-      command: nft delete table inet {{ item }}
+      ansible.builtin.command: nft delete table inet {{ item }}
       failed_when: false
       changed_when: false
       with_items:
@@ -49,7 +48,7 @@
         - "{{ chineseroom_nft_table_nat }}"
 
     - name: Remove chineseroom rules in main nftables config
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/sysconfig/nftables.conf
         line: 'include "/etc/nftables/chineseroom.nft"'
         create: true

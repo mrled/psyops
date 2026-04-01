@@ -1,13 +1,13 @@
 ---
 - name: Add pikvm to known_hosts
-  known_hosts:
+  ansible.builtin.known_hosts:
     name: "{{ acmedns_pikvm_updater_server }}"
     key: "{{ acmedns_pikvm_updater_host_ssh_pubkey }}"
   become: true
   become_user: "{{ acmedns_pikvm_updater_user }}"
 
 - name: Create local certificate dir
-  file:
+  ansible.builtin.file:
     path: "{{ acmedns_pikvm_updater_certificate_dir }}"
     state: directory
     owner: "{{ acmedns_pikvm_updater_user }}"
@@ -15,7 +15,7 @@
     mode: "0700"
 
 - name: Install script
-  template:
+  ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     owner: root
@@ -26,7 +26,7 @@
       dest: "{{ acmedns_pikvm_updater_script_path }}"
 
 - name: Configure cronvar
-  cronvar:
+  community.general.cronvar:
     name: "{{ item.name }}"
     value: "{{ item.value }}"
     cron_file: "{{ acmedns_pikvm_updater_cron_file }}"
@@ -35,7 +35,7 @@
       value: "{{ acmedns_pikvm_updater_email }}"
 
 - name: Configure cronjob
-  cron:
+  ansible.builtin.cron:
     name: "{{ acmedns_pikvm_updater_job_name }}"
     day: "*"
     hour: "3"
@@ -45,7 +45,7 @@
     cron_file: "{{ acmedns_pikvm_updater_cron_file }}"
 
 - name: Install hook
-  template:
+  ansible.builtin.template:
     src: hook.json.j2
     dest: "{{ capthook_webhooks_dir }}/acmedns_{{ acmedns_pikvm_updater_job_name }}.hook.json"
     owner: "{{ capthook_user }}"
@@ -54,7 +54,7 @@
   notify: restart capthook
 
 - name: Allow all users to run wrapper script as our user
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/sudoers.d/acmedns_{{ acmedns_pikvm_updater_job_name }}
     line: "ALL ALL=({{ acmedns_pikvm_updater_user }}) NOPASSWD: {{ acmedns_pikvm_updater_script_path }}"
     owner: root
@@ -65,7 +65,7 @@
 
 - name: Run wrapper script once
   # Wrapper script passes --days, so this won't contact Let's Encrypt unless necessary
-  command: "{{ acmedns_pikvm_updater_script_path }}"
+  ansible.builtin.command: "{{ acmedns_pikvm_updater_script_path }}"
   become: true
   become_user: "{{ acmedns_pikvm_updater_user }}"
   when: acmedns_pikvm_updater_runonce|bool

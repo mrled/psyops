@@ -1,6 +1,6 @@
 ---
 - name: Install pull-from-github config
-  template:
+  ansible.builtin.template:
     src: gitea-pull-from-github.conf.j2
     dest: "{{ chineseroom_gitea_pull_config }}"
     owner: root
@@ -8,7 +8,7 @@
     mode: "0640"
 
 - name: Install pull-from-github oneshot service
-  template:
+  ansible.builtin.template:
     src: gitea-pull-from-github.service.j2
     dest: /etc/systemd/system/gitea-pull-from-github.service
     owner: root
@@ -17,7 +17,7 @@
   notify: daemon-reload
 
 - name: Install pull-from-github timer
-  template:
+  ansible.builtin.template:
     src: gitea-pull-from-github.timer.j2
     dest: /etc/systemd/system/gitea-pull-from-github.timer
     owner: root
@@ -26,7 +26,7 @@
   notify: daemon-reload
 
 - name: Enable and start pull-from-github timer
-  systemd:
+  ansible.builtin.systemd:
     name: gitea-pull-from-github.timer
     enabled: true
     state: started

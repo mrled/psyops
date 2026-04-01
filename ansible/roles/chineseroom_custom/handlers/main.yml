@@ -1,15 +1,15 @@
 ---
 - name: reconfigure squid
-  systemd:
+  ansible.builtin.systemd:
     name: squid
     state: reloaded
 
 - name: restart squid
-  systemd:
+  ansible.builtin.systemd:
     name: squid
     state: restarted
 
 - name: Restart sshd
-  systemd:
+  ansible.builtin.systemd:
     name: sshd
     state: restarted

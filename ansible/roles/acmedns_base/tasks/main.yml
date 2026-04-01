@@ -2,20 +2,20 @@
 - name: Install prereqs (RH)
   block:
     - name: Install packages (RH)
-      dnf:
+      ansible.builtin.dnf:
         name:
           - python3-pip
         state: latest
         update_cache: true
     - name: Install python modules (RH)
-      pip:
+      ansible.builtin.pip:
         name:
           - cryptography
         state: latest
   when: ansible_distribution in ["Fedora", "CentOS"]
 
 - name: Install prereqs (Ubuntu)
-  apt:
+  ansible.builtin.apt:
     name:
       - python3-cryptography
     state: latest
@@ -23,12 +23,12 @@
   when: ansible_distribution in ["Debian", "Ubuntu"]
 
 - name: Add acme group
-  group:
+  ansible.builtin.group:
     name: "{{ acmedns_base_group }}"
     system: true
 
 - name: Add acme user
-  user:
+  ansible.builtin.user:
     name: "{{ acmedns_base_user }}"
     group: "{{ acmedns_base_group }}"
     system: true
@@ -36,7 +36,7 @@
     home: "{{ acmedns_base_home }}"
 
 - name: Create acme user .ssh directory
-  file:
+  ansible.builtin.file:
     path: "{{ acmedns_base_home }}/.ssh"
     state: directory
     owner: "{{ acmedns_base_user }}"
@@ -44,7 +44,7 @@
     mode: "0700"
 
 - name: Create acme certificates directory
-  file:
+  ansible.builtin.file:
     path: "{{ acmedns_base_certificate_dir }}"
     state: directory
     owner: "{{ acmedns_base_user }}"
@@ -52,7 +52,7 @@
     mode: "0700"
 
 - name: Set acme user ssh key
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.value }}"
     dest: "{{ acmedns_base_home }}/.ssh/{{ item.name }}"
     owner: "{{ acmedns_base_user }}"
@@ -66,12 +66,12 @@
   no_log: true
 
 - name: Get lego
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ acmedns_base_lego_uri }}"
     dest: "{{ acmedns_base_lego_archive_path }}"
 
 - name: Create lego extration dir
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ acmedns_base_lego_extracted_path }}"
     owner: "{{ acmedns_base_user }}"
@@ -79,19 +79,19 @@
     mode: "0755"
 
 - name: Extract lego
-  unarchive:
+  ansible.builtin.unarchive:
     src: "{{ acmedns_base_lego_archive_path }}"
     dest: "{{ acmedns_base_lego_extracted_path }}"
     remote_src: true
 
 - name: Install lego
-  file:
+  ansible.builtin.file:
     state: link
     src: "{{ acmedns_base_lego_extracted_path }}/lego"
     dest: /usr/local/bin/lego
 
 - name: Install lego wrapper
-  template:
+  ansible.builtin.template:
     src: wraplego.py.j2
     dest: /usr/local/bin/wraplego.py
     owner: root

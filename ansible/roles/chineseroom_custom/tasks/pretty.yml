@@ -1,6 +1,6 @@
 ---
 - name: Install motd/issue message file
-  copy:
+  ansible.builtin.copy:
     src: rorschach.ansi
     dest: "{{ item }}"
     owner: root
@@ -11,7 +11,7 @@
     - /etc/issue.d/rorschach.issue
 
 - name: Remove cockpit motd/issue
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   loop:
@@ -19,7 +19,7 @@
     - /etc/issue.d/cockpit
 
 - name: Set shell prompt
-  copy:
+  ansible.builtin.copy:
     dest: /etc/profile.d/chineseroom-prompt.sh
     src: prompt.sh
     owner: root

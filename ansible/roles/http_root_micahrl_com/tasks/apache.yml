@@ -1,6 +1,6 @@
 ---
 - name: Install packages
-  package:
+  ansible.builtin.package:
     name:
       - apache2
       - libapache2-mod-wsgi-py3
@@ -8,7 +8,7 @@
     update_cache: true
 
 - name: Enable Apache modules
-  apache2_module:
+  community.general.apache2_module:
     state: present
     name: "{{ item }}"
   with_items:
@@ -21,7 +21,7 @@
     - wsgi
 
 - name: Install micahrl.com site config
-  template:
+  ansible.builtin.template:
     src: micahrl.com.conf.j2
     dest: /etc/apache2/sites-available/micahrl.com.conf
     owner: root
@@ -31,7 +31,7 @@
   tags: apache_conf
 
 - name: Enable micahrl.com site
-  file:
+  ansible.builtin.file:
     state: link
     src: ../sites-available/micahrl.com.conf
     dest: /etc/apache2/sites-enabled/micahrl.com.conf
@@ -40,25 +40,25 @@
 
 # Will need to temp disable this when deploying on a new server that doesn't have cert yet
 - name: Test config file
-  command: apachectl configtest
+  ansible.builtin.command: apachectl configtest
   changed_when: false
   tags: apache_conf
 
 - name: Restart apache
-  systemd:
+  ansible.builtin.systemd:
     name: apache2
     state: restarted
   when: http_root_micahrl_com_install_site.changed or http_root_micahrl_com_enable_site.changed
   tags: apache_conf
 
 - name: Start apache
-  systemd:
+  ansible.builtin.systemd:
     name: apache2
     state: started
     enabled: true
 
 - name: Create .well-known dir
-  file:
+  ansible.builtin.file:
     path: /var/www/html/.well-known
     state: directory
     owner: root
@@ -68,7 +68,7 @@
 # Useful for testing with e.g. 'curl http://micahrl.com/.well-known/acme-challenge/test.txt'
 # to make sure all your apache rules are working before running certbot
 - name: Install test file into acme-challenge dir
-  copy:
+  ansible.builtin.copy:
     content: "hello ACME"
     dest: /var/www/letsencrypt/.well-known/acme-challenge/test.txt
     owner: root
@@ -77,7 +77,7 @@
 
 # This can be easily run from SSH as well
 - name: Create certbot wrapper
-  copy:
+  ansible.builtin.copy:
     content: >
       certbot certonly
       --noninteractive
@@ -106,5 +106,5 @@
 # 3) Registers the certificate with certbot for automatic renewal
 #    (the certbot_apache_manager role enables the systemd timer for automatic renewal)
 - name: Run certbot once
-  shell: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
+  ansible.builtin.shell: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
   tags: certbot

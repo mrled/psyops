@@ -2,29 +2,29 @@
 # On Debian, duplicity 0.8.23+ (available in Bookworm) supports --s3-endpoint-url,
 # so we can use the apt package instead of building from pip.
 - name: Install backup prereqs
-  apt:
+  ansible.builtin.apt:
     name:
       - duplicity
       - python3-boto3
     state: present
 
 - name: Install GPG public key
-  command: gpg --import
+  ansible.builtin.command: gpg --import
   args:
     stdin: "{{ seedbox_backup_gpg_pub_key }}"
 
 - name: Install GPG private key
-  command: gpg --import --allow-secret-key-import
+  ansible.builtin.command: gpg --import --allow-secret-key-import
   args:
     stdin: "{{ seedbox_backup_gpg_priv_key }}"
 
 - name: Absolutely trust GPG key
-  command: gpg --import-ownertrust
+  ansible.builtin.command: gpg --import-ownertrust
   args:
     stdin: "{{ seedbox_backup_gpg_key_id }}:6:"
 
 - name: Create backup configs dir
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ seedbox_backup_config_dir }}"
     owner: root
@@ -32,7 +32,7 @@
     mode: "0700"
 
 - name: Create duplicity archive dir
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ seedbox_backup_duplicity_archive_dir }}"
     owner: root
@@ -40,7 +40,7 @@
     mode: "0700"
 
 - name: Install backup script
-  template:
+  ansible.builtin.template:
     src: backup-seedbox.sh.j2
     dest: "{{ seedbox_backup_script }}"
     owner: root
@@ -48,12 +48,12 @@
     mode: "0700"
 
 - name: Exclude paths from the backup
-  copy:
+  ansible.builtin.copy:
     content: "{{ seedbox_backup_exclude_paths | join('\n') + '\n' }}"
     dest: "{{ seedbox_backup_exclude_file }}"
 
 - name: Configure backup cronjob
-  cron:
+  ansible.builtin.cron:
     name: seedbox
     minute: 0
     hour: 5

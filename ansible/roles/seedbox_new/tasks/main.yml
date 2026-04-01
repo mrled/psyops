@@ -1,10 +1,10 @@
 ---
 - name: Set system hostname
-  hostname:
+  ansible.builtin.hostname:
     name: "{{ seedbox_hostname }}"
 
 - name: Increase inotify limits for k8s
-  sysctl:
+  ansible.posix.sysctl:
     name: "{{ item.name }}"
     value: "{{ item.value }}"
     state: present
@@ -16,7 +16,7 @@
   tags: seedbox_inotify
 
 - name: Install system packages
-  apt:
+  ansible.builtin.apt:
     name:
       - ffmpeg
       - gnupg
@@ -31,23 +31,23 @@
     update_cache: true
 
 - name: Add seedbox group
-  group:
+  ansible.builtin.group:
     name: "{{ seedbox_group }}"
     gid: "{{ seedbox_gid }}"
 
 - name: Add seedbox user
-  user:
+  ansible.builtin.user:
     name: "{{ seedbox_user }}"
     uid: "{{ seedbox_uid }}"
     group: "{{ seedbox_group }}"
     home: "{{ seedbox_homedir }}"
     create_home: true
 
-- import_tasks: samba.yml
+- ansible.builtin.import_tasks: samba.yml
   tags: samba
 
 - name: Create seedbox config dirs (0750 seedbox)
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ seedbox_user }}"
@@ -79,7 +79,7 @@
     - "{{ seedbox_lazylibrarian_config_dir }}"
 
 - name: Make seedbox media subdirs
-  file:
+  ansible.builtin.file:
     path: "{{ item.value }}"
     state: directory
     owner: "{{ seedbox_user }}"
@@ -88,7 +88,7 @@
   with_dict: "{{ seedbox_media }}"
 
 - name: Make seedbox download/usenet subdirs
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ seedbox_user }}"
@@ -141,9 +141,9 @@
     - udp
 
 - name: Configure seedbox backups
-  import_tasks: backups.yml
+  ansible.builtin.import_tasks: backups.yml
   tags: seedbox_backups
 
 - name: Configure k8s (k0s + Flux)
-  import_tasks: k8s.yml
+  ansible.builtin.import_tasks: k8s.yml
   tags: seedbox_k8s

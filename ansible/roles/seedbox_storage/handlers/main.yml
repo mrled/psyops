@@ -3,4 +3,4 @@
 # cryptsetup-initramfs (installed by this role) provides the hooks that
 # embed crypttab into the initramfs so disks are decrypted at boot.
 - name: Update initramfs
-  command: update-initramfs -u
+  ansible.builtin.command: update-initramfs -u

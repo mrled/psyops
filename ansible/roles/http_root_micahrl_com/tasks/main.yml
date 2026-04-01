@@ -1,7 +1,7 @@
 ---
-- import_tasks: apache.yml
+- ansible.builtin.import_tasks: apache.yml
   tags: apache_root
-- import_tasks: interpersonal.yml
+- ansible.builtin.import_tasks: interpersonal.yml
   tags: interpersonal
-- import_tasks: micahrlci.yml
+- ansible.builtin.import_tasks: micahrlci.yml
   tags: micahrlci

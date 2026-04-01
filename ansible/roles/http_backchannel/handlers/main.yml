@@ -1,6 +1,6 @@
 ---
 - name: restart traefik
-  shell: |
+  ansible.builtin.shell: |
     launchctl bootout system/us.younix.backchannel || true
     launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
   become: true

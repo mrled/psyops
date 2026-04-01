@@ -1,6 +1,6 @@
 ---
 - name: Install samba config
-  template:
+  ansible.builtin.template:
     src: smb.conf.j2
     dest: /etc/samba/smb.conf
     owner: root
@@ -10,7 +10,7 @@
   notify: restart samba
 
 - name: Install samba-check-passwd script
-  copy:
+  ansible.builtin.copy:
     src: samba-check-passwd
     dest: /usr/local/bin/samba-check-passwd
     owner: root
@@ -18,7 +18,7 @@
     mode: "0755"
 
 - name: Check if samba password needs updating
-  command: /usr/local/bin/samba-check-passwd "{{ seedbox_user }}"
+  ansible.builtin.command: /usr/local/bin/samba-check-passwd "{{ seedbox_user }}"
   args:
     stdin: "{{ seedbox_user_samba_passwd_ro }}"
   register: seedbox_samba_passwd_check
@@ -27,14 +27,14 @@
   no_log: true
 
 - name: Set seedbox samba password
-  shell: >
+  ansible.builtin.shell: >
     printf '{{ seedbox_user_samba_passwd_ro }}\n{{ seedbox_user_samba_passwd_ro }}\n' |
     smbpasswd -a "{{ seedbox_user }}"
   no_log: true
   when: seedbox_samba_passwd_check.rc == 1
 
 - name: Start samba
-  systemd:
+  ansible.builtin.systemd:
     name: "{{ item }}"
     state: started
     enabled: true

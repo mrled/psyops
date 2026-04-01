@@ -7,7 +7,7 @@
   become: false
 
 - name: Create Traefik configuration directory
-  file:
+  ansible.builtin.file:
     path: /usr/local/etc/traefik
     state: directory
     owner: root
@@ -16,7 +16,7 @@
   become: true
 
 - name: Create Traefik dynamic configuration directory
-  file:
+  ansible.builtin.file:
     path: /usr/local/etc/traefik/dynamic
     state: directory
     owner: root
@@ -25,7 +25,7 @@
   become: true
 
 - name: Create Traefik acme.json file
-  file:
+  ansible.builtin.file:
     path: /usr/local/etc/traefik/acme.json
     state: touch
     owner: root
@@ -36,7 +36,7 @@
   become: true
 
 - name: Deploy Traefik configuration
-  template:
+  ansible.builtin.template:
     src: traefik.yml.j2
     dest: /usr/local/etc/traefik/traefik.yml
     owner: root
@@ -46,7 +46,7 @@
   notify: restart traefik
 
 - name: Deploy AWS credentials file
-  template:
+  ansible.builtin.template:
     src: awscreds.conf.j2
     dest: /usr/local/etc/traefik/awscreds.conf
     owner: root
@@ -56,7 +56,7 @@
   notify: restart traefik
 
 - name: Deploy AWS config file
-  template:
+  ansible.builtin.template:
     src: awsconfig.conf.j2
     dest: /usr/local/etc/traefik/awsconfig.conf
     owner: root
@@ -66,7 +66,7 @@
   notify: restart traefik
 
 - name: Deploy wildcard certificate dynamic configuration
-  template:
+  ansible.builtin.template:
     src: wildcard-cert.yml.j2
     dest: /usr/local/etc/traefik/dynamic/wildcard-cert.yml
     owner: root
@@ -76,7 +76,7 @@
   notify: restart traefik
 
 - name: Deploy subdomain routes dynamic configuration
-  template:
+  ansible.builtin.template:
     src: subdomain-routes.yml.j2
     dest: /usr/local/etc/traefik/dynamic/subdomain-routes.yml
     owner: root
@@ -86,7 +86,7 @@
   notify: restart traefik
 
 - name: Deploy Traefik launch daemon
-  template:
+  ansible.builtin.template:
     src: us.younix.backchannel.plist.j2
     dest: /Library/LaunchDaemons/us.younix.backchannel.plist
     owner: root
@@ -96,18 +96,18 @@
   notify: restart traefik
 
 - name: Check if Traefik launch daemon is loaded
-  command: launchctl print system/us.younix.backchannel
+  ansible.builtin.command: launchctl print system/us.younix.backchannel
   register: launchd_status
   failed_when: false
   changed_when: false
   become: true
 
 - name: Bootstrap Traefik launch daemon if not loaded
-  command: launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
+  ansible.builtin.command: launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
   when: launchd_status.rc != 0
   become: true
 
 - name: Ensure Traefik launch daemon is running
-  command: launchctl kickstart -k system/us.younix.backchannel
+  ansible.builtin.command: launchctl kickstart -k system/us.younix.backchannel
   become: true
   changed_when: false

@@ -1,6 +1,6 @@
 ---
 - name: Install Prosody XMPP server
-  package:
+  ansible.builtin.package:
     name:
       - liblua5.4-dev
       - lua-unbound
@@ -10,7 +10,7 @@
     state: present
 
 - name: Install community modules via prosodyctl
-  command: prosodyctl install --server=https://modules.prosody.im/rocks/ {{ item }}
+  ansible.builtin.command: prosodyctl install --server=https://modules.prosody.im/rocks/ {{ item }}
   args:
     creates: /var/lib/prosody/custom_plugins/share/lua/5.4/{{ item }}.lua
   loop:
@@ -19,7 +19,7 @@
   notify: restart prosody
 
 - name: Ensure SSL certificate directory exists
-  file:
+  ansible.builtin.file:
     path: "{{ xmpp_server_certs_path }}"
     state: directory
     owner: "{{ xmpp_server_prosody_user }}"
@@ -27,7 +27,7 @@
     mode: "0750"
 
 - name: Create AWS credentials directory for certbot
-  file:
+  ansible.builtin.file:
     path: /root/.aws
     state: directory
     owner: root
@@ -35,7 +35,7 @@
     mode: "0700"
 
 - name: Configure AWS credentials for certbot Route53 access
-  copy:
+  ansible.builtin.copy:
     content: |
       [default]
       aws_access_key_id = {{ xmpp_server_aws_access_key }}
@@ -46,7 +46,7 @@
     mode: "0600"
 
 - name: Configure AWS region for certbot
-  copy:
+  ansible.builtin.copy:
     content: |
       [default]
       region = {{ xmpp_server_aws_region }}
@@ -56,7 +56,7 @@
     mode: "0600"
 
 - name: Create certbot wrapper script for XMPP
-  copy:
+  ansible.builtin.copy:
     content: |
       #!/bin/bash
       set -e
@@ -83,7 +83,7 @@
     mode: "0755"
 
 - name: Create Let's Encrypt renewal hook directory
-  file:
+  ansible.builtin.file:
     path: "{{ xmpp_server_letsencrypt_base }}/renewal-hooks/deploy"
     state: directory
     owner: root
@@ -91,7 +91,7 @@
     mode: "0755"
 
 - name: Install Let's Encrypt renewal hook for Prosody
-  copy:
+  ansible.builtin.copy:
     content: |
       #!/bin/sh
       set -eu
@@ -107,22 +107,21 @@
     mode: "0755"
 
 - name: Run certbot once to get initial certificate (also runs the deploy hook to copy certs to Prosody directory)
-  shell: /usr/local/bin/certbot_{{ xmpp_server_certname }}.sh
-
+  ansible.builtin.shell: /usr/local/bin/certbot_{{ xmpp_server_certname }}.sh
 - name: Generate DH parameters if not present
-  command: openssl dhparam -out {{ xmpp_server_ssl_dhparam }} 2048
+  ansible.builtin.command: openssl dhparam -out {{ xmpp_server_ssl_dhparam }} 2048
   args:
     creates: "{{ xmpp_server_ssl_dhparam }}"
 
 - name: Set DH parameters ownership
-  file:
+  ansible.builtin.file:
     path: "{{ xmpp_server_ssl_dhparam }}"
     owner: "{{ xmpp_server_prosody_user }}"
     group: "{{ xmpp_server_prosody_group }}"
     mode: "0640"
 
 - name: Deploy Prosody configuration
-  template:
+  ansible.builtin.template:
     src: prosody.cfg.lua.j2
     dest: "{{ xmpp_server_config_path }}"
     owner: root
@@ -132,7 +131,7 @@
   notify: restart prosody
 
 - name: Ensure Prosody data directory has correct permissions
-  file:
+  ansible.builtin.file:
     path: "{{ xmpp_server_data_path }}"
     state: directory
     owner: "{{ xmpp_server_prosody_user }}"
@@ -153,7 +152,7 @@
 #     - "{{ xmpp_server_https_port }}/tcp"    # HTTPS (BOSH/WebSocket)
 
 - name: Enable and start Prosody service
-  systemd:
+  ansible.builtin.systemd:
     name: prosody
     enabled: true
     state: started

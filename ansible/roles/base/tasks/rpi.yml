@@ -1,6 +1,6 @@
 ---
 - name: Configure rpi PoE hat fan (requires manual reboot to take effect)
-  lineinfile:
+  ansible.builtin.lineinfile:
     line: "{{ item.line }}"
     regex: "{{ item.regex }}"
     path: "{{ base_rpi_boot_mount }}/usercfg.txt"
@@ -18,13 +18,13 @@
 - name: Log rpi temperature to the temporal log
   block:
     - name: Copy rpi_log_temperature script
-      copy:
+      ansible.builtin.copy:
         src: rpi_log_temperature.py
         dest: /usr/local/bin/rpi_log_temperature.py
         owner: root
         mode: "0755"
     - name: Install rpi_log_temperature venv
-      pip:
+      ansible.builtin.pip:
         virtualenv: /var/venvs/rpi_log_temperature
         virtualenv_command: python3 -m venv
         name:
@@ -34,7 +34,7 @@
       vars:
         base_log_rpi_temp_script: |
           sh -c ". /var/venvs/rpi_log_temperature/bin/activate && /usr/local/bin/rpi_log_temperature.py --syslog-server '{{ global_syslog_host }}' --syslog-port '{{ global_syslog_nettemp_port }}'  --no-console-log"
-      cron:
+      ansible.builtin.cron:
         name: "{{ base_log_rpi_temperature_temporal_jobname }}"
         day: "*"
         hour: "*"

@@ -8,7 +8,7 @@
 #     someorg: [team1, team2]
 
 - name: Get teams for orgs that {{ _gitea_user_for_teams.username }} is assigned to
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ item.key }}/teams"
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
@@ -32,15 +32,15 @@
       {%   endfor %}
       {% endfor %}
       {{ assignments }}
-  set_fact:
+  ansible.builtin.set_fact:
     _user_team_assignments: "{{ _raw | from_yaml }}"
 
 - name: Show team assignments for {{ _gitea_user_for_teams.username }}
-  debug:
+  ansible.builtin.debug:
     var: _user_team_assignments
 
 - name: Add {{ _gitea_user_for_teams.username }} to org teams
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/teams/{{ item.team_id }}/members/{{ _gitea_user_for_teams.username }}"
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"

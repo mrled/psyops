@@ -2,33 +2,32 @@
 - name: Install Tailscale on Debian/Ubuntu
   block:
     - name: Get GPG key
-      get_url:
+      ansible.builtin.get_url:
         url: https://pkgs.tailscale.com/stable/{{ ansible_distribution | lower }}/{{ ansible_distribution_release }}.noarmor.gpg
         dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
         owner: root
         mode: "0644"
     - name: Get sources.list
-      get_url:
+      ansible.builtin.get_url:
         url: https://pkgs.tailscale.com/stable/{{ ansible_distribution | lower }}/{{ ansible_distribution_release }}.tailscale-keyring.list
         dest: /etc/apt/sources.list.d/tailscale.list
         owner: root
         mode: "0644"
     - name: Install tailscale
-      apt:
+      ansible.builtin.apt:
         update_cache: true
         name: tailscale
         state: latest
   when: ansible_distribution in ["Debian", "Ubuntu"]
 
-- debug: var=ansible_distribution
-
+- ansible.builtin.debug: var=ansible_distribution
 - name: Install Tailscale on RH
   block:
   # Rocky Linux is basically CentOS, but still supported.
   # Tailscale doesn't support it by name, so we'll just swap it out here.
   # Fedora uses a different URL pattern (no version subdir).
     - name: Set repo URL
-      set_fact:
+      ansible.builtin.set_fact:
         tailscale_repo_url: >-
           {{
             'https://pkgs.tailscale.com/stable/fedora/tailscale.repo'
@@ -37,32 +36,32 @@
           + '/tailscale.repo'
           }}
     - name: Get repo file
-      get_url:
+      ansible.builtin.get_url:
         url: "{{ tailscale_repo_url }}"
         dest: /etc/yum.repos.d/tailscale.repo
         owner: root
         mode: "0644"
     - name: Install tailscale
-      dnf:
+      ansible.builtin.dnf:
         update_cache: true
         name: tailscale
         state: latest
   when: ansible_distribution in ["Rocky", "Fedora"]
 
 - name: Start and enable tailscale service
-  systemd:
+  ansible.builtin.systemd:
     name: tailscaled
     state: started
     enabled: true
 
 - name: Read tailscaled.state
-  slurp:
+  ansible.builtin.slurp:
     src: /var/lib/tailscale/tailscaled.state
   register: tailscale_daemon_state
 
 - name: When machine is already joined to the tailnet
   block:
-    - debug:
+    - ansible.builtin.debug:
         msg: This machine is already joined to the tailnet
   when: "'_machinekey' in (tailscale_daemon_state['content'] | b64decode)"
 
@@ -71,13 +70,13 @@
     - name: When the auth key is defined
       block:
         - name: Connect to the tailnet via an auth key
-          command: tailscale up --authkey {{ tailscale_auth_key }}
-        - debug:
+          ansible.builtin.command: tailscale up --authkey {{ tailscale_auth_key }}
+        - ansible.builtin.debug:
             msg: Joined this machine to the tailnet via auth key
       when: tailscale_auth_key is defined
     - name: When the auth key is not defined
       block:
-        - debug:
+        - ansible.builtin.debug:
             msg: >
               This machine is not joined to the tailnet.
               We couldn't join it automatically without an auth key.
@@ -85,5 +84,5 @@
   when: "'_machinekey' not in (tailscale_daemon_state['content'] | b64decode)"
 
 - name: Configure SSH takeover
-  import_tasks: ssh_takeover.yml
+  ansible.builtin.import_tasks: ssh_takeover.yml
   when: tailscale_take_over_ssh

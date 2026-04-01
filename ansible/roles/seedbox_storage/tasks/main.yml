@@ -1,6 +1,6 @@
 ---
 - name: Install cryptsetup packages
-  package:
+  ansible.builtin.package:
     name:
       - cryptsetup
       - cryptsetup-initramfs
@@ -9,7 +9,7 @@
     state: present
 
 - name: Create cryptsetup keys directory
-  file:
+  ansible.builtin.file:
     path: /etc/cryptsetup-keys.d
     state: directory
     owner: root
@@ -17,7 +17,7 @@
     mode: "0700"
 
 - name: Deploy LUKS key file
-  copy:
+  ansible.builtin.copy:
     src: seedbox_vg_keyfile
     dest: "{{ seedbox_storage_luks_keyfile }}"
     owner: root
@@ -52,12 +52,12 @@
   notify: Update initramfs
 
 - name: Activate volume group
-  command: vgchange -ay {{ seedbox_storage_volume_group }}
+  ansible.builtin.command: vgchange -ay {{ seedbox_storage_volume_group }}
   args:
     creates: /dev/{{ seedbox_storage_volume_group }}
 
 - name: Create media mount point
-  file:
+  ansible.builtin.file:
     path: "{{ seedbox_storage_media_mount }}"
     state: directory
     owner: root
@@ -65,7 +65,7 @@
     mode: "0755"
 
 - name: Mount media volume
-  mount:
+  ansible.posix.mount:
     src: /dev/{{ seedbox_storage_volume_group }}/{{ seedbox_storage_media_lv }}
     path: "{{ seedbox_storage_media_mount }}"
     fstype: ext4
@@ -73,7 +73,7 @@
     state: mounted
 
 - name: Create media symlink
-  file:
+  ansible.builtin.file:
     src: "{{ seedbox_storage_media_mount }}"
     dest: "{{ seedbox_storage_media_symlink }}"
     state: link

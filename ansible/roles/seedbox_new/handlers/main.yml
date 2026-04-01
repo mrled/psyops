@@ -1,6 +1,6 @@
 ---
 - name: restart samba
-  service:
+  ansible.builtin.service:
     name: "{{ item }}"
     state: restarted
   with_items:
@@ -8,4 +8,4 @@
     - nmbd
 
 - name: update ca certificates
-  command: update-ca-certificates
+  ansible.builtin.command: update-ca-certificates

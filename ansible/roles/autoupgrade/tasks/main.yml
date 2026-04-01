@@ -2,7 +2,7 @@
 # https://wiki.debian.org/UnattendedUpgrades
 
 - name: Install packages
-  apt:
+  ansible.builtin.apt:
     name:
       - unattended-upgrades
       - apt-listchanges
@@ -10,7 +10,7 @@
     update_cache: true
 
 - name: Send mail
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/apt/apt.conf.d/50unattended-upgrades
     regexp: "Unattended-Upgrade::Mail "
     line: 'Unattended-Upgrade::Mail "root";'
@@ -19,7 +19,7 @@
     mode: "0644"
 
 - name: Report only errors via mail
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/apt/apt.conf.d/50unattended-upgrades
     regexp: "Unattended-Upgrade::MailReport"
     line: 'Unattended-Upgrade::MailReport "only-on-error";'

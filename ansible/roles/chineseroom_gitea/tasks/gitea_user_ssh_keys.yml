@@ -3,7 +3,7 @@
 # Loop var: gitea_user (one entry from chineseroom_gitea_users)
 
 - name: Get existing SSH keys for {{ gitea_user.username }}
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/users/{{ gitea_user.username }}/keys"
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
@@ -12,7 +12,7 @@
   register: chineseroom_gitea_existing_keys
 
 - name: Add missing SSH keys for {{ gitea_user.username }}
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/admin/users/{{ gitea_user.username }}/keys"
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"

@@ -5,7 +5,7 @@
 # A post-commit hook will run the build and deploy it to Netlify.
 
 - name: Ensure git is installed
-  package:
+  ansible.builtin.package:
     name:
       - age
       - git
@@ -18,7 +18,7 @@
     state: present
 
 - name: Create micahrlci user
-  user:
+  ansible.builtin.user:
     name: micahrlci
     comment: CI user for micahrl.com
     shell: /bin/bash
@@ -26,7 +26,7 @@
     create_home: true
 
 - name: Configure micahrlci ulimit
-  copy:
+  ansible.builtin.copy:
     content: |
       micahrlci soft nofile 65536
       micahrlci hard nofile 65536
@@ -38,10 +38,9 @@
 # but others can't like Podman.
 # wtf???
 - name: Enable lingering
-  command: loginctl enable-linger micahrlci
-
+  ansible.builtin.command: loginctl enable-linger micahrlci
 - name: Set up SSH directory for micahrlci user
-  file:
+  ansible.builtin.file:
     path: /home/micahrlci/.ssh
     state: directory
     owner: micahrlci
@@ -49,7 +48,7 @@
     mode: "0700"
 
 - name: Create authorized_keys file
-  copy:
+  ansible.builtin.copy:
     content: |
       # THIS FILE WILL BE OVERWRITTEN BY ANSIBLE
       {% for key in http_root_micahrl_com_ci_authorized_keys %}
@@ -70,7 +69,7 @@
 #     marker: "# {mark} ANSIBLE MANAGED BLOCK FOR GIT-ONLY KEYS"
 
 - name: Create bin directory for micahrlci user
-  file:
+  ansible.builtin.file:
     path: /home/micahrlci/bin
     state: directory
     owner: micahrlci
@@ -78,7 +77,7 @@
     mode: "0700"
 
 - name: Install micahrlci script
-  copy:
+  ansible.builtin.copy:
     src: micahrlci.py
     dest: "{{ http_root_micahrl_com_micahrlci_script }}"
     owner: micahrlci
@@ -87,7 +86,7 @@
   tags: micahrlci.py
 
 - name: Create repo root
-  file:
+  ansible.builtin.file:
     path: "{{ http_root_micahrl_com_micahrlci_reporoot }}"
     state: directory
     owner: micahrlci
@@ -95,14 +94,14 @@
     mode: "0700"
 
 - name: Create bare Git repository
-  command:
+  ansible.builtin.command:
     cmd: git init --bare "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
     creates: "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
   become: true
   become_user: micahrlci
 
 - name: Create secrets root
-  file:
+  ansible.builtin.file:
     state: directory
     path: /home/micahrlci/micahrlci/secrets
     owner: micahrlci
@@ -110,7 +109,7 @@
     mode: "0700"
 
 - name: Install secret key
-  copy:
+  ansible.builtin.copy:
     content: "{{ http_root_micahrl_com_ci_age_private_key }}"
     dest: /home/micahrlci/micahrlci/secrets/secret.age
     owner: micahrlci
@@ -118,7 +117,7 @@
     mode: "0600"
 
 - name: Set up post-receive hook
-  template:
+  ansible.builtin.template:
     src: micahrlci-post-receive.sh.j2
     dest: "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}/hooks/post-receive"
     owner: micahrlci

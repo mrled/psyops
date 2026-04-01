@@ -3,14 +3,14 @@
 # Loop var: chineseroom_gitea_github_mirror
 
 - name: Set derived facts for {{ chineseroom_gitea_github_mirror.github_repo }}
-  set_fact:
+  ansible.builtin.set_fact:
     _gitea_name: "github--{{ chineseroom_gitea_github_mirror.github_repo | replace('/', '--') }}"
     _github_owner: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[0] }}"
     _github_name: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[1] }}"
     _checkout_name: "{{ chineseroom_gitea_github_mirror.checkout_name | default(chineseroom_gitea_github_mirror.github_repo.split('/')[1]) }}"
 
 - name: Query GitHub API for {{ chineseroom_gitea_github_mirror.github_repo }}
-  uri:
+  ansible.builtin.uri:
     url: "https://api.github.com/repos/{{ chineseroom_gitea_github_mirror.github_repo }}"
     method: GET
     headers:
@@ -19,13 +19,13 @@
   register: _github_repo_info
 
 - name: Set default branch fact for {{ chineseroom_gitea_github_mirror.github_repo }}
-  set_fact:
+  ansible.builtin.set_fact:
     _github_default_branch: "{{ chineseroom_gitea_github_mirror.default_branch | default(_github_repo_info.json.default_branch) }}"
 
 # --- Gitea repo ---
 
 - name: Check if Gitea repo {{ _gitea_name }} exists
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}"
     headers:
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
@@ -34,7 +34,7 @@
   register: _gitea_repo_check
 
 - name: Create Gitea repo {{ _gitea_name }}
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/repos"
     headers:
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
@@ -52,7 +52,7 @@
 # --- Gitea webhook ---
 
 - name: Get webhooks for {{ _gitea_name }}
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/hooks"
     headers:
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
@@ -61,7 +61,7 @@
   register: _gitea_hooks
 
 - name: Add push webhook for {{ _gitea_name }}
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/hooks"
     headers:
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
@@ -84,7 +84,7 @@
 # --- GitHub webhook ---
 
 - name: Get GitHub webhooks for {{ chineseroom_gitea_github_mirror.github_repo }}
-  uri:
+  ansible.builtin.uri:
     url: "https://api.github.com/repos/{{ chineseroom_gitea_github_mirror.github_repo }}/hooks"
     method: GET
     headers:
@@ -95,7 +95,7 @@
   when: chineseroom_gitea_github_webhook_secret != ""
 
 - name: Add GitHub webhook for {{ chineseroom_gitea_github_mirror.github_repo }}
-  uri:
+  ansible.builtin.uri:
     url: "https://api.github.com/repos/{{ chineseroom_gitea_github_mirror.github_repo }}/hooks"
     method: POST
     headers:
@@ -124,7 +124,7 @@
 # --- Working clone (gitea system user) ---
 
 - name: Create working clone directory for {{ _gitea_name }}
-  file:
+  ansible.builtin.file:
     path: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}"
     state: directory
     owner: "{{ chineseroom_gitea_user }}"
@@ -132,7 +132,7 @@
     mode: "0750"
 
 - name: Initialise working clone and remotes for {{ _gitea_name }}
-  shell: |
+  ansible.builtin.shell: |
     set -euo pipefail
     cd "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}"
     git init -b "{{ _github_default_branch }}"
@@ -149,7 +149,7 @@
   no_log: true
 
 - name: Update origin remote URL for {{ _gitea_name }}
-  shell: |
+  ansible.builtin.shell: |
     git -C "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}" remote set-url origin \
       "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}.git"
   become: true
@@ -158,7 +158,7 @@
   no_log: true
 
 - name: Create .git/gitea metadata directory for {{ _gitea_name }}
-  file:
+  ansible.builtin.file:
     path: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git/gitea"
     state: directory
     owner: "{{ chineseroom_gitea_user }}"
@@ -166,7 +166,7 @@
     mode: "0750"
 
 - name: Seed default-branch cache for {{ _gitea_name }}
-  copy:
+  ansible.builtin.copy:
     content: "{{ _github_default_branch }}\n"
     dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git/gitea/default-branch"
     owner: "{{ chineseroom_gitea_user }}"
@@ -175,7 +175,7 @@
     force: false
 
 - name: Create auto-push marker for {{ _gitea_name }}
-  copy:
+  ansible.builtin.copy:
     content: ""
     dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ _gitea_name }}/.git/gitea/auto-push"
     owner: "{{ chineseroom_gitea_user }}"
@@ -186,7 +186,7 @@
 # --- Restricted user fork and checkout ---
 
 - name: Check if fork of {{ _gitea_name }} exists for {{ chineseroom_gitea_restricted_user }}
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_restricted_user }}/{{ _gitea_name }}"
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
@@ -195,7 +195,7 @@
   register: _restricted_user_fork_check
 
 - name: Fork {{ _gitea_name }} to {{ chineseroom_gitea_restricted_user }}
-  uri:
+  ansible.builtin.uri:
     url: |
       "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ _gitea_name }}/forks?sudo={{ chineseroom_gitea_restricted_user }}"
     headers:
@@ -207,7 +207,7 @@
   when: _restricted_user_fork_check.status == 404
 
 - name: Clone or fetch fork of {{ _gitea_name }} for restricted user
-  shell: |
+  ansible.builtin.shell: |
     set -euo pipefail
     dest="/mnt/aiworkspace/{{ _checkout_name }}"
     if [ -d "${dest}/.git" ]; then
@@ -222,7 +222,7 @@
   changed_when: false
 
 - name: Add upstream remote to restricted user checkout of {{ _gitea_name }}
-  shell: |
+  ansible.builtin.shell: |
     set -euo pipefail
     dest="/mnt/aiworkspace/{{ _checkout_name }}"
     git -C "${dest}" remote get-url upstream 2>/dev/null \

@@ -1,18 +1,18 @@
 ---
 - name: Install prerequisites
-  apt:
+  ansible.builtin.apt:
     name:
       - git
       - python3-venv
     state: latest
 
 - name: Add interpersonal group
-  group:
+  ansible.builtin.group:
     name: "{{ http_root_micahrl_com_interpersonal_group }}"
     system: true
 
 - name: Add interpersonal user
-  user:
+  ansible.builtin.user:
     name: "{{ http_root_micahrl_com_interpersonal_user }}"
     group: "{{ http_root_micahrl_com_interpersonal_group }}"
     system: true
@@ -20,7 +20,7 @@
     home: "{{ http_root_micahrl_com_interpersonal_home }}"
 
 - name: Clone Interpersonal git repo
-  git:
+  ansible.builtin.git:
     repo: "https://github.com/mrled/interpersonal"
     dest: "{{ http_root_micahrl_com_interpersonal_checkout_dir }}"
     force: true
@@ -29,7 +29,7 @@
   when: not http_root_micahrl_com_interpersonal_skip_install
 
 - name: Create "{{ http_root_micahrl_com_interpersonal_user }}-owned Interpersonal directories"
-  file:
+  ansible.builtin.file:
     state: directory
     path: "{{ item }}"
     owner: "{{ http_root_micahrl_com_interpersonal_user }}"
@@ -40,7 +40,7 @@
     - "{{ http_root_micahrl_com_interpersonal_mediastaging_dir }}"
 
 - name: Create Interpersonal venv and install package and prerequisites
-  pip:
+  ansible.builtin.pip:
     name: "{{ http_root_micahrl_com_interpersonal_checkout_dir }}"
     editable: true
     virtualenv: "{{ http_root_micahrl_com_interpersonal_venv }}"
@@ -50,21 +50,21 @@
   when: not http_root_micahrl_com_interpersonal_skip_install
 
 - name: Generate the secret key for Flask's cookie encrypted sessions
-  command: python3 -c 'import base64, os; print(base64.b64encode(os.urandom(32)).decode())'
+  ansible.builtin.command: python3 -c 'import base64, os; print(base64.b64encode(os.urandom(32)).decode())'
   register: http_root_micahrl_com_interpersonal_cookie_secret_result
   tags:
     - apache_conf
     - interpersonal_db
 
 - name: Set the cookie secret fact
-  set_fact:
+  ansible.builtin.set_fact:
     http_root_micahrl_com_interpersonal_cookie_secret: "{{ http_root_micahrl_com_interpersonal_cookie_secret_result.stdout | trim }}"
   tags:
     - apache_conf
     - interpersonal_db
 
 - name: Install the Interpersonal config file
-  template:
+  ansible.builtin.template:
     src: interpersonal.config.yml.j2
     dest: "{{ http_root_micahrl_com_interpersonal_config }}"
     owner: "{{ http_root_micahrl_com_interpersonal_user }}"
@@ -76,7 +76,7 @@
     # You can call an executable installed to a venv directly
     # and it'll use its own venv transparently
     flask: "{{ http_root_micahrl_com_interpersonal_venv }}/bin/flask"
-  shell: |
+  ansible.builtin.shell: |
     export FLASK_APP="interpersonal"
     export INTERPERSONAL_CONFIG="{{ http_root_micahrl_com_interpersonal_config }}"
     {{ flask }} init-db
@@ -86,7 +86,7 @@
     - interpersonal_db
 
 - name: Create Interpersonal WSGI file
-  template:
+  ansible.builtin.template:
     src: interpersonal.wsgi.py.j2
     dest: "{{ http_root_micahrl_com_interpersonal_wsgi }}"
     owner: "{{ http_root_micahrl_com_interpersonal_user }}"
@@ -96,7 +96,7 @@
   tags: apache_conf
 
 - name: Install Interpersonal Apache site
-  template:
+  ansible.builtin.template:
     src: interpersonal.micahrl.com.conf.j2
     dest: /etc/apache2/sites-available/interpersonal.micahrl.com.conf
     owner: root
@@ -106,7 +106,7 @@
   tags: apache_conf
 
 - name: Enable Interpersonal site
-  file:
+  ansible.builtin.file:
     state: link
     src: ../sites-available/interpersonal.micahrl.com.conf
     dest: /etc/apache2/sites-enabled/interpersonal.micahrl.com.conf
@@ -114,7 +114,7 @@
   tags: apache_conf
 
 - name: Restart Apache
-  systemd:
+  ansible.builtin.systemd:
     name: apache2
     state: restarted
   when: >

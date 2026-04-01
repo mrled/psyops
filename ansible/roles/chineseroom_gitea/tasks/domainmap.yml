@@ -1,6 +1,6 @@
 ---
 - name: Create /etc/chineseroom parent directory
-  file:
+  ansible.builtin.file:
     path: "{{ chineseroom_domainmap_dir }}"
     state: directory
     owner: root
@@ -8,7 +8,7 @@
     mode: "0755"
 
 - name: Create domainmap.sandbox.d directory with restricted user write access
-  file:
+  ansible.builtin.file:
     path: "{{ chineseroom_domainmap_sandbox_dir }}"
     state: directory
     owner: "{{ chineseroom_gitea_restricted_user }}"
@@ -16,7 +16,7 @@
     mode: "0755"
 
 - name: Write chineseroom_gitea domain map file
-  template:
+  ansible.builtin.template:
     src: domainmap.sandbox.j2
     dest: "{{ chineseroom_domainmap_sandbox_dir }}/chineseroom_gitea"
     owner: root
