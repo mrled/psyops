@@ -1,8 +1,0 @@
-{
-  "log-driver": "syslog",
-  "log-opts": {
-    {# Use 127.0.0.1 to force ipv4; using 'localhost' will cause messages to be mysteriously blackholed #}
-    "syslog-address": "udp://127.0.0.1:{{ seedbox_logstash_docker_port }}",
-    "tag": "{% raw %}{{.ImageName}}/{{.Name}}/{{.ID}}{% endraw %}"
-  }
-}
