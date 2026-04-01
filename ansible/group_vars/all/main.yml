@@ -49,7 +49,7 @@ global_home_zone_updater_zone_id: Z32HSYI0AGMFV9
 global_home_zone_updater_region: "{{ global_aws_region }}"
 
 # For the generic cloudformation role, set the all-access keys as the defaults
-# This is not prefixed with global_, but the cfn role is very generic
+# This is not prefixed with global_, but the cloudformation role is very generic
 cloudformation_aws_region: "{{ global_aws_region }}"
 
 # Shared seedbox stuff

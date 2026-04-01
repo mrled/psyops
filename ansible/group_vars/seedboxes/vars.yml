@@ -122,7 +122,7 @@ seedbox_logstash_system_password: "{{ vault_seedbox_logstash_system_password }}"
 # The IP address for Traefik to be exposed on
 seedbox_ingress_ipaddr: 100.86.119.112
 
-# seedbox_new role: k0s / Kubernetes / Flux settings
+# seedbox role: k0s / Kubernetes / Flux settings
 # Set seedbox_k8s_host_ip in host_vars for each host (the host's primary LAN IP).
 # Add the Tailscale IP and any others to seedbox_k8s_api_sans.
 seedbox_k8s_host_ip: "192.168.1.25" # Override in host_vars

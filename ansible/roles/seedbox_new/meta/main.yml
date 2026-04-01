@@ -1,3 +1,0 @@
----
-# No docker dependency - seedbox_new targets a Debian host without Docker Swarm
-dependencies: []

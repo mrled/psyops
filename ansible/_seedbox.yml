@@ -8,4 +8,4 @@
     - { role: interactive_system, tags: ["interactive", "interactive_system"] }
     - { role: interactive_user, tags: ["interactive", "interactive_user"] }
     - { role: seedbox_storage, tags: ["seedbox_storage"] }
-    - { role: seedbox_new, tags: ["seedbox"] }
+    - { role: seedbox, tags: ["seedbox"] }
