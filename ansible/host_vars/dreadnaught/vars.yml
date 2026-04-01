@@ -90,6 +90,10 @@ chineseroom_gitea_github_mirrors:
         port: 64224
       - subdomain: lrhacim
         port: 42246
+  - github_repo: mrled/disquisition.micahrl.com
+    domain_map:
+      - subdomain: disquisition
+        port: 1313
   - github_repo: mrled/bibliographer
 
 chineseroom_gitea_restricted_user_privkeys:
