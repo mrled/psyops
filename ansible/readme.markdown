@@ -30,3 +30,13 @@ and only give credentials that allow updating one zone to the updater.
 Playbooks are prefixed with a single underscore (`_`), which keeps them nicely organized in my list.
 
 Playbooks that call other playbooks are sometimes useful too; these are prefixed with a double underscore (`__`).
+
+## ansible-lint
+
+`ansible-lint` is a pain in the ass, but it's the best thing we have.
+
+- It rewrites YAML with `ruamel`, which has non-configurable line length behavior.
+  This means we sometimes have to go through acrobatics to get lines to stay long,
+  even though we disable line length yamllint/ansible-lint rules.
+  - Apparently RedHat thinks this is totally fine lol: <https://github.com/ansible/ansible-lint/issues/4233>
+- ansible-lint also uses yamllint, and you have to configure them both separately.

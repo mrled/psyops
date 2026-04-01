@@ -11,17 +11,5 @@ rules:
     forbid-explicit-octal: true # Required for compatibility with ansible-lint
   braces:
     max-spaces-inside: 1 # Required for compatibility with ansible-lint
-  line-length: disable
-  empty-lines: disable
-
-  # Rules we disable for minimum impact on first pass, but that we might want to enable later
-  document-start: disable
-  indentation: disable
-  trailing-spaces: disable
-  truthy: disable
-  colons: disable
-  commas: disable
-  brackets: disable
-  hyphens: disable
-  key-duplicates: disable
-  new-line-at-end-of-file: disable
+  line-length: disable # Enforcing programmatically is worse than doing it manually
+  empty-lines: disable # Enforcing programmatically is worse than doing it manually
