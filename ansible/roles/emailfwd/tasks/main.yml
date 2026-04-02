@@ -52,4 +52,6 @@
     subj: "Subject: Test message from Ansible playbook run"
     body: "Message generated on {{ inventory_hostname }}"
     addr: "{{ mailfwd_default_destination_address }}"
-  ansible.builtin.shell: printf "{{ subj }}\n{{ body }}\n" | msmtp -d -a default {{ addr }}
+  ansible.builtin.shell: |
+    set -o pipefail
+    printf "{{ subj }}\n{{ body }}\n" | msmtp -d -a default {{ addr }}

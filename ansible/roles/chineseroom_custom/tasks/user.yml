@@ -40,11 +40,17 @@
     - src: "/home/{{ chineseroom_restricted_user }}/.dhd/hosts/{{ ansible_facts['hostname'] }}/CLAUDE.md"
       dest: "/home/{{ chineseroom_restricted_user }}/.claude/CLAUDE.md"
 
+- name: Download GHCup installer
+  ansible.builtin.get_url:
+    url: https://get-ghcup.haskell.org
+    dest: /usr/local/src/ghcup-installer.sh
+    mode: "0755"
+  when: chineseroom_app_ghcup_enable
+
 - name: Install GHCup for chineseroom user
   become: true
   become_user: "{{ chineseroom_restricted_user }}"
-  ansible.builtin.shell: |
-    curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+  ansible.builtin.command: /usr/local/src/ghcup-installer.sh
   args:
     creates: "/home/{{ chineseroom_restricted_user }}/.ghcup/bin/ghcup"
   environment:

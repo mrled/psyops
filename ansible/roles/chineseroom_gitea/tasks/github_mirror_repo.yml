@@ -172,12 +172,13 @@
   no_log: true
 
 - name: Update origin remote URL for {{ chineseroom_gitea_name }}
-  ansible.builtin.shell: |
-    git -C "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_name }}" remote set-url origin \
-      "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}.git"
-  become: true
-  become_user: "{{ chineseroom_gitea_user }}"
-  changed_when: false
+  community.general.ini_file:
+    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_name }}/.git/config"
+    section: 'remote "origin"'
+    option: url
+    value: "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}.git"
+    owner: "{{ chineseroom_gitea_user }}"
+    mode: "0600"
   no_log: true
 
 - name: Create .git/gitea metadata directory for {{ chineseroom_gitea_name }}

@@ -20,13 +20,11 @@
   ansible.builtin.set_fact:
     capthook_home: "{{ getent_passwd[capthook_user][4] }}"
 
-# Use the command module so we can do creates here because of
-# https://github.com/ansible/ansible/pull/65739
 - name: Get webhook
-  ansible.builtin.command:
-    cmd: curl -L -o "{{ capthook_webhook_archive_path }}" "{{ capthook_webhook_dl_uri }}"
-    creates: "{{ capthook_webhook_archive_path }}"
-    warn: false
+  ansible.builtin.get_url:
+    url: "{{ capthook_webhook_dl_uri }}"
+    dest: "{{ capthook_webhook_archive_path }}"
+    mode: "0644"
   become: true
   become_user: "{{ capthook_user }}"
 
