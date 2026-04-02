@@ -29,6 +29,7 @@
 
     - name: Apply nftables ruleset
       ansible.builtin.command: nft -f /etc/nftables/chineseroom.nft
+      changed_when: true
     - name: Include chineseroom rules in main nftables config
       ansible.builtin.lineinfile:
         path: /etc/sysconfig/nftables.conf

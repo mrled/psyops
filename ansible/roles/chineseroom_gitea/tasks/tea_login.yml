@@ -46,6 +46,7 @@
     _login_name: "{{ chineseroom_gitea_server_shortname if chineseroom_gitea_server_shortname else chineseroom_gitea_domain }}"
   when: >-
     ((chineseroom_gitea_tea_logins_list.stdout | from_json) or []) | selectattr('name', 'equalto', _login_name) | list | length == 0
+  changed_when: true
 
 - name: Set tea default login for restricted user
   become: true

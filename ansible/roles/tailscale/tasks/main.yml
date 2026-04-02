@@ -75,6 +75,7 @@
       block:
         - name: Connect to the tailnet via an auth key
           ansible.builtin.command: tailscale up --authkey {{ tailscale_auth_key }}
+          changed_when: true
         - ansible.builtin.debug:
             msg: Joined this machine to the tailnet via auth key
     - name: When the auth key is not defined

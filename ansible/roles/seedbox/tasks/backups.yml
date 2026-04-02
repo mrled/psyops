@@ -12,16 +12,19 @@
   ansible.builtin.command: gpg --import
   args:
     stdin: "{{ seedbox_backup_gpg_pub_key }}"
+  changed_when: true
 
 - name: Install GPG private key
   ansible.builtin.command: gpg --import --allow-secret-key-import
   args:
     stdin: "{{ seedbox_backup_gpg_priv_key }}"
+  changed_when: true
 
 - name: Absolutely trust GPG key
   ansible.builtin.command: gpg --import-ownertrust
   args:
     stdin: "{{ seedbox_backup_gpg_key_id }}:6:"
+  changed_when: true
 
 - name: Create backup configs dir
   ansible.builtin.file:

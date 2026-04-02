@@ -108,3 +108,4 @@
 - name: Run certbot once
   ansible.builtin.command: /usr/local/bin/certbot_{{ http_root_micahrl_com_certname }}.sh
   tags: certbot
+  changed_when: true

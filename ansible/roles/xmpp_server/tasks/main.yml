@@ -108,6 +108,7 @@
 
 - name: Run certbot once to get initial certificate (also runs the deploy hook to copy certs to Prosody directory)
   ansible.builtin.command: /usr/local/bin/certbot_{{ xmpp_server_certname }}.sh
+  changed_when: true
 - name: Generate DH parameters if not present
   ansible.builtin.command: openssl dhparam -out {{ xmpp_server_ssl_dhparam }} 2048
   args:

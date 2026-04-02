@@ -4,3 +4,4 @@
 # embed crypttab into the initramfs so disks are decrypted at boot.
 - name: Update initramfs
   ansible.builtin.command: update-initramfs -u
+  changed_when: true

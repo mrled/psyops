@@ -32,5 +32,7 @@
 
     - name: Run akmods
       ansible.builtin.command: akmods
+      changed_when: true
     - name: modprobe wl
       ansible.builtin.command: modprobe wl
+      changed_when: true

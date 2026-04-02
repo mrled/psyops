@@ -36,6 +36,7 @@
     GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
   when: chineseroom_gitea_admin_username not in chineseroom_gitea_user_list.stdout
   no_log: true
+  changed_when: true
 
 - name: Generate Ansible admin API token
   ansible.builtin.shell: >-
@@ -88,6 +89,7 @@
     GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
   when: chineseroom_gitea_mirror_user not in chineseroom_gitea_user_list.stdout
   no_log: true
+  changed_when: true
 
 - name: Generate mirrorbot API token
   ansible.builtin.shell: >-
@@ -130,6 +132,7 @@
   when: item.username not in chineseroom_gitea_user_list.stdout
   no_log: true
   loop: "{{ chineseroom_gitea_users }}"
+  changed_when: true
 
 - name: Add SSH keys to Gitea users
   ansible.builtin.include_tasks: gitea_user_ssh_keys.yml
@@ -164,6 +167,7 @@
     GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
   register: chineseroom_gitea_restricted_user_token_generated
   when: not chineseroom_gitea_restricted_user_token_stat.stat.exists
+  changed_when: true
 
 - name: Write restricted user token file with correct ownership
   ansible.builtin.copy:

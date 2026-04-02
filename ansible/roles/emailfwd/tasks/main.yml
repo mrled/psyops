@@ -55,3 +55,4 @@
   ansible.builtin.shell: |
     set -o pipefail
     printf "{{ subj }}\n{{ body }}\n" | msmtp -d -a default {{ addr }}
+  changed_when: true

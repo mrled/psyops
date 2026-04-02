@@ -52,6 +52,7 @@
 - name: Generate the secret key for Flask's cookie encrypted sessions
   ansible.builtin.command: python3 -c 'import base64, os; print(base64.b64encode(os.urandom(32)).decode())'
   register: http_root_micahrl_com_interpersonal_cookie_secret_result
+  changed_when: true
   tags:
     - apache_conf
     - interpersonal_db
@@ -82,6 +83,7 @@
     {{ flask }} init-db
   become: true
   become_user: "{{ http_root_micahrl_com_interpersonal_user }}"
+  changed_when: true
   tags:
     - interpersonal_db
 

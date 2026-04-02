@@ -45,6 +45,7 @@
     - name: Import GPG key
       ansible.builtin.command: apt-key add /usr/local/docker-apt-gpg-key
       when: docker_apt_gpg_key.changed
+      changed_when: true
     # NOTE: must use bionic (18.04) for 20.04, for now, apparently this will get fixed later, smh
     - name: Add Docker repo (Ubuntu)
       ansible.builtin.apt_repository:
@@ -63,6 +64,7 @@
     - name: Import GPG key
       ansible.builtin.command: apt-key add /usr/local/docker-apt-gpg-key
       when: docker_apt_gpg_key.changed
+      changed_when: true
     - name: Add Docker repo (Debian)
       ansible.builtin.apt_repository:
         repo: deb https://download.docker.com/linux/{{ ansible_facts.lsb.id | lower }}/ {{ ansible_facts.lsb.codename }} stable

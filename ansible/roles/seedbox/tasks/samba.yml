@@ -32,6 +32,7 @@
     printf '{{ seedbox_user_samba_passwd_ro }}\n{{ seedbox_user_samba_passwd_ro }}\n' | smbpasswd -a "{{ seedbox_user }}"
   no_log: true
   when: seedbox_samba_passwd_check.rc == 1
+  changed_when: true
 
 - name: Start samba
   ansible.builtin.systemd:

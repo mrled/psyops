@@ -69,3 +69,4 @@
   become: true
   become_user: "{{ acmedns_pikvm_updater_user }}"
   when: acmedns_pikvm_updater_runonce|bool
+  changed_when: true

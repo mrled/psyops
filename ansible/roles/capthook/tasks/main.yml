@@ -111,12 +111,15 @@
     - name: Compile SELinux module file for buildpy
       ansible.builtin.command: checkmodule -M -m -o /etc/selinux/capthook_buildpy.mod /etc/selinux/capthook_buildpy.te
       when: capthook_buildpy_copytefile.changed
+      changed_when: true
     - name: Build SELinux policy package for buildpy
       ansible.builtin.command: semodule_package -o /etc/selinux/capthook_buildpy.pp -m /etc/selinux/capthook_buildpy.mod
       when: capthook_buildpy_copytefile.changed
+      changed_when: true
     - name: Load SELinux policy package for buildpy
       ansible.builtin.command: semodule -i /etc/selinux/capthook_buildpy.pp
       when: capthook_buildpy_copytefile.changed
+      changed_when: true
       notify: restart capthook
 
     - name: Copy SELinux type enforcement file for webhook
@@ -127,12 +130,15 @@
     - name: Compile SELinux module file for webhook
       ansible.builtin.command: checkmodule -M -m -o /etc/selinux/capthook_webhook.mod /etc/selinux/capthook_webhook.te
       when: capthook_webhook_copytefile.changed
+      changed_when: true
     - name: Build SELinux policy package for webhook
       ansible.builtin.command: semodule_package -o /etc/selinux/capthook_webhook.pp -m /etc/selinux/capthook_webhook.mod
       when: capthook_webhook_copytefile.changed
+      changed_when: true
     - name: Load SELinux policy package for webhook
       ansible.builtin.command: semodule -i /etc/selinux/capthook_webhook.pp
       when: capthook_webhook_copytefile.changed
+      changed_when: true
       notify: restart capthook
 
 - name: Start service

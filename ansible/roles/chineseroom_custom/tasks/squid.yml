@@ -22,12 +22,14 @@
 - name: Generate CA private key
   ansible.builtin.command: openssl genrsa -out /etc/squid/ssl_cert/myCA.key 4096
   when: not chineseroom_custom_ca_key_stat.stat.exists
+  changed_when: true
 
 - name: Generate CA certificate
   ansible.builtin.command: >
     openssl req -new -x509 -days 3650 -key /etc/squid/ssl_cert/myCA.key
     -out /etc/squid/ssl_cert/myCA.crt -subj "/CN={{ chineseroom_custom_squid_ca_cn }}"
   when: not chineseroom_custom_ca_key_stat.stat.exists
+  changed_when: true
 
 - name: Set permissions on CA files
   ansible.builtin.file:
@@ -41,6 +43,7 @@
 
 - name: Trust CA certificate system-wide
   ansible.builtin.command: trust anchor /etc/squid/ssl_cert/myCA.crt
+  changed_when: true
 - name: Create parent directory for SSL database
   ansible.builtin.file:
     path: /var/lib

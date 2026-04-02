@@ -39,6 +39,7 @@
 # wtf???
 - name: Enable lingering
   ansible.builtin.command: loginctl enable-linger micahrlci
+  changed_when: true
 - name: Set up SSH directory for micahrlci user
   ansible.builtin.file:
     path: /home/micahrlci/.ssh

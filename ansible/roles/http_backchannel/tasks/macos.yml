@@ -106,6 +106,7 @@
   ansible.builtin.command: launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
   when: http_backchannel_launchd_status.rc != 0
   become: true
+  changed_when: true
 
 - name: Ensure Traefik launch daemon is running
   ansible.builtin.command: launchctl kickstart -k system/us.younix.backchannel

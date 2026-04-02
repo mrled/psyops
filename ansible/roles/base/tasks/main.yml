@@ -17,6 +17,7 @@
     - name: Compile and install ghostty terminfo
       ansible.builtin.command: tic -x -o /usr/share/terminfo /usr/local/share/terminfo-sources/xterm-ghostty.terminfo
       when: base_ghostty_terminfo_src.changed
+      changed_when: true
 
 - name: Fix fucking Broadcom wifi on Fedora
   ansible.builtin.import_tasks: fucking_broadcom_wifi.yml

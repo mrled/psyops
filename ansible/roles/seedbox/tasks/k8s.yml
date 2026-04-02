@@ -31,6 +31,7 @@
 # the NFS server may have started before /etc/exports was written.
 - name: Apply NFS exports
   ansible.builtin.command: exportfs -ra
+  changed_when: true
 - name: Install cluster CA certificate
   ansible.builtin.copy:
     content: "{{ seedbox_k8s_ca_crt }}"
@@ -272,6 +273,7 @@
     --private-key-file=/etc/seedboxk8s/flux/psyops_seedboxk8s_flux_deploy_id
     --silent
   when: seedbox_flux_ns_check.rc != 0
+  changed_when: true
 
 # Create SOPS age secret for Flux
 - name: Check if sops-age secret exists
@@ -286,3 +288,4 @@
     --namespace=flux-system
     --from-file=/etc/seedboxk8s/flux.agekey
   when: seedbox_sops_age_check.rc != 0
+  changed_when: true
