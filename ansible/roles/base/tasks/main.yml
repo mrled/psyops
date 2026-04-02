@@ -60,7 +60,7 @@
   tags: hostname
 
 - name: Re-gather facts when hostname changes
-  action: setup
+  ansible.builtin.setup:
   when: base_hostname_result.changed
   tags: hostname
 

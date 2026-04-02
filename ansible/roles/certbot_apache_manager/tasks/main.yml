@@ -38,7 +38,7 @@
     owner: root
     group: root
     mode: "0644"
-  when: letsencrypt_apache_config.stat.exists == False
+  when: not letsencrypt_apache_config.stat.exists
 
 # Set up webroot for HTTP-01 ACME challenges
 - name: Create webroot for ACME challenges
