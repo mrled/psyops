@@ -17,17 +17,17 @@
 - name: Check if CA key exists
   ansible.builtin.stat:
     path: /etc/squid/ssl_cert/myCA.key
-  register: ca_key_stat
+  register: chineseroom_custom_ca_key_stat
 
 - name: Generate CA private key
   ansible.builtin.command: openssl genrsa -out /etc/squid/ssl_cert/myCA.key 4096
-  when: not ca_key_stat.stat.exists
+  when: not chineseroom_custom_ca_key_stat.stat.exists
 
 - name: Generate CA certificate
   ansible.builtin.command: >
     openssl req -new -x509 -days 3650 -key /etc/squid/ssl_cert/myCA.key
-    -out /etc/squid/ssl_cert/myCA.crt -subj "/CN={{ chineseroom_squid_ca_cn }}"
-  when: not ca_key_stat.stat.exists
+    -out /etc/squid/ssl_cert/myCA.crt -subj "/CN={{ chineseroom_custom_squid_ca_cn }}"
+  when: not chineseroom_custom_ca_key_stat.stat.exists
 
 - name: Set permissions on CA files
   ansible.builtin.file:

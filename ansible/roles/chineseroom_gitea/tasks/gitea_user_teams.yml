@@ -14,7 +14,7 @@
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
     method: GET
     status_code: 200
-  register: _user_org_teams_results
+  register: chineseroom_gitea_user_org_teams_results
   loop: "{{ _gitea_user_for_teams.orgs | dict2items }}"
   loop_control:
     label: "{{ item.key }}"
@@ -23,7 +23,7 @@
   vars:
     _raw: >-
       {% set assignments = [] %}
-      {% for result in _user_org_teams_results.results %}
+      {% for result in chineseroom_gitea_user_org_teams_results.results %}
       {%   for team_name in result.item.value %}
       {%     set team_obj = result.json | selectattr('name', 'equalto', team_name) | list | first | default(none) %}
       {%     if team_obj %}
@@ -33,11 +33,11 @@
       {% endfor %}
       {{ assignments }}
   ansible.builtin.set_fact:
-    _user_team_assignments: "{{ _raw | from_yaml }}"
+    chineseroom_gitea_user_team_assignments: "{{ _raw | from_yaml }}"
 
 - name: Show team assignments for {{ _gitea_user_for_teams.username }}
   ansible.builtin.debug:
-    var: _user_team_assignments
+    var: chineseroom_gitea_user_team_assignments
 
 - name: Add {{ _gitea_user_for_teams.username }} to org teams
   ansible.builtin.uri:
@@ -46,6 +46,6 @@
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
     method: PUT
     status_code: [200, 204]
-  loop: "{{ _user_team_assignments }}"
+  loop: "{{ chineseroom_gitea_user_team_assignments }}"
   loop_control:
     label: "{{ item.org }}/{{ item.team_name }}"

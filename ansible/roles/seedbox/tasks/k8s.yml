@@ -58,12 +58,12 @@
     owner: root
     group: root
     mode: "0640"
-  register: k0s_yaml_result
+  register: seedbox_k0s_yaml_result
 
 # Install k0s binary
 - name: Check current k0s version
   ansible.builtin.command: /usr/local/bin/k0s version
-  register: k0s_version_check
+  register: seedbox_k0s_version_check
   changed_when: false
   failed_when: false
 
@@ -74,12 +74,12 @@
     owner: root
     group: root
     mode: "0755"
-  when: k0s_version_check.rc != 0 or seedbox_k8s_k0s_version not in k0s_version_check.stdout
+  when: seedbox_k0s_version_check.rc != 0 or seedbox_k8s_k0s_version not in seedbox_k0s_version_check.stdout
 
 # Install helm
 - name: Check current helm version
   ansible.builtin.command: /usr/local/bin/helm version --short
-  register: helm_version_check
+  register: seedbox_helm_version_check
   changed_when: false
   failed_when: false
 
@@ -87,15 +87,15 @@
   ansible.builtin.get_url:
     url: "https://get.helm.sh/helm-{{ seedbox_k8s_helm_version }}-linux-amd64.tar.gz"
     dest: "/tmp/helm-{{ seedbox_k8s_helm_version }}.tar.gz"
-  when: helm_version_check.rc != 0 or seedbox_k8s_helm_version not in helm_version_check.stdout
-  register: helm_tarball
+  when: seedbox_helm_version_check.rc != 0 or seedbox_k8s_helm_version not in seedbox_helm_version_check.stdout
+  register: seedbox_helm_tarball
 
 - name: Extract helm binary
   ansible.builtin.unarchive:
     src: "/tmp/helm-{{ seedbox_k8s_helm_version }}.tar.gz"
     dest: /tmp/
     remote_src: true
-  when: helm_tarball is changed
+  when: seedbox_helm_tarball is changed
 
 - name: Install helm binary
   ansible.builtin.copy:
@@ -105,12 +105,12 @@
     group: root
     mode: "0755"
     remote_src: true
-  when: helm_tarball is changed
+  when: seedbox_helm_tarball is changed
 
 # Install kubeseal
 - name: Check current kubeseal version
   ansible.builtin.command: /usr/local/bin/kubeseal --version
-  register: kubeseal_version_check
+  register: seedbox_kubeseal_version_check
   changed_when: false
   failed_when: false
 
@@ -118,8 +118,8 @@
   ansible.builtin.get_url:
     url: "https://github.com/bitnami-labs/sealed-secrets/releases/download/v{{ seedbox_k8s_kubeseal_version }}/kubeseal-{{ seedbox_k8s_kubeseal_version }}-linux-amd64.tar.gz"
     dest: "/tmp/kubeseal-{{ seedbox_k8s_kubeseal_version }}.tar.gz"
-  when: kubeseal_version_check.rc != 0 or seedbox_k8s_kubeseal_version not in kubeseal_version_check.stdout
-  register: kubeseal_tarball
+  when: seedbox_kubeseal_version_check.rc != 0 or seedbox_k8s_kubeseal_version not in seedbox_kubeseal_version_check.stdout
+  register: seedbox_kubeseal_tarball
 
 - name: Extract and install kubeseal binary
   ansible.builtin.unarchive:
@@ -128,7 +128,7 @@
     remote_src: true
     include:
       - kubeseal
-  when: kubeseal_tarball is changed
+  when: seedbox_kubeseal_tarball is changed
 
 - name: Ensure kubeseal is executable
   ansible.builtin.file:
@@ -136,12 +136,12 @@
     owner: root
     group: root
     mode: "0755"
-  when: kubeseal_tarball is changed
+  when: seedbox_kubeseal_tarball is changed
 
 # Install flux
 - name: Check current flux version
   ansible.builtin.command: /usr/local/bin/flux version --client
-  register: flux_version_check
+  register: seedbox_flux_version_check
   changed_when: false
   failed_when: false
 
@@ -149,8 +149,8 @@
   ansible.builtin.get_url:
     url: "https://github.com/fluxcd/flux2/releases/download/v{{ seedbox_k8s_flux_version }}/flux_{{ seedbox_k8s_flux_version }}_linux_amd64.tar.gz"
     dest: "/tmp/flux-{{ seedbox_k8s_flux_version }}.tar.gz"
-  when: flux_version_check.rc != 0 or seedbox_k8s_flux_version not in flux_version_check.stdout
-  register: flux_tarball
+  when: seedbox_flux_version_check.rc != 0 or seedbox_k8s_flux_version not in seedbox_flux_version_check.stdout
+  register: seedbox_flux_tarball
 
 - name: Extract and install flux binary
   ansible.builtin.unarchive:
@@ -159,7 +159,7 @@
     remote_src: true
     include:
       - flux
-  when: flux_tarball is changed
+  when: seedbox_flux_tarball is changed
 
 - name: Ensure flux is executable
   ansible.builtin.file:
@@ -167,7 +167,7 @@
     owner: root
     group: root
     mode: "0755"
-  when: flux_tarball is changed
+  when: seedbox_flux_tarball is changed
 
 # Set up k0s shell aliases
 - name: Install k0s profile.d aliases
@@ -221,13 +221,13 @@
   ansible.builtin.command: /usr/local/bin/k0s install controller --single -c /etc/k0s/k0s.yaml
   args:
     creates: /etc/systemd/system/k0scontroller.service
-  register: k0s_service_install_result
+  register: seedbox_k0s_service_install_result
 
 - name: Restart k0scontroller if config changed (service was pre-existing)
   ansible.builtin.systemd:
     name: k0scontroller
     state: restarted
-  when: k0s_yaml_result is changed and not k0s_service_install_result is changed
+  when: seedbox_k0s_yaml_result is changed and not seedbox_k0s_service_install_result is changed
 
 - name: Start k0scontroller
   ansible.builtin.systemd:
@@ -259,7 +259,7 @@
 # Bootstrap Flux
 - name: Check if flux-system namespace exists
   ansible.builtin.command: /usr/local/bin/k0s kubectl get ns flux-system
-  register: flux_ns_check
+  register: seedbox_flux_ns_check
   changed_when: false
   failed_when: false
 
@@ -271,12 +271,12 @@
     --branch=master
     --private-key-file=/etc/seedboxk8s/flux/psyops_seedboxk8s_flux_deploy_id
     --silent
-  when: flux_ns_check.rc != 0
+  when: seedbox_flux_ns_check.rc != 0
 
 # Create SOPS age secret for Flux
 - name: Check if sops-age secret exists
   ansible.builtin.command: /usr/local/bin/k0s kubectl get secret sops-age --namespace=flux-system
-  register: sops_age_check
+  register: seedbox_sops_age_check
   changed_when: false
   failed_when: false
 
@@ -285,4 +285,4 @@
     /usr/local/bin/k0s kubectl create secret generic sops-age
     --namespace=flux-system
     --from-file=/etc/seedboxk8s/flux.agekey
-  when: sops_age_check.rc != 0
+  when: seedbox_sops_age_check.rc != 0

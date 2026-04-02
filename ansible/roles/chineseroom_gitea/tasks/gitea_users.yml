@@ -141,19 +141,19 @@
   ansible.builtin.file:
     path: "{{ chineseroom_gitea_restricted_user_token_dir }}"
     state: directory
-    owner: "{{ chineseroom_gitea_restricted_user }}"
-    group: "{{ chineseroom_gitea_restricted_user }}"
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
     mode: "0750"
 
 - name: Check if restricted user token file exists
   ansible.builtin.stat:
     path: "{{ chineseroom_gitea_restricted_user_token_file }}"
-  register: _restricted_user_token_stat
+  register: chineseroom_gitea_restricted_user_token_stat
 
 - name: Generate restricted user API token for tea CLI
   ansible.builtin.command: >-
     {{ chineseroom_gitea_binary }} admin user generate-access-token
-    --username {{ chineseroom_gitea_restricted_user }}
+    --username {{ chineseroom_restricted_user }}
     --token-name tea-cli
     --raw
     --scopes all
@@ -162,17 +162,17 @@
   become_user: "{{ chineseroom_gitea_user }}"
   environment:
     GITEA_WORK_DIR: "{{ chineseroom_gitea_home }}"
-  register: _restricted_user_token_generated
-  when: not _restricted_user_token_stat.stat.exists
+  register: chineseroom_gitea_restricted_user_token_generated
+  when: not chineseroom_gitea_restricted_user_token_stat.stat.exists
 
 - name: Write restricted user token file with correct ownership
   ansible.builtin.copy:
-    content: "{{ _restricted_user_token_generated.stdout }}"
+    content: "{{ chineseroom_gitea_restricted_user_token_generated.stdout }}"
     dest: "{{ chineseroom_gitea_restricted_user_token_file }}"
     owner: root
-    group: "{{ chineseroom_gitea_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
     mode: "0640"
-  when: not _restricted_user_token_stat.stat.exists
+  when: not chineseroom_gitea_restricted_user_token_stat.stat.exists
   no_log: true
 
 - name: Read restricted user API token

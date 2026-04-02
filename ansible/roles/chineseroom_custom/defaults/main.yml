@@ -1,13 +1,13 @@
 ---
-# User to apply network restrictions to
-chineseroom_restricted_user: agent
+# User to apply network restrictions to.
+# chineseroom_restricted_user must be set in group_vars or host_vars.
 
 # If true, the restricted user will only be able to connect to the IPs allowed below.
-chineseroom_enable_whitelist_ips: false
+chineseroom_custom_enable_whitelist_ips: false
 # Allowed IP addresses for the restricted user to connect to directly.
-# If chineseroom_enable_whitelist_domains is also true, domains that resolve to these IPs will bypass Squid,
+# If chineseroom_custom_enable_whitelist_domains is also true, domains that resolve to these IPs will bypass Squid,
 # without Squid breaking TLS.
-chineseroom_whitelist_ips:
+chineseroom_custom_whitelist_ips:
   ipv4:
     - 160.79.104.0/23 # Anthropic addresses
   ipv6:
@@ -19,18 +19,18 @@ chineseroom_whitelist_ips:
 # and then Squid fails to connect to the domain over ipv6,
 # Squid won't fall back and curl won't know to fall back,
 # so the connection will just fail.
-chineseroom_disable_ipv6: false
+chineseroom_custom_disable_ipv6: false
 
 # If true, configure Squid proxy to enforce domain whitelist
-chineseroom_enable_whitelist_domains: false
+chineseroom_custom_enable_whitelist_domains: false
 # Allowed domains for the restricted user (includes all subdomains).
 # Domains specified here will have Squid intercept them, and use a MITM SSL certificate,
-# UNLESS they resolve to an IP in chineseroom_whitelist_ips.
-chineseroom_whitelist_domains:
+# UNLESS they resolve to an IP in chineseroom_custom_whitelist_ips.
+chineseroom_custom_whitelist_domains:
   - anthropic.com
 
 # Jujutsu version control system version
-jujutsu_version: "0.34.0"
+chineseroom_custom_jujutsu_version: "0.34.0"
 
 # Zellij terminal multiplexer version
-zellij_version: "0.43.1"
+chineseroom_custom_zellij_version: "0.43.1"

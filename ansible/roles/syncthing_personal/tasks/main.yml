@@ -13,7 +13,7 @@
     repo: deb https://apt.syncthing.net/ syncthing stable
     filename: syncthing
     state: present
-  register: syncthing_add_apt_repo_result
+  register: syncthing_personal_add_apt_repo_result
 - name: Install syncthing
   ansible.builtin.apt:
     name: syncthing

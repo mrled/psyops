@@ -49,16 +49,16 @@
         group: root
         mode: "0644"
       notify: restart sshd
-      register: sshd_systemd_override
+      register: tailscale_sshd_systemd_override
 
     - name: Reload systemd daemon
       ansible.builtin.systemd:
         daemon_reload: true
-      when: sshd_systemd_override.changed
+      when: tailscale_sshd_systemd_override.changed
 
     - name: Check if main sshd_config has Include directive
       ansible.builtin.shell: grep -q "^Include /etc/ssh/sshd_config.d/\*" /etc/ssh/sshd_config
-      register: sshd_include_check
+      register: tailscale_sshd_include_check
       changed_when: false
       failed_when: false
 
@@ -68,7 +68,7 @@
         line: "Include /etc/ssh/sshd_config.d/*.conf"
         insertbefore: BOF
         backup: true
-      when: sshd_include_check.rc != 0
+      when: tailscale_sshd_include_check.rc != 0
 
     - name: Deploy Tailscale-only SSH configuration
       ansible.builtin.template:

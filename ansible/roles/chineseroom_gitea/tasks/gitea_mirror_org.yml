@@ -9,7 +9,7 @@
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: [200, 404]
-  register: _mirror_org_check
+  register: chineseroom_gitea_mirror_org_check
 
 - name: Create mirror org
   ansible.builtin.uri:
@@ -22,7 +22,7 @@
       username: "{{ chineseroom_gitea_mirror_org }}"
       visibility: private
     status_code: 201
-  when: _mirror_org_check.status == 404
+  when: chineseroom_gitea_mirror_org_check.status == 404
 
 - name: Get teams in mirror org
   ansible.builtin.uri:
@@ -31,7 +31,7 @@
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: 200
-  register: _mirror_org_teams
+  register: chineseroom_gitea_mirror_org_teams
 
 - name: Create admin team
   ansible.builtin.uri:
@@ -49,7 +49,7 @@
         - repo.pulls
     status_code: 201
   when: >-
-    (_mirror_org_teams.json
+    (chineseroom_gitea_mirror_org_teams.json
       | selectattr('name', 'equalto', chineseroom_gitea_mirror_team_admin)
       | list | length) == 0
 
@@ -69,7 +69,7 @@
         - repo.pulls
     status_code: 201
   when: >-
-    (_mirror_org_teams.json
+    (chineseroom_gitea_mirror_org_teams.json
       | selectattr('name', 'equalto', chineseroom_gitea_mirror_team_readwrite)
       | list | length) == 0
 
@@ -89,7 +89,7 @@
         - repo.pulls
     status_code: 201
   when: >-
-    (_mirror_org_teams.json
+    (chineseroom_gitea_mirror_org_teams.json
       | selectattr('name', 'equalto', chineseroom_gitea_mirror_team_readonly)
       | list | length) == 0
 
@@ -101,13 +101,13 @@
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: 200
-  register: _mirror_org_teams_current
+  register: chineseroom_gitea_mirror_org_teams_current
 
 - name: Add mirrorbot to admin team
   ansible.builtin.uri:
     url: >-
       https://{{ chineseroom_gitea_domain }}/api/v1/teams/{{
-        (_mirror_org_teams_current.json
+        (chineseroom_gitea_mirror_org_teams_current.json
           | selectattr('name', 'equalto', chineseroom_gitea_mirror_team_admin)
           | first).id
       }}/members/{{ chineseroom_gitea_mirror_user }}

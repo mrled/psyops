@@ -9,8 +9,8 @@
         >> /etc/ssh/ssh_known_hosts
       echo added
     fi
-  register: _gitea_known_hosts_result
-  changed_when: "'added' in _gitea_known_hosts_result.stdout"
+  register: chineseroom_gitea_known_hosts_result
+  changed_when: "'added' in chineseroom_gitea_known_hosts_result.stdout"
 
 - name: Add GitHub SSH host keys to system known_hosts
   ansible.builtin.known_hosts:
@@ -23,26 +23,26 @@
 - name: Symlink ~/work to /mnt/aiworkspace for restricted user
   ansible.builtin.file:
     src: /mnt/aiworkspace
-    dest: "/home/{{ chineseroom_gitea_restricted_user }}/work"
+    dest: "/home/{{ chineseroom_restricted_user }}/work"
     state: link
   become: true
-  become_user: "{{ chineseroom_gitea_restricted_user }}"
+  become_user: "{{ chineseroom_restricted_user }}"
 
 - name: Get Tailscale status for funnel URL
   ansible.builtin.command: tailscale status --json
-  register: _ts_status_raw
+  register: chineseroom_gitea_ts_status_raw
   changed_when: false
   when: chineseroom_gitea_github_webhook_secret != ""
 
 - name: Set Tailscale DNS name fact
   ansible.builtin.set_fact:
-    _chineseroom_ts_dns_name: >-
-      {{ (_ts_status_raw.stdout | from_json).Self.DNSName | regex_replace('\.$', '') }}
+    chineseroom_gitea_ts_dns_name: >-
+      {{ (chineseroom_gitea_ts_status_raw.stdout | from_json).Self.DNSName | regex_replace('\.$', '') }}
   when: chineseroom_gitea_github_webhook_secret != ""
 
 - name: Set Tailscale funnel URL fact
   ansible.builtin.set_fact:
-    _chineseroom_ts_funnel_url: "https://{{ _chineseroom_ts_dns_name }}:{{ chineseroom_gitea_funnel_port }}"
+    chineseroom_gitea_ts_funnel_url: "https://{{ chineseroom_gitea_ts_dns_name }}:{{ chineseroom_gitea_funnel_port }}"
   when: chineseroom_gitea_github_webhook_secret != ""
 
 - name: Set up GitHub mirror repos

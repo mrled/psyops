@@ -97,14 +97,14 @@
 
 - name: Check if Traefik launch daemon is loaded
   ansible.builtin.command: launchctl print system/us.younix.backchannel
-  register: launchd_status
+  register: http_backchannel_launchd_status
   failed_when: false
   changed_when: false
   become: true
 
 - name: Bootstrap Traefik launch daemon if not loaded
   ansible.builtin.command: launchctl bootstrap system /Library/LaunchDaemons/us.younix.backchannel.plist
-  when: launchd_status.rc != 0
+  when: http_backchannel_launchd_status.rc != 0
   become: true
 
 - name: Ensure Traefik launch daemon is running

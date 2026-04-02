@@ -1,41 +1,41 @@
 ---
 - name: Ensure .ssh directory exists for restricted user
   ansible.builtin.file:
-    path: "/home/{{ chineseroom_gitea_restricted_user }}/.ssh"
+    path: "/home/{{ chineseroom_restricted_user }}/.ssh"
     state: directory
-    owner: "{{ chineseroom_gitea_restricted_user }}"
-    group: "{{ chineseroom_gitea_restricted_user }}"
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
     mode: "0700"
 
 - name: Install SSH private keys for restricted user
   ansible.builtin.copy:
     content: "{{ item.content }}"
-    dest: "/home/{{ chineseroom_gitea_restricted_user }}/.ssh/{{ item.filename }}"
-    owner: "{{ chineseroom_gitea_restricted_user }}"
-    group: "{{ chineseroom_gitea_restricted_user }}"
+    dest: "/home/{{ chineseroom_restricted_user }}/.ssh/{{ item.filename }}"
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
     mode: "0600"
   no_log: true
   loop: "{{ chineseroom_gitea_restricted_user_privkeys }}"
 
 - name: Install tea CLI via Homebrew
   become: true
-  become_user: "{{ chineseroom_gitea_restricted_user }}"
+  become_user: "{{ chineseroom_restricted_user }}"
   ansible.builtin.command: /home/linuxbrew/.linuxbrew/bin/brew install tea
   environment:
     HOME: /home/linuxbrew
-  register: _tea_brew_install
-  changed_when: "'already installed' not in _tea_brew_install.stdout"
+  register: chineseroom_gitea_tea_brew_install
+  changed_when: "'already installed' not in chineseroom_gitea_tea_brew_install.stdout"
 
 - name: Check existing tea logins for restricted user
   become: true
-  become_user: "{{ chineseroom_gitea_restricted_user }}"
+  become_user: "{{ chineseroom_restricted_user }}"
   ansible.builtin.command: /home/linuxbrew/.linuxbrew/bin/tea logins ls --output json
-  register: _tea_logins_list
+  register: chineseroom_gitea_tea_logins_list
   changed_when: false
 
 - name: Configure tea login for restricted user
   become: true
-  become_user: "{{ chineseroom_gitea_restricted_user }}"
+  become_user: "{{ chineseroom_restricted_user }}"
   ansible.builtin.command: >-
     /home/linuxbrew/.linuxbrew/bin/tea login add
     --name {{ chineseroom_gitea_server_shortname if chineseroom_gitea_server_shortname else chineseroom_gitea_domain }}
@@ -45,11 +45,11 @@
   vars:
     _login_name: "{{ chineseroom_gitea_server_shortname if chineseroom_gitea_server_shortname else chineseroom_gitea_domain }}"
   when: >-
-    ((_tea_logins_list.stdout | from_json) or []) | selectattr('name', 'equalto', _login_name) | list | length == 0
+    ((chineseroom_gitea_tea_logins_list.stdout | from_json) or []) | selectattr('name', 'equalto', _login_name) | list | length == 0
 
 - name: Set tea default login for restricted user
   become: true
-  become_user: "{{ chineseroom_gitea_restricted_user }}"
+  become_user: "{{ chineseroom_restricted_user }}"
   ansible.builtin.command: >-
     /home/linuxbrew/.linuxbrew/bin/tea logins default
     {{ chineseroom_gitea_server_shortname if chineseroom_gitea_server_shortname else chineseroom_gitea_domain }}

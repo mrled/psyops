@@ -3,22 +3,22 @@
   when: ansible_distribution == "Fedora"
   block:
     - ansible.builtin.set_fact:
-        rpmfusion_free: rpmfusion-free-release-{{ ansible_distribution_version }}.noarch.rpm
-        rpmfusion_nonfree: rpmfusion-nonfree-release-{{ ansible_distribution_version }}.noarch.rpm
+        base_rpmfusion_free: rpmfusion-free-release-{{ ansible_distribution_version }}.noarch.rpm
+        base_rpmfusion_nonfree: rpmfusion-nonfree-release-{{ ansible_distribution_version }}.noarch.rpm
 
     - name: Get rpmfusion
       ansible.builtin.get_url:
         url: "{{ item }}"
         dest: /usr/local/src
       with_items:
-        - https://download1.rpmfusion.org/free/fedora/{{ rpmfusion_free }}
-        - https://download1.rpmfusion.org/nonfree/fedora/{{ rpmfusion_nonfree }}
+        - https://download1.rpmfusion.org/free/fedora/{{ base_rpmfusion_free }}
+        - https://download1.rpmfusion.org/nonfree/fedora/{{ base_rpmfusion_nonfree }}
 
     - name: Install rpmfusion
       ansible.builtin.dnf:
         name:
-          - /usr/local/src/{{ rpmfusion_free }}
-          - /usr/local/src/{{ rpmfusion_nonfree }}
+          - /usr/local/src/{{ base_rpmfusion_free }}
+          - /usr/local/src/{{ base_rpmfusion_nonfree }}
         state: present
 
     - name: Install broadcom package and prereqs

@@ -41,5 +41,5 @@ chineseroom_gitea_admin_password_file: "{{ chineseroom_gitea_data_dir }}/chinese
 chineseroom_gitea_admin_token_file: "{{ chineseroom_gitea_data_dir }}/chineseroom-admin.token"
 chineseroom_gitea_mirror_password_file: "{{ chineseroom_gitea_data_dir }}/mirrorbot.password"
 chineseroom_gitea_mirror_token_file: "{{ chineseroom_gitea_data_dir }}/mirrorbot.token"
-chineseroom_gitea_restricted_user_token_dir: "/home/{{ chineseroom_gitea_restricted_user }}/.config/gitea"
+chineseroom_gitea_restricted_user_token_dir: "/home/{{ chineseroom_restricted_user }}/.config/gitea"
 chineseroom_gitea_restricted_user_token_file: "{{ chineseroom_gitea_restricted_user_token_dir }}/token"

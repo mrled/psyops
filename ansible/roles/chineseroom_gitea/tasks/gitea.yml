@@ -87,7 +87,7 @@
     permanent: true
     state: enabled
     immediate: true
-  when: chineseroom_firewall_enabled
+  when: chineseroom_gitea_firewall_enabled
 
 - name: Open Gitea SSH port in firewall
   ansible.posix.firewalld:
@@ -96,7 +96,7 @@
     permanent: true
     state: enabled
     immediate: true
-  when: chineseroom_firewall_enabled
+  when: chineseroom_gitea_firewall_enabled
 
 - name: Enable and start Gitea
   ansible.builtin.systemd:
@@ -111,4 +111,4 @@
     path: /home/linuxbrew/.linuxbrew/bin
     state: latest
   become: true
-  become_user: "{{ chineseroom_gitea_restricted_user }}"
+  become_user: "{{ chineseroom_restricted_user }}"

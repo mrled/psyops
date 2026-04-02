@@ -1,6 +1,6 @@
 ---
 - name: Configure IPv6 - Disable
-  when: chineseroom_disable_ipv6
+  when: chineseroom_custom_disable_ipv6
   block:
     - name: Remove IPv6 enable sysctl file if exists
       ansible.builtin.file:
@@ -20,7 +20,7 @@
         - net.ipv6.conf.lo.disable_ipv6
 
 - name: Configure IPv6 - Enable
-  when: not chineseroom_disable_ipv6
+  when: not chineseroom_custom_disable_ipv6
   block:
     - name: Remove IPv6 disable sysctl file if exists
       ansible.builtin.file:

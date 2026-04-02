@@ -1,11 +1,11 @@
 ---
 # NFT table and chain names
-chineseroom_nft_table_filter: chineseroom_filter
-chineseroom_nft_table_nat: chineseroom_nat
+chineseroom_custom_nft_table_filter: chineseroom_filter
+chineseroom_custom_nft_table_nat: chineseroom_nat
 
 # Squid proxy configuration
-chineseroom_squid_http_port: 1081
-chineseroom_squid_https_port: 1082
-chineseroom_squid_http_intercept_port: 1083
-chineseroom_squid_https_intercept_port: 1084
-chineseroom_squid_ca_cn: "Chinese Room CA"
+chineseroom_custom_squid_http_port: 1081
+chineseroom_custom_squid_https_port: 1082
+chineseroom_custom_squid_http_intercept_port: 1083
+chineseroom_custom_squid_https_intercept_port: 1084
+chineseroom_custom_squid_ca_cn: "Chinese Room CA"

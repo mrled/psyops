@@ -29,7 +29,7 @@
 - name: Check for Let's Encrypt Apache SSL config file
   ansible.builtin.stat:
     path: /etc/letsencrypt/options-ssl-apache.conf
-  register: letsencrypt_apache_config
+  register: certbot_apache_manager_letsencrypt_config
 
 - name: Create empty Let's Encrypt Apache SSL config if it doesn't exist
   ansible.builtin.copy:
@@ -38,7 +38,7 @@
     owner: root
     group: root
     mode: "0644"
-  when: not letsencrypt_apache_config.stat.exists
+  when: not certbot_apache_manager_letsencrypt_config.stat.exists
 
 # Set up webroot for HTTP-01 ACME challenges
 - name: Create webroot for ACME challenges
@@ -57,21 +57,21 @@
     owner: root
     group: root
     mode: "0644"
-  register: certbot_apache_install_letsencrypt
+  register: certbot_apache_manager_install_letsencrypt
 
 - name: Enable Let's Encrypt Apache config
   ansible.builtin.file:
     state: link
     src: ../sites-available/100-letsencrypt.conf
     dest: /etc/apache2/sites-enabled/100-letsencrypt.conf
-  register: certbot_apache_enable_letsencrypt
+  register: certbot_apache_manager_enable_letsencrypt
 
 # Reload Apache if config changed
 - name: Reload Apache for Let's Encrypt config
   ansible.builtin.systemd:
     name: apache2
     state: reloaded
-  when: certbot_apache_install_letsencrypt.changed or certbot_apache_enable_letsencrypt.changed
+  when: certbot_apache_manager_install_letsencrypt.changed or certbot_apache_manager_enable_letsencrypt.changed
 
 # Debian's certbot package includes a systemd timer for automatic renewal
 - name: Enable certbot renewal timer

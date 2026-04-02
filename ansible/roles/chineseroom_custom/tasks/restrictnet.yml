@@ -17,15 +17,15 @@
     mode: "0600"
 
 - name: Enable whitelist
-  when: chineseroom_enable_whitelist_ips
+  when: chineseroom_custom_enable_whitelist_ips
   block:
     - name: Delete existing chineseroom table
       ansible.builtin.command: nft delete table inet {{ item }}
       failed_when: false
       changed_when: false
       with_items:
-        - "{{ chineseroom_nft_table_filter }}"
-        - "{{ chineseroom_nft_table_nat }}"
+        - "{{ chineseroom_custom_nft_table_filter }}"
+        - "{{ chineseroom_custom_nft_table_nat }}"
 
     - name: Apply nftables ruleset
       ansible.builtin.command: nft -f /etc/nftables/chineseroom.nft
@@ -37,15 +37,15 @@
         state: present
 
 - name: Disable whitelist
-  when: not chineseroom_enable_whitelist_ips
+  when: not chineseroom_custom_enable_whitelist_ips
   block:
     - name: Delete existing chineseroom table
       ansible.builtin.command: nft delete table inet {{ item }}
       failed_when: false
       changed_when: false
       with_items:
-        - "{{ chineseroom_nft_table_filter }}"
-        - "{{ chineseroom_nft_table_nat }}"
+        - "{{ chineseroom_custom_nft_table_filter }}"
+        - "{{ chineseroom_custom_nft_table_nat }}"
 
     - name: Remove chineseroom rules in main nftables config
       ansible.builtin.lineinfile:

@@ -3,15 +3,15 @@
 #debug_options ALL,1 33,2 28,9
 
 # Non-intercept ports handle traffic with an explicit proxy configuration,
-# like curl -x http://localhost:{{ chineseroom_squid_http_port }} http://example.com
+# like curl -x http://localhost:{{ chineseroom_custom_squid_http_port }} http://example.com
 # We don't use this, but Squid requires at least one non-intercept port to be defined.
-http_port {{ chineseroom_squid_http_port }}
-https_port {{ chineseroom_squid_https_port }} cert=/etc/squid/ssl_cert/myCA.crt key=/etc/squid/ssl_cert/myCA.key
+http_port {{ chineseroom_custom_squid_http_port }}
+https_port {{ chineseroom_custom_squid_https_port }} cert=/etc/squid/ssl_cert/myCA.crt key=/etc/squid/ssl_cert/myCA.key
 
 # Intercept ports
 # nftables will shunt traffic to these ports for the restricted user.
-http_port {{ chineseroom_squid_http_intercept_port }} intercept
-https_port {{ chineseroom_squid_https_intercept_port }} intercept ssl-bump cert=/etc/squid/ssl_cert/myCA.crt key=/etc/squid/ssl_cert/myCA.key
+http_port {{ chineseroom_custom_squid_http_intercept_port }} intercept
+https_port {{ chineseroom_custom_squid_https_intercept_port }} intercept ssl-bump cert=/etc/squid/ssl_cert/myCA.crt key=/etc/squid/ssl_cert/myCA.key
 
 # sslcrtd is the Squid SSL certificate generator
 # It generates certificates for each site, signed by its CA.

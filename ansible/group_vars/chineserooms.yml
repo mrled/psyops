@@ -11,17 +11,17 @@ chineseroom_aws_region: us-east-1
 chineseroom_aws_access_key_id: "{{ vault_chineseroom_aws_access_key_id }}"
 chineseroom_aws_secret_access_key: "{{ vault_chineseroom_aws_secret_access_key }}"
 
-chineseroom_enable_whitelist_ips: false
-# chineseroom_whitelist_ips:
+chineseroom_custom_enable_whitelist_ips: false
+# chineseroom_custom_whitelist_ips:
 #   ipv4:
 #     - 160.79.104.0/23  # Anthropic addresses
 #   ipv6:
 #     - 2607:6bc0::/48  # Anthropic addresses
 
-# chineseroom_disable_ipv6: true
+# chineseroom_custom_disable_ipv6: true
 
-chineseroom_enable_whitelist_domains: false
-# chineseroom_whitelist_domains:
+chineseroom_custom_enable_whitelist_domains: false
+# chineseroom_custom_whitelist_domains:
 # - anthropic.com
 # - npmjs.org
 # - pythonhosted.com
