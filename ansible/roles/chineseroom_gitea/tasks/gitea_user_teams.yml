@@ -7,7 +7,7 @@
 #     mirror: [trusted]
 #     someorg: [team1, team2]
 
-- name: Get teams for orgs that {{ _gitea_user_for_teams.username }} is assigned to
+- name: Get org teams for user {{ _gitea_user_for_teams.username }}
   ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ item.key }}/teams"
     headers:
@@ -39,7 +39,7 @@
   ansible.builtin.debug:
     var: chineseroom_gitea_user_team_assignments
 
-- name: Add {{ _gitea_user_for_teams.username }} to org teams
+- name: Add user to org teams {{ _gitea_user_for_teams.username }}
   ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/teams/{{ item.team_id }}/members/{{ _gitea_user_for_teams.username }}"
     headers:

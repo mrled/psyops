@@ -24,7 +24,7 @@
 
 # --- Gitea repo ---
 
-- name: Check if Gitea repo {{ chineseroom_gitea_name }} exists
+- name: Check if Gitea repo exists {{ chineseroom_gitea_name }}
   ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}"
     headers:
@@ -208,7 +208,7 @@
 
 # --- Restricted user fork and checkout ---
 
-- name: Check if fork of {{ chineseroom_gitea_name }} exists for {{ chineseroom_restricted_user }}
+- name: Check if fork exists for restricted user {{ chineseroom_gitea_name }}
   ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_restricted_user }}/{{ chineseroom_gitea_name }}"
     headers:
@@ -217,7 +217,7 @@
     status_code: [200, 404]
   register: chineseroom_gitea_restricted_user_fork_check
 
-- name: Fork {{ chineseroom_gitea_name }} to {{ chineseroom_restricted_user }}
+- name: Fork repo to restricted user {{ chineseroom_gitea_name }}
   ansible.builtin.uri:
     url: |
       "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}/forks?sudo={{ chineseroom_restricted_user }}"
@@ -229,7 +229,7 @@
     status_code: 202
   when: chineseroom_gitea_restricted_user_fork_check.status == 404
 
-- name: Clone or fetch fork of {{ chineseroom_gitea_name }} for restricted user
+- name: Clone or fetch restricted user fork {{ chineseroom_gitea_name }}
   ansible.builtin.shell: |
     set -euo pipefail
     dest="/mnt/aiworkspace/{{ chineseroom_gitea_checkout_name }}"
