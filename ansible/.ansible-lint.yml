@@ -7,6 +7,8 @@ exclude_paths:
   - "**/vault.yml"
   # If we need to we can use something less weird for CloudFormation
   - "cloudformation/**"
+  # This is a symlink to an external collection checked out separately; lint that repo on its own
+  - "roles/chineseroom"
 
 skip_list:
   - name[missing] # Names are sometimes useless, use your best judgement
