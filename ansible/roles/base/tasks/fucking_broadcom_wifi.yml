@@ -10,6 +10,7 @@
       ansible.builtin.get_url:
         url: "{{ item }}"
         dest: /usr/local/src
+        mode: "0644"
       with_items:
         - https://download1.rpmfusion.org/free/fedora/{{ base_rpmfusion_free }}
         - https://download1.rpmfusion.org/nonfree/fedora/{{ base_rpmfusion_nonfree }}

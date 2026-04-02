@@ -3,6 +3,7 @@
   ansible.builtin.copy:
     src: chineseroom_webhook_receiver
     dest: /tmp/
+    mode: "0644"
   register: chineseroom_gitea_webhook_pkg_src
 
 - name: Install webhook receiver package into virtualenv

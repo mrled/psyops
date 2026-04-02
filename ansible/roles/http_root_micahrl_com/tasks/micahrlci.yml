@@ -31,6 +31,7 @@
       micahrlci soft nofile 65536
       micahrlci hard nofile 65536
     dest: /etc/security/limits.d/micahrlci.conf
+    mode: "0644"
 
 # Without this, systemd will not allow services to run independently of login sessions.
 # I don't understand this in detail,

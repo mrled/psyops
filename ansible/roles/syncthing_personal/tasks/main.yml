@@ -67,6 +67,7 @@
     state: directory
     path: "{{ syncthing_personal_default_folder_path }}"
     owner: "{{ syncthing_personal_user }}"
+    mode: "0755"
 
 # To configure syncthing, you have to GET the existing configuration over the REST API,
 # make whatever changes you want to the resulting JSON document,
@@ -100,6 +101,7 @@
     content: "{{ item.content }}"
     dest: "{{ item.dest }}"
     owner: "{{ syncthing_personal_user }}"
+    mode: "0644"
   with_items:
     - dest: "{{ syncthing_personal_config_dir }}/restapi_system_config.old.json"
       content: "{{ syncthing_personal_old_config | to_nice_json(indent=2) }}"
@@ -125,6 +127,7 @@
     content: "{{ item.content }}"
     dest: "{{ item.dest }}"
     owner: "{{ syncthing_personal_user }}"
+    mode: "0644"
   with_items:
     - dest: "{{ syncthing_personal_config_dir }}/restapi_system_config.result.json"
       content: "{{ syncthing_personal_set_config_result | to_nice_json(indent=2) }}"

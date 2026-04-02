@@ -69,6 +69,7 @@
   ansible.builtin.get_url:
     url: "{{ acmedns_base_lego_uri }}"
     dest: "{{ acmedns_base_lego_archive_path }}"
+    mode: "0644"
 
 - name: Create lego extration dir
   ansible.builtin.file:

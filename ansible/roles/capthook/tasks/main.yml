@@ -107,6 +107,7 @@
       ansible.builtin.template:
         src: capthook_buildpy.te.j2
         dest: /etc/selinux/capthook_buildpy.te
+        mode: "0644"
       register: capthook_buildpy_copytefile
     - name: Compile SELinux module file for buildpy
       ansible.builtin.command: checkmodule -M -m -o /etc/selinux/capthook_buildpy.mod /etc/selinux/capthook_buildpy.te
@@ -126,6 +127,7 @@
       ansible.builtin.template:
         src: capthook_webhook.te.j2
         dest: /etc/selinux/capthook_webhook.te
+        mode: "0644"
       register: capthook_webhook_copytefile
     - name: Compile SELinux module file for webhook
       ansible.builtin.command: checkmodule -M -m -o /etc/selinux/capthook_webhook.mod /etc/selinux/capthook_webhook.te

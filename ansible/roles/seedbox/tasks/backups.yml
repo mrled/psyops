@@ -54,6 +54,7 @@
   ansible.builtin.copy:
     content: "{{ seedbox_backup_exclude_paths | join('\n') + '\n' }}"
     dest: "{{ seedbox_backup_exclude_file }}"
+    mode: "0644"
 
 - name: Configure backup cronjob
   ansible.builtin.cron:

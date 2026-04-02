@@ -36,6 +36,7 @@
         line: 'include "/etc/nftables/chineseroom.nft"'
         create: true
         state: present
+        mode: "0644"
 
 - name: Disable whitelist
   when: not chineseroom_custom_enable_whitelist_ips
@@ -54,3 +55,4 @@
         line: 'include "/etc/nftables/chineseroom.nft"'
         create: true
         state: absent
+        mode: "0644"

@@ -53,6 +53,7 @@
       ansible.builtin.get_url:
         url: "https://github.com/zellij-org/zellij/releases/download/v{{ chineseroom_custom_zellij_version }}/zellij-aarch64-unknown-linux-musl.tar.gz"
         dest: "/usr/local/src/zellij-v{{ chineseroom_custom_zellij_version }}-aarch64-unknown-linux-musl.tar.gz"
+        mode: "0644"
 
     - name: Extract zellij
       ansible.builtin.unarchive:
@@ -70,6 +71,7 @@
       ansible.builtin.get_url:
         url: "https://github.com/jj-vcs/jj/releases/download/v{{ chineseroom_custom_jujutsu_version }}/jj-v{{ chineseroom_custom_jujutsu_version }}-{{ chineseroom_custom_jujutsu_arch }}-unknown-linux-musl.tar.gz"
         dest: "/usr/local/src/jj-v{{ chineseroom_custom_jujutsu_version }}-{{ chineseroom_custom_jujutsu_arch }}-unknown-linux-musl.tar.gz"
+        mode: "0644"
 
     - name: Extract jujutsu
       ansible.builtin.unarchive:

@@ -12,6 +12,7 @@
       ansible.builtin.copy:
         src: xterm-ghostty.terminfo
         dest: /usr/local/share/terminfo-sources/xterm-ghostty.terminfo
+        mode: "0644"
       register: base_ghostty_terminfo_src
 
     - name: Compile and install ghostty terminfo

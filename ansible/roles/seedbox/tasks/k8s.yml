@@ -88,6 +88,7 @@
   ansible.builtin.get_url:
     url: "https://get.helm.sh/helm-{{ seedbox_k8s_helm_version }}-linux-amd64.tar.gz"
     dest: "/tmp/helm-{{ seedbox_k8s_helm_version }}.tar.gz"
+    mode: "0644"
   when: seedbox_helm_version_check.rc != 0 or seedbox_k8s_helm_version not in seedbox_helm_version_check.stdout
   register: seedbox_helm_tarball
 
@@ -119,6 +120,7 @@
   ansible.builtin.get_url:
     url: "https://github.com/bitnami-labs/sealed-secrets/releases/download/v{{ seedbox_k8s_kubeseal_version }}/kubeseal-{{ seedbox_k8s_kubeseal_version }}-linux-amd64.tar.gz"
     dest: "/tmp/kubeseal-{{ seedbox_k8s_kubeseal_version }}.tar.gz"
+    mode: "0644"
   when: seedbox_kubeseal_version_check.rc != 0 or seedbox_k8s_kubeseal_version not in seedbox_kubeseal_version_check.stdout
   register: seedbox_kubeseal_tarball
 
@@ -150,6 +152,7 @@
   ansible.builtin.get_url:
     url: "https://github.com/fluxcd/flux2/releases/download/v{{ seedbox_k8s_flux_version }}/flux_{{ seedbox_k8s_flux_version }}_linux_amd64.tar.gz"
     dest: "/tmp/flux-{{ seedbox_k8s_flux_version }}.tar.gz"
+    mode: "0644"
   when: seedbox_flux_version_check.rc != 0 or seedbox_k8s_flux_version not in seedbox_flux_version_check.stdout
   register: seedbox_flux_tarball
 
