@@ -19,7 +19,7 @@
     create_home: true
     home: "{{ http_root_micahrl_com_interpersonal_home }}"
 
-- name: Clone Interpersonal git repo
+- name: Clone Interpersonal git repo # noqa: latest
   ansible.builtin.git:
     repo: "https://github.com/mrled/interpersonal"
     dest: "{{ http_root_micahrl_com_interpersonal_checkout_dir }}"

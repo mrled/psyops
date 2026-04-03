@@ -95,10 +95,10 @@
     group: micahrlci
     mode: "0700"
 
-- name: Create bare Git repository
-  ansible.builtin.command:
-    cmd: git init --bare "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
-    creates: "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
+- name: Create bare Git repository # noqa: latest
+  ansible.builtin.git:
+    repo: "{{ http_root_micahrl_com_micahrlci_micahrlrepo }}"
+    bare: true
   become: true
   become_user: micahrlci
 
