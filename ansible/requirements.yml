@@ -1,0 +1,5 @@
+---
+collections:
+  - name: mrled.chineseroom
+    source: /mnt/aiworkspace/ansible-collection-chineseroom
+    type: dir

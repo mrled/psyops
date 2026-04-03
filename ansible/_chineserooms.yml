@@ -6,7 +6,7 @@
     - { role: emailfwd, tags: ["emailfwd"] }
     - { role: ssh_copy_id, tags: ["ssh_copy_id"], when: "ssh_copy_id_keys | length > 0" }
     - { role: tailscale, tags: ["tailscale"], when: "tailscale_enable | default(False)" }
-    - { role: chineseroom, tags: ["chineseroom", "chineseroom_base"] }
+    - { role: mrled.chineseroom.chineseroom, tags: ["chineseroom", "chineseroom_base"] }
     - { role: chineseroom_gitea, tags: ["chineseroom", "chineseroom_gitea"], when: "chineseroom_gitea_enable | default(False)" }
     - { role: chineseroom_custom, tags: ["chineseroom", "chineseroom_custom"] }
     - { role: interactive_system, tags: ["interactive", "interactive_system"] }
