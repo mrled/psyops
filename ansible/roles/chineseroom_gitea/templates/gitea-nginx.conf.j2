@@ -1,12 +1,6 @@
 # Gitea reverse proxy — managed by Ansible role chineseroom_gitea
 
 server {
-    listen 80;
-    server_name {{ chineseroom_gitea_domain }};
-    return 301 https://$host$request_uri;
-}
-
-server {
     listen 443 ssl;
     server_name {{ chineseroom_gitea_domain }};
 
