@@ -8,6 +8,7 @@
     mode: "0700"
   loop:
     - /mnt/aiworkspace/dhd/hbase/.claude
+    - "/home/{{ chineseroom_restricted_user }}/.config/jj"
 
 - name: Link dhd
   ansible.builtin.file:
@@ -37,8 +38,10 @@
     state: link
     force: true
   loop:
-    - src: "/home/{{ chineseroom_restricted_user }}/.dhd/hosts/{{ ansible_facts['hostname'] }}/CLAUDE.md"
+    - src: "/mnt/aiworkspace/.dhd/hosts/{{ ansible_facts['hostname'] }}/CLAUDE.md"
       dest: "/home/{{ chineseroom_restricted_user }}/.claude/CLAUDE.md"
+    - src: "/mnt/aiworkspace/.dhd/hbase/.config/jj/config.toml"
+      dest: "/home/{{ chineseroom_restricted_user }}/.config/jj/config.toml"
 
 - name: Download GHCup installer
   ansible.builtin.get_url:

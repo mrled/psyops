@@ -26,6 +26,7 @@
       - atuin
       - clang # used with linuxbrew a lot
       - curl
+      - git-delta
       - git-lfs
       - glow
       - gcc
