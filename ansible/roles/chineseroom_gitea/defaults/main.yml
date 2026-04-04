@@ -96,6 +96,11 @@ chineseroom_gitea_github_mirrors: []
 chineseroom_gitea_webhook_listen: "127.0.0.1"
 chineseroom_gitea_webhook_port: 9420
 
+# External port that Tailscale Funnel exposes to the internet for GitHub webhooks.
+# Tailscale supports 443, 8443, and 10000. Use 8443 to avoid conflict with the
+# chineseroom nginx server that owns the default HTTPS port (443).
+chineseroom_gitea_funnel_port: 8443
+
 # Disable public self-registration; set false only for open installs
 chineseroom_gitea_disable_registration: true
 

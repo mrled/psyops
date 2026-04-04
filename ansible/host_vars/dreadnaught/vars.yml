@@ -8,7 +8,13 @@ ansible_host: 100.124.185.62
 ansible_ssh_common_args: "-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 ansible_user: mrled # must match lima VM username, which is same as host VM username by default
 
+chineseroom_gitea_webhook_port: 9420
+chineseroom_gitea_funnel_port: 8443 # nginx already listens on 443 for tailnet-only traffic
+
 tailscale_enable: true
+tailscale_funnels:
+  - local_port: "{{ chineseroom_gitea_webhook_port }}"
+    https_port: "{{ chineseroom_gitea_funnel_port }}"
 
 mailfwd_smtp_host: email-smtp.us-east-2.amazonaws.com
 mailfwd_smtp_port: 465

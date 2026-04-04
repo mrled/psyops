@@ -34,10 +34,15 @@
   changed_when: false
   when: chineseroom_gitea_github_webhook_secret != ""
 
-- name: Set Tailscale funnel base URL fact
+- name: Set Tailscale DNS name fact
   ansible.builtin.set_fact:
-    _chineseroom_ts_funnel_url: >-
-      https://{{ (_ts_status_raw.stdout | from_json).Self.DNSName | regex_replace('\.$', '') }}
+    _chineseroom_ts_dns_name: >-
+      {{ (_ts_status_raw.stdout | from_json).Self.DNSName | regex_replace('\.$', '') }}
+  when: chineseroom_gitea_github_webhook_secret != ""
+
+- name: Set Tailscale funnel URL fact
+  ansible.builtin.set_fact:
+    _chineseroom_ts_funnel_url: "https://{{ _chineseroom_ts_dns_name }}:{{ chineseroom_gitea_funnel_port }}"
   when: chineseroom_gitea_github_webhook_secret != ""
 
 - name: Set up GitHub mirror repos
