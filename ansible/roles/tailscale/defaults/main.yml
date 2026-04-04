@@ -3,3 +3,12 @@ tailscale_take_over_ssh: false
 tailscale_ssh_listen_ipv4: true
 tailscale_ssh_listen_ipv6: true
 tailscale_ssh_port: 22
+
+# List of Tailscale Funnel entries to configure.
+# Each entry: {local_port: <int>, https_port: <int>}
+# Supported https_port values: 443, 8443, 10000
+# Example:
+#   tailscale_funnels:
+#     - local_port: 9420
+#       https_port: 8443
+tailscale_funnels: []

@@ -87,3 +87,7 @@
 - name: Configure SSH takeover
   ansible.builtin.import_tasks: ssh_takeover.yml
   when: tailscale_take_over_ssh
+
+- name: Configure Tailscale Funnel entries
+  ansible.builtin.import_tasks: funnel.yml
+  when: tailscale_funnels | length > 0

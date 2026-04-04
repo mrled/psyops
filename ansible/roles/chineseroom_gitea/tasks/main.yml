@@ -41,11 +41,6 @@
   tags:
     - chineseroom_gitea_webhook
 
-- name: Configure Tailscale funnel for webhook receiver
-  ansible.builtin.import_tasks: tailscale_funnel.yml
-  tags:
-    - chineseroom_gitea_funnel
-
 - name: Configure periodic GitHub→Gitea pull sync
   ansible.builtin.import_tasks: sync.yml
   tags:
