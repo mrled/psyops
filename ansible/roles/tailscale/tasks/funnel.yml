@@ -1,7 +1,7 @@
 ---
 - name: Check tailscale funnel status
   ansible.builtin.command: tailscale funnel status
-  register: _ts_funnel_status
+  register: tailscale_funnel_status
   changed_when: false
   failed_when: false
 
@@ -11,4 +11,5 @@
     --https={{ item.https_port }}
     {{ item.local_port }}
   loop: "{{ tailscale_funnels }}"
-  when: item.local_port | string not in _ts_funnel_status.stdout
+  changed_when: true
+  when: item.local_port | string not in tailscale_funnel_status.stdout
