@@ -1,7 +1,12 @@
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
 
-install: ## Install Ansible collections from requirements.yml
+venv: ## Create the virtual environment and install Python dependencies
+	test -d .venv || python3 -m venv .venv
+	.venv/bin/pip install --upgrade pip
+	.venv/bin/pip install -r requirements.txt
+
+install: venv ## Install Ansible collections from requirements.yml
 	.venv/bin/ansible-galaxy collection install -r requirements.yml
 
 # Run ansible-lint with a dummy vault password.
@@ -12,4 +17,4 @@ install: ## Install Ansible collections from requirements.yml
 lint: install ## Run ansible-lint
 	ANSIBLE_VAULT_PASSWORD=$${ANSIBLE_VAULT_PASSWORD:-lint} .venv/bin/ansible-lint
 
-.PHONY: help install lint
+.PHONY: help venv install lint

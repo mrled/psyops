@@ -1,5 +1,8 @@
 ---
 collections:
+  # For doing local development on the chineseroom collection
+  # - name: mrled.chineseroom
+  #   source: ../../ansible-collection-chineseroom
+  #   type: dir
   - name: mrled.chineseroom
-    source: /mnt/aiworkspace/ansible-collection-chineseroom
-    type: dir
+    source: https://github.com/mrled/ansible-collection-chineseroom
