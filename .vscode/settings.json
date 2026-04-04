@@ -1,0 +1,10 @@
+{
+  "ansible.ansible.path": "ansible/.venv/bin/ansible",
+  "ansible.python.interpreterPath": "ansible/.venv/bin/python3",
+  "ansible.validation.lint.path": "ansible/.venv/bin/ansible-lint",
+  "ansible.lightspeed.enabled": false,
+  "ansible.validation.lint.arguments": "--config-file ansible/.ansible-lint.yml",
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/tasks": "file:///Users/mrled/mrldata/aiworkspace/psyops/ansible/roles/chineseroom_gitea/tasks/github_mirror_repo.yml"
+  }
+}
