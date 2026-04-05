@@ -103,7 +103,7 @@
       Authorization: "Bearer {{ chineseroom_gitea_github_api_token }}"
     status_code: 204
   loop: >-
-    {{ _github_hooks.json
+    {{ chineseroom_gitea_github_hooks.json
        | selectattr('config.url', 'search', chineseroom_gitea_ts_dns_name)
        | rejectattr('config.url', 'equalto', chineseroom_gitea_ts_funnel_url + '/github-webhook')
        | list }}
@@ -112,7 +112,7 @@
   when:
     - chineseroom_gitea_github_webhook_secret != ""
     - >-
-      (_github_hooks.json
+      (chineseroom_gitea_github_hooks.json
         | selectattr('config.url', 'equalto',
             chineseroom_gitea_ts_funnel_url + '/github-webhook')
         | list | length) == 0
