@@ -38,9 +38,9 @@
     state: link
     force: true
   loop:
-    - src: "/mnt/aiworkspace/.dhd/hosts/{{ ansible_facts['hostname'] }}/CLAUDE.md"
+    - src: "/mnt/aiworkspace/dhd/hosts/{{ ansible_facts['hostname'] }}/CLAUDE.md"
       dest: "/home/{{ chineseroom_restricted_user }}/.claude/CLAUDE.md"
-    - src: "/mnt/aiworkspace/.dhd/hbase/.config/jj/config.toml"
+    - src: "/mnt/aiworkspace/dhd/hbase/.config/jj/config.toml"
       dest: "/home/{{ chineseroom_restricted_user }}/.config/jj/config.toml"
 
 - name: Download GHCup installer
