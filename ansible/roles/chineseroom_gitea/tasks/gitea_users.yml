@@ -58,10 +58,14 @@
   ansible.builtin.slurp:
     src: "{{ chineseroom_gitea_admin_token_file }}"
   register: chineseroom_gitea_admin_token_slurped
+  tags:
+    - chineseroom_gitea_github_mirrors
 
 - name: Set admin token fact
   ansible.builtin.set_fact:
     chineseroom_gitea_admin_token: "{{ chineseroom_gitea_admin_token_slurped.content | b64decode | trim }}"
+  tags:
+    - chineseroom_gitea_github_mirrors
 
 - name: Generate mirrorbot password
   ansible.builtin.shell: openssl rand -hex 32 > {{ chineseroom_gitea_mirror_password_file }}
@@ -111,10 +115,14 @@
   ansible.builtin.slurp:
     src: "{{ chineseroom_gitea_mirror_token_file }}"
   register: chineseroom_gitea_mirror_token_slurped
+  tags:
+    - chineseroom_gitea_github_mirrors
 
 - name: Set mirrorbot token fact
   ansible.builtin.set_fact:
     chineseroom_gitea_mirror_token: "{{ chineseroom_gitea_mirror_token_slurped.content | b64decode | trim }}"
+  tags:
+    - chineseroom_gitea_github_mirrors
 
 - name: Create Gitea users
   ansible.builtin.command: >-
