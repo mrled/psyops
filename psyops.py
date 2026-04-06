@@ -102,129 +102,93 @@ def dockerbuild(imagename: str, imagetag: str, additional_build_args: str = ""):
     subprocess.check_call(buildcli)
 
 
-class PsyopsArgumentCollection:
-    """PSYOPS argument collection
+def makeparser() -> argparse.ArgumentParser:
+    epilog = textwrap.dedent(
+        """
+        Note about the passthrough arguments:
 
-    A container for the defined arguments.
-    The parser and each subparser are set as properties, allowing them to be referenced by consuming code.
-    """
-
-    def __init__(self, args: list[str]):
-
-        description = "Wrap Docker for PSYOPS"
-        epilog = textwrap.dedent(
-            """
-            Note about the passthrough arguments:
-
-            In the (likely) case that you want to pass arguments that begin with a
-            dash, you may need to use an equals sign between the passthru argument
-            and its value. For instance, '--build-passthru="--no-cache"'
-            """
-        )
-
-        self.parser = argparse.ArgumentParser(
-            description=description,
-            epilog=epilog,
-            add_help=True,
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-
-        self.parser.add_argument(
-            "--verbose", "-v", action="store_true", help="Print verbose messages"
-        )
-        self.parser.add_argument(
-            "--debug",
-            "-d",
-            action="store_true",
-            help="Invoke debugger on exceptions. (Implies --verbose.)",
-        )
-
-        self.dockeropts = argparse.ArgumentParser(add_help=False)
-        self.dockeropts.add_argument(
-            "imagename",
-            nargs="?",
-            default="psyops",
-            help="The name of the Docker image to build. Defaults to 'psyops'.",
-        )
-        self.dockeropts.add_argument(
-            "imagetag",
-            nargs="?",
-            default="wip",
-            help="The tag to use. Defaults to 'wip'. Published versions should be 'latest'.",
-        )
-
-        self.dockerbuildopts = argparse.ArgumentParser(add_help=False)
-        self.dockerbuildopts.add_argument(
-            "--build-passthru",
-            dest="buildargs",
-            default="",
-            help="Pass these additional arguments to 'docker build'",
-        )
-
-        self.dockerrunopts = argparse.ArgumentParser(add_help=False)
-        self.dockerrunopts.add_argument(
-            "--run-passthru",
-            dest="runargs",
-            help="Pass these additional arguments to 'docker run'",
-        )
-        self.dockerrunopts.add_argument(
-            "--container-passthru",
-            dest="containerargs",
-            help="Pass these additional arguments to the container itself",
-        )
-        self.dockerrunopts.add_argument(
-            "--psyops-volume",
-            dest="psyopsvol",
-            default="/psyops",
-            help="Mount point for the psyops volume",
-        )
-        self.dockerrunopts.add_argument(
-            "--secrets-tmpfs",
-            dest="secretstmpfs",
-            default="/secrets",
-            help="Mount point for the secrets tmpfs filesystem",
-        )
-
-        self.subparsers = self.parser.add_subparsers(dest="action")
-        self.subparsers.required = True
-        self.subparsers.add_parser(
-            "build",
-            parents=[self.dockeropts, self.dockerbuildopts],
-            help="Build the Docker image",
-        )
-        self.subparsers.add_parser(
-            "run",
-            parents=[self.dockeropts, self.dockerrunopts],
-            help="Run the Docker image",
-        )
-        self.subparsers.add_parser(
-            "buildrun",
-            parents=[self.dockeropts, self.dockerbuildopts, self.dockerrunopts],
-            help="Build the Docker image, then immediately run it",
-        )
-
-        self.parsed = self.parser.parse_args(args=args)
+        In the (likely) case that you want to pass arguments that begin with a
+        dash, you may need to use an equals sign between the passthru argument
+        and its value. For instance, '--build-passthru="--no-cache"'
+        """
+    )
+    parser = argparse.ArgumentParser(
+        description="Wrap Docker for PSYOPS",
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "action",
+        choices=["build", "run", "buildrun"],
+        help="Action to perform: build the image, run it, or build then run",
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Print verbose messages"
+    )
+    parser.add_argument(
+        "--debug",
+        "-d",
+        action="store_true",
+        help="Invoke debugger on exceptions. (Implies --verbose.)",
+    )
+    parser.add_argument(
+        "--imagename",
+        default="psyops",
+        help="The name of the Docker image. Defaults to 'psyops'.",
+    )
+    parser.add_argument(
+        "--imagetag",
+        default="wip",
+        help="The image tag. Defaults to 'wip'. Published versions should be 'latest'.",
+    )
+    parser.add_argument(
+        "--build-passthru",
+        dest="buildargs",
+        default="",
+        help="Additional arguments to pass to 'docker build'",
+    )
+    parser.add_argument(
+        "--run-passthru",
+        dest="runargs",
+        default="",
+        help="Additional arguments to pass to 'docker run'",
+    )
+    parser.add_argument(
+        "--container-passthru",
+        dest="containerargs",
+        default="",
+        help="Additional arguments to pass to the container itself",
+    )
+    parser.add_argument(
+        "--psyops-volume",
+        dest="psyopsvol",
+        default="/psyops",
+        help="Mount point for the psyops volume",
+    )
+    parser.add_argument(
+        "--secrets-tmpfs",
+        dest="secretstmpfs",
+        default="/secrets",
+        help="Mount point for the secrets tmpfs filesystem",
+    )
+    return parser
 
 
-def main(args: list[str]):  # pylint: disable=W0613
+def main(args: list[str]):
     """PSYOPS Docker wrapper main program execution"""
 
-    arguments = PsyopsArgumentCollection(args)
-    parsed = arguments.parsed
+    parsed = makeparser().parse_args(args=args)
 
     if parsed.verbose or parsed.debug:
         logger.setLevel(logging.DEBUG)
     if parsed.debug:
         sys.excepthook = debugexchandler
 
-    knownaction = False
     if parsed.action in ["build", "buildrun"]:
-        knownaction = True
         dockerbuild(
             parsed.imagename, parsed.imagetag, additional_build_args=parsed.buildargs
         )
     if parsed.action in ["run", "buildrun"]:
-        knownaction = True
         dockerrun(
             parsed.imagename,
             parsed.imagetag,
@@ -233,11 +197,7 @@ def main(args: list[str]):  # pylint: disable=W0613
             runargs=parsed.runargs,
             containerargs=parsed.containerargs,
         )
-    if not knownaction:
-        print(f"Unknown action '{parsed.action}'")
-        arguments.parser.print_usage()
-        return 1
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    sys.exit(main(sys.argv[1:]))
