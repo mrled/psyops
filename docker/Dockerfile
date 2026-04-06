@@ -98,6 +98,7 @@ RUN true \
         docker docker-doc docker-bash-completion docker-zsh-completion \
         docker-compose \
         emacs-nox emacs-doc \
+        figlet figlet-doc \
         file file-doc \
         # Used for kubenrasty
         #flux@edgetesting flux-bash-completion@edgetesting flux-zsh-completion@edgetesting \
@@ -194,8 +195,6 @@ COPY ["setup", "$psysetup"]
 ## Configure psyops-banner prereqs
 # Absolutely vital to our mission
 RUN true \
-    && apk add \
-        figlet figlet-doc \
     && gem install \
         lolcat \
     && cp "$psysetup/figlet-fonts/"*.[ft]lf /usr/share/figlet/fonts \
@@ -213,22 +212,7 @@ RUN true \
     && cd "$psysetup" \
     && unzip "terraform.zip" \
     && install -o root -g root -m 755 "$psysetup/terraform" /usr/local/bin \
-    # This doesn't work
-    # Linked against GNU libc
-    # && export PROVIDER={all,google,aws,kubernetes} \
-    # && export tfer_provider=all \
-    # && export tfer_latest="$(curl -s https://api.github.com/repos/GoogleCloudPlatform/terraformer/releases/latest | jq -r -M '.tag_name')" \
-    # && export tfer_url="https://github.com/GoogleCloudPlatform/terraformer/releases/download/${tfer_latest}/terraformer-${tfer_provider}-linux-amd64" \
-    # && curl -o "$psysetup/terraformer" "$tfer_url" \
-    # && install -o root -g root -m 755 "$psysetup/terraformer" /usr/local/bin \
     && true
-
-# RUN true \
-#     && "$psysetup/bin/get-gh-release" --outdir "$psysetup" benbjohnson/litestream '^litestream.*linux-amd64-static.tar.gz$' \
-#     && cd "$psysetup" \
-#     && tar -zx -f litestream*.tar.gz \
-#     && install -o root -g root -m 755 "$psysetup"/litestream /usr/local/bin \
-#     && true
 
 RUN true \
     && set -x \
@@ -242,7 +226,6 @@ RUN true \
     #
     # Configure my user
     # Forcibly install a group with the correct GID, even if there is already a group with that GID
-    # && addgroup -g "$PSYOPS_GID" "$groupname" \
     && echo "${groupname}:x:${PSYOPS_GID}:" >> /etc/group \
     && adduser -D -G "$groupname" -u "$PSYOPS_UID" -s /bin/zsh "$username" \
     && usermod --password "$PSYOPS_USER_PASSWORD" "$username" \
