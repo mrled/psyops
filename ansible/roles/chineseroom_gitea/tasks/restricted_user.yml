@@ -1,4 +1,10 @@
 ---
+- name: Run 'git lfs install' for restricted user
+  become: true
+  become_user: "{{ chineseroom_restricted_user }}"
+  ansible.builtin.command: /usr/bin/git lfs install
+  changed_when: false
+
 - name: Ensure .ssh directory exists for restricted user
   ansible.builtin.file:
     path: "/home/{{ chineseroom_restricted_user }}/.ssh"
@@ -24,7 +30,7 @@
   environment:
     HOME: /home/linuxbrew
   register: chineseroom_gitea_tea_brew_install
-  changed_when: "'already installed' not in chineseroom_gitea_tea_brew_install.stdout"
+  changed_when: "'brew reinstall tea' not in chineseroom_gitea_tea_brew_install.stdout"
 
 - name: Check existing tea logins for restricted user
   become: true
