@@ -5,6 +5,7 @@
 import argparse
 import logging
 import os
+import shlex
 import subprocess
 import sys
 import textwrap
@@ -66,9 +67,9 @@ def dockerrun(
         f"{tmpfsmount}:{tmpfsopts}",
         "--hostname",
         hostname,
-        *runargs.split(" "),
+        *shlex.split(runargs),
         f"{imagename}:{imagetag}",
-        *containerargs.split(" "),
+        *shlex.split(containerargs),
     ]
     logger.info(f"Running an image with: {' '.join(runcli)}")
     os.execvp(runcli[0], runcli)
@@ -95,7 +96,7 @@ def dockerbuild(imagename: str, imagetag: str, additional_build_args: str = ""):
         "plain",
         "--tag",
         f"{imagename}:{imagetag}",
-        *additional_build_args.split(" "),
+        *shlex.split(additional_build_args),
     ]
 
     logger.info(f"Building an image with:\n{buildcli}")
