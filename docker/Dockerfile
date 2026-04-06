@@ -187,6 +187,7 @@ ARG gitemail="me@micahrl.com"
 RUN <<EOF
 set -eux
 curl -L https://fly.io/install.sh | sh
+curl -fsSL https://claude.ai/install.sh | bash
 EOF
 
 # Run commands (as my user). Changes more often
