@@ -1,5 +1,8 @@
+# syntax=docker/dockerfile:1
+# check=skip=SecretsUsedInArgOrEnv;error=true
+
 FROM alpine:3.19
-LABEL maintainer "me@micahrl.com"
+LABEL maintainer="me@micahrl.com"
 
 #### Development notes
 #
@@ -313,7 +316,7 @@ RUN true \
     && chmod 700 $HOME/.gnupg $HOME/.ssh \
     && true
 
-CMD /bin/zsh -i
-ENTRYPOINT $HOME/.entrypoint.sh
+CMD ["/bin/zsh", "-i"]
+ENTRYPOINT ["$HOME/.entrypoint.sh"]
 # NOTE: run with 'docker run -it <imagename>'
 # You must run with -it so that it runs interactively and with a terminal assigned
