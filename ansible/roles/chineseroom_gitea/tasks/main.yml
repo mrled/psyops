@@ -51,8 +51,8 @@
   tags:
     - chineseroom_gitea_users
 
-- name: Configure tea CLI login for restricted user
-  ansible.builtin.import_tasks: tea_login.yml
+- name: Configure the restricted user
+  ansible.builtin.import_tasks: restricted_user.yml
   tags:
     - chineseroom_gitea_tea
 
