@@ -3,7 +3,6 @@
 """PSYOPS Docker wrapper to make life a bit easier"""
 
 import argparse
-import base64
 import configparser
 import logging
 import os
@@ -11,11 +10,12 @@ import shutil
 import subprocess
 import sys
 import textwrap
+from types import TracebackType
 
 
 MIN_PYTHON = (3, 6)
 if sys.version_info < MIN_PYTHON:
-    print("This script requires Python version %.%" % MIN_PYTHON)
+    print(f"This script requires Python version {MIN_PYTHON}")
     sys.exit(1)
 
 
@@ -25,12 +25,11 @@ DOCKERDIR = os.path.join(SCRIPTDIR, "docker")
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
-def resolvepath(path):
-    """Resolve a path"""
-    return os.path.realpath(os.path.normpath(os.path.expanduser(path)))
-
-
-def debugexchandler(exc_type, exc_value, exc_traceback):
+def debugexchandler(
+    exc_type: type[BaseException],
+    exc_value: BaseException,
+    exc_traceback: TracebackType | None,
+):
     """Debug Exception Handler
 
     If sys.excepthook is set to this function, automatically enter the debugger when encountering
@@ -52,18 +51,15 @@ def debugexchandler(exc_type, exc_value, exc_traceback):
 
 
 def dockerrun(
-    imagename,
-    imagetag,
-    psyopsvol,
-    tmpfsmount,
-    runargs=None,
-    containerargs=None,
-    # Only used when running from Linux
-    linuxuid=None,
-    linuxgid=None,
+    imagename: str,
+    imagetag: str,
+    psyopsvol: str,
+    tmpfsmount: str,
+    runargs: str = "",
+    containerargs: str = "",
     # Note: default tmpfs options are read only and noexec
-    tmpfsopts="exec,mode=1777",
-    hostname="PSYOPS",
+    tmpfsopts: str = "exec,mode=1777",
+    hostname: str = "PSYOPS",
 ):
     """Run the Docker container"""
 
@@ -102,14 +98,6 @@ def dockerrun(
         hostname,
     ]
 
-    # if sys.platform.startswith("linux"):
-    #     runcli += [
-    #         "-e",
-    #         "uid={}".format(linuxuid or os.geteuid()),
-    #         "-e",
-    #         "gid={}".format(linuxgid or os.getegid()),
-    #     ]
-
     if runargs:
         runcli += runargs.split(" ")
     runcli += [f"{imagename}:{imagetag}"]
@@ -126,7 +114,7 @@ def dockerrun(
         raise Exception(f"'docker run' command exited with nonzero code '{retcode}'")
 
 
-def dockerbuild(imagename, imagetag, additional_build_args=None):
+def dockerbuild(imagename: str, imagetag: str, additional_build_args: str = ""):
     """Build the Docker container"""
 
     env = os.environ.copy()
@@ -183,10 +171,10 @@ def clean():
 class GitRepoMetadata:
     """Metadata of a checked-out Git repository"""
 
-    _submodules = None
+    _submodules: list["GitRepoMetadata"] | None = None
 
-    def __init__(self, checkoutdir, dotgitdir=None):
-        self.checkoutdir = checkoutdir
+    def __init__(self, checkoutdir: str, dotgitdir: str = ""):
+        self.checkoutdir: str = checkoutdir
         if dotgitdir:
             self.dotgitdir = dotgitdir
         else:
@@ -245,7 +233,13 @@ class GitRepoMetadata:
 
         # Now remove the existing index and reset the repo, so that it re-
         # checks out each file in the repository without autocrlf
-        os.remove(resolvepath(os.path.join(self.dotgitdir, "index")))
+        os.remove(
+            os.path.realpath(
+                os.path.normpath(
+                    os.path.expanduser(os.path.join(self.dotgitdir, "index"))
+                )
+            )
+        )
         subprocess.check_call(["git", "reset", "--hard", "HEAD"], cwd=self.checkoutdir)
 
     def allfixcrlf(self):
@@ -259,7 +253,7 @@ class GitRepoMetadata:
             submodule.fixcrlf()
         self.fixcrlf()
 
-    def testcheckout(self, throw=False):
+    def testcheckout(self, throw: bool = False):
         """Test that all submodules are checked out
 
         If care is not taken when the initial repo is checked out, or when the
@@ -267,7 +261,7 @@ class GitRepoMetadata:
         submodule checkout directory that is not detected until we attempt to
         use it. Check for that here first and fail early.
         """
-        missing = []
+        missing: list[str] = []
         for submodule in self.submodules:
             submodpath = os.path.join(SCRIPTDIR, submodule.checkoutdir)
             if not os.path.exists(os.path.join(submodpath, ".git")):
@@ -285,7 +279,7 @@ class PsyopsArgumentCollection:
     The parser and each subparser are set as properties, allowing them to be referenced by consuming code.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, args: list[str]):
 
         description = textwrap.dedent(
             """
@@ -408,13 +402,13 @@ class PsyopsArgumentCollection:
             "clean", help="Clean any cached data from running the container."
         )
 
-        self.parsed = self.parser.parse_args(*args, **kwargs)
+        self.parsed = self.parser.parse_args(args=args)
 
 
-def main(*args, **kwargs):  # pylint: disable=W0613
+def main(args: list[str]):  # pylint: disable=W0613
     """PSYOPS Docker wrapper main program execution"""
 
-    arguments = PsyopsArgumentCollection()
+    arguments = PsyopsArgumentCollection(args)
     parsed = arguments.parsed
 
     if parsed.verbose or parsed.debug:
@@ -473,4 +467,4 @@ def main(*args, **kwargs):  # pylint: disable=W0613
 
 
 if __name__ == "__main__":
-    sys.exit(main(*sys.argv))
+    sys.exit(main(sys.argv))
