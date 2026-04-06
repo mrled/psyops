@@ -4,5 +4,8 @@ collections:
   # - name: mrled.chineseroom
   #   source: ../../ansible-collection-chineseroom
   #   type: dir
+
+  # Install from Ansible Galaxy
+  # https://galaxy.ansible.com/ui/repo/published/mrled/chineseroom/
   - name: mrled.chineseroom
-    source: https://github.com/mrled/ansible-collection-chineseroom
+    version: "0.1.1"
