@@ -223,7 +223,9 @@
     set -euo pipefail
     cd "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}"
     git fetch github
+    git lfs fetch github --all
     git push --mirror origin
+    git lfs push origin --all
   args:
     creates: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}/.git/FETCH_HEAD"
   become: true
