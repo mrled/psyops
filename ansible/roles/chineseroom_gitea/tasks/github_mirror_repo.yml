@@ -3,11 +3,21 @@
 # Loop var: chineseroom_gitea_github_mirror
 
 - name: Set derived facts for {{ chineseroom_gitea_github_mirror.github_repo }}
+  vars:
+    ghowner: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[0] }}"
+    ghrepo: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[1] }}"
+    gthost: "gitea@{{ chineseroom_gitea_ssh_host }}"
+    gtmirrororg: "{{ chineseroom_gitea_mirror_org }}"
+    gtruser: "{{ chineseroom_restricted_user }}"
+    coname: "{{ chineseroom_gitea_github_mirror.checkout_name | default(ghrepo) }}"
   ansible.builtin.set_fact:
-    chineseroom_gitea_name: "github--{{ chineseroom_gitea_github_mirror.github_repo | replace('/', '--') }}"
-    chineseroom_gitea_github_owner: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[0] }}"
-    chineseroom_gitea_github_name: "{{ chineseroom_gitea_github_mirror.github_repo.split('/')[1] }}"
-    chineseroom_gitea_checkout_name: "{{ chineseroom_gitea_github_mirror.checkout_name | default(chineseroom_gitea_github_mirror.github_repo.split('/')[1]) }}"
+    chineseroom_gitea_repo_name: "github--{{ ghowner }}--{{ ghrepo }}"
+    chineseroom_gitea_github_owner: "{{ ghowner }}"
+    chineseroom_gitea_github_name: "{{ ghrepo }}"
+    chineseroom_gitea_checkout_name: "{{ coname }}"
+    chineseroom_gitea_checkout_path: "/mnt/aiworkspace/{{ coname }}"
+    chineseroom_gitea_repo_mirror_uri: "ssh://{{ gthost }}/{{ gtmirrororg }}/github--{{ ghowner }}--{{ ghrepo }}.git"
+    chineseroom_gitea_repo_fork_uri: "ssh://{{ gthost }}/{{ gtruser }}/github--{{ ghowner }}--{{ ghrepo }}.git"
 
 - name: Query GitHub API for {{ chineseroom_gitea_github_mirror.github_repo }}
   ansible.builtin.uri:
@@ -24,16 +34,16 @@
 
 # --- Gitea repo ---
 
-- name: Check if Gitea repo exists {{ chineseroom_gitea_name }}
+- name: Check if Gitea repo exists {{ chineseroom_gitea_repo_name }}
   ansible.builtin.uri:
-    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}"
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_repo_name }}"
     headers:
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: [200, 404]
   register: chineseroom_gitea_repo_check
 
-- name: Create Gitea repo {{ chineseroom_gitea_name }}
+- name: Create Gitea repo {{ chineseroom_gitea_repo_name }}
   ansible.builtin.uri:
     url: "https://{{ chineseroom_gitea_domain }}/api/v1/orgs/{{ chineseroom_gitea_mirror_org }}/repos"
     headers:
@@ -41,7 +51,7 @@
     method: POST
     body_format: json
     body:
-      name: "{{ chineseroom_gitea_name }}"
+      name: "{{ chineseroom_gitea_repo_name }}"
       description: "Mirror of https://github.com/{{ chineseroom_gitea_github_mirror.github_repo }}"
       private: false
       auto_init: false
@@ -51,18 +61,18 @@
 
 # --- Gitea webhook ---
 
-- name: Get webhooks for {{ chineseroom_gitea_name }}
+- name: Get webhooks for {{ chineseroom_gitea_repo_name }}
   ansible.builtin.uri:
-    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}/hooks"
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_repo_name }}/hooks"
     headers:
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: GET
     status_code: 200
   register: chineseroom_gitea_hooks
 
-- name: Add push webhook for {{ chineseroom_gitea_name }}
+- name: Add push webhook for {{ chineseroom_gitea_repo_name }}
   ansible.builtin.uri:
-    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}/hooks"
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_repo_name }}/hooks"
     headers:
       Authorization: "token {{ chineseroom_gitea_mirror_token }}"
     method: POST
@@ -146,82 +156,95 @@
 
 # --- Working clone (gitea system user) ---
 
-- name: Create working clone directory for {{ chineseroom_gitea_name }}
+- name: Create working clone directory for {{ chineseroom_gitea_repo_name }}
   ansible.builtin.file:
-    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_name }}"
+    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}"
     state: directory
     owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
     mode: "0750"
 
-- name: Initialise working clone and remotes for {{ chineseroom_gitea_name }}
+- name: Initialise working clone and remotes for {{ chineseroom_gitea_repo_name }}
   ansible.builtin.shell: |
     set -euo pipefail
-    cd "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_name }}"
+    cd "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}"
     git init -b "{{ chineseroom_gitea_github_default_branch }}"
     git lfs install
     git remote get-url origin 2>/dev/null \
       || git remote add origin \
-           "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}.git"
+           "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_repo_name }}.git"
     git remote get-url github 2>/dev/null \
       || git remote add github "git@github.com:{{ chineseroom_gitea_github_mirror.github_repo }}.git"
   args:
-    creates: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_name }}/.git"
+    creates: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}/.git"
   become: true
   become_user: "{{ chineseroom_gitea_user }}"
   no_log: true
 
-- name: Update origin remote URL for {{ chineseroom_gitea_name }}
+- name: Update origin remote URL for {{ chineseroom_gitea_repo_name }}
   community.general.ini_file:
-    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_name }}/.git/config"
+    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}/.git/config"
     section: 'remote "origin"'
     option: url
-    value: "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}.git"
+    value: "http://{{ chineseroom_gitea_mirror_user }}:{{ chineseroom_gitea_mirror_token }}@127.0.0.1:{{ chineseroom_gitea_http_port }}/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_repo_name }}.git"
     owner: "{{ chineseroom_gitea_user }}"
     mode: "0600"
   no_log: true
 
-- name: Create .git/gitea metadata directory for {{ chineseroom_gitea_name }}
+- name: Create .git/gitea metadata directory for {{ chineseroom_gitea_repo_name }}
   ansible.builtin.file:
-    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_name }}/.git/gitea"
+    path: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}/.git/gitea"
     state: directory
     owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
     mode: "0750"
 
-- name: Seed default-branch cache for {{ chineseroom_gitea_name }}
+- name: Seed default-branch cache for {{ chineseroom_gitea_repo_name }}
   ansible.builtin.copy:
     content: "{{ chineseroom_gitea_github_default_branch }}\n"
-    dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_name }}/.git/gitea/default-branch"
+    dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}/.git/gitea/default-branch"
     owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
     mode: "0640"
     force: false
 
-- name: Create auto-push marker for {{ chineseroom_gitea_name }}
+- name: Create auto-push marker for {{ chineseroom_gitea_repo_name }}
   ansible.builtin.copy:
     content: ""
-    dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_name }}/.git/gitea/auto-push"
+    dest: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}/.git/gitea/auto-push"
     owner: "{{ chineseroom_gitea_user }}"
     group: "{{ chineseroom_gitea_group }}"
     mode: "0640"
     force: false
+
+# This runs once (guarded by FETCH_HEAD); ongoing sync is handled by the webhook.
+- name: Initial sync from GitHub to Gitea of {{ chineseroom_gitea_repo_name }}
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}"
+    git fetch github
+    git push --mirror origin
+  args:
+    creates: "{{ chineseroom_gitea_mirrors_dir }}/{{ chineseroom_gitea_repo_name }}/.git/FETCH_HEAD"
+  become: true
+  become_user: "{{ chineseroom_gitea_user }}"
+  no_log: true
 
 # --- Restricted user fork and checkout ---
 
-- name: Check if fork exists for restricted user {{ chineseroom_gitea_name }}
+- name: Check if fork exists for restricted user {{ chineseroom_gitea_repo_name }}
   ansible.builtin.uri:
-    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_restricted_user }}/{{ chineseroom_gitea_name }}"
+    url: "https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_restricted_user }}/{{ chineseroom_gitea_repo_name }}"
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
     method: GET
     status_code: [200, 404]
   register: chineseroom_gitea_restricted_user_fork_check
 
-- name: Fork repo to restricted user {{ chineseroom_gitea_name }}
+- name: Fork repo to restricted user {{ chineseroom_gitea_repo_name }}
   ansible.builtin.uri:
     url: |
-      https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}/forks?sudo={{ chineseroom_restricted_user }}
+      https://{{ chineseroom_gitea_domain }}/api/v1/repos/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_repo_name }}/forks?sudo={{ chineseroom_restricted_user }}
     headers:
       Authorization: "token {{ chineseroom_gitea_admin_token }}"
     method: POST
@@ -230,29 +253,39 @@
     status_code: 202
   when: chineseroom_gitea_restricted_user_fork_check.status == 404
 
-- name: Clone or fetch restricted user fork {{ chineseroom_gitea_name }}
+- name: Clone restricted user fork of {{ chineseroom_gitea_repo_name }}
   ansible.builtin.shell: |
-    set -euo pipefail
-    dest="/mnt/aiworkspace/{{ chineseroom_gitea_checkout_name }}"
-    uri="ssh://{{ chineseroom_gitea_ssh_host }}/{{ chineseroom_restricted_user }}/{{ chineseroom_gitea_name }}.git"
-    if [ -d "${dest}/.git" ]; then
-      git -C "${dest}" fetch --all
-    else
-      git clone "$uri" "${dest}"
-      git lfs install
-      echo "NEW_CLONE"
+    set -eu
+    if ! [ -d "{{ chineseroom_gitea_checkout_path }}/.git" ]; then
+      git clone "{{ chineseroom_gitea_repo_fork_uri }}" "{{ chineseroom_gitea_checkout_path }}"
+      echo "DID_CHANGE"
     fi
   become: true
   become_user: "{{ chineseroom_restricted_user }}"
   register: chineseroom_gitea_restricted_user_clone_result
-  changed_when: "'NEW_CLONE' in chineseroom_gitea_restricted_user_clone_result.stdout"
+  changed_when: "'DID_CHANGE' in chineseroom_gitea_restricted_user_clone_result.stdout"
 
-- name: Add upstream remote to restricted user checkout of {{ chineseroom_gitea_name }}
+- name: Add upstream remote pointing to mirror of {{ chineseroom_gitea_repo_name }}
   ansible.builtin.shell: |
-    set -euo pipefail
-    dest="/mnt/aiworkspace/{{ chineseroom_gitea_checkout_name }}"
-    uri="ssh://{{ chineseroom_gitea_ssh_host }}/{{ chineseroom_gitea_mirror_org }}/{{ chineseroom_gitea_name }}.git"
-    git -C "${dest}" remote get-url upstream 2>/dev/null || git -C "${dest}" remote add upstream "$uri"
+    set -eu
+    if upstream_url="$(git remote get-url upstream 2>/dev/null)"; then
+      if test "$upstream_url" != "{{ chineseroom_gitea_repo_mirror_uri }}"; then
+        git remote set-url upstream "{{ chineseroom_gitea_repo_mirror_uri }}"
+        echo "DID_CHANGE"
+      fi
+    else
+      git remote add upstream "{{ chineseroom_gitea_repo_mirror_uri }}"
+      echo "DID_CHANGE"
+    fi
+  args:
+    chdir: "{{ chineseroom_gitea_checkout_path }}"
+  become: true
+  become_user: "{{ chineseroom_restricted_user }}"
+  register: chineseroom_gitea_restricted_user_add_upstream_result
+  changed_when: "'DID_CHANGE' in chineseroom_gitea_restricted_user_add_upstream_result.stdout"
+
+- name: Fetch all remotes of {{ chineseroom_gitea_repo_name }}
+  ansible.builtin.command: git -C "{{ chineseroom_gitea_checkout_path }}" fetch --all
   become: true
   become_user: "{{ chineseroom_restricted_user }}"
   changed_when: false
