@@ -1,0 +1,97 @@
+# Packages we install system-wide
+# -*- mode: shell-script; -*-
+# Works normally with blank lines and comment lines (but not same-line comments)
+abuild abuild-doc
+age age-doc
+# For calculating a bcrypt password with htpasswd
+apache2-utils
+alpine-sdk
+ansible ansible-core ansible-core-doc
+apk-tools-doc
+aws-cli
+bash bash-doc
+bash-completion
+black
+# For dig
+bind-tools
+busybox-doc
+ca-certificates ca-certificates-doc
+# I got tired of fucking with busybox's wget
+curl curl-doc
+docker docker-doc docker-bash-completion docker-zsh-completion
+docker-compose
+emacs-nox emacs-doc
+figlet figlet-doc
+file file-doc
+# Used for kubenrasty
+#flux@edgetesting flux-bash-completion@edgetesting flux-zsh-completion@edgetesting
+gcc
+git git-doc
+gopass gopass-doc gopass-bash-completion gopass-zsh-completion
+# Installs GPG 2.x, not 1.x (gnupg1 gnupg1-doc)
+# Sadly, Alpine doesn't offer a way to install them side by side
+gnupg gnupg-doc
+# Required for awscli to get its documentation
+groff groff-doc
+# For non busybox ping; busybox ping requires root privs, or setting net.ipv4.ping_group_range on the Docker *host*,
+# which is problematic on Windows/macOS which both use a Linux VM that is difficult to directly configure.
+iputils
+jq jq-doc
+# For matrix-docker-ansible-deploy
+just just-doc@edgecommunity just-zsh-completion
+kubectl@edgecommunity kubectl-bash-completion@edgecommunity kubectl-zsh-completion@edgecommunity
+# By default, busybox's less is /usr/bin/less; adding the less package makes the real less /usr/bin/less instead
+less less-doc
+# for (at least) PyNACL
+libffi-dev
+linux-headers
+make
+man-db man-db-doc man-pages
+minisign minisign-doc
+musl-dev
+# provides tput
+ncurses
+nebula
+neovim neovim-doc
+openssh-client openssh-doc
+openssl openssl-dev
+parallel parallel-doc
+pwgen pwgen-doc
+python3 python3-dev python3-doc
+py3-bcrypt
+py3-build
+py3-boto3
+# The cryptography package relies on rust to build;
+# it is much easier to get it from the apk repo than build it with pip.
+py3-cryptography
+py3-dnspython
+# Apparently required to install my whl into a directory for apk
+# https://wiki.alpinelinux.org/wiki/APKBUILD_examples:Python
+py3-installer
+py3-mypy
+py3-netaddr
+py3-passlib
+py3-pip py3-pip-doc
+py3-requests
+py3-setuptools
+py3-tz
+py3-wheel
+py3-yaml
+ripgrep ripgrep-doc ripgrep-bash-completion ripgrep-zsh-completion
+rsync rsync-doc
+ruby
+s3cmd
+shadow shadow-doc
+sops@edgecommunity
+sqlite sqlite-doc
+# Required for Ansible to use SSH password auth instead of public keys
+sshpass sshpass-doc
+strace strace-doc
+# Useful to have the 'ipsec' command when working with Algo
+strongswan strongswan-doc
+sudo sudo-doc
+tmux tmux-doc
+tzdata tzdata-doc
+wireguard-tools wireguard-tools-doc wireguard-tools-wg
+zip zip-doc
+zsh zsh-doc zsh-completions
