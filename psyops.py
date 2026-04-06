@@ -11,12 +11,6 @@ import textwrap
 from types import TracebackType
 
 
-MIN_PYTHON = (3, 6)
-if sys.version_info < MIN_PYTHON:
-    print(f"This script requires Python version {MIN_PYTHON}")
-    sys.exit(1)
-
-
 SCRIPTPATH = os.path.realpath(__file__)
 SCRIPTDIR = os.path.dirname(SCRIPTPATH)
 DOCKERDIR = os.path.join(SCRIPTDIR, "docker")
@@ -60,9 +54,6 @@ def dockerrun(
     hostname: str = "PSYOPS",
 ):
     """Run the Docker container"""
-    volperms = "rw"
-    volume = f"{SCRIPTDIR}:{psyopsvol}:{volperms}"
-
     runcli = [
         "docker",
         "run",
@@ -70,36 +61,21 @@ def dockerrun(
         "--interactive",
         "--tty",
         "--volume",
-        volume,
+        f"{SCRIPTDIR}:{psyopsvol}:rw",
         "--tmpfs",
         f"{tmpfsmount}:{tmpfsopts}",
         "--hostname",
         hostname,
+        *runargs.split(" "),
+        f"{imagename}:{imagetag}",
+        *containerargs.split(" "),
     ]
-
-    if runargs:
-        runcli += runargs.split(" ")
-    runcli += [f"{imagename}:{imagetag}"]
-    if containerargs:
-        runcli += containerargs.split(" ")
     logger.info(f"Running an image with: {' '.join(runcli)}")
-    retcode = subprocess.call(runcli)
-
-    suppressed_result_codes = [
-        130,  # probably SIGINT aka ctrl-c from the last program
-    ]
-    logger.info(f"'docker run' command exited with code '{retcode}'")
-    if retcode > 0 and retcode not in suppressed_result_codes:
-        raise Exception(f"'docker run' command exited with nonzero code '{retcode}'")
+    os.execvp(runcli[0], runcli)
 
 
 def dockerbuild(imagename: str, imagetag: str, additional_build_args: str = ""):
     """Build the Docker container"""
-
-    env = os.environ.copy()
-
-    # For fuck's sake
-    env["DOCKER_SCAN_SUGGEST"] = "false"
 
     build_time_vars_arg = ""
     if sys.platform.startswith("linux"):
@@ -113,21 +89,17 @@ def dockerbuild(imagename: str, imagetag: str, additional_build_args: str = ""):
     buildcli = [
         "docker",
         "build",
-    ]
-    buildcli += build_time_vars_arg
-    buildcli += [
+        *build_time_vars_arg,
         DOCKERDIR,
         "--progress",
         "plain",
         "--tag",
         f"{imagename}:{imagetag}",
+        *additional_build_args.split(" "),
     ]
-    if additional_build_args:
-        buildcli += additional_build_args.split(" ")
 
     logger.info(f"Building an image with:\n{buildcli}")
-
-    subprocess.check_call(buildcli, env=env)
+    subprocess.check_call(buildcli)
 
 
 class PsyopsArgumentCollection:
@@ -245,13 +217,14 @@ def main(args: list[str]):  # pylint: disable=W0613
     if parsed.debug:
         sys.excepthook = debugexchandler
 
-    logger.info(parsed)
-
-    if parsed.action == "build":
+    knownaction = False
+    if parsed.action in ["build", "buildrun"]:
+        knownaction = True
         dockerbuild(
             parsed.imagename, parsed.imagetag, additional_build_args=parsed.buildargs
         )
-    elif parsed.action == "run":
+    if parsed.action in ["run", "buildrun"]:
+        knownaction = True
         dockerrun(
             parsed.imagename,
             parsed.imagetag,
@@ -260,19 +233,7 @@ def main(args: list[str]):  # pylint: disable=W0613
             runargs=parsed.runargs,
             containerargs=parsed.containerargs,
         )
-    elif parsed.action == "buildrun":
-        dockerbuild(
-            parsed.imagename, parsed.imagetag, additional_build_args=parsed.buildargs
-        )
-        dockerrun(
-            parsed.imagename,
-            parsed.imagetag,
-            parsed.psyopsvol,
-            parsed.secretstmpfs,
-            runargs=parsed.runargs,
-            containerargs=parsed.containerargs,
-        )
-    else:
+    if not knownaction:
         print(f"Unknown action '{parsed.action}'")
         arguments.parser.print_usage()
         return 1
