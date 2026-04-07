@@ -16,6 +16,7 @@ case "$mode" in
     exec ssh-agent /usr/bin/tmux -u
     ;;
   claude)
+    cd /psyops
     exec claude --dangerously-skip-permissions
     ;;
   *)
