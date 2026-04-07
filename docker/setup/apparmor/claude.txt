@@ -1,0 +1,19 @@
+# AppArmor profile for claude running in the psyops container.
+#
+#Load on the Docker host before running in claude mode:
+#sudo apparmor_parser - r / path / to / docker / apparmor / psyops - claude
+#Or install to the standard location:
+#sudo install - m 644 docker / apparmor / psyops - claude / etc / apparmor.d / psyops - claude
+#sudo apparmor_parser - r / etc / apparmor.d / psyops - claude
+
+#include <tunables/global>
+
+profile claude
+{
+  #include <abstractions/base>
+  / psyops /** rwlk,
+  deny /psyops/.git/** w,
+  deny /psyops/.gitmodules w,
+  deny /psyops/.gitattributes w,
+  deny /psyops/**/.gitattributes w,
+}

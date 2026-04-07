@@ -8,6 +8,8 @@ apache2-utils
 alpine-sdk
 ansible ansible-core ansible-core-doc
 apk-tools-doc
+apparmor
+apparmor-utils
 aws-cli
 bash bash-doc
 bash-completion
