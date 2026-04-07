@@ -134,20 +134,10 @@ chmod 0664 /etc/localtime
 echo "${groupname}:x:${PSYOPS_GID}:" >> /etc/group
 adduser -D -G "$groupname" -u "$PSYOPS_UID" -s /bin/zsh "$username"
 usermod --password "$PSYOPS_USER_PASSWORD" "$username"
+echo "$username ALL=(ALL) ALL" > "/etc/sudoers.d/$username"
+chmod 0440 "/etc/sudoers.d/$username"
 adduser "$username" abuild
 adduser "$username" timekeeper
-
-# Sudo configuration. Last defined rule wins.
-# Configure sudo with a password
-echo "$username ALL=(ALL) ALL" > "/etc/sudoers.d/01-$username"
-# Configure passwordless sudo for aa commands
-cat >/etc/sudoers.d/50-apparmor-claude <<ENDSUDO
-Cmnd_Alias APPARMOR_SETUP = \
-    /sbin/apparmor_parser -r /etc/apparmor.d/claude, \
-    /usr/sbin/aa-enforce /etc/apparmor.d/claude
-$username ALL=(root) NOPASSWD: APPARMOR_SETUP
-ENDSUDO
-chmod 0440 "/etc/sudoers.d/01-$username" "/etc/sudoers.d/50-apparmor-claude"
 EOF
 
 # Passwordless sudo. DEVELOPMENT ONLY PLEASE.
@@ -157,17 +147,9 @@ set -eux
 if test "$enablesudo"; then
     echo "ENABLING PASSWORDLESS SUDO" >&2
     echo "sudo should only be enabled in development, since root privs in your container can probably be leveraged to root privs on your host" >&2
-    echo "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/02-$username"
-    chmod 0440 "/etc/sudoers.d/02-$username"
+    echo "$username ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$username"
+    chmod 0440 "/etc/sudoers.d/$username"
 fi
-EOF
-
-# AppArmor profile for Claude.
-RUN <<EOF
-set -eux
-mkdir -p /etc/apparmor.d
-chmod 755 /etc/apparmor.d
-cp "$psysetup"/apparmor/claude.txt /etc/apparmor.d/claude
 EOF
 
 # Configure my user. Changes more often
