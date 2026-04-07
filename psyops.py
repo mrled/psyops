@@ -48,6 +48,7 @@ def dockerrun(
     imagetag: str,
     psyopsvol: str,
     tmpfsmount: str,
+    mode: str = "interactive",
     runargs: str = "",
     containerargs: str = "",
     # Note: default tmpfs options are read only and noexec
@@ -69,6 +70,7 @@ def dockerrun(
         hostname,
         *shlex.split(runargs),
         f"{imagename}:{imagetag}",
+        mode,
         *shlex.split(containerargs),
     ]
     logger.info(f"Running an image with: {' '.join(runcli)}")
@@ -155,6 +157,12 @@ def makeparser() -> argparse.ArgumentParser:
         help="Additional arguments to pass to 'docker run'",
     )
     parser.add_argument(
+        "--mode",
+        choices=["interactive", "claude"],
+        default="interactive",
+        help="Container mode: 'interactive' (default) starts tmux, 'claude' runs claude",
+    )
+    parser.add_argument(
         "--container-passthru",
         dest="containerargs",
         default="",
@@ -195,6 +203,7 @@ def main(args: list[str]):
             parsed.imagetag,
             parsed.psyopsvol,
             parsed.secretstmpfs,
+            mode=parsed.mode,
             runargs=parsed.runargs,
             containerargs=parsed.containerargs,
         )
