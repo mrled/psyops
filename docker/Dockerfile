@@ -86,6 +86,10 @@ python3 -m venv /usr/local/systemvenv
     invoke
 echo 'case "$PATH" in *"/usr/local/systemvenv/bin"*);; *) export PATH="/usr/local/systemvenv/bin:$PATH";; esac' > /etc/profile.d/systemvenv.sh
 chmod 644 /etc/profile.d/systemvenv.sh
+
+# Add .local/bin to the PATH
+echo 'case "$PATH" in *"$HOME/.local/bin"*);; *) export PATH="$HOME/.local/bin:$PATH";; esac' > /etc/profile.d/homelocalbin.sh
+chmod 644 /etc/profile.d/homelocalbin.sh
 EOF
 
 ARG psysetup=/setup
@@ -207,6 +211,6 @@ chmod 700 $HOME/.gnupg $HOME/.ssh
 EOF
 
 CMD ["/bin/zsh", "-i"]
-ENTRYPOINT ["/bin/zsh", "-c", "$HOME/.entrypoint.sh \"%@\"", "--"]
+ENTRYPOINT ["/bin/zsh", "-c", "$HOME/.entrypoint.sh \"$@\"", "--"]
 # NOTE: run with 'docker run -it <imagename>'
 # You must run with -it so that it runs interactively and with a terminal assigned
