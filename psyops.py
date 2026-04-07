@@ -56,6 +56,25 @@ def dockerrun(
     hostname: str = "PSYOPS",
 ):
     """Run the Docker container"""
+    git_ro_mounts: list[str] = []
+    claude_home_mounts: list[str] = []
+    if mode == "claude":
+        for path in [".git", ".gitmodules"]:
+            src = os.path.join(SCRIPTDIR, path)
+            dst = os.path.join(psyopsvol, path)
+            git_ro_mounts += ["--volume", f"{src}:{dst}:ro"]
+
+        claudehome = os.path.join(SCRIPTDIR, "docker", "claudehome")
+        container_home = "/home/psyops"
+        claude_json = os.path.join(claudehome, ".claude.json")
+        if not os.path.exists(claude_json):
+            with open(claude_json, "w") as f:
+                f.write("{}\n")
+        for path in [".claude", ".claude.json"]:
+            src = os.path.join(claudehome, path)
+            dst = os.path.join(container_home, path)
+            claude_home_mounts += ["--volume", f"{src}:{dst}:rw"]
+
     runcli = [
         "docker",
         "run",
@@ -64,6 +83,8 @@ def dockerrun(
         "--tty",
         "--volume",
         f"{SCRIPTDIR}:{psyopsvol}:rw",
+        *git_ro_mounts,
+        *claude_home_mounts,
         "--tmpfs",
         f"{tmpfsmount}:{tmpfsopts}",
         "--hostname",

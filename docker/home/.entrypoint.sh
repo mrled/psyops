@@ -7,6 +7,7 @@ mkdir -p "$HOME/.local/bin"
 
 # Sets the $PATH and a bunch of other stuff
 $HOME/.dhd/opt/bin/dhd-shdetect
+. $HOME/.shdetect_dhd.sh
 
 mode=${1:-interactive}
 echo "Mode: $mode"
@@ -15,7 +16,7 @@ case "$mode" in
     exec ssh-agent /usr/bin/tmux -u
     ;;
   claude)
-    exec claude
+    exec claude --dangerously-skip-permissions
     ;;
   *)
     echo "Unknown mode: $mode" >&2

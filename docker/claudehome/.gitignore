@@ -1,0 +1,4 @@
+*
+!.gitignore
+!.claude/settings.json
+!readme.md
