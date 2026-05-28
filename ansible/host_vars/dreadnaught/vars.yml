@@ -101,6 +101,10 @@ chineseroom_gitea_github_mirrors:
       - subdomain: disquisition
         port: 1313
   - github_repo: mrled/bibliographer
+  - github_repo: mrled/chex.quest
+    domain_map:
+      - subdomain: chexquest
+        port: 24397
 
 chineseroom_gitea_restricted_user_privkeys:
   - filename: id_ed25519

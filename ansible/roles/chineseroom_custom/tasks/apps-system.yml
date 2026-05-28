@@ -24,6 +24,7 @@
   ansible.builtin.dnf:
     name:
       - atuin
+      - chromium
       - clang # used with linuxbrew a lot
       - curl
       - git-delta
