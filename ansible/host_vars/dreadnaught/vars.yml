@@ -105,6 +105,7 @@ chineseroom_gitea_github_mirrors:
     domain_map:
       - subdomain: chexquest
         port: 24397
+  - github_repo: mrled/darktable
 
 chineseroom_gitea_restricted_user_privkeys:
   - filename: id_ed25519
