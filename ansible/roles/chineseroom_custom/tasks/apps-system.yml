@@ -27,6 +27,7 @@
       - chromium
       - clang # used with linuxbrew a lot
       - curl
+      - firefox
       - git-delta
       - git-lfs
       - glow
