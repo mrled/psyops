@@ -10,7 +10,7 @@ seedbox_hostname: "{{ inventory_hostname }}"
 seedbox_k8s_k0s_version: "v1.36.1+k0s.0"
 seedbox_k8s_helm_version: "v3.14.4"
 seedbox_k8s_kubeseal_version: "0.26.0"
-seedbox_k8s_flux_version: "2.5.1"
+seedbox_k8s_flux_version: "2.8.8"
 
 # Additional SANs for the k0s API server certificate beyond the host IP.
 # seedbox_k8s_host_ip is always included automatically.
