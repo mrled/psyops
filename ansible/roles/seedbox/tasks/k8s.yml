@@ -81,10 +81,10 @@
     mode: "0644"
 
 # Uncomment AFTER upgrading to 1.36
-# - name: Remove legacy containerd v1 registry drop-in
-#   ansible.builtin.file:
-#     path: /etc/k0s/containerd.d/allow-insecure-cluster-registry.toml
-#     state: absent
+- name: Remove legacy containerd v1 registry drop-in
+  ansible.builtin.file:
+    path: /etc/k0s/containerd.d/allow-insecure-cluster-registry.toml
+    state: absent
 
 - name: Install k0s config
   ansible.builtin.template:
