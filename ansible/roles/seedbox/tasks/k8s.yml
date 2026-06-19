@@ -284,8 +284,7 @@
 
 - name: Generate admin kubeconfig
   ansible.builtin.shell: /usr/local/bin/k0s kubeconfig admin > /root/.kube/config
-  args:
-    creates: /root/.kube/config
+  when: seedbox_k0s_binary_result is changed or not ('/root/.kube/config' is file)
 
 - name: Ensure kubeconfig is mode 0600
   ansible.builtin.file:
