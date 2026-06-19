@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubfiles
+  namespace: tortuga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pubfiles
+  template:
+    metadata:
+      labels:
+        app: pubfiles
+    spec:
+      securityContext:
+        fsGroup: ${plexGid}
+      containers:
+        - name: caddy
+          image: caddy:2-alpine
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /etc/caddy/Caddyfile
+              name: caddyfile
+              readOnly: true
+              subPath: Caddyfile
+            - mountPath: /srv
+              name: seedboxmedia-nfs
+              readOnly: true
+            - mountPath: /srv/Trix
+              name: hidden-dir-mask
+              readOnly: true
+            - mountPath: /srv/usenet
+              name: hidden-dir-mask
+              readOnly: true
+            - mountPath: /srv/seedboxconf
+              name: hidden-dir-mask
+              readOnly: true
+            - mountPath: /srv/lost+found
+              name: hidden-dir-mask
+              readOnly: true
+      volumes:
+        - name: caddyfile
+          configMap:
+            name: pubfiles-caddyfile
+        - name: seedboxmedia-nfs
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc
+        - name: hidden-dir-mask
+          emptyDir: {}
