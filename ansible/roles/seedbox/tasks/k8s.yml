@@ -52,38 +52,39 @@
     group: root
     mode: "0755"
 
-# Uncomment when upgrading to k0s v1.36+ (containerd v2 migration)
-# - name: Create k0s and containerd config directories
-#   ansible.builtin.file:
-#     path: "{{ item }}"
-#     state: directory
-#     owner: root
-#     group: root
-#     mode: "0755"
-#   loop:
-#     - /etc/k0s/containerd.d
-#     - /etc/k0s/containerd.d/certs.d/registry.registry.svc.cluster.local
-#
+# Uncomment BEFORE upgrading to k0s v1.36+ (containerd v2 migration)
+- name: Create k0s and containerd config directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/k0s/containerd.d
+    - /etc/k0s/containerd.d/certs.d/registry.registry.svc.cluster.local
+
+- name: Install containerd registry config drop-in
+  ansible.builtin.template:
+    src: containerd-registry-config.toml.j2
+    dest: /etc/k0s/containerd.d/registry-config.toml
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install containerd cluster registry hosts.toml
+  ansible.builtin.template:
+    src: containerd-cluster-registry-hosts.toml.j2
+    dest: /etc/k0s/containerd.d/certs.d/registry.registry.svc.cluster.local/hosts.toml
+    owner: root
+    group: root
+    mode: "0644"
+
+# Uncomment AFTER upgrading to 1.36
 # - name: Remove legacy containerd v1 registry drop-in
 #   ansible.builtin.file:
 #     path: /etc/k0s/containerd.d/allow-insecure-cluster-registry.toml
 #     state: absent
-#
-# - name: Install containerd registry config drop-in
-#   ansible.builtin.template:
-#     src: containerd-registry-config.toml.j2
-#     dest: /etc/k0s/containerd.d/registry-config.toml
-#     owner: root
-#     group: root
-#     mode: "0644"
-#
-# - name: Install containerd cluster registry hosts.toml
-#   ansible.builtin.template:
-#     src: containerd-cluster-registry-hosts.toml.j2
-#     dest: /etc/k0s/containerd.d/certs.d/registry.registry.svc.cluster.local/hosts.toml
-#     owner: root
-#     group: root
-#     mode: "0644"
 
 - name: Install k0s config
   ansible.builtin.template:
