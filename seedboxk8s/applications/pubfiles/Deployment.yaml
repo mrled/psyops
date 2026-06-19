@@ -18,6 +18,9 @@ spec:
       containers:
         - name: caddy
           image: caddy:2-alpine
+          securityContext:
+            runAsUser: 6000
+            runAsGroup: 6000
           ports:
             - containerPort: 8080
           volumeMounts:
