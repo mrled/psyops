@@ -31,18 +31,6 @@ spec:
             - mountPath: /srv
               name: seedboxmedia-nfs
               readOnly: true
-            - mountPath: /srv/Trix
-              name: hidden-dir-mask
-              readOnly: true
-            - mountPath: /srv/usenet
-              name: hidden-dir-mask
-              readOnly: true
-            - mountPath: /srv/seedboxconf
-              name: hidden-dir-mask
-              readOnly: true
-            - mountPath: /srv/lost+found
-              name: hidden-dir-mask
-              readOnly: true
       volumes:
         - name: caddyfile
           configMap:
@@ -50,5 +38,3 @@ spec:
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc
-        - name: hidden-dir-mask
-          emptyDir: {}
