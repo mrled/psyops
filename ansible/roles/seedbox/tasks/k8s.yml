@@ -295,6 +295,14 @@
     mode: "0600"
 
 # Bootstrap Flux
+- name: Wait for k0s API server to be ready
+  ansible.builtin.command: /usr/local/bin/k0s kubectl get nodes
+  register: seedbox_k0s_api_ready
+  until: seedbox_k0s_api_ready.rc == 0
+  retries: 3
+  delay: 10
+  changed_when: false
+
 - name: Check if flux-system namespace exists
   ansible.builtin.command: /usr/local/bin/k0s kubectl get ns flux-system
   register: seedbox_flux_ns_check
