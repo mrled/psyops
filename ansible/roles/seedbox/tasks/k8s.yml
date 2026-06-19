@@ -108,6 +108,7 @@
     owner: root
     group: root
     mode: "0755"
+    force: true
   when: seedbox_k0s_version_check.rc != 0 or seedbox_k8s_k0s_version not in seedbox_k0s_version_check.stdout
   register: seedbox_k0s_binary_result
 
