@@ -6,14 +6,18 @@ RUN apt-get update \
         ca-certificates \
         curl \
         file \
+        fuse-overlayfs \
         git \
         gzip \
-        jq \
         iputils-ping \
+        jq \
+        podman \
         procps \
         python3 \
         ruby \
+        slirp4netns \
         sudo \
+        uidmap \
         zsh \
     && rm -rf /var/lib/apt/lists/*
 
@@ -31,7 +35,7 @@ RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.co
 
 RUN brew install --cask claude-code codex
 
-RUN brew install go kubectl yq helm uv fluxcd/tap/flux
+RUN brew install go kubectl yq helm uv sops fluxcd/tap/flux
 
 # ansible via uv tool (isolated, avoids Python version conflicts)
 RUN uv tool install ansible
