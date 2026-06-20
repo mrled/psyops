@@ -65,6 +65,12 @@ data:
         response.on("end", () => {
           if (response.statusCode < 200 || response.statusCode > 299) {
             console.error(`GitHub installation token request failed with HTTP ${response.statusCode}`);
+            if (response.statusCode === 404) {
+              console.error(
+                "Check that GITHUB_APP_INSTALLATION_ID is the installation ID for this app, " +
+                  "that GITHUB_APP_ID matches the private key, and that the app is installed on mrled/psyops.",
+              );
+            }
             console.error(body);
             process.exit(1);
           }

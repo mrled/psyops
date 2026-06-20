@@ -24,7 +24,8 @@ spec:
                 - -ec
               args:
                 - |
-                  export RENOVATE_TOKEN="$(node /etc/renovate/github-app-token.js)"
+                  RENOVATE_TOKEN="$(node /etc/renovate/github-app-token.js)"
+                  export RENOVATE_TOKEN
                   exec renovate
               env:
                 - name: LOG_LEVEL
