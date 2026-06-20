@@ -36,6 +36,10 @@ spec:
       # We only have one node in this cluster anyway;
       # without this the controller won't start.
       replicaCount: 1
+      # Required because the chart's controller podAntiAffinity prevents
+      # rolling updates from scheduling a replacement pod on a single node.
+      updateStrategy:
+        type: Recreate
     node:
       kubeletWorkDirectory: /var/lib/k0s/kubelet
     scheduler:
