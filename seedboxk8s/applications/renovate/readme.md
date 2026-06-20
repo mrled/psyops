@@ -36,13 +36,13 @@ Create the GitHub App:
 - After creation, record the App ID.
 - Generate and download a private key, then use the full PEM as `GITHUB_APP_PRIVATE_KEY`.
 - Install the App on only the `mrled/psyops` repository.
-- Record the installation ID from the installation URL or GitHub API, then use it as `GITHUB_APP_INSTALLATION_ID`.
+- The CronJob discovers the installation ID from the `mrled/psyops` repository at runtime.
 
-If the manual job logs `GitHub installation token request failed with HTTP 404`,
-the most likely cause is that `GITHUB_APP_INSTALLATION_ID` is not the installation ID
-for this GitHub App.
-It can also happen if `GITHUB_APP_ID` does not match the private key,
-or if the App has not been installed on `mrled/psyops`.
+If the manual job logs `GitHub App JWT validation failed`,
+check that `GITHUB_APP_ID` is the App ID, not the Client ID,
+and that `GITHUB_APP_PRIVATE_KEY` is a private key generated for that same App.
+If it logs `GitHub App installation lookup failed`,
+check that the App is installed on `mrled/psyops`.
 
 GitHub App repository permissions:
 
