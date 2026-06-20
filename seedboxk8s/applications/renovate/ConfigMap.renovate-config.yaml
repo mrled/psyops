@@ -6,9 +6,20 @@ metadata:
 data:
   config.json: |
     {
+      "automerge": false,
       "dependencyDashboard": true,
       "extends": ["config:recommended"],
+      "flux": {
+        "managerFilePatterns": [
+          "/^seedboxk8s/applications/.+\\.ya?ml$/",
+          "/^seedboxk8s/fluxroot/flux-system/gotk-components\\.ya?ml$/",
+          "/^seedboxk8s/fluxroot/helmrepos/.+\\.ya?ml$/"
+        ]
+      },
       "includePaths": ["seedboxk8s/**"],
+      "kubernetes": {
+        "managerFilePatterns": ["/^seedboxk8s/applications/.+\\.ya?ml$/"]
+      },
       "labels": ["renovate"],
       "onboarding": false,
       "platform": "github",
