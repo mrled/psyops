@@ -22,6 +22,84 @@ data:
       },
       "labels": ["renovate"],
       "onboarding": false,
+      "packageRules": [
+        {
+          "matchPackageNames": ["docker.io/library/registry"],
+          "changelogUrl": "https://github.com/distribution/distribution/releases"
+        },
+        {
+          "matchPackageNames": ["docker.io/library/traefik"],
+          "changelogUrl": "https://github.com/traefik/traefik/releases"
+        },
+        {
+          "matchPackageNames": ["docker.io/dexidp/dex"],
+          "changelogUrl": "https://github.com/dexidp/dex/releases"
+        },
+        {
+          "matchPackageNames": ["docker.io/jasongdove/ersatztv"],
+          "changelogUrl": "https://github.com/ErsatzTV/ErsatzTV/releases"
+        },
+        {
+          "matchPackageNames": ["docker.io/thomseddon/traefik-forward-auth"],
+          "changelogUrl": "https://github.com/thomseddon/traefik-forward-auth/releases"
+        },
+        {
+          "matchPackageNames": ["docker.io/cesanta/docker_auth"],
+          "changelogUrl": "https://github.com/cesanta/docker_auth/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/alexta69/metube"],
+          "changelogUrl": "https://github.com/alexta69/metube/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/tautulli/tautulli"],
+          "changelogUrl": "https://github.com/Tautulli/Tautulli/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/cops"],
+          "changelogUrl": "https://github.com/linuxserver/docker-cops/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/heimdall"],
+          "changelogUrl": "https://github.com/linuxserver/docker-heimdall/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/lazylibrarian"],
+          "changelogUrl": "https://github.com/linuxserver/docker-lazylibrarian/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/lidarr"],
+          "changelogUrl": "https://github.com/linuxserver/docker-lidarr/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/nzbhydra2"],
+          "changelogUrl": "https://github.com/linuxserver/docker-nzbhydra2/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/plex"],
+          "changelogUrl": "https://github.com/linuxserver/docker-plex/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/prowlarr"],
+          "changelogUrl": "https://github.com/linuxserver/docker-prowlarr/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/radarr"],
+          "changelogUrl": "https://github.com/linuxserver/docker-radarr/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/sabnzbd"],
+          "changelogUrl": "https://github.com/linuxserver/docker-sabnzbd/releases"
+        },
+        {
+          "matchPackageNames": ["ghcr.io/linuxserver/sonarr"],
+          "changelogUrl": "https://github.com/linuxserver/docker-sonarr/releases"
+        },
+        {
+          "matchPackageNames": ["quay.io/buildah/stable"],
+          "changelogUrl": "https://github.com/containers/buildah/releases"
+        }
+      ],
       "platform": "github",
       "branchConcurrentLimit": 0,
       "prConcurrentLimit": 0,
