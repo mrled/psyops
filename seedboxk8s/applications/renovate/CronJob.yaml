@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: renovate
+  namespace: renovate
+spec:
+  schedule: "17 4 * * *"
+  timeZone: America/Chicago
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: renovate
+              image: renovate/renovate:43.233.3
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -ec
+              args:
+                - |
+                  export RENOVATE_TOKEN="$(node /etc/renovate/github-app-token.js)"
+                  exec renovate
+              env:
+                - name: LOG_LEVEL
+                  value: info
+                - name: RENOVATE_CONFIG_FILE
+                  value: /etc/renovate/config.json
+                - name: RENOVATE_BASE_DIR
+                  value: /tmp/renovate
+                - name: RENOVATE_GIT_AUTHOR
+                  value: "Renovate Bot <psyops@micahrl.com>"
+              envFrom:
+                - secretRef:
+                    name: renovate-env
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 512Mi
+                limits:
+                  memory: 2Gi
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/renovate
+                  readOnly: true
+                - name: work
+                  mountPath: /tmp/renovate
+          volumes:
+            - name: config
+              configMap:
+                name: renovate-config
+            - name: work
+              emptyDir: {}
