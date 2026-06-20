@@ -23,6 +23,9 @@ data:
       "labels": ["renovate"],
       "onboarding": false,
       "platform": "github",
+      "branchConcurrentLimit": 0,
+      "prConcurrentLimit": 0,
+      "prHourlyLimit": 0,
       "requireConfig": "optional",
       "repositories": ["mrled/psyops"],
       "timezone": "America/Chicago"
