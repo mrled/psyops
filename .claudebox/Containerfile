@@ -1,0 +1,39 @@
+FROM debian:stable-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        file \
+        git \
+        gzip \
+        jq \
+        iputils-ping \
+        procps \
+        python3 \
+        ruby \
+        sudo \
+        zsh \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -u 1000 -s /bin/zsh claude \
+    && mkdir -p /home/linuxbrew \
+    && chown claude:claude /home/linuxbrew \
+    && echo "claude ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER claude
+
+ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew
+ENV PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:/home/claude/.local/bin:$PATH"
+
+RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+RUN brew install --cask claude-code codex
+
+RUN brew install go kubectl yq helm uv fluxcd/tap/flux
+
+# ansible via uv tool (isolated, avoids Python version conflicts)
+RUN uv tool install ansible
+
+WORKDIR /src
