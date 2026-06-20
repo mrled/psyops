@@ -18,7 +18,7 @@ spec:
         fsGroup: ${plexGid}
       initContainers:
         - name: import-data
-          image: busybox
+          image: busybox:1.38.0
           command:
             - sh
             - -c
@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ${x3Image}:latest
+        - image: ${x3Image}:v0.31.1
           name: x3
           securityContext:
             runAsUser: ${plexUid}

@@ -27,7 +27,7 @@ data:
     set -x
 
     # Build the image
-    container="$(buildah from alpine:latest)"
+    container="$(buildah from alpine:3.22.2)"
     buildah run "$container" -- apk add --no-cache privoxy
     buildah run "$container" -- mv /etc/privoxy/config.new /etc/privoxy/config
     buildah config \

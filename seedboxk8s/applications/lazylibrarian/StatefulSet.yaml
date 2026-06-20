@@ -18,7 +18,7 @@ spec:
         fsGroup: ${plexGid}
       initContainers:
         - name: import-data
-          image: busybox
+          image: busybox:1.38.0
           command: ["sh", "/data-import-helper/import-data.sh"]
           volumeMounts:
             - name: data-import-helper

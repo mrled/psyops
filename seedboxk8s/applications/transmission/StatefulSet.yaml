@@ -18,7 +18,7 @@ spec:
         fsGroup: ${plexGid}
       initContainers:
         - name: import-data
-          image: busybox
+          image: busybox:1.38.0
           command:
             - sh
             - -c
@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${productionClusterFqdn}/tortuga/transmission:latest
+        - image: registry.${productionClusterFqdn}/tortuga/transmission:latest@sha256:8374c362426216be741c2d31d0fd79677062218af09509a3647951dd37348c8a
           name: transmission
           securityContext:
             runAsUser: ${plexUid}

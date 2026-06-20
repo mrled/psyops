@@ -14,7 +14,7 @@ spec:
         app: tfa
     spec:
       containers:
-        - image: thomseddon/traefik-forward-auth:2
+        - image: docker.io/thomseddon/traefik-forward-auth:2@sha256:69a2c985d2c518b6f0e77161a98628a148a5d964e4e84fc52cc62e19bb4da634
           name: tfa
           ports:
             - containerPort: 4181

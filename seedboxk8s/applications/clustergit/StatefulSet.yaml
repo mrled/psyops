@@ -18,7 +18,7 @@ spec:
     spec:
       initContainers:
         - name: import-data
-          image: busybox
+          image: busybox:1.38.0
           command: ["sh", "/data-import-helper/import-data.sh"]
           volumeMounts:
             - name: data-import-helper
@@ -28,7 +28,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${productionClusterFqdn}/clustergit/clustergit:latest
+        - image: registry.${productionClusterFqdn}/clustergit/clustergit:latest@sha256:547270b88446b80b257a493af7d8021fda928dd8003040c15c1497447568ca55
           name: gitserver
           ports:
             - containerPort: 22

@@ -27,7 +27,7 @@ data:
     set -x
 
     # Build the image
-    container="$(buildah from debian:latest)"
+    container="$(buildah from debian:13.5)"
     buildah run "$container" -- apt-get update
     buildah run "$container" -- apt-get install -y tor
     buildah run "$container" -- rm -rf /var/lib/apt/lists/*

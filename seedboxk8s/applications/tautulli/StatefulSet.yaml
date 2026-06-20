@@ -18,7 +18,7 @@ spec:
         fsGroup: ${plexGid}
       initContainers:
         - name: import-data
-          image: busybox
+          image: busybox:1.38.0
           command:
             - sh
             - -c
@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ghcr.io/tautulli/tautulli
+        - image: ghcr.io/tautulli/tautulli:latest@sha256:f66f65c3e5b60b94eb9dc9848fbe983009b4705f1795e4c979b961251c9637ad
           name: tautulli
           ports:
             - containerPort: 8181

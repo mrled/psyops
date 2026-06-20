@@ -16,7 +16,7 @@ spec:
       serviceAccountName: dex
       initContainers:
       - name: unpack-theme
-        image: busybox
+        image: busybox:1.38.0
         command: ['sh', '-c', 'cp /mindcontrol-config/* /srv/dex/web/themes/mindcontrol/; cd /srv/dex/web/themes/mindcontrol; base64 -d il2_png_b64 > il2.png; ln -sf il2.png favicon.png; ln -sf il2.png logo.png;']
         volumeMounts:
         - name: mindcontrol-config
@@ -25,7 +25,7 @@ spec:
           mountPath: /srv/dex/web/themes/mindcontrol
       containers:
       - name: dex
-        image: dexidp/dex
+        image: docker.io/dexidp/dex:latest@sha256:70fbdd07f990ca00dc239bb9c7ef866914c5d7ea5cf10ea6ac4e8780d37738d9
         command: ['dex', 'serve', '/etc/dex/config.yaml']
         ports:
         - containerPort: 5556

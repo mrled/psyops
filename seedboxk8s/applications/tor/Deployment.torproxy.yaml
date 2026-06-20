@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: torproxy
-          image: registry.${productionClusterFqdn}/tor/torproxy:latest
+          image: registry.${productionClusterFqdn}/tor/torproxy:latest@sha256:e3d935a65acfd4320f78d869f2982b175668afbcdf484f5fd4b087e12c12f239
           ports:
             - name: torproxy
               containerPort: 9050

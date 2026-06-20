@@ -15,7 +15,7 @@ spec:
     spec:
       initContainers:
       - name: prepare-config
-        image: python:3-alpine
+        image: python:3.14.6-alpine3.24
         command: ["/usr/local/bin/python3", "/temple/temple.py", "/unprocessed/auth_config.yml", "/substitutions/substitutions.json", "/processed/auth_config.yml"]
         volumeMounts:
         - name: python-temple
@@ -28,7 +28,7 @@ spec:
           mountPath: /processed
       containers:
       - name: docker-auth
-        image: cesanta/docker_auth:1
+        image: docker.io/cesanta/docker_auth:1@sha256:7e7d7d9aa72850b9b4811cbe7fe61fdc5b5184bf8bfb3335350f9d11985b6f0a
         ports:
         - containerPort: 5001
         volumeMounts:

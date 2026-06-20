@@ -18,7 +18,7 @@ spec:
         fsGroup: ${plexGid}
       initContainers:
         - name: import-data
-          image: busybox
+          image: busybox:1.38.0
           command:
             - sh
             - -c
@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ghcr.io/linuxserver/heimdall
+        - image: ghcr.io/linuxserver/heimdall:v2.7.6-ls350
           name: heimdall
           ports:
             - containerPort: 80

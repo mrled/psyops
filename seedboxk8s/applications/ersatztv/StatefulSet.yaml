@@ -18,7 +18,7 @@ spec:
         fsGroup: ${plexGid}
       initContainers:
         - name: import-data
-          image: busybox
+          image: busybox:1.38.0
           command:
             - sh
             - -c
@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: jasongdove/ersatztv:develop-vaapi
+        - image: docker.io/jasongdove/ersatztv:develop-vaapi@sha256:a7e5696e042a879808b2822a50059a0b0aaba5ffba2603e39a8b5d9ca94896c4
           name: ersatztv
           ports:
             - containerPort: 8409

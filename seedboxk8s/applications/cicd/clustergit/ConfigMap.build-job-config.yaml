@@ -25,7 +25,7 @@ data:
     set -x
 
     # Build the image
-    container="$(buildah from alpine:3.19)"
+    container="$(buildah from alpine:3.19.9)"
     buildah run "$container" -- apk add --no-cache git openssh-server
 
     buildah run "$container" -- mkdir -p /home/git/.ssh

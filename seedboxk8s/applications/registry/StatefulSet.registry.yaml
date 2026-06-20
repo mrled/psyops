@@ -20,7 +20,7 @@ spec:
     spec:
       initContainers:
         - name: import-data
-          image: busybox
+          image: busybox:1.38.0
           command: ["sh", "/data-import-helper/import-data.sh"]
           volumeMounts:
             - name: data-import-helper
@@ -31,7 +31,7 @@ spec:
               mountPath: /import
       containers:
         - name: registry
-          image: registry:2
+          image: docker.io/library/registry:2@sha256:4fac7a8257b1d7a86599043fcc181dfbdf9c8f57e337db763ac94b0e67c6cfb5
           env:
             - name: REGISTRY_AUTH
               value: "token"

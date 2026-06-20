@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: onionproxy
-          image: nginx:latest
+          image: nginx:1.31.2
           ports:
             - name: web
               containerPort: 80

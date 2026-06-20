@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: torprivoxy
-          image: registry.${productionClusterFqdn}/tor/torprivoxy:latest
+          image: registry.${productionClusterFqdn}/tor/torprivoxy:latest@sha256:f663ab96130930482c781699a174649acfea88a4bf7e92a2e70b56a25bc870f8
           ports:
             - name: torprivoxy
               containerPort: 8118
