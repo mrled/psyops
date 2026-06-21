@@ -9,6 +9,9 @@ spec:
     kind: ClusterIssuer
     name: selfsigned
   secretName: docker-auth-cert-backing-secret
+  # This key signs Docker registry auth tokens; keep it stable across renewals.
+  privateKey:
+    rotationPolicy: Never
   duration: 2160h # 90 days
   renewBefore: 360h # 15 days before expiration
   subject:
