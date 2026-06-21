@@ -16,7 +16,7 @@ spec:
     externalAccountBinding:
       keyID: Mw3AqUA-9TpLcNOBJkGpHA
       keySecretRef:
-        name: zerossl-eab-hmac
+        name: zerossl-eab
         key: eab-hmac
       keyAlgorithm: HS256
 
