@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: docker.io/jasongdove/ersatztv:develop-vaapi@sha256:a7e5696e042a879808b2822a50059a0b0aaba5ffba2603e39a8b5d9ca94896c4
+        - image: ghcr.io/ersatztv/legacy:develop@sha256:6a60bba98387544929d09fdce85a9dfe249ef64ea378504b5b659486ece57df9
           name: ersatztv
           ports:
             - containerPort: 8409

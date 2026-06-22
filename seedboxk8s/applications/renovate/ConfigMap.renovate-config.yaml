@@ -36,7 +36,7 @@ data:
           "changelogUrl": "https://github.com/dexidp/dex/releases"
         },
         {
-          "matchPackageNames": ["docker.io/jasongdove/ersatztv"],
+          "matchPackageNames": ["ghcr.io/ersatztv/legacy"],
           "changelogUrl": "https://github.com/ErsatzTV/ErsatzTV/releases"
         },
         {
