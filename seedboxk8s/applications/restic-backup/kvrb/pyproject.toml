@@ -1,0 +1,18 @@
+[project]
+name = "kvrb"
+version = "0.0.0"
+description = "Kubernetes Volume Restic Backup"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+kvrb = "kvrb.__main__:main"
+
+[tool.ruff]
+line-length = 120
+
+[tool.black]
+line-length = 120
+
+[tool.mypy]
+strict = true

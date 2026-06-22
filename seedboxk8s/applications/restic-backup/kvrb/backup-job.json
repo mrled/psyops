@@ -1,0 +1,61 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "$JOB_NAME",
+    "namespace": "$NAMESPACE"
+  },
+  "spec": {
+    "backoffLimit": 0,
+    "template": {
+      "spec": {
+        "restartPolicy": "Never",
+        "containers": [
+          {
+            "name": "restic",
+            "image": "alpine:3.22",
+            "imagePullPolicy": "IfNotPresent",
+            "envFrom": [
+              {
+                "secretRef": {
+                  "name": "$SECRET_NAME"
+                }
+              }
+            ],
+            "command": ["/bin/sh", "-ceu"],
+            "args": [
+              "apk add --no-cache ca-certificates restic\nrestic snapshots >/dev/null 2>&1 || restic init\nrestic backup $SOURCE_MOUNT --host seedboxk8s --tag namespace=$${POD_NAMESPACE} --tag pvc=$PVC_NAME\nrestic forget --keep-daily 14 --keep-weekly 8 --keep-monthly 120 --prune"
+            ],
+            "env": [
+              {
+                "name": "POD_NAMESPACE",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              }
+            ],
+            "volumeMounts": [
+              {
+                "name": "source",
+                "mountPath": "$SOURCE_MOUNT",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "source",
+            "persistentVolumeClaim": {
+              "claimName": "$PVC_NAME",
+              "readOnly": true
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+

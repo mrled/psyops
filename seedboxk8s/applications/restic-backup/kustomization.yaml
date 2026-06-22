@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - Namespace.yaml
+  - Secret.restic-backup-env.yaml
+  - RBAC.yaml
+  - CronJob.yaml
+configMapGenerator:
+  - name: kvrb-module
+    namespace: restic-backup
+    files:
+      - __init__.py=kvrb/__init__.py
+      - __main__.py=kvrb/__main__.py
+      - backup.py=kvrb/backup.py
+      - config.py=kvrb/config.py
+      - kube.py=kvrb/kube.py
+      - manifests.py=kvrb/manifests.py
+      - backup-job.json=kvrb/backup-job.json
+      - restic-secret.json=kvrb/restic-secret.json

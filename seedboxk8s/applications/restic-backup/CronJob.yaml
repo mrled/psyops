@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: restic-backup
+  namespace: restic-backup
+spec:
+  # Keep suspended until the secret values are filled and a manual run succeeds.
+  suspend: true
+  schedule: "0 5 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: restic-backup
+          containers:
+            - name: backup
+              image: alpine:3.22
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - secretRef:
+                    name: restic-backup-env
+              command:
+                - /bin/sh
+                - -ceu
+              args:
+                - |
+                  apk add --no-cache ca-certificates kubectl python3
+                  PYTHONPATH=/opt python3 -m kvrb
+              volumeMounts:
+                - name: kvrb-module
+                  mountPath: /opt/kvrb
+                  readOnly: true
+          volumes:
+            - name: kvrb-module
+              configMap:
+                name: kvrb-module
+                defaultMode: 0555
