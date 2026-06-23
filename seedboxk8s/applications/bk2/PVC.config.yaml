@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: bk2-metube-state-pvc
   namespace: tortuga
+  annotations:
+    backup.seedboxk8s.micahrl.com/enabled: "false"
 spec:
   accessModes:
   - ReadWriteOnce

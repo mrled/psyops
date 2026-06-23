@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: prowlarr-config-pvc
   namespace: tortuga
+  annotations:
+    backup.seedboxk8s.micahrl.com/enabled: "false"
 spec:
   accessModes:
   - ReadWriteOnce

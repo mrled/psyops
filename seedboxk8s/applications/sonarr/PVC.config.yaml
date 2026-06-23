@@ -3,6 +3,11 @@ kind: PersistentVolumeClaim
 metadata:
   name: sonarr-config-pvc
   namespace: tortuga
+  annotations:
+    backup.seedboxk8s.micahrl.com/enabled: "false"
+    backup.seedboxk8s.micahrl.com/exclude: |
+      /source/logs
+      /source/MediaCover
 spec:
   accessModes:
   - ReadWriteOnce

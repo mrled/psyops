@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: tautulli-config-pvc
   namespace: tortuga
+  annotations:
+    backup.seedboxk8s.micahrl.com/enabled: "false"
 spec:
   accessModes:
   - ReadWriteOnce

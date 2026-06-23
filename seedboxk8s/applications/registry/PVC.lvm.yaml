@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: registry-lvm-pvc
   namespace: registry
+  annotations:
+    backup.seedboxk8s.micahrl.com/enabled: "false"
 spec:
   accessModes:
   - ReadWriteOnce
