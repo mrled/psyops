@@ -65,6 +65,7 @@ def acquire_lock() -> str:
         "-",
         check=False,
         input_text=json.dumps(lease_manifest(holder)),
+        log_output=False,
     )
     if result.returncode == 0:
         print(f"Acquired backup lock {LOCK_LEASE_NAMESPACE}/{LOCK_LEASE_NAME} as {holder}", flush=True)

@@ -15,11 +15,18 @@ class Workload(TypedDict):
     name: str
 
 
-def kubectl(*args: str, check: bool = True, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
+def kubectl(
+    *args: str,
+    check: bool = True,
+    input_text: str | None = None,
+    log_command: bool = True,
+    log_output: bool = True,
+) -> subprocess.CompletedProcess[str]:
     """Run kubectl, logging the command and its output."""
 
     command = ["kubectl", *args]
-    print("+ " + " ".join(command), flush=True)
+    if log_command:
+        print("+ " + " ".join(command), flush=True)
     result = subprocess.run(
         command,
         check=False,
@@ -28,15 +35,16 @@ def kubectl(*args: str, check: bool = True, input_text: str | None = None) -> su
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
-    if result.stdout:
+    if log_output and result.stdout:
         print(result.stdout, end="", flush=True)
     if check and result.returncode != 0:
-        raise RuntimeError(f"command failed with exit code {result.returncode}: {' '.join(command)}")
+        detail = f": {result.stdout.strip()}" if result.stdout else ""
+        raise RuntimeError(f"command failed with exit code {result.returncode}: {' '.join(command)}{detail}")
     return result
 
 
 def kubectl_json(*args: str) -> JsonMap:
-    return cast(JsonMap, json.loads(kubectl(*args).stdout))
+    return cast(JsonMap, json.loads(kubectl(*args, log_output=False).stdout))
 
 
 def sanitize_name(value: str) -> str:
@@ -66,6 +74,8 @@ def eligible_pvcs() -> list[JsonMap]:
             print(f"Skipping {pvc['metadata']['namespace']}/{pvc['metadata']['name']}: PVC is not Bound", flush=True)
             continue
         selected.append(pvc)
+    selected_names = [f"{pvc['metadata']['namespace']}/{pvc['metadata']['name']}" for pvc in selected]
+    print(f"Found {len(selected)} opted-in PVC(s): {', '.join(selected_names) or 'none'}", flush=True)
     return selected
 
 
@@ -153,7 +163,13 @@ def workloads_for_pvc(namespace: str, pvc_name: str) -> list[Workload]:
             continue
         workload = workload_for_pod(pod)
         workloads[(workload["api"], workload["namespace"], workload["name"])] = workload
-    return list(workloads.values())
+    selected = list(workloads.values())
+    workload_names = [f"{workload['namespace']}/{workload['api']}/{workload['name']}" for workload in selected]
+    print(
+        f"Found {len(selected)} workload(s) using {namespace}/{pvc_name}: {', '.join(workload_names) or 'none'}",
+        flush=True,
+    )
+    return selected
 
 
 def delete_stale_backup_jobs(namespace: str, pvc_name: str, current_job_name: str) -> None:
@@ -182,6 +198,7 @@ def scale(workload: Workload, replicas: int) -> None:
 def wait_for_no_pods_using_pvc(namespace: str, pvc_name: str, timeout: int = 600) -> None:
     """Wait for all pods using the given PVC to terminate, or raise a TimeoutError after the specified timeout."""
     deadline = time.time() + timeout
+    last_active: list[str] | None = None
     while time.time() < deadline:
         pods = pods_using_pvc(namespace, pvc_name)
         active = [
@@ -191,7 +208,13 @@ def wait_for_no_pods_using_pvc(namespace: str, pvc_name: str, timeout: int = 600
         ]
         if not active:
             return
-        print(f"Waiting for {len(active)} pod(s) using {namespace}/{pvc_name} to terminate", flush=True)
+        active_names = [pod["metadata"]["name"] for pod in active]
+        if active_names != last_active:
+            print(
+                f"Waiting for {len(active)} pod(s) using {namespace}/{pvc_name} to terminate: {', '.join(active_names)}",
+                flush=True,
+            )
+            last_active = active_names
         time.sleep(POLL_SECONDS)
     raise TimeoutError(f"timed out waiting for pods using {namespace}/{pvc_name} to terminate")
 
@@ -199,12 +222,18 @@ def wait_for_no_pods_using_pvc(namespace: str, pvc_name: str, timeout: int = 600
 def wait_for_job(namespace: str, name: str) -> None:
     """Wait for the given Kubernetes Job to complete successfully, or raise an error if it fails or times out."""
     deadline = time.time() + JOB_TIMEOUT_SECONDS
+    last_log = 0.0
+    print(f"Waiting for backup job {namespace}/{name}", flush=True)
     while time.time() < deadline:
         job = kubectl_json("-n", namespace, "get", "job", name, "-o", "json")
         status = job.get("status", {})
         if status.get("succeeded", 0) >= 1:
+            print(f"Backup job {namespace}/{name} completed", flush=True)
             return
         if status.get("failed", 0) >= 1:
             raise RuntimeError(f"backup job {namespace}/{name} failed")
+        if time.time() - last_log >= 60:
+            print(f"Backup job {namespace}/{name} is still running", flush=True)
+            last_log = time.time()
         time.sleep(POLL_SECONDS)
     raise TimeoutError(f"backup job {namespace}/{name} timed out")
