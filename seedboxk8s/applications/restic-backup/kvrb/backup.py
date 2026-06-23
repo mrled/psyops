@@ -8,6 +8,7 @@ from kvrb.kube import (
     delete_stale_backup_jobs,
     eligible_pvcs,
     get_replicas,
+    job_logs,
     kubectl,
     scale,
     short_name,
@@ -52,6 +53,7 @@ def backup_pvc(pvc: JsonMap) -> None:
     delete_stale_backup_jobs(namespace, pvc_name, job_name)
     workloads = workloads_for_pvc(namespace, pvc_name)
     original_replicas: dict[tuple[str, str, str], tuple[Workload, int]] = {}
+    job_created = False
 
     print(f"Backing up {namespace}/{pvc_name} to {repository}", flush=True)
     if excludes:
@@ -76,8 +78,11 @@ def backup_pvc(pvc: JsonMap) -> None:
             "-",
             input_text=json.dumps(backup_job_manifest(namespace, job_name, temp_secret, pvc_name, excludes)),
         )
+        job_created = True
         wait_for_job(namespace, job_name)
     finally:
+        if job_created:
+            job_logs(namespace, job_name)
         kubectl("-n", namespace, "delete", "job", job_name, "--ignore-not-found=true", check=False)
         kubectl("-n", namespace, "delete", "secret", temp_secret, "--ignore-not-found=true", check=False)
         for workload, replicas in reversed(list(original_replicas.values())):

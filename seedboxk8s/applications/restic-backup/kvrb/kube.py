@@ -237,3 +237,10 @@ def wait_for_job(namespace: str, name: str) -> None:
             last_log = time.time()
         time.sleep(POLL_SECONDS)
     raise TimeoutError(f"backup job {namespace}/{name} timed out")
+
+
+def job_logs(namespace: str, name: str) -> None:
+    """Print logs from all pods owned by a Job without failing the controller."""
+    print(f"Begin logs for job {namespace}/{name}", flush=True)
+    kubectl("-n", namespace, "logs", f"job/{name}", "--all-containers=true", "--timestamps=true", "--prefix=true", check=False) # fmt: skip
+    print(f"End logs for job {namespace}/{name}", flush=True)
