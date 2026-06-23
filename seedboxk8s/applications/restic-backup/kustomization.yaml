@@ -15,6 +15,7 @@ configMapGenerator:
       - backup.py=kvrb/backup.py
       - config.py=kvrb/config.py
       - kube.py=kvrb/kube.py
+      - lock.py=kvrb/lock.py
       - manifests.py=kvrb/manifests.py
       - backup-job.json=kvrb/backup-job.json
       - restic-secret.json=kvrb/restic-secret.json
