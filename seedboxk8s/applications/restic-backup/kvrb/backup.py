@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 
+from kvrb.config import EXCLUDE_ANNOTATION
 from kvrb.kube import (
     JsonMap,
     Workload,
@@ -23,6 +24,13 @@ class BackupFailures(Exception):
         self.failures = failures
 
 
+def pvc_excludes(pvc: JsonMap) -> list[str]:
+    """Return non-empty restic exclusion lines from a PVC annotation."""
+    annotations = pvc.get("metadata", {}).get("annotations", {})
+    raw_excludes = annotations.get(EXCLUDE_ANNOTATION, "")
+    return [line.strip() for line in raw_excludes.splitlines() if line.strip()]
+
+
 def backup_pvc(pvc: JsonMap) -> None:
     """Back up the given PVC to the configured repository.
 
@@ -38,6 +46,7 @@ def backup_pvc(pvc: JsonMap) -> None:
     namespace = pvc["metadata"]["namespace"]
     pvc_name = pvc["metadata"]["name"]
     repository = restic_repository(namespace, pvc_name)
+    excludes = pvc_excludes(pvc)
     temp_secret = short_name("restic", pvc_name, "env")
     job_name = short_name("restic", pvc_name)
     delete_stale_backup_jobs(namespace, pvc_name, job_name)
@@ -45,6 +54,8 @@ def backup_pvc(pvc: JsonMap) -> None:
     original_replicas: dict[tuple[str, str, str], tuple[Workload, int]] = {}
 
     print(f"Backing up {namespace}/{pvc_name} to {repository}", flush=True)
+    if excludes:
+        print(f"Using {len(excludes)} restic exclude pattern(s): {', '.join(excludes)}", flush=True)
     if not workloads:
         print(
             f"No active workload currently uses {namespace}/{pvc_name}; backing up without scaling",
@@ -63,7 +74,7 @@ def backup_pvc(pvc: JsonMap) -> None:
             "create",
             "-f",
             "-",
-            input_text=json.dumps(backup_job_manifest(namespace, job_name, temp_secret, pvc_name)),
+            input_text=json.dumps(backup_job_manifest(namespace, job_name, temp_secret, pvc_name, excludes)),
         )
         wait_for_job(namespace, job_name)
     finally:

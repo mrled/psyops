@@ -12,6 +12,56 @@ PVCs opt in with this annotation:
 backup.seedboxk8s.micahrl.com/enabled: "true"
 ```
 
+## Exclusions
+
+Some application config PVCs contain caches, generated artwork, or logs that do
+not need to be backed up. Exclusions should live on the PVC that opts into
+backup, so the backup policy stays next to the volume it applies to.
+
+The annotation is:
+
+```yaml
+backup.seedboxk8s.micahrl.com/exclude: |
+  /source/logs
+  /source/MediaCover
+```
+
+The backup Job mounts the PVC at `/source`, so exclusion paths should be written
+from that mount point. For example, the old host-level seedbox backup excluded
+paths like `/seedboxmedia/seedboxconf/radarr/logs`; in Kubernetes, the Radarr
+config PVC is mounted at `/source`, so the equivalent exclusion is
+`/source/logs`.
+
+Examples:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-config-pvc
+  namespace: tortuga
+  annotations:
+    backup.seedboxk8s.micahrl.com/enabled: "true"
+    backup.seedboxk8s.micahrl.com/exclude: |
+      /source/logs
+      /source/MediaCover
+```
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-config-pvc
+  namespace: tortuga
+  annotations:
+    backup.seedboxk8s.micahrl.com/enabled: "true"
+    backup.seedboxk8s.micahrl.com/exclude: |
+      /source/Library/Application Support/Plex Media Server/Cache
+```
+
+The controller writes each non-empty annotation line to a restic exclude file
+and passes it to the PVC's backup Job with `--exclude-file`.
+
 The `restic-backup-config` ConfigMap must set:
 
 - `AWS_DEFAULT_REGION`: S3-compatible bucket region.

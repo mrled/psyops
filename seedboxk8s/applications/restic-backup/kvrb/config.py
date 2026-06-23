@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 ANNOTATION = "backup.seedboxk8s.micahrl.com/enabled"
+EXCLUDE_ANNOTATION = "backup.seedboxk8s.micahrl.com/exclude"
 AWS_DEFAULT_REGION = os.environ["AWS_DEFAULT_REGION"]
 AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
 AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]

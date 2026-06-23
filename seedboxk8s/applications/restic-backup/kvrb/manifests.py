@@ -46,7 +46,13 @@ def create_temp_secret(namespace: str, name: str, repository: str) -> None:
     kubectl("create", "-f", "-", input_text=rendered)
 
 
-def backup_job_manifest(namespace: str, name: str, secret_name: str, pvc_name: str) -> JsonMap:
+def backup_job_manifest(
+    namespace: str,
+    name: str,
+    secret_name: str,
+    pvc_name: str,
+    excludes: list[str] | None = None,
+) -> JsonMap:
     """Return a Kubernetes Job manifest for backing up the given PVC."""
     rendered = Template(BACKUP_JOB_TEMPLATE.read_text()).substitute(
         JOB_NAME=name,
@@ -55,4 +61,9 @@ def backup_job_manifest(namespace: str, name: str, secret_name: str, pvc_name: s
         SECRET_NAME=secret_name,
         SOURCE_MOUNT=SOURCE_MOUNT,
     )
-    return cast(JsonMap, json.loads(rendered))
+    manifest = cast(JsonMap, json.loads(rendered))
+    exclude_lines = "\n".join(excludes or [])
+    if exclude_lines:
+        container = manifest["spec"]["template"]["spec"]["containers"][0]
+        container["env"].append({"name": "RESTIC_EXCLUDES", "value": exclude_lines})
+    return manifest

@@ -42,7 +42,7 @@
             ],
             "command": ["/bin/sh", "-ceu"],
             "args": [
-              "apk add --no-cache ca-certificates restic\nrestic version\necho 'Checking restic repository'\nrestic snapshots || { echo 'Initializing restic repository'; restic init; }\necho 'Backing up $SOURCE_MOUNT'\nrestic backup $SOURCE_MOUNT --host seedboxk8s --tag namespace=$${POD_NAMESPACE} --tag pvc=$PVC_NAME --verbose\necho 'Applying restic retention policy'\nrestic forget --keep-daily 14 --keep-weekly 8 --keep-monthly 120 --prune"
+              "apk add --no-cache ca-certificates restic\nrestic version\necho 'Checking restic repository'\nrestic snapshots || { echo 'Initializing restic repository'; restic init; }\nexclude_args=''\nif test -n \"$${RESTIC_EXCLUDES:-}\"; then\n  printf '%s\\n' \"$${RESTIC_EXCLUDES}\" > /tmp/restic-excludes\n  echo 'Using restic exclude file:'\n  cat /tmp/restic-excludes\n  exclude_args='--exclude-file /tmp/restic-excludes'\nfi\necho 'Backing up $SOURCE_MOUNT'\nrestic backup $SOURCE_MOUNT $${exclude_args} --host seedboxk8s --tag namespace=$${POD_NAMESPACE} --tag pvc=$PVC_NAME --verbose\necho 'Applying restic retention policy'\nrestic forget --keep-daily 14 --keep-weekly 8 --keep-monthly 120 --prune"
             ],
             "env": [
               {
