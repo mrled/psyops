@@ -1,0 +1,5 @@
+---
+wasabi_region: us-central-1
+wasabi_s3_endpoint_url: "https://s3.{{ wasabi_region }}.wasabisys.com"
+wasabi_iam_endpoint_url: https://iam.wasabisys.com
+wasabi_krvb_seedbox_create_credential: "{{ wasabi_create_credential | default(false) }}"

@@ -1,0 +1,12 @@
+---
+- name: Ensure Wasabi admin credentials are available
+  ansible.builtin.assert:
+    that:
+      - wasabi_root_access_key | length > 0
+      - wasabi_root_secret_key | length > 0
+    fail_msg: >-
+      Set vault_wasabi_root_access_key and vault_wasabi_root_secret_key,
+      or export WASABI_ACCESS_KEY_ID and WASABI_SECRET_ACCESS_KEY.
+
+- name: Manage seedboxk8s krvb resources
+  ansible.builtin.import_tasks: krvb.yml

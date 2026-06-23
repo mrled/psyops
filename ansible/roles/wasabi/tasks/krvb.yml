@@ -1,0 +1,138 @@
+---
+# Wasabi does not let you retrieve a secret access key after initial creation.
+# By default, this role creates the service user but does not create an access
+# key. To create the access key with Ansible, run:
+#
+#   ansible-playbook _wasabi.yml -e wasabi_krvb_seedbox_create_credential=true
+#
+# Capture the play output immediately. If you do not use Ansible for the key,
+# create it in the Wasabi console:
+#
+#   Users -> SeedboxK8sKrvbBackupUser -> Access Keys -> Create Access Key
+#
+# Copy/download the access key and secret key immediately, then save them into:
+#
+#   /src/seedboxk8s/applications/restic-backup/Secret.restic-backup-env.yaml
+#
+# Required secret values:
+#
+#   AWS_ACCESS_KEY_ID: <new key for SeedboxK8sKrvbBackupUser>
+#   AWS_SECRET_ACCESS_KEY: <new secret key, only visible at creation time>
+#   RESTIC_PASSWORD: <new long restic repository password>
+#   RESTIC_REPOSITORY_BASE: s3:s3.us-central-1.wasabisys.com/micahrl-seedboxk8s-krvb/seedboxk8s/restic
+#
+# Run sops on that file before committing.
+
+- name: Set seedboxk8s krvb Wasabi resource names
+  ansible.builtin.set_fact:
+    wasabi_krvb_bucket: micahrl-seedboxk8s-krvb
+    wasabi_krvb_user: SeedboxK8sKrvbBackupUser
+    wasabi_krvb_policy_name: SeedboxK8sKrvbBucketAccess
+
+- name: Create seedboxk8s krvb bucket
+  amazon.aws.s3_bucket:
+    name: "{{ wasabi_krvb_bucket }}"
+    state: present
+    region: "{{ wasabi_region }}"
+    endpoint_url: "{{ wasabi_s3_endpoint_url }}"
+    aws_access_key: "{{ wasabi_root_access_key }}"
+    aws_secret_key: "{{ wasabi_root_secret_key }}"
+  no_log: true
+
+- name: Create seedboxk8s krvb service user
+  amazon.aws.iam_user:
+    name: "{{ wasabi_krvb_user }}"
+    state: present
+    region: "us-east-1" # This MUST be us-east-1 for IAM stuff
+    endpoint_url: "{{ wasabi_iam_endpoint_url }}"
+    aws_access_key: "{{ wasabi_root_access_key }}"
+    aws_secret_key: "{{ wasabi_root_secret_key }}"
+  no_log: true
+
+- name: Give seedboxk8s krvb service user bucket-scoped access
+  amazon.aws.iam_policy:
+    iam_type: user
+    iam_name: "{{ wasabi_krvb_user }}"
+    policy_name: "{{ wasabi_krvb_policy_name }}"
+    state: present
+    region: "us-east-1"
+    endpoint_url: "{{ wasabi_iam_endpoint_url }}"
+    aws_access_key: "{{ wasabi_root_access_key }}"
+    aws_secret_key: "{{ wasabi_root_secret_key }}"
+    policy_json:
+      Version: "2012-10-17"
+      Statement:
+        - Sid: BucketMetadata
+          Effect: Allow
+          Action:
+            - s3:GetBucketLocation
+            - s3:ListBucket
+            - s3:ListBucketMultipartUploads
+          Resource:
+            - "arn:aws:s3:::{{ wasabi_krvb_bucket }}"
+        - Sid: ResticObjects
+          Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            - s3:AbortMultipartUpload
+            - s3:ListMultipartUploadParts
+          Resource:
+            - "arn:aws:s3:::{{ wasabi_krvb_bucket }}/*"
+  no_log: true
+
+- name: Optionally create seedboxk8s krvb service user credential
+  when: wasabi_krvb_seedbox_create_credential | bool
+  block:
+    - name: Check existing seedboxk8s krvb service user access keys
+      amazon.aws.iam_access_key_info:
+        user_name: "{{ wasabi_krvb_user }}"
+        region: "us-east-1"
+        endpoint_url: "{{ wasabi_iam_endpoint_url }}"
+        aws_access_key: "{{ wasabi_root_access_key }}"
+        aws_secret_key: "{{ wasabi_root_secret_key }}"
+      register: wasabi_krvb_existing_access_keys
+
+    - name: Refuse to create another seedboxk8s krvb access key
+      ansible.builtin.fail:
+        msg: >-
+          {{ wasabi_krvb_user }} already has an access key. Wasabi cannot show
+          the secret key again after creation. Delete or rotate the existing key
+          intentionally before rerunning with wasabi_krvb_seedbox_create_credential=true.
+      when: >-
+        (
+          wasabi_krvb_existing_access_keys.access_key |
+          default(wasabi_krvb_existing_access_keys.access_keys) |
+          default([])
+        ) | length > 0
+
+    - name: Create seedboxk8s krvb service user access key
+      amazon.aws.iam_access_key:
+        user_name: "{{ wasabi_krvb_user }}"
+        state: present
+        region: "us-east-1"
+        endpoint_url: "{{ wasabi_iam_endpoint_url }}"
+        aws_access_key: "{{ wasabi_root_access_key }}"
+        aws_secret_key: "{{ wasabi_root_secret_key }}"
+      register: wasabi_krvb_access_key
+
+    - name: Show created seedboxk8s krvb credential result
+      ansible.builtin.debug:
+        var: wasabi_krvb_access_key
+
+    - name: Show seedboxk8s krvb secret destination
+      ansible.builtin.debug:
+        msg:
+          - "Save the created access key values immediately; the secret key cannot be retrieved again."
+          - "RESTIC_PASSWORD=<generate a new long restic repository password>"
+          - "RESTIC_REPOSITORY_BASE=s3:s3.{{ wasabi_region }}.wasabisys.com/{{ wasabi_krvb_bucket }}/seedboxk8s/restic"
+          - "Destination: /src/seedboxk8s/applications/restic-backup/Secret.restic-backup-env.yaml"
+
+- name: Show seedboxk8s krvb credential save instructions
+  ansible.builtin.debug:
+    msg:
+      - "Create an access key for Wasabi user {{ wasabi_krvb_user }} in the Wasabi console, or rerun with -e wasabi_krvb_seedbox_create_credential=true."
+      - "Save AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, RESTIC_PASSWORD, and RESTIC_REPOSITORY_BASE in /src/seedboxk8s/applications/restic-backup/Secret.restic-backup-env.yaml."
+      - "RESTIC_REPOSITORY_BASE=s3:s3.{{ wasabi_region }}.wasabisys.com/{{ wasabi_krvb_bucket }}/seedboxk8s/restic"
+  when: not (wasabi_krvb_seedbox_create_credential | bool)

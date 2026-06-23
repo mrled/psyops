@@ -1,0 +1,8 @@
+---
+- name: Manage Wasabi resources
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  roles:
+    - wasabi
