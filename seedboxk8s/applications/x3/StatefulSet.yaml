@@ -73,7 +73,7 @@ spec:
             - name: STASH_CACHE
               value: /data/Trix/cache
             - name: STASH_CONFIG_FILE
-              value: /data/seedboxconf/stash/stash.yml
+              value: /config/stash.yml
           volumeMounts:
             - mountPath: /config
               name: x3-config-pvc
