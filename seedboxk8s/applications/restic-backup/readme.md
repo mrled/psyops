@@ -29,18 +29,20 @@ The controller uses a `coordination.k8s.io/v1` Lease named `restic-backup` in
 the `restic-backup` namespace. This prevents overlapping scheduled or manual
 controller Jobs from backing up the same PVCs at the same time.
 
-If a backup is stuck, stop the controller Job and any child restic Jobs:
+Find backup jobs:
 
 ```sh
-kubectl -n restic-backup delete job -l job-name=<controller-job-name>
-kubectl -n <pvc-namespace> delete job -l job-name=<restic-job-name>
+kubectl get jobs -A -l app.kubernetes.io/name=kvrb
+
+# You can find just the controller or just the backup jobs with:
+kubectl get jobs -A -l app.kubernetes.io/name=kvrb,app.kubernetes.io/component=controller
+kubectl get jobs -A -l app.kubernetes.io/name=kvrb,app.kubernetes.io/component=volume-backup
 ```
 
-Or delete them by name:
+If a backup is stuck, stop the controller Job and all its child restic Jobs:
 
 ```sh
-kubectl -n restic-backup delete job <controller-job-name>
-kubectl -n <pvc-namespace> delete job <restic-job-name>
+kubectl delete jobs -A -l app.kubernetes.io/name=kvrb
 ```
 
 If the controller died and left a stale lock, inspect and delete the Lease:

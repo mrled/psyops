@@ -3,11 +3,29 @@
   "kind": "Job",
   "metadata": {
     "name": "$JOB_NAME",
-    "namespace": "$NAMESPACE"
+    "namespace": "$NAMESPACE",
+    "labels": {
+      "app.kubernetes.io/name": "kvrb",
+      "app.kubernetes.io/component": "volume-backup"
+    },
+    "annotations": {
+      "kvrb.seedboxk8s.micahrl.com/pvc-namespace": "$NAMESPACE",
+      "kvrb.seedboxk8s.micahrl.com/pvc-name": "$PVC_NAME"
+    }
   },
   "spec": {
     "backoffLimit": 0,
     "template": {
+      "metadata": {
+        "labels": {
+          "app.kubernetes.io/name": "kvrb",
+          "app.kubernetes.io/component": "volume-backup"
+        },
+        "annotations": {
+          "kvrb.seedboxk8s.micahrl.com/pvc-namespace": "$NAMESPACE",
+          "kvrb.seedboxk8s.micahrl.com/pvc-name": "$PVC_NAME"
+        }
+      },
       "spec": {
         "restartPolicy": "Never",
         "containers": [
