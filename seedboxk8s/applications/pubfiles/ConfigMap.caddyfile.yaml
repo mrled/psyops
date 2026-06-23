@@ -8,7 +8,7 @@ data:
     :8080 {
     	root * /srv
 
-    	@hidden path /Trix /Trix/* /usenet /usenet/* /seedboxconf /seedboxconf/* /lost+found /lost+found/*
+    	@hidden path /Trix /Trix/* /usenet /usenet/* /seedboxconf /seedboxconf/* /seedboxconf* /lost+found /lost+found/*
     	respond @hidden 404
 
     	file_server {
