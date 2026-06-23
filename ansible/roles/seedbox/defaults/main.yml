@@ -42,18 +42,3 @@ seedbox_heimdall_config_dir: "{{ seedbox_config_dir }}/heimdall"
 seedbox_tautulli_config_dir: "{{ seedbox_config_dir }}/tautulli"
 seedbox_plex_config_dir: "{{ seedbox_config_dir }}/plex"
 seedbox_plex_appsup_dir: "{{ seedbox_plex_config_dir }}/Library/Application Support/Plex Media Server"
-
-# Backup settings
-seedbox_backup_config_dir: "{{ seedbox_config_dir }}/backups"
-seedbox_backup_exclude_file: "{{ seedbox_backup_config_dir }}/excludes.txt"
-seedbox_backup_duplicity_archive_dir: "{{ seedbox_backup_config_dir }}/archive"
-seedbox_backup_script: "{{ seedbox_backup_config_dir }}/seedbox-backup.sh"
-seedbox_backup_exclude_paths:
-  - "{{ seedbox_backup_config_dir }}"
-  - "{{ seedbox_lidarr_config_dir }}/logs"
-  - "{{ seedbox_radarr_config_dir }}/logs"
-  - "{{ seedbox_sonarr_config_dir }}/logs"
-  - "{{ seedbox_lidarr_config_dir }}/MediaCover"
-  - "{{ seedbox_radarr_config_dir }}/MediaCover"
-  - "{{ seedbox_sonarr_config_dir }}/MediaCover"
-  - "{{ seedbox_plex_appsup_dir }}/Cache"

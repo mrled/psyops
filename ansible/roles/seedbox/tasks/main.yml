@@ -140,10 +140,6 @@
     - tcp
     - udp
 
-- name: Configure seedbox backups
-  ansible.builtin.import_tasks: backups.yml
-  tags: seedbox_backups
-
 - name: Configure k8s (k0s + Flux)
   ansible.builtin.import_tasks: k8s.yml
   tags: seedbox_k8s
