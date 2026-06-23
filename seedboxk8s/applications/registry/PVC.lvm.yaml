@@ -4,7 +4,7 @@ metadata:
   name: registry-lvm-pvc
   namespace: registry
   annotations:
-    backup.seedboxk8s.micahrl.com/enabled: "false"
+    backup.seedboxk8s.micahrl.com/enabled: "true"
 spec:
   accessModes:
   - ReadWriteOnce

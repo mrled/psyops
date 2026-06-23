@@ -4,9 +4,13 @@ metadata:
   name: plex-config-pvc
   namespace: tortuga
   annotations:
-    backup.seedboxk8s.micahrl.com/enabled: "false"
+    backup.seedboxk8s.micahrl.com/enabled: "true"
     backup.seedboxk8s.micahrl.com/exclude: |
       /source/Library/Application Support/Plex Media Server/Cache
+      /source/Library/Application Support/Plex Media Server/Codecs
+      /source/Library/Application Support/Plex Media Server/Crash Reports
+      /source/Library/Application Support/Plex Media Server/Drivers
+      /source/Library/Application Support/Plex Media Server/Logs
 spec:
   accessModes:
   - ReadWriteOnce
