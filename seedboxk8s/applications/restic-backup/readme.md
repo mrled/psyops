@@ -89,125 +89,13 @@ The `restic-backup-env` secret must set:
 
 ## Restore Testing
 
-To test a restore without touching the live PVC, create a fresh PVC in the same
-namespace as the application and run a one-shot restore Job against that PVC.
-This example restores the latest Heimdall backup into
-`heimdall-restore-test-pvc`.
-
-Create a fresh PVC:
+See [docs/restore.md](docs/restore.md) for single-PVC restore testing. The
+helper script creates a fresh PVC, runs a restore Job, and prints inspection and
+cleanup commands:
 
 ```sh
-cat <<'EOF' | kubectl apply -f -
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: heimdall-restore-test-pvc
-  namespace: tortuga
-  labels:
-    app.kubernetes.io/name: kvrb
-    app.kubernetes.io/component: restore-test
-    kvrb.seedboxk8s.micahrl.com/restore-test: heimdall
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: seedbox-slow-mirror
-  resources:
-    requests:
-      storage: 1Gi
-EOF
+./docs/restore-pvc.sh -n tortuga -s heimdall-config-pvc
 ```
-
-Copy the restic secret into the application namespace:
-
-```sh
-kubectl -n restic-backup get secret restic-backup-env -o json \
-  | jq 'del(.metadata.uid,.metadata.resourceVersion,.metadata.creationTimestamp,.metadata.annotations,.metadata.managedFields) | .metadata.name="restic-restore-env" | .metadata.namespace="tortuga"' \
-  | kubectl apply -f -
-```
-
-Run a restore Job:
-
-```sh
-cat <<'EOF' | kubectl apply -f -
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: restic-restore-heimdall-test
-  namespace: tortuga
-  labels:
-    app.kubernetes.io/name: kvrb
-    app.kubernetes.io/component: restore-test
-    kvrb.seedboxk8s.micahrl.com/restore-test: heimdall
-spec:
-  backoffLimit: 0
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: kvrb
-        app.kubernetes.io/component: restore-test
-        kvrb.seedboxk8s.micahrl.com/restore-test: heimdall
-    spec:
-      restartPolicy: Never
-      containers:
-        - name: restore
-          image: alpine:3.22
-          envFrom:
-            - secretRef:
-                name: restic-restore-env
-          env:
-            - name: AWS_DEFAULT_REGION
-              value: us-central-1
-            - name: RESTIC_REPOSITORY
-              value: s3:https://s3.us-central-1.wasabisys.com/micahrl-seedboxk8s-krvb/restic/tortuga/heimdall-config-pvc
-          command: ["/bin/sh", "-ceu"]
-          args:
-            - |
-              apk add --no-cache ca-certificates restic
-              restic snapshots
-              restic restore latest --target /restore --exclude-xattr security.*
-              cp -a /restore/source/. /target/
-              rm -rf /restore/source
-          volumeMounts:
-            - name: target
-              mountPath: /target
-            - name: restore-work
-              mountPath: /restore
-      volumes:
-        - name: target
-          persistentVolumeClaim:
-            claimName: heimdall-restore-test-pvc
-        - name: restore-work
-          emptyDir: {}
-EOF
-```
-
-Watch the restore:
-
-```sh
-kubectl -n tortuga logs -f job/restic-restore-heimdall-test
-```
-
-Inspect the restored PVC:
-
-```sh
-kubectl -n tortuga run heimdall-restore-shell --rm -it --restart=Never \
-  --image=alpine:3.22 \
-  --overrides='{"spec":{"containers":[{"name":"heimdall-restore-shell","image":"alpine:3.22","stdin":true,"tty":true,"command":["/bin/sh"],"volumeMounts":[{"name":"target","mountPath":"/target"}]}],"volumes":[{"name":"target","persistentVolumeClaim":{"claimName":"heimdall-restore-test-pvc"}}]}}'
-```
-
-Delete the restore test resources when finished:
-
-```sh
-kubectl -n tortuga delete job,pod,pvc -l kvrb.seedboxk8s.micahrl.com/restore-test=heimdall
-```
-
-Backups are created from a backup Job that mounts the source PVC at `/source`,
-so `restic restore --target /restore` recreates files under `/restore/source`.
-For an application PVC, copy `/restore/source/.` into the mounted target PVC
-root. Kubernetes restore Jobs may not be allowed to set SELinux extended
-attributes from the snapshot, so test restore Jobs should use
-`--exclude-xattr security.*`; otherwise restic can restore files under
-`/restore/source` but exit nonzero before the copy into the target PVC runs.
 
 ## Locking
 
