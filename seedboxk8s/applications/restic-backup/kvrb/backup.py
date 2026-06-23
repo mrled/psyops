@@ -4,6 +4,7 @@ import json
 from kvrb.kube import (
     JsonMap,
     Workload,
+    delete_stale_backup_jobs,
     eligible_pvcs,
     get_replicas,
     kubectl,
@@ -39,6 +40,7 @@ def backup_pvc(pvc: JsonMap) -> None:
     repository = restic_repository(namespace, pvc_name)
     temp_secret = short_name("restic", pvc_name, "env")
     job_name = short_name("restic", pvc_name)
+    delete_stale_backup_jobs(namespace, pvc_name, job_name)
     workloads = workloads_for_pvc(namespace, pvc_name)
     original_replicas: dict[tuple[str, str, str], tuple[Workload, int]] = {}
 

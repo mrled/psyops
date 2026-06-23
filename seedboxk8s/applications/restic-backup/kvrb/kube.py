@@ -96,6 +96,18 @@ def owner_ref(obj: JsonMap, kind: str) -> JsonMap | None:
     return None
 
 
+def backup_job_prefix(pvc_name: str) -> str:
+    return sanitize_name(f"restic-{pvc_name}")
+
+
+def is_backup_job_pod(pod: JsonMap, pvc_name: str) -> bool:
+    job = owner_ref(pod, "Job")
+    if not job:
+        return False
+    job_name = str(job.get("name", ""))
+    return job_name.startswith(f"{backup_job_prefix(pvc_name)}-")
+
+
 def workload_for_pod(pod: JsonMap) -> Workload:
     """Return the owning workload (StatefulSet, ReplicaSet, Deployment) for the given pod.
 
@@ -137,9 +149,23 @@ def workloads_for_pvc(namespace: str, pvc_name: str) -> list[Workload]:
     for pod in pods_using_pvc(namespace, pvc_name):
         if pod.get("metadata", {}).get("deletionTimestamp"):
             continue
+        if is_backup_job_pod(pod, pvc_name):
+            continue
         workload = workload_for_pod(pod)
         workloads[(workload["api"], workload["namespace"], workload["name"])] = workload
     return list(workloads.values())
+
+
+def delete_stale_backup_jobs(namespace: str, pvc_name: str, current_job_name: str) -> None:
+    """Delete previous backup Jobs for this PVC before starting another one."""
+    jobs = kubectl_json("-n", namespace, "get", "jobs", "-o", "json")["items"]
+    prefix = f"{backup_job_prefix(pvc_name)}-"
+    for job in jobs:
+        job_name = job["metadata"]["name"]
+        if job_name == current_job_name or not str(job_name).startswith(prefix):
+            continue
+        print(f"Deleting stale backup job {namespace}/{job_name}", flush=True)
+        kubectl("-n", namespace, "delete", "job", job_name, "--ignore-not-found=true", check=False)
 
 
 def get_replicas(workload: Workload) -> int:
@@ -158,7 +184,11 @@ def wait_for_no_pods_using_pvc(namespace: str, pvc_name: str, timeout: int = 600
     deadline = time.time() + timeout
     while time.time() < deadline:
         pods = pods_using_pvc(namespace, pvc_name)
-        active = [pod for pod in pods if not pod.get("metadata", {}).get("deletionTimestamp")]
+        active = [
+            pod
+            for pod in pods
+            if not pod.get("metadata", {}).get("deletionTimestamp") and not is_backup_job_pod(pod, pvc_name)
+        ]
         if not active:
             return
         print(f"Waiting for {len(active)} pod(s) using {namespace}/{pvc_name} to terminate", flush=True)
