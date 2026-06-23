@@ -5,6 +5,7 @@ from typing import cast
 
 from kvrb.config import (
     AWS_ACCESS_KEY_ID,
+    AWS_DEFAULT_REGION,
     AWS_SECRET_ACCESS_KEY,
     BACKUP_JOB_TEMPLATE,
     REPOSITORY_BASE,
@@ -34,6 +35,7 @@ def create_temp_secret(namespace: str, name: str, repository: str) -> None:
         raise ValueError("RESTIC_PASSWORD contains characters that are not allowed for JSON template substitution")
 
     rendered = Template(RESTIC_SECRET_TEMPLATE.read_text()).substitute(
+        AWS_DEFAULT_REGION=AWS_DEFAULT_REGION,
         AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID,
         AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY,
         NAME=name,

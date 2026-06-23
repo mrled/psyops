@@ -25,6 +25,11 @@ spec:
                 - secretRef:
                     name: restic-backup-env
               env:
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    configMapKeyRef:
+                      name: restic-backup-config
+                      key: AWS_DEFAULT_REGION
                 - name: RESTIC_REPOSITORY_BASE
                   valueFrom:
                     configMapKeyRef:

@@ -14,6 +14,7 @@ backup.seedboxk8s.micahrl.com/enabled: "true"
 
 The `restic-backup-config` ConfigMap must set:
 
+- `AWS_DEFAULT_REGION`: S3-compatible bucket region.
 - `RESTIC_REPOSITORY_BASE`: base repository URL, such as `s3:.../restic`.
 
 The `restic-backup-env` secret must set:

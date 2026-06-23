@@ -4,4 +4,5 @@ metadata:
   name: restic-backup-config
   namespace: restic-backup
 data:
-  RESTIC_REPOSITORY_BASE: s3:s3.us-west-1.wasabisys.com/micahrl-seedboxk8s-krvb/restic
+  AWS_DEFAULT_REGION: us-west-1
+  RESTIC_REPOSITORY_BASE: s3:https://s3.us-west-1.wasabisys.com/micahrl-seedboxk8s-krvb/restic
