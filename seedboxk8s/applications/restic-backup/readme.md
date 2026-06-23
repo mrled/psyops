@@ -12,9 +12,12 @@ PVCs opt in with this annotation:
 backup.seedboxk8s.micahrl.com/enabled: "true"
 ```
 
+The `restic-backup-config` ConfigMap must set:
+
+- `RESTIC_REPOSITORY_BASE`: base repository URL, such as `s3:.../restic`.
+
 The `restic-backup-env` secret must set:
 
 - `AWS_ACCESS_KEY_ID`: S3-compatible access key.
 - `AWS_SECRET_ACCESS_KEY`: S3-compatible secret key.
 - `RESTIC_PASSWORD`: restic repository encryption password.
-- `RESTIC_REPOSITORY_BASE`: base repository URL, such as `s3:.../restic`.

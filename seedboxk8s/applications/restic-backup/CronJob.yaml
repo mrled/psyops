@@ -24,6 +24,12 @@ spec:
               envFrom:
                 - secretRef:
                     name: restic-backup-env
+              env:
+                - name: RESTIC_REPOSITORY_BASE
+                  valueFrom:
+                    configMapKeyRef:
+                      name: restic-backup-config
+                      key: RESTIC_REPOSITORY_BASE
               command:
                 - /bin/sh
                 - -ceu

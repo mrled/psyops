@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restic-backup-config
+  namespace: restic-backup
+data:
+  RESTIC_REPOSITORY_BASE: s3:s3.us-west-1.wasabisys.com/micahrl-seedboxk8s-krvb/restic
