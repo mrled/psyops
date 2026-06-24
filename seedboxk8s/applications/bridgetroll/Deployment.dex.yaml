@@ -25,7 +25,7 @@ spec:
           mountPath: /srv/dex/web/themes/mindcontrol
       containers:
       - name: dex
-        image: docker.io/dexidp/dex:latest@sha256:70fbdd07f990ca00dc239bb9c7ef866914c5d7ea5cf10ea6ac4e8780d37738d9
+        image: docker.io/dexidp/dex:latest@sha256:fa1bcba637d7ee99202e7d6a22b58a932da157228795185b7038ab11fa8023e1
         command: ['dex', 'serve', '/etc/dex/config.yaml']
         ports:
         - containerPort: 5556
