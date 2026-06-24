@@ -146,6 +146,7 @@ spec:
             - |
               apk add --no-cache ca-certificates restic
               restic snapshots
+              # Exclude security.* xattrs bc we may not have permission to set SELinux labels
               restic restore latest --target /restore --exclude-xattr security.*
               cp -a /restore/source/. /target/
               rm -rf /restore/source
