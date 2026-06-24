@@ -32,7 +32,7 @@ kubectl get jobs -A -l app.kubernetes.io/name=kvrb,app.kubernetes.io/component=v
 kubectl delete jobs -A -l app.kubernetes.io/name=kvrb
 
 # Run a manual backup
-# Works whether the CronJob is enabled or suspended)
+# Works whether the CronJob is enabled or suspended.
 job_name=restic-backup-manual-$(date +%Y%m%d%H%M%S)
 kubectl -n restic-backup create job "$job_name" --from=cronjob/restic-backup
 
@@ -41,6 +41,10 @@ kubectl -n restic-backup create job "$job_name" --from=cronjob/restic-backup
 # so it includes child Jobs' restic output too.
 kubectl -n restic-backup logs -l app.kubernetes.io/name=kvrb,app.kubernetes.io/component=controller
 ```
+
+## Parallel Backups
+
+Set `BACKUP_PARALLELISM` in the `restic-backup-config` ConfigMap to control how many PVC backup Jobs can run at once.
 
 ## Exclusions
 

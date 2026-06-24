@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 import json
+from threading import Lock
 
-from kvrb.config import EXCLUDE_ANNOTATION
+from kvrb.config import BACKUP_PARALLELISM, EXCLUDE_ANNOTATION
 from kvrb.kube import (
     JsonMap,
     Workload,
@@ -25,6 +28,12 @@ class BackupFailures(Exception):
         self.failures = failures
 
 
+@dataclass(frozen=True)
+class BackupPlan:
+    pvc: JsonMap
+    workloads: list[Workload]
+
+
 def pvc_excludes(pvc: JsonMap) -> list[str]:
     """Return non-empty restic exclusion lines from a PVC annotation."""
     annotations = pvc.get("metadata", {}).get("annotations", {})
@@ -32,7 +41,11 @@ def pvc_excludes(pvc: JsonMap) -> list[str]:
     return [line.strip() for line in raw_excludes.splitlines() if line.strip()]
 
 
-def backup_pvc(pvc: JsonMap) -> None:
+def workload_key(workload: Workload) -> tuple[str, str, str]:
+    return (workload["api"], workload["namespace"], workload["name"])
+
+
+def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
     """Back up the given PVC to the configured repository.
 
     - Scale down any workloads using the PVC to zero replicas.
@@ -51,7 +64,8 @@ def backup_pvc(pvc: JsonMap) -> None:
     temp_secret = short_name("restic", pvc_name, "env")
     job_name = short_name("restic", pvc_name)
     delete_stale_backup_jobs(namespace, pvc_name, job_name)
-    workloads = workloads_for_pvc(namespace, pvc_name)
+    if workloads is None:
+        workloads = workloads_for_pvc(namespace, pvc_name)
     original_replicas: dict[tuple[str, str, str], tuple[Workload, int]] = {}
     job_created = False
 
@@ -96,13 +110,36 @@ def backup_annotated_pvcs() -> None:
         print("No opted-in PVCs found", flush=True)
         return
 
-    failures: list[str] = []
-    for pvc in pvcs:
+    plans: list[BackupPlan] = [
+        BackupPlan(pvc=pvc, workloads=workloads_for_pvc(pvc["metadata"]["namespace"], pvc["metadata"]["name"]))
+        for pvc in pvcs
+    ]
+
+    max_workers = max(1, min(BACKUP_PARALLELISM, len(plans)))
+    print(f"Running PVC backups with parallelism {max_workers}", flush=True)
+    workload_locks = {workload_key(workload): Lock() for plan in plans for workload in plan.workloads}
+
+    def run_plan(plan: BackupPlan) -> None:
+        keys = sorted({workload_key(workload) for workload in plan.workloads})
+        locks = [workload_locks[key] for key in keys]
+        for lock in locks:
+            lock.acquire()
         try:
-            backup_pvc(pvc)
-        except Exception as exc:
-            failures.append(f"{pvc['metadata']['namespace']}/{pvc['metadata']['name']}: {exc}")
-            print(f"ERROR: {failures[-1]}", flush=True)
+            backup_pvc(plan.pvc, plan.workloads)
+        finally:
+            for lock in reversed(locks):
+                lock.release()
+
+    failures: list[str] = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(run_plan, plan): plan for plan in plans}
+        for future in as_completed(futures):
+            pvc = futures[future].pvc
+            try:
+                future.result()
+            except Exception as exc:
+                failures.append(f"{pvc['metadata']['namespace']}/{pvc['metadata']['name']}: {exc}")
+                print(f"ERROR: {failures[-1]}", flush=True)
 
     if failures:
         raise BackupFailures(failures)

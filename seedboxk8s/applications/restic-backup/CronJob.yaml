@@ -46,6 +46,11 @@ spec:
                     configMapKeyRef:
                       name: restic-backup-config
                       key: RESTIC_REPOSITORY_BASE
+                - name: BACKUP_PARALLELISM
+                  valueFrom:
+                    configMapKeyRef:
+                      name: restic-backup-config
+                      key: BACKUP_PARALLELISM
               command:
                 - /bin/sh
                 - -ceu
