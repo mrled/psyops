@@ -51,13 +51,25 @@ like this:
 ```sh
 kubectl -n tortuga run heimdall-restore-test-pvc-shell --rm -it --restart=Never \
   --image=alpine:3.22 \
+  --labels=app.kubernetes.io/name=kvrb,app.kubernetes.io/component=restore-test,kvrb.seedboxk8s.micahrl.com/restore-test=heimdall-config-pvc \
   --overrides='{"spec":{"containers":[{"name":"heimdall-restore-test-pvc-shell","image":"alpine:3.22","stdin":true,"tty":true,"command":["/bin/sh"],"volumeMounts":[{"name":"target","mountPath":"/target"}]}],"volumes":[{"name":"target","persistentVolumeClaim":{"claimName":"heimdall-restore-test-pvc"}}]}}'
 ```
 
-Clean up restore test resources with the label printed by the script:
+Clean up restore test resources with the label printed by the script. Delete
+pods and Jobs before deleting the PVC so Kubernetes can release the PVC
+protection finalizer:
 
 ```sh
-kubectl -n tortuga delete job,pod,pvc,secret -l kvrb.seedboxk8s.micahrl.com/restore-test=heimdall-config-pvc
+kubectl -n tortuga delete job,pod -l kvrb.seedboxk8s.micahrl.com/restore-test=heimdall-config-pvc --ignore-not-found
+kubectl -n tortuga wait --for=delete pod -l kvrb.seedboxk8s.micahrl.com/restore-test=heimdall-config-pvc --timeout=120s
+kubectl -n tortuga delete pvc,secret -l kvrb.seedboxk8s.micahrl.com/restore-test=heimdall-config-pvc --ignore-not-found
+```
+
+If a target PVC is stuck in `Terminating`, look for any pod still mounting it:
+
+```sh
+kubectl -n tortuga get pod -o json \
+  | jq -r '.items[] | select(any(.spec.volumes[]?; .persistentVolumeClaim.claimName == "heimdall-restore-test-pvc")) | .metadata.name'
 ```
 
 ## Restore Details

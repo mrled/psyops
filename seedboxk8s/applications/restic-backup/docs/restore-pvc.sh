@@ -170,8 +170,10 @@ Watch logs:
   kubectl -n ${namespace} logs -f job/${job_name}
 
 Inspect restored PVC:
-  kubectl -n ${namespace} run ${target_pvc}-shell --rm -it --restart=Never --image=alpine:3.22 --overrides='{"spec":{"containers":[{"name":"'${target_pvc}'-shell","image":"alpine:3.22","stdin":true,"tty":true,"command":["/bin/sh"],"volumeMounts":[{"name":"target","mountPath":"/target"}]}],"volumes":[{"name":"target","persistentVolumeClaim":{"claimName":"'${target_pvc}'"}}]}}'
+  kubectl -n ${namespace} run ${target_pvc}-shell --rm -it --restart=Never --image=alpine:3.22 --labels=app.kubernetes.io/name=kvrb,app.kubernetes.io/component=restore-test,kvrb.seedboxk8s.micahrl.com/restore-test=${restore_id} --overrides='{"spec":{"containers":[{"name":"'${target_pvc}'-shell","image":"alpine:3.22","stdin":true,"tty":true,"command":["/bin/sh"],"volumeMounts":[{"name":"target","mountPath":"/target"}]}],"volumes":[{"name":"target","persistentVolumeClaim":{"claimName":"'${target_pvc}'"}}]}}'
 
 Clean up restore test resources:
-  kubectl -n ${namespace} delete job,pod,pvc,secret -l kvrb.seedboxk8s.micahrl.com/restore-test=${restore_id}
+  kubectl -n ${namespace} delete job,pod -l kvrb.seedboxk8s.micahrl.com/restore-test=${restore_id} --ignore-not-found
+  kubectl -n ${namespace} wait --for=delete pod -l kvrb.seedboxk8s.micahrl.com/restore-test=${restore_id} --timeout=120s
+  kubectl -n ${namespace} delete pvc,secret -l kvrb.seedboxk8s.micahrl.com/restore-test=${restore_id} --ignore-not-found
 EOF
