@@ -7,8 +7,6 @@ metadata:
     app.kubernetes.io/name: kvrb
     app.kubernetes.io/component: controller
 spec:
-  # Keep suspended until the secret values are filled and a manual run succeeds.
-  suspend: true
   schedule: "0 5 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
