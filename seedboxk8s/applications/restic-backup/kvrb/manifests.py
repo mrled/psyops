@@ -1,7 +1,5 @@
-import json
 import re
 from string import Template
-from typing import cast
 
 from kvrb.config import (
     AWS_ACCESS_KEY_ID,
@@ -13,7 +11,7 @@ from kvrb.config import (
     RESTIC_SECRET_TEMPLATE,
     SOURCE_MOUNT,
 )
-from kvrb.kube import JsonMap, kubectl
+from kvrb.kube import kubectl
 
 
 def restic_repository(namespace: str, pvc_name: str) -> str:
@@ -52,18 +50,14 @@ def backup_job_manifest(
     secret_name: str,
     pvc_name: str,
     excludes: list[str] | None = None,
-) -> JsonMap:
-    """Return a Kubernetes Job manifest for backing up the given PVC."""
-    rendered = Template(BACKUP_JOB_TEMPLATE.read_text()).substitute(
+) -> str:
+    """Return a rendered Kubernetes Job manifest for backing up the given PVC."""
+    exclude_lines = ";".join(excludes or [])
+    return Template(BACKUP_JOB_TEMPLATE.read_text()).substitute(
         JOB_NAME=name,
         NAMESPACE=namespace,
         PVC_NAME=pvc_name,
+        RESTIC_EXCLUDES=exclude_lines,
         SECRET_NAME=secret_name,
         SOURCE_MOUNT=SOURCE_MOUNT,
     )
-    manifest = cast(JsonMap, json.loads(rendered))
-    exclude_lines = "\n".join(excludes or [])
-    if exclude_lines:
-        container = manifest["spec"]["template"]["spec"]["containers"][0]
-        container["env"].append({"name": "RESTIC_EXCLUDES", "value": exclude_lines})
-    return manifest

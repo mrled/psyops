@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-import json
 from threading import Lock
 
 from kvrb.config import BACKUP_PARALLELISM, EXCLUDE_ANNOTATION
@@ -90,7 +89,7 @@ def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
             "create",
             "-f",
             "-",
-            input_text=json.dumps(backup_job_manifest(namespace, job_name, temp_secret, pvc_name, excludes)),
+            input_text=backup_job_manifest(namespace, job_name, temp_secret, pvc_name, excludes),
         )
         job_created = True
         wait_for_job(namespace, job_name)

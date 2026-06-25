@@ -55,6 +55,7 @@ spec:
               args:
                 - |
                   apk add --no-cache ca-certificates kubectl python3
+                  # We have to update PYTHONPATH because we mount the Python module to /opt
                   PYTHONPATH=/opt python3 -m kvrb
               volumeMounts:
                 - name: kvrb-module
