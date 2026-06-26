@@ -15,6 +15,7 @@ data:
       realm: https://registry.${productionClusterFqdn}/auth
       certificate: /token-certs/tls.crt
       key: /token-certs/tls.key
+      disable_legacy_key_id: true
 
     # Passwords MUST be bcrypt; they can be generated with htpasswd, e.g.:
     # docker run --entrypoint htpasswd httpd:2 -Bbn admin testpassword | sed 's/[^:].*://'

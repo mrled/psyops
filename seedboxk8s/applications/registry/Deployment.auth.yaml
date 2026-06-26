@@ -30,7 +30,7 @@ spec:
           mountPath: /processed
       containers:
       - name: docker-auth
-        image: docker.io/cesanta/docker_auth:1@sha256:7e7d7d9aa72850b9b4811cbe7fe61fdc5b5184bf8bfb3335350f9d11985b6f0a
+        image: docker.io/cesanta/docker_auth:1.14.0@sha256:98e0307e0d2dcbafe10098814a97d248143b78ca478693f78c3c0d67fe776ab4
         ports:
         - containerPort: 5001
         volumeMounts:
