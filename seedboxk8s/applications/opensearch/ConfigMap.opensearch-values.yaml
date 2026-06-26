@@ -24,8 +24,11 @@ data:
         plugins.security.ssl.transport.pemtrustedcas_filepath: /usr/share/opensearch/config/tls/ca.crt
         plugins.security.ssl.transport.enforce_hostname_verification: false
 
-        # HTTP unencrypted - Traefik handles external TLS
-        plugins.security.ssl.http.enabled: false
+        # HTTP TLS - reuse the same cert as transport
+        plugins.security.ssl.http.enabled: true
+        plugins.security.ssl.http.pemcert_filepath: /usr/share/opensearch/config/tls/tls.crt
+        plugins.security.ssl.http.pemkey_filepath: /usr/share/opensearch/config/tls/tls.key
+        plugins.security.ssl.http.pemtrustedcas_filepath: /usr/share/opensearch/config/tls/ca.crt
 
         # DN must match the certificate commonName
         plugins.security.nodes_dn:

@@ -37,7 +37,9 @@ data:
             Logstash_Prefix k8s-logs
             Replace_Dots On
             Retry_Limit False
-            tls Off
+            tls On
+            tls.verify Off
+            # TODO: enable tls.verify On - mount ca.crt from opensearch-transport-tls-secret and set tls.ca_file
             Suppress_Type_Name On
 
     # Inject OpenSearch credentials from secret as environment variables

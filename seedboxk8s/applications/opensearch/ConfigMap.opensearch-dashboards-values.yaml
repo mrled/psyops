@@ -8,7 +8,7 @@ data:
     replicaCount: 1
 
     # HTTP since OpenSearch has SSL disabled on the HTTP layer
-    opensearchHosts: "http://opensearch-cluster-master:9200"
+    opensearchHosts: "https://opensearch-cluster-master:9200"
 
     # Credentials for the opensearch-dashboards internal user
     opensearchAccount:
