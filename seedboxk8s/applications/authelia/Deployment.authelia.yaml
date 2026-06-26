@@ -18,6 +18,8 @@ spec:
       containers:
         - name: authelia
           image: ghcr.io/authelia/authelia:4.39.20
+          command:
+            - authelia
           args:
             - --config=/configuration.yaml
           env:
