@@ -18,6 +18,9 @@ data:
       opensearch_dashboards.yml: |
         server.host: '0.0.0.0'
         opensearch.ssl.verificationMode: none
+        opensearch_security.auth.type: "proxy"
+        opensearch_security.proxycache.user_header: "x-forwarded-user"
+        opensearch_security.proxycache.roles_header: "x-forwarded-roles"
 
     ingress:
       enabled: false

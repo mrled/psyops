@@ -54,4 +54,5 @@ data:
       rules:
         - domain:
             - whoami-authelia.${productionClusterFqdn}
+            - logs.${productionClusterFqdn}
           policy: one_factor
