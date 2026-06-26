@@ -13,6 +13,7 @@ spec:
       labels:
         app: authelia
     spec:
+      enableServiceLinks: false
       securityContext:
         fsGroup: 1000
       containers:
