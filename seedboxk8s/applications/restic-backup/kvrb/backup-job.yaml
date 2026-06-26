@@ -63,7 +63,12 @@ spec:
                 --verbose
 
               echo "Applying restic retention policy"
-              restic forget --keep-daily 14 --keep-weekly 8 --keep-monthly 120 --prune
+              restic forget \
+                --keep-daily $RESTIC_KEEP_DAILY \
+                --keep-weekly $RESTIC_KEEP_WEEKLY \
+                --keep-monthly $RESTIC_KEEP_MONTHLY \
+                --keep-yearly $RESTIC_KEEP_YEARLY \
+                --prune
           volumeMounts:
             - name: source
               mountPath: $SOURCE_MOUNT

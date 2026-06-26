@@ -57,6 +57,22 @@ backup.seedboxk8s.micahrl.com/exclude: |
   /source/MediaCover
 ```
 
+## Retention
+
+The default retention policy is 14 daily snapshots, 8 weekly snapshots, 120
+monthly snapshots, and 5 yearly snapshots. Override it per PVC with
+annotations:
+
+```yaml
+backup.seedboxk8s.micahrl.com/keep-daily: "14"
+backup.seedboxk8s.micahrl.com/keep-weekly: "8"
+backup.seedboxk8s.micahrl.com/keep-monthly: "120"
+backup.seedboxk8s.micahrl.com/keep-yearly: "5"
+```
+
+Values must be non-negative integers. The controller renders them into the
+child Job's `restic forget --prune` command.
+
 ## Restore Testing
 
 See [docs/restore.md](docs/restore.md) for single-PVC restore testing. The

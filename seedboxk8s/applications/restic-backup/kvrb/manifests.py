@@ -6,6 +6,10 @@ from kvrb.config import (
     AWS_DEFAULT_REGION,
     AWS_SECRET_ACCESS_KEY,
     BACKUP_JOB_TEMPLATE,
+    DEFAULT_KEEP_DAILY,
+    DEFAULT_KEEP_MONTHLY,
+    DEFAULT_KEEP_WEEKLY,
+    DEFAULT_KEEP_YEARLY,
     REPOSITORY_BASE,
     RESTIC_PASSWORD,
     RESTIC_SECRET_TEMPLATE,
@@ -50,6 +54,7 @@ def backup_job_manifest(
     secret_name: str,
     pvc_name: str,
     excludes: list[str] | None = None,
+    retention: object | None = None,
 ) -> str:
     """Return a rendered Kubernetes Job manifest for backing up the given PVC."""
     exclude_lines = ";".join(excludes or [])
@@ -58,6 +63,10 @@ def backup_job_manifest(
         NAMESPACE=namespace,
         PVC_NAME=pvc_name,
         RESTIC_EXCLUDES=exclude_lines,
+        RESTIC_KEEP_DAILY=getattr(retention, "keep_daily", DEFAULT_KEEP_DAILY),
+        RESTIC_KEEP_MONTHLY=getattr(retention, "keep_monthly", DEFAULT_KEEP_MONTHLY),
+        RESTIC_KEEP_WEEKLY=getattr(retention, "keep_weekly", DEFAULT_KEEP_WEEKLY),
+        RESTIC_KEEP_YEARLY=getattr(retention, "keep_yearly", DEFAULT_KEEP_YEARLY),
         SECRET_NAME=secret_name,
         SOURCE_MOUNT=SOURCE_MOUNT,
     )

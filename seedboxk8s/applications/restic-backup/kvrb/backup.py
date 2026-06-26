@@ -3,7 +3,18 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from threading import Lock
 
-from kvrb.config import BACKUP_PARALLELISM, EXCLUDE_ANNOTATION
+from kvrb.config import (
+    BACKUP_PARALLELISM,
+    DEFAULT_KEEP_DAILY,
+    DEFAULT_KEEP_MONTHLY,
+    DEFAULT_KEEP_WEEKLY,
+    DEFAULT_KEEP_YEARLY,
+    EXCLUDE_ANNOTATION,
+    KEEP_DAILY_ANNOTATION,
+    KEEP_MONTHLY_ANNOTATION,
+    KEEP_WEEKLY_ANNOTATION,
+    KEEP_YEARLY_ANNOTATION,
+)
 from kvrb.kube import (
     JsonMap,
     Workload,
@@ -33,11 +44,43 @@ class BackupPlan:
     workloads: list[Workload]
 
 
+@dataclass(frozen=True)
+class RetentionPolicy:
+    keep_daily: int
+    keep_weekly: int
+    keep_monthly: int
+    keep_yearly: int
+
+
 def pvc_excludes(pvc: JsonMap) -> list[str]:
     """Return non-empty restic exclusion lines from a PVC annotation."""
     annotations = pvc.get("metadata", {}).get("annotations", {})
     raw_excludes = annotations.get(EXCLUDE_ANNOTATION, "")
     return [line.strip() for line in raw_excludes.splitlines() if line.strip()]
+
+
+def annotation_int(annotations: dict[str, str], key: str, default: int) -> int:
+    value = annotations.get(key)
+    if value is None or value == "":
+        return default
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise ValueError(f"{key} must be an integer, got {value!r}") from exc
+    if parsed < 0:
+        raise ValueError(f"{key} must be greater than or equal to 0, got {value!r}")
+    return parsed
+
+
+def pvc_retention(pvc: JsonMap) -> RetentionPolicy:
+    """Return the restic retention policy from PVC annotations."""
+    annotations = pvc.get("metadata", {}).get("annotations", {})
+    return RetentionPolicy(
+        keep_daily=annotation_int(annotations, KEEP_DAILY_ANNOTATION, DEFAULT_KEEP_DAILY),
+        keep_weekly=annotation_int(annotations, KEEP_WEEKLY_ANNOTATION, DEFAULT_KEEP_WEEKLY),
+        keep_monthly=annotation_int(annotations, KEEP_MONTHLY_ANNOTATION, DEFAULT_KEEP_MONTHLY),
+        keep_yearly=annotation_int(annotations, KEEP_YEARLY_ANNOTATION, DEFAULT_KEEP_YEARLY),
+    )
 
 
 def workload_key(workload: Workload) -> tuple[str, str, str]:
@@ -60,6 +103,7 @@ def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
     pvc_name = pvc["metadata"]["name"]
     repository = restic_repository(namespace, pvc_name)
     excludes = pvc_excludes(pvc)
+    retention = pvc_retention(pvc)
     temp_secret = short_name("restic", pvc_name, "env")
     job_name = short_name("restic", pvc_name)
     delete_stale_backup_jobs(namespace, pvc_name, job_name)
@@ -71,6 +115,12 @@ def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
     print(f"Backing up {namespace}/{pvc_name} to {repository}", flush=True)
     if excludes:
         print(f"Using {len(excludes)} restic exclude pattern(s): {', '.join(excludes)}", flush=True)
+    print(
+        "Using retention policy: "
+        f"keep daily={retention.keep_daily}, weekly={retention.keep_weekly}, "
+        f"monthly={retention.keep_monthly}, yearly={retention.keep_yearly}",
+        flush=True,
+    )
     if not workloads:
         print(
             f"No active workload currently uses {namespace}/{pvc_name}; backing up without scaling",
@@ -89,7 +139,7 @@ def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
             "create",
             "-f",
             "-",
-            input_text=backup_job_manifest(namespace, job_name, temp_secret, pvc_name, excludes),
+            input_text=backup_job_manifest(namespace, job_name, temp_secret, pvc_name, excludes, retention),
         )
         job_created = True
         wait_for_job(namespace, job_name)
