@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authelia-users
+  namespace: authelia
+data:
+  users.yml: |
+    users:
+      freeleech:
+        disabled: false
+        displayname: Free Leech
+        password: '$argon2id$v=19$m=65536,t=3,p=4$AqDLAewR4gI7RbVb7drRRA$UOnDei9Ua+Ni/Wn8VSIrR2ijQh1tMt7BAhBqlQ2fLZU'
+        email: freeleech@${productionClusterFqdn}
+        groups:
+          - seedbox

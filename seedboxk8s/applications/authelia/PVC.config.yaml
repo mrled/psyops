@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: authelia-config
+  namespace: authelia
+  annotations:
+    backup.seedboxk8s.micahrl.com/enabled: "true"
+    backup.seedboxk8s.micahrl.com/keep-daily: 2
+    backup.seedboxk8s.micahrl.com/keep-weekly: 2
+    backup.seedboxk8s.micahrl.com/keep-monthly: 8
+    backup.seedboxk8s.micahrl.com/keep-yearly: 3
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: seedbox-bootdisk-fast-single
+  resources:
+    requests:
+      storage: 1Gi

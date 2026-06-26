@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authelia
+  namespace: authelia
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authelia
+  template:
+    metadata:
+      labels:
+        app: authelia
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: authelia
+          image: ghcr.io/authelia/authelia:4.39.20
+          args:
+            - --config=/configuration.yaml
+          env:
+            - name: AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE
+              value: /secrets/JWT_SECRET
+            - name: AUTHELIA_SESSION_SECRET_FILE
+              value: /secrets/SESSION_SECRET
+            - name: AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE
+              value: /secrets/STORAGE_ENCRYPTION_KEY
+          ports:
+            - name: http
+              containerPort: 9091
+          startupProbe:
+            failureThreshold: 12
+            httpGet:
+              path: /api/health
+              port: http
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: config-file
+              mountPath: /configuration.yaml
+              readOnly: true
+              subPath: configuration.yaml
+            - name: users
+              mountPath: /users/users.yml
+              readOnly: true
+              subPath: users.yml
+            - name: config
+              mountPath: /config
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+      volumes:
+        - name: config-file
+          configMap:
+            name: authelia
+            items:
+              - key: configuration.yaml
+                path: configuration.yaml
+        - name: users
+          configMap:
+            name: authelia-users
+        - name: config
+          persistentVolumeClaim:
+            claimName: authelia-config
+        - name: secrets
+          secret:
+            secretName: authelia
