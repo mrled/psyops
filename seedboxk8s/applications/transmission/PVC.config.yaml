@@ -10,12 +10,14 @@ metadata:
     backup.seedboxk8s.micahrl.com/keep-monthly: 8
     backup.seedboxk8s.micahrl.com/keep-yearly: 3
     backup.seedboxk8s.micahrl.com/exclude: |
+      /source/dht.dat
       /source/lost+found
+      /source/stats.json
       /source/**/*.db-shm
       /source/**/*.db-wal
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   storageClassName: seedbox-slow-mirror
   resources:
     requests:
