@@ -5,6 +5,17 @@ metadata:
   namespace: tortuga
   annotations:
     backup.seedboxk8s.micahrl.com/enabled: "true"
+    backup.seedboxk8s.micahrl.com/keep-daily: 2
+    backup.seedboxk8s.micahrl.com/keep-weekly: 2
+    backup.seedboxk8s.micahrl.com/keep-monthly: 8
+    backup.seedboxk8s.micahrl.com/keep-yearly: 3
+    backup.seedboxk8s.micahrl.com/exclude: |
+      /source/backups
+      /source/cache
+      /source/logs
+      /source/lost+found
+      /source/**/*.db-shm
+      /source/**/*.db-wal
 spec:
   accessModes:
   - ReadWriteOnce
