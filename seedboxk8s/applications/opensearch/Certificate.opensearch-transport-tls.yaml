@@ -16,7 +16,7 @@ spec:
     encoding: PKCS8
     rotationPolicy: Always
 
-  commonName: opensearch-cluster-master-0.opensearch-cluster-master-headless.opensearch.svc.cluster.local
+  commonName: opensearch-cluster-master
   dnsNames:
     # Pod DNS name (used for transport between nodes)
     - opensearch-cluster-master-0.opensearch-cluster-master-headless.opensearch.svc.cluster.local

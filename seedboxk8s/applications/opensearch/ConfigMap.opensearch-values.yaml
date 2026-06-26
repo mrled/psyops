@@ -27,11 +27,11 @@ data:
         # HTTP unencrypted - Traefik handles external TLS
         plugins.security.ssl.http.enabled: false
 
-        # DN from the cert-manager certificate commonName
+        # DN must match the certificate commonName
         plugins.security.nodes_dn:
-          - "CN=opensearch-cluster-master-0.opensearch-cluster-master-headless.opensearch.svc.cluster.local"
+          - "CN=opensearch-cluster-master"
         plugins.security.authcz.admin_dn:
-          - "CN=opensearch-cluster-master-0.opensearch-cluster-master-headless.opensearch.svc.cluster.local"
+          - "CN=opensearch-cluster-master"
 
         # Initialize security index from mounted config files on first start
         plugins.security.allow_default_init_securityindex: true
