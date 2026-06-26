@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-values
+  namespace: fluent-bit
+data:
+  values.yaml: |
+    config:
+      inputs: |
+        [INPUT]
+            Name tail
+            Path /var/log/containers/*.log
+            multiline.parser docker, cri
+            Tag kube.*
+            Mem_Buf_Limit 5MB
+            Skip_Long_Lines On
+
+      filters: |
+        [FILTER]
+            Name kubernetes
+            Match kube.*
+            Merge_Log On
+            Keep_Log Off
+            K8S-Logging.Parser On
+            K8S-Logging.Exclude On
+
+      outputs: |
+        [OUTPUT]
+            Name opensearch
+            Match kube.*
+            Host opensearch-cluster-master.opensearch.svc.cluster.local
+            Port 9200
+            # env vars are substituted at runtime
+            HTTP_User $${OPENSEARCH_USERNAME}
+            HTTP_Passwd $${OPENSEARCH_PASSWORD}
+            Logstash_Format On
+            Logstash_Prefix k8s-logs
+            Replace_Dots On
+            Retry_Limit False
+            tls Off
+            Suppress_Type_Name On
+
+    # Inject OpenSearch credentials from secret as environment variables
+    envFrom:
+      - secretRef:
+          name: fluent-bit-opensearch-creds
+
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule

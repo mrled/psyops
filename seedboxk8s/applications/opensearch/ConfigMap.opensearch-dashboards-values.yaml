@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opensearch-dashboards-values
+  namespace: opensearch
+data:
+  values.yaml: |
+    replicaCount: 1
+
+    # HTTP since OpenSearch has SSL disabled on the HTTP layer
+    opensearchHosts: "http://opensearch-cluster-master:9200"
+
+    # Credentials for the opensearch-dashboards internal user
+    opensearchAccount:
+      secret: opensearch-dashboards-account
+
+    config:
+      opensearch_dashboards.yml: |
+        server.host: '0.0.0.0'
+        opensearch.ssl.verificationMode: none
+
+    ingress:
+      enabled: false

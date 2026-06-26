@@ -1,0 +1,31 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: opensearch-transport-tls
+  namespace: opensearch
+spec:
+  secretName: opensearch-transport-tls-secret
+  duration: 175200h # 20 years
+  renewBefore: 8760h # 1 year
+
+  # OpenSearch can ONLY read RSA keys, not ECDSA
+  # https://github.com/opensearch-project/helm-charts/issues/180#issuecomment-2266308172
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    encoding: PKCS8
+    rotationPolicy: Always
+
+  commonName: opensearch-cluster-master-0.opensearch-cluster-master-headless.opensearch.svc.cluster.local
+  dnsNames:
+    # Pod DNS name (used for transport between nodes)
+    - opensearch-cluster-master-0.opensearch-cluster-master-headless.opensearch.svc.cluster.local
+    # Service DNS names
+    - opensearch-cluster-master
+    - opensearch-cluster-master.opensearch
+    - opensearch-cluster-master.opensearch.svc
+    - opensearch-cluster-master.opensearch.svc.cluster.local
+
+  issuerRef:
+    name: cluster-ca-issuer
+    kind: ClusterIssuer

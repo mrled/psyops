@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opensearch-values
+  namespace: opensearch
+data:
+  values.yaml: |
+    singleNode: true
+
+    # Prevent demo security config from running - we provide our own
+    extraEnvs:
+      - name: DISABLE_INSTALL_DEMO_CONFIG
+        value: "true"
+
+    config:
+      opensearch.yml: |
+        cluster.name: opensearch-cluster
+        network.host: 0.0.0.0
+        discovery.type: single-node
+
+        # Transport TLS - required by the security plugin even on single-node
+        plugins.security.ssl.transport.pemcert_filepath: /usr/share/opensearch/config/tls/tls.crt
+        plugins.security.ssl.transport.pemkey_filepath: /usr/share/opensearch/config/tls/tls.key
+        plugins.security.ssl.transport.pemtrustedcas_filepath: /usr/share/opensearch/config/tls/ca.crt
+        plugins.security.ssl.transport.enforce_hostname_verification: false
+
+        # HTTP unencrypted - Traefik handles external TLS
+        plugins.security.ssl.http.enabled: false
+
+        # DN from the cert-manager certificate commonName
+        plugins.security.nodes_dn:
+          - "CN=opensearch-cluster-master-0.opensearch-cluster-master-headless.opensearch.svc.cluster.local"
+        plugins.security.authcz.admin_dn:
+          - "CN=opensearch-cluster-master-0.opensearch-cluster-master-headless.opensearch.svc.cluster.local"
+
+        # Initialize security index from mounted config files on first start
+        plugins.security.allow_default_init_securityindex: true
+
+    # Mount the cert-manager TLS secret for transport
+    secretMounts:
+      - name: transport-tls
+        secretName: opensearch-transport-tls-secret
+        path: /usr/share/opensearch/config/tls
+
+    # Use external secret for security config (internal_users, roles, etc.)
+    securityConfig:
+      enabled: true
+      config:
+        securityConfigSecret: opensearch-security-config
+
+    opensearchJavaOpts: "-Xmx1g -Xms1g"
+
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1500Mi
+      limits:
+        memory: 2Gi
+
+    persistence:
+      enabled: true
+      storageClass: seedbox-slow-mirror
+      size: 50Gi
