@@ -1,11 +1,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: monitoring-fluent-bit
+  name: fluent-bit
   namespace: flux-system
 spec:
   interval: 15m
-  path: /seedboxk8s/applications/monitoring-fluent-bit
+  path: /seedboxk8s/applications/fluent-bit
   prune: true
   timeout: 5m
   sourceRef:
@@ -13,7 +13,7 @@ spec:
     name: flux-system
   dependsOn:
     - name: fluxcfg
-    - name: monitoring-opensearch
+    - name: opensearch
   decryption:
     provider: sops
     secretRef:
