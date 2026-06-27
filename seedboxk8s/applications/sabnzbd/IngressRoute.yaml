@@ -16,7 +16,7 @@ spec:
           kind: Service
           port: 80
       middlewares:
-        - name: bridgetroll-mw
-          namespace: bridgetroll
+        - name: authelia
+          namespace: authelia
   tls:
     secretName: seedbox-wildcard-backing-secret

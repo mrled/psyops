@@ -58,4 +58,22 @@ data:
             - whoami-authelia.${productionClusterFqdn}
             - opensearch.${productionClusterFqdn}
             - sonarr.${productionClusterFqdn}
+            - bk2.${productionClusterFqdn}
+            - cops.${productionClusterFqdn}
+            - ersatztv.${productionClusterFqdn}
+            - heimdall.${productionClusterFqdn}
+            - hydra2.${productionClusterFqdn}
+            - lazylib.${productionClusterFqdn}
+            - lazylibrarian.${productionClusterFqdn}
+            - library.${productionClusterFqdn}
+            - lidarr.${productionClusterFqdn}
+            - nzbhydra2.${productionClusterFqdn}
+            - prowlarr.${productionClusterFqdn}
+            - radarr.${productionClusterFqdn}
+            - sabnzbd.${productionClusterFqdn}
+            - seedbox.${productionClusterFqdn}
+            - shhh.${productionClusterFqdn}
+            - tautulli.${productionClusterFqdn}
+            - transmission.${productionClusterFqdn}
+            - x3.${productionClusterFqdn}
           policy: one_factor
