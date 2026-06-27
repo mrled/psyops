@@ -26,6 +26,8 @@ spec:
                 - |
                   RENOVATE_TOKEN="$(node /etc/renovate/github-app-token.js)"
                   export RENOVATE_TOKEN
+                  node /etc/renovate/render-config.js
+                  export RENOVATE_CONFIG_FILE=/tmp/renovate-config.json
                   exec renovate
               env:
                 - name: LOG_LEVEL
@@ -41,6 +43,8 @@ spec:
               envFrom:
                 - secretRef:
                     name: renovate-env
+                - secretRef:
+                    name: seedboxk8s-config
               resources:
                 requests:
                   cpu: 100m

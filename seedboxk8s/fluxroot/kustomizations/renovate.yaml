@@ -13,6 +13,7 @@ spec:
     name: flux-system
   dependsOn:
     - name: fluxcfg
+    - name: reflector
   decryption:
     provider: sops
     secretRef:
