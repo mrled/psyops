@@ -54,7 +54,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: plexinc/pms-docker:1.42.2.10156-f737b826c
+        - image: plexinc/pms-docker:1.43.2.10687-563d026ea
           name: pms
           ports:
             - containerPort: 32400
