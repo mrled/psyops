@@ -13,13 +13,13 @@ data:
         userKey: admin-user
         passwordKey: admin-password
 
-      # Auth proxy - trusts X-Forwarded-User set by Authelia.
+      # Auth proxy - trusts Remote-User set by Authelia.
       grafana.ini:
         server:
           root_url: https://grafana.${productionClusterFqdn}
         auth.proxy:
           enabled: true
-          header_name: X-Forwarded-User
+          header_name: Remote-User
           header_property: username
           auto_sign_up: true
         auth:
