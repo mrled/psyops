@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: opensearch-admin-tls
+  namespace: opensearch
+spec:
+  secretName: opensearch-admin-tls-secret
+  duration: 175200h # 20 years
+  renewBefore: 8760h # 1 year
+
+  # OpenSearch can ONLY read RSA keys, not ECDSA
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    encoding: PKCS8
+    rotationPolicy: Always
+
+  commonName: opensearch-admin
+
+  issuerRef:
+    name: cluster-ca-issuer
+    kind: ClusterIssuer

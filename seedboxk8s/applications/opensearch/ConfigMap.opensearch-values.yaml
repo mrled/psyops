@@ -30,20 +30,23 @@ data:
         plugins.security.ssl.http.pemkey_filepath: /usr/share/opensearch/config/tls/tls.key
         plugins.security.ssl.http.pemtrustedcas_filepath: /usr/share/opensearch/config/tls/ca.crt
 
-        # DN must match the certificate commonName
+        # Node cert DN - must match transport certificate commonName
         plugins.security.nodes_dn:
           - "CN=opensearch-cluster-master"
+        # Admin cert DN - separate cert from node cert (required by Security 7+)
         plugins.security.authcz.admin_dn:
-          - "CN=opensearch-cluster-master"
+          - "CN=opensearch-admin"
 
         # Initialize security index from mounted config files on first start
         plugins.security.allow_default_init_securityindex: true
 
-    # Mount the cert-manager TLS secret for transport
     secretMounts:
       - name: transport-tls
         secretName: opensearch-transport-tls-secret
         path: /usr/share/opensearch/config/tls
+      - name: admin-tls
+        secretName: opensearch-admin-tls-secret
+        path: /usr/share/opensearch/config/admin-tls
 
     # Use external secret for security config (internal_users, roles, etc.)
     securityConfig:
