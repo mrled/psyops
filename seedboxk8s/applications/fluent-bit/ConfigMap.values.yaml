@@ -41,11 +41,21 @@ data:
             tls.verify Off
             # TODO: enable tls.verify On - mount ca.crt from opensearch-transport-tls-secret and set tls.ca_file
             Suppress_Type_Name On
+            Template_File /fluent-bit/templates/k8s-logs-template.json
 
     # Inject OpenSearch credentials from secret as environment variables
     envFrom:
       - secretRef:
           name: fluent-bit-opensearch-creds
+
+    extraVolumes:
+      - name: opensearch-index-template
+        configMap:
+          name: fluent-bit-opensearch-index-template
+
+    extraVolumeMounts:
+      - name: opensearch-index-template
+        mountPath: /fluent-bit/templates
 
     tolerations:
       - key: node-role.kubernetes.io/control-plane
