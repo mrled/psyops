@@ -7,7 +7,7 @@ spec:
   interval: 15m
   path: /seedboxk8s/applications/prometheus
   prune: true
-  timeout: 10m
+  timeout: 30m
   sourceRef:
     kind: GitRepository
     name: flux-system

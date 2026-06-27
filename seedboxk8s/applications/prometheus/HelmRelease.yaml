@@ -13,13 +13,17 @@ spec:
         name: prometheus-community
         namespace: flux-system
   interval: 15m
-  timeout: 10m
+  timeout: 30m
   releaseName: kube-prometheus-stack
   # CRDs are large; install them separately on upgrade to avoid timeouts
   install:
     crds: Create
+    remediation:
+      retries: 3
   upgrade:
     crds: CreateReplace
+    remediation:
+      retries: 3
   valuesFrom:
     - kind: ConfigMap
       name: kube-prometheus-stack-values
