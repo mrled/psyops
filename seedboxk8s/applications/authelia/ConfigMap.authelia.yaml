@@ -57,4 +57,5 @@ data:
         - domain:
             - whoami-authelia.${productionClusterFqdn}
             - opensearch.${productionClusterFqdn}
+            - sonarr.${productionClusterFqdn}
           policy: one_factor
