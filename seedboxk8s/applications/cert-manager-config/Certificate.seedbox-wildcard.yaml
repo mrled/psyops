@@ -21,6 +21,7 @@ spec:
       reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: >-
         authelia,
         kube-system,
+        prometheus,
         registry,
         tor,
         tortuga,
