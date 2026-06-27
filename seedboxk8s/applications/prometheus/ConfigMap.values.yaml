@@ -5,6 +5,10 @@ metadata:
   namespace: prometheus
 data:
   values.yaml: |
+    crds:
+      upgradeJob:
+        enabled: true
+
     grafana:
       enabled: true
 
