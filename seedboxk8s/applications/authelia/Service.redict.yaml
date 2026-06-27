@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redict
+  namespace: authelia
+  labels:
+    app.kubernetes.io/name: redict
+spec:
+  selector:
+    app.kubernetes.io/name: redict
+  ports:
+    - name: redict
+      port: 6379
+      targetPort: redict
+  type: ClusterIP

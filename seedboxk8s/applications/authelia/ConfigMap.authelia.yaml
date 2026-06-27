@@ -42,6 +42,10 @@ data:
         - domain: ${productionClusterFqdn}
           authelia_url: https://auth.${productionClusterFqdn}
           default_redirection_url: https://whoami-authelia.${productionClusterFqdn}
+      redis:
+        host: redict
+        port: 6379
+        username: authelia
 
     storage:
       local:

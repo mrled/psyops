@@ -30,6 +30,8 @@ spec:
               value: /secrets/JWT_SECRET
             - name: AUTHELIA_SESSION_SECRET_FILE
               value: /secrets/SESSION_SECRET
+            - name: AUTHELIA_SESSION_REDIS_PASSWORD_FILE
+              value: /redict-secret/REDIS_PASSWORD
             - name: AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE
               value: /secrets/STORAGE_ENCRYPTION_KEY
           ports:
@@ -76,6 +78,9 @@ spec:
             - name: assets
               mountPath: /config/assets
               readOnly: true
+            - name: redict-secret
+              mountPath: /redict-secret
+              readOnly: true
             - name: secrets
               mountPath: /secrets
               readOnly: true
@@ -95,6 +100,9 @@ spec:
         - name: assets
           configMap:
             name: authelia-assets
+        - name: redict-secret
+          secret:
+            secretName: redict-secret
         - name: secrets
           secret:
             secretName: authelia
