@@ -54,7 +54,6 @@ cloudformation_aws_region: "{{ global_aws_region }}"
 
 # Shared seedbox stuff
 global_seedbox_domain: "{{ vault_seedbox_domain }}"
-global_plexserver_domain: plex.{{ global_seedbox_domain }}
 
 # Shared appliance stuff
 global_acmedns_ssh_client_pubkey: |

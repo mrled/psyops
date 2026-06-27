@@ -55,56 +55,11 @@ seedbox_media:
 seedbox_media_selinux_enable:
   - /mnt/seedboxmedia
 
-seedbox_root_domain: "{{ global_seedbox_domain }}"
-seedbox_misc_domain: "seedbox.{{ seedbox_root_domain }}"
-seedbox_tentacles_domain: tentacles.{{ seedbox_root_domain }}
-seedbox_transmission_domain: transmission.{{ seedbox_root_domain }}
-seedbox_rtorrent_domain: rtorrent.{{ seedbox_root_domain }}
-seedbox_cops_domain: books.{{ seedbox_root_domain }}
-seedbox_jackett_domain: jackett.{{ seedbox_root_domain }}
-seedbox_prowlarr_domain: prowlarr.{{ seedbox_root_domain }}
-seedbox_plex_domain: plex.{{ seedbox_root_domain }}
-seedbox_sonarr_domain: sonarr.{{ seedbox_root_domain }}
-seedbox_radarr_domain: radarr.{{ seedbox_root_domain }}
-seedbox_lidarr_domain: lidarr.{{ seedbox_root_domain }}
-seedbox_headphones_domain: headphones.{{ seedbox_root_domain }}
-seedbox_sabnzbd_domain: sabnzbd.{{ seedbox_root_domain }}
-seedbox_hydra2_domain: hydra2.{{ seedbox_root_domain }}
-seedbox_whoami_domain: whoami.{{ seedbox_root_domain }}
-seedbox_balancer_domain: balancer.{{ seedbox_root_domain }}
-seedbox_tautulli_domain: tautulli.{{ seedbox_root_domain }}
-seedbox_kibana_domain: kibana.{{ seedbox_root_domain }}
-seedbox_stash_domain: 6.{{ seedbox_root_domain }}
-seedbox_ersatztv_domain: ersatztv.{{ seedbox_root_domain }}
-seedbox_shhh_domain: shhh.{{ seedbox_root_domain }}
-seedbox_lazylibrarian_domain: library.{{ seedbox_root_domain }}
-seedbox_onionproxy_domain: onion.{{ seedbox_root_domain }}
-seedbox_elastic_domain: elastic.{{ seedbox_root_domain }}
-seedbox_dejavu_domain: dejavu.{{ seedbox_root_domain }}
-
 seedbox_acme_email: psyops@micahrl.com
 seedbox_acme_aws_region: "{{ global_home_zone_updater_region }}"
 seedbox_acme_aws_access_key: "{{ vault_seedbox_zone_updater_access_key }}"
 seedbox_acme_aws_secret_key: "{{ vault_seedbox_zone_updater_secret_key }}"
 seedbox_acme_aws_zone: Z10276202TLC17I3UZTK3
-
-# These should be the same for all services
-# Note that some services might require manual configuration
-# The traefik dashboard is at least configured with this
-seedbox_web_admin_user: freeleech
-seedbox_web_admin_pass: "{{ vault_seedbox_web_admin_pass }}"
-seedbox_web_admin_pass_bcrypt: "{{ vault_seedbox_web_admin_pass_bcrypt }}"
-
-# ELK shit
-seedbox_elastic_password: "{{ vault_seedbox_elastic_password }}"
-seedbox_kibana_user: kibana_system
-seedbox_kibana_password: "{{ vault_seedbox_kibana_password }}"
-# NOTE: logstash_system is some built in user that is not designed for log ingestion,#
-# but that we do need to create a password for ...
-# and we have to create our own user for ingestion too.
-seedbox_logstash_ingestion_user: logstash_ingestion
-seedbox_logstash_ingestion_password: "{{ vault_seedbox_logstash_ingestion_password }}"
-seedbox_logstash_system_password: "{{ vault_seedbox_logstash_system_password }}"
 
 # The IP address for Traefik to be exposed on
 seedbox_ingress_ipaddr: 100.86.119.112
