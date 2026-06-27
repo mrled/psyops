@@ -73,6 +73,9 @@ spec:
               subPath: users.yml
             - name: config
               mountPath: /config
+            - name: assets
+              mountPath: /config/assets
+              readOnly: true
             - name: secrets
               mountPath: /secrets
               readOnly: true
@@ -89,6 +92,9 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: authelia-config
+        - name: assets
+          configMap:
+            name: authelia-assets
         - name: secrets
           secret:
             secretName: authelia
