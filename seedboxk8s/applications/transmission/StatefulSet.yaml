@@ -53,11 +53,18 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: registry.${productionClusterFqdn}/tortuga/transmission:latest@sha256:8374c362426216be741c2d31d0fd79677062218af09509a3647951dd37348c8a
+        # https://github.com/linuxserver/docker-transmission/releases
+        - image: lscr.io/linuxserver/transmission:4.0.6-r4-ls294
           name: transmission
-          securityContext:
-            runAsUser: ${plexUid}
-            runAsGroup: ${plexGid}
+          env:
+            - name: PUID
+              value: ${quote}${plexUid}${quote}
+            - name: PGID
+              value: ${quote}${plexGid}${quote}
+            - name: TZ
+              value: ${timezone}
+            - name: PEERPORT
+              value: ${quote}${transmissionPeerPort}${quote}
           ports:
             - containerPort: 9091
             - containerPort: ${transmissionPeerPort}
@@ -71,8 +78,6 @@ spec:
             - mountPath: /media
               name: seedboxmedia-nfs
               readOnly: false
-      imagePullSecrets:
-        - name: registry-k8s-dockerconfigjson
       volumes:
         - name: import
           emptyDir: {}
