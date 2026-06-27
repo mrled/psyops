@@ -19,15 +19,29 @@ data:
         [FILTER]
             Name kubernetes
             Match kube.*
-            Merge_Log On
-            Keep_Log Off
+            Merge_Log Off
+            Annotations Off
             K8S-Logging.Parser On
             K8S-Logging.Exclude On
+
+        [FILTER]
+            Name rewrite_tag
+            Match kube.*
+            Rule $kubernetes['container_name'] ^traefik traefik.$TAG false
+            Emitter_Name traefik_tagger
+
+        [FILTER]
+            Name parser
+            Match traefik.*
+            Key_Name log
+            Parser json
+            Reserve_Data true
+            Preserve_Key false
 
       outputs: |
         [OUTPUT]
             Name opensearch
-            Match kube.*
+            Match *
             Host opensearch-cluster-master.opensearch.svc.cluster.local
             Port 9200
             # env vars are substituted at runtime

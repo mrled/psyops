@@ -9,7 +9,7 @@ data:
       "index_patterns": ["k8s-logs-*"],
       "template": {
         "settings": {
-          "index.mapping.total_fields.limit": 5000
+          "index.mapping.total_fields.limit": 2000
         }
       }
     }
