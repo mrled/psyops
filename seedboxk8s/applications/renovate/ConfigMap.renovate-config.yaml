@@ -138,7 +138,8 @@ data:
       config.customManagers.push({
         customType: "regex",
         managerFilePatterns: [`/^${imageVar.path.replaceAll("/", "\\/").replaceAll(".", "\\.")}$/`],
-        matchStrings: [`image: \\$\\{${imageVar.name}\\}:(?<currentValue>\\S+)`],
+        matchStrings: [`(?<depPrefix>image:\\s*)\\$\\{${imageVar.name}\\}:(?<currentValue>\\S+)`],
+        autoReplaceStringTemplate: `{{{depPrefix}}}\${${imageVar.name}}:{{{newValue}}}`,
         datasourceTemplate: "docker",
         depNameTemplate: requireEnv(imageVar.name),
         versioningTemplate: imageVar.versioning,
