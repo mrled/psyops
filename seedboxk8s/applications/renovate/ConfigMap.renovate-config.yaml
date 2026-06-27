@@ -46,7 +46,8 @@ data:
         },
         {
           "matchPackageNames": ["ghcr.io/tautulli/tautulli"],
-          "changelogUrl": "https://github.com/Tautulli/Tautulli/releases"
+          "changelogUrl": "https://github.com/Tautulli/Tautulli/releases",
+          "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
         },
         {
           "matchPackageNames": ["ghcr.io/linuxserver/cops"],
@@ -58,7 +59,8 @@ data:
         },
         {
           "matchPackageNames": ["ghcr.io/linuxserver/lazylibrarian"],
-          "changelogUrl": "https://github.com/linuxserver/docker-lazylibrarian/releases"
+          "changelogUrl": "https://github.com/linuxserver/docker-lazylibrarian/releases",
+          "versioning": "regex:^[a-f0-9]+-ls(?<major>\\d+)$"
         },
         {
           "matchPackageNames": ["ghcr.io/linuxserver/lidarr"],
@@ -66,7 +68,8 @@ data:
         },
         {
           "matchPackageNames": ["ghcr.io/linuxserver/nzbhydra2"],
-          "changelogUrl": "https://github.com/linuxserver/docker-nzbhydra2/releases"
+          "changelogUrl": "https://github.com/linuxserver/docker-nzbhydra2/releases",
+          "versioning": "regex:^v?(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>\\d+)$"
         },
         {
           "matchPackageNames": ["plexinc/pms-docker"],
@@ -79,15 +82,18 @@ data:
         },
         {
           "matchPackageNames": ["ghcr.io/linuxserver/radarr"],
-          "changelogUrl": "https://github.com/linuxserver/docker-radarr/releases"
+          "changelogUrl": "https://github.com/linuxserver/docker-radarr/releases",
+          "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-ls(?<revision>\\d+)$"
         },
         {
           "matchPackageNames": ["ghcr.io/linuxserver/sabnzbd"],
-          "changelogUrl": "https://github.com/linuxserver/docker-sabnzbd/releases"
+          "changelogUrl": "https://github.com/linuxserver/docker-sabnzbd/releases",
+          "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>\\d+)$"
         },
         {
           "matchPackageNames": ["ghcr.io/linuxserver/sonarr"],
-          "changelogUrl": "https://github.com/linuxserver/docker-sonarr/releases"
+          "changelogUrl": "https://github.com/linuxserver/docker-sonarr/releases",
+          "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-ls(?<revision>\\d+)$"
         },
         {
           "matchPackageNames": ["quay.io/buildah/stable"],
