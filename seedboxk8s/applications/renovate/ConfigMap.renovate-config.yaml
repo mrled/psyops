@@ -69,8 +69,8 @@ data:
           "changelogUrl": "https://github.com/linuxserver/docker-nzbhydra2/releases"
         },
         {
-          "matchPackageNames": ["ghcr.io/linuxserver/plex"],
-          "changelogUrl": "https://github.com/linuxserver/docker-plex/releases"
+          "matchPackageNames": ["plexinc/pms-docker"],
+          "changelogUrl": "https://github.com/plexinc/pms-docker/releases"
         },
         {
           "matchPackageNames": ["ghcr.io/linuxserver/prowlarr"],
