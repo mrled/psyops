@@ -128,7 +128,8 @@ data:
       {
         name: "shhhImage",
         path: "seedboxk8s/applications/shhh/StatefulSet.yaml",
-        versioning: "docker",
+        versioning: "semver",
+        extractVersion: "^v3-(?<version>\\d+\\.\\d+\\.\\d+)(?:-release)?(?:\\.\\d+)?$",
       },
     ];
 
@@ -143,6 +144,7 @@ data:
         datasourceTemplate: "docker",
         depNameTemplate: requireEnv(imageVar.name),
         versioningTemplate: imageVar.versioning,
+        ...(imageVar.extractVersion ? { extractVersionTemplate: imageVar.extractVersion } : {}),
       });
     }
 
