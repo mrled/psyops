@@ -117,23 +117,41 @@ data:
 
     const configPath = process.env.RENOVATE_CONFIG_FILE || "/etc/renovate/config.json";
     const outputPath = "/tmp/renovate-config.json";
-    const x3Image = process.env.x3Image;
 
-    if (!x3Image) {
-      console.error("x3Image is required from the reflected seedboxk8s-config Secret");
-      process.exit(1);
+    function requireEnv(name) {
+      const value = process.env[name];
+      if (!value) {
+        console.error(`${name} is required from the reflected seedboxk8s-config Secret`);
+        process.exit(1);
+      }
+      return value;
     }
+
+    const imageVars = [
+      {
+        name: "x3Image",
+        path: "seedboxk8s/applications/x3/StatefulSet.yaml",
+        versioning: "semver",
+      },
+      {
+        name: "shhhImage",
+        path: "seedboxk8s/applications/shhh/StatefulSet.yaml",
+        versioning: "docker",
+      },
+    ];
 
     const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
     config.customManagers = config.customManagers || [];
-    config.customManagers.push({
-      customType: "regex",
-      managerFilePatterns: ["/^seedboxk8s/applications/x3/StatefulSet\\.ya?ml$/"],
-      matchStrings: ["image: \\$\\{x3Image\\}:(?<currentValue>\\S+)"],
-      datasourceTemplate: "docker",
-      depNameTemplate: x3Image,
-      versioningTemplate: "semver"
-    });
+    for (const imageVar of imageVars) {
+      config.customManagers.push({
+        customType: "regex",
+        managerFilePatterns: [`/^${imageVar.path.replaceAll("/", "\\/").replaceAll(".", "\\.")}$/`],
+        matchStrings: [`image: \\$\\{${imageVar.name}\\}:(?<currentValue>\\S+)`],
+        datasourceTemplate: "docker",
+        depNameTemplate: requireEnv(imageVar.name),
+        versioningTemplate: imageVar.versioning,
+      });
+    }
 
     fs.writeFileSync(outputPath, `${JSON.stringify(config, null, 2)}\n`);
 
