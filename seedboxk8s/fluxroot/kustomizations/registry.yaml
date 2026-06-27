@@ -15,6 +15,7 @@ spec:
     - name: fluxcfg
     - name: cert-manager-config
     - name: topolvm
+    - name: authelia
   decryption:
     provider: sops
     secretRef:

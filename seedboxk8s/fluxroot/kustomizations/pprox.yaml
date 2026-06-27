@@ -15,6 +15,7 @@ spec:
     - name: fluxcfg
     - name: topolvm
     - name: tortuga
+    - name: tailscale-operator
   decryption:
     provider: sops
     secretRef:

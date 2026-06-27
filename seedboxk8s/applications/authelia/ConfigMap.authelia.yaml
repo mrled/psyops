@@ -61,6 +61,7 @@ data:
             - bk2.${productionClusterFqdn}
             - cops.${productionClusterFqdn}
             - ersatztv.${productionClusterFqdn}
+            - grafana.${productionClusterFqdn}
             - heimdall.${productionClusterFqdn}
             - hydra2.${productionClusterFqdn}
             - lazylib.${productionClusterFqdn}
@@ -70,10 +71,16 @@ data:
             - nzbhydra2.${productionClusterFqdn}
             - prowlarr.${productionClusterFqdn}
             - radarr.${productionClusterFqdn}
+            - registry-browser.${productionClusterFqdn}
             - sabnzbd.${productionClusterFqdn}
             - seedbox.${productionClusterFqdn}
             - shhh.${productionClusterFqdn}
             - tautulli.${productionClusterFqdn}
             - transmission.${productionClusterFqdn}
+            - traefik-localnet.${productionClusterFqdn}
+            - traefik-tailscale.${productionClusterFqdn}
+            - whoami.${productionClusterFqdn}
+            - whoami-newcert.${productionClusterFqdn}
+            - whoami-newcert.${testingClusterFqdn}
             - x3.${productionClusterFqdn}
           policy: one_factor

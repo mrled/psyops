@@ -16,6 +16,7 @@ spec:
     - name: topolvm
     - name: tortuga
     - name: authelia
+    - name: pprox
   decryption:
     provider: sops
     secretRef:

@@ -16,6 +16,7 @@ spec:
   dependsOn:
     - name: fluxcfg
     - name: traefik-00-base
+    - name: authelia
   decryption:
     provider: sops
     secretRef:
