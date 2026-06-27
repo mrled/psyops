@@ -54,7 +54,7 @@ spec:
               mountPath: /import
       containers:
         # https://github.com/linuxserver/docker-sabnzbd/releases
-        - image: ghcr.io/linuxserver/sabnzbd:4.5.5-ls250
+        - image: ghcr.io/linuxserver/sabnzbd:5.0.4-ls260
           name: sabnzbd
           ports:
             - containerPort: 8080
