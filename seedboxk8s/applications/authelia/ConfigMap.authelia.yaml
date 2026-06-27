@@ -24,6 +24,8 @@ data:
       file:
         path: /users/users.yml
         watch: false
+        search:
+          email: true
         password:
           algorithm: argon2
           argon2:
