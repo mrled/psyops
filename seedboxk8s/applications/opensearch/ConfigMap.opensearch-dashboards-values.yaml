@@ -28,6 +28,7 @@ data:
         cpu: 500m
         memory: 512Mi
       limits:
+        cpu: 2000m
         memory: 1Gi
 
     ingress:
