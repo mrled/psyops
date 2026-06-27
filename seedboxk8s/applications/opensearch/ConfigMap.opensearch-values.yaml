@@ -40,11 +40,6 @@ data:
         # Initialize security index from mounted config files on first start
         plugins.security.allow_default_init_securityindex: true
 
-        # Trust proxy headers from any pod in the cluster (Dashboards sends Remote-User to OpenSearch)
-        # TODO: restrict to Dashboards pod CIDR once stable
-        plugins.security.authcz.rest_layer.proxy:
-          - "0.0.0.0/0"
-
     secretMounts:
       - name: transport-tls
         secretName: opensearch-transport-tls-secret
