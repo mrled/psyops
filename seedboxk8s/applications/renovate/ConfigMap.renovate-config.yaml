@@ -33,16 +33,8 @@ data:
           "changelogUrl": "https://github.com/traefik/traefik/releases"
         },
         {
-          "matchPackageNames": ["docker.io/dexidp/dex"],
-          "changelogUrl": "https://github.com/dexidp/dex/releases"
-        },
-        {
           "matchPackageNames": ["ghcr.io/ersatztv/legacy"],
           "changelogUrl": "https://github.com/ErsatzTV/ErsatzTV/releases"
-        },
-        {
-          "matchPackageNames": ["docker.io/thomseddon/traefik-forward-auth"],
-          "changelogUrl": "https://github.com/thomseddon/traefik-forward-auth/releases"
         },
         {
           "matchPackageNames": ["docker.io/cesanta/docker_auth"],

@@ -14,7 +14,6 @@ spec:
   dependsOn:
     - name: fluxcfg
     - name: traefik-00-base
-    - name: bridgetroll
   decryption:
     provider: sops
     secretRef:

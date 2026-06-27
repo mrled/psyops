@@ -15,9 +15,6 @@ spec:
         - name: onionproxy
           kind: Service
           port: 80
-      # middlewares:
-      #   - name: bridgetroll-mw
-      #     namespace: bridgetroll
     - match: HostRegexp(`^.+\.onion\.${productionClusterFqdn}$`)
       kind: Rule
       services:

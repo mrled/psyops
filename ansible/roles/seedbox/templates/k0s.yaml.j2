@@ -18,10 +18,6 @@ spec:
 {% for san in seedbox_k8s_api_sans %}
     - {{ san }}
 {% endfor %}
-    extraArgs:
-      oidc-issuer-url: https://dex.{{ seedbox_root_domain }}
-      oidc-client-id: seedboxk8s-kubernetes
-      oidc-username-claim: email
 
   controllerManager: {}
 
