@@ -18,10 +18,6 @@ spec:
     protocol: TCP
     port: 443
     targetPort: 443
-  - name: clustergit-ssh
-    protocol: TCP
-    port: 20022
-    targetPort: 20022
   - name: plex32400
     protocol: TCP
     port: 32400

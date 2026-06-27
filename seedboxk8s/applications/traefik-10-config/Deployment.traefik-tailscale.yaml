@@ -27,7 +27,6 @@ spec:
           - --entrypoints.web.forwardedHeaders.trustedIPs=127.0.0.1/32,10.0.0.0/8
           - --entrypoints.websecure.Address=:443
           - --entrypoints.websecure.forwardedHeaders.trustedIPs=127.0.0.1/32,10.0.0.0/8
-          - --entrypoints.clustergit-ssh.Address=:20022
           - --entrypoints.plex32400.address=:32400
           - --entrypoints.plex64800.address=:64800
 
@@ -42,9 +41,6 @@ spec:
             protocol: TCP
           - name: websecure
             containerPort: 443
-            protocol: TCP
-          - name: clustergit-ssh
-            containerPort: 20022
             protocol: TCP
           - name: plex32400
             containerPort: 32400
