@@ -23,7 +23,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: restic
-          image: alpine:3.22
+          image: alpine:3.24
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
