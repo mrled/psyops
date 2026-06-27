@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-prometheus-stack-values
+  namespace: prometheus
+data:
+  values.yaml: |
+    grafana:
+      enabled: true
+
+      admin:
+        existingSecret: grafana-admin
+        userKey: admin-user
+        passwordKey: admin-password
+
+      # Auth proxy - trusts X-Forwarded-User set by Authelia.
+      grafana.ini:
+        server:
+          root_url: https://grafana.${productionClusterFqdn}
+        auth.proxy:
+          enabled: true
+          header_name: X-Forwarded-User
+          header_property: username
+          auto_sign_up: true
+        auth:
+          disable_login_form: true
+
+      # Managed via Traefik IngressRoute instead
+      ingress:
+        enabled: false
+
+      persistence:
+        enabled: true
+        storageClassName: seedbox-slow-mirror
+        size: 10Gi
+
+    prometheus:
+      prometheusSpec:
+        retention: 30d
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: seedbox-slow-mirror
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 50Gi
+
+    alertmanager:
+      ingress:
+        enabled: false
