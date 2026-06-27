@@ -18,6 +18,7 @@ data:
       opensearch_dashboards.yml: |
         server.host: '0.0.0.0'
         opensearch.ssl.verificationMode: none
+        opensearch.requestHeadersWhitelist: ["x-forwarded-for","remote-user","remote-groups","remote-email","remote-name"]
         opensearch_security.auth.type: "proxy"
         opensearch_security.proxycache.user_header: "remote-user"
         opensearch_security.proxycache.roles_header: "remote-groups"
