@@ -19,4 +19,4 @@ kubectl exec -n opensearch opensearch-cluster-master-0 -- \
 
 echo "Restarting OpenSearch Dashboards to pick up new opensearch_dashboards.yml..."
 kubectl rollout restart deployment/opensearch-dashboards -n opensearch
-kubectl rollout status deployment/opensearch-dashboards -n opensearch
+echo "Dashboards restarted (startup takes several minutes, check with: kubectl rollout status deployment/opensearch-dashboards -n opensearch)"

@@ -22,5 +22,12 @@ data:
         opensearch_security.proxycache.user_header: "remote-user"
         opensearch_security.proxycache.roles_header: "remote-groups"
 
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+
     ingress:
       enabled: false
