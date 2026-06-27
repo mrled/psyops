@@ -35,9 +35,9 @@ data:
     session:
       name: authelia_session
       same_site: lax
-      inactivity: 24h
-      expiration: 24h
-      remember_me: 90d
+      inactivity: 180d
+      expiration: 180d
+      remember_me: 180d
       cookies:
         - domain: ${productionClusterFqdn}
           authelia_url: https://auth.${productionClusterFqdn}
