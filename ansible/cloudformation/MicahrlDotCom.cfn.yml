@@ -277,6 +277,16 @@ Resources:
           TTL: 60
           ResourceRecords: ["d2chf3ip7meb8o.cloudfront.net."]
 
+        # IRC Bouncer
+        - Name: bolgana.micahrl.com.
+          Type: A
+          TTL: 60
+          ResourceRecords: [64.188.8.125]
+        - Name: bolgana.micahrl.com.
+          Type: AAAA
+          TTL: 60
+          ResourceRecords: [fe80::216:3cff:fe82:d5f0]
+
   # Home Zone
   # Unifi is too dumb to set hostnames for its clients :) lol
   HomeZone:
