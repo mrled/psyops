@@ -11,7 +11,7 @@ global_timezone:
   zoneinfo_tzname: US/Central
 
 # This is not prefixed with global_, but the base role is very generic
-base_timezone: "{{ global_timezone.zoneinfo_tzname }}"
+base_timezone: "{{ global_timezone.zoneinfo_cityname }}"
 
 base_ghostty_terminfo: true
 

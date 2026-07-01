@@ -1,0 +1,11 @@
+---
+- name: Configure IRC bouncers
+  hosts: ircbnc
+  roles:
+    - { role: base, tags: ["base"] }
+    - { role: autoupgrade, tags: ["autoupgrade"] }
+    - { role: tailscale, tags: ["tailscale"] }
+    - { role: emailfwd, tags: ["emailfwd"] }
+    - { role: ssh_copy_id, tags: ["ssh_copy_id"] }
+    - { role: interactive_system, tags: ["interactive", "interactive_system"] }
+    - { role: interactive_user, tags: ["interactive", "interactive_user"] }

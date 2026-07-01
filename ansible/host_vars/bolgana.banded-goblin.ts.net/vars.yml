@@ -1,0 +1,19 @@
+---
+# Public IP: 64.188.8.125
+ansible_user: root
+ansible_port: 22
+
+tailscale_take_over_ssh: true
+base_set_hostname: bolgana
+
+base_motd: >-
+  These badlands of venomous sagebrush are dominated by two species: jackalopes,
+  and the carnivorous tumbleweeds that prey upon them.
+
+interactive_system_create_users:
+  - micahrl
+interactive_system_zsh_users:
+  - micahrl
+
+interactive_user_list:
+  - name: micahrl

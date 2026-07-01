@@ -22,6 +22,7 @@ apsylania.micahrl.com
 tagasaw.home.micahrl.com
 wenaglia.banded-goblin.ts.net
 dreadnaught
+bolgana.banded-goblin.ts.net
 
 [http_root_micahrl_com]
 apsylania.micahrl.com
@@ -36,6 +37,10 @@ tagasaw.home.micahrl.com
 apsylania.micahrl.com
 tagasaw.home.micahrl.com
 wenaglia.banded-goblin.ts.net
+bolgana.banded-goblin.ts.net
+
+[ircbnc]
+bolgana.banded-goblin.ts.net
 
 [unifiusg]
 gateway.home.micahrl.com
