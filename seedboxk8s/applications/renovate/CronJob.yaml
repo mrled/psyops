@@ -17,7 +17,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: renovate
-              image: renovate/renovate:43.245.0
+              image: renovate/renovate:43.249.5
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/sh
