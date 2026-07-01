@@ -53,6 +53,21 @@
     name:
       - ntp
       - sudo
+  when: ansible_distribution_major_version | int < 13
+
+- name: Install base packages (Debian 13+)
+  ansible.builtin.apt:
+    name:
+      - ntpsec
+      - sudo
+  when: ansible_distribution_major_version | int >= 13
+
+- name: Set MOTD
+  ansible.builtin.copy:
+    content: "{{ base_motd }}\n"
+    dest: /etc/motd
+    mode: "0644"
+  when: base_motd
 
 - name: Set system hostname to inventory_hostname
   ansible.builtin.hostname:
@@ -61,9 +76,16 @@
   when: base_set_system_hostname_to_inventory_hostname
   tags: hostname
 
+- name: Set system hostname
+  ansible.builtin.hostname:
+    name: "{{ base_set_hostname }}"
+  register: base_set_hostname_result
+  when: base_set_hostname
+  tags: hostname
+
 - name: Re-gather facts when hostname changes
   ansible.builtin.setup:
-  when: base_hostname_result.changed
+  when: base_hostname_result.changed or base_set_hostname_result.changed
   tags: hostname
 
 # Note that if a machine cannot resolve its short hostname, sudo can be very slow
