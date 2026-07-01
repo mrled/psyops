@@ -1,4 +1,10 @@
 ---
+- name: Create users
+  ansible.builtin.user:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ interactive_system_create_users }}"
+
 - name: Install packages
   ansible.builtin.package:
     name:
