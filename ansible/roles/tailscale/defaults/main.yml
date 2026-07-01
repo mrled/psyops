@@ -12,3 +12,4 @@ tailscale_ssh_port: 22
 #     - local_port: 9420
 #       https_port: 8443
 tailscale_funnels: []
+tailscale_serves: []

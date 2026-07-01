@@ -92,3 +92,7 @@
 - name: Configure Tailscale Funnel entries
   ansible.builtin.import_tasks: funnel.yml
   when: tailscale_funnels | length > 0
+
+- name: Configure Tailscale Serve entries
+  ansible.builtin.import_tasks: serve.yml
+  when: tailscale_serves | length > 0

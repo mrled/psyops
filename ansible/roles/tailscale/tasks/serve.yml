@@ -1,0 +1,16 @@
+---
+- name: Check tailscale serve status
+  ansible.builtin.command: tailscale serve status
+  register: tailscale_serve_status
+  changed_when: false
+  failed_when: false
+
+- name: Configure tailscale serve entries
+  ansible.builtin.command: >-
+    tailscale serve --bg
+    --https={{ item.https_port }}
+    --set-path={{ item.path | default('/') }}
+    http://localhost:{{ item.local_port }}
+  loop: "{{ tailscale_serves }}"
+  changed_when: true
+  when: item.local_port | string not in tailscale_serve_status.stdout
