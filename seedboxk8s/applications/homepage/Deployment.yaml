@@ -21,6 +21,18 @@ spec:
       automountServiceAccountToken: true
       dnsPolicy: ClusterFirst
       enableServiceLinks: true
+      initContainers:
+        - name: config-copy
+          image: busybox:1.38.0
+          command:
+            - sh
+            - -c
+            - cp /config-src/* /app/config/
+          volumeMounts:
+            - name: homepage-config
+              mountPath: /config-src
+            - name: config
+              mountPath: /app/config
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:latest
@@ -49,32 +61,8 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 15
           volumeMounts:
-            - mountPath: /app/config/custom.js
-              name: homepage-config
-              subPath: custom.js
-            - mountPath: /app/config/custom.css
-              name: homepage-config
-              subPath: custom.css
-            - mountPath: /app/config/bookmarks.yaml
-              name: homepage-config
-              subPath: bookmarks.yaml
-            - mountPath: /app/config/docker.yaml
-              name: homepage-config
-              subPath: docker.yaml
-            - mountPath: /app/config/kubernetes.yaml
-              name: homepage-config
-              subPath: kubernetes.yaml
-            - mountPath: /app/config/services.yaml
-              name: homepage-config
-              subPath: services.yaml
-            - mountPath: /app/config/settings.yaml
-              name: homepage-config
-              subPath: settings.yaml
-            - mountPath: /app/config/widgets.yaml
-              name: homepage-config
-              subPath: widgets.yaml
-            - mountPath: /app/config/logs
-              name: logs
+            - name: config
+              mountPath: /app/config
           resources:
             requests:
               memory: 128Mi
@@ -85,5 +73,5 @@ spec:
         - name: homepage-config
           configMap:
             name: homepage-config
-        - name: logs
+        - name: config
           emptyDir: {}
