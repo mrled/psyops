@@ -30,7 +30,9 @@ spec:
           ports:
             - containerPort: 3000
               name: http
-
+          env:
+            - name: HOMEPAGE_ALLOWED_HOSTS
+              value: "*"
           volumeMounts:
             - name: config
               mountPath: /app/config
