@@ -32,3 +32,8 @@ data:
           timeStyle: short
           dateStyle: short
           hourCycle: h23
+  services.yaml: ""
+  bookmarks.yaml: ""
+  docker.yaml: ""
+  custom.css: ""
+  custom.js: ""

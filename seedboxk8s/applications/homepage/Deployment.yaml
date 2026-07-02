@@ -19,38 +19,62 @@ spec:
     spec:
       serviceAccountName: homepage
       automountServiceAccountToken: true
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: true
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:latest
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
           ports:
-            - containerPort: 3000
-              name: http
+            - name: http
+              containerPort: 3000
+              protocol: TCP
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
               value: "*"
-          volumeMounts:
-            - name: config
-              mountPath: /app/config/kubernetes.yaml
-              subPath: kubernetes.yaml
-            - name: config
-              mountPath: /app/config/settings.yaml
-              subPath: settings.yaml
-            - name: config
-              mountPath: /app/config/widgets.yaml
-              subPath: widgets.yaml
-            - name: logs
-              mountPath: /app/config/logs
           livenessProbe:
             httpGet:
               path: /api/healthcheck
-              port: 3000
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 15
+          volumeMounts:
+            - mountPath: /app/config/custom.js
+              name: homepage-config
+              subPath: custom.js
+            - mountPath: /app/config/custom.css
+              name: homepage-config
+              subPath: custom.css
+            - mountPath: /app/config/bookmarks.yaml
+              name: homepage-config
+              subPath: bookmarks.yaml
+            - mountPath: /app/config/docker.yaml
+              name: homepage-config
+              subPath: docker.yaml
+            - mountPath: /app/config/kubernetes.yaml
+              name: homepage-config
+              subPath: kubernetes.yaml
+            - mountPath: /app/config/services.yaml
+              name: homepage-config
+              subPath: services.yaml
+            - mountPath: /app/config/settings.yaml
+              name: homepage-config
+              subPath: settings.yaml
+            - mountPath: /app/config/widgets.yaml
+              name: homepage-config
+              subPath: widgets.yaml
+            - mountPath: /app/config/logs
+              name: logs
           resources:
             requests:
               memory: 128Mi
@@ -58,7 +82,7 @@ spec:
             limits:
               memory: 512Mi
       volumes:
-        - name: config
+        - name: homepage-config
           configMap:
             name: homepage-config
         - name: logs
