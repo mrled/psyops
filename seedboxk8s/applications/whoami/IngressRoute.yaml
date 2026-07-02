@@ -5,6 +5,12 @@ metadata:
   namespace: whoami
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Whoami
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: mdi-help-network-outline
+    gethomepage.dev/href: https://whoami.${productionClusterFqdn}
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=whoami
 spec:
   entryPoints:
     - websecure

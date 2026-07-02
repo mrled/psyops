@@ -5,6 +5,12 @@ metadata:
   namespace: traefik
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Traefik (Tailscale)
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: traefik
+    gethomepage.dev/href: https://traefik-tailscale.${productionClusterFqdn}/dashboard/
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=traefik-tailscale
 spec:
   entryPoints:
     - websecure

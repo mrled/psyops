@@ -5,6 +5,12 @@ metadata:
   namespace: registry
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Registry Browser
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: docker
+    gethomepage.dev/href: https://registry-browser.${productionClusterFqdn}
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=browser
 spec:
   entryPoints:
     - websecure

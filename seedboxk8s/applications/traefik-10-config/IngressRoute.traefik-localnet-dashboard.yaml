@@ -5,6 +5,11 @@ metadata:
   namespace: traefik
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Traefik (Localnet)
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: traefik
+    gethomepage.dev/href: https://traefik-localnet.${productionClusterFqdn}/dashboard/
 spec:
   entryPoints:
     - websecure

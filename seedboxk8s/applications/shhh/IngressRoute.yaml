@@ -7,8 +7,8 @@ metadata:
     kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Shhh
-    gethomepage.dev/group: Media
-    gethomepage.dev/icon: mdi-shield-lock-outline
+    gethomepage.dev/group: Ao
+    gethomepage.dev/icon: whisparr
     gethomepage.dev/href: https://shhh.${productionClusterFqdn}
 
 spec:
