@@ -8,6 +8,7 @@ Restart=always
 ExecStartPre=-/usr/bin/podman stop thelounge
 ExecStartPre=-/usr/bin/podman rm thelounge
 ExecStart=/usr/bin/podman run --rm --name thelounge \
+  --user {{ ircbnc_thelounge_uid }}:{{ ircbnc_thelounge_gid }} \
   -v /var/opt/thelounge:/var/opt/thelounge \
   -p 127.0.0.1:9000:9000 \
   ghcr.io/thelounge/thelounge:{{ ircbnc_thelounge_version }}

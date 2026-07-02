@@ -1,3 +1,5 @@
 ---
 ircbnc_port: 9000
 ircbnc_thelounge_version: "latest"
+ircbnc_thelounge_uid: 21000
+ircbnc_thelounge_gid: 21000

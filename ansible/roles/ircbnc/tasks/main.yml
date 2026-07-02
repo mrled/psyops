@@ -4,6 +4,22 @@
     name: podman
     state: present
 
+- name: Create thelounge system group
+  ansible.builtin.group:
+    name: thelounge
+    gid: "{{ ircbnc_thelounge_gid }}"
+    system: true
+
+- name: Create thelounge system user
+  ansible.builtin.user:
+    name: thelounge
+    uid: "{{ ircbnc_thelounge_uid }}"
+    group: thelounge
+    system: true
+    shell: /usr/sbin/nologin
+    home: /var/opt/thelounge
+    create_home: false
+
 - name: Pull The Lounge image
   ansible.builtin.command:
     cmd: podman pull ghcr.io/thelounge/thelounge:{{ ircbnc_thelounge_version }}
@@ -14,8 +30,8 @@
   ansible.builtin.file:
     path: /var/opt/thelounge/users
     state: directory
-    owner: "1000"
-    group: "1000"
+    owner: thelounge
+    group: thelounge
     mode: "0755"
 
 - name: Install thelounge systemd service
