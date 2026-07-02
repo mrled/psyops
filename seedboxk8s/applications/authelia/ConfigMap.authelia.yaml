@@ -73,6 +73,7 @@ data:
             - ersatztv.${productionClusterFqdn}
             - grafana.${productionClusterFqdn}
             - heimdall.${productionClusterFqdn}
+            - homepage.${productionClusterFqdn}
             - hydra2.${productionClusterFqdn}
             - lazylib.${productionClusterFqdn}
             - lazylibrarian.${productionClusterFqdn}

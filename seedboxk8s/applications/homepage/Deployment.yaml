@@ -30,13 +30,7 @@ spec:
           ports:
             - containerPort: 3000
               name: http
-          env:
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: HOMEPAGE_ALLOWED_HOSTS
-              value: "homepage.${productionClusterFqdn},$(MY_POD_IP)"
+
           volumeMounts:
             - name: config
               mountPath: /app/config
