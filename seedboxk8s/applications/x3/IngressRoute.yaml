@@ -8,7 +8,7 @@ metadata:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Stash
     gethomepage.dev/group: Ao
-    gethomepage.dev/icon: stashapp
+    gethomepage.dev/icon: mdi-movie-filter
     gethomepage.dev/href: https://x3.${productionClusterFqdn}
 spec:
   entryPoints:
