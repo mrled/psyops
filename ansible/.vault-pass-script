@@ -1,11 +1,18 @@
 #!/bin/sh
 set -e
+
+log() {
+    echo ".vault-pass-script: $*" >&2
+}
+
 # If it's set as an env var, just use that
 if test -n "$ANSIBLE_VAULT_PASSWORD"; then
+    log "Using \$ANSIBLE_VAULT_PASSWORD"
     echo "$ANSIBLE_VAULT_PASSWORD"
     exit 0
 fi
 set -u
+
 # When run by ansible, this is run from the root of the ansible directory
 # But when run by git in a smudge filter, it's run from the root of the git repo
 # So we have to look for .vault-passphrase.gpg in two relative places
@@ -14,13 +21,17 @@ if test -e .vault-passphrase.gpg; then
 elif test -e ansible/.vault-passphrase.gpg; then
     vp=ansible/.vault-passphrase.gpg
 else
-    echo "CANNOT FIND .vault-passphrase.gpg FROM PWD $(pwd)"
+    log "CANNOT FIND .vault-passphrase.gpg FROM PWD $(pwd)"
     exit 1
 fi
+log "Found $vp"
+
 if command -v op 2>&1 >/dev/null; then
     # retrieve from 1password, works on the mac
+    log "Retrieving $vp passphrase from 1Password"
     op item get gmjopfnukc2p355jmnkasofory --fields password
 else
     # retrieve from gpg-encrypted file stored in repo, works in psyops container
+    log "Retrieving $vp passphrase from GPG"
     gpg --quiet --decrypt "$vp"
 fi
