@@ -1,0 +1,5 @@
+---
+- name: Restart thelounge
+  ansible.builtin.systemd:
+    name: thelounge
+    state: restarted

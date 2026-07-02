@@ -4,6 +4,11 @@ ansible_user: root
 ansible_port: 22
 
 tailscale_take_over_ssh: true
+tailscale_serves:
+  - local_port: 9000
+    https_port: 443
+    path: /
+
 base_set_hostname: bolgana
 
 base_motd: >-

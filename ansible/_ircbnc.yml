@@ -9,3 +9,4 @@
     - { role: ssh_copy_id, tags: ["ssh_copy_id"] }
     - { role: interactive_system, tags: ["interactive", "interactive_system"] }
     - { role: interactive_user, tags: ["interactive", "interactive_user"] }
+    - { role: ircbnc, tags: ["ircbnc"] }

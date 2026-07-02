@@ -1,0 +1,17 @@
+[Unit]
+Description=The Lounge IRC client (Podman)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Restart=always
+ExecStartPre=-/usr/bin/podman stop thelounge
+ExecStartPre=-/usr/bin/podman rm thelounge
+ExecStart=/usr/bin/podman run --rm --name thelounge \
+  -v /var/opt/thelounge:/var/opt/thelounge \
+  -p 127.0.0.1:9000:9000 \
+  ghcr.io/thelounge/thelounge:{{ ircbnc_thelounge_version }}
+ExecStop=/usr/bin/podman stop thelounge
+
+[Install]
+WantedBy=multi-user.target

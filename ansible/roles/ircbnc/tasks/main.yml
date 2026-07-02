@@ -1,0 +1,33 @@
+---
+- name: Install podman
+  ansible.builtin.apt:
+    name: podman
+    state: present
+
+- name: Pull The Lounge image
+  ansible.builtin.command:
+    cmd: podman pull ghcr.io/thelounge/thelounge:{{ ircbnc_thelounge_version }}
+  register: ircbnc_podman_pull
+  changed_when: "'Copying' in ircbnc_podman_pull.stdout"
+
+- name: Create data directory
+  ansible.builtin.file:
+    path: /var/opt/thelounge/users
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: "0755"
+
+- name: Install thelounge systemd service
+  ansible.builtin.template:
+    src: thelounge.service.j2
+    dest: /etc/systemd/system/thelounge.service
+    mode: "0644"
+  notify: Restart thelounge
+
+- name: Enable and start thelounge
+  ansible.builtin.systemd:
+    name: thelounge
+    state: started
+    enabled: true
+    daemon_reload: true
