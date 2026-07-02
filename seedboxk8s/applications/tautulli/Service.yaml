@@ -5,7 +5,7 @@ metadata:
   namespace: tortuga
 spec:
   selector:
-    app: tautulli
+    app.kubernetes.io/name: tautulli
   ports:
   - protocol: TCP
     port: 80

@@ -8,11 +8,11 @@ spec:
   serviceName: radarr
   selector:
     matchLabels:
-      app: radarr
+      app.kubernetes.io/name: radarr
   template:
     metadata:
       labels:
-        app: radarr
+        app.kubernetes.io/name: radarr
     spec:
       securityContext:
         fsGroup: ${plexGid}

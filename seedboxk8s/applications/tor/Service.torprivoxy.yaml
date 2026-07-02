@@ -5,7 +5,7 @@ metadata:
   namespace: tor
 spec:
   selector:
-    app: torprivoxy
+    app.kubernetes.io/name: torprivoxy
   ports:
   - protocol: TCP
     port: 8118

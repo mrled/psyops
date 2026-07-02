@@ -5,7 +5,7 @@ metadata:
   namespace: tortuga
 spec:
   selector:
-    app: heimdall
+    app.kubernetes.io/name: heimdall
   ports:
   - protocol: TCP
     port: 80

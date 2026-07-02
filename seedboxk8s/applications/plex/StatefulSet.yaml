@@ -9,11 +9,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: plex
+      app.kubernetes.io/name: plex
   template:
     metadata:
       labels:
-        app: plex
+        app.kubernetes.io/name: plex
     spec:
       securityContext:
         fsGroup: ${plexGid}

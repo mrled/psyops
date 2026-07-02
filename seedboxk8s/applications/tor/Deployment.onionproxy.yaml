@@ -9,11 +9,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: onionproxy
+      app.kubernetes.io/name: onionproxy
   template:
     metadata:
       labels:
-        app: onionproxy
+        app.kubernetes.io/name: onionproxy
     spec:
       containers:
         - name: onionproxy

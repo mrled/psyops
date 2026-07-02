@@ -8,11 +8,11 @@ spec:
   serviceName: transmission
   selector:
     matchLabels:
-      app: transmission
+      app.kubernetes.io/name: transmission
   template:
     metadata:
       labels:
-        app: transmission
+        app.kubernetes.io/name: transmission
     spec:
       securityContext:
         fsGroup: ${plexGid}

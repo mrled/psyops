@@ -9,11 +9,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: torproxy
+      app.kubernetes.io/name: torproxy
   template:
     metadata:
       labels:
-        app: torproxy
+        app.kubernetes.io/name: torproxy
     spec:
       containers:
         - name: torproxy

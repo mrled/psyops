@@ -5,7 +5,7 @@ metadata:
   namespace: whoami
 spec:
   selector:
-    app: whoami
+    app.kubernetes.io/name: whoami
   ports:
     # The external port is deliberately not handled by the ingress controller
     # so that we can test before we have the ingress controller working.

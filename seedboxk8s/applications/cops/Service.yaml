@@ -5,7 +5,7 @@ metadata:
   namespace: tortuga
 spec:
   selector:
-    app: cops
+    app.kubernetes.io/name: cops
   ports:
   - protocol: TCP
     port: 80

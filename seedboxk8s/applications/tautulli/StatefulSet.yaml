@@ -8,11 +8,11 @@ spec:
   serviceName: tautulli
   selector:
     matchLabels:
-      app: tautulli
+      app.kubernetes.io/name: tautulli
   template:
     metadata:
       labels:
-        app: tautulli
+        app.kubernetes.io/name: tautulli
     spec:
       securityContext:
         fsGroup: ${plexGid}

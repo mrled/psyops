@@ -5,7 +5,7 @@ metadata:
   namespace: tor
 spec:
   selector:
-    app: onionproxy
+    app.kubernetes.io/name: onionproxy
   ports:
   - protocol: TCP
     port: 80

@@ -9,11 +9,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: authelia
+      app.kubernetes.io/name: authelia
   template:
     metadata:
       labels:
-        app: authelia
+        app.kubernetes.io/name: authelia
     spec:
       enableServiceLinks: false
       securityContext:

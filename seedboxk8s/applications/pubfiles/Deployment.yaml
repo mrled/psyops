@@ -7,11 +7,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pubfiles
+      app.kubernetes.io/name: pubfiles
   template:
     metadata:
       labels:
-        app: pubfiles
+        app.kubernetes.io/name: pubfiles
     spec:
       securityContext:
         fsGroup: ${plexGid}

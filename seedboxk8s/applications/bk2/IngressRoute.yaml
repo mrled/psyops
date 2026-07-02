@@ -10,6 +10,7 @@ metadata:
     gethomepage.dev/group: Downloads
     gethomepage.dev/icon: metube
     gethomepage.dev/href: https://bk2.${productionClusterFqdn}
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=bk2-metube
     gethomepage.dev/widget.type: metube
     gethomepage.dev/widget.url: http://bk2-metube.tortuga:8081
 spec:

@@ -8,11 +8,11 @@ spec:
   serviceName: heimdall
   selector:
     matchLabels:
-      app: heimdall
+      app.kubernetes.io/name: heimdall
   template:
     metadata:
       labels:
-        app: heimdall
+        app.kubernetes.io/name: heimdall
     spec:
       securityContext:
         fsGroup: ${plexGid}

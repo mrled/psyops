@@ -5,7 +5,7 @@ metadata:
   namespace: tortuga
 spec:
   selector:
-    app: ersatztv
+    app.kubernetes.io/name: ersatztv
   ports:
   - protocol: TCP
     port: 80

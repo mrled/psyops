@@ -7,11 +7,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: traefik-tailscale
+      app.kubernetes.io/name: traefik-tailscale
   template:
     metadata:
       labels:
-        app: traefik-tailscale
+        app.kubernetes.io/name: traefik-tailscale
     spec:
       serviceAccountName: traefik-account
       containers:

@@ -10,6 +10,7 @@ metadata:
     gethomepage.dev/group: Downloads
     gethomepage.dev/icon: mdi-folder-open
     gethomepage.dev/href: https://pubfiles.${productionClusterFqdn}
+
 spec:
   entryPoints:
     - websecure

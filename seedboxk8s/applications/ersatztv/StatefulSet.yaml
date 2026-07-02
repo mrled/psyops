@@ -8,11 +8,11 @@ spec:
   serviceName: ersatztv
   selector:
     matchLabels:
-      app: ersatztv
+      app.kubernetes.io/name: ersatztv
   template:
     metadata:
       labels:
-        app: ersatztv
+        app.kubernetes.io/name: ersatztv
     spec:
       securityContext:
         fsGroup: ${plexGid}

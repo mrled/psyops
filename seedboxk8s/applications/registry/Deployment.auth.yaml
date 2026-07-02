@@ -9,11 +9,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: auth
+      app.kubernetes.io/name: auth
   template:
     metadata:
       labels:
-        app: auth
+        app.kubernetes.io/name: auth
     spec:
       initContainers:
       - name: prepare-config

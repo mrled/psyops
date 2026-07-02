@@ -5,7 +5,7 @@ metadata:
   namespace: tortuga
 spec:
   selector:
-    app: x3
+    app.kubernetes.io/name: x3
   ports:
   - protocol: TCP
     port: 80

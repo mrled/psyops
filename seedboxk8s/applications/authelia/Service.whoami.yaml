@@ -5,7 +5,7 @@ metadata:
   namespace: authelia
 spec:
   selector:
-    app: whoami-authelia
+    app.kubernetes.io/name: whoami-authelia
   ports:
     - name: http
       port: 80

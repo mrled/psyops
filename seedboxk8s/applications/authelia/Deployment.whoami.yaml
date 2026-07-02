@@ -7,11 +7,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: whoami-authelia
+      app.kubernetes.io/name: whoami-authelia
   template:
     metadata:
       labels:
-        app: whoami-authelia
+        app.kubernetes.io/name: whoami-authelia
     spec:
       containers:
         - name: whoami

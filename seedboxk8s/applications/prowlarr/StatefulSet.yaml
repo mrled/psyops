@@ -8,11 +8,11 @@ spec:
   serviceName: prowlarr
   selector:
     matchLabels:
-      app: prowlarr
+      app.kubernetes.io/name: prowlarr
   template:
     metadata:
       labels:
-        app: prowlarr
+        app.kubernetes.io/name: prowlarr
     spec:
       securityContext:
         fsGroup: ${plexGid}

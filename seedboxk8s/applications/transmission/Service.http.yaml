@@ -5,7 +5,7 @@ metadata:
   namespace: tortuga
 spec:
   selector:
-    app: transmission
+    app.kubernetes.io/name: transmission
   ports:
   - protocol: TCP
     port: 80

@@ -8,11 +8,11 @@ spec:
   serviceName: cops
   selector:
     matchLabels:
-      app: cops
+      app.kubernetes.io/name: cops
   template:
     metadata:
       labels:
-        app: cops
+        app.kubernetes.io/name: cops
     spec:
       securityContext:
         fsGroup: ${plexGid}

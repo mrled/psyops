@@ -5,7 +5,7 @@ metadata:
   namespace: registry
 spec:
   selector:
-    app: auth
+    app.kubernetes.io/name: auth
   ports:
   - protocol: TCP
     port: 80

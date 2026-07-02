@@ -8,11 +8,11 @@ spec:
   serviceName: lazylibrarian
   selector:
     matchLabels:
-      app: lazylibrarian
+      app.kubernetes.io/name: lazylibrarian
   template:
     metadata:
       labels:
-        app: lazylibrarian
+        app.kubernetes.io/name: lazylibrarian
     spec:
       securityContext:
         fsGroup: ${plexGid}

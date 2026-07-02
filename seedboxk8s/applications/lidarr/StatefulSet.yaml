@@ -8,11 +8,11 @@ spec:
   serviceName: lidarr
   selector:
     matchLabels:
-      app: lidarr
+      app.kubernetes.io/name: lidarr
   template:
     metadata:
       labels:
-        app: lidarr
+        app.kubernetes.io/name: lidarr
     spec:
       securityContext:
         fsGroup: ${plexGid}

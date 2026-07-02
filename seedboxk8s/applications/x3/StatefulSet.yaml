@@ -8,11 +8,11 @@ spec:
   serviceName: x3
   selector:
     matchLabels:
-      app: x3
+      app.kubernetes.io/name: x3
   template:
     metadata:
       labels:
-        app: x3
+        app.kubernetes.io/name: x3
     spec:
       securityContext:
         fsGroup: ${plexGid}

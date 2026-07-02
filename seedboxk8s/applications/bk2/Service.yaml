@@ -5,7 +5,7 @@ metadata:
   namespace: tortuga
 spec:
   selector:
-    app: bk2-metube
+    app.kubernetes.io/name: bk2-metube
   ports:
   - protocol: TCP
     port: 8081

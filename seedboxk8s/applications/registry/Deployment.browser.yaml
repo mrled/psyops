@@ -4,16 +4,16 @@ metadata:
   name: browser
   namespace: registry
   labels:
-    app: browser
+    app.kubernetes.io/name: browser
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: browser
+      app.kubernetes.io/name: browser
   template:
     metadata:
       labels:
-        app: browser
+        app.kubernetes.io/name: browser
     spec:
       containers:
         - name: browser

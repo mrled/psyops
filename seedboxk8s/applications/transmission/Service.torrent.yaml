@@ -6,7 +6,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app: transmission
+    app.kubernetes.io/name: transmission
   ports:
   - name: transmission-torrent-tcp
     protocol: TCP

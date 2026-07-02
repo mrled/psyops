@@ -6,11 +6,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: whoami
+      app.kubernetes.io/name: whoami
   template:
     metadata:
       labels:
-        app: whoami
+        app.kubernetes.io/name: whoami
     spec:
       containers:
       - name: whoami

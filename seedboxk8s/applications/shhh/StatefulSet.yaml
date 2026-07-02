@@ -8,11 +8,11 @@ spec:
   serviceName: shhh
   selector:
     matchLabels:
-      app: shhh
+      app.kubernetes.io/name: shhh
   template:
     metadata:
       labels:
-        app: shhh
+        app.kubernetes.io/name: shhh
     spec:
       securityContext:
         fsGroup: ${plexGid}

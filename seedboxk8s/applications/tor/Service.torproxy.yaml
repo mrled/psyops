@@ -5,7 +5,7 @@ metadata:
   namespace: tor
 spec:
   selector:
-    app: torproxy
+    app.kubernetes.io/name: torproxy
   ports:
   - protocol: TCP
     port: 9050

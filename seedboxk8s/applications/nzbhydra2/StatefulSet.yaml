@@ -8,11 +8,11 @@ spec:
   serviceName: nzbhydra2
   selector:
     matchLabels:
-      app: nzbhydra2
+      app.kubernetes.io/name: nzbhydra2
   template:
     metadata:
       labels:
-        app: nzbhydra2
+        app.kubernetes.io/name: nzbhydra2
     spec:
       securityContext:
         fsGroup: ${plexGid}

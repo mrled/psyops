@@ -10,6 +10,7 @@ metadata:
     gethomepage.dev/group: Media
     gethomepage.dev/icon: plex
     gethomepage.dev/href: https://plex.${productionClusterFqdn}
+    gethomepage.dev/pod-selector: app.kubernetes.io/name=plex
     # Widget: add gethomepage.dev/widget.key with your Plex token (X-Plex-Token) to enable
     gethomepage.dev/widget.type: plex
     gethomepage.dev/widget.url: http://plex.tortuga:32400

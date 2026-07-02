@@ -5,7 +5,7 @@ metadata:
   namespace: tortuga
 spec:
   selector:
-    app: pubfiles
+    app.kubernetes.io/name: pubfiles
   ports:
     - protocol: TCP
       port: 80

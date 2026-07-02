@@ -8,11 +8,11 @@ spec:
   serviceName: sonarr
   selector:
     matchLabels:
-      app: sonarr
+      app.kubernetes.io/name: sonarr
   template:
     metadata:
       labels:
-        app: sonarr
+        app.kubernetes.io/name: sonarr
     spec:
       securityContext:
         fsGroup: ${plexGid}
