@@ -5,6 +5,14 @@ metadata:
   namespace: tortuga
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Plex
+    gethomepage.dev/group: Media
+    gethomepage.dev/icon: plex
+    gethomepage.dev/href: https://plex.${productionClusterFqdn}
+    # Widget: add gethomepage.dev/widget.key with your Plex token (X-Plex-Token) to enable
+    gethomepage.dev/widget.type: plex
+    gethomepage.dev/widget.url: http://plex.tortuga:32400
 spec:
   entryPoints:
     - websecure

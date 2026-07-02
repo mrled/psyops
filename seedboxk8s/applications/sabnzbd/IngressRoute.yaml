@@ -5,6 +5,14 @@ metadata:
   namespace: tortuga
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: SABnzbd
+    gethomepage.dev/group: Downloads
+    gethomepage.dev/icon: sabnzbd
+    gethomepage.dev/href: https://sabnzbd.${productionClusterFqdn}
+    # Widget: add gethomepage.dev/widget.key with your SABnzbd API key to enable
+    gethomepage.dev/widget.type: sabnzbd
+    gethomepage.dev/widget.url: http://sabnzbd.tortuga
 spec:
   entryPoints:
     - websecure

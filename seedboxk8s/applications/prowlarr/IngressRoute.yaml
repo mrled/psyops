@@ -5,6 +5,14 @@ metadata:
   namespace: tortuga
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Prowlarr
+    gethomepage.dev/group: Downloads
+    gethomepage.dev/icon: prowlarr
+    gethomepage.dev/href: https://prowlarr.${productionClusterFqdn}
+    # Widget: add gethomepage.dev/widget.key with your Prowlarr API key to enable
+    gethomepage.dev/widget.type: prowlarr
+    gethomepage.dev/widget.url: http://prowlarr.tortuga
 spec:
   entryPoints:
     - websecure

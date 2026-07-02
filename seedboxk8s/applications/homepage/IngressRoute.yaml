@@ -1,25 +1,20 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: shhh
-  namespace: tortuga
+  name: homepage
+  namespace: homepage
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/name: Shhh
-    gethomepage.dev/group: Media
-    gethomepage.dev/icon: mdi-shield-lock-outline
-    gethomepage.dev/href: https://shhh.${productionClusterFqdn}
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`shhh.${productionClusterFqdn}`)
+    - match: Host(`homepage.${productionClusterFqdn}`)
       kind: Rule
       services:
-        - name: shhh
+        - name: homepage
           kind: Service
-          port: 80
+          port: 3000
       middlewares:
         - name: authelia
           namespace: authelia

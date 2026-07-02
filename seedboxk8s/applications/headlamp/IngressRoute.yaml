@@ -5,6 +5,11 @@ metadata:
   namespace: headlamp
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Headlamp
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: headlamp
+    gethomepage.dev/href: https://headlamp.${productionClusterFqdn}
 spec:
   entryPoints:
     - websecure

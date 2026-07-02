@@ -5,6 +5,14 @@ metadata:
   namespace: prometheus
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Grafana
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: grafana
+    gethomepage.dev/href: https://grafana.${productionClusterFqdn}
+    # Widget: add gethomepage.dev/widget.username and gethomepage.dev/widget.password (or widget.token) to enable
+    gethomepage.dev/widget.type: grafana
+    gethomepage.dev/widget.url: http://kube-prometheus-stack-grafana.prometheus
 spec:
   ingressClassName: traefik-tailscale
   entryPoints:

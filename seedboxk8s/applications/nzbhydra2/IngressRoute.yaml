@@ -5,6 +5,14 @@ metadata:
   namespace: tortuga
   annotations:
     kubernetes.io/ingress.class: traefik-tailscale
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: NZBHydra2
+    gethomepage.dev/group: Downloads
+    gethomepage.dev/icon: nzbhydra2
+    gethomepage.dev/href: https://hydra2.${productionClusterFqdn}
+    # Widget: add gethomepage.dev/widget.key with your NZBHydra2 API key to enable
+    gethomepage.dev/widget.type: nzbhydra
+    gethomepage.dev/widget.url: http://hydra2.tortuga
 spec:
   entryPoints:
     - websecure
