@@ -24,3 +24,5 @@ spec:
   values:
     ingress:
       enabled: false
+    config:
+      unsafeUseServiceAccountToken: true
