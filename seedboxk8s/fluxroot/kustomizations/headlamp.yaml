@@ -1,0 +1,33 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: headlamp
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: /seedboxk8s/applications/headlamp
+  prune: true
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: fluxcfg
+    - name: traefik-00-base
+    - name: authelia
+    - name: cert-manager-config
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: headlamp
+      namespace: headlamp
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: seedboxk8s-config
+      - kind: ConfigMap
+        name: seedboxk8s-config

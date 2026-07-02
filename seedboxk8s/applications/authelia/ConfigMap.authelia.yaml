@@ -60,6 +60,11 @@ data:
       default_policy: deny
       rules:
         - domain:
+            - headlamp.${productionClusterFqdn}
+          subject:
+            - user:freeleech
+          policy: one_factor
+        - domain:
             - whoami-authelia.${productionClusterFqdn}
             - opensearch.${productionClusterFqdn}
             - sonarr.${productionClusterFqdn}
