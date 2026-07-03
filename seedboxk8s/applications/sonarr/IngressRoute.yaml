@@ -10,9 +10,6 @@ metadata:
     gethomepage.dev/group: Media
     gethomepage.dev/icon: sonarr
     gethomepage.dev/href: https://sonarr.${productionClusterFqdn}
-    # Widget: add gethomepage.dev/widget.key with your Sonarr API key to enable
-    gethomepage.dev/widget.type: sonarr
-    gethomepage.dev/widget.url: http://sonarr.tortuga
 spec:
   entryPoints:
     - websecure

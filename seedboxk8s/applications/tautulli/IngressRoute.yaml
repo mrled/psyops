@@ -10,9 +10,6 @@ metadata:
     gethomepage.dev/group: Media
     gethomepage.dev/icon: tautulli
     gethomepage.dev/href: https://tautulli.${productionClusterFqdn}
-    # Widget: add gethomepage.dev/widget.key with your Tautulli API key to enable
-    gethomepage.dev/widget.type: tautulli
-    gethomepage.dev/widget.url: http://tautulli.tortuga
 spec:
   entryPoints:
     - websecure

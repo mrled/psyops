@@ -10,9 +10,6 @@ metadata:
     gethomepage.dev/group: Media
     gethomepage.dev/icon: radarr
     gethomepage.dev/href: https://radarr.${productionClusterFqdn}
-    # Widget: add gethomepage.dev/widget.key with your Radarr API key to enable
-    gethomepage.dev/widget.type: radarr
-    gethomepage.dev/widget.url: http://radarr.tortuga
 spec:
   entryPoints:
     - websecure

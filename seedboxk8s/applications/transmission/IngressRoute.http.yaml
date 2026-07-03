@@ -11,8 +11,6 @@ metadata:
     gethomepage.dev/icon: transmission
     gethomepage.dev/href: https://transmission.${productionClusterFqdn}
     gethomepage.dev/pod-selector: app.kubernetes.io/name=transmission
-    gethomepage.dev/widget.type: transmission
-    gethomepage.dev/widget.url: http://transmission-http.tortuga
 spec:
   entryPoints:
     - websecure
