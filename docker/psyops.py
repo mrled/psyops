@@ -13,8 +13,8 @@ from types import TracebackType
 
 
 SCRIPTPATH = os.path.realpath(__file__)
-SCRIPTDIR = os.path.dirname(SCRIPTPATH)
-DOCKERDIR = os.path.join(SCRIPTDIR, "docker")
+REPOROOT = os.path.dirname(os.path.dirname(SCRIPTPATH))
+DOCKERDIR = os.path.join(REPOROOT, "docker")
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
@@ -60,11 +60,11 @@ def dockerrun(
     claude_home_mounts: list[str] = []
     if mode == "claude":
         for path in [".git", ".gitmodules"]:
-            src = os.path.join(SCRIPTDIR, path)
+            src = os.path.join(REPOROOT, path)
             dst = os.path.join(psyopsvol, path)
             git_ro_mounts += ["--volume", f"{src}:{dst}:ro"]
 
-        claudehome = os.path.join(SCRIPTDIR, "docker", "claudehome")
+        claudehome = os.path.join(REPOROOT, "docker", "claudehome")
         container_home = "/home/psyops"
         claude_json = os.path.join(claudehome, ".claude.json")
         if not os.path.exists(claude_json):
@@ -82,7 +82,7 @@ def dockerrun(
         "--interactive",
         "--tty",
         "--volume",
-        f"{SCRIPTDIR}:{psyopsvol}:rw",
+        f"{REPOROOT}:{psyopsvol}:rw",
         *git_ro_mounts,
         *claude_home_mounts,
         "--tmpfs",

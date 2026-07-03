@@ -1,4 +1,8 @@
-# psyops: Personal SYs OPS
+# The psyops Docker image
+
+This has been mostly unused for a while, but still works.
+
+Provides a host-OS-independent interface for working with psyops.
 
 Shit I use to manage my own infrastructure
 
