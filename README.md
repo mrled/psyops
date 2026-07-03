@@ -16,8 +16,11 @@ Directories:
 - fly: Deploy fly.io infrastructure
   - disagreements.micahrl.com: the comments engine for my blog at https://me.micahrl.com
 - kubernasty: a multi-node homelab Kubernetes cluster
-- seedboxk8s: a single-node homelab Kubernetes cluster running on tagasaw for media downloading and playback,
-  including Plex, *arr apps, sabnzbd, etc
+- seedboxk8s: a single-node homelab Kubernetes cluster
+  - Runs on tagasaw baremetal host
+  - Runs apps for media downloading and playback, including Plex, *arr apps, sabnzbd, etc.
+  - k0s Kubernetes runtime
+  - flux CI/CD
 - lima: Lima VMs for macOS, including dreadnaught, which is a chineseroom VM for agent containment
 - pipelines: CI / data pipeline definitions
 - progfiguration_blacksite: infrastructure-as-code site package
