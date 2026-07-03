@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`homepage.${productionClusterFqdn}`)
+    - match: Host(`seedbox.${productionClusterFqdn}`) || Host(`${productionClusterFqdn}`)
       kind: Rule
       services:
         - name: homepage

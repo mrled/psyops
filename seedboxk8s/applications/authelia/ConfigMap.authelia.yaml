@@ -72,8 +72,7 @@ data:
             - cops.${productionClusterFqdn}
             - ersatztv.${productionClusterFqdn}
             - grafana.${productionClusterFqdn}
-            - heimdall.${productionClusterFqdn}
-            - homepage.${productionClusterFqdn}
+
             - hydra2.${productionClusterFqdn}
             - lazylib.${productionClusterFqdn}
             - lazylibrarian.${productionClusterFqdn}
@@ -85,6 +84,7 @@ data:
             - registry-browser.${productionClusterFqdn}
             - sabnzbd.${productionClusterFqdn}
             - seedbox.${productionClusterFqdn}
+            - ${productionClusterFqdn}
             - shhh.${productionClusterFqdn}
             - tautulli.${productionClusterFqdn}
             - transmission.${productionClusterFqdn}
