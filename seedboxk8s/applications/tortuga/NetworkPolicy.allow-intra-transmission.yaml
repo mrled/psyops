@@ -14,6 +14,18 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: prowlarr
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: sonarr
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: radarr
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: lidarr
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: shhh
     ports:
     - port: 9091
       protocol: TCP
