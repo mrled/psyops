@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-authelia-to-redict
+  namespace: authelia
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redict
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: authelia
+    ports:
+    - port: 6379
+      protocol: TCP

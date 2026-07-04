@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-prowlarr
+  namespace: tortuga
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prowlarr
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: sonarr
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: radarr
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: lidarr
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: shhh
+    ports:
+    - port: 9696
+      protocol: TCP

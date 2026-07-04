@@ -1,0 +1,51 @@
+---
+# torproxy SOCKS5: any pod cluster-wide may use it
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-to-torproxy
+  namespace: tor
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: torproxy
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports:
+    - port: 9050
+      protocol: TCP
+---
+# torprivoxy HTTP proxy: any pod cluster-wide may use it
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-to-torprivoxy
+  namespace: tor
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: torprivoxy
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports:
+    - port: 8118
+      protocol: TCP
+---
+# onionproxy HTTP: any pod cluster-wide may use it (incl. lazylibrarian and traefik)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-to-onionproxy
+  namespace: tor
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: onionproxy
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports:
+    - port: 80
+      protocol: TCP

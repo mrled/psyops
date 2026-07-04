@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-transmission
+  namespace: tortuga
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: transmission
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prowlarr
+    ports:
+    - port: 9091
+      protocol: TCP

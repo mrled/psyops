@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-plex
+  namespace: tortuga
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: plex
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: tautulli
+    ports:
+    - port: 32400
+      protocol: TCP
