@@ -50,6 +50,11 @@ data:
           "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
         },
         {
+          "matchPackageNames": ["ghcr.io/linuxserver/bazarr"],
+          "changelogUrl": "https://github.com/linuxserver/docker-bazarr/releases",
+          "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>\\d+)$"
+        },
+        {
           "matchPackageNames": ["ghcr.io/linuxserver/cops"],
           "changelogUrl": "https://github.com/linuxserver/docker-cops/releases"
         },
