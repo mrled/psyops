@@ -4,13 +4,13 @@ metadata:
   name: sonarr
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Sonarr
     gethomepage.dev/group: Media
     gethomepage.dev/icon: sonarr
     gethomepage.dev/href: https://sonarr.${productionClusterFqdn}
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

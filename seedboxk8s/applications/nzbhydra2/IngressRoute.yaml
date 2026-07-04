@@ -4,13 +4,13 @@ metadata:
   name: nzbhydra2
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: NZBHydra2
     gethomepage.dev/group: Downloads
     gethomepage.dev/icon: nzbhydra2
     gethomepage.dev/href: https://hydra2.${productionClusterFqdn}
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

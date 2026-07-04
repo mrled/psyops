@@ -4,7 +4,6 @@ metadata:
   name: ersatztv
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: ErsatzTV
     gethomepage.dev/group: Media
@@ -12,6 +11,7 @@ metadata:
     gethomepage.dev/href: https://ersatztv.${productionClusterFqdn}
 
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

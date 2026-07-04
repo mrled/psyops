@@ -3,9 +3,8 @@ kind: IngressRoute
 metadata:
   name: lazylibrarian-web
   namespace: tortuga
-  annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - web # LazyLibrarian keeps generating http:// URLs, so we have to create a separate IngressRoute to redirect them to https.
   routes:

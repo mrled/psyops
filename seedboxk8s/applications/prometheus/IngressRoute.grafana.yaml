@@ -4,7 +4,6 @@ metadata:
   name: grafana
   namespace: prometheus
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Grafana
     gethomepage.dev/group: Infrastructure

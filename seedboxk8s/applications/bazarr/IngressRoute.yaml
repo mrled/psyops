@@ -4,13 +4,13 @@ metadata:
   name: bazarr
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Bazarr
     gethomepage.dev/group: Media
     gethomepage.dev/icon: bazarr
     gethomepage.dev/href: https://bazarr.${productionClusterFqdn}
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

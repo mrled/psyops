@@ -3,9 +3,8 @@ kind: IngressRoute
 metadata:
   name: whoami-authelia
   namespace: authelia
-  annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

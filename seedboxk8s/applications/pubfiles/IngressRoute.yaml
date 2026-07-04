@@ -4,7 +4,6 @@ metadata:
   name: pubfiles
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Pubfiles
     gethomepage.dev/group: Downloads
@@ -12,6 +11,7 @@ metadata:
     gethomepage.dev/href: https://pubfiles.${productionClusterFqdn}
 
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

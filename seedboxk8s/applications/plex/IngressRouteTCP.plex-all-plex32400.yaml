@@ -3,9 +3,8 @@ kind: IngressRouteTCP
 metadata:
   name: plex-all-plex32400
   namespace: tortuga
-  annotations:
-    kubernetes.io/ingress.class: traefik-localnet
 spec:
+  ingressClassName: traefik-localnet
   entryPoints:
     - plex32400
   routes:

@@ -4,13 +4,13 @@ metadata:
   name: lidarr
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Lidarr
     gethomepage.dev/group: Media
     gethomepage.dev/icon: lidarr
     gethomepage.dev/href: https://lidarr.${productionClusterFqdn}
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

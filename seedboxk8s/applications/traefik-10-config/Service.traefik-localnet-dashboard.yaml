@@ -5,7 +5,7 @@ metadata:
   namespace: traefik
 spec:
   selector:
-    app: traefik-localnet
+    name: traefik-localnet
   ports:
   - name: dashboard
     protocol: TCP

@@ -4,13 +4,13 @@ metadata:
   name: prowlarr
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Prowlarr
     gethomepage.dev/group: Downloads
     gethomepage.dev/icon: prowlarr
     gethomepage.dev/href: https://prowlarr.${productionClusterFqdn}
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

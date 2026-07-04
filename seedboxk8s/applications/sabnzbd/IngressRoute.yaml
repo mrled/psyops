@@ -4,13 +4,13 @@ metadata:
   name: sabnzbd
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: SABnzbd
     gethomepage.dev/group: Downloads
     gethomepage.dev/icon: sabnzbd
     gethomepage.dev/href: https://sabnzbd.${productionClusterFqdn}
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

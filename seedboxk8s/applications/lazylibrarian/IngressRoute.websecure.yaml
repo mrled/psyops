@@ -4,7 +4,6 @@ metadata:
   name: lazylibrarian-websecure
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: LazyLibrarian
     gethomepage.dev/group: Books
@@ -12,6 +11,7 @@ metadata:
     gethomepage.dev/href: https://library.${productionClusterFqdn}
     gethomepage.dev/pod-selector: app.kubernetes.io/name=lazylibrarian
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

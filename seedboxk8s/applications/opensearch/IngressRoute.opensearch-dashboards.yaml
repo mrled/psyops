@@ -4,13 +4,13 @@ metadata:
   name: opensearch-dashboards
   namespace: opensearch
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: OpenSearch
     gethomepage.dev/group: Infrastructure
     gethomepage.dev/icon: opensearch
     gethomepage.dev/href: https://opensearch.${productionClusterFqdn}
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

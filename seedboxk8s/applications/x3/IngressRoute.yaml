@@ -4,13 +4,13 @@ metadata:
   name: x3
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Stash
     gethomepage.dev/group: Ao
     gethomepage.dev/icon: mdi-movie-filter
     gethomepage.dev/href: https://x3.${productionClusterFqdn}
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

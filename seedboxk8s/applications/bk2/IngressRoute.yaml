@@ -4,7 +4,6 @@ metadata:
   name: bk2
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: bk2 (MeTube)
     gethomepage.dev/group: Ao
@@ -12,6 +11,7 @@ metadata:
     gethomepage.dev/href: https://bk2.${productionClusterFqdn}
     gethomepage.dev/pod-selector: app.kubernetes.io/name=bk2-metube
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

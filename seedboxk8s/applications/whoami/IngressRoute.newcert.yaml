@@ -3,9 +3,8 @@ kind: IngressRoute
 metadata:
   name: whoami-newcert
   namespace: whoami
-  annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

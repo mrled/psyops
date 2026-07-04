@@ -4,7 +4,6 @@ metadata:
   name: plex-tailscale-https
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Plex
     gethomepage.dev/group: Media
@@ -12,6 +11,7 @@ metadata:
     gethomepage.dev/href: https://plex.${productionClusterFqdn}
     gethomepage.dev/pod-selector: app.kubernetes.io/name=plex
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

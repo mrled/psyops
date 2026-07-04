@@ -4,13 +4,13 @@ metadata:
   name: radarr
   namespace: tortuga
   annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Radarr
     gethomepage.dev/group: Media
     gethomepage.dev/icon: radarr
     gethomepage.dev/href: https://radarr.${productionClusterFqdn}
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:

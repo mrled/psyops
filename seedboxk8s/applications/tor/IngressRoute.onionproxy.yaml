@@ -3,9 +3,8 @@ kind: IngressRoute
 metadata:
   name: onionproxy
   namespace: tor
-  annotations:
-    kubernetes.io/ingress.class: traefik-tailscale
 spec:
+  ingressClassName: traefik-tailscale
   entryPoints:
     - websecure
   routes:
