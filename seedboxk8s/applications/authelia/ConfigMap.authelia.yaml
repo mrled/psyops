@@ -67,6 +67,7 @@ data:
         - domain:
             - whoami-authelia.${productionClusterFqdn}
             - opensearch.${productionClusterFqdn}
+            - bazarr.${productionClusterFqdn}
             - sonarr.${productionClusterFqdn}
             - bk2.${productionClusterFqdn}
             - cops.${productionClusterFqdn}
