@@ -34,3 +34,6 @@ chineseroom_custom_jujutsu_version: "0.34.0"
 
 # Zellij terminal multiplexer version
 chineseroom_custom_zellij_version: "0.43.1"
+
+# A credentials file for the restricted user to source in their shell profile.
+chineseroom_custom_profile_d_credentials_content: ""

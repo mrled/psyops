@@ -117,3 +117,6 @@ interactive_user_list:
   - name: callista # chineseroom limited user
     dhd_disable: true
 interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') | list }}"
+
+chineseroom_custom_profile_d_credentials_content: |
+  export OP_SERVICE_ACCOUNT_TOKEN="{{ vault_1password_service_account_token_understatement_agents }}"
