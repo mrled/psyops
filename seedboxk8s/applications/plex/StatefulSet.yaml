@@ -75,20 +75,6 @@ spec:
               value: "http://${clusterLocalnetPrimaryFqdn}:32400/"
             - name: CHANGE_CONFIG_DIR_OWNERSHIP
               value: "false"
-          livenessProbe:
-            tcpSocket:
-              port: 32400
-            initialDelaySeconds: 120
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            tcpSocket:
-              port: 32400
-            initialDelaySeconds: 60
-            periodSeconds: 15
-            timeoutSeconds: 10
-            failureThreshold: 3
           volumeMounts:
             - mountPath: /config
               name: plex-config-pvc
