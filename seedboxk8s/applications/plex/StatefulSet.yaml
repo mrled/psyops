@@ -75,6 +75,16 @@ spec:
               value: "http://${clusterLocalnetPrimaryFqdn}:32400/"
             - name: CHANGE_CONFIG_DIR_OWNERSHIP
               value: "false"
+          livenessProbe:
+            exec:
+              command:
+              - pgrep
+              - -f
+              - /usr/lib/plexmediaserver/Plex Media Server
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
           volumeMounts:
             - mountPath: /config
               name: plex-config-pvc
