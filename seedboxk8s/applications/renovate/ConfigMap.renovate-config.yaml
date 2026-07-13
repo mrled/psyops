@@ -140,7 +140,7 @@ data:
       {
         name: "shhhImage",
         path: "seedboxk8s/applications/shhh/StatefulSet.yaml",
-        versioning: "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)$",
+        versioning: "regex:^v3-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-release\\.(?<build>\\d+)$",
       },
     ];
 
