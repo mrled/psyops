@@ -195,7 +195,7 @@ def scale(workload: Workload, replicas: int) -> None:
     kubectl("-n", workload["namespace"], "scale", workload["api"], workload["name"], f"--replicas={replicas}")
 
 
-def wait_for_no_pods_using_pvc(namespace: str, pvc_name: str, timeout: int = 600) -> None:
+def wait_for_no_pods_using_pvc(namespace: str, pvc_name: str, timeout: int = 600, include_backup_jobs: bool = False) -> None:
     """Wait for all pods using the given PVC to terminate, or raise a TimeoutError after the specified timeout."""
     deadline = time.time() + timeout
     last_active: list[str] | None = None
@@ -204,7 +204,8 @@ def wait_for_no_pods_using_pvc(namespace: str, pvc_name: str, timeout: int = 600
         active = [
             pod
             for pod in pods
-            if not pod.get("metadata", {}).get("deletionTimestamp") and not is_backup_job_pod(pod, pvc_name)
+            if not pod.get("metadata", {}).get("deletionTimestamp")
+            and (include_backup_jobs or not is_backup_job_pod(pod, pvc_name))
         ]
         if not active:
             return

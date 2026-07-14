@@ -148,6 +148,7 @@ def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
             job_logs(namespace, job_name)
         kubectl("-n", namespace, "delete", "job", job_name, "--ignore-not-found=true", check=False)
         kubectl("-n", namespace, "delete", "secret", temp_secret, "--ignore-not-found=true", check=False)
+        wait_for_no_pods_using_pvc(namespace, pvc_name, include_backup_jobs=True)
         for workload, replicas in reversed(list(original_replicas.values())):
             scale(workload, replicas)
 
