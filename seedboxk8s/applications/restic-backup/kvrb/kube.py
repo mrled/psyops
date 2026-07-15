@@ -4,7 +4,9 @@ import subprocess
 import time
 from typing import Any, TypedDict, cast
 
-from kvrb.config import ANNOTATION, JOB_TIMEOUT_SECONDS, POLL_SECONDS
+from kvrb.config import ANNOTATION, FLUX_KUSTOMIZATION_ANNOTATION, JOB_TIMEOUT_SECONDS, POLL_SECONDS
+
+FLUX_NAMESPACE = "flux-system"
 
 JsonMap = dict[str, Any]
 
@@ -195,7 +197,9 @@ def scale(workload: Workload, replicas: int) -> None:
     kubectl("-n", workload["namespace"], "scale", workload["api"], workload["name"], f"--replicas={replicas}")
 
 
-def wait_for_no_pods_using_pvc(namespace: str, pvc_name: str, timeout: int = 600, include_backup_jobs: bool = False) -> None:
+def wait_for_no_pods_using_pvc(
+    namespace: str, pvc_name: str, timeout: int = 600, include_backup_jobs: bool = False
+) -> None:
     """Wait for all pods using the given PVC to terminate, or raise a TimeoutError after the specified timeout."""
     deadline = time.time() + timeout
     last_active: list[str] | None = None
@@ -238,6 +242,45 @@ def wait_for_job(namespace: str, name: str) -> None:
             last_log = time.time()
         time.sleep(POLL_SECONDS)
     raise TimeoutError(f"backup job {namespace}/{name} timed out")
+
+
+def flux_kustomizations_for_pvc(pvc: JsonMap) -> list[str]:
+    """Return Flux Kustomization names from the PVC annotation, if any."""
+    annotations = pvc.get("metadata", {}).get("annotations", {})
+    value = annotations.get(FLUX_KUSTOMIZATION_ANNOTATION, "").strip()
+    if not value:
+        return []
+    return [name.strip() for name in value.split(",") if name.strip()]
+
+
+def suspend_flux_kustomization(name: str) -> None:
+    kubectl("patch", "kustomization", name, "-n", FLUX_NAMESPACE, "--type", "merge", "-p", '{"spec":{"suspend":true}}')
+    print(f"Suspended Flux Kustomization {FLUX_NAMESPACE}/{name}", flush=True)
+
+
+def resume_flux_kustomization(name: str) -> None:
+    kubectl("patch", "kustomization", name, "-n", FLUX_NAMESPACE, "--type", "merge", "-p", '{"spec":{"suspend":false}}')
+    print(f"Resumed Flux Kustomization {FLUX_NAMESPACE}/{name}", flush=True)
+
+
+def wait_for_backup_pod_released(namespace: str, pvc_name: str, timeout: int = 600) -> None:
+    """Wait for the backup job pod to terminate and release the PVC mount.
+
+    Does not raise on timeout — just warns and returns so scale-up always proceeds.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        pods = pods_using_pvc(namespace, pvc_name)
+        backup_pods = [p for p in pods if is_backup_job_pod(p, pvc_name)]
+        if not backup_pods:
+            return
+        pod_names = [p["metadata"]["name"] for p in backup_pods]
+        print(f"Waiting for backup pod(s) to release {namespace}/{pvc_name}: {', '.join(pod_names)}", flush=True)
+        time.sleep(POLL_SECONDS)
+    print(
+        f"WARNING: timed out waiting for backup pod to release {namespace}/{pvc_name}; proceeding with scale-up anyway",
+        flush=True,
+    )
 
 
 def job_logs(namespace: str, name: str) -> None:

@@ -3,6 +3,7 @@ from pathlib import Path
 
 ANNOTATION = "backup.seedboxk8s.micahrl.com/enabled"
 EXCLUDE_ANNOTATION = "backup.seedboxk8s.micahrl.com/exclude"
+FLUX_KUSTOMIZATION_ANNOTATION = "backup.seedboxk8s.micahrl.com/flux-kustomization"
 KEEP_DAILY_ANNOTATION = "backup.seedboxk8s.micahrl.com/keep-daily"
 KEEP_MONTHLY_ANNOTATION = "backup.seedboxk8s.micahrl.com/keep-monthly"
 KEEP_WEEKLY_ANNOTATION = "backup.seedboxk8s.micahrl.com/keep-weekly"

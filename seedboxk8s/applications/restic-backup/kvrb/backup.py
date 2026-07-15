@@ -20,11 +20,15 @@ from kvrb.kube import (
     Workload,
     delete_stale_backup_jobs,
     eligible_pvcs,
+    flux_kustomizations_for_pvc,
     get_replicas,
     job_logs,
     kubectl,
+    resume_flux_kustomization,
     scale,
     short_name,
+    suspend_flux_kustomization,
+    wait_for_backup_pod_released,
     wait_for_job,
     wait_for_no_pods_using_pvc,
     workloads_for_pvc,
@@ -91,12 +95,15 @@ def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
     """Back up the given PVC to the configured repository.
 
     - Scale down any workloads using the PVC to zero replicas.
+    - Suspend the Flux Kustomizations that manage those workloads,
+      specified with a backup.seedboxk8s.micahrl.com/flux-kustomization=NAME annotation.
     - Wait for all pods using the PVC to terminate.
     - Create a temporary secret with the necessary environment variables for the backup job.
     - Create a Kubernetes Job to perform the backup.
     - Wait for the Job to complete successfully.
     - Clean up the Job and temporary secret.
     - Scale the workloads back to their original replica counts.
+    - Resume Flux Kustomizations that were suspended.
     """
 
     namespace = pvc["metadata"]["namespace"]
@@ -106,6 +113,7 @@ def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
     retention = pvc_retention(pvc)
     temp_secret = short_name("restic", pvc_name, "env")
     job_name = short_name("restic", pvc_name)
+    flux_kustomizations = flux_kustomizations_for_pvc(pvc)
     delete_stale_backup_jobs(namespace, pvc_name, job_name)
     if workloads is None:
         workloads = workloads_for_pvc(namespace, pvc_name)
@@ -128,6 +136,9 @@ def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
         )
 
     try:
+        for name in flux_kustomizations:
+            suspend_flux_kustomization(name)
+
         for workload in workloads:
             key = (workload["api"], workload["namespace"], workload["name"])
             original_replicas[key] = (workload, get_replicas(workload))
@@ -148,9 +159,11 @@ def backup_pvc(pvc: JsonMap, workloads: list[Workload] | None = None) -> None:
             job_logs(namespace, job_name)
         kubectl("-n", namespace, "delete", "job", job_name, "--ignore-not-found=true", check=False)
         kubectl("-n", namespace, "delete", "secret", temp_secret, "--ignore-not-found=true", check=False)
-        wait_for_no_pods_using_pvc(namespace, pvc_name, include_backup_jobs=True)
+        wait_for_backup_pod_released(namespace, pvc_name)
         for workload, replicas in reversed(list(original_replicas.values())):
             scale(workload, replicas)
+        for name in reversed(flux_kustomizations):
+            resume_flux_kustomization(name)
 
 
 def backup_annotated_pvcs() -> None:

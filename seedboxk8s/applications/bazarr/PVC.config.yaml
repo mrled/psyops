@@ -5,6 +5,7 @@ metadata:
   namespace: tortuga
   annotations:
     backup.seedboxk8s.micahrl.com/enabled: "true"
+    backup.seedboxk8s.micahrl.com/flux-kustomization: bazarr
     backup.seedboxk8s.micahrl.com/keep-daily: 2
     backup.seedboxk8s.micahrl.com/keep-weekly: 2
     backup.seedboxk8s.micahrl.com/keep-monthly: 8

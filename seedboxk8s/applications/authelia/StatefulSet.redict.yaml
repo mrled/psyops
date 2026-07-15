@@ -69,6 +69,7 @@ spec:
         name: redict-data
         annotations:
           backup.seedboxk8s.micahrl.com/enabled: "true"
+          backup.seedboxk8s.micahrl.com/flux-kustomization: authelia
       spec:
         accessModes:
           - ReadWriteOnce
