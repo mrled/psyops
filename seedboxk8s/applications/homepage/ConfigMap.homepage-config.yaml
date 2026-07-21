@@ -33,7 +33,14 @@ data:
           dateStyle: short
           hourCycle: h23
   services.yaml: ""
-  bookmarks.yaml: ""
+  bookmarks.yaml: |
+    - psyops:
+        - Renovate Dashboard:
+            - abbr: RD
+              href: https://github.com/mrled/psyops/issues/1
+        - Pull Requests:
+            - abbr: PR
+              href: https://github.com/mrled/psyops/pulls
   docker.yaml: ""
   custom.css: ""
   custom.js: ""
