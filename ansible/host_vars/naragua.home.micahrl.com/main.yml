@@ -14,3 +14,4 @@ http_backchannel_subdomain_ports:
   lrhacim: 42246
   piclaw: 25297
   ellipsis: 35477
+  unprivellipsis: 35478
