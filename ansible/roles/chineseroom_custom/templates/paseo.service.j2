@@ -1,0 +1,14 @@
+[Unit]
+Description=Paseo daemon
+
+[Service]
+Type=simple
+WorkingDirectory=/home/{{ chineseroom_restricted_user }}
+Environment=HOME=/home/{{ chineseroom_restricted_user }}
+Environment=PATH=/home/{{ chineseroom_restricted_user }}/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/{{ chineseroom_restricted_user }}/.local/bin/paseo start --foreground --home /home/{{ chineseroom_restricted_user }}/.paseo
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -29,6 +29,12 @@
   tags:
     - chineseroom_apps_system
 
+- name: Install paseo user service
+  ansible.builtin.import_tasks: paseo.yml
+  when: chineseroom_custom_paseo_enable
+  tags:
+    - chineseroom_paseo
+
 - name: Configure SSH
   ansible.builtin.import_tasks: ssh.yml
   tags:

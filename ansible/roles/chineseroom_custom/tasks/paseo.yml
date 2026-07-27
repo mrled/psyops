@@ -1,0 +1,37 @@
+---
+# Install the paseo daemon as a systemd *user* service for the restricted user.
+# Lingering is assumed to already be enabled for the user, so the user manager
+# is running headless / at boot and can start this service.
+
+- name: Look up the restricted user (for XDG_RUNTIME_DIR)
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ chineseroom_restricted_user }}"
+
+- name: Create the user systemd unit directory
+  ansible.builtin.file:
+    path: "/home/{{ chineseroom_restricted_user }}/.config/systemd/user"
+    state: directory
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: "0755"
+
+- name: Install the paseo user unit
+  ansible.builtin.template:
+    src: paseo.service.j2
+    dest: "/home/{{ chineseroom_restricted_user }}/.config/systemd/user/paseo.service"
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: "0644"
+
+- name: Enable and start paseo for the restricted user
+  become: true
+  become_user: "{{ chineseroom_restricted_user }}"
+  ansible.builtin.systemd:
+    name: paseo.service
+    scope: user
+    daemon_reload: true
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ getent_passwd[chineseroom_restricted_user][1] }}"

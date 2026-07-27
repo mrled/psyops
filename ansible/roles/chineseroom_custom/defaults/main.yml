@@ -37,3 +37,8 @@ chineseroom_custom_zellij_version: "0.43.1"
 
 # A credentials file for the restricted user to source in their shell profile.
 chineseroom_custom_profile_d_credentials_content: ""
+
+# If true, install/enable/start the paseo daemon as a systemd user service
+# for the restricted user. Requires the paseo binary at
+# ~/.local/bin/paseo (installed separately).
+chineseroom_custom_paseo_enable: false
