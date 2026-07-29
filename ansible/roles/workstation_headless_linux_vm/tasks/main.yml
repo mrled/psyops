@@ -1,0 +1,22 @@
+---
+- name: Install workstation packages
+  ansible.builtin.package:
+    name:
+    - atuin
+    - clang
+    - curl
+    - git-annex
+    - git-delta
+    - make
+    - ripgrep
+    - sqlite
+    - vim
+    state: present
+
+# The stock /etc/zlogout clears the screen on logout, which is useless and
+# annoying. Move it aside rather than delete it so it's recoverable.
+- name: Move /etc/zlogout aside
+  ansible.builtin.command:
+    cmd: mv /etc/zlogout /etc/zlogout.dist
+    creates: /etc/zlogout.dist
+    removes: /etc/zlogout

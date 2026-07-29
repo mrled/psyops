@@ -1,0 +1,10 @@
+---
+# Lima VM - connect via lima SSH config
+# For initial setup, use lima configuration in ~/.lima/naraguachile/ssh.config
+ansible_host: lima-naraguachile
+ansible_ssh_common_args: "-F {{ lookup('env', 'HOME') }}/.lima/naraguachile/ssh.config"
+# Once joined to the tailnet, connect via tailscale instead (as dreadnaught does):
+# ansible_host: <tailscale-ip>
+# ansible_ssh_common_args: "-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+ansible_user: mrled # must match lima VM username, which is same as host VM username by default
+# The lima default user (mrled) has passwordless sudo, so no ansible_become_pass is needed.

@@ -1,0 +1,18 @@
+---
+# Headless Linux VM workstations
+
+tailscale_enable: true
+
+# Listen for SSH on the Tailscale interface, but keep listening on the main
+# interface too. sshd's default (ListenAddress 0.0.0.0:22) already covers both
+# the Tailscale IP and the regular interface, so we deliberately do NOT take
+# over SSH the way the tailscale role can for tailnet-only hosts.
+tailscale_take_over_ssh: false
+
+# interactive_user: clone dhd and symlink dotfiles for the workstation user(s).
+# The lima default user (mrled) has passwordless sudo already.
+interactive_user_list:
+  - name: mrled
+
+# interactive_system: install interactive packages and set the login shell to zsh.
+interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') | list }}"

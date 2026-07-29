@@ -45,5 +45,8 @@ bolgana.banded-goblin.ts.net
 [unifiusg]
 gateway.home.micahrl.com
 
+[workstation_headless_linux_vm]
+naraguachile
+
 [xmpp_server]
 apsylania.micahrl.com

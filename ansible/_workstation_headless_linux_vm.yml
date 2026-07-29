@@ -1,0 +1,10 @@
+---
+- name: Deploy headless Linux VM workstations
+  hosts: workstation_headless_linux_vm
+  roles:
+    - { role: emailfwd, tags: ["emailfwd"] }
+    - { role: ssh_copy_id, tags: ["ssh_copy_id"], when: "ssh_copy_id_keys | length > 0" }
+    - { role: tailscale, tags: ["tailscale"], when: "tailscale_enable | default(False)" }
+    - { role: workstation_headless_linux_vm, tags: ["workstation"] }
+    - { role: interactive_system, tags: ["interactive", "interactive_system"] }
+    - { role: interactive_user, tags: ["interactive", "interactive_user"] }
