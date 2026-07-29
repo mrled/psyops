@@ -67,6 +67,18 @@ Resources:
           TTL: 60
           ResourceRecords: ["dreadnaught.backchannel.younix.us."]
 
+        # Naraguachile host records
+        # REPLACE the placeholder below with naraguachile's Tailscale IPv4
+        # (run `tailscale ip -4` on the host once it has joined the tailnet).
+        - Name: naraguachile.backchannel.younix.us.
+          Type: A
+          TTL: 60
+          ResourceRecords: ["100.73.66.28"]
+        - Name: "*.naraguachile.backchannel.younix.us."
+          Type: CNAME
+          TTL: 60
+          ResourceRecords: ["naraguachile.backchannel.younix.us."]
+
   # IAM group with permission to modify records in the backchannel zone
   BackchannelZoneUpdaterGroup:
     Type: AWS::IAM::Group
@@ -115,6 +127,13 @@ Resources:
       Groups:
         - !Ref BackchannelZoneUpdaterGroup
 
+  NaraguachileBackchannelZoneUpdaterUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: NaraguachileBackchannelZoneUpdater
+      Groups:
+        - !Ref BackchannelZoneUpdaterGroup
+
 Outputs:
   BackchannelZoneId:
     Description: The ID of the backchannel zone
@@ -151,3 +170,9 @@ Outputs:
     Value: !GetAtt DreadnaughtBackchannelZoneUpdaterUser.Arn
     Export:
       Name: BackchannelZone-DreadnaughtUpdaterUserArn
+
+  NaraguachileBackchannelZoneUpdaterUserArn:
+    Description: The ARN for the Naraguachile user with permission to modify records in the backchannel zone
+    Value: !GetAtt NaraguachileBackchannelZoneUpdaterUser.Arn
+    Export:
+      Name: BackchannelZone-NaraguachileUpdaterUserArn
