@@ -8,3 +8,13 @@ ansible_ssh_common_args: "-F {{ lookup('env', 'HOME') }}/.lima/naraguachile/ssh.
 # ansible_ssh_common_args: "-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 ansible_user: mrled # must match lima VM username, which is same as host VM username by default
 # The lima default user (mrled) has passwordless sudo, so no ansible_become_pass is needed.
+
+# HTTP backchannel (traefik + Let's Encrypt via Route53 DNS challenge).
+# Serves appname.naraguachile.backchannel.younix.us over the tailnet.
+http_backchannel_dnsname: naraguachile.backchannel.younix.us
+http_backchannel_aws_access_key_id: "{{ vault_http_backchannel_aws_access_key_id }}"
+http_backchannel_aws_secret_access_key: "{{ vault_http_backchannel_aws_secret_access_key }}"
+# Map subdomains to local ports.
+http_backchannel_subdomain_ports:
+  ellipsis: 35477
+  unprivellipsis: 35478

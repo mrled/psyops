@@ -2,15 +2,19 @@
 - name: Install workstation packages
   ansible.builtin.package:
     name:
-    - atuin
-    - clang
-    - curl
-    - git-annex
-    - git-delta
-    - make
-    - ripgrep
-    - sqlite
-    - vim
+      - atuin
+      - clang
+      - curl
+      - git-annex
+      - git-crypt
+      - git-delta
+      - make
+      - nodejs
+      - npm
+      - ripgrep
+      - sqlite
+      - uv
+      - vim
     state: present
 
 # The stock /etc/zlogout clears the screen on logout, which is useless and

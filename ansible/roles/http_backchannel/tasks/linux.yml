@@ -1,0 +1,121 @@
+---
+- name: Use the Linux traefik config directory
+  ansible.builtin.set_fact:
+    http_backchannel_config_dir: /etc/traefik
+
+- name: Check installed traefik version
+  ansible.builtin.command: /usr/local/bin/traefik version
+  register: http_backchannel_traefik_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install traefik binary
+  ansible.builtin.unarchive:
+    src: "{{ http_backchannel_traefik_download_url }}"
+    dest: /usr/local/bin
+    remote_src: true
+    include:
+      - traefik
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+  when: http_backchannel_traefik_version | regex_replace('^v', '') not in (http_backchannel_traefik_installed.stdout | default(''))
+  notify: restart traefik linux
+
+- name: Create Traefik configuration directory
+  ansible.builtin.file:
+    path: "{{ http_backchannel_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  become: true
+
+- name: Create Traefik dynamic configuration directory
+  ansible.builtin.file:
+    path: "{{ http_backchannel_config_dir }}/dynamic"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  become: true
+
+- name: Create Traefik acme.json file
+  ansible.builtin.file:
+    path: "{{ http_backchannel_config_dir }}/acme.json"
+    state: touch
+    owner: root
+    group: root
+    mode: "0600"
+    modification_time: preserve
+    access_time: preserve
+  become: true
+
+- name: Deploy Traefik configuration
+  ansible.builtin.template:
+    src: traefik.yml.j2
+    dest: "{{ http_backchannel_config_dir }}/traefik.yml"
+    owner: root
+    group: root
+    mode: "0600"
+  become: true
+  notify: restart traefik linux
+
+- name: Deploy AWS credentials file
+  ansible.builtin.template:
+    src: awscreds.conf.j2
+    dest: "{{ http_backchannel_config_dir }}/awscreds.conf"
+    owner: root
+    group: root
+    mode: "0600"
+  become: true
+  notify: restart traefik linux
+
+- name: Deploy AWS config file
+  ansible.builtin.template:
+    src: awsconfig.conf.j2
+    dest: "{{ http_backchannel_config_dir }}/awsconfig.conf"
+    owner: root
+    group: root
+    mode: "0600"
+  become: true
+  notify: restart traefik linux
+
+- name: Deploy wildcard certificate dynamic configuration
+  ansible.builtin.template:
+    src: wildcard-cert.yml.j2
+    dest: "{{ http_backchannel_config_dir }}/dynamic/wildcard-cert.yml"
+    owner: root
+    group: root
+    mode: "0600"
+  become: true
+  notify: restart traefik linux
+
+- name: Deploy subdomain routes dynamic configuration
+  ansible.builtin.template:
+    src: subdomain-routes.yml.j2
+    dest: "{{ http_backchannel_config_dir }}/dynamic/subdomain-routes.yml"
+    owner: root
+    group: root
+    mode: "0600"
+  become: true
+  notify: restart traefik linux
+
+- name: Deploy Traefik systemd unit
+  ansible.builtin.template:
+    src: traefik.service.j2
+    dest: /etc/systemd/system/traefik.service
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: restart traefik linux
+
+- name: Enable and start Traefik
+  ansible.builtin.systemd:
+    name: traefik
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true

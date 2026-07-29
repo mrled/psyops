@@ -1,0 +1,19 @@
+[Unit]
+Description=Traefik HTTP backchannel
+Documentation=https://doc.traefik.io/traefik/
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/traefik --configFile={{ http_backchannel_config_dir }}/traefik.yml
+Environment=AWS_SHARED_CREDENTIALS_FILE={{ http_backchannel_config_dir }}/awscreds.conf
+Environment=AWS_CONFIG_FILE={{ http_backchannel_config_dir }}/awsconfig.conf
+WorkingDirectory={{ http_backchannel_config_dir }}
+# Allow binding the privileged :80 and :443 entrypoints.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

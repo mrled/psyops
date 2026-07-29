@@ -27,7 +27,7 @@ certificatesResolvers:
   letsencrypt:
     acme:
       email: {{ http_backchannel_acme_email }}
-      storage: /usr/local/etc/traefik/acme.json
+      storage: {{ http_backchannel_config_dir }}/acme.json
       # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
       dnsChallenge:
         provider: route53
@@ -35,7 +35,7 @@ certificatesResolvers:
 
 providers:
   file:
-    directory: /usr/local/etc/traefik/dynamic
+    directory: {{ http_backchannel_config_dir }}/dynamic
     watch: true
 
 log:

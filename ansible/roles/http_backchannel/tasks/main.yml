@@ -2,3 +2,7 @@
 - name: Import macOS tasks
   ansible.builtin.import_tasks: macos.yml
   when: ansible_distribution == "MacOSX"
+
+- name: Import Linux tasks
+  ansible.builtin.import_tasks: linux.yml
+  when: ansible_system == "Linux"

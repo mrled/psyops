@@ -5,7 +5,23 @@ http_backchannel_log_level: "INFO"
 # Path to Traefik binary (adjust for Intel vs Apple Silicon Macs)
 # Intel Macs: /usr/local/bin/traefik
 # Apple Silicon Macs: /opt/homebrew/bin/traefik
+# On Linux the binary is installed to /usr/local/bin/traefik (see below).
 http_backchannel_traefik_binary: "/opt/homebrew/bin/traefik"
+
+# Directory holding traefik.yml, acme.json, awscreds/awsconfig, and dynamic/.
+# macOS keeps the Homebrew-era default; Linux overrides this to /etc/traefik.
+http_backchannel_config_dir: "/usr/local/etc/traefik"
+
+# Linux only: which traefik release to download and where from.
+# Bump this to upgrade; the binary is (re)installed whenever it differs from
+# the version already on the host.
+http_backchannel_traefik_version: "v3.3.0"
+http_backchannel_traefik_arch_map:
+  aarch64: arm64
+  x86_64: amd64
+http_backchannel_traefik_arch: "{{ http_backchannel_traefik_arch_map[ansible_architecture] }}"
+http_backchannel_traefik_download_url: >-
+  https://github.com/traefik/traefik/releases/download/{{ http_backchannel_traefik_version }}/traefik_{{ http_backchannel_traefik_version }}_linux_{{ http_backchannel_traefik_arch }}.tar.gz
 
 # Subdomain to port mappings for this host
 # Map subdomain names to localhost ports
