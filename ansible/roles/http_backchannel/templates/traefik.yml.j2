@@ -32,6 +32,13 @@ certificatesResolvers:
       dnsChallenge:
         provider: route53
         delayBeforeCheck: 30
+        # Use public recursive resolvers for zone detection and the
+        # propagation check. The host's stub resolver (systemd-resolved /
+        # Tailscale MagicDNS) returns empty NOERROR for SOA queries, which
+        # breaks lego's FindZoneByFqdn ("could not find zone for FQDN ...").
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
 
 providers:
   file:

@@ -17,6 +17,10 @@
       <string>/usr/local/etc/traefik/awscreds.conf</string>
       <key>AWS_CONFIG_FILE</key>
       <string>/usr/local/etc/traefik/awsconfig.conf</string>
+{% if http_backchannel_aws_hosted_zone_id %}
+      <key>AWS_HOSTED_ZONE_ID</key>
+      <string>{{ http_backchannel_aws_hosted_zone_id }}</string>
+{% endif %}
     </dict>
 
     <key>RunAtLoad</key>

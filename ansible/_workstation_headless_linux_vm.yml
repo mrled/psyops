@@ -4,6 +4,9 @@
   roles:
     - { role: ssh_copy_id, tags: ["ssh_copy_id"], when: "ssh_copy_id_keys | length > 0" }
     - { role: tailscale, tags: ["tailscale"], when: "tailscale_enable | default(False)" }
+    # Only for hosts that also opt into the backchannel service via inventory
+    # group membership; the standalone _backchannel.yml play still works too.
+    - { role: http_backchannel, tags: ["http_backchannel"], when: "'backchannel' in group_names" }
     - { role: workstation_headless_linux_vm, tags: ["workstation"] }
     - { role: interactive_system, tags: ["interactive", "interactive_system"] }
     - { role: interactive_user, tags: ["interactive", "interactive_user"] }

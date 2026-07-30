@@ -2,6 +2,16 @@
 # Traefik log level (DEBUG, INFO, WARN, ERROR, FATAL, PANIC)
 http_backchannel_log_level: "INFO"
 
+# Route53 hosted zone ID for the backchannel domain. When set, lego uses it
+# directly and skips DNS-based hosted-zone detection (FindZoneByFqdn), which
+# fails on hosts whose stub resolver won't answer SOA queries (systemd-resolved
+# / Tailscale MagicDNS): "route53: failed to determine hosted zone ID". Find it
+# with:
+#   aws route53 list-hosted-zones-by-name --dns-name younix.us \
+#     --query 'HostedZones[0].Id' --output text   # -> /hostedzone/Z...  (use the Z... part)
+# Empty by default so hosts with a working resolver (e.g. macOS) are unaffected.
+http_backchannel_aws_hosted_zone_id: ""
+
 # Path to Traefik binary (adjust for Intel vs Apple Silicon Macs)
 # Intel Macs: /usr/local/bin/traefik
 # Apple Silicon Macs: /opt/homebrew/bin/traefik
