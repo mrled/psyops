@@ -44,6 +44,10 @@
 # --- Codex ---------------------------------------------------------------
 # Codex has no self-update subcommand; re-running the installer is the
 # documented way to both install and update, so it runs unconditionally.
+# The installer appends an `export PATH` block to a shell profile unless its
+# target dir (~/.local/bin) is already on PATH, so we put it there for the run.
+# That keeps the installer from writing into the dhd-managed dotfiles, which
+# are symlinked from ~/.dhd; PATH is set up there instead.
 - name: Install or update Codex for {{ ai_agent_user.name }}
   become: true
   become_user: "{{ ai_agent_user.name }}"
@@ -52,4 +56,5 @@
     executable: /bin/bash
   environment:
     HOME: "{{ ai_agent_home }}"
+    PATH: "{{ ai_agent_home }}/.local/bin:{{ ansible_env.PATH }}"
   changed_when: true
