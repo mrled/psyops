@@ -18,5 +18,3 @@ http_backchannel_aws_secret_access_key: "{{ vault_http_backchannel_aws_secret_ac
 http_backchannel_subdomain_ports:
   ellipsis: 35477
   unprivellipsis: 35478
-
-http_backchannel_aws_hosted_zone_id: Z073795617RDA8GMOGZGZ
