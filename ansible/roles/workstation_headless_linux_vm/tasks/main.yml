@@ -17,6 +17,15 @@
       - vim
     state: present
 
+# Claude Code and Codex are installed per-user via their official install
+# scripts (into ~/.local), NOT system-wide as root. Both projects distribute
+# curl|sh installers as the recommended method for individual users.
+- name: Install AI coding agents for workstation users
+  ansible.builtin.include_tasks: ai_agents.yml
+  loop: "{{ interactive_user_list }}"
+  loop_control:
+    loop_var: ai_agent_user
+
 # The stock /etc/zlogout clears the screen on logout, which is useless and
 # annoying. Move it aside rather than delete it so it's recoverable.
 - name: Move /etc/zlogout aside

@@ -1,0 +1,55 @@
+---
+# Install/update Claude Code and Codex for a single workstation user, running
+# as that user (not root) so the tools land in their ~/.local. Included once
+# per entry in interactive_user_list, with the user in `ai_agent_user`.
+
+- name: Getent for {{ ai_agent_user.name }} home
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ ai_agent_user.name }}"
+
+- name: Set home fact for {{ ai_agent_user.name }}
+  ansible.builtin.set_fact:
+    ai_agent_home: "{{ getent_passwd[ai_agent_user.name][4] }}"
+
+# --- Claude Code ---------------------------------------------------------
+# Native installer puts the launcher at ~/.local/bin/claude; once present it
+# self-updates with `claude update`.
+- name: Check whether Claude Code is installed for {{ ai_agent_user.name }}
+  ansible.builtin.stat:
+    path: "{{ ai_agent_home }}/.local/bin/claude"
+  register: ai_agent_claude
+
+- name: Install Claude Code for {{ ai_agent_user.name }}
+  become: true
+  become_user: "{{ ai_agent_user.name }}"
+  ansible.builtin.shell:
+    cmd: set -o pipefail && curl -fsSL https://claude.ai/install.sh | bash
+    executable: /bin/bash
+  environment:
+    HOME: "{{ ai_agent_home }}"
+  when: not ai_agent_claude.stat.exists
+
+- name: Update Claude Code for {{ ai_agent_user.name }}
+  become: true
+  become_user: "{{ ai_agent_user.name }}"
+  ansible.builtin.command:
+    cmd: "{{ ai_agent_home }}/.local/bin/claude update"
+  environment:
+    HOME: "{{ ai_agent_home }}"
+  register: ai_agent_claude_update
+  changed_when: "'Successfully updated' in ai_agent_claude_update.stdout"
+  when: ai_agent_claude.stat.exists
+
+# --- Codex ---------------------------------------------------------------
+# Codex has no self-update subcommand; re-running the installer is the
+# documented way to both install and update, so it runs unconditionally.
+- name: Install or update Codex for {{ ai_agent_user.name }}
+  become: true
+  become_user: "{{ ai_agent_user.name }}"
+  ansible.builtin.shell:
+    cmd: set -o pipefail && curl -fsSL https://chatgpt.com/codex/install.sh | sh
+    executable: /bin/bash
+  environment:
+    HOME: "{{ ai_agent_home }}"
+  changed_when: true
