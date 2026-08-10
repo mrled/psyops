@@ -15,3 +15,4 @@ http_backchannel_subdomain_ports:
   piclaw: 25297
   ellipsis: 35477
   unprivellipsis: 35478
+  antedom: 26833
