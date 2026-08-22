@@ -1,0 +1,19 @@
+---
+# The base mrled.chineseroom.chineseroom role creates the wildcard certificate,
+# nginx mapping generator, and these parent directories before this role runs.
+- name: Ensure sandbox domain map directory exists for direct GitHub clones
+  ansible.builtin.file:
+    path: "{{ chineseroom_domainmap_sandbox_dir }}"
+    state: directory
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: "0755"
+
+- name: Write direct GitHub clone domain map
+  ansible.builtin.template:
+    src: domainmap.github-clones.j2
+    dest: "{{ chineseroom_domainmap_sandbox_dir }}/chineseroom_custom_github_clones"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: regen custom nginx mappings

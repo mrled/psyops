@@ -38,6 +38,26 @@ chineseroom_custom_zellij_version: "0.43.1"
 # A credentials file for the restricted user to source in their shell profile.
 chineseroom_custom_profile_d_credentials_content: ""
 
+# GitHub repositories to clone directly into the restricted user's workspace.
+# Each entry supports:
+#   github_repo:    GitHub owner/repo (required), e.g. mrledlabs/antedom
+#   checkout_name:  directory name under /mnt/aiworkspace (defaults to repo name)
+#   domain_map:     optional list of {subdomain, port} sandbox nginx entries
+#
+# These are one-way working clones: no Gitea repository, API token, webhook,
+# or periodic synchronization is configured. Existing clones are not updated
+# by later playbook runs.
+chineseroom_custom_github_clones: []
+
+# Private keys for direct GitHub clones. Install a key only when a configured
+# repository needs non-public GitHub access. Each item is
+# {filename: "id_ed25519", content: "{{ vault_... }}"}.
+chineseroom_custom_github_ssh_privkeys: []
+
+# GitHub's published Ed25519 SSH host key, installed before direct clones.
+chineseroom_custom_github_ssh_host_fingerprints:
+  - github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+
 # If true, install/enable/start the paseo daemon as a systemd user service
 # for the restricted user. Requires the paseo binary at
 # ~/.local/bin/paseo (installed separately).

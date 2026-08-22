@@ -1,0 +1,5 @@
+{% for clone in chineseroom_custom_github_clones %}
+{% for mapping in clone.domain_map | default([]) %}
+{{ mapping.subdomain }} {{ mapping.port }}
+{% endfor %}
+{% endfor %}

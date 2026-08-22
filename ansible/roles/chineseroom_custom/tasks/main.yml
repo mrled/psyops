@@ -29,6 +29,16 @@
   tags:
     - chineseroom_apps_system
 
+- name: Configure direct GitHub working clones
+  ansible.builtin.import_tasks: github_clones.yml
+  tags:
+    - chineseroom_github_clones
+
+- name: Write direct GitHub clone sandbox domain map
+  ansible.builtin.import_tasks: domainmap.yml
+  tags:
+    - chineseroom_github_clones
+
 - name: Install paseo user service
   ansible.builtin.import_tasks: paseo.yml
   when: chineseroom_custom_paseo_enable

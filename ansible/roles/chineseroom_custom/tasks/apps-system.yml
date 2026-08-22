@@ -28,6 +28,7 @@
       - clang # used with linuxbrew a lot
       - curl
       - firefox
+      - git
       - git-delta
       - git-lfs
       - glow

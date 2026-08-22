@@ -1,0 +1,38 @@
+---
+- name: Install GitHub SSH keys for direct clones
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "/home/{{ chineseroom_restricted_user }}/.ssh/{{ item.filename }}"
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: "0600"
+  loop: "{{ chineseroom_custom_github_ssh_privkeys }}"
+  no_log: true
+
+- name: Add GitHub SSH host keys for direct clones
+  ansible.builtin.known_hosts:
+    path: "/home/{{ chineseroom_restricted_user }}/.ssh/known_hosts"
+    name: github.com
+    key: "{{ item }}"
+    state: present
+  loop: "{{ chineseroom_custom_github_ssh_host_fingerprints }}"
+  when: chineseroom_custom_github_clones | length > 0
+
+- name: Configure Git LFS for the restricted user
+  ansible.builtin.command: git lfs install
+  become: true
+  become_user: "{{ chineseroom_restricted_user }}"
+  changed_when: false
+  when: chineseroom_custom_github_clones | length > 0
+
+- name: Clone direct GitHub working repositories
+  ansible.builtin.git:
+    repo: "git@github.com:{{ item.github_repo }}.git"
+    dest: "/mnt/aiworkspace/{{ item.checkout_name | default(item.github_repo.split('/')[1]) }}"
+    clone: true
+    update: false
+  become: true
+  become_user: "{{ chineseroom_restricted_user }}"
+  loop: "{{ chineseroom_custom_github_clones }}"
+  loop_control:
+    label: "{{ item.github_repo }}"

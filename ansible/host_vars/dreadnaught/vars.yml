@@ -83,14 +83,6 @@ chineseroom_gitea_github_mirrors:
     domain_map:
       - subdomain: hedgerules
         port: 13100
-  - github_repo: mrled/understatement
-    domain_map:
-      - subdomain: understatement1
-        port: 3001
-      - subdomain: understatement2
-        port: 3002
-      - subdomain: understatement3
-        port: 3003
   - github_repo: mrled/me.micahrl.com
     domain_map:
       - subdomain: micahrl
@@ -108,7 +100,21 @@ chineseroom_gitea_github_mirrors:
         port: 24397
   - github_repo: mrled/darktable
 
-chineseroom_gitea_restricted_user_privkeys:
+chineseroom_custom_github_clones:
+  - github_repo: mrledlabs/antedom
+    domain_map:
+      - subdomain: antedom
+        port: 26833
+  - github_repo: mrledlabs/understatement
+    domain_map:
+      - subdomain: understatement1
+        port: 3001
+      - subdomain: understatement2
+        port: 3002
+      - subdomain: understatement3
+        port: 3003
+
+chineseroom_custom_github_ssh_privkeys:
   - filename: id_ed25519
     content: "{{ vault_chineseroom_gitea_restricted_user_ssh_privkey }}"
 
