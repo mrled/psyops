@@ -1,0 +1,12 @@
+ARG CLAUDEBOX_BASE=debian:stable-slim
+FROM ${CLAUDEBOX_BASE}
+
+# System packages needed in addition to the claudebox2 base image.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        fuse-overlayfs \
+        gzip \
+        podman \
+        slirp4netns \
+        uidmap \
+    && rm -rf /var/lib/apt/lists/*
