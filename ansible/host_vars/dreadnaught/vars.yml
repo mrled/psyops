@@ -98,7 +98,7 @@ chineseroom_gitea_github_mirrors:
     domain_map:
       - subdomain: chexquest
         port: 24397
-  - github_repo: mrled/darktable
+  # - github_repo: mrled/darktable
 
 chineseroom_custom_github_clones:
   - github_repo: mrledlabs/antedom
