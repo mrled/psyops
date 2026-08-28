@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ghcr.io/tautulli/tautulli:v2.17.2@sha256:864245fb24830ef6516b5f383bf4d8ba37939ae2f0574dc0217ca02fba4301ff
+        - image: ghcr.io/tautulli/tautulli:v2.18.1@sha256:7feb72192d5f477f2e4e28ed6b871b57478aff693c279462577cb4dad16556de
           name: tautulli
           ports:
             - containerPort: 8181
