@@ -15,7 +15,7 @@ spec:
       serviceAccountName: traefik-account
       containers:
       - name: traefik-localnet
-        image: docker.io/library/traefik:v3.7.6@sha256:21a3d83696379bac6434bb32e1dde0aff0e84ef2abd053ed3db87d3f45e749b2
+        image: docker.io/library/traefik:v3.7.12@sha256:9c2a54d87f76f5c2f5f2682c68394af92fb12c0a2686798d6462a3f84bd78eaf
         args:
           - --api.insecure=true
           - --api.dashboard=true
