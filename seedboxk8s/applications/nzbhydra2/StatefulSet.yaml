@@ -30,7 +30,7 @@ spec:
               mountPath: /import
       containers:
         # https://github.com/linuxserver/docker-nzbhydra2/releases
-        - image: ghcr.io/linuxserver/nzbhydra2:v8.9.0-ls102
+        - image: ghcr.io/linuxserver/nzbhydra2:v8.9.0-ls103
           name: nzbhydra2
           ports:
             - containerPort: 5076
