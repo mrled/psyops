@@ -20,7 +20,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: authelia
-          image: ghcr.io/authelia/authelia:4.39.20
+          image: ghcr.io/authelia/authelia:4.39.22
           command:
             - authelia
           args:
