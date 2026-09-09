@@ -63,7 +63,7 @@ chineseroom_gitea_users:
       mirror: [readonly]
     ssh_keys:
       - title: callista@dreadnaught
-        pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGmEr9SIPlKKHxIFGbzTNcPnfMVquDal8Z0EAb+tLxpB
+        pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN7pDZUZnA9txYLad4jIECZm2CBDcnfeEtmGZdLKxacq
 
 chineseroom_gitea_github_mirrors:
   - github_repo: mrled/KeymapKit
@@ -113,10 +113,14 @@ chineseroom_custom_github_clones:
         port: 3002
       - subdomain: understatement3
         port: 3003
+      - subdomain: understatement4
+        port: 3004
 
-chineseroom_custom_github_ssh_privkeys:
+chineseroom_gitea_restricted_user_privkeys:
   - filename: id_ed25519
     content: "{{ vault_chineseroom_gitea_restricted_user_ssh_privkey }}"
+
+chineseroom_custom_github_ssh_privkeys: "{{ chineseroom_gitea_restricted_user_privkeys }}"
 
 interactive_user_disable_dhd: true
 interactive_user_list:
