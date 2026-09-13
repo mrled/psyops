@@ -6,6 +6,12 @@ We have a `kvrb` (Kubernetes Volume Restic Backup) Python package that runs as a
 It finds annotated PVCs, pauses workloads that use them, runs a temporary backup
 Job in the PVC namespace, and restores the workloads afterward.
 
+All backup Jobs request a writable PVC mount from CSI, but expose `/source`
+read-only inside the restic container. This keeps TopoLVM's underlying filesystem
+mount writable when the workload restarts, while preventing restic from writing
+to the source files. Workloads are still stopped during backup for consistency,
+and the controller still waits for backup pods to disappear before restarting them.
+
 PVCs opt in with this annotation:
 
 ```yaml

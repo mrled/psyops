@@ -77,4 +77,6 @@ spec:
         - name: source
           persistentVolumeClaim:
             claimName: $PVC_NAME
-            readOnly: true
+            # Keep the CSI filesystem mount writable for the workload's restart.
+            # Restic's /source mount remains read-only via volumeMounts above.
+            readOnly: false
