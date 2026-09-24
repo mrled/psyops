@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: browser
-          image: klausmeyer/docker-registry-browser:1.10.0
+          image: klausmeyer/docker-registry-browser:1.10.1
           ports:
             - containerPort: 8080
           env:
