@@ -17,7 +17,7 @@ spec:
         fsGroup: ${plexGid}
       containers:
       - name: metube
-        image: ghcr.io/alexta69/metube:latest@sha256:397778fccf13d83adf9325fe813b260617a082d1772aff6d678c5b9256dd01fb
+        image: ghcr.io/alexta69/metube:latest@sha256:549f4b0eeb13b01ecae2a20b50153d17481b1d59b517de5ae0dddee03e058745
         ports:
         - containerPort: 8081
         env:
