@@ -7,7 +7,7 @@ WorkingDirectory=/home/{{ chineseroom_restricted_user }}
 Environment=HOME=/home/{{ chineseroom_restricted_user }}
 Environment=PATH=/home/{{ chineseroom_restricted_user }}/.local/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin
 Environment=SHELL=/usr/bin/zsh
-ExecStart=/usr/bin/zsh -lc '. "$HOME/.profile"; exec "$HOME/.local/bin/paseo" start --foreground --home "$HOME/.paseo"'
+ExecStart=/usr/bin/zsh -lc '. "$HOME/.profile"; exec "$HOME/.local/bin/paseo" daemon run --home "$HOME/.paseo"'
 Restart=always
 RestartSec=5
 
