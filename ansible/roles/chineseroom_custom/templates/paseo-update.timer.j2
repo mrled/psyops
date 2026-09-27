@@ -1,0 +1,9 @@
+[Unit]
+Description=Periodically update Paseo CLI
+
+[Timer]
+OnCalendar={{ chineseroom_custom_paseo_update_oncalendar }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

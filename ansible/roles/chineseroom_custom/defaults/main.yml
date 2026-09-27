@@ -59,6 +59,8 @@ chineseroom_custom_github_ssh_host_fingerprints:
   - github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
 
 # If true, install/enable/start the paseo daemon as a systemd user service
-# for the restricted user. Requires the paseo binary at
-# ~/.local/bin/paseo (installed separately).
+# for the restricted user, install the npm CLI into ~/.local, and enable
+# a systemd user timer to keep it updated.
 chineseroom_custom_paseo_enable: false
+chineseroom_custom_paseo_npm_package: "@getpaseo/cli@latest"
+chineseroom_custom_paseo_update_oncalendar: "daily"

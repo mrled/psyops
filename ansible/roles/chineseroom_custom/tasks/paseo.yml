@@ -3,18 +3,41 @@
 # Lingering is assumed to already be enabled for the user, so the user manager
 # is running headless / at boot and can start this service.
 
+- name: Install npm for Paseo
+  ansible.builtin.dnf:
+    name: npm
+    state: present
+
 - name: Look up the restricted user (for XDG_RUNTIME_DIR)
   ansible.builtin.getent:
     database: passwd
     key: "{{ chineseroom_restricted_user }}"
 
-- name: Create the user systemd unit directory
+- name: Create Paseo user directories
   ansible.builtin.file:
-    path: "/home/{{ chineseroom_restricted_user }}/.config/systemd/user"
+    path: "{{ item }}"
     state: directory
     owner: "{{ chineseroom_restricted_user }}"
     group: "{{ chineseroom_restricted_user }}"
     mode: "0755"
+  loop:
+    - "/home/{{ chineseroom_restricted_user }}/.config/systemd/user"
+    - "/home/{{ chineseroom_restricted_user }}/.local"
+    - "/home/{{ chineseroom_restricted_user }}/.local/bin"
+
+- name: Install or update the Paseo CLI
+  become: true
+  become_user: "{{ chineseroom_restricted_user }}"
+  ansible.builtin.command: "npm install -g {{ chineseroom_custom_paseo_npm_package }}"
+  environment:
+    HOME: "/home/{{ chineseroom_restricted_user }}"
+    PATH: "/home/{{ chineseroom_restricted_user }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+    NPM_CONFIG_PREFIX: "/home/{{ chineseroom_restricted_user }}/.local"
+  register: chineseroom_custom_paseo_npm_install
+  changed_when: >-
+    'added ' in chineseroom_custom_paseo_npm_install.stdout
+    or 'changed ' in chineseroom_custom_paseo_npm_install.stdout
+    or 'removed ' in chineseroom_custom_paseo_npm_install.stdout
 
 - name: Install the paseo user unit
   ansible.builtin.template:
@@ -24,11 +47,50 @@
     group: "{{ chineseroom_restricted_user }}"
     mode: "0644"
 
+- name: Install the paseo update user unit
+  ansible.builtin.template:
+    src: paseo-update.service.j2
+    dest: "/home/{{ chineseroom_restricted_user }}/.config/systemd/user/paseo-update.service"
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: "0644"
+
+- name: Install the paseo update user timer
+  ansible.builtin.template:
+    src: paseo-update.timer.j2
+    dest: "/home/{{ chineseroom_restricted_user }}/.config/systemd/user/paseo-update.timer"
+    owner: "{{ chineseroom_restricted_user }}"
+    group: "{{ chineseroom_restricted_user }}"
+    mode: "0644"
+
 - name: Enable and start paseo for the restricted user
   become: true
   become_user: "{{ chineseroom_restricted_user }}"
   ansible.builtin.systemd:
     name: paseo.service
+    scope: user
+    daemon_reload: true
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ getent_passwd[chineseroom_restricted_user][1] }}"
+
+- name: Restart paseo if the CLI changed
+  become: true
+  become_user: "{{ chineseroom_restricted_user }}"
+  ansible.builtin.systemd:
+    name: paseo.service
+    scope: user
+    state: restarted
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ getent_passwd[chineseroom_restricted_user][1] }}"
+  when: chineseroom_custom_paseo_npm_install.changed
+
+- name: Enable and start paseo updater for the restricted user
+  become: true
+  become_user: "{{ chineseroom_restricted_user }}"
+  ansible.builtin.systemd:
+    name: paseo-update.timer
     scope: user
     daemon_reload: true
     enabled: true

@@ -1,0 +1,10 @@
+[Unit]
+Description=Update Paseo CLI
+
+[Service]
+Type=oneshot
+Environment=HOME=/home/{{ chineseroom_restricted_user }}
+Environment=PATH=/home/{{ chineseroom_restricted_user }}/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=NPM_CONFIG_PREFIX=/home/{{ chineseroom_restricted_user }}/.local
+ExecStart=/usr/bin/npm install -g {{ chineseroom_custom_paseo_npm_package }}
+ExecStartPost=/usr/bin/systemctl --user try-restart paseo.service
