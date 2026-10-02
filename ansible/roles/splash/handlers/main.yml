@@ -1,12 +1,25 @@
 ---
-- name: Restart splash
+- name: Unload Splash LaunchAgent
+  listen: Restart splash
   ansible.builtin.command:
-    argv:
-      - /bin/sh
-      - -c
-      - >-
-        launchctl bootout gui/{{ splash_uid.stdout | trim }}/{{ splash_service_name }} 2>/dev/null || true;
-        launchctl bootstrap gui/{{ splash_uid.stdout | trim }}
-        {{ (splash_user_home ~ '/Library/LaunchAgents/' ~ splash_service_name ~ '.plist') | quote }}
+    argv: ["launchctl", "bootout", "gui/{{ splash_uid.stdout | trim }}/{{ splash_service_name }}"]
+  register: splash_bootout
+  # 0: successfully unloaded.
+  # 3: ESRCH (No such process), returned when the job is not loaded.
+  # 113: launchd's "Could not find specified service", also an absent job.
+  # An already-absent job is safe here: the next handler bootstraps it.
+  # Other errors (e.g. permission failures) must not be silently ignored.
+  failed_when: splash_bootout.rc not in [0, 3, 113]
+  become: false
+  changed_when: splash_bootout.rc == 0
+
+- name: Reload Splash LaunchAgent
+  listen: Restart splash
+  ansible.builtin.command:
+    argv: ["launchctl", "bootstrap", "gui/{{ splash_uid.stdout | trim }}", "{{ splash_user_home }}/Library/LaunchAgents/{{ splash_service_name }}.plist"]
+  register: splash_bootstrap
+  until: splash_bootstrap.rc == 0
+  retries: 5
+  delay: 2
   become: false
   changed_when: true
