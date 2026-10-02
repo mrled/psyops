@@ -8,6 +8,9 @@ ansible_become_pass: "{{ vault_ansible_become_pass }}"
 
 splash_service_name: splash
 splash_home: /Volumes/DataDisk/mrldata/Library/splash
+splash_allowed_hosts:
+- host.docker.internal
+- splash.naragua.backchannel.younix.us
 
 http_backchannel_dnsname: naragua.backchannel.younix.us
 http_backchannel_aws_access_key_id: "{{ vault_http_backchannel_aws_access_key_id }}"

@@ -8,5 +8,7 @@ splash_hf_home: "{{ splash_data_dir }}/hfhome"
 splash_weight_cache: "{{ splash_data_dir }}/weights"
 splash_models:
   - mlx-community/Qwen3.8-27B-4bit
+splash_allowed_hosts: []
+splash_log_dir: "{{ splash_user_home }}/Library/Logs"
 splash_port: 7574
 splash_executable: /opt/homebrew/bin/splash

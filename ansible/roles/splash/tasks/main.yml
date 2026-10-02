@@ -4,11 +4,18 @@
     that: ansible_distribution == "MacOSX"
     fail_msg: splash is currently supported only on macOS hosts
 
-- name: Ensure Splash data directories exist
+- name: Get Splash user's UID
+  ansible.builtin.command:
+    argv: [id, -u, "{{ ansible_user }}"]
+  register: splash_uid
+  changed_when: false
+  become: false
+
+- name: Ensure Splash directories exist
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    owner: "{{ splash_user }}"
+    owner: "{{ ansible_user }}"
     group: staff
     mode: "0750"
   loop:
@@ -16,32 +23,39 @@
     - "{{ splash_data_dir }}"
     - "{{ splash_hf_home }}"
     - "{{ splash_weight_cache }}"
-  become: true
+    - "{{ splash_log_dir }}"
+    - "{{ splash_user_home }}/Library/LaunchAgents"
+  become: false
 
-- name: Install splash launch daemon
+- name: Install Splash LaunchAgent
   ansible.builtin.template:
     src: splash.plist.j2
-    dest: /Library/LaunchDaemons/{{ splash_service_name }}.plist
-    owner: root
-    group: wheel
+    dest: "{{ splash_user_home }}/Library/LaunchAgents/{{ splash_service_name }}.plist"
+    owner: "{{ ansible_user }}"
+    group: staff
     mode: "0644"
-  become: true
+  become: false
   notify: Restart splash
 
-- name: Check if splash launch daemon is loaded
-  ansible.builtin.command: launchctl print system/{{ splash_service_name }}
+- name: Check if Splash LaunchAgent is loaded
+  ansible.builtin.command: launchctl print gui/{{ splash_uid.stdout | trim }}/{{ splash_service_name }}
   register: splash_launchd_status
   failed_when: false
   changed_when: false
-  become: true
+  become: false
 
-- name: Bootstrap splash launch daemon if not loaded
-  ansible.builtin.command: launchctl bootstrap system /Library/LaunchDaemons/{{ splash_service_name }}.plist
+- name: Bootstrap Splash LaunchAgent if not loaded
+  ansible.builtin.command:
+    argv:
+      - launchctl
+      - bootstrap
+      - "gui/{{ splash_uid.stdout | trim }}"
+      - "{{ splash_user_home }}/Library/LaunchAgents/{{ splash_service_name }}.plist"
   when: splash_launchd_status.rc != 0
-  become: true
+  become: false
   changed_when: true
 
-- name: Ensure splash is running
-  ansible.builtin.command: launchctl kickstart -k system/{{ splash_service_name }}
-  become: true
+- name: Ensure Splash is running
+  ansible.builtin.command: launchctl kickstart gui/{{ splash_uid.stdout | trim }}/{{ splash_service_name }}
+  become: false
   changed_when: false
