@@ -1,0 +1,6 @@
+---
+- name: Configure macOS workstation
+  hosts: workstation_macos
+  roles:
+    - { role: http_backchannel, tags: ["http_backchannel"], when: "'backchannel' in group_names" }
+    - { role: splash, tags: ["splash"] }

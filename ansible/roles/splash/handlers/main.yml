@@ -1,0 +1,7 @@
+---
+- name: Restart splash
+  ansible.builtin.command: >-
+    sh -c 'launchctl bootout system/{{ splash_service_name }} 2>/dev/null || true;
+    launchctl bootstrap system /Library/LaunchDaemons/{{ splash_service_name }}.plist'
+  become: true
+  changed_when: true

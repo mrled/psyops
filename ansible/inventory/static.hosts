@@ -7,6 +7,9 @@ cloudkey.home.micahrl.com
 naragua.home.micahrl.com
 naraguachile
 
+[splash]
+naragua.home.micahrl.com
+
 [capthook]
 tagasaw.home.micahrl.com
 
@@ -48,6 +51,9 @@ gateway.home.micahrl.com
 
 [workstation_headless_linux_vm]
 naraguachile
+
+[workstation_macos]
+naragua.home.micahrl.com
 
 [xmpp_server]
 apsylania.micahrl.com

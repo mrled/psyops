@@ -1,0 +1,47 @@
+---
+- name: Require macOS
+  ansible.builtin.assert:
+    that: ansible_distribution == "MacOSX"
+    fail_msg: splash is currently supported only on macOS hosts
+
+- name: Ensure Splash data directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ splash_user }}"
+    group: staff
+    mode: "0750"
+  loop:
+    - "{{ splash_home }}"
+    - "{{ splash_data_dir }}"
+    - "{{ splash_hf_home }}"
+    - "{{ splash_weight_cache }}"
+  become: true
+
+- name: Install splash launch daemon
+  ansible.builtin.template:
+    src: splash.plist.j2
+    dest: /Library/LaunchDaemons/{{ splash_service_name }}.plist
+    owner: root
+    group: wheel
+    mode: "0644"
+  become: true
+  notify: Restart splash
+
+- name: Check if splash launch daemon is loaded
+  ansible.builtin.command: launchctl print system/{{ splash_service_name }}
+  register: splash_launchd_status
+  failed_when: false
+  changed_when: false
+  become: true
+
+- name: Bootstrap splash launch daemon if not loaded
+  ansible.builtin.command: launchctl bootstrap system /Library/LaunchDaemons/{{ splash_service_name }}.plist
+  when: splash_launchd_status.rc != 0
+  become: true
+  changed_when: true
+
+- name: Ensure splash is running
+  ansible.builtin.command: launchctl kickstart -k system/{{ splash_service_name }}
+  become: true
+  changed_when: false

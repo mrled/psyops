@@ -1,0 +1,12 @@
+---
+splash_service_name: splash
+splash_user: "{{ ansible_user }}"
+splash_user_home: "/Users/{{ splash_user }}"
+splash_home: "{{ splash_user_home }}/Library/Application Support/Splash"
+splash_data_dir: "{{ splash_home }}"
+splash_hf_home: "{{ splash_data_dir }}/hfhome"
+splash_weight_cache: "{{ splash_data_dir }}/weights"
+splash_models:
+  - mlx-community/Qwen3.8-27B-4bit
+splash_port: 7574
+splash_executable: /opt/homebrew/bin/splash

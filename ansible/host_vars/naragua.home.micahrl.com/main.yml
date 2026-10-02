@@ -6,6 +6,9 @@ ansible_become_method: sudo
 ansible_become_user: root
 ansible_become_pass: "{{ vault_ansible_become_pass }}"
 
+splash_service_name: splash
+splash_home: /Volumes/DataDisk/mrldata/Library/splash
+
 http_backchannel_dnsname: naragua.backchannel.younix.us
 http_backchannel_aws_access_key_id: "{{ vault_http_backchannel_aws_access_key_id }}"
 http_backchannel_aws_secret_access_key: "{{ vault_http_backchannel_aws_secret_access_key }}"
@@ -16,3 +19,4 @@ http_backchannel_subdomain_ports:
   ellipsis: 35477
   unprivellipsis: 35478
   antedom: 26833
+  splash: 7574
