@@ -1,49 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>{{ splash_service_name }}</string>
-  <key>WorkingDirectory</key>
-  <string>{{ splash_home }}</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>{{ splash_executable | e }}</string>
-    <string>serve</string>
-{% for model in splash_models %}
-    <string>--model</string>
-    <string>{{ model | e }}</string>
-{% endfor %}
-    <string>--port</string>
-    <string>{{ splash_port }}</string>
-    <string>--host</string>
-    <string>127.0.0.1</string>
-    <string>--language-only</string>
-{% for host in splash_allowed_hosts %}
-    <string>--allowed-host</string>
-    <string>{{ host | e }}</string>
-{% endfor %}
-  </array>
-  <key>EnvironmentVariables</key>
   <dict>
-    <key>HF_HOME</key>
-    <string>{{ splash_hf_home | e }}</string>
-    <key>SPLASH_WEIGHT_CACHE</key>
-    <string>{{ splash_weight_cache | e }}</string>
-    <key>PYTHONUNBUFFERED</key>
-    <string>1</string>
-    <key>HOME</key>
-    <string>{{ splash_user_home | e }}</string>
-    <key>PATH</key>
-    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>Label</key>
+    <string>{{ splash_service_name }}</string>
+    <key>WorkingDirectory</key>
+    <string>{{ splash_home }}</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>{{ splash_executable | e }}</string>
+      <string>serve</string>
+      {% for model in splash_models %}
+      <string>--model</string>
+      <string>{{ model | e }}</string>
+      {% endfor %}
+      <string>--port</string>
+      <string>{{ splash_port }}</string>
+      <string>--host</string>
+      <string>127.0.0.1</string>
+      <string>--language-only</string>
+      {% for host in splash_allowed_hosts %}
+      <string>--allowed-host</string>
+      <string>{{ host | e }}</string>
+      {% endfor %}
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>HF_HOME</key>
+      <string>{{ splash_hf_home | e }}</string>
+      <key>SPLASH_WEIGHT_CACHE</key>
+      <string>{{ splash_weight_cache | e }}</string>
+      <key>PYTHONUNBUFFERED</key>
+      <string>1</string>
+      <key>HOME</key>
+      <string>{{ splash_user_home | e }}</string>
+      <key>PATH</key>
+      <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>{{ splash_log_dir | e }}/splash.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{ splash_log_dir | e }}/splash.log</string>
+    <key>RunAtLoad</key>
+    <true />
+    <key>KeepAlive</key>
+    <true />
   </dict>
-  <key>StandardOutPath</key>
-  <string>{{ splash_log_dir | e }}/splash.log</string>
-  <key>StandardErrorPath</key>
-  <string>{{ splash_log_dir | e }}/splash.log</string>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>KeepAlive</key>
-  <true/>
-</dict>
 </plist>
