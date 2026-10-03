@@ -49,8 +49,9 @@ bolgana.banded-goblin.ts.net
 [unifiusg]
 gateway.home.micahrl.com
 
-[workstation_headless_linux_vm]
+[workstation_fedora]
 naraguachile
+haluth
 
 [workstation_macos]
 naragua.home.micahrl.com

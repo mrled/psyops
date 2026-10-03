@@ -1,0 +1,88 @@
+---
+- name: Install Linuxbrew
+  when: linuxbrew_enable | bool
+  block:
+    - name: Require linuxbrew_user
+      ansible.builtin.assert:
+        that:
+          - linuxbrew_user is defined
+          - linuxbrew_user | length > 0
+        fail_msg: linuxbrew_user must be set when linuxbrew_enable is true
+
+    - name: Getent for Linuxbrew user
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ linuxbrew_user }}"
+
+    - name: Set Linuxbrew user home fact
+      ansible.builtin.set_fact:
+        linuxbrew_user_home: "{{ getent_passwd[linuxbrew_user][4] }}"
+
+    - name: Install Homebrew on Linux prerequisites
+      ansible.builtin.dnf:
+        name:
+          - '@development-tools'
+          - procps-ng
+          - curl
+          - file
+          - git
+        state: present
+
+    - name: Create Linuxbrew parent directory
+      ansible.builtin.file:
+        path: /home/linuxbrew
+        state: directory
+        owner: "{{ linuxbrew_user }}"
+        group: "{{ linuxbrew_user }}"
+        mode: "0755"
+
+    - name: Create Linuxbrew prefix directory
+      ansible.builtin.file:
+        path: "{{ linuxbrew_prefix }}"
+        state: directory
+        owner: "{{ linuxbrew_user }}"
+        group: "{{ linuxbrew_user }}"
+        mode: "0755"
+
+    - name: Install Homebrew on Linux with official installer
+      become: true
+      become_user: "{{ linuxbrew_user }}"
+      ansible.builtin.shell:
+        cmd: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        executable: /bin/bash
+        creates: "{{ linuxbrew_prefix }}/bin/brew"
+      environment:
+        HOME: "{{ linuxbrew_user_home }}"
+        NONINTERACTIVE: "1"
+
+    - name: Add Linuxbrew to system shell environment
+      ansible.builtin.copy:
+        dest: /etc/profile.d/linuxbrew.sh
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          # Managed by Ansible. Homebrew on Linux.
+          if [ -x {{ linuxbrew_prefix }}/bin/brew ]; then
+            eval "$({{ linuxbrew_prefix }}/bin/brew shellenv)"
+          fi
+
+    - name: Add Linuxbrew to zsh login environment for {{ linuxbrew_user }}
+      ansible.builtin.blockinfile:
+        path: "{{ linuxbrew_user_home }}/.zprofile"
+        create: true
+        owner: "{{ linuxbrew_user }}"
+        group: "{{ linuxbrew_user }}"
+        mode: "0644"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - linuxbrew"
+        block: |
+          eval "$({{ linuxbrew_prefix }}/bin/brew shellenv)"
+
+    - name: Verify brew is available
+      become: true
+      become_user: "{{ linuxbrew_user }}"
+      ansible.builtin.command:
+        cmd: "{{ linuxbrew_prefix }}/bin/brew --version"
+      environment:
+        HOME: "{{ linuxbrew_user_home }}"
+      changed_when: false

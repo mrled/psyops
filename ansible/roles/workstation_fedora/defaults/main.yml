@@ -1,0 +1,4 @@
+---
+workstation_fedora_headless: true
+workstation_fedora_t2linux_enable: false
+workstation_fedora_enable_ai_agents: false

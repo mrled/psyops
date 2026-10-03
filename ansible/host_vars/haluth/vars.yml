@@ -1,0 +1,11 @@
+---
+ansible_host: haluth-linux.banded-goblin.ts.net
+ansible_user: root
+workstation_fedora_headless: false
+workstation_fedora_t2linux_enable: true
+linuxbrew_enable: true
+linuxbrew_user: micahrl
+
+interactive_user_list:
+  - name: micahrl
+interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') | list }}"

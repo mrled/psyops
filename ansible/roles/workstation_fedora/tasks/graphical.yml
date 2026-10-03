@@ -1,0 +1,60 @@
+---
+- name: Add 1Password RPM key
+  ansible.builtin.rpm_key:
+    key: https://downloads.1password.com/linux/keys/1password.asc
+    state: present
+
+- name: Add 1Password yum repository
+  ansible.builtin.yum_repository:
+    name: 1password
+    description: 1Password Stable Channel
+    baseurl: https://downloads.1password.com/linux/rpm/stable/$basearch
+    enabled: true
+    gpgcheck: true
+    repo_gpgcheck: true
+    gpgkey: https://downloads.1password.com/linux/keys/1password.asc
+
+- name: Add Microsoft RPM key
+  ansible.builtin.rpm_key:
+    key: https://packages.microsoft.com/keys/microsoft.asc
+    state: present
+
+- name: Add Visual Studio Code yum repository
+  ansible.builtin.yum_repository:
+    name: code
+    description: Visual Studio Code
+    baseurl: https://packages.microsoft.com/yumrepos/vscode
+    enabled: true
+    gpgcheck: true
+    gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+    metadata_expire: 1h
+
+- name: Install DNF plugins for COPR support
+  ansible.builtin.dnf:
+    name: dnf-plugins-core
+    state: present
+
+- name: Enable Ghostty COPR repository
+  ansible.builtin.command:
+    cmd: dnf -y copr enable scottames/ghostty
+    creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:scottames:ghostty.repo
+
+- name: Install graphical workstation packages
+  ansible.builtin.dnf:
+    name:
+      - 1password
+      - code
+      - flatpak
+      - ghostty
+    state: present
+
+- name: Add Flathub remote
+  ansible.builtin.command:
+    cmd: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  changed_when: false
+
+- name: Install Mattermost Desktop from Flathub
+  ansible.builtin.command:
+    cmd: flatpak install -y flathub com.mattermost.Desktop
+  register: workstation_fedora_mattermost_flatpak
+  changed_when: "'Skipping: com.mattermost.Desktop' not in workstation_fedora_mattermost_flatpak.stdout"

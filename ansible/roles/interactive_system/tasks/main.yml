@@ -21,3 +21,11 @@
     name: "{{ item }}"
     shell: /usr/bin/zsh
   loop: "{{ interactive_system_zsh_users }}"
+
+# The stock /etc/zlogout clears the screen on logout, which is useless and
+# annoying. Move it aside rather than delete it so it's recoverable.
+- name: Move /etc/zlogout aside
+  ansible.builtin.command:
+    cmd: mv /etc/zlogout /etc/zlogout.dist
+    creates: /etc/zlogout.dist
+    removes: /etc/zlogout

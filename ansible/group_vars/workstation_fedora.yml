@@ -1,0 +1,10 @@
+---
+# Fedora workstations
+
+tailscale_enable: true
+
+# Listen for SSH on the Tailscale interface, but keep listening on the main
+# interface too. sshd's default (ListenAddress 0.0.0.0:22) already covers both
+# the Tailscale IP and the regular interface, so we deliberately do NOT take
+# over SSH the way the tailscale role can for tailnet-only hosts.
+tailscale_take_over_ssh: false

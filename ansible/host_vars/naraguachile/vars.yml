@@ -9,6 +9,12 @@ ansible_ssh_common_args: "-F {{ lookup('env', 'HOME') }}/.lima/naraguachile/ssh.
 ansible_user: mrled # must match lima VM username, which is same as host VM username by default
 # The lima default user (mrled) has passwordless sudo, so no ansible_become_pass is needed.
 
+workstation_fedora_headless: true
+
+interactive_user_list:
+  - name: mrled
+interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') | list }}"
+
 # HTTP backchannel (traefik + Let's Encrypt via Route53 DNS challenge).
 # Serves appname.naraguachile.backchannel.younix.us over the tailnet.
 http_backchannel_dnsname: naraguachile.backchannel.younix.us

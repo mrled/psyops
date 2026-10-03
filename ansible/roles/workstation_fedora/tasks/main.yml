@@ -1,0 +1,31 @@
+---
+- name: Install headless workstation baseline
+  ansible.builtin.include_tasks: headless.yml
+
+- name: Install T2 Linux support
+  when: workstation_fedora_t2linux_enable | bool
+  block:
+    - name: Install DNF plugins for COPR support
+      ansible.builtin.dnf:
+        name: dnf-plugins-core
+        state: present
+
+    - name: Enable T2 Linux COPR repository
+      ansible.builtin.command:
+        cmd: dnf -y copr enable sharpenedblade/t2linux
+        creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:sharpenedblade:t2linux.repo
+
+    - name: Install T2 Linux kernel
+      ansible.builtin.command:
+        cmd: dnf -y swap --from-repo="copr:copr.fedorainfracloud.org:sharpenedblade:t2linux" kernel kernel
+      register: workstation_fedora_t2linux_kernel_swap
+      changed_when: "'Nothing to do' not in workstation_fedora_t2linux_kernel_swap.stdout"
+
+    - name: Install T2 Linux interactive release package
+      ansible.builtin.dnf:
+        name: t2linux-release
+        state: present
+
+- name: Install graphical workstation packages
+  when: not (workstation_fedora_headless | bool)
+  ansible.builtin.include_tasks: graphical.yml
