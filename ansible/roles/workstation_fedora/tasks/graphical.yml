@@ -1,4 +1,8 @@
 ---
+- name: Configure KDE autologin
+  when: workstation_fedora_kde_autologin | bool
+  ansible.builtin.include_tasks: kde_autologin.yml
+
 - name: Add 1Password RPM key
   ansible.builtin.rpm_key:
     key: https://downloads.1password.com/linux/keys/1password.asc

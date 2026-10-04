@@ -4,6 +4,8 @@ ansible_user: root
 workstation_fedora_headless: false
 workstation_fedora_t2linux_enable: true
 workstation_fedora_enable_deskflow: true
+workstation_fedora_kde_autologin: true
+workstation_fedora_kde_autologin_user: micahrl
 linuxbrew_enable: true
 linuxbrew_user: micahrl
 

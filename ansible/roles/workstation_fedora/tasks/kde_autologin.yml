@@ -1,0 +1,89 @@
+---
+- name: Validate KDE autologin account
+  ansible.builtin.assert:
+    that:
+      - workstation_fedora_kde_autologin_user | length > 0
+      - workstation_fedora_kde_autologin_user in (interactive_user_list | map(attribute='name') | list)
+    fail_msg: Set workstation_fedora_kde_autologin_user to an interactive user (required on multi-user hosts).
+
+- name: Create Plasma Login systemd override directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/plasmalogin.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Inherit the system keyring in Plasma Login
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/plasmalogin.service.d/keyring.conf
+    content: |
+      [Service]
+      KeyringMode=inherit
+    owner: root
+    group: root
+    mode: '0644'
+  register: workstation_fedora_kde_autologin_systemd_override
+
+# Do not restart the display manager: that would terminate desktop sessions.
+- name: Reload systemd for the Plasma Login override
+  when: workstation_fedora_kde_autologin_systemd_override.changed
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Check for local Plasma Login autologin PAM policy
+  ansible.builtin.stat:
+    path: /etc/pam.d/plasmalogin-autologin
+  register: workstation_fedora_kde_autologin_pam_policy
+
+- name: Seed local autologin PAM policy from the vendor policy
+  when: not workstation_fedora_kde_autologin_pam_policy.stat.exists
+  ansible.builtin.copy:
+    src: /usr/lib/pam.d/plasmalogin-autologin
+    dest: /etc/pam.d/plasmalogin-autologin
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure autologin key loading and KWallet PAM entries
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/plasmalogin-autologin
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertbefore: "{{ item.insertbefore | default(omit) }}"
+  loop:
+    - regexp: '^\s*-?auth\s+.*\bpam_systemd_loadkey\.so\b.*$'
+      line: '-auth optional pam_systemd_loadkey.so'
+      insertbefore: BOF
+    - regexp: '^\s*-?auth\s+.*\bpam_kwallet5\.so\b.*$'
+      line: '-auth optional pam_kwallet5.so'
+    - regexp: '^\s*-?session\s+.*\bpam_kwallet5\.so\b.*$'
+      line: '-session optional pam_kwallet5.so auto_start'
+
+# lineinfile replaces existing entries in place; move loadkey to the front
+# even if the original policy already had it later in the auth stack.
+- name: Put systemd key loading before all other PAM auth entries
+  ansible.builtin.replace:
+    path: /etc/pam.d/plasmalogin-autologin
+    regexp: '(?ms)\A(.+?)(^-auth optional pam_systemd_loadkey\.so\n)'
+    replace: '\2\1'
+
+# This is the native configuration used by Plasma Login's KDE settings UI.
+- name: Enable Plasma Login autologin for the workstation account
+  community.general.ini_file:
+    path: /etc/plasmalogin.conf
+    section: Autologin
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: root
+    group: root
+    mode: '0644'
+    no_extra_spaces: true
+  loop:
+    - option: User
+      value: "{{ workstation_fedora_kde_autologin_user }}"
+    - option: Session
+      value: "{{ workstation_fedora_kde_autologin_session }}"
+    - option: Relogin
+      value: 'false'
