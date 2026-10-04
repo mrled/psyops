@@ -1,0 +1,50 @@
+---
+- name: Get latest Deskflow release
+  become: false
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/deskflow/deskflow/releases/latest
+    return_content: true
+    headers:
+      Accept: application/vnd.github+json
+  register: workstation_fedora_deskflow_release
+
+- name: Set Deskflow release facts
+  ansible.builtin.set_fact:
+    workstation_fedora_deskflow_latest_version: "{{ workstation_fedora_deskflow_version_for_asset }}"
+    workstation_fedora_deskflow_arch: "{{ workstation_fedora_deskflow_arch_for_asset }}"
+    workstation_fedora_deskflow_rpm_name: "{{ workstation_fedora_deskflow_rpm_name_for_asset }}"
+    workstation_fedora_deskflow_rpm_urls: >-
+      {{
+        workstation_fedora_deskflow_release.json.assets
+        | selectattr('name', 'equalto', workstation_fedora_deskflow_rpm_name_for_asset)
+        | map(attribute='browser_download_url')
+        | list
+      }}
+  vars:
+    workstation_fedora_deskflow_version_for_asset: "{{ workstation_fedora_deskflow_release.json.tag_name | regex_replace('^v', '') }}"
+    workstation_fedora_deskflow_arch_for_asset: "{{ {'x86_64': 'x86_64', 'aarch64': 'aarch64'}.get(ansible_architecture, ansible_architecture) }}"
+    workstation_fedora_deskflow_rpm_name_for_asset: "deskflow-{{ workstation_fedora_deskflow_version_for_asset }}-fedora-{{ ansible_distribution_major_version }}-{{ workstation_fedora_deskflow_arch_for_asset }}.rpm"
+
+- name: Require a matching Deskflow RPM release asset
+  ansible.builtin.assert:
+    that:
+      - workstation_fedora_deskflow_rpm_urls | length == 1
+    fail_msg: >-
+      Could not find exactly one Deskflow RPM asset named {{ workstation_fedora_deskflow_rpm_name }}
+      in {{ workstation_fedora_deskflow_release.json.html_url }}.
+
+- name: Gather installed package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Install latest Deskflow RPM directly from GitHub release
+  ansible.builtin.dnf:
+    name: "{{ workstation_fedora_deskflow_rpm_urls[0] }}"
+    state: present
+    update_cache: true
+    disable_gpg_check: true
+  when: >-
+    'deskflow' not in ansible_facts.packages
+    or ansible_facts.packages.deskflow[0].version != workstation_fedora_deskflow_latest_version
