@@ -1,4 +1,10 @@
 ---
+# Remove Fedora's system-wide EDITOR override without removing nano itself.
+- name: Remove nano default editor configuration
+  ansible.builtin.package:
+    name: nano-default-editor
+    state: absent
+
 - name: Install workstation packages
   ansible.builtin.package:
     name:
