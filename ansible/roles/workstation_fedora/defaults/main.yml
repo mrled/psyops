@@ -9,3 +9,6 @@ workstation_fedora_kde_autologin: false
 # Defaults to the sole interactive user; set explicitly for multi-user hosts.
 workstation_fedora_kde_autologin_user: "{{ interactive_user_list[0].name if interactive_user_list | length == 1 else '' }}"
 workstation_fedora_kde_autologin_session: plasma.desktop
+
+workstation_fedora_hugo_version: v0.163.3+extended+withdeploy
+

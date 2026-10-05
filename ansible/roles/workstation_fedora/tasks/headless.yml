@@ -23,6 +23,9 @@
       - vim
     state: present
 
+- name: Install pinned Hugo release
+  ansible.builtin.include_tasks: hugo.yml
+
 # Claude Code and Codex are installed per-user via their official install
 # scripts (into ~/.local), NOT system-wide as root. Both projects distribute
 # curl|sh installers as the recommended method for individual users.
