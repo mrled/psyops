@@ -12,3 +12,4 @@ workstation_fedora_kde_autologin_session: plasma.desktop
 
 workstation_fedora_hugo_version: v0.163.3+extended+withdeploy
 
+workstation_fedora_deskflow_version: latest
