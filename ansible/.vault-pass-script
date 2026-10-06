@@ -29,7 +29,7 @@ log "Found $vp"
 if command -v op 2>&1 >/dev/null; then
     # retrieve from 1password, works on the mac
     log "Retrieving $vp passphrase from 1Password"
-    op item get gmjopfnukc2p355jmnkasofory --fields password
+    op item get gmjopfnukc2p355jmnkasofory --fields password --reveal
 else
     # retrieve from gpg-encrypted file stored in repo, works in psyops container
     log "Retrieving $vp passphrase from GPG"
