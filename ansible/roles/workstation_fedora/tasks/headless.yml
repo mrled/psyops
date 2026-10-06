@@ -11,6 +11,7 @@
       - atuin
       - clang
       - curl
+      - direnv
       - git-annex
       - git-crypt
       - git-delta
