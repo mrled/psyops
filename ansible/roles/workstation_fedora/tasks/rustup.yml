@@ -1,0 +1,17 @@
+---
+# Fedora supplies rustup-init; toolchains and proxies belong to each user.
+- name: Get home directory for {{ rustup_user.name }}
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ rustup_user.name }}"
+
+- name: Initialize Rust toolchain for {{ rustup_user.name }}
+  become: true
+  become_user: "{{ rustup_user.name }}"
+  ansible.builtin.command:
+    cmd: rustup-init -y --no-modify-path --default-toolchain stable
+    creates: "{{ getent_passwd[rustup_user.name][4] }}/.cargo/bin/rustup"
+  environment:
+    HOME: "{{ getent_passwd[rustup_user.name][4] }}"
+    CARGO_HOME: "{{ getent_passwd[rustup_user.name][4] }}/.cargo"
+    RUSTUP_HOME: "{{ getent_passwd[rustup_user.name][4] }}/.rustup"
