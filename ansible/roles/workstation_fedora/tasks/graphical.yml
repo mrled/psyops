@@ -50,6 +50,7 @@
   ansible.builtin.dnf:
     name:
       - 1password
+      - 1password-cli
       - code
       - flatpak
       - ghostty
