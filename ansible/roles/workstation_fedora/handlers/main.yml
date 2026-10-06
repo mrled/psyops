@@ -1,0 +1,5 @@
+---
+- name: Apply workstation console keymap
+  ansible.builtin.systemd_service:
+    name: systemd-vconsole-setup.service
+    state: restarted

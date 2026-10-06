@@ -1,0 +1,58 @@
+---
+# Text console only; Wayland/X11 keyboard settings are intentionally untouched.
+- name: Install text console keyboard utilities
+  ansible.builtin.package:
+    name:
+      - kbd
+      - kbd-misc
+    state: present
+
+# Includes need an actual filename, not the shorthand accepted by loadkeys.
+- name: List installed Fedora console keymaps
+  ansible.builtin.command:
+    cmd: rpm -ql kbd-misc
+  register: workstation_fedora_console_keymap_files
+  changed_when: false
+  check_mode: false
+
+- name: Find base console keymap path
+  ansible.builtin.set_fact:
+    workstation_fedora_console_base_keymap_paths: >-
+      {{ workstation_fedora_console_keymap_files.stdout_lines
+         | select('search', '/' ~ (workstation_fedora_console_base_keymap | regex_escape) ~ '\.map(\.gz)?$')
+         | list }}
+
+- name: Verify base console keymap exists
+  ansible.builtin.assert:
+    that:
+      - workstation_fedora_console_base_keymap_paths | length == 1
+    fail_msg: "Expected one keymap for {{ workstation_fedora_console_base_keymap }} in kbd-misc"
+
+- name: Create local console keymap directory
+  ansible.builtin.file:
+    path: /usr/local/share/kbd/keymaps
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install Caps Lock as Ctrl console keymap
+  ansible.builtin.template:
+    src: console-capsctrl.map.j2
+    dest: /usr/local/share/kbd/keymaps/workstation-capsctrl.map
+    validate: /usr/bin/loadkeys --parse %s
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Apply workstation console keymap
+
+- name: Select console keymap at boot
+  ansible.builtin.lineinfile:
+    path: /etc/vconsole.conf
+    regexp: '^\s*KEYMAP\s*='
+    line: KEYMAP=/usr/local/share/kbd/keymaps/workstation-capsctrl.map
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Apply workstation console keymap
