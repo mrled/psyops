@@ -1,0 +1,62 @@
+---
+- name: Install font management and ZIP extraction tools
+  ansible.builtin.dnf:
+    name:
+      - fontconfig
+      - unzip
+    state: present
+
+- name: Resolve Inconsolata Nerd Font release asset
+  ansible.builtin.set_fact:
+    workstation_fedora_inconsolata_asset: >-
+      {{ lookup('github_release_asset', 'ryanoasis/nerd-fonts',
+                asset_regex='^Inconsolata[.]zip$',
+                version=workstation_fedora_nerd_fonts_version) }}
+
+- name: Install Inconsolata Nerd Font system-wide
+  vars:
+    workstation_fedora_inconsolata_directory: /usr/local/share/fonts/InconsolataNerdFont
+    workstation_fedora_inconsolata_marker: "{{ workstation_fedora_inconsolata_directory }}/.installed-{{ workstation_fedora_inconsolata_asset.tag_name }}"
+  block:
+    - name: Check installed Inconsolata Nerd Font version
+      ansible.builtin.stat:
+        path: "{{ workstation_fedora_inconsolata_marker }}"
+      register: workstation_fedora_inconsolata_installed
+
+    # A clean install removes obsolete fonts and markers for previous versions,
+    # so switching back to an older pinned release also works correctly.
+    - name: Install selected Inconsolata Nerd Font release
+      when: not workstation_fedora_inconsolata_installed.stat.exists
+      block:
+        - name: Prepare system-wide Inconsolata Nerd Font directory
+          ansible.builtin.file:
+            path: "{{ workstation_fedora_inconsolata_directory }}"
+            state: "{{ item }}"
+            owner: root
+            group: root
+            mode: '0755'
+          loop:
+            - absent
+            - directory
+
+        - name: Extract Inconsolata Nerd Font from GitHub release
+          ansible.builtin.unarchive:
+            src: "{{ workstation_fedora_inconsolata_asset.browser_download_url }}"
+            dest: "{{ workstation_fedora_inconsolata_directory }}"
+            remote_src: true
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Refresh system font cache
+          ansible.builtin.command:
+            cmd: "fc-cache -f {{ workstation_fedora_inconsolata_directory }}"
+          changed_when: true
+
+        - name: Record installed Inconsolata Nerd Font version
+          ansible.builtin.copy:
+            dest: "{{ workstation_fedora_inconsolata_marker }}"
+            content: "{{ workstation_fedora_inconsolata_asset.tag_name }}\n"
+            owner: root
+            group: root
+            mode: '0644'

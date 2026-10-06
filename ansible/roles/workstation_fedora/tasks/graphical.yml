@@ -1,4 +1,7 @@
 ---
+- name: Install graphical workstation fonts
+  ansible.builtin.include_tasks: fonts.yml
+
 - name: Configure KDE autologin
   when: workstation_fedora_kde_autologin | bool
   ansible.builtin.include_tasks: kde_autologin.yml
