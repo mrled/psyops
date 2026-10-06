@@ -40,3 +40,7 @@ Playbooks that call other playbooks are sometimes useful too; these are prefixed
   even though we disable line length yamllint/ansible-lint rules.
   - Apparently RedHat thinks this is totally fine lol: <https://github.com/ansible/ansible-lint/issues/4233>
 - ansible-lint also uses yamllint, and you have to configure them both separately.
+
+## Ansible modules
+
+- `lookup_plugins/github_release_asset.py`: resolve one asset from a GitHub release
