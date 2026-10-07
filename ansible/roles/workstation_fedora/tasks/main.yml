@@ -30,6 +30,10 @@
   when: not (workstation_fedora_headless | bool)
   ansible.builtin.include_tasks: graphical.yml
 
+- name: Install Google Chrome
+  when: workstation_fedora_enable_google_chrome | bool
+  ansible.builtin.include_tasks: google_chrome.yml
+
 - name: Install Deskflow
   when: workstation_fedora_enable_deskflow | bool
   ansible.builtin.include_tasks: deskflow.yml
