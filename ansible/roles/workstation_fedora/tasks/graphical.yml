@@ -54,6 +54,7 @@
       - code
       - flatpak
       - ghostty
+      - neovim-qt
     state: present
 
 - name: Add Flathub remote
