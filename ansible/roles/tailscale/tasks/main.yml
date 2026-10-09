@@ -85,6 +85,10 @@
             msg: >
               This machine is not joined to the tailnet.
               We couldn't join it automatically without an auth key.
+- name: Configure Tailscale desktop integration
+  ansible.builtin.include_tasks: systray.yml
+  when: tailscale_systray_enable | bool
+
 - name: Configure SSH takeover
   ansible.builtin.import_tasks: ssh_takeover.yml
   when: tailscale_take_over_ssh

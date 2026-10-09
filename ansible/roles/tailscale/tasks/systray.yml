@@ -1,0 +1,36 @@
+---
+- name: Validate Tailscale operator selection
+  ansible.builtin.assert:
+    that:
+      - tailscale_operator | length > 0
+    fail_msg: Set tailscale_operator to the desktop user when tailscale_systray_enable is true.
+
+- name: Read Tailscale preferences
+  ansible.builtin.command:
+    cmd: tailscale debug prefs
+  register: tailscale_systray_prefs
+  changed_when: false
+
+- name: Allow workstation user to manage Tailscale
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - set
+      - "--operator={{ tailscale_operator }}"
+  when: (tailscale_systray_prefs.stdout | from_json).OperatorUser | default('') != tailscale_operator
+
+- name: Look up Tailscale operator home directory
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ tailscale_operator }}"
+
+# Requires Tailscale 1.96 or later. Configure startup in the desktop session,
+# rather than launching the tray from Ansible's non-graphical session.
+- name: Enable Tailscale systray at desktop login
+  become: true
+  become_user: "{{ tailscale_operator }}"
+  environment:
+    HOME: "{{ getent_passwd[tailscale_operator][4] }}"
+    XDG_CONFIG_HOME: "{{ getent_passwd[tailscale_operator][4] }}/.config"
+  ansible.builtin.command:
+    cmd: tailscale configure systray --enable-startup=freedesktop

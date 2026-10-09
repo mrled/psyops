@@ -3,6 +3,11 @@
 
 tailscale_enable: true
 
+# Desktop integration is managed by the Tailscale role.
+tailscale_systray_enable: "{{ not (workstation_fedora_headless | default(true) | bool) }}"
+# Set explicitly on multi-user workstations.
+tailscale_operator: "{{ interactive_user_list[0].name if interactive_user_list | length == 1 else '' }}"
+
 # Listen for SSH on the Tailscale interface, but keep listening on the main
 # interface too. sshd's default (ListenAddress 0.0.0.0:22) already covers both
 # the Tailscale IP and the regular interface, so we deliberately do NOT take

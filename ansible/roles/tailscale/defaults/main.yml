@@ -1,4 +1,9 @@
 ---
+# Desktop integration requires Tailscale 1.96 or later.
+tailscale_systray_enable: false
+# Tailscale supports one operator; specify an existing desktop user.
+tailscale_operator: ""
+
 tailscale_take_over_ssh: false
 tailscale_ssh_listen_ipv4: true
 tailscale_ssh_listen_ipv6: true
