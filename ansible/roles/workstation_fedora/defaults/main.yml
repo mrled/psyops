@@ -4,6 +4,7 @@ workstation_fedora_t2linux_enable: false
 workstation_fedora_enable_ai_agents: false
 workstation_fedora_enable_deskflow: false
 workstation_fedora_enable_google_chrome: false
+workstation_fedora_enable_syncthing: false
 
 # Base layout for the text console only; desktop keyboard settings are separate.
 workstation_fedora_console_base_keymap: us

@@ -30,6 +30,21 @@
   when: not (workstation_fedora_headless | bool)
   ansible.builtin.include_tasks: graphical.yml
 
+- name: Install and enable Syncthing
+  when: workstation_fedora_enable_syncthing | bool
+  block:
+    - name: Install Syncthing
+      ansible.builtin.dnf:
+        name: syncthing
+        state: present
+
+    - name: Configure Syncthing user service for workstation users
+      ansible.builtin.include_tasks: syncthing_user.yml
+      loop: "{{ interactive_user_list }}"
+      loop_control:
+        loop_var: syncthing_user
+        label: "{{ syncthing_user.name }}"
+
 - name: Install Google Chrome
   when: workstation_fedora_enable_google_chrome | bool
   ansible.builtin.include_tasks: google_chrome.yml
