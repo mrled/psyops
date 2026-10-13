@@ -56,6 +56,34 @@ data:
       filesystem:
         filename: /config/notification.txt
 
+    # Schema: https://github.com/authelia/authelia/blob/v4.39.20/internal/configuration/schema/identity_providers.go
+    identity_providers:
+      oidc:
+        # hmac_secret is supplied by AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE.
+        jwks:
+          - key: {{ secret "/secrets/OIDC_JWKS_PRIMARY_RSA_PRIVATE_KEY" | mindent 10 "|" | msquote }}
+        clients:
+          # https://bookorbit.app/oidc — public Authorization Code client with PKCE.
+          - client_id: bookorbit
+            client_name: BookOrbit
+            public: true
+            authorization_policy: one_factor
+            require_pkce: true
+            pkce_challenge_method: S256
+            token_endpoint_auth_method: none
+            redirect_uris:
+              - https://bookorbit.${productionClusterFqdn}/oauth2-callback
+            scopes:
+              - openid
+              - profile
+              - email
+              - groups
+            response_types:
+              - code
+            grant_types:
+              - authorization_code
+            userinfo_signed_response_alg: none
+
     access_control:
       default_policy: deny
       rules:

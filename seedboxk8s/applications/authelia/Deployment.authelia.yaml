@@ -26,6 +26,11 @@ spec:
           args:
             - --config=/configuration.yaml
           env:
+            # In 4.39.20 this experimental setting requires the X_ prefix.
+            - name: X_AUTHELIA_CONFIG_FILTERS
+              value: template
+            - name: AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE
+              value: /secrets/OIDC_HMAC_SECRET
             - name: AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE
               value: /secrets/JWT_SECRET
             - name: AUTHELIA_SESSION_SECRET_FILE

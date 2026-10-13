@@ -12,6 +12,19 @@ Create a library at `/media/Books/BookOrbit`, mapped to
 `subPath`, like Plex and Radarr. The parent directory must be writable by media
 UID/GID `6000:6000`.
 
+## SSO
+
+In BookOrbit's OIDC provider settings, enable a provider with:
+
+- **Issuer:** `https://auth.${productionClusterFqdn}`
+- **Client ID:** `bookorbit`; **Client secret:** leave empty (public PKCE client).
+- **Scopes:** `openid profile email groups`
+- **Allow local account linking:** enable for your existing account.
+
+Callback: `https://bookorbit.${productionClusterFqdn}/oauth2-callback`.
+Keep local login enabled until SSO works. Authelia's ingress gate stays enabled.
+Preserve the encrypted `../authelia/Secret.authelia.yaml` signing secrets.
+
 ## Backups
 
 - **Backed up:** BookOrbit `/data` (`bookorbit-config-pvc`) and PostgreSQL dumps

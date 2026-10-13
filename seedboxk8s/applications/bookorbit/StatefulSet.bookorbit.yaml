@@ -64,6 +64,9 @@ spec:
               value: bookorbit
             - name: APP_URL
               value: https://bookorbit.${productionClusterFqdn}
+            # The HTTPS issuer resolves to the private Tailscale ingress address.
+            - name: OIDC_ALLOW_LOCAL_ISSUERS
+              value: "true"
             - name: TZ
               value: ${timezone}
             - name: PUID
