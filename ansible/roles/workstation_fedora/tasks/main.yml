@@ -1,6 +1,6 @@
 ---
 - name: Install headless workstation baseline
-  ansible.builtin.include_tasks: headless.yml
+  ansible.builtin.include_tasks: headless/main.yml
 
 - name: Install T2 Linux support
   when: workstation_fedora_t2linux_enable | bool
@@ -28,7 +28,7 @@
 
 - name: Install graphical workstation packages
   when: not (workstation_fedora_headless | bool)
-  ansible.builtin.include_tasks: graphical.yml
+  ansible.builtin.include_tasks: graphical/main.yml
 
 - name: Install and enable Syncthing
   when: workstation_fedora_enable_syncthing | bool
@@ -39,7 +39,7 @@
         state: present
 
     - name: Configure Syncthing user service for workstation users
-      ansible.builtin.include_tasks: syncthing_user.yml
+      ansible.builtin.include_tasks: headless/syncthing_user.yml
       loop: "{{ interactive_user_list }}"
       loop_control:
         loop_var: syncthing_user
@@ -47,8 +47,8 @@
 
 - name: Install Google Chrome
   when: workstation_fedora_enable_google_chrome | bool
-  ansible.builtin.include_tasks: google_chrome.yml
+  ansible.builtin.include_tasks: graphical/google_chrome.yml
 
 - name: Install Deskflow
   when: workstation_fedora_enable_deskflow | bool
-  ansible.builtin.include_tasks: deskflow.yml
+  ansible.builtin.include_tasks: graphical/deskflow.yml
