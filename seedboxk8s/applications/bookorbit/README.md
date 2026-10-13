@@ -7,8 +7,10 @@ administrator setup, retrieve the bootstrap token:
 kubectl -n tortuga get secret bookorbit-env -o jsonpath='{.data.SETUP_BOOTSTRAP_TOKEN}' | base64 --decode
 ```
 
-Create a library at `/books`, mapped to `/seedboxmedia/Books/BookOrbit`.
-The parent directory must be writable by media UID/GID `6000:6000`.
+Create a library at `/media/Books/BookOrbit`, mapped to
+`/seedboxmedia/Books/BookOrbit`. The NFS volume is mounted at `/media` without
+`subPath`, like Plex and Radarr. The parent directory must be writable by media
+UID/GID `6000:6000`.
 
 ## Backups
 
