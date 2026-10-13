@@ -4,6 +4,7 @@ resources:
   - CronJob.bookorbit-postgres-dump.yaml
   - PVC.bookorbit-postgres-dump.yaml
   - IngressRoute.bookorbit.yaml
+  - NetworkPolicy.bookorbit-postgres.yaml
   - PVC.bookorbit.yaml
   - PVC.bookorbit-postgres.yaml
   - Secret.bookorbit-env.yaml
