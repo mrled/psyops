@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - IngressRoute.bookorbit.yaml
+  - PVC.bookorbit.yaml
+  - PVC.bookorbit-postgres.yaml
+  - Secret.bookorbit-env.yaml
+  - Service.bookorbit.yaml
+  - Service.bookorbit-postgres.yaml
+  - StatefulSet.bookorbit.yaml
+  - StatefulSet.bookorbit-postgres.yaml

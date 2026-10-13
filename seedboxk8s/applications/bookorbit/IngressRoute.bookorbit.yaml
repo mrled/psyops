@@ -1,0 +1,27 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: bookorbit
+  namespace: tortuga
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: BookOrbit
+    gethomepage.dev/group: Books
+    gethomepage.dev/icon: mdi-bookshelf
+    gethomepage.dev/href: https://bookorbit.${productionClusterFqdn}
+spec:
+  ingressClassName: traefik-tailscale
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`bookorbit.${productionClusterFqdn}`)
+      kind: Rule
+      services:
+        - name: bookorbit
+          kind: Service
+          port: 3000
+      middlewares:
+        - name: authelia
+          namespace: authelia
+  tls:
+    secretName: seedbox-wildcard-backing-secret

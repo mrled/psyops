@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bookorbit
+  namespace: tortuga
+spec:
+  replicas: 1
+  serviceName: bookorbit
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bookorbit
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bookorbit
+    spec:
+      initContainers:
+        - name: initialize-books
+          image: busybox:1.38.0
+          command:
+            - sh
+            - -ec
+            - |
+              mkdir -p /media/Books/BookOrbit
+              chown "$PUID:$PGID" /media/Books/BookOrbit
+          env:
+            - name: PUID
+              value: ${quote}${plexUid}${quote}
+            - name: PGID
+              value: ${quote}${plexGid}${quote}
+          volumeMounts:
+            - name: books
+              mountPath: /media
+        - name: wait-for-db
+          image: pgvector/pgvector:pg18
+          command:
+            - sh
+            - -ec
+            - |
+              until pg_isready -h bookorbit-postgres -p 5432 -U bookorbit -d bookorbit; do
+                sleep 2
+              done
+      containers:
+        # Verified in https://github.com/bookorbit/bookorbit/releases/tag/v3.3.0
+        - name: bookorbit
+          image: ghcr.io/bookorbit/bookorbit:3.3.0
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: bookorbit-env
+          env:
+            - name: POSTGRES_HOST
+              value: bookorbit-postgres
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: bookorbit
+            - name: POSTGRES_DB
+              value: bookorbit
+            - name: APP_URL
+              value: https://bookorbit.${productionClusterFqdn}
+            - name: TZ
+              value: ${timezone}
+            - name: PUID
+              value: ${quote}${plexUid}${quote}
+            - name: PGID
+              value: ${quote}${plexGid}${quote}
+            - name: LIBRARY_BROWSE_ROOT
+              value: /books
+          # Upstream starts as root, fixes /data ownership, then uses su-exec.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+              add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+          # Upstream serves its production frontend at / (server/src/main.ts).
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: books
+              mountPath: /books
+              subPath: Books/BookOrbit
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: books
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc
+        - name: data
+          persistentVolumeClaim:
+            claimName: bookorbit-config-pvc
+        - name: tmp
+          emptyDir: {}
