@@ -55,6 +55,7 @@
       - flatpak
       - ghostty
       - neovim-qt
+      - thunderbird
     state: present
 
 - name: Add Flathub remote
