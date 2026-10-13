@@ -50,6 +50,9 @@
   loop_control:
     loop_var: rustup_user
 
+- name: Install SOPS
+  ansible.builtin.include_tasks: sops.yml
+
 - name: Install pinned Hugo release
   ansible.builtin.include_tasks: hugo.yml
 

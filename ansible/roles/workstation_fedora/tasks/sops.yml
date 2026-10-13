@@ -1,0 +1,17 @@
+---
+- name: Resolve SOPS RPM release asset
+  ansible.builtin.set_fact:
+    workstation_fedora_sops_asset: >-
+      {{ lookup('github_release_asset', 'getsops/sops',
+                asset_regex=workstation_fedora_sops_asset_regex,
+                version=workstation_fedora_sops_version) }}
+  vars:
+    workstation_fedora_sops_asset_regex: >-
+      ^sops-[0-9]+[.][0-9]+[.][0-9]+-[0-9]+[.]{{ ansible_architecture | regex_escape }}[.]rpm$
+
+# Upstream release RPMs are not signed with a configured Fedora RPM key.
+- name: Install SOPS RPM directly from GitHub release
+  ansible.builtin.dnf:
+    name: "{{ workstation_fedora_sops_asset.browser_download_url }}"
+    state: present
+    disable_gpg_check: true
