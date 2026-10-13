@@ -70,6 +70,7 @@ data:
             - bazarr.${productionClusterFqdn}
             - sonarr.${productionClusterFqdn}
             - bk2.${productionClusterFqdn}
+            - bookorbit.${productionClusterFqdn}
             - cops.${productionClusterFqdn}
             - ersatztv.${productionClusterFqdn}
             - grafana.${productionClusterFqdn}
