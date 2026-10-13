@@ -17,17 +17,20 @@ spec:
       initContainers:
         - name: initialize-books
           image: busybox:1.38.0
+          # NFS root squashing prevents root from creating/chowning media directories.
+          securityContext:
+            runAsUser: ${plexUid}
+            runAsGroup: ${plexGid}
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           command:
             - sh
             - -ec
             - |
               mkdir -p /media/Books/BookOrbit
-              chown "$PUID:$PGID" /media/Books/BookOrbit
-          env:
-            - name: PUID
-              value: ${quote}${plexUid}${quote}
-            - name: PGID
-              value: ${quote}${plexGid}${quote}
+              test -w /media/Books/BookOrbit
           volumeMounts:
             - name: books
               mountPath: /media

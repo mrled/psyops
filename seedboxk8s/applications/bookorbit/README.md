@@ -1,25 +1,23 @@
 # BookOrbit
 
-## First deployment
+Visit `https://bookorbit.${productionClusterFqdn}` through Authelia. For initial
+administrator setup, retrieve the bootstrap token:
 
-1. Deploy the apps
-2. Retrieve the bootstrap token:
-   ```sh
-   kubectl -n tortuga get secret bookorbit-env -o jsonpath='{.data.SETUP_BOOTSTRAP_TOKEN}' | base64 --decode
-   ```
-3. Visit the web UI; authenticate through Authelia
-4. Complete initial administrator setup with the token
-6. Create a library pointing at `/books`
+```sh
+kubectl -n tortuga get secret bookorbit-env -o jsonpath='{.data.SETUP_BOOTSTRAP_TOKEN}' | base64 --decode
+```
 
-## Storage and secrets
+Create a library at `/books`, mapped to `/seedboxmedia/Books/BookOrbit`.
+The parent directory must be writable by media UID/GID `6000:6000`.
 
-- BookOrbit container
-  - `/books` is `/seedboxmedia/Books/BookOrbit`
-    - The directory itself is `chown`'d in an init container, but not recursively
-  - `/data` contains app runtime state, including covers
-    - Annotated for backup
-- Postgres
-  - `PGDATA=/var/lib/postgresql/data/pgdata`
-    - Not annotated for backup directly
-  - `/tmp` is disposable writable storage
-- `bookorbit-env` secret
+## Backups
+
+- **Backed up:** BookOrbit `/data` (`bookorbit-config-pvc`) and PostgreSQL dumps
+  (`bookorbit-postgres-dump-pvc`).
+- **Not backed up:** NFS library storage and live PostgreSQL storage.
+- Dumps run daily at **03:00 UTC**, atomically replacing `bookorbit.dump` only
+  after success. Staging files are excluded from backup.
+
+See the [PVC restore procedure](../restic-backup/docs/restore.md). Restore `/data`
+and import the dump into an empty database using `pg_restore`. Preserve the
+original encrypted Secret and its SOPS decryption key.

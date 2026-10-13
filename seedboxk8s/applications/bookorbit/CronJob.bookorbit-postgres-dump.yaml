@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bookorbit-postgres-dump
+  namespace: tortuga
+spec:
+  schedule: "0 3 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 0
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 60
+      activeDeadlineSeconds: 3600
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          # The new volume is root-owned; no access to the live PGDATA PVC.
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
+          containers:
+            - name: dump
+              image: pgvector/pgvector:pg18
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: bookorbit-env
+                      key: POSTGRES_PASSWORD
+              command:
+                - /bin/sh
+                - -ceu
+              args:
+                - |
+                  umask 077
+                  mkdir -p /dumps/.staging
+                  pg_dump -h bookorbit-postgres -U bookorbit -d bookorbit -Fc --no-owner --no-acl -f /dumps/.staging/bookorbit.dump.tmp
+                  pg_restore --list /dumps/.staging/bookorbit.dump.tmp > /dev/null
+                  mv -f /dumps/.staging/bookorbit.dump.tmp /dumps/bookorbit.dump
+                  echo "Published /dumps/bookorbit.dump"
+              volumeMounts:
+                - name: dumps
+                  mountPath: /dumps
+          volumes:
+            - name: dumps
+              persistentVolumeClaim:
+                claimName: bookorbit-postgres-dump-pvc

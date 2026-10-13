@@ -155,14 +155,41 @@ def workload_for_pod(pod: JsonMap) -> Workload:
     raise RuntimeError(f"pod {namespace}/{pod['metadata']['name']} has no supported scalable owner")
 
 
-def workloads_for_pvc(namespace: str, pvc_name: str) -> list[Workload]:
-    """Return the unique workloads that use the given PVC."""
+def is_terminal_pod(pod: JsonMap) -> bool:
+    return pod.get("status", {}).get("phase") in {"Succeeded", "Failed"}
+
+
+def workloads_for_pvc(namespace: str, pvc_name: str, job_timeout: int = 300) -> list[Workload]:
+    """Wait for active non-backup Job pods, then plan scalable workloads using the PVC.
+
+    Jobs are allowed to finish naturally, never scaled or deleted. Re-fetch pods
+    on each poll so planning uses the current workloads, not a pre-wait snapshot.
+    """
+    deadline = time.monotonic() + job_timeout
+    last_jobs: list[str] | None = None
+    while True:
+        pods = [
+            pod
+            for pod in pods_using_pvc(namespace, pvc_name)
+            if not pod.get("metadata", {}).get("deletionTimestamp")
+            and not is_terminal_pod(pod)
+            and not is_backup_job_pod(pod, pvc_name)
+        ]
+        jobs = [pod["metadata"]["name"] for pod in pods if owner_ref(pod, "Job")]
+        if not jobs:
+            break
+        if time.monotonic() >= deadline:
+            raise TimeoutError(
+                f"timed out after {job_timeout}s waiting for active Job pods using "
+                f"{namespace}/{pvc_name} to finish: {', '.join(jobs)}"
+            )
+        if jobs != last_jobs:
+            print(f"Waiting for active Job pods using {namespace}/{pvc_name}: {', '.join(jobs)}", flush=True)
+            last_jobs = jobs
+        time.sleep(POLL_SECONDS)
+
     workloads: dict[tuple[str, str, str], Workload] = {}
-    for pod in pods_using_pvc(namespace, pvc_name):
-        if pod.get("metadata", {}).get("deletionTimestamp"):
-            continue
-        if is_backup_job_pod(pod, pvc_name):
-            continue
+    for pod in pods:
         workload = workload_for_pod(pod)
         workloads[(workload["api"], workload["namespace"], workload["name"])] = workload
     selected = list(workloads.values())
@@ -209,6 +236,7 @@ def wait_for_no_pods_using_pvc(
             pod
             for pod in pods
             if not pod.get("metadata", {}).get("deletionTimestamp")
+            and not is_terminal_pod(pod)
             and (include_backup_jobs or not is_backup_job_pod(pod, pvc_name))
         ]
         if not active:
