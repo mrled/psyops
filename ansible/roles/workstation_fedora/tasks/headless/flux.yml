@@ -1,0 +1,79 @@
+---
+- name: Validate Flux architecture
+  ansible.builtin.assert:
+    that:
+      - ansible_architecture in ['x86_64', 'aarch64']
+    fail_msg: Flux requires an x86_64 or aarch64 host.
+
+- name: Resolve Flux binary release asset
+  ansible.builtin.set_fact:
+    workstation_fedora_flux_asset: >-
+      {{ lookup('github_release_asset', 'fluxcd/flux2',
+                asset_regex=workstation_fedora_flux_asset_regex,
+                version=workstation_fedora_flux_version) }}
+  vars:
+    workstation_fedora_flux_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_architecture] }}"
+    workstation_fedora_flux_asset_regex: >-
+      ^flux_[0-9]+[.][0-9]+[.][0-9]+_linux_{{ workstation_fedora_flux_arch }}[.]tar[.]gz$
+
+- name: Check installed Flux version
+  ansible.builtin.command:
+    cmd: /usr/local/bin/flux --version
+  register: workstation_fedora_flux_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Install Flux binary from GitHub release
+  when:
+    - not ansible_check_mode
+    - >-
+      workstation_fedora_flux_installed.rc != 0
+      or workstation_fedora_flux_installed.stdout | trim !=
+         'flux version ' ~ (workstation_fedora_flux_asset.tag_name | regex_replace('^v', ''))
+  block:
+    - name: Resolve checksums for the selected Flux release
+      ansible.builtin.set_fact:
+        workstation_fedora_flux_checksums: >-
+          {{ lookup('github_release_asset', 'fluxcd/flux2',
+                    asset_regex='^flux_.+_checksums[.]txt$',
+                    version=workstation_fedora_flux_asset.tag_name) }}
+
+    - name: Create temporary Flux download directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: workstation-flux-
+      register: workstation_fedora_flux_tempdir
+
+    - name: Download and install verified Flux binary
+      block:
+        - name: Download Flux archive and verify SHA-256 checksum
+          ansible.builtin.get_url:
+            url: "{{ workstation_fedora_flux_asset.browser_download_url }}"
+            dest: "{{ workstation_fedora_flux_tempdir.path }}/{{ workstation_fedora_flux_asset.name }}"
+            checksum: "sha256:{{ workstation_fedora_flux_checksums.browser_download_url }}"
+            mode: '0600'
+
+        - name: Ensure local binary directory exists
+          ansible.builtin.file:
+            path: /usr/local/bin
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+
+        - name: Extract Flux binary
+          ansible.builtin.unarchive:
+            src: "{{ workstation_fedora_flux_tempdir.path }}/{{ workstation_fedora_flux_asset.name }}"
+            dest: /usr/local/bin
+            remote_src: true
+            include:
+              - flux
+            owner: root
+            group: root
+            mode: '0755'
+      always:
+        - name: Remove temporary Flux download directory
+          ansible.builtin.file:
+            path: "{{ workstation_fedora_flux_tempdir.path }}"
+            state: absent

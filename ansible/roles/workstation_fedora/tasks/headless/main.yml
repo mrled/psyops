@@ -50,6 +50,9 @@
   loop_control:
     loop_var: rustup_user
 
+- name: Install Flux
+  ansible.builtin.include_tasks: flux.yml
+
 - name: Install SOPS
   ansible.builtin.include_tasks: sops.yml
 
