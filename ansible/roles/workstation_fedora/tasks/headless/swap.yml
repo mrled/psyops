@@ -1,0 +1,104 @@
+---
+
+- name: Require Btrfs for workstation swap
+  ansible.builtin.assert:
+    that:
+      - ansible_mounts | selectattr('mount', 'equalto', '/') | map(attribute='fstype') | list == ['btrfs']
+    fail_msg: Workstation swap requires Btrfs; leave workstation_fedora_swap_size unset on other filesystems.
+
+- name: Install Btrfs and SELinux management tools
+  ansible.builtin.dnf:
+    name:
+      - btrfs-progs
+      - policycoreutils
+      - policycoreutils-python-utils
+      - python3-libselinux
+      - util-linux
+    state: present
+
+- name: Create or verify dedicated Btrfs swap subvolume
+  ansible.builtin.shell: |
+    set -euo pipefail
+    umask 077
+    if [ ! -e /swap ]; then
+      btrfs subvolume create /swap
+      printf 'subvolume_created\n'
+    fi
+    # An existing directory is not necessarily a subvolume.
+    btrfs subvolume show /swap >/dev/null
+  args:
+    executable: /bin/bash
+  register: workstation_fedora_swap_subvolume
+  changed_when: "'subvolume_created' in workstation_fedora_swap_subvolume.stdout_lines"
+
+- name: Restrict swap directory permissions
+  ansible.builtin.file:
+    path: /swap
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: not ansible_check_mode
+
+# Btrfs handles disabling CoW and formatting swap. Never resize existing files.
+- name: Create Btrfs swapfile
+  ansible.builtin.command:
+    argv:
+      - btrfs
+      - filesystem
+      - mkswapfile
+      - --size
+      - "{{ workstation_fedora_swap_size }}"
+      - /swap/swapfile
+    creates: /swap/swapfile
+
+- name: Restrict swapfile permissions
+  ansible.builtin.file:
+    path: /swap/swapfile
+    owner: root
+    group: root
+    mode: '0600'
+  when: not ansible_check_mode
+
+- name: Configure persistent SELinux context for swap
+  community.general.sefcontext:
+    target: '/swap(/.*)?'
+    setype: swapfile_t
+    state: present
+  when:
+    - ansible_selinux.status == 'enabled'
+    - not ansible_check_mode
+
+# sefcontext manages policy; restorecon applies it to existing files.
+- name: Apply SELinux context to swap directory and file
+  ansible.builtin.command:
+    cmd: restorecon -RFv /swap
+  register: workstation_fedora_swap_restorecon
+  changed_when: workstation_fedora_swap_restorecon.stdout | length > 0
+  when:
+    - ansible_selinux.status == 'enabled'
+    - not ansible_check_mode
+
+- name: Activate swapfile
+  ansible.builtin.shell: |
+    set -euo pipefail
+    active_swap=$(swapon --show --noheadings --raw --output NAME)
+    if ! grep -Fxq /swap/swapfile <<< "$active_swap"; then
+      swapon /swap/swapfile
+      printf 'swap_activated\n'
+    fi
+  args:
+    executable: /bin/bash
+  register: workstation_fedora_swap_active
+  changed_when: "'swap_activated' in workstation_fedora_swap_active.stdout_lines"
+
+# state: present manages fstab only; activation above validates the file first.
+- name: Persist swapfile in fstab
+  ansible.posix.mount:
+    src: /swap/swapfile
+    path: none
+    fstype: swap
+    opts: defaults
+    dump: '0'
+    passno: '0'
+    state: present

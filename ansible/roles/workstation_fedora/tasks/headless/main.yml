@@ -27,6 +27,10 @@
       - vim
     state: present
 
+- name: Configure Btrfs swap
+  when: workstation_fedora_swap_size | default('', true) | string | length > 0
+  ansible.builtin.include_tasks: swap.yml
+
 # Text console only: this does not remap Caps Lock in desktop environments.
 - name: Configure text console keyboard
   ansible.builtin.include_tasks: console_keyboard.yml

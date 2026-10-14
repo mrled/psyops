@@ -1,5 +1,7 @@
 ---
 collections:
+  - name: ansible.posix
+
   # For doing local development on the chineseroom collection
   # - name: mrled.chineseroom
   #   source: ../../ansible-collection-chineseroom
