@@ -5,6 +5,7 @@ workstation_fedora_enable_ai_agents: false
 workstation_fedora_enable_deskflow: false
 workstation_fedora_enable_google_chrome: false
 workstation_fedora_enable_syncthing: false
+workstation_fedora_enable_yubikey: false
 
 # Set a size (e.g. 16G) to configure swap; unset leaves swap unmanaged.
 # Requires a Btrfs root filesystem. Existing swapfiles are never resized.

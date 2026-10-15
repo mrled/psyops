@@ -1,4 +1,8 @@
 ---
+- name: Configure YubiKey authentication for polkit
+  when: workstation_fedora_enable_yubikey | bool
+  ansible.builtin.include_tasks: yubikey.yml
+
 - name: Install graphical workstation fonts
   ansible.builtin.include_tasks: fonts.yml
 

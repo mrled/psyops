@@ -1,0 +1,26 @@
+---
+- name: Install polkit and YubiKey PAM support
+  ansible.builtin.dnf:
+    name:
+      - polkit
+      - pam-u2f
+    state: present
+
+# Preserve any existing local PAM configuration instead of replacing it.
+- name: Create local polkit PAM configuration from Fedora defaults
+  ansible.builtin.copy:
+    src: /usr/lib/pam.d/polkit-1
+    dest: /etc/pam.d/polkit-1
+    remote_src: true
+    force: false
+    owner: root
+    group: root
+    mode: '0644'
+
+# Users enroll their keys separately in ~/.config/Yubico/u2f_keys.
+# Sufficient permits U2F success without removing the password fallback.
+- name: Enable YubiKey authentication for polkit
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/polkit-1
+    insertbefore: BOF
+    line: 'auth sufficient pam_u2f.so authfile=.config/Yubico/u2f_keys openasuser cue userpresence=1'
