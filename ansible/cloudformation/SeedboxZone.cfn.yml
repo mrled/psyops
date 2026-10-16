@@ -32,6 +32,11 @@ Resources:
           TTL: "60"
           ResourceRecords: [!Ref DomainName]
 
+        - Name: !Join [".", ["smb", !Ref DomainName]]
+          Type: A
+          TTL: "300"
+          ResourceRecords: ["100.86.119.112"]
+
         - Name: !Join [".", ["onion", !Ref DomainName]]
           Type: CNAME
           TTL: "60"
