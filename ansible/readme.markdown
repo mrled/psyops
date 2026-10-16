@@ -1,5 +1,27 @@
 # ansible
 
+## Controller environment
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then run
+these commands from `ansible/`:
+
+```sh
+make install
+uv run --locked ansible-playbook _dns.yml -t seedbox
+make lint
+```
+
+`make install` uses `uv sync --locked` to create/update `.venv` with the Python
+and lint dependencies in `uv.lock`, then installs Galaxy collections from
+`requirements.yml`. No virtualenv activation or system pip is needed. uv can
+install a compatible Python automatically if necessary (Python 3.12+ required).
+AWS tasks also require credentials for the profile specified by the playbook.
+
+Edit `pyproject.toml` to change Python dependencies, then run `make lock` and
+commit both files. To upgrade dependencies within their declared constraints,
+run `uv lock --upgrade`. Galaxy dependencies are managed separately in
+`requirements.yml`; `uv.lock` does not lock their versions.
+
 ## Configuring git for ansible-vault
 
 - See the `.gitattributes` file

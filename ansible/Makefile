@@ -1,20 +1,25 @@
-help: ## Show this help
+.DEFAULT_GOAL := help
+
+UV ?= uv
+
+.PHONY: help sync venv collections install lint lock
+
+help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
 
-venv: ## Create the virtual environment and install Python dependencies
-	test -d .venv || python3 -m venv .venv
-	.venv/bin/pip install --upgrade pip
-	.venv/bin/pip install -r requirements.txt
+sync: ## Sync the Python environment from uv.lock (including lint tools)
+	$(UV) sync --locked
 
-install: venv ## Install Ansible collections from requirements.yml
-	.venv/bin/ansible-galaxy collection install -r requirements.yml
+venv: sync ## Compatibility alias for sync
 
-# Run ansible-lint with a dummy vault password.
-# Vault-encrypted files are excluded from linting already;
-# the dummy password just allows ansible-playbook --syntax-check to run.
-# In environments with real credentials (1Password, GPG, or ANSIBLE_VAULT_PASSWORD set),
-# the vault-pass-script uses those instead.
+collections: sync ## Install Galaxy collections (separate from uv dependencies)
+	$(UV) run --locked ansible-galaxy collection install -r requirements.yml
+
+install: collections ## Install the complete controller environment
+
+# Use real vault credentials when available; otherwise allow offline syntax checks.
 lint: install ## Run ansible-lint
-	ANSIBLE_VAULT_PASSWORD=$${ANSIBLE_VAULT_PASSWORD:-lint} .venv/bin/ansible-lint
+	ANSIBLE_VAULT_PASSWORD=$${ANSIBLE_VAULT_PASSWORD:-lint} $(UV) run --locked ansible-lint
 
-.PHONY: help venv install lint
+lock: ## Refresh uv.lock after editing pyproject.toml
+	$(UV) lock
