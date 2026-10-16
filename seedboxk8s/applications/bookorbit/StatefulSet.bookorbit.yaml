@@ -46,7 +46,7 @@ spec:
       containers:
         # Verified in https://github.com/bookorbit/bookorbit/releases/tag/v3.3.0
         - name: bookorbit
-          image: ghcr.io/bookorbit/bookorbit:3.3.0
+          image: ghcr.io/bookorbit/bookorbit:3.4.0
           ports:
             - name: http
               containerPort: 3000
