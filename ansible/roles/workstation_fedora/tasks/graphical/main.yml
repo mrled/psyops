@@ -50,6 +50,22 @@
     cmd: dnf -y copr enable scottames/ghostty
     creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:scottames:ghostty.repo
 
+# Bootstrap RPM Fusion trust from Fedora's signed key package, without disabling GPG checks.
+- name: Install distribution signing keys
+  ansible.builtin.dnf:
+    name: distribution-gpg-keys
+    state: present
+
+- name: Import RPM Fusion Free signing key
+  ansible.builtin.rpm_key:
+    key: /usr/share/distribution-gpg-keys/rpmfusion/RPM-GPG-KEY-rpmfusion-free-fedora-{{ ansible_distribution_major_version }}
+    state: present
+
+- name: Enable RPM Fusion Free repository
+  ansible.builtin.dnf:
+    name: https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_distribution_major_version }}.noarch.rpm
+    state: present
+
 - name: Install graphical workstation packages
   ansible.builtin.dnf:
     name:
@@ -58,8 +74,12 @@
       - code
       - flatpak
       - ghostty
+      - libavcodec-freeworld
       - neovim-qt
       - thunderbird
+      - vlc
+      - vlc-plugin-ffmpeg
+      - vlc-plugins-freeworld
     state: present
 
 - name: Add Flathub remote
