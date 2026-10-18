@@ -22,6 +22,24 @@ commit both files. To upgrade dependencies within their declared constraints,
 run `uv lock --upgrade`. Galaxy dependencies are managed separately in
 `requirements.yml`; `uv.lock` does not lock their versions.
 
+### Passwords
+
+- Retrieves from 1Password if `op` is logged in
+- Attempts to decrypt via GPG keyring
+- Can bypass by setting `$ANSIBLE_VAULT_PASSWORD`
+
+See `./vault-pass-script`
+
+### AWS credentials
+
+Expects the follow AWS profiles to already be set up.
+Only needs to happen once.
+
+```sh
+# Initial setup
+aws configure sso --profile primary-micahrl
+```
+
 ## Configuring git for ansible-vault
 
 - See the `.gitattributes` file
