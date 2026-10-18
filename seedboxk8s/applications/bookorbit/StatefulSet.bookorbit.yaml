@@ -75,6 +75,8 @@ spec:
               value: ${quote}${plexGid}${quote}
             - name: LIBRARY_BROWSE_ROOT
               value: /media/Books
+            - name: SWAGGER_ENABLED
+              value: "true"
           # Upstream starts as root, fixes /data ownership, then uses su-exec.
           securityContext:
             allowPrivilegeEscalation: false
