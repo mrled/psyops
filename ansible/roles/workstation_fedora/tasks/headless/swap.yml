@@ -82,11 +82,15 @@
 - name: Activate swapfile
   ansible.builtin.shell: |
     set -euo pipefail
-    active_swap=$(swapon --show --noheadings --raw --output NAME)
-    if ! grep -Fxq /swap/swapfile <<< "$active_swap"; then
-      swapon /swap/swapfile
-      printf 'swap_activated\n'
-    fi
+    active_swap=$(swapon --show=NAME --noheadings --raw)
+    # Compare file identity too: Btrfs mount aliases can expose another path.
+    while IFS= read -r active_path; do
+      if [[ "$active_path" == /swap/swapfile || "$active_path" -ef /swap/swapfile ]]; then
+        exit 0
+      fi
+    done <<< "$active_swap"
+    swapon /swap/swapfile
+    printf 'swap_activated\n'
   args:
     executable: /bin/bash
   register: workstation_fedora_swap_active
