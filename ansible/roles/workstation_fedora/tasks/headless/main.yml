@@ -9,6 +9,7 @@
   ansible.builtin.package:
     name:
       - atuin
+      - awscli2
       - clang
       - curl
       - direnv
