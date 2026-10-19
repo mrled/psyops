@@ -19,6 +19,7 @@
   ansible.builtin.apt:
     name:
       - ffmpeg
+      - git-annex
       - gnupg
       - python3-cryptography
       - python3-lxml
