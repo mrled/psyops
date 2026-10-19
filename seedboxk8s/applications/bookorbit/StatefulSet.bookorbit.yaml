@@ -54,6 +54,8 @@ spec:
             - secretRef:
                 name: bookorbit-env
           env:
+            - name: JWT_REFRESH_EXPIRES_IN
+              value: "365d"
             - name: POSTGRES_HOST
               value: bookorbit-postgres
             - name: POSTGRES_PORT
