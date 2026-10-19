@@ -79,6 +79,7 @@
       - thunderbird
       - vlc
       - vlc-plugin-ffmpeg
+      - vlc-plugin-samba
       - vlc-plugins-freeworld
     state: present
 
