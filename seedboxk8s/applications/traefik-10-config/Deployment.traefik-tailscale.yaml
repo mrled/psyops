@@ -16,7 +16,7 @@ spec:
       serviceAccountName: traefik-account
       containers:
       - name: traefik-tailscale
-        image: docker.io/library/traefik:v3.7.16@sha256:6d3e069ee484ab1da5adfdda555a75eb9b1545ef09096a0cc7c3043101986a20
+        image: docker.io/library/traefik:v3.7.16@sha256:c8a121e4bb1347e8fd52657fab12f2cb70b68f8a018895e2068f92c9e519b9c2
         args:
           - --api.insecure=true
           - --api.dashboard=true
