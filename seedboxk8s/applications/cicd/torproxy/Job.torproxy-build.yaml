@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
         - name: build-container
-          image: quay.io/buildah/stable@sha256:83045a38da942948cbe8ce53fcf32d76b2d9bfad33bc4586d804522030efc64f
+          image: quay.io/buildah/stable@sha256:4cb71c73553ba30c0891a004636a43ee3e0aa0a04ef6cba760404b2c87949d5c
 
           # Equivalent to 'docker run --privileged'.
           # Required for buildah.
