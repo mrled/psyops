@@ -23,3 +23,19 @@
   when: >-
     'deskflow' not in ansible_facts.packages
     or ansible_facts.packages.deskflow[0].version != (workstation_fedora_deskflow_asset.tag_name | regex_replace('^v', ''))
+
+- name: Ensure system-wide desktop autostart directory exists
+  ansible.builtin.file:
+    path: /etc/xdg/autostart
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install Deskflow desktop autostart entry
+  ansible.builtin.copy:
+    src: org.deskflow.deskflow.desktop
+    dest: /etc/xdg/autostart/org.deskflow.deskflow.desktop
+    owner: root
+    group: root
+    mode: "0644"

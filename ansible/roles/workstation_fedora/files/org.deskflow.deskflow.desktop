@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=Utility;
+Comment=Mouse and keyboard sharing utility
+Exec=deskflow
+Icon=org.deskflow.deskflow
+Keywords=keyboard;mouse;sharing;network;share;
+Name=Deskflow
+Terminal=false
+Type=Application
+Version=1.0
