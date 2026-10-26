@@ -22,8 +22,10 @@
       - nodejs
       - npm
       - ripgrep
+      - ruff
       - rustup
       - sqlite
+      - ty
       - uv
       - vim
     state: present
