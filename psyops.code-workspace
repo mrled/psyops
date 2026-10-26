@@ -1,0 +1,40 @@
+{
+  "folders": [
+    { "name": "psyops", "path": "." },
+    { "name": "ansible", "path": "ansible" },
+    {
+      "name": "chineseroom-webhook-receiver",
+      "path": "ansible/roles/chineseroom_gitea/files/chineseroom_webhook_receiver"
+    },
+    { "name": "macrofactor", "path": "pipelines/macrofactor" },
+    { "name": "progfiguration_blacksite", "path": "progfiguration_blacksite" },
+    { "name": "neuralupgrade", "path": "psyopsOS/neuralupgrade" },
+    { "name": "kvrb", "path": "seedboxk8s/applications/restic-backup/kvrb" },
+    { "name": "telekinesis", "path": "telekinesis" }
+  ],
+  "settings": {
+    "python.languageServer": "None",
+    "ruff.nativeServer": "on",
+    "ty.disableLanguageServices": false,
+    "[python]": {
+      "editor.defaultFormatter": "charliermarsh.ruff",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.ruff": "explicit",
+        "source.organizeImports.ruff": "explicit"
+      }
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "charliermarsh.ruff",
+      "astral-sh.ty"
+    ],
+    "unwantedRecommendations": [
+      "ms-python.vscode-pylance",
+      "ms-python.black-formatter",
+      "ms-python.autopep8"
+    ]
+  }
+}

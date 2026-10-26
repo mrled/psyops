@@ -1,4 +1,15 @@
 {
+  "python.languageServer": "None",
+  "ruff.nativeServer": "on",
+  "ty.disableLanguageServices": false,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
   "ansible.ansible.path": "ansible/.venv/bin/ansible",
   "ansible.python.interpreterPath": "ansible/.venv/bin/python3",
   "ansible.validation.lint.path": "ansible/.venv/bin/ansible-lint",

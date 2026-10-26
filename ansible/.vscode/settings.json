@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
+  "ansible.ansible.path": "${workspaceFolder}/.venv/bin/ansible",
+  "ansible.python.interpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "ansible.validation.lint.path": "${workspaceFolder}/.venv/bin/ansible-lint",
+  "ansible.validation.lint.arguments": "--config-file ${workspaceFolder}/.ansible-lint.yml",
+  "ansible.lightspeed.enabled": false
+}

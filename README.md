@@ -2,6 +2,28 @@
 
 Shit I use to manage my own infrastructure
 
+## VS Code / Python development
+
+Open the multi-root workspace rather than just the repository directory:
+
+```sh
+code psyops.code-workspace
+```
+
+Each Python project is a separate workspace folder with its own `.venv`.
+
+Prereqs:
+
+- `ruff`
+- `ty`
+- `uv`
+
+Set up all the venvs (otherwise you get a slew of messages when vscode starts):
+
+```sh
+make venvs
+```
+
 Directories:
 
 - .claudebox: Configuration for claudebox2 script from submod/dhd repository
