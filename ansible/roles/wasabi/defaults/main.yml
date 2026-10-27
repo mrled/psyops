@@ -1,5 +1,8 @@
 ---
+# Required: wasabi_bucket and wasabi_prefix.
 wasabi_region: us-central-1
-wasabi_s3_endpoint_url: "https://s3.{{ wasabi_region }}.wasabisys.com"
+wasabi_endpoint_url: "https://s3.{{ wasabi_region }}.wasabisys.com"
 wasabi_iam_endpoint_url: https://iam.wasabisys.com
-wasabi_krvb_seedbox_create_credential: "{{ wasabi_create_credential | default(false) }}"
+wasabi_ro_users: []
+wasabi_rw_users: []
+wasabi_create_keys: []

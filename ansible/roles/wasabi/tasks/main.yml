@@ -1,12 +1,136 @@
 ---
-- name: Ensure Wasabi admin credentials are available
-  ansible.builtin.assert:
-    that:
-      - wasabi_root_access_key | length > 0
-      - wasabi_root_secret_key | length > 0
-    fail_msg: >-
-      Set vault_wasabi_root_access_key and vault_wasabi_root_secret_key,
-      or export WASABI_ACCESS_KEY_ID and WASABI_SECRET_ACCESS_KEY.
+- name: Manage bucket access
+  vars:
+    wasabi_key_users: >-
+      {{ (wasabi_create_keys | from_yaml)
+         if wasabi_create_keys is string else wasabi_create_keys }}
+    wasabi_users: "{{ (wasabi_ro_users + wasabi_rw_users) | unique | list }}"
+    wasabi_groups:
+      - name: "{{ wasabi_prefix }}ReadOnly"
+        policy: "{{ wasabi_prefix }}ReadOnlyAccess"
+        users: "{{ wasabi_ro_users }}"
+        bucket_actions:
+          - s3:GetBucketLocation
+          - s3:ListBucket
+        object_actions:
+          - s3:GetObject
+      - name: "{{ wasabi_prefix }}ReadWrite"
+        policy: "{{ wasabi_prefix }}ReadWriteAccess"
+        users: "{{ wasabi_rw_users }}"
+        bucket_actions:
+          - s3:GetBucketLocation
+          - s3:ListBucket
+          - s3:ListBucketMultipartUploads
+        object_actions:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          - s3:AbortMultipartUpload
+          - s3:ListMultipartUploadParts
+  module_defaults:
+    amazon.aws.s3_bucket:
+      region: "{{ wasabi_region }}"
+      endpoint_url: "{{ wasabi_endpoint_url }}"
+      aws_access_key: "{{ wasabi_root_access_key }}"
+      aws_secret_key: "{{ wasabi_root_secret_key }}"
+    # Wasabi IAM requests must be signed for us-east-1.
+    group/amazon.aws.aws:
+      region: us-east-1
+      endpoint_url: "{{ wasabi_iam_endpoint_url }}"
+      aws_access_key: "{{ wasabi_root_access_key }}"
+      aws_secret_key: "{{ wasabi_root_secret_key }}"
+  block:
+    - name: Restrict credential creation to this bucket's users
+      ansible.builtin.assert:
+        that:
+          - wasabi_key_users | difference(wasabi_users) | length == 0
+        fail_msg: Request credentials only for users in wasabi_ro_users or wasabi_rw_users.
 
-- name: Manage seedboxk8s krvb resources
-  ansible.builtin.import_tasks: krvb.yml
+    - name: Create bucket
+      amazon.aws.s3_bucket:
+        name: "{{ wasabi_bucket }}"
+        state: present
+      no_log: true
+
+    - name: Create access users
+      amazon.aws.iam_user:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ wasabi_users }}"
+      no_log: true
+
+    - name: Manage bucket access groups and membership
+      amazon.aws.iam_group:
+        name: "{{ item.name }}"
+        users: "{{ item.users }}"
+        purge_users: true
+        state: present
+      loop: "{{ wasabi_groups }}"
+      register: wasabi_group_results
+      no_log: true
+
+    - name: Assign bucket-scoped group policies
+      amazon.aws.iam_policy:
+        iam_type: group
+        iam_name: "{{ item.name }}"
+        policy_name: "{{ item.policy }}"
+        state: present
+        policy_json:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: BucketMetadata
+              Effect: Allow
+              Action: "{{ item.bucket_actions }}"
+              Resource: "arn:aws:s3:::{{ wasabi_bucket }}"
+            - Sid: BucketObjects
+              Effect: Allow
+              Action: "{{ item.object_actions }}"
+              Resource: "arn:aws:s3:::{{ wasabi_bucket }}/*"
+      loop: "{{ wasabi_groups }}"
+      loop_control:
+        index_var: wasabi_group_index
+      # iam_policy cannot preview a group that check mode has not created.
+      when: not ansible_check_mode or not wasabi_group_results.results[wasabi_group_index].changed
+      no_log: true
+
+    - name: Create requested credentials
+      when: not ansible_check_mode
+      block:
+        # Check every requested user before creating any keys.
+        - name: Check existing access keys
+          amazon.aws.iam_access_key_info:
+            user_name: "{{ item }}"
+          loop: "{{ wasabi_key_users | unique | list }}"
+          register: wasabi_existing_keys
+          no_log: true
+
+        - name: Refuse to create keys for users that already have one
+          ansible.builtin.assert:
+            that:
+              - item.access_keys | length == 0
+            fail_msg: "{{ item.item }} already has an access key; handle replacement separately."
+          loop: "{{ wasabi_existing_keys.results }}"
+          loop_control:
+            label: "{{ item.item }}"
+
+        - name: Create and display access keys
+          block:
+            - name: Create user access keys
+              amazon.aws.iam_access_key:
+                user_name: "{{ item }}"
+                state: present
+                rotate_keys: false
+              loop: "{{ wasabi_key_users | unique | list }}"
+              register: wasabi_created_keys
+              no_log: true
+          always:
+            # Show successful credentials even if a later user fails.
+            - name: Show credentials (record now; secrets cannot be retrieved later)
+              ansible.builtin.debug:
+                msg:
+                  username: "{{ item.item }}"
+                  AWS_ACCESS_KEY_ID: "{{ item.access_key.access_key_id }}"
+                  AWS_SECRET_ACCESS_KEY: "{{ item.secret_access_key }}"
+              loop: "{{ wasabi_created_keys.results | selectattr('secret_access_key', 'defined') | list }}"
+              loop_control:
+                label: "{{ item.item }}"
