@@ -11,3 +11,9 @@
       wasabi_rw_users:
         - SeedboxK8sKrvbBackupUser
       tags: seedboxk8s_krvb
+    - role: wasabi
+      wasabi_bucket: micahrl-nullyork-urestic-backups
+      wasabi_prefix: NullYorkURestic
+      wasabi_rw_users:
+        - NullYorkUResticBackupUser
+      tags: nullyork_urestic
