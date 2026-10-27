@@ -1,0 +1,106 @@
+---
+- name: Require unique job names
+  ansible.builtin.assert:
+    that:
+      - urestic_jobs | map(attribute='name') | unique(case_sensitive=true) | length == urestic_jobs | length
+    fail_msg: Backup jobs must have unique names.
+
+- name: Validate backup jobs before making changes
+  ansible.builtin.include_tasks: validate_job.yml
+  loop: "{{ urestic_jobs }}"
+  loop_control:
+    loop_var: urestic_job
+    label: "{{ urestic_job.name | default('invalid job') }}"
+
+- name: Look up the backup account
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ urestic_user }}"
+
+- name: Set account paths
+  ansible.builtin.set_fact:
+    urestic_home: "{{ ansible_facts.getent_passwd[urestic_user][4] }}"
+    urestic_group: "{{ ansible_facts.getent_passwd[urestic_user][2] }}"
+
+- name: Install backup prerequisites
+  ansible.builtin.package:
+    name:
+      - restic
+      - systemd
+      - tpm2-tools
+      - python3
+      - ca-certificates
+    state: present
+
+- name: Prepare shared configuration on the controller
+  ansible.builtin.set_fact:
+    urestic_directories:
+      - path: /usr/local/libexec/urestic
+        owner: root
+        group: root
+        mode: "0755"
+    urestic_files: []
+    urestic_configured_jobs: []
+    urestic_units: []
+
+- name: Render each backup job on the controller
+  ansible.builtin.include_tasks: job.yml
+  loop: "{{ urestic_jobs }}"
+  loop_control:
+    loop_var: urestic_job
+    label: "{{ urestic_job.name }}"
+
+- name: Create leaf directories and any missing parents
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+    state: directory
+  loop: "{{ urestic_directories }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Install uresticjob
+  ansible.builtin.copy:
+    src: uresticjob
+    dest: /usr/local/libexec/urestic/uresticjob
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install job configuration and rendered units
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "{{ item.path }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop: "{{ urestic_files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  register: urestic_copies
+
+- name: Seal all job credentials with the host TPM
+  urestic_credentials:
+    jobs: "{{ urestic_configured_jobs }}"
+    tpm2_pcrs: "{{ urestic_tpm2_pcrs }}"
+
+- name: Identify changed units on the controller
+  ansible.builtin.set_fact:
+    urestic_changed_units: >-
+      {{ urestic_copies.results | default([]) | selectattr('changed')
+         | selectattr('item.unit', 'defined') | map(attribute='item.unit') | unique | list }}
+
+# Reload once, even after a previous run failed after copying units.
+- name: Reload systemd configuration
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when: urestic_units | length > 0
+
+- name: Enable and start backup timers, restarting those with changed units
+  ansible.builtin.systemd_service:
+    name: "{{ item }}.timer"
+    enabled: true
+    state: "{{ 'restarted' if item in urestic_changed_units else 'started' }}"
+  loop: "{{ urestic_units }}"

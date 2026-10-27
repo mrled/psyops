@@ -1,0 +1,12 @@
+# Managed by Ansible: urestic
+[Unit]
+Description=Schedule restic backup for {{ urestic_user }} ({{ urestic_job.name }})
+
+[Timer]
+OnCalendar={{ urestic_job.oncalendar | replace('%', '%%') }}
+Persistent=true
+RandomizedDelaySec={{ urestic_randomized_delay_sec }}
+Unit={{ urestic_unit }}.service
+
+[Install]
+WantedBy=timers.target

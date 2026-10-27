@@ -1,0 +1,39 @@
+---
+# These tasks only build module arguments; none opens a connection to the target.
+- name: Collect job configuration and render units locally
+  ansible.builtin.set_fact:
+    urestic_directories: >-
+      {{ urestic_directories + [
+        {'path': urestic_job_directory,
+         'owner': urestic_user, 'group': urestic_group, 'mode': '0700'},
+        {'path': urestic_credential_directory,
+         'owner': 'root', 'group': 'root', 'mode': '0700'}] }}
+    urestic_files: "{{ urestic_files + [
+        {'path': urestic_job_directory ~ '/restic.paths',
+         'content': (urestic_job.paths.keys() | list | join('\n')) ~ '\n',
+         'owner': urestic_user, 'group': urestic_group, 'mode': '0600'},
+        {'path': urestic_job_directory ~ '/restic.excludes',
+         'content': (urestic_job.excludes | default([]) | join('\n')) ~ '\n',
+         'owner': urestic_user, 'group': urestic_group, 'mode': '0600'},
+        {'path': urestic_job_directory ~ '/restic.repository',
+         'content': urestic_job.repository ~ '\n',
+         'owner': urestic_user, 'group': urestic_group, 'mode': '0600'},
+        {'path': '/etc/systemd/system/' ~ urestic_unit ~ '.service', 'unit': urestic_unit,
+         'content': lookup('ansible.builtin.template', role_path ~ '/templates/service.j2'),
+         'owner': 'root', 'group': 'root', 'mode': '0644'},
+        {'path': '/etc/systemd/system/' ~ urestic_unit ~ '.timer', 'unit': urestic_unit,
+         'content': lookup('ansible.builtin.template', role_path ~ '/templates/timer.j2'),
+         'owner': 'root', 'group': 'root', 'mode': '0644'}] }}"
+    urestic_configured_jobs: >-
+      {{ urestic_configured_jobs + [
+        {'credential_directory': urestic_credential_directory,
+         'credentials': {
+           'restic.password': urestic_job.password,
+           'aws.access-key-id': urestic_job.aws_access_key_id,
+           'aws.secret-access-key': urestic_job.aws_secret_access_key}}] }}
+    urestic_units: "{{ urestic_units + [urestic_unit] }}"
+  vars:
+    urestic_job_directory: "{{ urestic_home }}/.config/psyops/backup/{{ urestic_job.name }}"
+    urestic_credential_directory: "/etc/credstore.encrypted/urestic/{{ urestic_user }}/{{ urestic_job.name }}"
+    urestic_unit: "urestic-{{ urestic_user }}@{{ urestic_job.name }}"
+  no_log: true

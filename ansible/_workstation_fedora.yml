@@ -11,3 +11,4 @@
     - { role: interactive_system, tags: ["interactive", "interactive_system"] }
     - { role: linuxbrew, tags: ["linuxbrew"], when: "linuxbrew_enable | default(False)" }
     - { role: interactive_user, tags: ["interactive", "interactive_user"] }
+    - { role: urestic, tags: ["urestic"], when: "urestic_jobs | default([]) | length > 0" }

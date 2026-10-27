@@ -17,3 +17,37 @@ linuxbrew_user: mrl
 interactive_user_list:
   - name: mrl
 interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') | list }}"
+
+# Define these four vault_urestic_home_* values in this host's encrypted vault.yml.
+# Use a dedicated repository/prefix and appropriately scoped S3 credentials.
+urestic_user: mrl
+urestic_jobs:
+  - name: home
+    oncalendar: hourly
+    repository: "s3:s3.us-central-1.wasabisys.com/micahrl-nullyork-urestic-backups/home"
+    password: "{{ vault_urestic_home_password }}"
+    aws_access_key_id: "{{ vault_urestic_home_aws_access_key_id }}"
+    aws_secret_access_key: "{{ vault_urestic_home_aws_secret_access_key }}"
+    paths:
+      /home/mrl:
+    excludes:
+      - /home/mrl/.cache
+      - /home/mrl/.local/share/containers
+      - /home/mrl/.local/state
+      - /home/mrl/.local/share/Trash
+      - /home/mrl/.local/share/baloo
+      - /home/mrl/.local/share/flatpak
+      - /home/mrl/.local/share/uv
+      - /home/mrl/.npm
+      - /home/mrl/.cargo
+      - /home/mrl/.rustup
+      - /home/mrl/.gradle
+      - /home/mrl/.vscode
+      - /home/mrl/.var/*/cache
+      - /home/mrl/EncryptedImages
+      - /home/mrl/go/pkg/mod
+      - "*.venv"
+      - node_modules
+      - __pycache__
+      - "*.py[co]"
+      - .DS_Store

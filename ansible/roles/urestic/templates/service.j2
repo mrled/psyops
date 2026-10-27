@@ -1,0 +1,24 @@
+# Managed by Ansible: urestic
+[Unit]
+Description=Restic backup for {{ urestic_user }} ({{ urestic_job.name }})
+Wants=network-online.target
+After=network-online.target
+{% for path, options in urestic_job.paths.items() %}
+{% if options is mapping and options.mountpoint | default(false) %}
+ConditionPathIsMountPoint={{ path }}
+{% endif %}
+{% endfor %}
+
+[Service]
+Type=oneshot
+User={{ urestic_user }}
+Group={{ urestic_group }}
+UMask=0077
+Environment="HOME={{ urestic_home }}"
+{% for credential in ['restic.password', 'aws.access-key-id', 'aws.secret-access-key'] %}
+LoadCredentialEncrypted={{ credential }}:{{ urestic_credential_directory }}/{{ credential }}
+{% endfor %}
+ExecStart=/usr/local/libexec/urestic/uresticjob "{{ urestic_job_directory }}" backup
+TimeoutStartSec=infinity
+NoNewPrivileges=true
+ProtectSystem=full

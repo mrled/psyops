@@ -1,0 +1,19 @@
+---
+- name: Require backup sources and secrets
+  ansible.builtin.assert:
+    that:
+      - urestic_job.paths | length > 0
+      - urestic_job.password | length > 0
+      - urestic_job.aws_access_key_id | length > 0
+      - urestic_job.aws_secret_access_key | length > 0
+    fail_msg: Each job requires backup paths, a restic password, and both S3 access keys.
+  no_log: true
+
+- name: Prevent nonboolean mountpoint options from silently changing backup guards
+  ansible.builtin.assert:
+    that:
+      - item.value is none or (item.value is mapping and (item.value.mountpoint | default(false)) is boolean)
+    fail_msg: Path options must be empty or a mapping with a boolean mountpoint if supplied.
+  loop: "{{ urestic_job.paths | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"

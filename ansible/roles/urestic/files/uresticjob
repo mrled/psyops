@@ -1,0 +1,28 @@
+#!/bin/sh
+# Installed by the urestic Ansible role.
+# The system manager decrypts credentials before starting the backup user process.
+set -eu
+job_directory=$1
+shift
+export RESTIC_PASSWORD_FILE="${CREDENTIALS_DIRECTORY:?Run with systemd encrypted credentials}/restic.password"
+export AWS_ACCESS_KEY_ID="$(cat "$CREDENTIALS_DIRECTORY/aws.access-key-id")"
+export AWS_SECRET_ACCESS_KEY="$(cat "$CREDENTIALS_DIRECTORY/aws.secret-access-key")"
+export RESTIC_REPOSITORY="$(cat "$job_directory/restic.repository")"
+
+if [ "${1:-}" = backup ]; then
+    shift
+    # Restic 0.17+ distinguishes a missing repository from other failures.
+    status=0
+    /usr/bin/restic cat config >/dev/null || status=$?
+    case "$status" in
+        0) ;;
+        10) /usr/bin/restic init ;;
+        *) exit "$status" ;;
+    esac
+    exec /usr/bin/restic backup \
+        --exclude-caches \
+        --files-from-verbatim "$job_directory/restic.paths" \
+        --exclude-file "$job_directory/restic.excludes" "$@"
+fi
+# Also usable with systemd-run for init, snapshots, restore, and check.
+exec /usr/bin/restic "$@"
