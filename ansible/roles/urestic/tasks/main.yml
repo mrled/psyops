@@ -21,6 +21,8 @@
   ansible.builtin.set_fact:
     urestic_home: "{{ ansible_facts.getent_passwd[urestic_user][4] }}"
     urestic_group: "{{ ansible_facts.getent_passwd[urestic_user][2] }}"
+    urestic_uid: "{{ ansible_facts.getent_passwd[urestic_user][1] }}"
+    urestic_user_unit_directory: "{{ ansible_facts.getent_passwd[urestic_user][4] }}/.config/systemd/user"
 
 - name: Install backup prerequisites
   ansible.builtin.package:
@@ -39,6 +41,10 @@
         owner: root
         group: root
         mode: "0755"
+      - path: "{{ urestic_user_unit_directory }}"
+        owner: "{{ urestic_user }}"
+        group: "{{ urestic_group }}"
+        mode: "0700"
     urestic_files: []
     urestic_configured_jobs: []
     urestic_units: []
@@ -83,6 +89,7 @@
 
 - name: Seal all job credentials with the host TPM
   urestic_credentials:
+    user: "{{ urestic_user }}"
     jobs: "{{ urestic_configured_jobs }}"
     tpm2_pcrs: "{{ urestic_tpm2_pcrs }}"
 
@@ -92,15 +99,43 @@
       {{ urestic_copies.results | default([]) | selectattr('changed')
          | selectattr('item.unit', 'defined') | map(attribute='item.unit') | unique | list }}
 
-# Reload once, even after a previous run failed after copying units.
-- name: Reload systemd configuration
+- name: Enable the credential broker for user-scoped TPM decryption
   ansible.builtin.systemd_service:
-    daemon_reload: true
+    name: systemd-creds.socket
+    enabled: true
+    state: started
   when: urestic_units | length > 0
 
-- name: Enable and start backup timers, restarting those with changed units
+- name: Keep the user manager running without an interactive login
+  ansible.builtin.command:
+    argv: [loginctl, enable-linger, "{{ urestic_user }}"]
+    creates: "/var/lib/systemd/linger/{{ urestic_user }}"
+  when: urestic_units | length > 0
+
+- name: Start the user manager
   ansible.builtin.systemd_service:
-    name: "{{ item }}.timer"
-    enabled: true
-    state: "{{ 'restarted' if item in urestic_changed_units else 'started' }}"
-  loop: "{{ urestic_units }}"
+    name: "user@{{ urestic_uid }}.service"
+    state: started
+  when: urestic_units | length > 0
+
+- name: Manage backup timers in the user's systemd manager
+  become: true
+  become_user: "{{ urestic_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ urestic_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ urestic_uid }}/bus"
+  when: urestic_units | length > 0
+  block:
+    # Reload once, even after a previous run failed after copying units.
+    - name: Reload user units
+      ansible.builtin.systemd_service:
+        scope: user
+        daemon_reload: true
+
+    - name: Enable and start backup timers, restarting those with changed units
+      ansible.builtin.systemd_service:
+        scope: user
+        name: "{{ item }}.timer"
+        enabled: true
+        state: "{{ 'restarted' if item in urestic_changed_units else 'started' }}"
+      loop: "{{ urestic_units }}"

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Installed by the urestic Ansible role.
-# The system manager decrypts credentials before starting the backup user process.
+# The user service manager supplies decrypted credentials to this process.
 set -eu
 job_directory=$1
 shift

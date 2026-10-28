@@ -2,6 +2,7 @@
 """Compare and TPM-seal credentials, leaving directory management to Ansible."""
 
 import os
+import pwd
 import subprocess
 import tempfile
 from collections.abc import Mapping
@@ -15,17 +16,25 @@ module: urestic_credentials
 short_description: Seal changed credentials with the local TPM
 author: Psyops maintainers
 description:
-  - Requires root, systemd-creds 250 or newer, and a usable TPM2 device.
-  - The caller must create root-owned mode 0700 parent directories with
-    ansible.builtin.file before invoking this module.
+  - Runs as root and requires systemd-creds 256 or newer and a usable TPM2 device.
+  - User-scoped credentials require the credential broker systemd-creds.socket
+    for an unprivileged service manager; the role handles this prerequisite.
+  - Encryption requires both the host key and TPM2; there is no non-TPM fallback.
+  - The caller must create mode 0700 parent directories owned by the specified
+    user with ansible.builtin.file before invoking this module.
   - Existing credentials are decrypted and compared as exact UTF-8 bytes.
     A decryption failure is fatal and never triggers replacement.
   - Only ciphertext is written to disk, in a mode 0600 temporary file in the
-    destination directory, then atomically moved into place as root mode 0600.
+    destination directory, then atomically moved into place with mode 0600,
+    owned by the specified user and their primary group.
   - Replacements are atomic per credential, not transactional across jobs.
   - Check mode decrypts existing credentials and predicts changes without writes.
     Absent credentials need neither an existing parent nor systemd-creds in check mode.
 options:
+  user:
+    description: User whose scope, ownership, and primary group the credentials use.
+    type: str
+    required: true
   jobs:
     description: Jobs with existing private credential directories.
     type: list
@@ -33,7 +42,7 @@ options:
     default: []
     suboptions:
       credential_directory:
-        description: Existing absolute root-owned mode 0700 directory.
+        description: Existing absolute mode 0700 directory owned by the specified user.
         type: str
         required: true
       credentials:
@@ -53,8 +62,9 @@ attributes:
 EXAMPLES = r"""
 - name: Seal backup credentials in an already provisioned directory
   urestic_credentials:
+    user: alice
     jobs:
-      - credential_directory: /etc/credstore.encrypted/backup-demo
+      - credential_directory: /home/alice/.config/psyops/backup/home/credentials
         credentials:
           restic-password: "{{ vault_restic_password }}"
     tpm2_pcrs: '7'
@@ -82,6 +92,7 @@ class Job(TypedDict):
 class Parameters(TypedDict):
     """Validated Ansible arguments for the credential batch and its TPM PCR policy."""
 
+    user: str
     jobs: list[Job]
     tpm2_pcrs: str
 
@@ -148,7 +159,8 @@ class Credentials:
                     "systemd-creds",
                     "encrypt",
                     "--name=" + name,
-                    "--with-key=tpm2",
+                    "--uid=" + self.params["user"],
+                    "--with-key=host+tpm2",
                     "--tpm2-device=auto",
                     "--tpm2-pcrs=" + self.params["tpm2_pcrs"],
                     "-",
@@ -175,18 +187,28 @@ class Credentials:
             raise CredentialError("Credential operation failed; diagnostics suppressed.") from None
 
     def _apply(self) -> dict[str, bool]:
-        """Compare plaintext, seal differences, and enforce root-only ciphertext metadata.
+        """Compare plaintext, seal differences, and enforce user-private ciphertext metadata.
 
         Check mode predicts changes without writing. Existing ciphertext must
         decrypt successfully before comparison; a decryption failure stops the batch.
         """
+        group = str(pwd.getpwnam(self.params["user"]).pw_gid)
         changed = False
         for job in self.params["jobs"]:
             for name, secret in job["credentials"].items():
                 path = os.path.join(job["credential_directory"], name)
                 different = True
                 if os.path.lexists(path):
-                    plaintext = self.run(["systemd-creds", "decrypt", "--name=" + name, path, "-"])
+                    plaintext = self.run(
+                        [
+                            "systemd-creds",
+                            "decrypt",
+                            "--name=" + name,
+                            "--uid=" + self.params["user"],
+                            path,
+                            "-",
+                        ]
+                    )
                     different = plaintext != secret.encode("utf-8")
                 if different:
                     changed = True
@@ -194,7 +216,9 @@ class Credentials:
                         continue
                     self.encrypt(path, name, secret.encode("utf-8"))
                 file_args = self.module.load_file_common_arguments(
-                    dict(path=path, owner="root", group="root", mode="0600", follow=False)
+                    dict(
+                        path=path, owner=self.params["user"], group=group, mode="0600", follow=False
+                    )
                 )
                 changed = self.module.set_fs_attributes_if_different(file_args, changed)
         return dict(changed=changed)
@@ -204,6 +228,7 @@ def main() -> None:
     """Define Ansible arguments, protect secret values, and return the batch result."""
     module = AnsibleModule(
         argument_spec=dict(
+            user=dict(type="str", required=True),
             jobs=dict(
                 type="list",
                 elements="dict",

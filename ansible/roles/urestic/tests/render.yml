@@ -8,11 +8,10 @@
   vars:
     urestic_user: alice
     urestic_home: /home/alice
-    urestic_group: '1000'
     urestic_randomized_delay_sec: 15m
     urestic_job_directory: /home/alice/.config/psyops/backup/job1
-    urestic_credential_directory: /etc/credstore.encrypted/urestic/alice/job1
-    urestic_unit: urestic-alice@job1
+    urestic_credential_directory: /home/alice/.config/psyops/backup/job1/credentials
+    urestic_unit: urestic@job1
     urestic_job:
       name: job1
       oncalendar: hourly
@@ -38,13 +37,16 @@
             mode: '0600'
           loop: [service, timer]
 
-        - name: Verify systemd syntax
+        - name: Verify user-unit syntax
           ansible.builtin.command:
             argv:
               - systemd-analyze
+              - --user
               - verify
               - "{{ urestic_test_directory.path }}/{{ urestic_unit }}.service"
               - "{{ urestic_test_directory.path }}/{{ urestic_unit }}.timer"
+          environment:
+            XDG_RUNTIME_DIR: "{{ urestic_test_directory.path }}"
           register: urestic_test_verify
           changed_when: false
           # The helper is deliberately not installed on the controller.

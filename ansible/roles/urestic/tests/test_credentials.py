@@ -1,6 +1,7 @@
 """Focused tests for TPM-sealed credentials without a local TPM."""
 
 import os
+import pwd
 import stat
 import subprocess
 import tempfile
@@ -30,7 +31,7 @@ class FakeModule:
         """Detect mode changes and apply them only outside check mode."""
         path = file_args["path"]
         different = stat.S_IMODE(os.stat(path).st_mode) != 0o600
-        # Stand in for root ownership on unprivileged test hosts.
+        # Ownership requests are checked separately without requiring root.
         if different and not self.check_mode:
             os.chmod(path, 0o600)
         return changed or different
@@ -52,6 +53,7 @@ class CredentialsTests(unittest.TestCase):
         self.directory = Path(self.tmp.name)
         self.path = self.directory / "password"
         self.params: credentials.Parameters = {
+            "user": pwd.getpwuid(os.getuid()).pw_name,
             "jobs": [
                 {"credential_directory": str(self.directory), "credentials": {"password": "secret"}}
             ],
@@ -92,9 +94,15 @@ class CredentialsTests(unittest.TestCase):
         self.assertEqual(dest, str(self.path))
         self.assertFalse(unsafe)
         self.assertFalse(keep)
+        self.assertEqual(module.attributes[0]["owner"], self.params["user"])
+        self.assertEqual(
+            module.attributes[0]["group"], str(pwd.getpwnam(self.params["user"]).pw_gid)
+        )
+        self.assertEqual(module.attributes[0]["mode"], "0600")
         self.calls.clear()
         self.assertEqual(self.apply()[0], {"changed": False})
         self.assertEqual([args[1] for args, _ in self.calls], ["decrypt"])
+        self.assertIn("--uid=" + self.params["user"], self.calls[0][0])
         self.assertEqual(list(self.directory.iterdir()), [self.path])
 
     def test_changed_secret_pcr_and_stdin(self):
@@ -106,7 +114,8 @@ class CredentialsTests(unittest.TestCase):
         args, kwargs = self.calls[-1]
         for option in (
             "--name=password",
-            "--with-key=tpm2",
+            "--uid=" + self.params["user"],
+            "--with-key=host+tpm2",
             "--tpm2-device=auto",
             "--tpm2-pcrs=7+11",
         ):
@@ -206,7 +215,7 @@ class CredentialsTests(unittest.TestCase):
         """Credential arguments are marked no_log without inspecting the rest of the schema."""
         with patch.object(credentials, "AnsibleModule") as constructor:
             module = constructor.return_value
-            module.params = {"jobs": [], "tpm2_pcrs": "7"}
+            module.params = {"user": self.params["user"], "jobs": [], "tpm2_pcrs": "7"}
             module.check_mode = False
             credentials.main()
         spec = constructor.call_args.kwargs["argument_spec"]

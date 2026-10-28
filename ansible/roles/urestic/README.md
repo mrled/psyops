@@ -1,9 +1,10 @@
 # urestic
 
-Scheduled personal-data backups to S3-compatible storage using restic. System
-services run as the selected account, without requiring a login. Requires Linux,
-systemd 250+ with TPM2 support, restic 0.17+, and a usable TPM2 device; prerequisites are installed.
-The account and S3 bucket must already exist. Apply with `become: true` and gathered facts.
+Scheduled personal-data backups to S3-compatible storage using restic user services.
+Requires Linux, systemd 256+ with TPM2 support, restic 0.17+, and a usable TPM2 device.
+The role installs prerequisites, enables the credential broker and user lingering
+(for runs without a login). The account and S3 bucket must already exist.
+Apply with `become: true` and gathered facts.
 
 ## Configuration
 
@@ -34,11 +35,14 @@ See [defaults/main.yml](defaults/main.yml) for overrides.
 
 Per-job files live in `~/.config/psyops/backup/JOB/`: `restic.paths`,
 `restic.excludes`, and `restic.repository`. Ansible overwrites local edits on reapply.
-Units are named `urestic-USER@JOB.service` and `.timer`:
+Units live in `~/.config/systemd/user/`, named `urestic@JOB.service` and `.timer`.
+As the backup user:
 
 ```sh
-sudo systemctl start urestic-alice@job1.service
-sudo journalctl -u urestic-alice@job1.service
+systemctl --user list-timers --all 'urestic@*'
+systemctl --user status urestic@job1.service
+systemctl --user start urestic@job1.service
+journalctl --user -u urestic@job1.service
 ```
 
 ## Repository access
@@ -47,28 +51,41 @@ Backups initialize missing repositories automatically, only when restic reports
 exit code 10. Wrong passwords, access errors, and other failures stop the backup
 without attempting initialization. The S3 bucket must already exist.
 
-To run manual commands using the sealed credentials:
+Browse and restore with plain restic on any machine—no systemd or original TPM
+required. Use the original credentials from Vault or your password manager, not
+the sealed files. Replace the placeholders below; avoid saving real secrets in
+shell history. Choose either restore example; neither overwrites the original files.
 
 ```sh
-user=alice job=job1
-home=$(getent passwd "$user" | cut -d: -f6)
-cred="/etc/credstore.encrypted/urestic/$user/$job"
-sudo systemd-run --wait --pipe --collect \
-  --property="User=$user" \
-  --property="LoadCredentialEncrypted=restic.password:$cred/restic.password" \
-  --property="LoadCredentialEncrypted=aws.access-key-id:$cred/aws.access-key-id" \
-  --property="LoadCredentialEncrypted=aws.secret-access-key:$cred/aws.secret-access-key" \
-  /usr/local/libexec/urestic/uresticjob "$home/.config/psyops/backup/$job" snapshots
+export RESTIC_REPOSITORY='s3:https://s3.us-central-1.wasabisys.com/YOUR_BUCKET/YOUR_PREFIX'
+export AWS_ACCESS_KEY_ID='YOUR_WASABI_ACCESS_KEY_ID'
+export AWS_SECRET_ACCESS_KEY='YOUR_WASABI_SECRET_ACCESS_KEY'
+export RESTIC_PASSWORD='YOUR_RESTIC_REPOSITORY_PASSWORD'
+
+# List snapshots, then inspect files in the latest (or substitute a snapshot ID).
+restic snapshots
+snapshot=latest
+restic ls "$snapshot"
+
+# Restore the entire snapshot and verify the restored contents.
+restic restore "$snapshot" --target "$HOME/restored-full" --verify
+
+# Restore just Documents; use its original snapshot path, even on another machine.
+restic restore "$snapshot" --target "$HOME/restored-partial" \
+  --include '/home/mrl/Documents' --verify
+
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY RESTIC_PASSWORD RESTIC_REPOSITORY
 ```
 
-Replace `snapshots` with `check` or `restore ...` as needed. Use the installed backup
-service for backups so mountpoint conditions apply.
+Use your bucket's Wasabi region and exact repository prefix. Restored paths retain
+their directory hierarchy beneath the target.
 
 ## Important limits
 
-- Password and S3 keys are TPM-sealed under `/etc/credstore.encrypted/urestic/USER/JOB/`,
-  using PCR 7 by default. **Keep independent recovery copies**: TPM or Secure Boot
-  changes can prevent decryption. Undecryptable existing credentials fail deployment.
+- Secrets are user-scoped and sealed with `host+tpm2` under each job's `credentials/`,
+  using PCR 7 by default. **Keep independent recovery copies**: TPM, OS host-key,
+  account, or Secure Boot changes can prevent decryption. Undecryptable credentials
+  fail deployment; there is no non-TPM fallback.
 - Changing the inventory password does **not** change the repository password.
   Changing PCR settings alone does not reseal unchanged credentials.
 - No automatic retention, pruning, integrity checks, or failure notifications.
