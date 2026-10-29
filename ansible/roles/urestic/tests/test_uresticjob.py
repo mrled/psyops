@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import TypedDict, cast
+from unittest.mock import patch
 
 
 class ResticCall(TypedDict):
@@ -46,16 +47,17 @@ class UresticjobTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.directory = Path(temporary.name)
         # Spaces exercise quoting of both executable and configuration paths.
-        self.credentials = self.directory / "decrypted credentials"
-        self.credentials.mkdir()
+        self.job = self.directory / "backup job"
+        self.job.mkdir()
+        self.runtime = self.directory / "runtime"
+        self.credentials = self.runtime / "urestic" / self.job.name
+        self.credentials.mkdir(parents=True)
         for name, value in {
             "restic.password": "test password\n",
             "aws.access-key-id": "test access key\n",
             "aws.secret-access-key": "test secret key\n",
         }.items():
             (self.credentials / name).write_text(value)
-        self.job = self.directory / "backup job"
-        self.job.mkdir()
         (self.job / "restic.repository").write_text("s3:example.invalid/bucket/repo\n")
         (self.job / "restic.paths").write_text("/some path\n")
         (self.job / "restic.excludes").write_text("*.tmp\n")
@@ -77,7 +79,7 @@ class UresticjobTests(unittest.TestCase):
             ["/bin/sh", str(self.script), str(self.job), *args],
             env={
                 **os.environ,
-                "CREDENTIALS_DIRECTORY": str(self.credentials),
+                "XDG_RUNTIME_DIR": str(self.runtime),
                 "RESTIC_MOCK_LOG": str(self.log),
                 "RESTIC_MOCK_CAT_STATUS": str(cat_status),
                 "RESTIC_MOCK_INIT_STATUS": str(init_status),
@@ -88,7 +90,11 @@ class UresticjobTests(unittest.TestCase):
             timeout=10,
             check=False,
         )
-        calls = [cast(ResticCall, json.loads(line)) for line in self.log.read_text().splitlines()]
+        calls = (
+            [cast(ResticCall, json.loads(line)) for line in self.log.read_text().splitlines()]
+            if self.log.exists()
+            else []
+        )
         expected_env = {
             "RESTIC_PASSWORD_FILE": str(self.credentials / "restic.password"),
             "AWS_ACCESS_KEY_ID": "test access key",
@@ -99,7 +105,6 @@ class UresticjobTests(unittest.TestCase):
             self.assertEqual(call["env"], expected_env)
         # Only the backup probe suppresses cat's output; explicit cat is passed through.
         self.assertEqual(result.stdout, "repository config\n" if args[0] == "cat" else "")
-        self.assertEqual(result.stderr, "")
         return result, calls
 
     def backup_args(self, *extra: str) -> list[str]:
@@ -113,6 +118,26 @@ class UresticjobTests(unittest.TestCase):
             str(self.job / "restic.excludes"),
             *extra,
         ]
+
+    def test_locked_cache_stops_before_accessing_the_repository(self) -> None:
+        """Missing runtime credentials fail promptly, without wallet access or repository init."""
+        (self.credentials / "restic.password").unlink()
+        result, calls = self.run_job("backup", cat_status=10)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("credentials locked", result.stderr)
+        self.assertEqual(calls, [])
+
+    def test_failed_cache_read_stops_before_accessing_the_repository(self) -> None:
+        """A read failure after the readiness check must not become an empty credential."""
+        commands = self.directory / "commands"
+        commands.mkdir()
+        failing_cat = commands / "cat"
+        failing_cat.write_text("#!/bin/sh\nexit 1\n")
+        failing_cat.chmod(0o700)
+        with patch.dict(os.environ, {"PATH": f"{commands}:{os.environ['PATH']}"}):
+            result, calls = self.run_job("backup", cat_status=10)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(calls, [])
 
     def test_existing_repository_skips_init_and_forwards_backup_arguments(self) -> None:
         """A successful probe skips initialization and preserves backup argument boundaries."""

@@ -3,7 +3,4 @@
 urestic_user: ""
 urestic_jobs: []
 
-# PCR 7 binds credentials to the Secure Boot policy, not individual kernel images.
-# Changing this later does not automatically reseal existing credentials.
-urestic_tpm2_pcrs: "7"
 urestic_randomized_delay_sec: 15m

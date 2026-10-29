@@ -1,13 +1,24 @@
 #!/bin/sh
 # Installed by the urestic Ansible role.
-# The user service manager supplies decrypted credentials to this process.
+# Credentials are read only from the private runtime cache.
 set -eu
 job_directory=$1
 shift
-export RESTIC_PASSWORD_FILE="${CREDENTIALS_DIRECTORY:?Run with systemd encrypted credentials}/restic.password"
-export AWS_ACCESS_KEY_ID="$(cat "$CREDENTIALS_DIRECTORY/aws.access-key-id")"
-export AWS_SECRET_ACCESS_KEY="$(cat "$CREDENTIALS_DIRECTORY/aws.secret-access-key")"
-export RESTIC_REPOSITORY="$(cat "$job_directory/restic.repository")"
+job=$(basename "$job_directory")
+cache="${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR is required}/urestic/$job"
+for credential in restic.password aws.access-key-id aws.secret-access-key; do
+    if [ ! -r "$cache/$credential" ]; then
+        printf 'urestic: credentials locked; run uresticcache unlock "%s"\n' "$job" >&2
+        exit 1
+    fi
+done
+aws_access_key_id=$(cat "$cache/aws.access-key-id")
+aws_secret_access_key=$(cat "$cache/aws.secret-access-key")
+repository=$(cat "$job_directory/restic.repository")
+export RESTIC_PASSWORD_FILE="$cache/restic.password"
+export AWS_ACCESS_KEY_ID="$aws_access_key_id"
+export AWS_SECRET_ACCESS_KEY="$aws_secret_access_key"
+export RESTIC_REPOSITORY="$repository"
 
 if [ "${1:-}" = backup ]; then
     shift
@@ -24,5 +35,5 @@ if [ "${1:-}" = backup ]; then
         --files-from-verbatim "$job_directory/restic.paths" \
         --exclude-file "$job_directory/restic.excludes" "$@"
 fi
-# Also usable with systemd-run for init, snapshots, restore, and check.
+# Other restic commands use the same runtime cache.
 exec /usr/bin/restic "$@"

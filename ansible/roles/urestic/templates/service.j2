@@ -11,9 +11,6 @@ ConditionPathIsMountPoint={{ path }}
 Type=oneshot
 UMask=0077
 Environment="HOME={{ urestic_home }}"
-{% for credential in ['restic.password', 'aws.access-key-id', 'aws.secret-access-key'] %}
-LoadCredentialEncrypted={{ credential }}:{{ urestic_credential_directory }}/{{ credential }}
-{% endfor %}
-ExecStart=/usr/local/libexec/urestic/uresticjob "{{ urestic_job_directory }}" backup
+ExecStart={{ urestic_home }}/.local/bin/uresticjob "{{ urestic_job_directory }}" backup
 TimeoutStartSec=infinity
 NoNewPrivileges=true

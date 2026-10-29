@@ -1,10 +1,10 @@
 # urestic
 
 Scheduled personal-data backups to S3-compatible storage using restic user services.
-Requires Linux, systemd 256+ with TPM2 support, restic 0.17+, and a usable TPM2 device.
-The role installs prerequisites, enables the credential broker and user lingering
-(for runs without a login). The account and S3 bucket must already exist.
-Apply with `become: true` and gathered facts.
+Requires Linux, restic 0.17+, and a Secret Service-compatible desktop wallet.
+Apply with `become: true` and gathered facts while the backup user is logged in
+and their wallet is available. The account and S3 bucket must already exist.
+The role installs packages and enables user lingering; job setup runs as the user.
 
 ## Configuration
 
@@ -26,35 +26,42 @@ urestic_jobs:
     excludes: ['*.bak', .DS_Store]
 ```
 
-Job names must be unique and contain letters, numbers, underscores, or hyphens
-(not starting with a hyphen). Paths must be absolute. Every `mountpoint: true`
-path adds a `ConditionPathIsMountPoint=`; if any is unmounted, that backup is skipped.
-Backups use `--exclude-caches` to honor valid `CACHEDIR.TAG` markers.
-Timers catch up after downtime and default to a randomized delay of 15 minutes.
-See [defaults/main.yml](defaults/main.yml) for overrides.
+Jobs need unique names and absolute source paths. Every `mountpoint: true` path
+adds a mountpoint condition; if any is unmounted, that backup is skipped.
+Backups honor `CACHEDIR.TAG` via `--exclude-caches`. Timers catch up after downtime
+and default to a randomized delay of 15 minutes. Missing repositories are initialized
+automatically only on restic exit code 10; other errors stop the backup.
 
-Per-job files live in `~/.config/psyops/backup/JOB/`: `restic.paths`,
-`restic.excludes`, and `restic.repository`. Ansible overwrites local edits on reapply.
+Job files live under `~/.config/psyops/backup/JOB/`; Ansible overwrites local edits.
 Units live in `~/.config/systemd/user/`, named `urestic@JOB.service` and `.timer`.
-As the backup user:
+Commands are installed in `~/.local/bin/`.
+
+## Unlocking and status
+
+Deployment stores credentials in the desktop wallet and fills each job's runtime
+cache. After reboot, log in and unlock again. Backups read only that cache and fail
+promptly if it is unavailable; they never prompt for wallet access.
 
 ```sh
+~/.local/bin/uresticcache unlock job1  # Use home on nullyork; may prompt for the wallet.
+~/.local/bin/uresticcache status job1
 systemctl --user list-timers --all 'urestic@*'
-systemctl --user status urestic@job1.service
 systemctl --user start urestic@job1.service
 journalctl --user -u urestic@job1.service
+~/.local/bin/uresticcache lock job1    # Clear this job's cached credentials.
 ```
 
-## Repository access
+Cache files are plaintext under `$XDG_RUNTIME_DIR/urestic/JOB/`, with directories
+`0700` and files `0600`. Lingering keeps them available through screen lock and
+logout; reboot clears them. Locking the wallet does not clear the cache, and
+clearing the cache does not stop an already-running backup. Protect swap and
+hibernation storage, and keep independent recovery copies of the credentials.
 
-Backups initialize missing repositories automatically, only when restic reports
-exit code 10. Wrong passwords, access errors, and other failures stop the backup
-without attempting initialization. The S3 bucket must already exist.
+## Browse and restore without the role
 
-Browse and restore with plain restic on any machine—no systemd or original TPM
-required. Use the original credentials from Vault or your password manager, not
-the sealed files. Replace the placeholders below; avoid saving real secrets in
-shell history. Choose either restore example; neither overwrites the original files.
+Use the original credentials from Vault or your password manager on any machine.
+Replace the placeholders; avoid saving real secrets in shell history. Choose either
+restore example; neither overwrites the original files.
 
 ```sh
 export RESTIC_REPOSITORY='s3:https://s3.us-central-1.wasabisys.com/YOUR_BUCKET/YOUR_PREFIX'
@@ -62,43 +69,32 @@ export AWS_ACCESS_KEY_ID='YOUR_WASABI_ACCESS_KEY_ID'
 export AWS_SECRET_ACCESS_KEY='YOUR_WASABI_SECRET_ACCESS_KEY'
 export RESTIC_PASSWORD='YOUR_RESTIC_REPOSITORY_PASSWORD'
 
-# List snapshots, then inspect files in the latest (or substitute a snapshot ID).
 restic snapshots
-snapshot=latest
+snapshot=latest  # Or a snapshot ID from the listing.
 restic ls "$snapshot"
 
-# Restore the entire snapshot and verify the restored contents.
+# Full restore, retaining the original directory hierarchy beneath the target.
 restic restore "$snapshot" --target "$HOME/restored-full" --verify
 
-# Restore just Documents; use its original snapshot path, even on another machine.
+# Partial restore: use an original snapshot path from ls, not a new machine's path.
 restic restore "$snapshot" --target "$HOME/restored-partial" \
   --include '/home/mrl/Documents' --verify
 
 unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY RESTIC_PASSWORD RESTIC_REPOSITORY
 ```
 
-Use your bucket's Wasabi region and exact repository prefix. Restored paths retain
-their directory hierarchy beneath the target.
+## Limits and checks
 
-## Important limits
-
-- Secrets are user-scoped and sealed with `host+tpm2` under each job's `credentials/`,
-  using PCR 7 by default. **Keep independent recovery copies**: TPM, OS host-key,
-  account, or Secure Boot changes can prevent decryption. Undecryptable credentials
-  fail deployment; there is no non-TPM fallback.
-- Changing the inventory password does **not** change the repository password.
-  Changing PCR settings alone does not reseal unchanged credentials.
+- Changing the inventory password does not change the repository password.
 - No automatic retention, pruning, integrity checks, or failure notifications.
   Monitor backups and test restores.
-- Removing a job from inventory does not disable it. Stop/disable its timer and
-  remove its units explicitly.
-
-## Checks
+- Removing a job from inventory does not disable its timer or remove wallet entries.
+  Stop/disable its timer and remove its units explicitly.
 
 ```sh
 cd ansible
 uv sync --locked
-make check-urestic  # Ruff, ty, Ansible lint, unit tests, and rendering smoke tests
+make check-urestic
 ```
 
-Real TPM operations and backup/restore still need target-host testing.
+Tests use a fake wallet; desktop wallet access and backup/restore need target-host testing.

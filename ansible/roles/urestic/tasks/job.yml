@@ -5,8 +5,6 @@
     urestic_directories: >-
       {{ urestic_directories + [
         {'path': urestic_job_directory,
-         'owner': urestic_user, 'group': urestic_group, 'mode': '0700'},
-        {'path': urestic_credential_directory,
          'owner': urestic_user, 'group': urestic_group, 'mode': '0700'}] }}
     urestic_files: "{{ urestic_files + [
         {'path': urestic_job_directory ~ '/restic.paths',
@@ -26,7 +24,7 @@
          'owner': urestic_user, 'group': urestic_group, 'mode': '0644'}] }}"
     urestic_configured_jobs: >-
       {{ urestic_configured_jobs + [
-        {'credential_directory': urestic_credential_directory,
+        {'name': urestic_job.name,
          'credentials': {
            'restic.password': urestic_job.password,
            'aws.access-key-id': urestic_job.aws_access_key_id,
@@ -34,6 +32,5 @@
     urestic_units: "{{ urestic_units + [urestic_unit] }}"
   vars:
     urestic_job_directory: "{{ urestic_home }}/.config/psyops/backup/{{ urestic_job.name }}"
-    urestic_credential_directory: "{{ urestic_job_directory }}/credentials"
     urestic_unit: "urestic@{{ urestic_job.name }}"
   no_log: true

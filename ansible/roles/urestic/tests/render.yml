@@ -1,5 +1,5 @@
 ---
-# Check our systemd syntax and mountpoint guards without installing units or using TPM.
+# Check our systemd syntax and mountpoint guards without installing units.
 - name: Test backup unit rendering
   hosts: localhost
   connection: local
@@ -10,7 +10,6 @@
     urestic_home: /home/alice
     urestic_randomized_delay_sec: 15m
     urestic_job_directory: /home/alice/.config/psyops/backup/job1
-    urestic_credential_directory: /home/alice/.config/psyops/backup/job1/credentials
     urestic_unit: urestic@job1
     urestic_job:
       name: job1
@@ -52,7 +51,7 @@
           # The helper is deliberately not installed on the controller.
           failed_when: >-
             urestic_test_verify.stderr_lines
-            | reject('search', 'Command /usr/local/libexec/urestic/uresticjob is not executable:')
+            | reject('search', 'Command /home/alice/.local/bin/uresticjob is not executable:')
             | list | length > 0
 
         - name: Read rendered service
