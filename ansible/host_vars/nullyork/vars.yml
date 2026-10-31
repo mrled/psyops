@@ -51,3 +51,4 @@ urestic_jobs:
       - __pycache__
       - "*.py[co]"
       - .DS_Store
+      - "*.active.img" # my name for images that I use directly; too large for backing up opaque container image, back up the inner filesystem instead

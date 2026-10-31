@@ -5,12 +5,28 @@ description = "Ansible controller environment for psyops infrastructure"
 requires-python = ">=3.12"
 dependencies = [
     "ansible==13.5.0",
-    "boto3>=1.35",
-    "botocore>=1.35",
+    "boto3>=1.36",
+    "botocore>=1.36",
 ]
 
 [dependency-groups]
-dev = ["ansible-lint==26.4.0"]
+dev = ["ansible-lint==26.4.0", "keyring>=25,<26", "ruff>=0.15,<0.16", "ty>=0.0.1,<0.1"]
 
 [tool.uv]
 package = false
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ty.environment]
+python-version = "3.10"
+
+[tool.ty.src]
+include = [
+    "roles/urestic/files",
+    "roles/urestic/tests",
+]
