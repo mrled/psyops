@@ -31,7 +31,7 @@ spec:
               mountPath: /import
       containers:
         - name: registry
-          image: docker.io/library/registry:3@sha256:1be55279f18a2fe1a74edf2664cac61c1bea305b7b4642dab412e7affdcb3e33
+          image: docker.io/library/registry:3@sha256:d4032d4cc323c1731c707931ecada07a53076eac38e3b61ae57533f170f2c6c3
           env:
             - name: REGISTRY_AUTH
               value: "token"
