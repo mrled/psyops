@@ -4,7 +4,7 @@ metadata:
   name: renovate
   namespace: renovate
 spec:
-  schedule: "17 4 * * *"
+  schedule: "17 * * * *"
   timeZone: America/Chicago
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
@@ -15,6 +15,9 @@ spec:
       template:
         spec:
           restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
           containers:
             - name: renovate
               image: renovate/renovate:44.175.0
@@ -60,4 +63,5 @@ spec:
               configMap:
                 name: renovate-config
             - name: work
-              emptyDir: {}
+              persistentVolumeClaim:
+                claimName: renovate-work-pvc

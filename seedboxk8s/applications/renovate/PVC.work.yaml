@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: renovate-work-pvc
+  namespace: renovate
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: seedbox-slow-mirror
+  resources:
+    requests:
+      storage: 5Gi
