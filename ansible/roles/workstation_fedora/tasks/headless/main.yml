@@ -10,9 +10,11 @@
     name:
       - atuin
       - awscli2
+      - caddy
       - clang
       - curl
       - direnv
+      - golang-bin
       - git-annex
       - git-crypt
       - git-delta
