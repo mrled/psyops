@@ -1,5 +1,15 @@
 # Renovate
 
+## Automerge policy
+
+We allow safe automerges
+
+- Minor/patch updates for most things
+- Some sensitive things no auto updates at all
+- Some safe things allow any update
+
+See `ConfigMap.renovate-config.yaml`.
+
 ## Manual run
 
 The CronJob runs on its configured schedule.

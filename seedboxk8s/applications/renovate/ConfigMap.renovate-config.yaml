@@ -25,6 +25,75 @@ data:
       "onboarding": false,
       "packageRules": [
         {
+          "description": "Automerge minor, patch, and digest updates for selected container images",
+          "matchDatasources": ["docker"],
+          "matchPackageNames": [
+            "docker.io/library/traefik",
+            "ghcr.io/linuxserver/bazarr",
+            "ghcr.io/linuxserver/lidarr",
+            "ghcr.io/linuxserver/prowlarr",
+            "ghcr.io/linuxserver/radarr",
+            "ghcr.io/linuxserver/sonarr",
+            "ghcr.io/linuxserver/sabnzbd",
+            "klausmeyer/docker-registry-browser",
+            "nginx",
+            "ghcr.io/bookorbit/bookorbit",
+            "renovate/renovate",
+            "ghcr.io/linuxserver/nzbhydra2",
+            "ghcr.io/linuxserver/cops",
+            "lscr.io/linuxserver/transmission",
+            "caddy",
+            "docker.io/library/registry",
+            "docker.io/cesanta/docker_auth",
+            "alpine",
+            "busybox",
+            "pgvector/pgvector",
+            "registry.redict.io/redict",
+            "python"
+          ],
+          "matchUpdateTypes": ["minor", "patch", "digest"],
+          "automerge": true
+        },
+        {
+          "description": "Automerge minor and patch updates for selected Helm charts",
+          "matchDatasources": ["helm"],
+          "matchPackageNames": ["tailscale-operator", "headlamp", "cert-manager", "fluent-bit", "reloader"],
+          "matchUpdateTypes": ["minor", "patch"],
+          "automerge": true
+        },
+        {
+          "description": "Automerge all updates for selected container images",
+          "matchDatasources": ["docker"],
+          "matchPackageNames": [
+            "ghcr.io/alexta69/metube",
+            "ghcr.io/ersatztv/legacy",
+            "quay.io/buildah/stable",
+            "ghcr.io/linuxserver/lazylibrarian",
+            "ghcr.io/gethomepage/homepage",
+            "plexinc/pms-docker",
+            "ghcr.io/tautulli/tautulli",
+            "traefik/whoami"
+          ],
+          "automerge": true
+        },
+        {
+          "description": "Automerge minor, patch, and digest updates for templated x3 and shhh images",
+          "matchManagers": ["custom.regex"],
+          "matchDatasources": ["docker"],
+          "matchFileNames": [
+            "seedboxk8s/applications/x3/StatefulSet.yaml",
+            "seedboxk8s/applications/shhh/StatefulSet.yaml"
+          ],
+          "matchUpdateTypes": ["minor", "patch", "digest"],
+          "automerge": true
+        },
+        {
+          "description": "Automerge all Reflector chart updates",
+          "matchDatasources": ["helm"],
+          "matchPackageNames": ["reflector"],
+          "automerge": true
+        },
+        {
           "matchPackageNames": ["docker.io/library/registry"],
           "changelogUrl": "https://github.com/distribution/distribution/releases"
         },
