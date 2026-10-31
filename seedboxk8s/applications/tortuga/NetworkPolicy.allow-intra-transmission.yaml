@@ -26,6 +26,9 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: shhh
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: lazylibrarian
     ports:
     - port: 9091
       protocol: TCP

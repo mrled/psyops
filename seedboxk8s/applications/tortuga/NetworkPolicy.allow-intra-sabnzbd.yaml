@@ -26,6 +26,12 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: shhh
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: lazylibrarian
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: nzbhydra2
     ports:
     - port: 8080
       protocol: TCP
