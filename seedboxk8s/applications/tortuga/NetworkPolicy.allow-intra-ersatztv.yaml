@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-ersatztv
+  namespace: tortuga
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ersatztv
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: plex
+    ports:
+    - port: 8409
+      protocol: TCP

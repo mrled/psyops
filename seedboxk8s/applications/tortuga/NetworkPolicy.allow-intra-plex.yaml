@@ -14,6 +14,18 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: tautulli
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ersatztv
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: sonarr
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: radarr
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: lidarr
     ports:
     - port: 32400
       protocol: TCP
