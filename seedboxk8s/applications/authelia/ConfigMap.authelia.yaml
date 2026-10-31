@@ -97,6 +97,7 @@ data:
             - opensearch.${productionClusterFqdn}
             - bazarr.${productionClusterFqdn}
             - sonarr.${productionClusterFqdn}
+            - bindery.${productionClusterFqdn}
             - bk2.${productionClusterFqdn}
             - bookorbit.${productionClusterFqdn}
             - cops.${productionClusterFqdn}

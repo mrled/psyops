@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bindery
+  namespace: tortuga
+spec:
+  replicas: 1
+  serviceName: bindery
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bindery
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bindery
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: ${plexUid}
+        runAsGroup: ${plexGid}
+        runAsNonRoot: true
+        fsGroup: ${plexGid}
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        # https://github.com/vavallee/bindery/releases/tag/v1.46.1
+        - name: bindery
+          image: ghcr.io/vavallee/bindery:1.46.1
+          ports:
+            - name: http
+              containerPort: 8787
+          env:
+            - name: TZ
+              value: ${timezone}
+            - name: BINDERY_PORT
+              value: "8787"
+            - name: BINDERY_DB_PATH
+              value: /config/bindery.db
+            - name: BINDERY_DATA_DIR
+              value: /config
+            - name: BINDERY_LIBRARY_DIR
+              value: /media/Books/Bindery
+            - name: BINDERY_AUDIOBOOK_DIR
+              value: /media/Audiobooks/Bindery
+            - name: BINDERY_DOWNLOAD_DIR
+              value: /media/Books/Incoming
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            # One mount preserves hardlinks between downloads and libraries.
+            - name: media
+              mountPath: /media
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: bindery-config-pvc
+        - name: media
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc
+        - name: tmp
+          emptyDir: {}

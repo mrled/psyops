@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: bindery
+  namespace: tortuga
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Bindery
+    gethomepage.dev/group: Media
+    gethomepage.dev/href: https://bindery.${productionClusterFqdn}
+spec:
+  ingressClassName: traefik-tailscale
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`bindery.${productionClusterFqdn}`)
+      kind: Rule
+      services:
+        - name: bindery
+          kind: Service
+          port: 80
+      middlewares:
+        - name: authelia
+          namespace: authelia
+  tls:
+    secretName: seedbox-wildcard-backing-secret

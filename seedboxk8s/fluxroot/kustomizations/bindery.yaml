@@ -1,0 +1,24 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: bindery
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: /seedboxk8s/applications/bindery
+  prune: true
+  timeout: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: fluxcfg
+    - name: topolvm
+    - name: tortuga
+    - name: authelia
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: seedboxk8s-config
+      - kind: ConfigMap
+        name: seedboxk8s-config

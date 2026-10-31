@@ -13,6 +13,9 @@ spec:
   - from:
     - podSelector:
         matchLabels:
+          app.kubernetes.io/name: bindery
+    - podSelector:
+        matchLabels:
           app.kubernetes.io/name: prowlarr
     - podSelector:
         matchLabels:
