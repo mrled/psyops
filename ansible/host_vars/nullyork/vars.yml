@@ -18,6 +18,15 @@ interactive_user_list:
   - name: mrl
 interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') | list }}"
 
+# HTTP backchannel (Traefik + Let's Encrypt via Route53 DNS challenge).
+# Store this host's NullyorkBackchannelZoneUpdater credentials in vault.yml.
+http_backchannel_dnsname: nullyork.backchannel.younix.us
+http_backchannel_aws_access_key_id: "{{ vault_http_backchannel_aws_access_key_id }}"
+http_backchannel_aws_secret_access_key: "{{ vault_http_backchannel_aws_secret_access_key }}"
+# Map app names to localhost ports to serve app.nullyork.backchannel.younix.us.
+http_backchannel_subdomain_ports:
+  ellipsis: 35477
+
 # Define these four vault_urestic_home_* values in this host's encrypted vault.yml.
 # Use a dedicated repository/prefix and appropriately scoped S3 credentials.
 urestic_user: mrl
