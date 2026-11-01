@@ -8,11 +8,29 @@
   ansible.builtin.set_fact:
     interactive_user_home: "{{ getent_passwd[interactive_user.name][4] }}"
 
+- name: Read existing dhd origin
+  become: true
+  become_user: "{{ interactive_user.name }}"
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - "{{ interactive_user_home }}/.dhd"
+      - config
+      - --get
+      - remote.origin.url
+  register: interactive_user_dhd_origin
+  changed_when: false
+  # An unset origin returns 1; a missing checkout returns 128.
+  failed_when: interactive_user_dhd_origin.rc not in [0, 1, 128]
+  check_mode: false
+  when: not interactive_user_disable_dhd
+
 - name: Clone dhd repo # noqa: latest
   become: true
   become_user: "{{ interactive_user.name }}"
   ansible.builtin.git:
-    repo: https://github.com/mrled/dhd
+    repo: "{{ interactive_user_dhd_origin.stdout | default('https://github.com/mrled/dhd', true) }}"
     dest: "{{ interactive_user_home }}/.dhd"
     update: true
   when: not interactive_user_disable_dhd
