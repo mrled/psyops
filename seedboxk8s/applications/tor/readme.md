@@ -1,5 +1,23 @@
 # In-cluster tor
 
+## Tor image updates
+
+The `cicd/torproxy-build` CronJob rebuilds the private Tor image daily
+at 03:37 America/Chicago, installing current Debian Tor packages.
+Renovate then checks the published `latest` image on its hourly run,
+pins its digest, and automerges digest changes for the Tor deployment.
+Rebuilding is necessary: Renovate cannot update packages inside an existing image.
+
+The deployment temporarily uses unpinned `latest` to replace the obsolete Tor image.
+The next successful Renovate run restores a digest pin.
+Future builds do not affect the running deployment until the digest-update PR merges.
+
+To rebuild immediately, create a job from `cronjob/torproxy-build` in namespace `cicd`.
+Avoid overlapping manual and scheduled builds, since both publish the same tag.
+After deployment, check Tor's logs for `Bootstrapped 100%` and verify the Gatus checks.
+
+## Components
+
 * `torproxy` container: runs Tor itself with a SOCKS5 proxy on port 9050.
 * `torprivoxy` container: runs Privoxy, which acts as an HTTP proxy that forwards requests to SOCKS;
   some applications support HTTP proxies but not SOCKS proxies.

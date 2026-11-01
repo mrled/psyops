@@ -56,12 +56,18 @@ spec:
                 - name: config
                   mountPath: /etc/renovate
                   readOnly: true
+                - name: registry-auth
+                  mountPath: /etc/renovate-registry
+                  readOnly: true
                 - name: work
                   mountPath: /tmp/renovate
           volumes:
             - name: config
               configMap:
                 name: renovate-config
+            - name: registry-auth
+              secret:
+                secretName: registry-k8s-dockerconfigjson
             - name: work
               persistentVolumeClaim:
                 claimName: renovate-work-pvc

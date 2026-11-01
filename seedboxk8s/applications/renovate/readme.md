@@ -27,6 +27,22 @@ kubectl -n renovate get jobs,pods
 kubectl -n renovate describe job "$job"
 ```
 
+## Private Tor image
+
+The renderer resolves `${productionClusterFqdn}` in the Tor image name
+using the reflected `seedboxk8s-config` Secret.
+A regex manager preserves the literal Flux substitution in the manifest
+while looking up the concrete private-registry image.
+Tor image digest pins and updates are eligible for automerge.
+
+The job mounts the reflected `registry-k8s-dockerconfigjson` pull Secret read-only
+and converts its credentials into a Docker `hostRules` entry at runtime.
+The generated `/tmp/renovate-config.json` contains those credentials;
+do not print or publish it.
+No additional Kubernetes API permissions are needed.
+
+See `../tor/readme.md` for the daily image-build schedule.
+
 ## GitHub App credentials
 
 `Secret.renovate-env.yaml` contains encrypted GitHub App credentials.

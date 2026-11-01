@@ -89,6 +89,14 @@ data:
           "automerge": true
         },
         {
+          "description": "Pin and automerge rebuilt Tor proxy images",
+          "matchManagers": ["custom.regex"],
+          "matchDatasources": ["docker"],
+          "matchFileNames": ["seedboxk8s/applications/tor/Deployment.torproxy.yaml"],
+          "pinDigests": true,
+          "automerge": true
+        },
+        {
           "description": "Automerge all Reflector chart updates",
           "matchDatasources": ["helm"],
           "matchPackageNames": ["reflector"],
@@ -238,7 +246,39 @@ data:
       });
     }
 
-    fs.writeFileSync(outputPath, `${JSON.stringify(config, null, 2)}\n`);
+    const registryHost = `registry.${requireEnv("productionClusterFqdn")}`;
+    const dockerConfig = JSON.parse(fs.readFileSync("/etc/renovate-registry/.dockerconfigjson", "utf8"));
+    const registryAuth = Object.entries(dockerConfig.auths || {}).find(
+      ([host]) => host.replace(/^https?:\/\//, "").replace(/\/.*$/, "") === registryHost,
+    )?.[1];
+    if (!registryAuth) {
+      throw new Error(`Registry pull credentials missing for ${registryHost}`);
+    }
+    let { username, password } = registryAuth;
+    if ((!username || !password) && registryAuth.auth) {
+      const decodedAuth = Buffer.from(registryAuth.auth, "base64").toString("utf8");
+      const separator = decodedAuth.indexOf(":");
+      if (separator >= 0) {
+        username = decodedAuth.slice(0, separator);
+        password = decodedAuth.slice(separator + 1);
+      }
+    }
+    if (!username || !password) {
+      throw new Error(`Registry pull credentials are incomplete for ${registryHost}`);
+    }
+    config.hostRules = config.hostRules || [];
+    config.hostRules.push({ hostType: "docker", matchHost: registryHost, username, password });
+    config.customManagers.push({
+      customType: "regex",
+      managerFilePatterns: ["/^seedboxk8s/applications/tor/Deployment\\.torproxy\\.yaml$/"],
+      matchStrings: ["(?<depPrefix>image:\\s*registry\\.\\$\\{productionClusterFqdn\\}/tor/torproxy:)(?<currentValue>[^\\s@]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"],
+      autoReplaceStringTemplate: "{{{depPrefix}}}{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{/if}}",
+      datasourceTemplate: "docker",
+      depNameTemplate: `${registryHost}/tor/torproxy`,
+      versioningTemplate: "docker",
+    });
+
+    fs.writeFileSync(outputPath, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
 
   github-app-token.js: |
     const crypto = require("crypto");
