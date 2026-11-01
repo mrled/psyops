@@ -177,7 +177,7 @@ data:
         {
           "matchDatasources": ["helm"],
           "matchPackageNames": ["topolvm"],
-          "changelogUrl": "https://github.com/topolvm/topolvm/releases"
+          "changelogUrl": "https://github.com/topolvm/topolvm/releases/tag/topolvm-chart-v{{{newVersion}}}"
         },
         {
           "matchPackageNames": ["quay.io/buildah/stable"],
