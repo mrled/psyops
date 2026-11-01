@@ -3,7 +3,8 @@
 UV ?= uv
 
 BETAECAN_ROLE := roles/betaecan
-BETAECAN_PYTHON := $(BETAECAN_ROLE)/files $(BETAECAN_ROLE)/tests
+BETAECAN_TOOL := $(BETAECAN_ROLE)/tools/betaecan
+BETAECAN_PYTHON := $(BETAECAN_ROLE)/files $(BETAECAN_ROLE)/tests $(BETAECAN_TOOL)
 
 .PHONY: help
 help: ## Show available targets
@@ -34,15 +35,17 @@ lint-betaecan: ## Check betaecan role Python lint, formatting, types, and Ansibl
 	$(UV) run --locked ruff format --check $(BETAECAN_PYTHON)
 	$(UV) run --locked ty check --error-on-warning $(BETAECAN_PYTHON)
 	ANSIBLE_VAULT_PASSWORD=$${ANSIBLE_VAULT_PASSWORD:-lint} $(UV) run --locked ansible-lint $(BETAECAN_ROLE)
+	$(UV) lock --check --project $(BETAECAN_TOOL)
 
 .PHONY: format-betaecan
 format-betaecan: ## Format the betaecan role Python sources
 	$(UV) run --locked ruff format $(BETAECAN_PYTHON)
 
 .PHONY: test-betaecan
-test-betaecan: ## Run betaecan cache and backup tests and controller-side smoke tests
+test-betaecan: ## Run betaecan cache, backup, CLI, and controller-side smoke tests
 	$(UV) run --locked python -m unittest discover -s $(BETAECAN_ROLE)/tests -p 'test_*.py'
 	ANSIBLE_VAULT_PASSWORD=$${ANSIBLE_VAULT_PASSWORD:-lint} $(UV) run --locked ansible-playbook -i localhost, $(BETAECAN_ROLE)/tests/render.yml
+	PYTHONPATH="$(abspath $(BETAECAN_TOOL))" $(UV) run --locked python -m unittest discover -s $(BETAECAN_TOOL)/tests -p 'test_*.py'
 
 .PHONY: check-betaecan
 check-betaecan: lint-betaecan test-betaecan ## Run all betaecan role checks

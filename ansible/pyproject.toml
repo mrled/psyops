@@ -24,9 +24,11 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.ty.environment]
 python-version = "3.10"
+extra-paths = ["roles/betaecan/tools/betaecan"]
 
 [tool.ty.src]
 include = [
     "roles/betaecan/files",
     "roles/betaecan/tests",
+    "roles/betaecan/tools/betaecan",
 ]

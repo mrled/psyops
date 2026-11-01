@@ -60,6 +60,37 @@ logout; reboot clears them. Locking the wallet does not clear the cache, and
 clearing the cache does not stop an already-running backup. Protect swap and
 hibernation storage, and keep independent recovery copies of the credentials.
 
+## Browse and restore with betaecan
+
+Run the CLI from the source checkout as the backup user on the backup machine;
+the role does not install it yet.
+Listing jobs needs no credentials; restic commands require an unlocked runtime cache.
+From the repository root:
+
+```sh
+cd ansible/roles/betaecan/tools/betaecan
+uv run --locked betaecan jobs
+uv run --locked betaecan restic home snapshots
+uv run --locked betaecan restic bdphotos snapshots
+uv run --locked betaecan restic home ls latest
+
+# Full restore to an arbitrary directory, retaining the original path hierarchy.
+uv run --locked betaecan restic home restore latest --target /mnt/recovery/full --verify
+
+# Restore only an original snapshot path to a different directory.
+uv run --locked betaecan restic home restore latest --target /mnt/recovery/partial \
+  --include '/home/mrl/Documents' --verify
+```
+
+`betaecan restic JOB ...` loads the job's repository, including its bucket and
+endpoint, and the same runtime credentials used by the backup service.
+Everything after `JOB` goes directly to restic, including `--help`.
+It does not add backup flags, initialize repositories, or apply service mountpoint conditions.
+Restic's output, interactive input, and exit status pass through unchanged.
+
+The default configuration directory is `~/.config/psyops/backup/`.
+Use `betaecan --config-dir /path/to/jobs ...` to select another directory.
+
 ## Browse and restore without the role
 
 Use the original credentials from Vault or your password manager on any machine.

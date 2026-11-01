@@ -1,0 +1,17 @@
+[project]
+name = "betaecan"
+version = "0.1.0"
+description = "Inspect and access backups managed by the betaecan role"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+betaecan = "betaecan:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["betaecan"]
