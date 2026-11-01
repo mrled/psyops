@@ -20,6 +20,15 @@ rules:
   - serviceaccounts
   - services
   verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources:
+  - pods/log
+  verbs: ["get"]
+- apiGroups: ["metrics.k8s.io"]
+  resources:
+  - nodes
+  - pods
+  verbs: ["get", "list"]
 - apiGroups: ["apps"]
   resources:
   - controllerrevisions
