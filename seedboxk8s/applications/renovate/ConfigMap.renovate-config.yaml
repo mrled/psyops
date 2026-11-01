@@ -175,6 +175,11 @@ data:
           "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-ls(?<revision>\\d+)$"
         },
         {
+          "matchDatasources": ["helm"],
+          "matchPackageNames": ["topolvm"],
+          "changelogUrl": "https://github.com/topolvm/topolvm/releases"
+        },
+        {
           "matchPackageNames": ["quay.io/buildah/stable"],
           "changelogUrl": "https://github.com/containers/buildah/releases"
         }
