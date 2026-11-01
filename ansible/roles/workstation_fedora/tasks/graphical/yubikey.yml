@@ -4,6 +4,7 @@
     name:
       - polkit
       - pam-u2f
+      - pamu2fcfg
     state: present
 
 # Preserve any existing local PAM configuration instead of replacing it.
@@ -15,7 +16,7 @@
     force: false
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 # Users enroll their keys separately in ~/.config/Yubico/u2f_keys.
 # Sufficient permits U2F success without removing the password fallback.
@@ -23,4 +24,4 @@
   ansible.builtin.lineinfile:
     path: /etc/pam.d/polkit-1
     insertbefore: BOF
-    line: 'auth sufficient pam_u2f.so authfile=.config/Yubico/u2f_keys openasuser cue userpresence=1'
+    line: "auth sufficient pam_u2f.so authfile=.config/Yubico/u2f_keys openasuser cue userpresence=1"
