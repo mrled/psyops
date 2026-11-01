@@ -115,6 +115,10 @@ data:
           "changelogUrl": "https://github.com/alexta69/metube/releases"
         },
         {
+          "matchPackageNames": ["ghcr.io/bookorbit/bookorbit"],
+          "changelogUrl": "https://github.com/bookorbit/bookorbit/releases"
+        },
+        {
           "matchPackageNames": ["ghcr.io/tautulli/tautulli"],
           "changelogUrl": "https://github.com/Tautulli/Tautulli/releases",
           "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
