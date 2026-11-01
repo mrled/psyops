@@ -1,0 +1,52 @@
+# Apply manually during monitoring-ssd-migration.md, never as part of Flux.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: grafana-ssd-copy
+  namespace: prometheus
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 1800
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      containers:
+        - name: copy
+          image: busybox:1.38.0
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              set -eu
+              test -f /source/grafana.db
+              test ! -e /target/grafana.db
+              cp -a /source/. /target/
+              sync
+              cmp /source/grafana.db /target/grafana.db
+              du -sh /source /target
+              echo "Grafana copy complete; main database matches the stopped source."
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: source
+              mountPath: /source
+              readOnly: true
+            - name: target
+              mountPath: /target
+      volumes:
+        # Keep the CSI volume writable; only the container's source mount is read-only.
+        - name: source
+          persistentVolumeClaim:
+            claimName: kube-prometheus-stack-grafana
+        - name: target
+          persistentVolumeClaim:
+            claimName: kube-prometheus-stack-grafana-fast

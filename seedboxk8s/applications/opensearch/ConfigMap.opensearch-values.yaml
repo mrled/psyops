@@ -66,5 +66,5 @@ data:
 
     persistence:
       enabled: true
-      storageClass: seedbox-slow-mirror
+      storageClass: seedbox-bootdisk-fast-single
       size: 50Gi

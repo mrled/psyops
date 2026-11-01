@@ -1,0 +1,14 @@
+# Replace the old claim only during docs/monitoring-ssd-migration.md.
+# The name matches the claim consumed by the operator-managed StatefulSet.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0
+  namespace: prometheus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: seedbox-bootdisk-fast-single
+  resources:
+    requests:
+      storage: 50Gi

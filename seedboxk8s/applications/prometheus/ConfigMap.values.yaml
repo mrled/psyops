@@ -38,14 +38,10 @@ data:
 
       persistence:
         enabled: true
-        annotations:
-          backup.seedboxk8s.micahrl.com/enabled: "true"
-          backup.seedboxk8s.micahrl.com/flux-kustomization: prometheus
-          backup.seedboxk8s.micahrl.com/keep-daily: "2"
-          backup.seedboxk8s.micahrl.com/keep-weekly: "2"
-          backup.seedboxk8s.micahrl.com/keep-monthly: "8"
-          backup.seedboxk8s.micahrl.com/keep-yearly: "3"
-        storageClassName: seedbox-slow-mirror
+        # This separately managed claim is populated during the SSD migration.
+        # Its manifest owns the backup annotations and retention policy.
+        existingClaim: kube-prometheus-stack-grafana-fast
+        storageClassName: seedbox-bootdisk-fast-single
         size: 10Gi
 
     prometheus:
@@ -54,7 +50,7 @@ data:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: seedbox-slow-mirror
+              storageClassName: seedbox-bootdisk-fast-single
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:

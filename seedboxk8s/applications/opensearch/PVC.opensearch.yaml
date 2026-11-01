@@ -1,0 +1,14 @@
+# Replace the old claim only during docs/monitoring-ssd-migration.md.
+# The name matches the claim consumed by the chart-managed StatefulSet.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: opensearch-cluster-master-opensearch-cluster-master-0
+  namespace: opensearch
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: seedbox-bootdisk-fast-single
+  resources:
+    requests:
+      storage: 50Gi
