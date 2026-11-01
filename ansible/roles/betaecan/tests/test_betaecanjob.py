@@ -38,7 +38,7 @@ sys.exit(int(os.environ.get("RESTIC_MOCK_" + command.upper() + "_STATUS", "0")))
 """
 
 
-class UresticjobTests(unittest.TestCase):
+class BetaecanjobTests(unittest.TestCase):
     """Verify shell-wrapper command routing, credential loading, and exit statuses."""
 
     def setUp(self) -> None:
@@ -50,7 +50,7 @@ class UresticjobTests(unittest.TestCase):
         self.job = self.directory / "backup job"
         self.job.mkdir()
         self.runtime = self.directory / "runtime"
-        self.credentials = self.runtime / "urestic" / self.job.name
+        self.credentials = self.runtime / "betaecan" / self.job.name
         self.credentials.mkdir(parents=True)
         for name, value in {
             "restic.password": "test password\n",

@@ -6,12 +6,12 @@
   gather_facts: false
   become: false
   vars:
-    urestic_user: alice
-    urestic_home: /home/alice
-    urestic_randomized_delay_sec: 15m
-    urestic_job_directory: /home/alice/.config/psyops/backup/job1
-    urestic_unit: urestic@job1
-    urestic_job:
+    betaecan_user: alice
+    betaecan_home: /home/alice
+    betaecan_randomized_delay_sec: 15m
+    betaecan_job_directory: /home/alice/.config/psyops/backup/job1
+    betaecan_unit: betaecan@job1
+    betaecan_job:
       name: job1
       oncalendar: hourly
       paths:
@@ -27,12 +27,12 @@
         - name: Create temporary rendering directory
           ansible.builtin.tempfile:
             state: directory
-          register: urestic_test_directory
+          register: betaecan_test_directory
 
         - name: Render units
           ansible.builtin.template:
             src: "{{ playbook_dir | dirname }}/templates/{{ item }}.j2"
-            dest: "{{ urestic_test_directory.path }}/{{ urestic_unit }}.{{ item }}"
+            dest: "{{ betaecan_test_directory.path }}/{{ betaecan_unit }}.{{ item }}"
             mode: '0600'
           loop: [service, timer]
 
@@ -42,30 +42,30 @@
               - systemd-analyze
               - --user
               - verify
-              - "{{ urestic_test_directory.path }}/{{ urestic_unit }}.service"
-              - "{{ urestic_test_directory.path }}/{{ urestic_unit }}.timer"
+              - "{{ betaecan_test_directory.path }}/{{ betaecan_unit }}.service"
+              - "{{ betaecan_test_directory.path }}/{{ betaecan_unit }}.timer"
           environment:
-            XDG_RUNTIME_DIR: "{{ urestic_test_directory.path }}"
-          register: urestic_test_verify
+            XDG_RUNTIME_DIR: "{{ betaecan_test_directory.path }}"
+          register: betaecan_test_verify
           changed_when: false
           # The helper is deliberately not installed on the controller.
           failed_when: >-
-            urestic_test_verify.stderr_lines
+            betaecan_test_verify.stderr_lines
             | reject('search', 'Command /home/alice/.local/bin/betaecanjob is not executable:')
             | list | length > 0
 
         - name: Read rendered service
           ansible.builtin.slurp:
-            src: "{{ urestic_test_directory.path }}/{{ urestic_unit }}.service"
-          register: urestic_test_service
+            src: "{{ betaecan_test_directory.path }}/{{ betaecan_unit }}.service"
+          register: betaecan_test_service
 
         - name: Check that only required mountpoints guard the backup
           ansible.builtin.assert:
             that:
-              - "(urestic_test_service.content | b64decode).splitlines() | select('match', '^ConditionPathIsMountPoint=') | list == ['ConditionPathIsMountPoint=/mnt/backup disk']"
+              - "(betaecan_test_service.content | b64decode).splitlines() | select('match', '^ConditionPathIsMountPoint=') | list == ['ConditionPathIsMountPoint=/mnt/backup disk']"
       always:
         - name: Remove rendered units
           ansible.builtin.file:
-            path: "{{ urestic_test_directory.path }}"
+            path: "{{ betaecan_test_directory.path }}"
             state: absent
-          when: urestic_test_directory.path is defined
+          when: betaecan_test_directory.path is defined

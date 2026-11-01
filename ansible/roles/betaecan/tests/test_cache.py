@@ -52,7 +52,7 @@ class CacheTests(unittest.TestCase):
         self.addCleanup(backend.stop)
         self.credentials = dict.fromkeys(cache.CREDENTIALS, "DO-NOT-LEAK")
         for name, value in self.credentials.items():
-            self.wallet.values["psyops.urestic.backup", name] = value
+            self.wallet.values["psyops.betaecan.backup", name] = value
 
     def run_cli(self, *args, payload=None):
         """Invoke the CLI while capturing every public output stream."""
@@ -74,7 +74,7 @@ class CacheTests(unittest.TestCase):
         self.credentials["restic.password"] = "updated"
         self.assertEqual(self.run_cli("store", payload=jobs), (0, "changed\n", ""))
         self.assertEqual(
-            self.wallet.writes, [("psyops.urestic.backup", "restic.password", "updated")]
+            self.wallet.writes, [("psyops.betaecan.backup", "restic.password", "updated")]
         )
         self.assertEqual(self.run_cli("store", payload=jobs), (0, "ok\n", ""))
 
@@ -86,7 +86,7 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(len(self.wallet.writes), 3)
         self.assertEqual(
             self.wallet.values,
-            {("psyops.urestic.backup", key): value for key, value in self.credentials.items()},
+            {("psyops.betaecan.backup", key): value for key, value in self.credentials.items()},
         )
 
     def test_backend_is_explicit_secret_service(self):
@@ -99,7 +99,7 @@ class CacheTests(unittest.TestCase):
     def test_unlock_private_and_idempotent(self):
         """Unlock creates private files and leaves identical files untouched."""
         self.assertEqual(self.run_cli("unlock", "backup"), (0, "changed\n", ""))
-        directory = self.root / "urestic" / "backup"
+        directory = self.root / "betaecan" / "backup"
         for path in (directory.parent, directory):
             self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o700)
         snapshots = {}
@@ -117,15 +117,15 @@ class CacheTests(unittest.TestCase):
     def test_directory_permissions_repaired_as_change(self):
         """Repairing directory permissions is also a reported cache change."""
         self.run_cli("unlock", "backup")
-        (self.root / "urestic" / "backup").chmod(0o750)
+        (self.root / "betaecan" / "backup").chmod(0o750)
         self.assertEqual(self.run_cli("unlock", "backup"), (0, "changed\n", ""))
         self.assertEqual(self.run_cli("unlock", "backup"), (0, "ok\n", ""))
 
     def test_wallet_read_failures_preserve_existing_cache(self):
         """All secrets must be read before any runtime file is changed."""
         self.run_cli("unlock", "backup")
-        self.wallet.values["psyops.urestic.backup", "restic.password"] = "new"
-        key = ("psyops.urestic.backup", cache.CREDENTIALS[-1])
+        self.wallet.values["psyops.betaecan.backup", "restic.password"] = "new"
+        key = ("psyops.betaecan.backup", cache.CREDENTIALS[-1])
         del self.wallet.values[key]
         for failure in (None, cache.CREDENTIALS[-1]):
             with self.subTest(failure=failure):
@@ -134,7 +134,7 @@ class CacheTests(unittest.TestCase):
                 self.assertEqual(code, 1)
                 self.assertEqual(output, "")
                 self.assertTrue(error)
-                for path in (self.root / "urestic" / "backup").iterdir():
+                for path in (self.root / "betaecan" / "backup").iterdir():
                     self.assertEqual(path.read_bytes(), b"DO-NOT-LEAK")
 
     def test_missing_runtime_has_no_fallback(self):
@@ -160,7 +160,7 @@ class CacheTests(unittest.TestCase):
     def test_lock_only_selected_job_and_unsafe_names(self):
         """Lock is scoped to one safe basename and is idempotent."""
         self.run_cli("unlock", "backup")
-        other = self.root / "urestic" / "other"
+        other = self.root / "betaecan" / "other"
         other.mkdir()
         (other / "keep").write_text("keep")
         for job in ("..", ".", "../other", "/", "", "a/b"):
@@ -175,7 +175,7 @@ class CacheTests(unittest.TestCase):
         self.run_cli("unlock", "backup")
         self.backend.reset_mock()
         self.assertEqual(self.run_cli("status", "backup"), (0, "unlocked\n", ""))
-        (self.root / "urestic" / "backup" / cache.CREDENTIALS[0]).unlink()
+        (self.root / "betaecan" / "backup" / cache.CREDENTIALS[0]).unlink()
         self.assertEqual(self.run_cli("status", "backup"), (0, "locked\n", ""))
         self.backend.assert_not_called()
 
@@ -183,15 +183,15 @@ class CacheTests(unittest.TestCase):
         """Failed replacement does not leak temporary files or exception text."""
         with patch.object(cache.os, "replace", side_effect=OSError("DO-NOT-LEAK")):
             self.assertEqual(self.run_cli("unlock", "backup")[0], 1)
-        self.assertEqual(list((self.root / "urestic" / "backup").iterdir()), [])
+        self.assertEqual(list((self.root / "betaecan" / "backup").iterdir()), [])
 
     def test_symlink_job_does_not_touch_target(self):
         """Cache operations never follow a job-directory symlink."""
-        (self.root / "urestic").mkdir(mode=0o700)
+        (self.root / "betaecan").mkdir(mode=0o700)
         target = self.root / "outside"
         target.mkdir()
         (target / "keep").write_text("keep")
-        (self.root / "urestic" / "backup").symlink_to(target, target_is_directory=True)
+        (self.root / "betaecan" / "backup").symlink_to(target, target_is_directory=True)
         for command in ("unlock", "lock"):
             self.assertEqual(self.run_cli(command, "backup")[0], 1)
         self.assertEqual((target / "keep").read_text(), "keep")

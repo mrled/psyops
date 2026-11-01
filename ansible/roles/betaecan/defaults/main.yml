@@ -1,6 +1,6 @@
 ---
 # Required: an existing local account. Services run with this user's permissions.
-urestic_user: ""
-urestic_jobs: []
+betaecan_user: ""
+betaecan_jobs: []
 
-urestic_randomized_delay_sec: 15m
+betaecan_randomized_delay_sec: 15m

@@ -27,16 +27,16 @@ http_backchannel_aws_secret_access_key: "{{ vault_http_backchannel_aws_secret_ac
 http_backchannel_subdomain_ports:
   ellipsis: 35477
 
-# Define these four vault_urestic_home_* values in this host's encrypted vault.yml.
+# Define the referenced secrets in this host's encrypted vault.yml.
 # Use a dedicated repository/prefix and appropriately scoped S3 credentials.
-urestic_user: mrl
-urestic_jobs:
+betaecan_user: mrl
+betaecan_jobs:
   - name: home
     oncalendar: hourly
     repository: "s3:s3.us-central-1.wasabisys.com/micahrl-nullyork-urestic-backups/home"
-    password: "{{ vault_urestic_home_password }}"
-    aws_access_key_id: "{{ vault_urestic_aws_access_key_id }}"
-    aws_secret_access_key: "{{ vault_urestic_aws_secret_access_key }}"
+    password: "{{ vault_betaecan_home_password }}"
+    aws_access_key_id: "{{ vault_betaecan_aws_access_key_id }}"
+    aws_secret_access_key: "{{ vault_betaecan_aws_secret_access_key }}"
     paths:
       /home/mrl:
     excludes:
@@ -64,9 +64,9 @@ urestic_jobs:
   - name: bdphotos
     oncalendar: hourly
     repository: "s3:s3.us-central-1.wasabisys.com/micahrl-nullyork-urestic-backups/bdphotos"
-    password: "{{ vault_urestic_bdphotos_password }}"
-    aws_access_key_id: "{{ vault_urestic_aws_access_key_id }}"
-    aws_secret_access_key: "{{ vault_urestic_aws_secret_access_key }}"
+    password: "{{ vault_betaecan_bdphotos_password }}"
+    aws_access_key_id: "{{ vault_betaecan_aws_access_key_id }}"
+    aws_secret_access_key: "{{ vault_betaecan_aws_secret_access_key }}"
     paths:
       /run/media/mrl/bdphotos:
         mountpoint: true

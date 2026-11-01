@@ -2,27 +2,27 @@
 - name: Require unique job names
   ansible.builtin.assert:
     that:
-      - urestic_jobs | map(attribute='name') | unique(case_sensitive=true) | length == urestic_jobs | length
+      - betaecan_jobs | map(attribute='name') | unique(case_sensitive=true) | length == betaecan_jobs | length
     fail_msg: Backup jobs must have unique names.
 
 - name: Validate backup jobs before making changes
   ansible.builtin.include_tasks: validate_job.yml
-  loop: "{{ urestic_jobs }}"
+  loop: "{{ betaecan_jobs }}"
   loop_control:
-    loop_var: urestic_job
-    label: "{{ urestic_job.name }}"
+    loop_var: betaecan_job
+    label: "{{ betaecan_job.name }}"
 
 - name: Look up the backup account
   ansible.builtin.getent:
     database: passwd
-    key: "{{ urestic_user }}"
+    key: "{{ betaecan_user }}"
 
 - name: Set account paths
   ansible.builtin.set_fact:
-    urestic_home: "{{ ansible_facts.getent_passwd[urestic_user][4] }}"
-    urestic_group: "{{ ansible_facts.getent_passwd[urestic_user][2] }}"
-    urestic_uid: "{{ ansible_facts.getent_passwd[urestic_user][1] }}"
-    urestic_user_unit_directory: "{{ ansible_facts.getent_passwd[urestic_user][4] }}/.config/systemd/user"
+    betaecan_home: "{{ ansible_facts.getent_passwd[betaecan_user][4] }}"
+    betaecan_group: "{{ ansible_facts.getent_passwd[betaecan_user][2] }}"
+    betaecan_uid: "{{ ansible_facts.getent_passwd[betaecan_user][1] }}"
+    betaecan_user_unit_directory: "{{ ansible_facts.getent_passwd[betaecan_user][4] }}/.config/systemd/user"
 
 - name: Install backup prerequisites
   ansible.builtin.package:
@@ -37,44 +37,44 @@
 
 - name: Keep the user manager running without an interactive login
   ansible.builtin.command:
-    argv: [loginctl, enable-linger, "{{ urestic_user }}"]
-    creates: "/var/lib/systemd/linger/{{ urestic_user }}"
-  when: urestic_jobs | length > 0
+    argv: [loginctl, enable-linger, "{{ betaecan_user }}"]
+    creates: "/var/lib/systemd/linger/{{ betaecan_user }}"
+  when: betaecan_jobs | length > 0
 
 - name: Start the user manager
   ansible.builtin.systemd_service:
-    name: "user@{{ urestic_uid }}.service"
+    name: "user@{{ betaecan_uid }}.service"
     state: started
-  when: urestic_jobs | length > 0
+  when: betaecan_jobs | length > 0
 
 - name: Prepare shared configuration on the controller
   ansible.builtin.set_fact:
-    urestic_directories:
-      - path: "{{ urestic_home }}/.local/bin"
-        owner: "{{ urestic_user }}"
-        group: "{{ urestic_group }}"
+    betaecan_directories:
+      - path: "{{ betaecan_home }}/.local/bin"
+        owner: "{{ betaecan_user }}"
+        group: "{{ betaecan_group }}"
         mode: "0755"
-      - path: "{{ urestic_user_unit_directory }}"
-        owner: "{{ urestic_user }}"
-        group: "{{ urestic_group }}"
+      - path: "{{ betaecan_user_unit_directory }}"
+        owner: "{{ betaecan_user }}"
+        group: "{{ betaecan_group }}"
         mode: "0700"
-    urestic_files: []
-    urestic_configured_jobs: []
-    urestic_units: []
+    betaecan_files: []
+    betaecan_configured_jobs: []
+    betaecan_units: []
 
 - name: Render each backup job on the controller
   ansible.builtin.include_tasks: job.yml
-  loop: "{{ urestic_jobs }}"
+  loop: "{{ betaecan_jobs }}"
   loop_control:
-    loop_var: urestic_job
-    label: "{{ urestic_job.name }}"
+    loop_var: betaecan_job
+    label: "{{ betaecan_job.name }}"
 
 - name: Configure backups as the backup user
   become: true
-  become_user: "{{ urestic_user }}"
+  become_user: "{{ betaecan_user }}"
   environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ urestic_uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ urestic_uid }}/bus"
+    XDG_RUNTIME_DIR: "/run/user/{{ betaecan_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ betaecan_uid }}/bus"
   block:
     - name: Create leaf directories and any missing parents
       ansible.builtin.file:
@@ -83,14 +83,14 @@
         group: "{{ item.group }}"
         mode: "{{ item.mode }}"
         state: directory
-      loop: "{{ urestic_directories }}"
+      loop: "{{ betaecan_directories }}"
       loop_control:
         label: "{{ item.path }}"
 
     - name: Install backup and credential cache commands
       ansible.builtin.copy:
         src: "{{ item.src }}"
-        dest: "{{ urestic_home }}/.local/bin/{{ item.dest }}"
+        dest: "{{ betaecan_home }}/.local/bin/{{ item.dest }}"
         mode: "0755"
       loop:
         - {src: betaecanjob, dest: betaecanjob}
@@ -103,35 +103,35 @@
         owner: "{{ item.owner }}"
         group: "{{ item.group }}"
         mode: "{{ item.mode }}"
-      loop: "{{ urestic_files }}"
+      loop: "{{ betaecan_files }}"
       loop_control:
         label: "{{ item.path }}"
-      register: urestic_copies
+      register: betaecan_copies
 
     - name: Store job credentials in the desktop wallet
       ansible.builtin.command:
-        argv: ["{{ urestic_home }}/.local/bin/betaecancache", store]
-        stdin: "{{ urestic_configured_jobs | to_json }}"
+        argv: ["{{ betaecan_home }}/.local/bin/betaecancache", store]
+        stdin: "{{ betaecan_configured_jobs | to_json }}"
         stdin_add_newline: false
-      register: urestic_wallet_store
-      changed_when: urestic_wallet_store.stdout | default('') == 'changed'
-      when: urestic_jobs | length > 0
+      register: betaecan_wallet_store
+      changed_when: betaecan_wallet_store.stdout | default('') == 'changed'
+      when: betaecan_jobs | length > 0
       no_log: true
 
     - name: Populate each job's runtime credential cache
       ansible.builtin.command:
-        argv: ["{{ urestic_home }}/.local/bin/betaecancache", unlock, "{{ item.name }}"]
-      register: urestic_cache_unlock
-      changed_when: urestic_cache_unlock.stdout | default('') == 'changed'
-      loop: "{{ urestic_jobs }}"
+        argv: ["{{ betaecan_home }}/.local/bin/betaecancache", unlock, "{{ item.name }}"]
+      register: betaecan_cache_unlock
+      changed_when: betaecan_cache_unlock.stdout | default('') == 'changed'
+      loop: "{{ betaecan_jobs }}"
       loop_control:
         label: "{{ item.name }}"
       no_log: true
 
     - name: Identify changed units on the controller
       ansible.builtin.set_fact:
-        urestic_changed_units: >-
-          {{ urestic_copies.results | default([]) | selectattr('changed')
+        betaecan_changed_units: >-
+          {{ betaecan_copies.results | default([]) | selectattr('changed')
              | selectattr('item.unit', 'defined') | map(attribute='item.unit') | unique | list }}
 
     # Reload once, even after a previous run failed after copying units.
@@ -139,12 +139,12 @@
       ansible.builtin.systemd_service:
         scope: user
         daemon_reload: true
-      when: urestic_units | length > 0
+      when: betaecan_units | length > 0
 
     - name: Enable and start backup timers, restarting those with changed units
       ansible.builtin.systemd_service:
         scope: user
         name: "{{ item }}.timer"
         enabled: true
-        state: "{{ 'restarted' if item in urestic_changed_units else 'started' }}"
-      loop: "{{ urestic_units }}"
+        state: "{{ 'restarted' if item in betaecan_changed_units else 'started' }}"
+      loop: "{{ betaecan_units }}"

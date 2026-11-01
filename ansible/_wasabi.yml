@@ -16,4 +16,4 @@
       wasabi_prefix: NullYorkURestic
       wasabi_rw_users:
         - NullYorkUResticBackupUser
-      tags: nullyork_urestic
+      tags: nullyork_betaecan

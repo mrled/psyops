@@ -2,35 +2,35 @@
 # These tasks only build module arguments; none opens a connection to the target.
 - name: Collect job configuration and render units locally
   ansible.builtin.set_fact:
-    urestic_directories: >-
-      {{ urestic_directories + [
-        {'path': urestic_job_directory,
-         'owner': urestic_user, 'group': urestic_group, 'mode': '0700'}] }}
-    urestic_files: "{{ urestic_files + [
-        {'path': urestic_job_directory ~ '/restic.paths',
-         'content': (urestic_job.paths.keys() | list | join('\n')) ~ '\n',
-         'owner': urestic_user, 'group': urestic_group, 'mode': '0600'},
-        {'path': urestic_job_directory ~ '/restic.excludes',
-         'content': (urestic_job.excludes | default([]) | join('\n')) ~ '\n',
-         'owner': urestic_user, 'group': urestic_group, 'mode': '0600'},
-        {'path': urestic_job_directory ~ '/restic.repository',
-         'content': urestic_job.repository ~ '\n',
-         'owner': urestic_user, 'group': urestic_group, 'mode': '0600'},
-        {'path': urestic_user_unit_directory ~ '/' ~ urestic_unit ~ '.service', 'unit': urestic_unit,
+    betaecan_directories: >-
+      {{ betaecan_directories + [
+        {'path': betaecan_job_directory,
+         'owner': betaecan_user, 'group': betaecan_group, 'mode': '0700'}] }}
+    betaecan_files: "{{ betaecan_files + [
+        {'path': betaecan_job_directory ~ '/restic.paths',
+         'content': (betaecan_job.paths.keys() | list | join('\n')) ~ '\n',
+         'owner': betaecan_user, 'group': betaecan_group, 'mode': '0600'},
+        {'path': betaecan_job_directory ~ '/restic.excludes',
+         'content': (betaecan_job.excludes | default([]) | join('\n')) ~ '\n',
+         'owner': betaecan_user, 'group': betaecan_group, 'mode': '0600'},
+        {'path': betaecan_job_directory ~ '/restic.repository',
+         'content': betaecan_job.repository ~ '\n',
+         'owner': betaecan_user, 'group': betaecan_group, 'mode': '0600'},
+        {'path': betaecan_user_unit_directory ~ '/' ~ betaecan_unit ~ '.service', 'unit': betaecan_unit,
          'content': lookup('ansible.builtin.template', role_path ~ '/templates/service.j2'),
-         'owner': urestic_user, 'group': urestic_group, 'mode': '0644'},
-        {'path': urestic_user_unit_directory ~ '/' ~ urestic_unit ~ '.timer', 'unit': urestic_unit,
+         'owner': betaecan_user, 'group': betaecan_group, 'mode': '0644'},
+        {'path': betaecan_user_unit_directory ~ '/' ~ betaecan_unit ~ '.timer', 'unit': betaecan_unit,
          'content': lookup('ansible.builtin.template', role_path ~ '/templates/timer.j2'),
-         'owner': urestic_user, 'group': urestic_group, 'mode': '0644'}] }}"
-    urestic_configured_jobs: >-
-      {{ urestic_configured_jobs + [
-        {'name': urestic_job.name,
+         'owner': betaecan_user, 'group': betaecan_group, 'mode': '0644'}] }}"
+    betaecan_configured_jobs: >-
+      {{ betaecan_configured_jobs + [
+        {'name': betaecan_job.name,
          'credentials': {
-           'restic.password': urestic_job.password,
-           'aws.access-key-id': urestic_job.aws_access_key_id,
-           'aws.secret-access-key': urestic_job.aws_secret_access_key}}] }}
-    urestic_units: "{{ urestic_units + [urestic_unit] }}"
+           'restic.password': betaecan_job.password,
+           'aws.access-key-id': betaecan_job.aws_access_key_id,
+           'aws.secret-access-key': betaecan_job.aws_secret_access_key}}] }}
+    betaecan_units: "{{ betaecan_units + [betaecan_unit] }}"
   vars:
-    urestic_job_directory: "{{ urestic_home }}/.config/psyops/backup/{{ urestic_job.name }}"
-    urestic_unit: "urestic@{{ urestic_job.name }}"
+    betaecan_job_directory: "{{ betaecan_home }}/.config/psyops/backup/{{ betaecan_job.name }}"
+    betaecan_unit: "betaecan@{{ betaecan_job.name }}"
   no_log: true

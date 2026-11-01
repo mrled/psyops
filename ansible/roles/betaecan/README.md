@@ -1,4 +1,7 @@
-# urestic
+# betaecan
+
+Named after Old English [*betǽcan*](https://bosworthtoller.com/40205):
+“to entrust” or “to put in a place for storage.”
 
 Scheduled personal-data backups to S3-compatible storage using restic user services.
 Requires Linux, restic 0.17+, and a Secret Service-compatible desktop wallet.
@@ -11,8 +14,8 @@ The role installs packages and enables user lingering; job setup runs as the use
 Keep secrets in Ansible Vault:
 
 ```yaml
-urestic_user: alice
-urestic_jobs:
+betaecan_user: alice
+betaecan_jobs:
   - name: job1
     oncalendar: '*-*-* 02:00:00'
     repository: s3:https://s3.example.com/my-bucket/alice/job1
@@ -33,7 +36,7 @@ and default to a randomized delay of 15 minutes. Missing repositories are initia
 automatically only on restic exit code 10; other errors stop the backup.
 
 Job files live under `~/.config/psyops/backup/JOB/`; Ansible overwrites local edits.
-Units live in `~/.config/systemd/user/`, named `urestic@JOB.service` and `.timer`.
+Units live in `~/.config/systemd/user/`, named `betaecan@JOB.service` and `.timer`.
 Commands are installed in `~/.local/bin/`.
 
 ## Unlocking and status
@@ -45,13 +48,13 @@ promptly if it is unavailable; they never prompt for wallet access.
 ```sh
 ~/.local/bin/betaecancache unlock job1  # Use home on nullyork; may prompt for the wallet.
 ~/.local/bin/betaecancache status job1
-systemctl --user list-timers --all 'urestic@*'
-systemctl --user start urestic@job1.service
-journalctl --user -u urestic@job1.service
+systemctl --user list-timers --all 'betaecan@*'
+systemctl --user start betaecan@job1.service
+journalctl --user -u betaecan@job1.service
 ~/.local/bin/betaecancache lock job1    # Clear this job's cached credentials.
 ```
 
-Cache files are plaintext under `$XDG_RUNTIME_DIR/urestic/JOB/`, with directories
+Cache files are plaintext under `$XDG_RUNTIME_DIR/betaecan/JOB/`, with directories
 `0700` and files `0600`. Lingering keeps them available through screen lock and
 logout; reboot clears them. Locking the wallet does not clear the cache, and
 clearing the cache does not stop an already-running backup. Protect swap and
@@ -94,7 +97,7 @@ unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY RESTIC_PASSWORD RESTIC_REPOSITORY
 ```sh
 cd ansible
 uv sync --locked
-make check-urestic
+make check-betaecan
 ```
 
 Tests use a fake wallet; desktop wallet access and backup/restore need target-host testing.

@@ -1,7 +1,7 @@
-# Managed by Ansible: urestic
+# Managed by Ansible: betaecan
 [Unit]
-Description=Restic backup for {{ urestic_user }} ({{ urestic_job.name }})
-{% for path, options in urestic_job.paths.items() %}
+Description=Restic backup for {{ betaecan_user }} ({{ betaecan_job.name }})
+{% for path, options in betaecan_job.paths.items() %}
 {% if options is mapping and options.mountpoint | default(false) %}
 ConditionPathIsMountPoint={{ path }}
 {% endif %}
@@ -10,7 +10,7 @@ ConditionPathIsMountPoint={{ path }}
 [Service]
 Type=oneshot
 UMask=0077
-Environment="HOME={{ urestic_home }}"
-ExecStart={{ urestic_home }}/.local/bin/betaecanjob "{{ urestic_job_directory }}" backup
+Environment="HOME={{ betaecan_home }}"
+ExecStart={{ betaecan_home }}/.local/bin/betaecanjob "{{ betaecan_job_directory }}" backup
 TimeoutStartSec=infinity
 NoNewPrivileges=true

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Installed by the urestic Ansible role.
+# Installed by the betaecan Ansible role.
 """Store credentials in the desktop wallet and cache them in the user's runtime directory."""
 
 import json
@@ -54,7 +54,7 @@ def cache_directory(root: Path, job: str, create: bool = False) -> tuple[Path, b
     """Check cache directories without following symlinks, optionally creating them."""
     directory = root
     changed = False
-    for part in ("urestic", job):
+    for part in ("betaecan", job):
         directory = directory / part
         if create:
             try:
@@ -66,7 +66,7 @@ def cache_directory(root: Path, job: str, create: bool = False) -> tuple[Path, b
             info = directory.lstat()
         except FileNotFoundError:
             if not create:
-                return root / "urestic" / job, changed
+                return root / "betaecan" / job, changed
             raise
         if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid():
             raise CacheError("Cache directory must be an owned directory, not a symlink")
@@ -100,7 +100,7 @@ def store(payload: object) -> bool:
         wallet = wallet_backend()
         for job, credentials in jobs:
             for filename, value in credentials.items():
-                service = f"psyops.urestic.{job}"
+                service = f"psyops.betaecan.{job}"
                 if wallet.get_password(service, filename) != value:
                     wallet.set_password(service, filename, value)
                     changed = True
@@ -145,7 +145,7 @@ def unlock(root: Path, job: str) -> bool:
     try:
         wallet = wallet_backend()
         for filename in CREDENTIALS:
-            value = wallet.get_password(f"psyops.urestic.{job}", filename)
+            value = wallet.get_password(f"psyops.betaecan.{job}", filename)
             if value is None:
                 raise CacheError("Wallet is missing a required credential; run store first")
             values[filename] = value.encode("utf-8")
