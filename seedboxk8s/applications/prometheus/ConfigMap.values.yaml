@@ -19,6 +19,9 @@ data:
 
       # Auth proxy - trusts Remote-User set by Authelia.
       grafana.ini:
+        database:
+          wal: true
+          query_retries: 3
         server:
           root_url: https://grafana.${productionClusterFqdn}
         auth.proxy:
