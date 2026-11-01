@@ -61,6 +61,7 @@ betaecan_jobs:
       - "*.py[co]"
       - .DS_Store
       - "*.hordcofa"
+      - "*.iso"
   - name: bdphotos
     oncalendar: hourly
     repository: "s3:s3.us-central-1.wasabisys.com/micahrl-nullyork-urestic-backups/bdphotos"
