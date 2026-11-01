@@ -162,8 +162,27 @@ flux reconcile helmrelease opensearch -n opensearch
 kubectl -n opensearch rollout status statefulset/opensearch-cluster-master --timeout=10m
 ```
 
-Check OpenSearch API health before starting Dashboards:
-no unassigned primary shards (yellow from unassigned replicas is acceptable).
+Check OpenSearch using its mounted admin certificate (no password required).
+This connects locally while verifying the server certificate against its CA:
+
+```sh
+os_get() {
+    kubectl -n opensearch exec opensearch-cluster-master-0 -c opensearch -- \
+        curl --fail --silent --show-error --connect-timeout 5 --max-time 75 \
+        --cacert /usr/share/opensearch/config/tls/ca.crt \
+        --cert /usr/share/opensearch/config/admin-tls/tls.crt \
+        --key /usr/share/opensearch/config/admin-tls/tls.key \
+        --resolve opensearch-cluster-master:9200:127.0.0.1 \
+        "https://opensearch-cluster-master:9200$1"
+}
+os_get '/_cluster/health?wait_for_status=yellow&timeout=60s&pretty'
+os_get '/_cat/shards?v'
+```
+
+Proceed when `timed_out` is false and status is `green` or `yellow`.
+In the shard table, no primary (`p`) may be `UNASSIGNED` or still `INITIALIZING`;
+unassigned replicas (`r`) are expected on a single node.
+On HTTP/authentication errors, red health, or timeout, stop and inspect OpenSearch logs.
 Investigate security-init failures rather than blindly reapplying security configuration.
 
 ```sh
