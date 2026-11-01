@@ -1,4 +1,4 @@
-"""Exercise the real uresticjob shell script without restic or system credentials."""
+"""Exercise the real betaecanjob shell script without restic or system credentials."""
 
 import json
 import os
@@ -43,7 +43,7 @@ class UresticjobTests(unittest.TestCase):
 
     def setUp(self) -> None:
         """Build isolated credentials, job files, and a wrapper using a logging fake restic."""
-        temporary = tempfile.TemporaryDirectory(prefix="uresticjob-")
+        temporary = tempfile.TemporaryDirectory(prefix="betaecanjob-")
         self.addCleanup(temporary.cleanup)
         self.directory = Path(temporary.name)
         # Spaces exercise quoting of both executable and configuration paths.
@@ -64,8 +64,8 @@ class UresticjobTests(unittest.TestCase):
         fake = self.directory / "fake restic"
         fake.write_text(f"#!{sys.executable}\n" + FAKE_RESTIC)
         fake.chmod(0o700)
-        source = Path(__file__).resolve().parents[1] / "files" / "uresticjob"
-        self.script = self.directory / "uresticjob"
+        source = Path(__file__).resolve().parents[1] / "files" / "betaecanjob"
+        self.script = self.directory / "betaecanjob"
         # The only source transformation is redirecting the absolute executable.
         self.script.write_text(source.read_text().replace("/usr/bin/restic", f'"{fake}"'))
         self.log = self.directory / "restic.jsonl"

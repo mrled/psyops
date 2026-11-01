@@ -43,12 +43,12 @@ cache. After reboot, log in and unlock again. Backups read only that cache and f
 promptly if it is unavailable; they never prompt for wallet access.
 
 ```sh
-~/.local/bin/uresticcache unlock job1  # Use home on nullyork; may prompt for the wallet.
-~/.local/bin/uresticcache status job1
+~/.local/bin/betaecancache unlock job1  # Use home on nullyork; may prompt for the wallet.
+~/.local/bin/betaecancache status job1
 systemctl --user list-timers --all 'urestic@*'
 systemctl --user start urestic@job1.service
 journalctl --user -u urestic@job1.service
-~/.local/bin/uresticcache lock job1    # Clear this job's cached credentials.
+~/.local/bin/betaecancache lock job1    # Clear this job's cached credentials.
 ```
 
 Cache files are plaintext under `$XDG_RUNTIME_DIR/urestic/JOB/`, with directories

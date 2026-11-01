@@ -27,6 +27,6 @@ python-version = "3.10"
 
 [tool.ty.src]
 include = [
-    "roles/urestic/files",
-    "roles/urestic/tests",
+    "roles/betaecan/files",
+    "roles/betaecan/tests",
 ]

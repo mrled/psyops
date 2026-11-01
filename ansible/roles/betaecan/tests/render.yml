@@ -51,7 +51,7 @@
           # The helper is deliberately not installed on the controller.
           failed_when: >-
             urestic_test_verify.stderr_lines
-            | reject('search', 'Command /home/alice/.local/bin/uresticjob is not executable:')
+            | reject('search', 'Command /home/alice/.local/bin/betaecanjob is not executable:')
             | list | length > 0
 
         - name: Read rendered service

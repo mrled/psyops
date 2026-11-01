@@ -2,7 +2,7 @@
 
 UV ?= uv
 
-URESTIC_ROLE := roles/urestic
+URESTIC_ROLE := roles/betaecan
 URESTIC_PYTHON := $(URESTIC_ROLE)/files $(URESTIC_ROLE)/tests
 
 .PHONY: help

@@ -11,6 +11,6 @@ ConditionPathIsMountPoint={{ path }}
 Type=oneshot
 UMask=0077
 Environment="HOME={{ urestic_home }}"
-ExecStart={{ urestic_home }}/.local/bin/uresticjob "{{ urestic_job_directory }}" backup
+ExecStart={{ urestic_home }}/.local/bin/betaecanjob "{{ urestic_job_directory }}" backup
 TimeoutStartSec=infinity
 NoNewPrivileges=true

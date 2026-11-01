@@ -93,8 +93,8 @@
         dest: "{{ urestic_home }}/.local/bin/{{ item.dest }}"
         mode: "0755"
       loop:
-        - {src: uresticjob, dest: uresticjob}
-        - {src: uresticcache.py, dest: uresticcache}
+        - {src: betaecanjob, dest: betaecanjob}
+        - {src: betaecancache.py, dest: betaecancache}
 
     - name: Install job configuration and rendered units
       ansible.builtin.copy:
@@ -110,7 +110,7 @@
 
     - name: Store job credentials in the desktop wallet
       ansible.builtin.command:
-        argv: ["{{ urestic_home }}/.local/bin/uresticcache", store]
+        argv: ["{{ urestic_home }}/.local/bin/betaecancache", store]
         stdin: "{{ urestic_configured_jobs | to_json }}"
         stdin_add_newline: false
       register: urestic_wallet_store
@@ -120,7 +120,7 @@
 
     - name: Populate each job's runtime credential cache
       ansible.builtin.command:
-        argv: ["{{ urestic_home }}/.local/bin/uresticcache", unlock, "{{ item.name }}"]
+        argv: ["{{ urestic_home }}/.local/bin/betaecancache", unlock, "{{ item.name }}"]
       register: urestic_cache_unlock
       changed_when: urestic_cache_unlock.stdout | default('') == 'changed'
       loop: "{{ urestic_jobs }}"

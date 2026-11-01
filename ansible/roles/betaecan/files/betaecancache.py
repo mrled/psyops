@@ -190,13 +190,13 @@ def main(argv: list[str] | None = None) -> int:
                 if changed:
                     shutil.rmtree(directory)
         else:
-            raise CacheError("Usage: uresticcache store | {unlock,lock,status} JOB")
+            raise CacheError("Usage: betaecancache store | {unlock,lock,status} JOB")
         print("changed" if changed else "ok")
         return 0
     except CacheError as error:
-        print(f"uresticcache: {error}", file=sys.stderr)
+        print(f"betaecancache: {error}", file=sys.stderr)
     except Exception:
-        print("uresticcache: operation failed; check runtime directory access", file=sys.stderr)
+        print("betaecancache: operation failed; check runtime directory access", file=sys.stderr)
     return 1
 
 

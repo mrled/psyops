@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from roles.urestic.files import uresticcache as cache
+from roles.betaecan.files import betaecancache as cache
 
 
 class FakeWallet:
