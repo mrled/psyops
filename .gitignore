@@ -7,3 +7,5 @@ artifacts/
 .aider*
 .env
 .ansible
+tmp
+
