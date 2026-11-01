@@ -70,6 +70,7 @@ data:
             "quay.io/buildah/stable",
             "ghcr.io/linuxserver/lazylibrarian",
             "ghcr.io/gethomepage/homepage",
+            "ghcr.io/twin/gatus",
             "plexinc/pms-docker",
             "ghcr.io/tautulli/tautulli",
             "traefik/whoami"

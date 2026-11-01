@@ -1,0 +1,27 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gatus
+  namespace: gatus
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Gatus
+    gethomepage.dev/icon: gatus.png
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/href: https://gatus.${productionClusterFqdn}
+spec:
+  ingressClassName: traefik-tailscale
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`gatus.${productionClusterFqdn}`)
+      kind: Rule
+      services:
+        - name: gatus
+          kind: Service
+          port: 80
+      middlewares:
+        - name: authelia
+          namespace: authelia
+  tls:
+    secretName: seedbox-wildcard-backing-secret

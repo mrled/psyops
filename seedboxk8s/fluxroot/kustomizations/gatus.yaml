@@ -1,0 +1,26 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gatus
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: /seedboxk8s/applications/gatus
+  prune: true
+  timeout: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: fluxcfg
+    - name: topolvm
+    - name: tor
+    - name: authelia
+    - name: traefik-00-base
+    - name: cert-manager-config
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: seedboxk8s-config
+      - kind: ConfigMap
+        name: seedboxk8s-config

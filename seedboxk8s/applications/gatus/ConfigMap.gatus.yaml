@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatus-config
+  namespace: gatus
+data:
+  config.yaml: |
+    storage:
+      type: sqlite
+      path: /data/gatus.db
+    endpoints:
+      - name: Tor exit
+        group: Infrastructure
+        url: https://check.torproject.org/api/ip
+        interval: 5m
+        client:
+          proxy-url: http://torprivoxy.tor:8118
+          timeout: 60s
+        conditions:
+          - '[STATUS] == 200'
+          - '[BODY].IsTor == true'

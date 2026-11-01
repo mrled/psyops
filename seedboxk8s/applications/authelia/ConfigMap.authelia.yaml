@@ -119,6 +119,7 @@ data:
             - shhh.${productionClusterFqdn}
             - tautulli.${productionClusterFqdn}
             - transmission.${productionClusterFqdn}
+            - gatus.${productionClusterFqdn}
             - traefik-localnet.${productionClusterFqdn}
             - traefik-tailscale.${productionClusterFqdn}
             - whoami.${productionClusterFqdn}

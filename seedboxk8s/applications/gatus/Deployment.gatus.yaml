@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gatus
+  namespace: gatus
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gatus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gatus
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        # Upstream's scratch image defaults to root; explicitly use a non-root UID.
+        runAsUser: 65532
+        runAsGroup: 65532
+        runAsNonRoot: true
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        # https://github.com/TwiN/gatus/releases/tag/v5.38.0
+        - name: gatus
+          image: ghcr.io/twin/gatus:v5.38.0
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: TZ
+              value: ${timezone}
+            # File path follows ConfigMap symlink updates for upstream's mtime check.
+            - name: GATUS_CONFIG_PATH
+              value: /config/config.yaml
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: gatus-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: gatus-data-pvc
+        - name: tmp
+          emptyDir: {}
