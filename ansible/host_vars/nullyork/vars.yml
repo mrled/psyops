@@ -35,8 +35,8 @@ urestic_jobs:
     oncalendar: hourly
     repository: "s3:s3.us-central-1.wasabisys.com/micahrl-nullyork-urestic-backups/home"
     password: "{{ vault_urestic_home_password }}"
-    aws_access_key_id: "{{ vault_urestic_home_aws_access_key_id }}"
-    aws_secret_access_key: "{{ vault_urestic_home_aws_secret_access_key }}"
+    aws_access_key_id: "{{ vault_urestic_aws_access_key_id }}"
+    aws_secret_access_key: "{{ vault_urestic_aws_secret_access_key }}"
     paths:
       /home/mrl:
     excludes:
@@ -61,3 +61,4 @@ urestic_jobs:
       - "*.py[co]"
       - .DS_Store
       - "*.hordcofa"
+  - name: bdphotos
