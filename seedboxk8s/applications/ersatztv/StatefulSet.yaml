@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ghcr.io/ersatztv/legacy:develop@sha256:2e0c48e9d186cd9023103c11fde237e3d7d38bd9ea4097cd6c097df34acda40d
+        - image: ghcr.io/ersatztv/legacy:develop@sha256:0613514831a6ba990f8ec125a087796079b01a18130857d75bb87a8dd501f04b
           name: ersatztv
           ports:
             - containerPort: 8409
