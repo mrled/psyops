@@ -1,8 +1,10 @@
 # Intel GPU device plugin
 
 Deploys Intel's GPU device plugin on the Kubernetes node.
-The kubelet socket hostPath uses k0s's `/var/lib/k0s/kubelet` root,
-while the container mount retains the upstream path.
+The device-plugin socket directory is `/var/lib/kubelet/device-plugins`
+on both the host and in the container.
+Kubernetes fixes this path independently of kubelet's root directory;
+k0s's `/var/lib/k0s/kubelet` root applies to CSI paths, not this API.
 The integrated GPU is exposed as two shared `gpu.intel.com/i915` allocations.
 Sharing grants concurrent access, not GPU performance or memory isolation.
 

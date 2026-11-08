@@ -83,8 +83,9 @@ spec:
             type: Directory
         - name: kubeletsockets
           hostPath:
-            # k0s uses a non-default kubelet root directory.
-            path: /var/lib/k0s/kubelet/device-plugins
+            # Device-plugin sockets use this fixed path, even with k0s's
+            # non-default kubelet root directory (unlike CSI sockets).
+            path: /var/lib/kubelet/device-plugins
             type: Directory
         - name: cdipath
           hostPath:
