@@ -15,6 +15,7 @@ spec:
     - name: fluxcfg
     - name: topolvm
     - name: tortuga
+    - name: intel-gpu-plugin
   decryption:
     provider: sops
     secretRef:
