@@ -56,6 +56,12 @@ spec:
       containers:
         - image: plexinc/pms-docker:1.43.7.11114-4b588ea35
           name: pms
+          resources:
+            requests:
+              memory: 2Gi
+            limits:
+              # Contain transcode memory spikes so they cannot exhaust the host.
+              memory: 4Gi
           ports:
             - containerPort: 32400
               protocol: TCP
