@@ -30,7 +30,7 @@ spec:
               mountPath: /import
       containers:
         # https://github.com/linuxserver/docker-lazylibrarian/releases
-        - image: ghcr.io/linuxserver/lazylibrarian:ab0d1156-ls392
+        - image: ghcr.io/linuxserver/lazylibrarian:6e755076-ls393
           name: lazylibrarian
           ports:
             - containerPort: 5299
