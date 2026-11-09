@@ -24,6 +24,22 @@ data:
             K8S-Logging.Parser On
             K8S-Logging.Exclude On
 
+        # Decode only the Plex file-log sidecar's structured stdout.
+        # Other Plex/container stdout remains unparsed.
+        [FILTER]
+            Name rewrite_tag
+            Match kube.*
+            Rule $kubernetes['container_name'] ^plex-logs$ plex.$TAG false
+            Emitter_Name plex_tagger
+
+        [FILTER]
+            Name parser
+            Match plex.*
+            Key_Name log
+            Parser json
+            Reserve_Data true
+            Preserve_Key false
+
         [FILTER]
             Name rewrite_tag
             Match kube.*

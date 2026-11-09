@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plex-log-forwarder
+  namespace: tortuga
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         1
+        Log_Level     warn
+        HTTP_Server   Off
+
+    [INPUT]
+        Name              tail
+        Tag               plex.files
+        # Follow active logs, not numbered rotations (which would duplicate data).
+        Path              /plex-logs/*.log,/plex-logs/PMS Plugin Logs/*.log
+        Path_Key          source
+        Key               message
+        Read_from_Head    On
+        Refresh_Interval  5
+        Rotate_Wait       30
+        DB                /state/tail.db
+        DB.Sync           Normal
+        Buffer_Chunk_Size 64k
+        Buffer_Max_Size   1M
+        Skip_Long_Lines   On
+        Mem_Buf_Limit     5M
+
+    [FILTER]
+        Name              nest
+        Match             *
+        Operation         nest
+        Wildcard          source
+        Wildcard          message
+        Nest_under        plex
+
+    [OUTPUT]
+        Name              stdout
+        Match             *
+        Format            json_lines
+        Json_Date_Key     false

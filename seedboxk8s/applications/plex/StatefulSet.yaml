@@ -3,6 +3,8 @@ kind: StatefulSet
 metadata:
   name: plex
   namespace: tortuga
+  annotations:
+    configmap.reloader.stakater.com/reload: plex-log-forwarder
 spec:
   # I think this serviceName must match the name of the Service in the same directory.
   serviceName: plex
@@ -12,6 +14,8 @@ spec:
       app.kubernetes.io/name: plex
   template:
     metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: pms
       labels:
         app.kubernetes.io/name: plex
     spec:
@@ -54,6 +58,39 @@ spec:
             - name: import
               mountPath: /import
       containers:
+        - name: plex-logs
+          # Match the cluster's existing Fluent Bit image.
+          image: cr.fluentbit.io/fluent/fluent-bit:5.1.3
+          args:
+            - -c
+            - /fluent-bit/plex/fluent-bit.conf
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: ${plexUid}
+            runAsGroup: ${plexGid}
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: plex-config-pvc
+              mountPath: /plex-logs
+              subPath: Library/Application Support/Plex Media Server/Logs
+              readOnly: true
+            - name: log-forwarder-config
+              mountPath: /fluent-bit/plex
+              readOnly: true
+            - name: log-forwarder-state
+              mountPath: /state
         - image: plexinc/pms-docker:1.43.7.11114-4b588ea35
           name: pms
           resources:
@@ -104,6 +141,12 @@ spec:
               name: transcode-tmp
               readOnly: false
       volumes:
+        - name: log-forwarder-config
+          configMap:
+            name: plex-log-forwarder
+        - name: log-forwarder-state
+          emptyDir:
+            sizeLimit: 32Mi
         - name: import
           emptyDir: {}
         - name: plex-config-pvc
