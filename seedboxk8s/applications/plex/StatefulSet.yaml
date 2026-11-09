@@ -4,7 +4,7 @@ metadata:
   name: plex
   namespace: tortuga
   annotations:
-    configmap.reloader.stakater.com/reload: plex-log-forwarder
+    configmap.reloader.stakater.com/reload: plex-log-forwarder,plex-gpu-permissions
 spec:
   # I think this serviceName must match the name of the Service in the same directory.
   serviceName: plex
@@ -131,6 +131,10 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
           volumeMounts:
+            - name: gpu-permissions
+              mountPath: /etc/cont-init.d/46-plex-gpu-groups
+              subPath: 46-plex-gpu-groups
+              readOnly: true
             - mountPath: /config
               name: plex-config-pvc
               readOnly: false
@@ -141,6 +145,10 @@ spec:
               name: transcode-tmp
               readOnly: false
       volumes:
+        - name: gpu-permissions
+          configMap:
+            name: plex-gpu-permissions
+            defaultMode: 0555
         - name: log-forwarder-config
           configMap:
             name: plex-log-forwarder

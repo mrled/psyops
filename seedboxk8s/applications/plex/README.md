@@ -70,11 +70,32 @@ but the separately mounted by-path node had GID `992`.
 Plex could use VA-API through the direct node,
 while Intel OpenCL received `EACCES` opening the by-path node
 and reported `CL_PLATFORM_NOT_FOUND_KHR` (`-1001`).
-Preserving symlinks avoids that ownership mismatch without a custom startup hook.
+Preserving symlinks avoids that ownership mismatch.
+Plex still needs membership in the allocated devices' groups.
+
+The image's `45-plex-hw-transcode-and-connected-tuner` startup hook
+uses `find -type c`, which returned no devices in the observed pod,
+even though `stat` and `ls` identified the paths as character devices.
+The `plex-gpu-permissions` ConfigMap adds `46-plex-gpu-groups`,
+which enumerates direct DRM paths with shell globs and explicitly checks `test -c`.
+It reads each device's GID, creates a group if needed,
+and adds `plex` to it without changing host device permissions.
+This runs before `s6-setuidgid` rebuilds Plex's supplementary groups
+from the container's group database;
+pod-level `supplementalGroups` alone would not survive that step.
 
 After the plugin rolls out, recreate the Plex pod to receive the new mounts;
 restarting only its container is not sufficient to obtain a new allocation.
 See `../intel-gpu-plugin/README.md` for rollout and access checks.
+After the Plex rollout, check startup-hook output and group membership:
+
+```bash
+kubectl -n tortuga logs plex-0 -c pms | grep -E '46-plex-gpu-groups|Granted Plex access'
+kubectl -n tortuga exec plex-0 -c pms -- s6-setuidgid plex id
+```
+
+On the observed host, the render device has GID `992`;
+that group should appear in the `s6-setuidgid` output.
 Then test an HDR-to-SDR video conversion without subtitle burn-in.
 The transcoder should use `tonemap_opencl` without an OpenCL initialization error
 or a fallback to software encoding.

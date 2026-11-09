@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plex-gpu-permissions
+  namespace: tortuga
+data:
+  46-plex-gpu-groups: |
+    #!/bin/sh
+    set -eu
+
+    # The image's find -type c misses these bind-mounted character devices.
+    # Explicitly inspect each path before s6-setuidgid reads the group database.
+    for device in /dev/dri/card* /dev/dri/renderD*; do
+        test -c "$device" || continue
+        device_gid=$(stat -c '%g' "$device")
+        device_group=$(getent group "$device_gid" | cut -d: -f1)
+        if test -z "$device_group"; then
+            device_group="plex-gpu-$device_gid"
+            groupadd -g "$device_gid" "$device_group"
+        fi
+        usermod -a -G "$device_group" plex
+        printf 'Granted Plex access to %s via group %s (%s)\n' \
+            "$device" "$device_group" "$device_gid"
+    done
