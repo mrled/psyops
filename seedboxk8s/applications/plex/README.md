@@ -56,3 +56,26 @@ It cannot access the media or other Plex configuration files through that mount.
 Plex logs may contain tokens, usernames, client addresses, and media paths.
 Forwarding makes these visible to pod-log readers and centralized-log readers;
 redact them before sharing outside trusted systems.
+
+## Intel GPU access and tone mapping
+
+The Intel device plugin grants runtime device access.
+It uses `-bypath=all` to preserve PCI-path symlinks,
+so `/dev/dri/by-path/pci-0000:00:02.0-render` resolves to `/dev/dri/renderD128`.
+
+The plugin's default `single` mode instead mounts each by-path entry separately,
+creating a device node that retains host ownership.
+On `tagasaw`, the direct render node had GID `0`,
+but the separately mounted by-path node had GID `992`.
+Plex could use VA-API through the direct node,
+while Intel OpenCL received `EACCES` opening the by-path node
+and reported `CL_PLATFORM_NOT_FOUND_KHR` (`-1001`).
+Preserving symlinks avoids that ownership mismatch without a custom startup hook.
+
+After the plugin rolls out, recreate the Plex pod to receive the new mounts;
+restarting only its container is not sufficient to obtain a new allocation.
+See `../intel-gpu-plugin/README.md` for rollout and access checks.
+Then test an HDR-to-SDR video conversion without subtitle burn-in.
+The transcoder should use `tonemap_opencl` without an OpenCL initialization error
+or a fallback to software encoding.
+This permission fix does not establish a fix for PGS burn-in memory exhaustion.

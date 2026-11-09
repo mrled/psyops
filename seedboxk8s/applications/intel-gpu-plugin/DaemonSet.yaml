@@ -37,6 +37,9 @@ spec:
             # Share access, not performance or memory isolation.
             # Leave a second allocation available for another media application.
             - -shared-dev-num=2
+            # Preserve PCI-path symlinks to the allocated device nodes.
+            # Individual by-path mounts retain host ownership and can deny OpenCL.
+            - -bypath=all
           env:
             - name: NODE_NAME
               valueFrom:

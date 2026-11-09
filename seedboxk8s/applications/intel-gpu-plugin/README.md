@@ -8,6 +8,16 @@ k0s's `/var/lib/k0s/kubelet` root applies to CSI paths, not this API.
 The integrated GPU is exposed as two shared `gpu.intel.com/i915` allocations.
 Sharing grants concurrent access, not GPU performance or memory isolation.
 
+The plugin uses `-bypath=all` to mount the DRM by-path directory intact,
+preserving symlinks to the allocated device nodes.
+The default `single` mode mounts each symlink target separately,
+which can retain different ownership from the direct device nodes
+and prevent Intel OpenCL from opening the GPU even when VA-API works.
+`all` exposes by-path names for every host GPU;
+runtime device authorization still applies to the targets.
+This is suitable for this single-GPU host;
+revisit the discovery/isolation implications if more GPUs are added.
+
 Plex's Flux Kustomization depends on this deployment's DaemonSet health check.
 A healthy DaemonSet does not by itself prove GPU discovery succeeded:
 verify the node's allocatable resources before diagnosing a Pending Plex pod.
@@ -30,12 +40,26 @@ Kubernetes defaults the corresponding request to the same value.
 Do not add a manual `/dev/dri` mount to Plex:
 the device plugin supplies the devices and runtime access permissions.
 
+When changing by-path mounting, wait for the plugin rollout first,
+then recreate Plex to obtain a new device allocation and mounts.
+Existing pod mounts are not updated by a plugin restart.
+Run these administrative commands only when ready to interrupt playback:
+
+```bash
+kubectl -n kube-system rollout status daemonset/intel-gpu-plugin
+kubectl -n tortuga rollout restart statefulset/plex
+kubectl -n tortuga rollout status statefulset/plex
+kubectl -n tortuga exec plex-0 -c pms -- ls -l /dev/dri/by-path/
+```
+
+The render entry should be a symlink to `../renderD128`, not a character device.
+
 Check access without initiating playback:
 
 ```bash
 kubectl -n tortuga exec plex-0 -c pms -- \
   su -s /bin/sh plex -c \
-  'exec 3<>/dev/dri/renderD128 && echo render-device-open-ok'
+  'exec 3<>/dev/dri/renderD128 && exec 4<>/dev/dri/by-path/pci-0000:00:02.0-render && echo render-device-open-ok'
 ```
 
 Opening the device successfully verifies access, not VA-API initialization.
