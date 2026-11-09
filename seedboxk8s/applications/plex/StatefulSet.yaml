@@ -98,7 +98,7 @@ spec:
               memory: 2Gi
             limits:
               # Contain transcode memory spikes so they cannot exhaust the host.
-              memory: 4Gi
+              memory: 6Gi
               # The device plugin grants device access as well as injecting /dev/dri.
               gpu.intel.com/i915: 1
           ports:
