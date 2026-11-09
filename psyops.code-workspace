@@ -9,6 +9,7 @@
     { "name": "macrofactor", "path": "pipelines/macrofactor" },
     { "name": "progfiguration_blacksite", "path": "progfiguration_blacksite" },
     { "name": "neuralupgrade", "path": "psyopsOS/neuralupgrade" },
+    { "name": "seedboxk8s", "path": "seedboxk8s" },
     { "name": "kvrb", "path": "seedboxk8s/applications/restic-backup/kvrb" },
     { "name": "telekinesis", "path": "telekinesis" }
   ],
