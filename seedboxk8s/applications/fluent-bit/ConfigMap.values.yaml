@@ -15,6 +15,16 @@ data:
             Mem_Buf_Limit 5MB
             Skip_Long_Lines On
 
+        # Collect the whole persistent host journal, including kernel messages.
+        # Backfill retained entries on first deployment; resume from DB afterward.
+        [INPUT]
+            Name systemd
+            Path /var/log/journal
+            Tag host.*
+            DB /var/lib/fluent-bit/systemd.db
+            Read_From_Tail Off
+            Mem_Buf_Limit 10MB
+
       filters: |
         [FILTER]
             Name kubernetes
@@ -71,6 +81,28 @@ data:
             tls.verify Off
             # TODO: enable tls.verify On - mount ca.crt from opensearch-transport-tls-secret and set tls.ca_file
             Suppress_Type_Name On
+
+    # The chart also mounts /etc/machine-id read-only for journal discovery.
+    # Override the chart's writable /var/log mount; only cursor state needs writes.
+    daemonSetVolumeMounts:
+      - name: varlog
+        mountPath: /var/log
+        readOnly: true
+      - name: varlibdockercontainers
+        mountPath: /var/lib/docker/containers
+        readOnly: true
+      - name: etcmachineid
+        mountPath: /etc/machine-id
+        readOnly: true
+
+    extraVolumes:
+      - name: journal-state
+        hostPath:
+          path: /var/lib/fluent-bit
+          type: DirectoryOrCreate
+    extraVolumeMounts:
+      - name: journal-state
+        mountPath: /var/lib/fluent-bit
 
     # Inject OpenSearch credentials from secret as environment variables
     envFrom:
