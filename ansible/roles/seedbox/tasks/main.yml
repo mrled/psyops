@@ -3,6 +3,10 @@
   ansible.builtin.hostname:
     name: "{{ seedbox_hostname }}"
 
+- name: Configure persistent host journal
+  ansible.builtin.import_tasks: journald.yml
+  tags: seedbox_journald
+
 - name: Increase inotify limits for k8s
   ansible.posix.sysctl:
     name: "{{ item.name }}"

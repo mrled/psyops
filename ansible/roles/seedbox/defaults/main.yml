@@ -6,6 +6,11 @@
 # Defaults to inventory_hostname; override in host_vars if needed.
 seedbox_hostname: "{{ inventory_hostname }}"
 
+# Keep host logs across reboots without consuming unbounded root disk space.
+seedbox_journal_system_max_use: 1G
+seedbox_journal_system_keep_free: 2G
+seedbox_journal_max_retention: 14day
+
 # k0s/Kubernetes tool versions
 seedbox_k8s_k0s_version: "v1.36.1+k0s.0"
 seedbox_k8s_helm_version: "v3.14.4"
