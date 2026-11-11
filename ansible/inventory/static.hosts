@@ -8,9 +8,6 @@ naragua.home.micahrl.com
 naraguachile
 nullyork
 
-[splash]
-naragua.home.micahrl.com
-
 [capthook]
 tagasaw.home.micahrl.com
 
@@ -32,19 +29,22 @@ bolgana.banded-goblin.ts.net
 [http_root_micahrl_com]
 apsylania.micahrl.com
 
+[ircbnc]
+bolgana.banded-goblin.ts.net
+
 [pprox]
 wenaglia.banded-goblin.ts.net
 
 [seedboxes]
 tagasaw.home.micahrl.com
 
+[splash]
+naragua.home.micahrl.com
+
 [tailscale]
 apsylania.micahrl.com
 tagasaw.home.micahrl.com
 wenaglia.banded-goblin.ts.net
-bolgana.banded-goblin.ts.net
-
-[ircbnc]
 bolgana.banded-goblin.ts.net
 
 [unifiusg]
