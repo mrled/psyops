@@ -16,7 +16,7 @@ spec:
         spec:
           containers:
             - name: build-container
-              image: quay.io/buildah/stable@sha256:e5a33092657823b0830186ea525054cf4cdeef29b6a44833444c59d86f561f29
+              image: quay.io/buildah/stable@sha256:30e1bdda5cbdf313163eed09e31917221ecf4a83195a03923d5ad822554802e4
               # Buildah requires the same privileges as the former one-shot build job.
               securityContext:
                 privileged: true
