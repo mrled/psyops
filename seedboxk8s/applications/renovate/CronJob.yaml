@@ -20,7 +20,7 @@ spec:
             fsGroupChangePolicy: OnRootMismatch
           containers:
             - name: renovate
-              image: renovate/renovate:44.235.0
+              image: renovate/renovate:44.235.1
               imagePullPolicy: IfNotPresent
               command:
                 - /bin/sh
