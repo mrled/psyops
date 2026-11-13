@@ -30,7 +30,7 @@ spec:
     - apiVersion: media-operator.dev/v1alpha1
       kind: JellyfinConfig
       current: >-
-        has(status) && has(status.initialized) && status.initialized &&
+        has(status.initialized) && status.initialized &&
         has(status.observedGeneration) && status.observedGeneration == metadata.generation &&
         has(status.conditions) &&
         status.conditions.exists(c, c.type == 'Synced' && c.status == 'True')
