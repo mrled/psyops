@@ -1,0 +1,46 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: jellyfin
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: /seedboxk8s/applications/jellyfin
+  prune: true
+  timeout: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: media-operator
+    - name: fluxcfg
+    - name: topolvm
+    - name: tortuga
+    - name: intel-gpu-plugin
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: StatefulSet
+      name: jellyfin
+      namespace: tortuga
+    - apiVersion: media-operator.dev/v1alpha1
+      kind: JellyfinConfig
+      name: jellyfin
+      namespace: tortuga
+  healthCheckExprs:
+    - apiVersion: media-operator.dev/v1alpha1
+      kind: JellyfinConfig
+      current: >-
+        has(status) && has(status.initialized) && status.initialized &&
+        has(status.observedGeneration) && status.observedGeneration == metadata.generation &&
+        has(status.conditions) &&
+        status.conditions.exists(c, c.type == 'Synced' && c.status == 'True')
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: seedboxk8s-config
+      - kind: ConfigMap
+        name: seedboxk8s-config

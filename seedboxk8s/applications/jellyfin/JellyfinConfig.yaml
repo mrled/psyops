@@ -1,0 +1,118 @@
+# Schema: kyleseneker/media-operator v0.41.0, config/crd/bases/
+# media-operator.dev_jellyfinconfigs.yaml (not an operator Deployment).
+apiVersion: media-operator.dev/v1alpha1
+kind: JellyfinConfig
+metadata:
+  name: jellyfin
+  namespace: tortuga
+spec:
+  connection:
+    url: http://jellyfin.tortuga.svc.cluster.local:8096
+  adminUser:
+    usernameSecretRef:
+      name: jellyfin-admin
+      key: username
+    passwordSecretRef:
+      name: jellyfin-admin
+      key: password
+  reconcile:
+    deletionPolicy: orphan
+  server:
+    serverName: ${productionClusterFqdn}
+    preferredMetadataLanguage: en
+    metadataCountryCode: US
+  encoding:
+    hardwareAccelerationType: qsv
+    qsvDevice: /dev/dri/renderD128
+    enableHardwareEncoding: true
+    hardwareDecodingCodecs:
+      - h264
+      - hevc
+      - mpeg2video
+      - vp8
+      - vp9
+    enableDecodingColorDepth10Hevc: true
+    enableDecodingColorDepth10Vp9: true
+    enableDecodingColorDepth10HevcRext: false
+    enableDecodingColorDepth12HevcRext: false
+    # Allow HEVC output for compatible clients; verify encoding in the container.
+    allowHevcEncoding: true
+    allowAv1Encoding: false
+    enableIntelLowPowerH264HwEncoder: false
+    enableIntelLowPowerHevcHwEncoder: false
+    # Use Intel VPP only, rather than also enabling the OpenCL tone-mapping path.
+    # VPP is lower power but with less tuning. Jellyfin prefers VPP when both are available.
+    # Will default to VPP for now and change to something else later if necessary.
+    enableVppTonemapping: true
+    enableTonemapping: false
+    enableThrottling: true
+    throttleDelaySeconds: 180
+    enableSegmentDeletion: true
+  network:
+    enableUPnP: false
+    autoDiscovery: false
+    enableRemoteAccess: true
+  libraries:
+    - name: Movies
+      collectionType: movies
+      paths:
+        - /media/Movies
+      enableRealtimeMonitor: false
+      enableTrickplayImageExtraction: false
+      automaticRefreshIntervalDays: 1
+    - name: TV
+      collectionType: tvshows
+      paths:
+        - /media/TV
+      enableRealtimeMonitor: false
+      enableTrickplayImageExtraction: false
+      automaticRefreshIntervalDays: 1
+    - name: KidsClips
+      collectionType: homevideos
+      paths:
+        - /media/KidsClips
+      enableRealtimeMonitor: false
+      enableTrickplayImageExtraction: false
+      automaticRefreshIntervalDays: 1
+    - name: Clips
+      collectionType: homevideos
+      paths:
+        - /media/Clips
+      enableRealtimeMonitor: false
+      enableTrickplayImageExtraction: false
+      automaticRefreshIntervalDays: 1
+    - name: Fitness
+      collectionType: homevideos
+      paths:
+        - /media/Fitness
+      enableRealtimeMonitor: false
+      enableTrickplayImageExtraction: false
+      automaticRefreshIntervalDays: 1
+    - name: MST3K
+      collectionType: movies
+      paths:
+        - /media/MST3K
+      enableRealtimeMonitor: false
+      enableTrickplayImageExtraction: false
+      automaticRefreshIntervalDays: 1
+    - name: MST3K-TV
+      collectionType: tvshows
+      paths:
+        - /media/MST3K-TV
+      enableRealtimeMonitor: false
+      enableTrickplayImageExtraction: false
+      automaticRefreshIntervalDays: 1
+    - name: NonfictionVideo
+      collectionType: homevideos
+      paths:
+        - /media/NonfictionVideo
+      enableRealtimeMonitor: false
+      enableTrickplayImageExtraction: false
+      automaticRefreshIntervalDays: 1
+    - name: Shorts
+      collectionType: homevideos
+      paths:
+        - /media/Shorts
+      enableRealtimeMonitor: false
+      enableTrickplayImageExtraction: false
+      automaticRefreshIntervalDays: 1

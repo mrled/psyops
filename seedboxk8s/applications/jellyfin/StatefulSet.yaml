@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: jellyfin
+  namespace: tortuga
+spec:
+  serviceName: jellyfin
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jellyfin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jellyfin
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        # Reuse Plex's shared-media filesystem identity.
+        runAsUser: ${plexUid}
+        runAsGroup: ${plexGid}
+        runAsNonRoot: true
+        fsGroup: ${plexGid}
+        fsGroupChangePolicy: OnRootMismatch
+        # Render-device GID observed on tagasaw.
+        # Might be able to drop this if we enable `device_ownership_from_security_context` in containerd,
+        # but that is a node-wide configuration that might require re-testing with other service (e.g. Plex).
+        supplementalGroups: [992]
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: jellyfin
+          # GitHub stable v12.4 and Docker Hub 12.4/latest verified 2026-11-12.
+          image: jellyfin/jellyfin:12.4@sha256:fea863d0cd9ec445985d9c75fc6ed64e38a1d2766cf0c250a33d553f4fc1b771
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: TZ
+              value: ${timezone}
+          ports:
+            - name: http
+              containerPort: 8096
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 1Gi
+            limits:
+              memory: 6Gi
+              gpu.intel.com/i915: 1
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: cache
+              mountPath: /cache
+            # Jellyfin defaults to <cache>/transcodes; keep it independently ephemeral.
+            - name: transcode
+              mountPath: /cache/transcodes
+            - name: media
+              mountPath: /media
+              readOnly: false
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jellyfin-config-pvc
+        - name: cache
+          emptyDir: {}
+        - name: transcode
+          emptyDir: {}
+        - name: media
+          persistentVolumeClaim:
+            claimName: seedboxmedia-nfs-pvc

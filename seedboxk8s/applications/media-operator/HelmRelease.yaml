@@ -1,0 +1,25 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: media-operator
+  namespace: media-operator
+spec:
+  interval: 15m
+  timeout: 5m
+  releaseName: media-operator
+  chart:
+    spec:
+      chart: media-operator-mediaservers
+      version: 0.41.0
+      sourceRef:
+        kind: HelmRepository
+        name: media-operator
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    watchNamespace: tortuga
+    metrics:
+      enabled: false
