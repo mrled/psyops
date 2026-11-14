@@ -1,0 +1,29 @@
+---
+- name: Validate authorized keys account mapping
+  ansible.builtin.assert:
+    that:
+      - ssh_authorized_keys_users is mapping
+    fail_msg: ssh_authorized_keys_users must map usernames to lists of public keys
+
+- name: Validate authorized keys lists
+  ansible.builtin.assert:
+    that:
+      - item.value is sequence
+      - item.value is not string
+      - item.value is not mapping
+      - item.value | select('string') | list | length == item.value | length
+    fail_msg: "Authorized keys for {{ item.key }} must be a list of public key strings"
+  loop: "{{ ssh_authorized_keys_users | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Fully manage authorized keys for configured users
+  ansible.posix.authorized_key:
+    user: "{{ item.key }}"
+    key: "{{ item.value | join('\n') }}"
+    state: present
+    exclusive: true
+    manage_dir: true
+  loop: "{{ ssh_authorized_keys_users | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"

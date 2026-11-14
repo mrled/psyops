@@ -1,0 +1,6 @@
+---
+- name: Manage SSH authorized keys
+  hosts: all
+  gather_facts: false
+  roles:
+    - { role: ssh_authorized_keys, tags: ["ssh_authorized_keys"], when: "ssh_authorized_keys_users | default({}) | length > 0" }

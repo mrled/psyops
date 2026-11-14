@@ -8,6 +8,9 @@ ansible_host: 100.124.185.62
 ansible_ssh_common_args: "-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 ansible_user: mrled # must match lima VM username, which is same as host VM username by default
 
+ssh_authorized_keys_users:
+  mrled: "{{ global_personal_ssh_keys }}"
+
 chineseroom_gitea_webhook_port: 9420
 chineseroom_gitea_funnel_port: 8443 # nginx already listens on 443 for tailnet-only traffic
 

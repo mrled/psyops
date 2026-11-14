@@ -6,7 +6,7 @@
     - { role: autoupgrade, tags: ["autoupgrade"] }
     - { role: tailscale, tags: ["tailscale"] }
     - { role: emailfwd, tags: ["emailfwd"] }
-    - { role: ssh_copy_id, tags: ["ssh_copy_id"] }
+    - { role: ssh_authorized_keys, tags: ["ssh_authorized_keys"] }
     - { role: interactive_system, tags: ["interactive", "interactive_system"] }
     - { role: interactive_user, tags: ["interactive", "interactive_user"] }
     - { role: ircbnc, tags: ["ircbnc"] }

@@ -4,6 +4,11 @@ ansible_ssh_user: root
 ansible_become_method: su
 docker_standalone_swarm_advertise_addr: 192.168.1.124
 
+ssh_authorized_keys_users:
+  root: "{{ global_personal_ssh_keys }}"
+  micahrl: "{{ global_personal_ssh_keys }}"
+  seedbox: "{{ global_personal_ssh_keys }}"
+
 interactive_user_list:
   - name: root
   - name: micahrl

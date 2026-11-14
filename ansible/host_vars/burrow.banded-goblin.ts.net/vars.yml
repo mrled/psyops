@@ -1,5 +1,9 @@
 ---
 ansible_ssh_user: micahrl
+
+ssh_authorized_keys_users:
+  micahrl: "{{ global_personal_ssh_keys }}"
+
 chineseroom_restricted_user: arthropodestrienne
 
 chineseroom_enable_autologin: true

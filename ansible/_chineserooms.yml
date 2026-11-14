@@ -4,7 +4,7 @@
   roles:
     # - { name: base, tags: ["base"] }
     - { role: emailfwd, tags: ["emailfwd"] }
-    - { role: ssh_copy_id, tags: ["ssh_copy_id"], when: "ssh_copy_id_keys | length > 0" }
+    - { role: ssh_authorized_keys, tags: ["ssh_authorized_keys"] }
     - { role: tailscale, tags: ["tailscale"], when: "tailscale_enable | default(False)" }
     - { role: mrled.chineseroom.chineseroom, tags: ["chineseroom", "chineseroom_base"] }
     - { role: chineseroom_gitea, tags: ["chineseroom", "chineseroom_gitea"], when: "chineseroom_gitea_enable | default(False)" }

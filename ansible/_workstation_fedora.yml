@@ -2,7 +2,7 @@
 - name: Deploy Fedora workstations
   hosts: workstation_fedora
   roles:
-    - { role: ssh_copy_id, tags: ["ssh_copy_id"], when: "ssh_copy_id_keys | length > 0" }
+    - { role: ssh_authorized_keys, tags: ["ssh_authorized_keys"] }
     - { role: tailscale, tags: ["tailscale"], when: "tailscale_enable | default(False)" }
     # Only for hosts that also opt into the backchannel service via inventory
     # group membership; the standalone _backchannel.yml play still works too.

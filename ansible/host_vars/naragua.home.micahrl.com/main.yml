@@ -2,6 +2,9 @@
 ansible_python_interpreter: /usr/bin/python3
 ansible_user: mrled
 
+ssh_authorized_keys_users:
+  mrled: "{{ global_personal_ssh_keys }}"
+
 ansible_become_method: sudo
 ansible_become_user: root
 ansible_become_pass: "{{ vault_ansible_become_pass }}"

@@ -3,6 +3,9 @@
 ansible_user: root
 ansible_port: 22
 
+ssh_authorized_keys_users:
+  root: "{{ global_personal_ssh_keys }}"
+
 tailscale_take_over_ssh: true
 tailscale_serves:
   - local_port: 9000

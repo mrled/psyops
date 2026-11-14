@@ -9,6 +9,9 @@ ansible_ssh_common_args: "-F {{ lookup('env', 'HOME') }}/.lima/naraguachile/ssh.
 ansible_user: mrled # must match lima VM username, which is same as host VM username by default
 # The lima default user (mrled) has passwordless sudo, so no ansible_become_pass is needed.
 
+ssh_authorized_keys_users:
+  mrled: "{{ global_personal_ssh_keys }}"
+
 workstation_fedora_headless: true
 
 interactive_user_list:

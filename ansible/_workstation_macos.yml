@@ -2,5 +2,6 @@
 - name: Configure macOS workstation
   hosts: workstation_macos
   roles:
+    - { role: ssh_authorized_keys, tags: ["ssh_authorized_keys"] }
     - { role: http_backchannel, tags: ["http_backchannel"], when: "'backchannel' in group_names" }
     - { role: splash, tags: ["splash"] }

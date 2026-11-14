@@ -4,6 +4,10 @@
 # chineseroom is the Ansible role but it doesn't have to be the hostname.
 
 ansible_ssh_user: micahrl
+
+ssh_authorized_keys_users:
+  micahrl: "{{ global_personal_ssh_keys }}"
+
 chineseroom_restricted_user: callista
 
 chineseroom_enable_autologin: true

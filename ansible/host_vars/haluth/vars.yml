@@ -1,6 +1,10 @@
 ---
 ansible_host: haluth-linux.banded-goblin.ts.net
 ansible_user: root
+
+ssh_authorized_keys_users:
+  root: "{{ global_personal_ssh_keys }}"
+
 workstation_fedora_headless: false
 workstation_fedora_flux_version: v2.10.0
 workstation_fedora_swap_size: 16G
