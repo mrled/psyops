@@ -8,6 +8,7 @@ metadata:
     gethomepage.dev/name: Traefik (Localnet)
     gethomepage.dev/group: Infrastructure
     gethomepage.dev/icon: traefik
+    gethomepage.dev/pod-selector: name=traefik-localnet
     gethomepage.dev/href: https://traefik-localnet.${productionClusterFqdn}/dashboard/
 spec:
   ingressClassName: traefik-tailscale

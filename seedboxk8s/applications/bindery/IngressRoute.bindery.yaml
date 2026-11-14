@@ -6,7 +6,8 @@ metadata:
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: Bindery
-    gethomepage.dev/group: Media
+    gethomepage.dev/group: Books
+    gethomepage.dev/icon: mdi-bookshelf
     gethomepage.dev/href: https://bindery.${productionClusterFqdn}
 spec:
   ingressClassName: traefik-tailscale
