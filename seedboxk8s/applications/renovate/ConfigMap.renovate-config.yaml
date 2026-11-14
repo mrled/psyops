@@ -29,6 +29,7 @@ data:
           "matchDatasources": ["docker"],
           "matchPackageNames": [
             "docker.io/library/traefik",
+            "cr.fluentbit.io/fluent/fluent-bit",
             "ghcr.io/linuxserver/bazarr",
             "ghcr.io/linuxserver/lidarr",
             "ghcr.io/linuxserver/prowlarr",
