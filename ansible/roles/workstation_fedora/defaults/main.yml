@@ -20,7 +20,7 @@ workstation_fedora_kde_autologin: false
 workstation_fedora_kde_autologin_user: "{{ interactive_user_list[0].name if interactive_user_list | length == 1 else '' }}"
 workstation_fedora_kde_autologin_session: plasma.desktop
 
-workstation_fedora_hugo_version: v0.163.3+extended+withdeploy
+workstation_fedora_hugo_version: v0.165.0+extended+withdeploy
 
 workstation_fedora_flux_version: latest
 workstation_fedora_sops_version: latest
