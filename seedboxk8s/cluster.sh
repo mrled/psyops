@@ -1,5 +1,52 @@
 # seedboxk8s cluster environment variables and functions for dot-sourcing.
 
+# Refresh local admin credentials from k0s without changing kubeconfig contexts.
+# Usage: seedbox_refresh_admin_certs [ssh-host]
+# Copies the server's current credentials; it does not renew expired certificates.
+seedbox_refresh_admin_certs() (
+    set -eu
+    host="${1:-root@tagasaw.home.micahrl.com}"
+    workdir="$(mktemp -d)"
+    trap 'rm -rf "$workdir"' EXIT
+    trap 'exit 1' HUP INT TERM
+    umask 077
+
+    ssh "$host" 'sudo k0s kubeconfig admin' > "$workdir/kubeconfig"
+    kubectl config view --kubeconfig="$workdir/kubeconfig" --raw -o json > "$workdir/config.json"
+    python3 - "$workdir/config.json" <<'PY'
+import base64
+import json
+from pathlib import Path
+import os
+import sys
+import tempfile
+
+with open(sys.argv[1]) as source:
+    user = json.load(source)["users"][0]["user"]
+credentials = [
+    ("admin.cert", base64.b64decode(user["client-certificate-data"], validate=True)),
+    ("admin.key", base64.b64decode(user["client-key-data"], validate=True)),
+]
+if not all(data for _, data in credentials):
+    raise ValueError("Server returned empty admin credentials")
+
+destination = Path.home() / ".kube/auth/seedboxk8s"
+destination.mkdir(parents=True, exist_ok=True, mode=0o700)
+staged = []
+try:
+    for name, data in credentials:
+        with tempfile.NamedTemporaryFile(dir=destination, delete=False) as output:
+            staged.append((Path(output.name), destination / name))
+            output.write(data)
+    for temporary, target in staged:
+        os.replace(temporary, target)
+finally:
+    for temporary, _ in staged:
+        temporary.unlink(missing_ok=True)
+print(f"Updated admin.cert and admin.key in {destination}")
+PY
+)
+
 # Examine certificates using openssl
 certinfo() {
     hostname="$1"
