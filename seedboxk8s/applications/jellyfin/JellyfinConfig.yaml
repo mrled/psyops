@@ -1,6 +1,5 @@
-# Schema: kyleseneker/media-operator v0.41.0, config/crd/bases/
-# media-operator.dev_jellyfinconfigs.yaml (not an operator Deployment).
-apiVersion: media-operator.dev/v1alpha1
+# Schema: https://github.com/kyleseneker/arrchitect/blob/v0.1.0/config/crd/bases/arrchitect.dev_jellyfinconfigs.yaml
+apiVersion: arrchitect.dev/v1alpha1
 kind: JellyfinConfig
 metadata:
   name: jellyfin

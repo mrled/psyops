@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: jellyfin-allow-media-operator
+  name: jellyfin-allow-arrchitect
   namespace: tortuga
 spec:
   podSelector:
@@ -13,7 +13,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: media-operator
+              kubernetes.io/metadata.name: arrchitect
       ports:
         - port: 8096
           protocol: TCP

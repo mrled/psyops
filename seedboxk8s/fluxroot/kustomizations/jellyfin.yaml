@@ -12,7 +12,7 @@ spec:
     kind: GitRepository
     name: flux-system
   dependsOn:
-    - name: media-operator
+    - name: arrchitect
     - name: fluxcfg
     - name: topolvm
     - name: tortuga
@@ -22,12 +22,12 @@ spec:
       kind: StatefulSet
       name: jellyfin
       namespace: tortuga
-    - apiVersion: media-operator.dev/v1alpha1
+    - apiVersion: arrchitect.dev/v1alpha1
       kind: JellyfinConfig
       name: jellyfin
       namespace: tortuga
   healthCheckExprs:
-    - apiVersion: media-operator.dev/v1alpha1
+    - apiVersion: arrchitect.dev/v1alpha1
       kind: JellyfinConfig
       current: >-
         has(status.initialized) && status.initialized &&

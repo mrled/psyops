@@ -1,9 +1,9 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: media-operator
+  name: arrchitect
   namespace: flux-system
 spec:
   type: oci
   interval: 15m
-  url: oci://ghcr.io/kyleseneker/media-operator
+  url: oci://ghcr.io/kyleseneker/charts
