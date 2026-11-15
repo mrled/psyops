@@ -1,11 +1,4 @@
 ---
-- name: Validate Hugo version and architecture
-  ansible.builtin.assert:
-    that:
-      - workstation_fedora_hugo_version is match('^v[0-9]+[.][0-9]+[.][0-9]+[+]extended[+]withdeploy$')
-      - ansible_architecture in ['x86_64', 'aarch64']
-    fail_msg: Hugo requires an extended+withdeploy version and an x86_64 or aarch64 host.
-
 - name: Check installed Hugo version
   ansible.builtin.command:
     cmd: /usr/local/bin/hugo version
@@ -29,15 +22,15 @@
         state: directory
         owner: root
         group: root
-        mode: '0755'
+        mode: "0755"
 
     - name: Extract Hugo extended with deploy from GitHub release
       ansible.builtin.unarchive:
-        src: "https://github.com/gohugoio/hugo/releases/download/{{ workstation_fedora_hugo_release }}/hugo_extended_withdeploy_{{ workstation_fedora_hugo_release[1:] }}_linux-{{ workstation_fedora_hugo_arch }}.tar.gz"
+        src: "https://github.com/gohugoio/hugo/releases/download/{{ workstation_fedora_hugo_release }}/hugo_withdeploy_{{ workstation_fedora_hugo_release[1:] }}_linux-{{ workstation_fedora_hugo_arch }}.tar.gz"
         dest: /usr/local/bin
         remote_src: true
         include:
           - hugo
         owner: root
         group: root
-        mode: '0755'
+        mode: "0755"
