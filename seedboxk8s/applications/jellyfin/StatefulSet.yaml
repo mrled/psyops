@@ -22,10 +22,8 @@ spec:
         runAsNonRoot: true
         fsGroup: ${plexGid}
         fsGroupChangePolicy: OnRootMismatch
-        # Render-device GID observed on tagasaw.
-        # Might be able to drop this if we enable `device_ownership_from_security_context` in containerd,
-        # but that is a node-wide configuration that might require re-testing with other service (e.g. Plex).
-        supplementalGroups: [992]
+        supplementalGroups:
+          - ${renderGid}
         seccompProfile:
           type: RuntimeDefault
       containers:

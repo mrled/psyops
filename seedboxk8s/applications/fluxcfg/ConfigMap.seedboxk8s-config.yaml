@@ -81,6 +81,10 @@ data:
   plexUid: "6000"
   plexGid: "6000"
 
+  # Render-device GID on tagasaw for non-root GPU consumers.
+  # This is a host-specific value that AFAIK cannot be looked up, so we have to hardcode it.
+  renderGid: "992"
+
   # We use this to test IngressRouteTCP
   whoamiHttpTcpPort: "10080"
 

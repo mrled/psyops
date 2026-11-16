@@ -16,6 +16,8 @@ spec:
     spec:
       securityContext:
         fsGroup: ${plexGid}
+        supplementalGroups:
+          - ${renderGid}
       initContainers:
         - name: import-data
           image: busybox:1.38.0
@@ -55,6 +57,9 @@ spec:
       containers:
         - image: ghcr.io/ersatztv/legacy:develop@sha256:50d39b54aa40a90d5e5497e8db4ed97a32ade53350589c7632d0a7e15dd83876
           name: ersatztv
+          resources:
+            limits:
+              gpu.intel.com/i915: 1
           ports:
             - containerPort: 8409
           env:
@@ -72,9 +77,6 @@ spec:
             - mountPath: /media
               name: seedboxmedia-nfs
               readOnly: true
-            - mountPath: /dev/dri
-              name: dev-dri
-              readOnly: false
       volumes:
         - name: import
           emptyDir: {}
@@ -84,7 +86,3 @@ spec:
         - name: seedboxmedia-nfs
           persistentVolumeClaim:
             claimName: seedboxmedia-nfs-pvc
-        - name: dev-dri
-          hostPath:
-            path: /dev/dri
-            type: Directory
