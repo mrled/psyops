@@ -63,7 +63,22 @@ global_backup_ssh_client_pubkey: |
 http_backchannel_acme_email: psyops@micahrl.com
 
 global_personal_ssh_keys:
+  # Stored in 1Password
   - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m conspirator@PSYOPS
+  # Created in Blink
+  - ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO9NZWXsn9u329/Fzxt5vAU4InxG1UVoKQj4hBMsDtmDGLE8iBwXcTRCYmZvxIBMycHgO+R06JAOpjYNcy6mFlQ= copland-2026-blink-secure-enclave
+  # Created on macOS:
+  #   sc_auth create-ctk-identity -l ssh -k p-256-ne -t bio
+  #   cd ssh
+  #   printf '\n' | ssh-keygen -w /usr/lib/ssh-keychain.dylib -K -N ''
+  #   ssh-keygen -c -C mrled@naragua-sc_auth -f ~/.ssh/id_ecdsa_sk_rk_ssh -P ''
+  - sk-ecdsa-sha2-nistp256@openssh.com AAAAInNrLWVjZHNhLXNoYTItbmlzdHAyNTZAb3BlbnNzaC5jb20AAAAIbmlzdHAyNTYAAABBBKPbjAqMD8Gv1LzExJI5IM/tvQgs6ANJbUYtIfkhpx8DWDgYRlyeYzmy/uh7XNzqkYqGGvIZEeT/j+pKqT3aGJcAAAAEc3NoOg== mrled@naragua-sc_auth
+  # Created on Linux with a Yubikey:
+  #   ssh-keygen -t ed25519-sk -f ~/.ssh/id_ed25519_sk
+  # This key is not resident, which means theft of the Yubikey cannot compromise the key,
+  # but also that loss of the ~/.ssh/id_ed25519_sk key handle file is irrevocable.
+  # Touching the Yubikey is required to use the SSH key.
+  - sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIHv9NyFDCaeFHKN2UdIxfyVVQVVn7FmMuT9uD4OhGLYCAAAABHNzaDo= mrl@nullyork-yubi
 
 ssh_copy_id_keys:
   - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/zN5QLrTpjL1Qb8oaSniRQSwWpe5ovenQZOLyeHn7m
