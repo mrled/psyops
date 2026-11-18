@@ -39,6 +39,7 @@ data:
             "klausmeyer/docker-registry-browser",
             "nginx",
             "ghcr.io/bookorbit/bookorbit",
+            "ghcr.io/vavallee/bindery",
             "renovate/renovate",
             "ghcr.io/linuxserver/nzbhydra2",
             "ghcr.io/linuxserver/cops",
