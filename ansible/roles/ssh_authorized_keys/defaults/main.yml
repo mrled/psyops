@@ -1,2 +1,3 @@
 ---
 ssh_authorized_keys_users: {}
+ssh_authorized_keys_header: "{{ ansible_managed | default('Ansible managed') }}"
