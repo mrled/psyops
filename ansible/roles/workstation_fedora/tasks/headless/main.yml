@@ -14,6 +14,7 @@
       - clang
       - curl
       - direnv
+      - fzf
       - golang-bin
       - git-annex
       - git-crypt
@@ -30,6 +31,7 @@
       - ty
       - uv
       - vim
+      - zoxide
     state: present
 
 - name: Configure Btrfs swap
