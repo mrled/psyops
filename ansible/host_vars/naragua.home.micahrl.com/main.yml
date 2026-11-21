@@ -19,6 +19,7 @@ http_backchannel_dnsname: naragua.backchannel.younix.us
 http_backchannel_aws_access_key_id: "{{ vault_http_backchannel_aws_access_key_id }}"
 http_backchannel_aws_secret_access_key: "{{ vault_http_backchannel_aws_secret_access_key }}"
 http_backchannel_subdomain_ports:
+  syncthing: 8384
   micahrl: 64224
   lrhacim: 42246
   piclaw: 25297

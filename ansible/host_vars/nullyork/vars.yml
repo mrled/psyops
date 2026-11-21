@@ -30,6 +30,7 @@ http_backchannel_aws_access_key_id: "{{ vault_http_backchannel_aws_access_key_id
 http_backchannel_aws_secret_access_key: "{{ vault_http_backchannel_aws_secret_access_key }}"
 # Map app names to localhost ports to serve app.nullyork.backchannel.younix.us.
 http_backchannel_subdomain_ports:
+  syncthing: 8384
   ellipsis: 35477
   micahrl: 64224
   lrhacim: 42246
