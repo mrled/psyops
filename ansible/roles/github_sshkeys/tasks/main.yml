@@ -1,0 +1,27 @@
+---
+- name: Manage GitHub authentication keys from the controller
+  delegate_to: localhost
+  become: false
+  block:
+    - name: Require a single localhost target for account-level reconciliation
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname in ['localhost', '127.0.0.1', '::1']
+          - ansible_play_hosts_all | length == 1
+        fail_msg: Run github_sshkeys in a dedicated single-host localhost play.
+
+    - name: Require explicit GitHub account and complete key configuration
+      ansible.builtin.assert:
+        that:
+          - github_sshkeys_username is defined
+          - github_sshkeys_token is defined
+          - github_sshkeys_keys is defined
+        fail_msg: >-
+          Set github_sshkeys_username, github_sshkeys_token, and github_sshkeys_keys.
+          The key list is authoritative; an explicit empty list removes all authentication keys.
+
+    - name: Reconcile the complete GitHub authentication key set
+      github_sshkeys:
+        username: "{{ github_sshkeys_username }}"
+        token: "{{ github_sshkeys_token }}"
+        keys: "{{ github_sshkeys_keys }}"

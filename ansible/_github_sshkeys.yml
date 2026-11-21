@@ -1,0 +1,9 @@
+---
+- name: Manage GitHub account SSH authentication keys
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  roles:
+    - role: github_sshkeys
+      tags: [github_sshkeys]
