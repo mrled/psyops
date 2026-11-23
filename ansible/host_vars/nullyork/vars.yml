@@ -28,12 +28,12 @@ interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') 
 http_backchannel_dnsname: nullyork.backchannel.younix.us
 http_backchannel_aws_access_key_id: "{{ vault_http_backchannel_aws_access_key_id }}"
 http_backchannel_aws_secret_access_key: "{{ vault_http_backchannel_aws_secret_access_key }}"
-# Map app names to localhost ports to serve app.nullyork.backchannel.younix.us.
-http_backchannel_subdomain_ports:
-  syncthing: 8384
-  ellipsis: 35477
-  micahrl: 64224
-  lrhacim: 42246
+# Route app.nullyork.backchannel.younix.us to localhost backends.
+http_backchannel_subdomains:
+  syncthing: {port: 8384, passHostHeader: false}
+  ellipsis: {port: 35477}
+  micahrl: {port: 64224}
+  lrhacim: {port: 42246}
 
 # Define the referenced secrets in this host's encrypted vault.yml.
 # Use a dedicated repository/prefix and appropriately scoped S3 credentials.

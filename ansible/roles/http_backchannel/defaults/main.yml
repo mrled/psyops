@@ -33,11 +33,10 @@ http_backchannel_traefik_arch: "{{ http_backchannel_traefik_arch_map[ansible_arc
 http_backchannel_traefik_download_url: >-
   https://github.com/traefik/traefik/releases/download/{{ http_backchannel_traefik_version }}/traefik_{{ http_backchannel_traefik_version }}_linux_{{ http_backchannel_traefik_arch }}.tar.gz
 
-# Subdomain to port mappings for this host
-# Map subdomain names to localhost ports
+# Map subdomain names to localhost backends. Each entry requires a port.
+# Traefik forwards the original Host header unless passHostHeader is false.
 # Example:
-#   http_backchannel_subdomain_ports:
-#     plex: 32400
-#     sonarr: 8989
-# This will route plex.NODE.backchannel.younix.us -> localhost:32400
-http_backchannel_subdomain_ports: {}
+#   http_backchannel_subdomains:
+#     plex: {port: 32400}
+#     syncthing: {port: 8384, passHostHeader: false}
+http_backchannel_subdomains: {}

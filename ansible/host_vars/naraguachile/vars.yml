@@ -23,7 +23,6 @@ interactive_system_zsh_users: "{{ interactive_user_list | map(attribute='name') 
 http_backchannel_dnsname: naraguachile.backchannel.younix.us
 http_backchannel_aws_access_key_id: "{{ vault_http_backchannel_aws_access_key_id }}"
 http_backchannel_aws_secret_access_key: "{{ vault_http_backchannel_aws_secret_access_key }}"
-# Map subdomains to local ports.
-http_backchannel_subdomain_ports:
-  ellipsis: 35477
-  unprivellipsis: 35478
+http_backchannel_subdomains:
+  ellipsis: {port: 35477}
+  unprivellipsis: {port: 35478}

@@ -18,7 +18,7 @@ Available variables are listed in `defaults/main.yml`:
 - `http_backchannel_aws_region`: AWS region for Route53 (default: "us-east-1")
 - `http_backchannel_log_level`: Traefik log level (default: "DEBUG")
 - `http_backchannel_traefik_binary`: Path to Traefik binary (default: "/opt/homebrew/bin/traefik")
-- `http_backchannel_subdomain_ports`: Dictionary mapping subdomains to localhost ports (default: {})
+- `http_backchannel_subdomains`: Dictionary mapping subdomains to localhost backend settings (default: `{}`)
 
 ## Dependencies
 
@@ -37,23 +37,25 @@ None
         http_backchannel_aws_secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 ```
 
-## Subdomain to Port Mapping
+## Subdomain Routes
 
-You can configure automatic routing from subdomains to localhost ports using the `http_backchannel_subdomain_ports` variable. This is typically set in host_vars:
+Use `http_backchannel_subdomains` in `host_vars` to route subdomains to localhost backends:
 
 ```yaml
 # In host_vars/myhost.yml
 http_backchannel_dnsname: myhost.backchannel.example.com
-http_backchannel_subdomain_ports:
-  plex: 32400
-  sonarr: 8989
-  radarr: 7878
+http_backchannel_subdomains:
+  plex: {port: 32400}
+  syncthing: {port: 8384, passHostHeader: false}
 ```
 
-This will automatically create traefik routes:
+Each entry requires a `port`. Traefik forwards the original `Host` header by default.
+Set `passHostHeader: false` to send the backend's host and port instead,
+for example when Syncthing's localhost GUI rejects the public hostname.
+
+This creates the following Traefik routes:
 - `plex.myhost.backchannel.example.com` → `http://127.0.0.1:32400`
-- `sonarr.myhost.backchannel.example.com` → `http://127.0.0.1:8989`
-- `radarr.myhost.backchannel.example.com` → `http://127.0.0.1:7878`
+- `syncthing.myhost.backchannel.example.com` → `http://127.0.0.1:8384`
 
 All routes automatically use HTTPS with Let's Encrypt certificates. Requests to unmatched subdomains will return Traefik's 404 page.
 
@@ -80,7 +82,7 @@ All routes automatically use HTTPS with Let's Encrypt certificates. Requests to 
 
 After running this role:
 
-1. Configure subdomain port mappings in your host_vars (see example above)
+1. Configure subdomain routes in your `host_vars` (see example above)
 2. Traefik will automatically reload when files in the dynamic directory change
 3. Check logs at:
    - `/var/log/traefik.log` - main log (configured in traefik.yml)

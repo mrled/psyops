@@ -4,7 +4,7 @@
 
 http:
   routers:
-{% for subdomain, port in http_backchannel_subdomain_ports.items() %}
+{% for subdomain in http_backchannel_subdomains %}
     {{ subdomain }}-router:
       rule: "Host(`{{ subdomain }}.{{ http_backchannel_dnsname }}`)"
       entryPoints:
@@ -15,9 +15,12 @@ http:
 {% endfor %}
 
   services:
-{% for subdomain, port in http_backchannel_subdomain_ports.items() %}
+{% for subdomain, config in http_backchannel_subdomains.items() %}
     {{ subdomain }}-service:
       loadBalancer:
+{% if config.passHostHeader is defined %}
+        passHostHeader: {{ config.passHostHeader | bool | lower }}
+{% endif %}
         servers:
-          - url: "http://127.0.0.1:{{ port }}"
+          - url: "http://127.0.0.1:{{ config.port }}"
 {% endfor %}
