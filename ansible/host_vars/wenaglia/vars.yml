@@ -1,3 +1,4 @@
 ---
 ansible_user: root
+ansible_host: wenaglia.banded-goblin.ts.net
 tailscale_take_over_ssh: true

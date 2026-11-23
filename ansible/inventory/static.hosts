@@ -1,54 +1,51 @@
 # Static inventory
 
 [acmednsremotes]
-cloudkey.home.micahrl.com
+cloudkey
 
 [backchannel]
-naragua.home.micahrl.com
+naragua
 naraguachile
 nullyork
 
 [capthook]
-tagasaw.home.micahrl.com
+tagasaw
 
 [chineserooms]
-chineseroom.micahrl.com
-burrow.banded-goblin.ts.net
+burrow
+chineseroom
 dreadnaught
 
 [cloudkey]
-cloudkey.home.micahrl.com
+cloudkey
 
 [emailfwd]
-apsylania.micahrl.com
-tagasaw.home.micahrl.com
-wenaglia.banded-goblin.ts.net
+apsylania
+bolgana
 dreadnaught
-bolgana.banded-goblin.ts.net
+tagasaw
+wenaglia
 
 [http_root_micahrl_com]
-apsylania.micahrl.com
+apsylania
 
 [ircbnc]
-bolgana.banded-goblin.ts.net
+bolgana
 
 [pprox]
-wenaglia.banded-goblin.ts.net
+wenaglia
 
 [seedboxes]
-tagasaw.home.micahrl.com
+tagasaw
 
 [splash]
-naragua.home.micahrl.com
+naragua
 
 [tailscale]
-apsylania.micahrl.com
-tagasaw.home.micahrl.com
-wenaglia.banded-goblin.ts.net
-bolgana.banded-goblin.ts.net
-
-[unifiusg]
-gateway.home.micahrl.com
+apsylania
+bolgana
+tagasaw
+wenaglia
 
 [workstation_fedora]
 naraguachile
@@ -56,7 +53,7 @@ haluth
 nullyork
 
 [workstation_macos]
-naragua.home.micahrl.com
+naragua
 
 [xmpp_server]
-apsylania.micahrl.com
+apsylania

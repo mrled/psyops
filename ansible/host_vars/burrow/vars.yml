@@ -1,5 +1,6 @@
 ---
 ansible_ssh_user: micahrl
+ansible_host: burrow.banded-goblin.ts.net
 
 ssh_authorized_keys_users:
   micahrl: "{{ global_personal_ssh_keys }}"
