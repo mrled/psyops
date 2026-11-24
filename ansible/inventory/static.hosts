@@ -1,8 +1,5 @@
 # Static inventory
 
-[acmednsremotes]
-cloudkey
-
 [backchannel]
 naragua
 naraguachile
@@ -15,9 +12,6 @@ tagasaw
 burrow
 chineseroom
 dreadnaught
-
-[cloudkey]
-cloudkey
 
 [emailfwd]
 apsylania
