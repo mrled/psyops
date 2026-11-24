@@ -60,7 +60,7 @@ spec:
       containers:
         - name: plex-logs
           # Match the cluster's existing Fluent Bit image.
-          image: cr.fluentbit.io/fluent/fluent-bit:5.2.0
+          image: cr.fluentbit.io/fluent/fluent-bit:5.2.1
           args:
             - -c
             - /fluent-bit/plex/fluent-bit.conf
