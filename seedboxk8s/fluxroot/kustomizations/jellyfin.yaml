@@ -23,12 +23,12 @@ spec:
       name: jellyfin
       namespace: tortuga
     - apiVersion: arrchitect.dev/v1alpha1
-      kind: JellyfinConfig
+      kind: Jellyfin
       name: jellyfin
       namespace: tortuga
   healthCheckExprs:
     - apiVersion: arrchitect.dev/v1alpha1
-      kind: JellyfinConfig
+      kind: Jellyfin
       current: >-
         has(status.initialized) && status.initialized &&
         has(status.observedGeneration) && status.observedGeneration == metadata.generation &&

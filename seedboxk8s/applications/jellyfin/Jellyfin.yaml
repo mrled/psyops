@@ -1,6 +1,6 @@
-# Schema: https://github.com/kyleseneker/arrchitect/blob/v0.1.0/config/crd/bases/arrchitect.dev_jellyfinconfigs.yaml
+# Schema: https://github.com/kyleseneker/arrchitect/blob/v0.9.0/config/crd/bases/arrchitect.dev_jellyfins.yaml
 apiVersion: arrchitect.dev/v1alpha1
-kind: JellyfinConfig
+kind: Jellyfin
 metadata:
   name: jellyfin
   namespace: tortuga
