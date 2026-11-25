@@ -31,7 +31,7 @@ Resources:
         - Name: naragua.backchannel.younix.us.
           Type: A
           TTL: 60
-          ResourceRecords: ["100.112.192.27"]
+          ResourceRecords: ["100.112.192.26"]
         - Name: "*.naragua.backchannel.younix.us."
           Type: CNAME
           TTL: 60
