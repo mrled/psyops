@@ -55,7 +55,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ghcr.io/ersatztv/legacy:develop@sha256:48f515fd9a6af52e03a4dafc269a3b377c3ac398d8e57d41b3d783b9451cbced
+        - image: ghcr.io/ersatztv/legacy:develop@sha256:f60b98e897c61d291d45396fe4b371e28be70d737062b2122e649d8283f429b8
           name: ersatztv
           resources:
             limits:
