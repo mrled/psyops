@@ -54,7 +54,7 @@ spec:
               mountPath: /import
       containers:
         # https://github.com/linuxserver/docker-cops/releases
-        - image: ghcr.io/linuxserver/cops:3.8.2-ls282
+        - image: ghcr.io/linuxserver/cops:4.6.1-ls22
           name: cops
           ports:
             - containerPort: 80
