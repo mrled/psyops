@@ -15,7 +15,7 @@ UsePAM yes
 # Host-root-owned bind mounts appear unmapped inside the user namespace.
 # A fixed reader avoids StrictModes rejecting that ownership on a key file.
 AuthorizedKeysFile none
-AuthorizedKeysCommand /usr/bin/cat /etc/mindless/authorized_keys
+AuthorizedKeysCommand /usr/bin/cat /etc/mindless/config/authorized_keys
 AuthorizedKeysCommandUser nobody
 StrictModes yes
 

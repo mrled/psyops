@@ -91,7 +91,7 @@ RUN curl -fsSL https://pkgs.tailscale.com/stable/fedora/tailscale.repo \
         tailscale \
     && dnf clean all
 
-# These files are copied into the /etc/mindless build context on the host.
+# Only /etc/mindless/config is used as the build context on the host.
 COPY mindless-workspace-init /usr/local/libexec/mindless-workspace-init
 COPY mindless-workspace.service herdr-core.service /etc/systemd/system/
 COPY tailscaled-workspace.conf /etc/systemd/system/tailscaled.service.d/workspace.conf

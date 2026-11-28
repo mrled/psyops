@@ -4,7 +4,7 @@ Description=Host egress policy for mindless
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/sudo -n -- /usr/sbin/nft --file /etc/mindless/policy.nft
-ExecReload=/usr/bin/sudo -n -- /usr/sbin/nft --file /etc/mindless/policy.nft
+ExecStart=/usr/bin/sudo -n -- /usr/sbin/nft --file /etc/mindless/config/policy.nft
+ExecReload=/usr/bin/sudo -n -- /usr/sbin/nft --file /etc/mindless/config/policy.nft
 # BindsTo/After on the container unit orders its shutdown before this removal.
 ExecStop=/usr/bin/sudo -n -- /usr/sbin/nft destroy table inet mindless

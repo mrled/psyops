@@ -7,7 +7,10 @@ Multiagent programming with `herdr`, in a rootless Fedora container.
 As the host account: `podman exec -it --user mindless mindless zsh`
 (substitute your container username).
 Keep work under `/workspace/home`, the developer-owned subtree of `mindless-workspace`.
-`/etc/mindless` is read-only inside.
+`/etc/mindless/config` and `/etc/mindless/secrets` are mounted read-only inside.
+Only `config` is used as the image build context.
+The secrets mount uses Podman's `:U` to adjust host ownership to container root;
+the secrets directory is accessible only to container root, not the developer user.
 
 As the host user:
 

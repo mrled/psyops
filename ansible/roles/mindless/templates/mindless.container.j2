@@ -15,7 +15,8 @@ DNS={{ server }}
 {% endfor %}
 # auto may choose a different mapping when the container is recreated.
 Volume=mindless-workspace:/workspace:U
-Volume=/etc/mindless:/etc/mindless:ro
+Volume=/etc/mindless/config:/etc/mindless/config:ro
+Volume=/etc/mindless/secrets:/etc/mindless/secrets:ro,U
 
 [Service]
 Restart=always

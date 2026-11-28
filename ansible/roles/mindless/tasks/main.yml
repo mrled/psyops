@@ -83,12 +83,35 @@
     mode: "0755"
   loop:
     - /etc/mindless
+    - /etc/mindless/config
     - "/etc/containers/systemd/users/{{ mindless_uid }}"
+
+- name: Check secrets directory ownership
+  ansible.builtin.stat:
+    path: /etc/mindless/secrets
+  register: mindless_secrets_dir
+
+# Podman :U owns this directory after startup; preserve its mapped ownership.
+- name: Create secrets directory
+  ansible.builtin.file:
+    path: /etc/mindless/secrets
+    state: directory
+    owner: "{{ omit if mindless_secrets_dir.stat.exists else mindless_host_user }}"
+    group: "{{ omit if mindless_secrets_dir.stat.exists else mindless_gid }}"
+    mode: "0700"
+
+- name: Install secrets ownership notice
+  ansible.builtin.copy:
+    src: secrets-README
+    dest: /etc/mindless/secrets/README
+    owner: "{{ mindless_secrets_dir.stat.uid | default(mindless_uid) }}"
+    group: "{{ mindless_secrets_dir.stat.gid | default(mindless_gid) }}"
+    mode: "0644"
 
 - name: Install image definition
   ansible.builtin.template:
     src: Containerfile.j2
-    dest: /etc/mindless/Containerfile
+    dest: /etc/mindless/config/Containerfile
     owner: root
     group: root
     mode: "0644"
@@ -97,7 +120,7 @@
 - name: Install container services
   ansible.builtin.copy:
     src: "{{ item }}"
-    dest: "/etc/mindless/{{ item }}"
+    dest: "/etc/mindless/config/{{ item }}"
     owner: root
     group: root
     mode: "0644"
@@ -110,7 +133,7 @@
 - name: Render container services
   ansible.builtin.template:
     src: "{{ item }}.j2"
-    dest: "/etc/mindless/{{ item }}"
+    dest: "/etc/mindless/config/{{ item }}"
     owner: root
     group: root
     mode: "0644"
@@ -123,7 +146,7 @@
 - name: Install container authorized keys
   ansible.builtin.template:
     src: authorized_keys.j2
-    dest: /etc/mindless/authorized_keys
+    dest: /etc/mindless/config/authorized_keys
     owner: root
     group: root
     mode: "0644"
@@ -131,7 +154,7 @@
 - name: Install firewall policy
   ansible.builtin.template:
     src: policy.nft.j2
-    dest: /etc/mindless/policy.nft
+    dest: /etc/mindless/config/policy.nft
     owner: root
     group: root
     mode: "0644"
@@ -182,7 +205,7 @@
   register: mindless_firewall_unit
 
 - name: Validate firewall transaction
-  ansible.builtin.command: nft --check --file /etc/mindless/policy.nft
+  ansible.builtin.command: nft --check --file /etc/mindless/config/policy.nft
   changed_when: false
   when: not ansible_check_mode
 
@@ -227,7 +250,7 @@
 
     - name: Build developer image
       ansible.builtin.command:
-        argv: "{{ ['podman', 'build', '--network=slirp4netns:allow_host_loopback=false'] + (['--no-cache'] if mindless_rebuild else []) + (mindless_dns_servers | map('regex_replace', '^', '--dns=') | list) + ['--tag', mindless_image, '--file', '/etc/mindless/Containerfile', '/etc/mindless'] }}"
+        argv: "{{ ['podman', 'build', '--network=slirp4netns:allow_host_loopback=false'] + (['--no-cache'] if mindless_rebuild else []) + (mindless_dns_servers | map('regex_replace', '^', '--dns=') | list) + ['--tag', mindless_image, '--file', '/etc/mindless/config/Containerfile', '/etc/mindless/config'] }}"
       when: mindless_containerfile.changed or mindless_container_services.changed or mindless_container_service_templates.changed or mindless_rebuild or mindless_image_exists.rc == 1
       register: mindless_build
       changed_when: true
