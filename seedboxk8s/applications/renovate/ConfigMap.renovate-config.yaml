@@ -37,6 +37,7 @@ data:
             "ghcr.io/linuxserver/sonarr",
             "ghcr.io/linuxserver/sabnzbd",
             "klausmeyer/docker-registry-browser",
+            "intel/intel-gpu-plugin",
             "nginx",
             "ghcr.io/bookorbit/bookorbit",
             "ghcr.io/vavallee/bindery",
@@ -59,15 +60,23 @@ data:
         {
           "description": "Automerge minor and patch updates for selected Helm charts",
           "matchDatasources": ["helm"],
-          "matchPackageNames": ["tailscale-operator", "headlamp", "cert-manager", "fluent-bit", "reloader"],
+          "matchPackageNames": ["tailscale-operator", "headlamp", "cert-manager", "fluent-bit", "reloader", "opensearch", "opensearch-dashboards"],
           "matchUpdateTypes": ["minor", "patch"],
           "automerge": true
         },
         {
-          "description": "Automerge minor and patch kube-prometheus-stack updates after three days",
+          "description": "Automerge all kube-prometheus-stack updates after three days",
           "matchDatasources": ["helm"],
           "matchPackageNames": ["kube-prometheus-stack"],
-          "matchUpdateTypes": ["minor", "patch"],
+          "minimumReleaseAge": "3 days",
+          "automerge": true
+        },
+        {
+          "description": "Automerge Flux patch releases after three days",
+          "matchManagers": ["flux"],
+          "matchDatasources": ["github-releases"],
+          "matchPackageNames": ["fluxcd/flux2"],
+          "matchUpdateTypes": ["patch"],
           "minimumReleaseAge": "3 days",
           "automerge": true
         },
