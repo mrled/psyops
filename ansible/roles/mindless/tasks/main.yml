@@ -187,7 +187,7 @@
   changed_when: false
   when: not ansible_check_mode
 
-- name: Enable lingering
+- name: Enable host account lingering
   ansible.builtin.command:
     argv: [loginctl, enable-linger, "{{ mindless_host_user }}"]
     creates: "/var/lib/systemd/linger/{{ mindless_host_user }}"

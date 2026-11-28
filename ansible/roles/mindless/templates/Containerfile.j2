@@ -97,7 +97,8 @@ COPY mindless-workspace.service herdr-core.service /etc/systemd/system/
 COPY tailscaled-workspace.conf /etc/systemd/system/tailscaled.service.d/workspace.conf
 COPY sshd_config /etc/ssh/sshd_config
 COPY sshd-workspace.conf /etc/systemd/system/sshd.service.d/workspace.conf
-RUN mkdir -p /etc/mindless/secrets \
+RUN mkdir -p /etc/mindless/secrets /var/lib/systemd/linger \
+    && touch /var/lib/systemd/linger/{{ mindless_container_user | quote }} \
     && chmod 0755 /etc/mindless /etc/mindless/secrets \
     && chmod 0755 /usr/local/libexec/mindless-workspace-init \
     && systemctl enable mindless-workspace.service herdr-core.service tailscaled.service sshd.service \
