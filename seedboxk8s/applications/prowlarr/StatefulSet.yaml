@@ -54,7 +54,7 @@ spec:
               mountPath: /import
       containers:
         # https://github.com/linuxserver/docker-prowlarr/releases
-        - image: ghcr.io/linuxserver/prowlarr:2.3.0.5236-ls133
+        - image: ghcr.io/linuxserver/prowlarr:3.1.0.5799-ls170
           name: prowlarr
           ports:
             - containerPort: 9696
