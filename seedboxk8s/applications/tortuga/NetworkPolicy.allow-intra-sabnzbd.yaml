@@ -25,9 +25,6 @@ spec:
           app.kubernetes.io/name: lidarr
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: prowlarr
-    - podSelector:
-        matchLabels:
           app.kubernetes.io/name: shhh
     - podSelector:
         matchLabels:

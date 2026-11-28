@@ -72,7 +72,6 @@
     - "{{ seedbox_heimdall_config_dir }}"
     - "{{ seedbox_tautulli_config_dir }}"
     - "{{ seedbox_rtorrent_config_dir }}"
-    - "{{ seedbox_prowlarr_config_dir }}"
     - "{{ seedbox_stash_config_dir }}"
     - "{{ seedbox_media.trix }}/stash"
     - "{{ seedbox_media.trix }}/generated"

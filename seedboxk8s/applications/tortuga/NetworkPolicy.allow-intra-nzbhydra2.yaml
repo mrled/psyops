@@ -32,9 +32,6 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: sabnzbd
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: prowlarr
     ports:
     - port: 5076
       protocol: TCP

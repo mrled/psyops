@@ -13,9 +13,6 @@ spec:
   - from:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: prowlarr
-    - podSelector:
-        matchLabels:
           app.kubernetes.io/name: bazarr
     ports:
     - port: 7878
