@@ -1,0 +1,23 @@
+Port 22
+ListenAddress 127.0.0.1
+
+HostKey /workspace/sshd/ssh_host_rsa_key
+HostKey /workspace/sshd/ssh_host_ed25519_key
+
+PermitRootLogin no
+AllowUsers {{ mindless_container_user }}
+SetEnv HC_SOCKET={{ mindless_hc_socket }}
+PubkeyAuthentication yes
+AuthenticationMethods publickey
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+UsePAM yes
+# Host-root-owned bind mounts appear unmapped inside the user namespace.
+# A fixed reader avoids StrictModes rejecting that ownership on a key file.
+AuthorizedKeysFile none
+AuthorizedKeysCommand /usr/bin/cat /etc/mindless/authorized_keys
+AuthorizedKeysCommandUser nobody
+StrictModes yes
+
+DisableForwarding yes
+Subsystem sftp internal-sftp

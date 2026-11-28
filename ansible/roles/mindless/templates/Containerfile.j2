@@ -1,0 +1,110 @@
+FROM {{ mindless_fedora_image }}
+
+USER root
+
+RUN dnf install -y \
+        bash \
+        bzip2 \
+        ca-certificates \
+        chromium \
+        cargo \
+        curl \
+        dejavu-sans-mono-fonts \
+        diffutils \
+        fd-find \
+        file \
+        findutils \
+        gcc \
+        gcc-c++ \
+        git \
+        glibc-langpack-en \
+        golang \
+        google-noto-emoji-color-fonts \
+        google-noto-sans-cjk-vf-fonts \
+        google-noto-sans-fonts \
+        gzip \
+        hugo \
+        iputils \
+        jq \
+        liberation-fonts \
+        make \
+        neovim \
+        nftables \
+        nodejs \
+        nodejs-npm \
+        openssh-server \
+        openssh-clients \
+        patch \
+        procps-ng \
+        python3 \
+        ripgrep \
+        ruby \
+        rubygems \
+        rust \
+        shadow-utils \
+        squid \
+        sudo \
+        systemd \
+        tar \
+        tmux \
+        unzip \
+        util-linux \
+        which \
+        xz \
+        zsh \
+    && dnf clean all
+
+# The developer owns Homebrew so installs work without sudo at runtime.
+RUN useradd --create-home --user-group --home-dir /workspace/home \
+        --shell /bin/zsh {{ mindless_container_user | quote }} \
+    && mkdir -p /home/linuxbrew/.linuxbrew \
+    && chown -R {{ mindless_container_user }}:{{ mindless_container_user }} /home/linuxbrew \
+    && curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh \
+        -o /tmp/install-homebrew.sh \
+    && runuser -u {{ mindless_container_user | quote }} -- env HOME=/workspace/home NONINTERACTIVE=1 HOMEBREW_NO_SUDO=1 \
+        /bin/bash /tmp/install-homebrew.sh \
+    && rm /tmp/install-homebrew.sh
+
+ENV PATH="/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
+ENV LANG=en_US.UTF-8
+
+# Keep tools outside the persistent HOME, without modifying Fedora's Python.
+RUN curl -fsSL https://astral.sh/uv/install.sh -o /tmp/install-uv.sh \
+    && UV_UNMANAGED_INSTALL=/usr/local/bin sh /tmp/install-uv.sh \
+    && UV_TOOL_DIR=/opt/uv-tools UV_TOOL_BIN_DIR=/usr/local/bin UV_PYTHON_DOWNLOADS=never \
+        uv tool install --python /usr/bin/python3 ruff \
+    && UV_TOOL_DIR=/opt/uv-tools UV_TOOL_BIN_DIR=/usr/local/bin UV_PYTHON_DOWNLOADS=never \
+        uv tool install --python /usr/bin/python3 ty \
+    && uv cache clean \
+    && rm /tmp/install-uv.sh \
+    && npm install --global @mariozechner/pi-coding-agent \
+    && npm cache clean --force
+
+RUN curl -fsSL https://releases.herdr.dev/core/install.sh -o /tmp/install-hc.sh \
+    && HC_INSTALL_DIR=/usr/local/bin sh /tmp/install-hc.sh \
+    && test -x /usr/local/bin/hc \
+    && rm /tmp/install-hc.sh
+
+RUN curl -fsSL https://pkgs.tailscale.com/stable/fedora/tailscale.repo \
+        -o /etc/yum.repos.d/tailscale.repo \
+    && dnf install -y \
+        tailscale \
+    && dnf clean all
+
+# These files are copied into the /etc/mindless build context on the host.
+COPY mindless-workspace-init /usr/local/libexec/mindless-workspace-init
+COPY mindless-workspace.service herdr-core.service /etc/systemd/system/
+COPY tailscaled-workspace.conf /etc/systemd/system/tailscaled.service.d/workspace.conf
+COPY sshd_config /etc/ssh/sshd_config
+COPY sshd-workspace.conf /etc/systemd/system/sshd.service.d/workspace.conf
+RUN chmod 0755 /usr/local/libexec/mindless-workspace-init \
+    && systemctl enable mindless-workspace.service herdr-core.service tailscaled.service sshd.service \
+    && systemctl set-default multi-user.target
+
+# PID 1 stays root inside the rootless user namespace; service units select users.
+STOPSIGNAL SIGRTMIN+3
+ENV HOME=/workspace/home
+ENV SHELL=/bin/zsh
+VOLUME ["/workspace"]
+WORKDIR /workspace/home
+ENTRYPOINT ["/sbin/init"]

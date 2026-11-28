@@ -1,0 +1,23 @@
+---
+mindless_host_user: mindless
+mindless_container_user: mindless
+mindless_fedora_image: registry.fedoraproject.org/fedora:45
+mindless_image: localhost/mindless:latest
+# The service and SSH sessions must agree despite different XDG_RUNTIME_DIR values.
+mindless_hc_socket: /workspace/home/.local/state/herdr-core/default/default.sock
+
+# Set to true to rebuild the container
+mindless_rebuild: false
+
+# Must be unique on the host for this user
+mindless_subid_start: 2000000
+mindless_subid_count: 1048576
+
+# Set explicitly so we can allow them through the firewall
+mindless_dns_servers:
+  - 1.1.1.1
+  - 9.9.9.9
+
+mindless_tcp_ports: [80, 443]
+# Public UDP permits Tailscale's encrypted peer transport and STUN.
+mindless_udp_ports: [3478, 41641]

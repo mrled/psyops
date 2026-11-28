@@ -1,0 +1,21 @@
+[Unit]
+Description=Herdr Core developer terminals
+Requires=mindless-workspace.service
+After=mindless-workspace.service
+
+[Service]
+Type=forking
+User={{ mindless_container_user }}
+Group={{ mindless_container_user }}
+Environment=HOME=/workspace/home
+Environment=HC_SOCKET={{ mindless_hc_socket }}
+Environment=SHELL=/bin/zsh
+Environment=PATH=/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+WorkingDirectory=/workspace/home
+ExecStart=/usr/local/bin/hc server start
+ExecStop=/usr/local/bin/hc server stop
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,27 @@
+[Unit]
+Description=Mindless developer container
+BindsTo=mindless-firewall.service
+After=mindless-firewall.service
+
+[Container]
+Image={{ mindless_image }}
+Pull=never
+ContainerName=mindless
+UserNS=auto:size=65536
+PodmanArgs=--systemd=always
+Network=slirp4netns:allow_host_loopback=false
+{% for server in mindless_dns_servers %}
+DNS={{ server }}
+{% endfor %}
+# auto may choose a different mapping when the container is recreated.
+Volume=mindless-workspace:/workspace:U
+Volume=/etc/mindless:/etc/mindless:ro
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStartSec=900
+TimeoutStopSec=120
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,29 @@
+# {{ ansible_managed }}
+# Replace only our table in one transaction; never flush another firewall.
+destroy table inet mindless
+table inet mindless {
+    chain output {
+        type filter hook output priority -10; policy accept;
+        meta skuid {{ mindless_uid }} jump restricted
+        # Host-network containers can create sockets as delegated host UIDs.
+        meta skuid {{ mindless_subid_start }}-{{ mindless_subid_start | int + mindless_subid_count | int - 1 }} jump restricted
+    }
+    chain restricted {
+        # Preserve replies to inbound SSH, without grandfathering outbound flows.
+        ct direction reply accept
+{% for server in mindless_dns_servers %}
+        {{ 'ip6' if ':' in server else 'ip' }} daddr {{ server }} meta l4proto { tcp, udp } th dport 53 accept
+{% endfor %}
+        ip daddr { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.0.2.0/24, 192.168.0.0/16, 198.18.0.0/15, 198.51.100.0/24, 203.0.113.0/24, 224.0.0.0/4, 240.0.0.0/4 } counter reject
+        ip6 daddr != 2000::/3 counter reject
+        # Native IPv6 must not tunnel to IPv4 destinations through transition ranges.
+        ip6 daddr { 2001::/32, 2001:db8::/32, 2002::/16 } counter reject
+{% if mindless_tcp_ports | length %}
+        tcp dport { {{ mindless_tcp_ports | join(', ') }} } accept
+{% endif %}
+{% if mindless_udp_ports | length %}
+        udp dport { {{ mindless_udp_ports | join(', ') }} } accept
+{% endif %}
+        counter reject
+    }
+}

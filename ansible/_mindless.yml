@@ -1,0 +1,15 @@
+---
+- name: Deploy mindless developer environment
+  hosts: mindless
+  roles:
+    - role: mindless
+      tags: [mindless]
+    - role: ssh_authorized_keys
+      tags: [ssh_authorized_keys]
+      vars:
+        ssh_authorized_keys_users: "{{ {mindless_host_user: mindless_ssh_authorized_keys} }}"
+    - role: interactive_user
+      tags: [interactive, interactive_user]
+      vars:
+        interactive_user_list:
+          - name: "{{ mindless_host_user }}"

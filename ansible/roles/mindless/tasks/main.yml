@@ -1,0 +1,254 @@
+---
+- name: Validate host and account configuration
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == 'Fedora'
+      - mindless_subid_count | int >= 65536
+      - mindless_dns_servers | length > 0
+      - mindless_host_user is match('^[a-z_][a-z0-9_-]*$')
+      - mindless_container_user is match('^[a-z_][a-z0-9_-]*$')
+      - mindless_host_user != 'root'
+      - mindless_container_user != 'root'
+    fail_msg: mindless requires Fedora, non-root account names, and at least 65536 subordinate IDs.
+
+- name: Install host dependencies
+  ansible.builtin.dnf:
+    name:
+      - podman
+      - slirp4netns
+      - fuse-overlayfs
+      - nftables
+      - sudo
+      - shadow-utils
+      - git
+      - zsh
+      - policycoreutils-python-utils
+    state: present
+
+- name: Create host account
+  ansible.builtin.user:
+    name: "{{ mindless_host_user }}"
+    create_home: true
+    shell: /bin/zsh
+    password_lock: true
+
+- name: Look up host account
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ mindless_host_user }}"
+
+- name: Set account paths
+  ansible.builtin.set_fact:
+    mindless_uid: "{{ getent_passwd[mindless_host_user][1] }}"
+    mindless_gid: "{{ getent_passwd[mindless_host_user][2] }}"
+    mindless_home: "{{ getent_passwd[mindless_host_user][4] }}"
+
+# userns=auto needs spare IDs beyond those used by Podman's default namespace.
+# Refuse collisions rather than silently stealing another user's mappings.
+- name: Check subordinate ID allocation
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - |
+        import pathlib, sys
+        user, start, count = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+        for name in ('subuid', 'subgid'):
+            for line in pathlib.Path('/etc/' + name).read_text().splitlines():
+                if not line.strip() or line.startswith('#'):
+                    continue
+                owner, first, length = line.split(':')
+                first, length = int(first), int(length)
+                if owner != user and first < start + count and start < first + length:
+                    sys.exit(f'{name}: requested range overlaps {owner}')
+      - "{{ mindless_host_user }}"
+      - "{{ mindless_subid_start | string }}"
+      - "{{ mindless_subid_count | string }}"
+  changed_when: false
+  check_mode: false
+
+- name: Set subordinate ID ranges
+  ansible.builtin.lineinfile:
+    path: "/etc/{{ item }}"
+    regexp: "^{{ mindless_host_user }}:"
+    line: "{{ mindless_host_user }}:{{ mindless_subid_start }}:{{ mindless_subid_count }}"
+  loop: [subuid, subgid]
+
+- name: Create root-owned configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/mindless
+    - "/etc/containers/systemd/users/{{ mindless_uid }}"
+
+- name: Install image definition
+  ansible.builtin.template:
+    src: Containerfile.j2
+    dest: /etc/mindless/Containerfile
+    owner: root
+    group: root
+    mode: "0644"
+  register: mindless_containerfile
+
+- name: Install container services
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/mindless/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - mindless-workspace-init
+    - tailscaled-workspace.conf
+    - sshd-workspace.conf
+  register: mindless_container_services
+
+- name: Render container services
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/mindless/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - mindless-workspace.service
+    - herdr-core.service
+    - sshd_config
+  register: mindless_container_service_templates
+
+- name: Install container authorized keys
+  ansible.builtin.template:
+    src: authorized_keys.j2
+    dest: /etc/mindless/authorized_keys
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install firewall policy
+  ansible.builtin.template:
+    src: policy.nft.j2
+    dest: /etc/mindless/policy.nft
+    owner: root
+    group: root
+    mode: "0644"
+  register: mindless_policy
+
+# Rootless Podman cannot relabel these root-owned files itself.
+- name: Register shared container configuration label
+  community.general.sefcontext:
+    target: "/etc/mindless(/.*)?"
+    setype: container_file_t
+    state: present
+  when: ansible_facts.selinux.status == 'enabled'
+
+- name: Apply shared container configuration label
+  ansible.builtin.command: restorecon -RFv /etc/mindless
+  register: mindless_restorecon
+  changed_when: mindless_restorecon.stdout | length > 0
+  when: ansible_facts.selinux.status == 'enabled'
+
+- name: Create user service directories
+  ansible.builtin.file:
+    path: "{{ mindless_home }}/{{ item }}"
+    state: directory
+    owner: "{{ mindless_host_user }}"
+    group: "{{ mindless_gid }}"
+    mode: "0755"
+  loop:
+    - .config
+    - .config/systemd
+    - .config/systemd/user
+
+- name: Grant scoped firewall permissions
+  ansible.builtin.template:
+    src: mindless.sudoers.j2
+    dest: /etc/sudoers.d/mindless
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+- name: Install firewall unit
+  ansible.builtin.copy:
+    src: mindless-firewall.service
+    dest: "{{ mindless_home }}/.config/systemd/user/mindless-firewall.service"
+    owner: root
+    group: root
+    mode: "0644"
+  register: mindless_firewall_unit
+
+- name: Validate firewall transaction
+  ansible.builtin.command: nft --check --file /etc/mindless/policy.nft
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Enable lingering
+  ansible.builtin.command:
+    argv: [loginctl, enable-linger, "{{ mindless_host_user }}"]
+    creates: "/var/lib/systemd/linger/{{ mindless_host_user }}"
+
+- name: Start user manager
+  ansible.builtin.systemd_service:
+    name: "user@{{ mindless_uid }}.service"
+    state: started
+
+- name: Start user firewall
+  become: true
+  become_user: "{{ mindless_host_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ mindless_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mindless_uid }}/bus"
+  ansible.builtin.systemd_service:
+    scope: user
+    name: mindless-firewall.service
+    daemon_reload: true
+    state: "{{ 'restarted' if mindless_policy.changed or mindless_firewall_unit.changed else 'started' }}"
+
+- name: Build rootless container image
+  become: true
+  become_user: "{{ mindless_host_user }}"
+  environment:
+    HOME: "{{ mindless_home }}"
+    XDG_RUNTIME_DIR: "/run/user/{{ mindless_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mindless_uid }}/bus"
+  block:
+    - name: Check image availability
+      ansible.builtin.command:
+        argv: [podman, image, exists, "{{ mindless_image }}"]
+      register: mindless_image_exists
+      changed_when: false
+      # 1 is the documented absent-image result; other errors must fail.
+      failed_when: mindless_image_exists.rc not in [0, 1]
+      check_mode: false
+
+    - name: Build developer image
+      ansible.builtin.command:
+        argv: "{{ ['podman', 'build', '--network=slirp4netns:allow_host_loopback=false'] + (['--no-cache'] if mindless_rebuild else []) + (mindless_dns_servers | map('regex_replace', '^', '--dns=') | list) + ['--tag', mindless_image, '--file', '/etc/mindless/Containerfile', '/etc/mindless'] }}"
+      when: mindless_containerfile.changed or mindless_container_services.changed or mindless_container_service_templates.changed or mindless_rebuild or mindless_image_exists.rc == 1
+      register: mindless_build
+      changed_when: true
+
+- name: Install Quadlet source
+  ansible.builtin.template:
+    src: mindless.container.j2
+    dest: "/etc/containers/systemd/users/{{ mindless_uid }}/mindless.container"
+    owner: root
+    group: root
+    mode: "0644"
+  register: mindless_quadlet
+
+- name: Start developer container
+  become: true
+  become_user: "{{ mindless_host_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ mindless_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ mindless_uid }}/bus"
+  ansible.builtin.systemd_service:
+    scope: user
+    daemon_reload: true
+    name: mindless.service
+    state: "{{ 'restarted' if mindless_quadlet.changed or mindless_build.changed else 'started' }}"

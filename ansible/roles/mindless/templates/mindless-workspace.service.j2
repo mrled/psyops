@@ -1,0 +1,12 @@
+[Unit]
+Description=Initialize persistent developer workspace
+RequiresMountsFor=/workspace
+Before=herdr-core.service tailscaled.service sshd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/mindless-workspace-init {{ mindless_container_user }}
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

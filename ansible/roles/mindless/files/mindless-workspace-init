@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+user=$1
+
+install -d -o root -g root -m 0755 /workspace
+install -d -o root -g root -m 0700 /workspace/tailscale
+chown -hR root:root /workspace/tailscale
+
+install -d -o root -g root -m 0700 /workspace/sshd
+chown -hR root:root /workspace/sshd
+umask 077
+if ! test -f /workspace/sshd/ssh_host_rsa_key; then
+    ssh-keygen -q -t rsa -b 3072 -N '' -f /workspace/sshd/ssh_host_rsa_key
+fi
+if ! test -f /workspace/sshd/ssh_host_ed25519_key; then
+    ssh-keygen -q -t ed25519 -N '' -f /workspace/sshd/ssh_host_ed25519_key
+fi
+chmod 0600 /workspace/sshd/ssh_host_rsa_key /workspace/sshd/ssh_host_ed25519_key
+
+# Podman's :U resets volume ownership when auto selects a new mapping.
+# Restore developer ownership only within its own subtree.
+install -d -o "$user" -g "$user" -m 0700 /workspace/home
+chown -hR "$user:$user" /workspace/home
