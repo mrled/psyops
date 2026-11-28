@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ${shhhImage}:v3-3.3.4-release.794
+        - image: ${shhhImage}:v3-3.6.5-release.1886
           name: shhh
           ports:
             - containerPort: 6969
