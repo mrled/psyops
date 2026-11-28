@@ -77,7 +77,7 @@ RUN curl -fsSL https://astral.sh/uv/install.sh -o /tmp/install-uv.sh \
         uv tool install --python /usr/bin/python3 ty \
     && uv cache clean \
     && rm /tmp/install-uv.sh \
-    && npm install --global @mariozechner/pi-coding-agent \
+    && npm install --global --ignore-scripts @earendil-works/pi-coding-agent \
     && npm cache clean --force
 
 RUN curl -fsSL https://releases.herdr.dev/core/install.sh -o /tmp/install-hc.sh \
