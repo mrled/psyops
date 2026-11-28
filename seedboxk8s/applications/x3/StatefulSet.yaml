@@ -53,7 +53,7 @@ spec:
             - name: import
               mountPath: /import
       containers:
-        - image: ${x3Image}:v0.31.1
+        - image: ${x3Image}:v0.32.0
           name: x3
           securityContext:
             runAsUser: ${plexUid}
