@@ -86,39 +86,6 @@
     - /etc/mindless/config
     - "/etc/containers/systemd/users/{{ mindless_uid }}"
 
-- name: Check secrets directory ownership
-  ansible.builtin.stat:
-    path: /etc/mindless/secrets
-  register: mindless_secrets_dir
-
-# Podman :U owns this directory after startup; preserve its mapped ownership.
-- name: Create secrets directory
-  ansible.builtin.file:
-    path: /etc/mindless/secrets
-    state: directory
-    owner: "{{ omit if mindless_secrets_dir.stat.exists else mindless_host_user }}"
-    group: "{{ omit if mindless_secrets_dir.stat.exists else mindless_gid }}"
-    mode: "0700"
-
-- name: Install secrets ownership notice
-  ansible.builtin.copy:
-    src: secrets-README
-    dest: /etc/mindless/secrets/README
-    owner: "{{ mindless_secrets_dir.stat.uid | default(mindless_uid) }}"
-    group: "{{ mindless_secrets_dir.stat.gid | default(mindless_gid) }}"
-    mode: "0644"
-
-- name: Install 1Password service account token
-  ansible.builtin.copy:
-    content: "{{ mindless_1password_service_account_token }}"
-    dest: /etc/mindless/secrets/1password-service-account-token
-    owner: "{{ mindless_secrets_dir.stat.uid | default(mindless_uid) }}"
-    group: "{{ mindless_secrets_dir.stat.gid | default(mindless_gid) }}"
-    mode: "0600"
-  when: mindless_1password_service_account_token | length > 0
-  no_log: true
-  diff: false
-
 - name: Install image definition
   ansible.builtin.template:
     src: Containerfile.j2
@@ -266,6 +233,61 @@
       register: mindless_build
       changed_when: true
 
+    - name: Configure rootless container secret
+      when: mindless_1password_service_account_token | length > 0
+      block:
+        - name: Read developer IDs from the built image
+          ansible.builtin.command:
+            argv:
+              - podman
+              - run
+              - --rm
+              - --network=none
+              - --entrypoint=/usr/bin/id
+              - "{{ mindless_image }}"
+              - "{{ item }}"
+              - "{{ mindless_container_user }}"
+          loop: [-u, -g]
+          register: mindless_image_ids
+          changed_when: false
+          check_mode: false
+
+        - name: Set container secret ownership
+          ansible.builtin.set_fact:
+            mindless_container_uid: "{{ mindless_image_ids.results[0].stdout | trim }}"
+            mindless_container_gid: "{{ mindless_image_ids.results[1].stdout | trim }}"
+
+        - name: Check managed secret availability
+          ansible.builtin.command:
+            argv: [podman, secret, exists, mindless-1password-service-account-token]
+          register: mindless_secret_exists
+          changed_when: false
+          failed_when: mindless_secret_exists.rc not in [0, 1]
+          check_mode: false
+
+        - name: Inspect managed secret data
+          ansible.builtin.command:
+            argv: [podman, secret, inspect, --showsecret, mindless-1password-service-account-token]
+          register: mindless_secret_inspect
+          when: mindless_secret_exists.rc == 0
+          changed_when: false
+          check_mode: false
+          no_log: true
+          diff: false
+
+        - name: Create or rotate managed secret
+          ansible.builtin.command:
+            argv: [podman, secret, create, --replace, mindless-1password-service-account-token, '-']
+            stdin: "{{ mindless_1password_service_account_token }}"
+            stdin_add_newline: false
+          when: >-
+            mindless_secret_exists.rc == 1 or
+            (mindless_secret_inspect.stdout | from_json)[0].SecretData != mindless_1password_service_account_token
+          register: mindless_secret_update
+          changed_when: true
+          no_log: true
+          diff: false
+
 - name: Install Quadlet source
   ansible.builtin.template:
     src: mindless.container.j2
@@ -285,4 +307,14 @@
     scope: user
     daemon_reload: true
     name: mindless.service
-    state: "{{ 'restarted' if mindless_quadlet.changed or mindless_build.changed else 'started' }}"
+    state: "{{ 'restarted' if mindless_quadlet.changed or mindless_build.changed or (mindless_secret_update | default({})) is changed else 'started' }}"
+
+# Do not remove files backing the old live mount until its replacement starts.
+# Leave the directory and any unmanaged files alone.
+- name: Remove legacy managed secret files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/mindless/secrets/README
+    - /etc/mindless/secrets/1password-service-account-token

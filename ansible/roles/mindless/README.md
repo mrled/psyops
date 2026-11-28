@@ -7,10 +7,8 @@ Multiagent programming with `herdr`, in a rootless Fedora container.
 As the host account: `podman exec -it --user mindless mindless zsh`
 (substitute your container username).
 Keep work under `/workspace/home`, the developer-owned subtree of `mindless-workspace`.
-`/etc/mindless/config` and `/etc/mindless/secrets` are mounted read-only inside.
-Only `config` is used as the image build context.
-The secrets mount uses Podman's `:U` to adjust host ownership to container root;
-the secrets directory is accessible only to container root, not the developer user.
+`/etc/mindless/config` is bind-mounted read-only inside
+and is the only image build context.
 
 As the host user:
 
@@ -30,6 +28,20 @@ After Tailscale enrollment, connect directly using the container's MagicDNS name
 ```sh
 hc machine add mindless@nullyork-mindless.banded-goblin.ts.net --name mindless
 ```
+
+## 1Password service account token
+
+Set `mindless_1password_service_account_token` to provision a rootless Podman secret.
+Quadlet mounts it at `/etc/mindless/secrets/1password-service-account-token`,
+owned by the container developer with mode `0400`.
+Ansible discovers the UID/GID from the built image;
+Podman handles the user-namespace mapping.
+Token updates recreate the container.
+An empty value omits the mount but retains any stored Podman secret.
+
+The token is supplied through stdin, with secret logs and diffs disabled.
+Podman's default secret store is not encrypted; the host account and root are trusted.
+The `op` CLI and wrapper are not configured by this role.
 
 ## SSH keys
 

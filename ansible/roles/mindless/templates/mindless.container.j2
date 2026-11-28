@@ -16,7 +16,9 @@ DNS={{ server }}
 # auto may choose a different mapping when the container is recreated.
 Volume=mindless-workspace:/workspace:U
 Volume=/etc/mindless/config:/etc/mindless/config:ro
-Volume=/etc/mindless/secrets:/etc/mindless/secrets:ro,U
+{% if mindless_1password_service_account_token | length > 0 %}
+Secret=mindless-1password-service-account-token,target=/etc/mindless/secrets/1password-service-account-token,uid={{ mindless_container_uid }},gid={{ mindless_container_gid }},mode=0400
+{% endif %}
 
 [Service]
 Restart=always
