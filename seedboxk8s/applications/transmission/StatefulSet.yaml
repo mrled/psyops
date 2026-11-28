@@ -54,7 +54,7 @@ spec:
               mountPath: /import
       containers:
         # https://github.com/linuxserver/docker-transmission/releases
-        - image: lscr.io/linuxserver/transmission:4.0.6-r4-ls294
+        - image: lscr.io/linuxserver/transmission:4.1.4-r0-ls371
           name: transmission
           env:
             - name: PUID
