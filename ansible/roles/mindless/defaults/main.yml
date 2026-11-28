@@ -3,6 +3,7 @@ mindless_host_user: mindless
 mindless_container_user: mindless
 mindless_fedora_image: registry.fedoraproject.org/fedora:45
 mindless_image: localhost/mindless:latest
+mindless_1password_service_account_token: ""
 # The service and SSH sessions must agree despite different XDG_RUNTIME_DIR values.
 mindless_hc_socket: /workspace/home/.local/state/herdr-core/default/default.sock
 

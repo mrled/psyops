@@ -108,6 +108,17 @@
     group: "{{ mindless_secrets_dir.stat.gid | default(mindless_gid) }}"
     mode: "0644"
 
+- name: Install 1Password service account token
+  ansible.builtin.copy:
+    content: "{{ mindless_1password_service_account_token }}"
+    dest: /etc/mindless/secrets/1password-service-account-token
+    owner: "{{ mindless_secrets_dir.stat.uid | default(mindless_uid) }}"
+    group: "{{ mindless_secrets_dir.stat.gid | default(mindless_gid) }}"
+    mode: "0600"
+  when: mindless_1password_service_account_token | length > 0
+  no_log: true
+  diff: false
+
 - name: Install image definition
   ansible.builtin.template:
     src: Containerfile.j2
